@@ -1,0 +1,67 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Restraint Metal Click",
+    "id": "restraint_metal_click_001",
+    "author": "Claude",
+    "description": "金屬拘束具扣合聲 — 極短衝擊 + 金屬殘響尾巴",
+    "created": "2026-05-06",
+    "tags": ["metal", "click", "mechanical", "dark", "character-sfx"],
+    "mood": "ominous",
+    "use_case": "VTuber character action / game UI interaction",
+    "category": "worldview_sfx",
+    "worldview": "Restraint",
+    "variation_of": null
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.75,
+    "effects": {
+      "reverb": { "decay": 2.0, "wet": 0.35 },
+      "delay": { "time_ms": 80, "feedback": 0.15, "wet": 0.12 },
+      "wall": { "distance_m": 5, "material": "concrete" }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.08,
+      "engine": "string",
+      "note": "C2",
+      "velocity": 1.0,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.8,
+        "length_mm": 60,
+        "tension_n": 1200,
+        "strike_position": 0.05,
+        "exciter": "metal_hammer",
+        "damping_override": 15.0
+      },
+      "comment": "極短極重的低頻金屬衝擊 — 高阻尼讓聲音瞬間截斷"
+    },
+    {
+      "time": 0.02,
+      "duration": 1.5,
+      "engine": "plate",
+      "note": "F#4",
+      "velocity": 0.35,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 0.8,
+        "radius_mm": 25,
+        "strike_position": 0.15,
+        "exciter": "metal_hammer"
+      },
+      "comment": "薄鋼片高頻殘響 — 疊在衝擊上面，模擬金屬零件碰撞後的顫音"
+    }
+  ],
+  "export": {
+    "filename": "restraint_metal_click_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 300
+  }
+}

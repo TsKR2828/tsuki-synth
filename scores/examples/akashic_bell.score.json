@@ -1,0 +1,66 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Akashic Bell",
+    "id": "akashic_bell_001",
+    "author": "Claude",
+    "description": "阿卡西紀錄的鐘聲 — 單音長殘響，適合作為 VTuber 場景轉換音效",
+    "created": "2026-05-06",
+    "tags": ["bell", "mystical", "transition", "reverb-heavy"],
+    "mood": "sacred",
+    "use_case": "VTuber scene transition / notification",
+    "category": "transition_sfx",
+    "worldview": "Akashic Library",
+    "variation_of": null
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.85,
+    "effects": {
+      "reverb": { "decay": 6.0, "wet": 0.65 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 },
+      "wall": { "distance_m": 12, "material": "stone" }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 8.0,
+      "engine": "plate",
+      "note": "C5",
+      "velocity": 0.75,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 3.5,
+        "radius_mm": 120,
+        "strike_position": 0.35,
+        "exciter": "metal_mallet",
+        "damping_override": null
+      }
+    },
+    {
+      "time": 0.0,
+      "duration": 8.0,
+      "engine": "plate",
+      "note": "G5",
+      "velocity": 0.3,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 3.5,
+        "radius_mm": 120,
+        "strike_position": 0.6,
+        "exciter": "metal_mallet",
+        "damping_override": null
+      },
+      "comment": "同時敲另一個位置，激發不同模態 → 產生泛音層次"
+    }
+  ],
+  "export": {
+    "filename": "akashic_bell_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 500
+  }
+}

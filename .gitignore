@@ -1,0 +1,34 @@
+# Build outputs
+build/
+builds/
+cmake-build-*/
+out/
+
+# IDE
+.vs/
+.vscode/
+*.vcxproj.user
+*.suo
+*.sdf
+*.opensdf
+.idea/
+*.xcworkspace
+xcuserdata/
+
+# JUCE
+libs/JUCE/
+
+# Compiled plugins
+*.vst3
+*.component
+*.aaxplugin
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Precompiled headers
+*.pch
+*.gch

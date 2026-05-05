@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "TsukiSynth Score v1",
+  "title": "TsukiSynth Score",
+  "description": "AI-readable physical modeling sound event format for TsukiSynth",
+  "type": "object",
+  "required": ["meta", "global", "events", "export"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "TsukiSynth Score v1"
+    },
+    "meta": {
+      "type": "object",
+      "required": ["title", "id"],
+      "properties": {
+        "title":        { "type": "string", "description": "Human-readable name" },
+        "id":           { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "Unique ID (snake_case), e.g. akashic_bell_001" },
+        "author":       { "type": "string" },
+        "description":  { "type": "string" },
+        "created":      { "type": "string", "format": "date" },
+        "tags":         { "type": "array", "items": { "type": "string" } },
+        "mood":         { "type": "string", "enum": ["sacred", "mystical", "tense", "ominous", "playful", "calm", "epic", "melancholic"] },
+        "use_case":     { "type": "string" },
+        "category":     { "type": "string", "description": "e.g. transition_sfx, character_ui, worldview_sfx, bell, mechanical" },
+        "worldview":    { "type": "string", "description": "World/universe this sound belongs to, e.g. Akashic Library, Rabbit, Restraint" },
+        "variation_of": { "type": ["string", "null"], "description": "ID of the parent sound if this is a variant, null otherwise" }
+      }
+    },
+    "global": {
+      "type": "object",
+      "required": ["bpm", "sample_rate", "master_volume"],
+      "properties": {
+        "bpm":           { "type": "number", "minimum": 1, "maximum": 999 },
+        "sample_rate":   { "type": "integer", "enum": [44100, 48000, 88200, 96000] },
+        "master_volume": { "type": "number", "minimum": 0, "maximum": 1 },
+        "effects": {
+          "type": "object",
+          "properties": {
+            "reverb": {
+              "type": "object",
+              "properties": {
+                "decay": { "type": "number", "minimum": 0, "maximum": 30 },
+                "wet":   { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            },
+            "delay": {
+              "type": "object",
+              "properties": {
+                "time_ms":  { "type": "number", "minimum": 0, "maximum": 5000 },
+                "feedback": { "type": "number", "minimum": 0, "maximum": 0.95 },
+                "wet":      { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            },
+            "wall": {
+              "type": "object",
+              "properties": {
+                "distance_m": { "type": "number", "minimum": 0, "maximum": 100 },
+                "material":   { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["time", "duration", "engine", "note", "velocity", "params"],
+        "properties": {
+          "time":     { "type": "number", "minimum": 0, "description": "Start time in seconds" },
+          "duration": { "type": "number", "minimum": 0, "description": "Duration in seconds" },
+          "engine":   { "type": "string", "enum": ["string", "beam", "plate", "membrane", "fm"], "description": "Physical model type" },
+          "note":     { "description": "Pitch as note name (C5) or MIDI number (72)" },
+          "velocity": { "type": "number", "minimum": 0, "maximum": 1 },
+          "params": {
+            "type": "object",
+            "description": "Engine-specific physical parameters",
+            "properties": {
+              "material":         { "type": "string", "description": "Key from materials.json" },
+              "thickness_mm":     { "type": "number", "minimum": 0.1 },
+              "radius_mm":        { "type": "number", "minimum": 1 },
+              "length_mm":        { "type": "number", "minimum": 1 },
+              "width_mm":         { "type": "number", "minimum": 1 },
+              "diameter_mm":      { "type": "number", "minimum": 0.1 },
+              "tension_n":        { "type": "number", "minimum": 1 },
+              "strike_position":  { "type": "number", "minimum": 0, "maximum": 1, "description": "0=edge, 0.5=center, 1=opposite edge" },
+              "exciter":          { "type": "string", "enum": ["cotton_mallet", "felt_mallet", "wood_mallet", "metal_mallet", "metal_hammer", "hard_plastic", "finger", "bow"], "description": "Excitation method" },
+              "damping_override": { "type": ["number", "null"], "description": "Override material damping alpha, null = use material default" }
+            }
+          },
+          "comment": { "type": "string", "description": "Optional note for humans/AI explaining intent" }
+        }
+      }
+    },
+    "export": {
+      "type": "object",
+      "required": ["filename"],
+      "properties": {
+        "filename":         { "type": "string", "description": "Output filename without extension" },
+        "format":           { "type": "string", "enum": ["wav", "flac"], "default": "wav" },
+        "bit_depth":        { "type": "integer", "enum": [16, 24, 32], "default": 24 },
+        "normalize":        { "type": "boolean", "default": true },
+        "tail_silence_ms":  { "type": "integer", "minimum": 0, "default": 300 }
+      }
+    }
+  }
+}

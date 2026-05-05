@@ -1,0 +1,66 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Rabbit Warning",
+    "id": "rabbit_warning_001",
+    "author": "Claude",
+    "description": "兔子角色的警告音效 — 兩聲短促金屬敲擊，略帶緊張感",
+    "created": "2026-05-06",
+    "tags": ["warning", "alert", "short", "character-sfx"],
+    "mood": "tense",
+    "use_case": "VTuber character reaction / UI alert",
+    "category": "character_ui",
+    "worldview": "Rabbit",
+    "variation_of": null
+  },
+  "global": {
+    "bpm": 140,
+    "sample_rate": 48000,
+    "master_volume": 0.80,
+    "effects": {
+      "reverb": { "decay": 1.2, "wet": 0.20 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 },
+      "wall": { "distance_m": 3, "material": "concrete" }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.4,
+      "engine": "beam",
+      "note": "E6",
+      "velocity": 0.9,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 2.0,
+        "length_mm": 45,
+        "width_mm": 12,
+        "strike_position": 0.25,
+        "exciter": "hard_plastic"
+      }
+    },
+    {
+      "time": 0.18,
+      "duration": 0.4,
+      "engine": "beam",
+      "note": "G6",
+      "velocity": 0.95,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 2.0,
+        "length_mm": 38,
+        "width_mm": 12,
+        "strike_position": 0.20,
+        "exciter": "hard_plastic"
+      },
+      "comment": "第二擊稍高、稍亮，營造上行警告感"
+    }
+  ],
+  "export": {
+    "filename": "rabbit_warning_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 200
+  }
+}

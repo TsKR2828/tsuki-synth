@@ -1,0 +1,56 @@
+{
+  "$schema": "TsukiSynth Sound Library Index v1",
+  "library": [
+    {
+      "id": "akashic_bell_001",
+      "name": "Akashic Bell",
+      "name_zh": "阿卡西之鐘",
+      "category": "bell",
+      "subcategory": "mystical",
+      "tags": ["bell", "mystical", "transition", "reverb-heavy", "sacred"],
+      "mood": "sacred",
+      "energy": "low",
+      "duration_sec": 8.5,
+      "use_cases": ["VTuber scene transition", "notification", "meditation"],
+      "world": "akashic",
+      "score_file": "scores/examples/akashic_bell.score.json",
+      "wav_file": "exports/wav/akashic_bell_001.wav",
+      "engine": "plate",
+      "primary_material": "bronze"
+    },
+    {
+      "id": "rabbit_warning_001",
+      "name": "Rabbit Warning",
+      "name_zh": "兔兔警告",
+      "category": "alert",
+      "subcategory": "character-sfx",
+      "tags": ["warning", "alert", "short", "character-sfx", "bright"],
+      "mood": "tense",
+      "energy": "high",
+      "duration_sec": 0.8,
+      "use_cases": ["VTuber reaction", "UI alert", "chat notification"],
+      "world": "rabbit",
+      "score_file": "scores/examples/rabbit_warning.score.json",
+      "wav_file": "exports/wav/rabbit_warning_001.wav",
+      "engine": "beam",
+      "primary_material": "aluminum"
+    },
+    {
+      "id": "restraint_metal_click_001",
+      "name": "Restraint Metal Click",
+      "name_zh": "拘束扣合",
+      "category": "mechanical",
+      "subcategory": "impact",
+      "tags": ["metal", "click", "mechanical", "dark", "impact", "short"],
+      "mood": "ominous",
+      "energy": "medium",
+      "duration_sec": 2.0,
+      "use_cases": ["VTuber character action", "game UI", "dark atmosphere"],
+      "world": "restraint",
+      "score_file": "scores/examples/restraint_metal_click.score.json",
+      "wav_file": "exports/wav/restraint_metal_click_001.wav",
+      "engine": "string+plate",
+      "primary_material": "steel"
+    }
+  ]
+}

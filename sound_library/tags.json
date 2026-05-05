@@ -1,0 +1,45 @@
+{
+  "$schema": "TsukiSynth Tag Taxonomy v1",
+  "categories": {
+    "bell": "鐘聲 — 圓板/圓膜模型，長殘響",
+    "chime": "風鈴/琴 — 梁/管模型，清脆短音",
+    "gong": "鑼 — 圓板模型，深沉共鳴",
+    "drum": "鼓類 — 圓膜模型",
+    "string": "弦類 — 弦模型，揚琴/鋼琴",
+    "alert": "警告/提示音 — 短促高頻",
+    "mechanical": "機械/金屬音效 — 衝擊+殘響",
+    "ambient": "氛圍 — 長音、環境填充",
+    "motif": "短旋律片段 — 多音符序列"
+  },
+  "moods": {
+    "sacred": "神聖、莊嚴",
+    "mystical": "神秘、魔法感",
+    "tense": "緊張、警戒",
+    "ominous": "不祥、黑暗",
+    "playful": "活潑、可愛",
+    "calm": "平靜、療癒",
+    "epic": "壯闊、史詩",
+    "melancholic": "憂鬱、感傷"
+  },
+  "energy_levels": ["very-low", "low", "medium", "high", "very-high"],
+  "use_cases": [
+    "VTuber scene transition",
+    "VTuber reaction / emote",
+    "chat notification",
+    "donation / superchat alert",
+    "UI button click",
+    "UI confirmation",
+    "game action feedback",
+    "BGM motif / loop element",
+    "ambient background",
+    "intro / outro jingle"
+  ],
+  "worlds": {
+    "akashic": "阿卡西 — 靈性、紀錄、光",
+    "rabbit": "兔兔 — 可愛、活潑、偶爾暴走",
+    "restraint": "拘束 — 暗黑、金屬、束縛",
+    "forest": "森林 — 木質、自然、風",
+    "ocean": "海洋 — 水聲、深沉、波動",
+    "clockwork": "齒輪 — 精密、機械、蒸汽龐克"
+  }
+}
