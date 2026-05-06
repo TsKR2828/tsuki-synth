@@ -16,17 +16,40 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(JUCE)
 
+# --- AAX Support (Phase 9) ---
+# To build AAX: cmake -B build -DTSUKI_AAX=ON -DAAX_SDK_PATH="C:/path/to/AAX_SDK"
+option(TSUKI_AAX "Build AAX format (requires Avid AAX SDK)" OFF)
+option(TSUKI_AU  "Build AU format (macOS only)" OFF)
+
+set(PLUGIN_FORMATS VST3 Standalone)
+
+if(TSUKI_AU AND APPLE)
+    list(APPEND PLUGIN_FORMATS AU)
+    message(STATUS "AU (Audio Unit) enabled")
+endif()
+
+if(TSUKI_AAX)
+    if(NOT DEFINED AAX_SDK_PATH)
+        message(FATAL_ERROR "TSUKI_AAX=ON but AAX_SDK_PATH not set. "
+            "Download from https://developer.avid.com and set -DAAX_SDK_PATH=...")
+    endif()
+    juce_set_aax_sdk_path("${AAX_SDK_PATH}")
+    list(APPEND PLUGIN_FORMATS AAX)
+    message(STATUS "AAX enabled: SDK at ${AAX_SDK_PATH}")
+endif()
+
 juce_add_plugin(TsukiSynth
     COMPANY_NAME        "TsKR"
     PLUGIN_MANUFACTURER_CODE TsKR
     PLUGIN_CODE         TkSy
-    FORMATS             VST3 Standalone
+    FORMATS             ${PLUGIN_FORMATS}
     PRODUCT_NAME        "TsukiSynth"
     IS_SYNTH            TRUE
     NEEDS_MIDI_INPUT    TRUE
     NEEDS_MIDI_OUTPUT   FALSE
     IS_MIDI_EFFECT      FALSE
     COPY_PLUGIN_AFTER_BUILD FALSE
+    AAX_CATEGORY        AAX_ePlugInCategory_SWGenerators
 )
 
 juce_add_binary_data(TsukiSynthData

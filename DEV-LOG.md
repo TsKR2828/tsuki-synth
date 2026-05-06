@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-05-07 -- Phase 9: AAX + AU Build Support
+
+### Phase 9 (commit TBD)
+- CMakeLists.txt: conditional AAX build via `-DTSUKI_AAX=ON -DAAX_SDK_PATH=...`
+- CMakeLists.txt: conditional AU (Audio Unit) build via `-DTSUKI_AU=ON` (macOS only)
+- `AAX_CATEGORY` set to `AAX_ePlugInCategory_SWGenerators`
+- Default build (AAX OFF) verified clean -- VST3 + Standalone + CLI all compile
+- To activate AAX: register at https://developer.avid.com, download AAX SDK, reconfigure
+
+---
+
 ## 2026-05-07 -- Bug Fixes + Phase 10 Complete
 
 ### Bug Fixes (commit `c8055b5`, `8ff0098`)

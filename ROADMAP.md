@@ -295,7 +295,7 @@ output = sin(carrier_freq × t + index × sin(modulator_freq × t))
 
 **預估工時**：3 天
 
-### Phase 9（可選）：AAX 格式
+### Phase 9（可選）：AAX 格式 ✅ (build infra ready)
 - 申請 Avid Developer 帳號
 - 下載 AAX SDK
 - 額外編譯設定
