@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-05-07 -- Bug Fixes + Phase 10 Complete
+
+### Bug Fixes (commit `c8055b5`, `8ff0098`)
+- Water gong pitch glide now actually applied to resonator frequencies via `scaleFrequencies()`
+- Editor auto-syncs widgets from processor state via 10Hz Timer (DAW session restore)
+- `syncFromProcessor()` refreshes all ComboBoxes and Sliders
+- Compressor amount slider added to effects row (threshold/ratio/makeup mapped from single knob)
+
+### Phase 10: AI Score Pipeline (commit `8ff0098`)
+- `src/score/ScoreParser.h` -- JSON parser for .score.json files
+- `src/score/ScoreRenderer.h` -- offline rendering using all DSP engines
+- `src/score/WavWriter.h` -- 24-bit WAV output with normalization
+- `src/cli/RenderApp.cpp` -- CLI entry point: single + `--batch` mode
+- CMakeLists.txt: `TsukiSynthCLI` console app target added
+- Tested: all 3 example scores render successfully
+  - `akashic_bell_001.wav` (2.3MB, 8s)
+  - `rabbit_warning_001.wav` (220KB, short)
+  - `restraint_metal_click_001.wav` (500KB, medium)
+
+### Build Status
+- All targets compile clean: VST3, Standalone, CLI
+- Total: Phase 0-8 + Phase 10 complete, Phase 9 (AAX) skipped
+
+---
+
 ## 2026-05-06 (Night) -- Phase 3-8 Overnight Build
 
 ### Phase 3: Cimbalom Engine (commit `acf65aa`)
