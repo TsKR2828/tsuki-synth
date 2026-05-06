@@ -2,46 +2,78 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_devices/juce_audio_devices.h>
-#include "dsp/ModalResonator.h"
+#include "engines/CimbalomEngine.h"
 #include "physics/MaterialDB.h"
-#include "physics/StringModel.h"
 
-class ModalSound : public juce::SynthesiserSound
+class CimbalomSound : public juce::SynthesiserSound
 {
 public:
     bool appliesToNote (int) override { return true; }
     bool appliesToChannel (int) override { return true; }
 };
 
-class ModalVoice : public juce::SynthesiserVoice
+class CimbalomJuceVoice : public juce::SynthesiserVoice
 {
 public:
-    void setMaterial (const Material* mat) { material = mat; }
-    void setStringParams (double diameter, double length, double strikePos, int modes)
+    void setParams (const Material* mat, const CimbalomParams* p)
     {
-        baseDiameter = diameter;
-        baseLength   = length;
-        strikePosition = strikePos;
-        numModes = modes;
+        material = mat;
+        params = p;
     }
 
-    bool canPlaySound (juce::SynthesiserSound* sound) override;
+    bool canPlaySound (juce::SynthesiserSound* sound) override
+    {
+        return dynamic_cast<CimbalomSound*> (sound) != nullptr;
+    }
+
     void startNote (int midiNoteNumber, float velocity,
-                    juce::SynthesiserSound*, int currentPitchWheelPosition) override;
-    void stopNote (float velocity, bool allowTailOff) override;
+                    juce::SynthesiserSound*, int) override
+    {
+        if (material == nullptr || params == nullptr)
+            return;
+        engine.prepare (getSampleRate());
+        engine.noteOn (midiNoteNumber, velocity, *material, *params);
+    }
+
+    void stopNote (float, bool allowTailOff) override
+    {
+        if (allowTailOff)
+            engine.noteOff();
+        else
+            clearCurrentNote();
+    }
+
     void pitchWheelMoved (int) override {}
     void controllerMoved (int, int) override {}
-    void renderNextBlock (juce::AudioBuffer<float>&,
-                          int startSample, int numSamples) override;
+
+    void renderNextBlock (juce::AudioBuffer<float>& buffer,
+                          int startSample, int numSamples) override
+    {
+        if (! engine.isActive())
+        {
+            if (isVoiceActive())
+                clearCurrentNote();
+            return;
+        }
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float value = engine.getNextSample() * 0.15f;
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+                buffer.addSample (ch, startSample + i, value);
+
+            if (! engine.isActive())
+            {
+                clearCurrentNote();
+                break;
+            }
+        }
+    }
 
 private:
-    ModalResonator resonator;
+    CimbalomVoice engine;
     const Material* material = nullptr;
-
-    double baseDiameter   = 0.8e-3;
-    double baseLength     = 0.35;
-    double strikePosition = 0.3;
-    int    numModes       = 40;
+    const CimbalomParams* params = nullptr;
 };
 
 class TsukiSynthProcessor : public juce::AudioProcessor
@@ -76,20 +108,18 @@ public:
     void addMidiMessage (const juce::MidiMessage& message);
 
     MaterialDB& getMaterialDB() { return materialDB; }
-    void setMaterial (const std::string& key);
-    void setStrikePosition (double pos);
+    CimbalomParams& getCimbalomParams() { return cimbalomParams; }
 
-private:
+    void setMaterial (const std::string& key);
     void updateVoiceParams();
 
+private:
     juce::Synthesiser synth;
     juce::MidiMessageCollector midiCollector;
     MaterialDB materialDB;
+    CimbalomParams cimbalomParams;
 
-    std::string currentMaterialKey = "steel";
-    double currentStrikePosition = 0.3;
-
-    static constexpr int numVoices = 16;
+    static constexpr int numVoices = 12;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthProcessor)
 };
