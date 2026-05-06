@@ -1,10 +1,63 @@
 # TsukiSynth Dev-Log
 
-> 開發日誌 — 記錄每次 session 的進度、決策與問題
+> 開發日誌 -- 記錄每次 session 的進度、決策與問題
 
 ---
 
-## 2026-05-06 — Phase 1 完成 ✅
+## 2026-05-06 (Night) -- Phase 3-8 Overnight Build
+
+### Phase 3: Cimbalom Engine (commit `acf65aa`)
+- StringModel: inharmonicity correction B, physical decay tau(n), strike position excitation
+- CimbalomVoice: multi-string resonators (up to 5 with cent detuning)
+- Soundboard body resonance (6 simplified plate-like modes)
+- Exciter noise burst: cotton 1500Hz / felt 2500Hz / wood 6000Hz / metal 12000Hz
+- MaterialDB embedded via BinaryData (fixed relative path issues)
+- UTF-8 fix for Chinese material display names
+
+### Phase 4: Chromatic Engine (commit `363240f`)
+- BeamModel: Euler-Bernoulli free-free beam, 20 pre-computed beta_n eigenvalues
+- PlateModel: Kirchhoff clamped circular plate, 25 Bessel zeros
+- ChromaticVoice with 3 sub-engines:
+  - Tongue Drum (beam model, scaled to MIDI note)
+  - Water Gong (plate model with pitch glide effect)
+  - Custom Harmonics (user-defined ratio/amplitude pairs)
+- MultiVoice engine switching in PluginProcessor
+- Editor: engine selector ComboBox, sub-engine dropdown, water level slider
+
+### Phase 5: FM Piano Engine (commit `892b472`)
+- Two-operator FM synthesis (carrier + 2 modulators)
+- 8 preset instruments: Piano, Electric Piano, Vibraphone, Bell, Organ, Bass, Strings, Brass
+- Velocity-sensitive modulation index + brightness rolloff for high notes
+- Attack/release envelopes per preset
+- Third engine type added to engine selector
+
+### Phase 6: Effects Chain (commit `0e2debc`)
+- SchroederReverb: 8-comb parallel + 4 allpass series, with damping
+- Stereo delay: offset R channel by 1.12x for width
+- SimpleCompressor: RMS-based with configurable threshold/ratio/makeup
+- EffectsChain: wires reverb -> delay -> compressor -> master volume
+- Editor: reverb/delay/master controls in bottom section
+
+### Phase 7-8: Presets + State (commit `4db6aaa`)
+- 12 factory presets covering all three engines
+- Full XML state serialization (getStateInformation/setStateInformation)
+- All engine params, effects settings, and program index persisted
+
+### Build Status
+- All phases compile clean with zero warnings
+- VST3 + Standalone output verified each phase
+- Total source files: 18 headers, 2 cpp, 1 json data
+
+### Known Issues / TODO for Review
+- GUI layout is functional but not polished (Phase 7 visual design deferred)
+- Editor does not auto-refresh widgets when state is restored from DAW
+- No DAW automation params yet (all controls are manual)
+- Compressor controls not exposed in editor (only reverb/delay/master)
+- Water gong pitch glide factor is computed but not yet applied to resonator frequencies
+
+---
+
+## 2026-05-06 -- Phase 1 complete
 
 ### 驗收
 - Standalone 啟動成功，虛擬鍵盤可用滑鼠彈奏
