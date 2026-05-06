@@ -50,5 +50,13 @@ private:
     juce::Slider waterSlider;
     juce::Label waterLabel;
 
+    // FM Piano-specific
+    juce::ComboBox fmPresetBox;
+    juce::Label fmPresetLabel;
+    juce::Slider fmDetuneSlider;
+    juce::Label fmDetuneLabel;
+    juce::Slider fmVolumeSlider;
+    juce::Label fmVolumeLabel;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)
 };

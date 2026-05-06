@@ -86,10 +86,14 @@ void TsukiSynthProcessor::setMaterial (const std::string& key)
 
 void TsukiSynthProcessor::updateVoiceParams()
 {
-    const Material* mat = materialDB.getMaterial (
-        engineType == EngineType::Cimbalom
-            ? cimbalomParams.materialKey
-            : chromaticParams.materialKey);
+    const Material* mat = nullptr;
+    if (engineType != EngineType::FMPiano)
+    {
+        mat = materialDB.getMaterial (
+            engineType == EngineType::Cimbalom
+                ? cimbalomParams.materialKey
+                : chromaticParams.materialKey);
+    }
 
     for (int i = 0; i < synth.getNumVoices(); ++i)
     {
@@ -99,6 +103,7 @@ void TsukiSynthProcessor::updateVoiceParams()
             voice->setMaterial (mat);
             voice->setCimbalomParams (&cimbalomParams);
             voice->setChromaticParams (&chromaticParams);
+            voice->setFMParams (&fmParams);
         }
     }
 }

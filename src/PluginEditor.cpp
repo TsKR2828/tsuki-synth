@@ -31,13 +31,17 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     initLabel (engineLabel, "Engine", this);
     engineBox.addItem ("Cimbalom", 1);
     engineBox.addItem ("Chromatic", 2);
+    engineBox.addItem ("FM Piano", 3);
     engineBox.setSelectedId (1, juce::dontSendNotification);
     engineBox.onChange = [this]
     {
-        processorRef.setEngineType (
-            engineBox.getSelectedId() == 1 ? EngineType::Cimbalom
-                                           : EngineType::Chromatic);
+        int id = engineBox.getSelectedId();
+        EngineType e = id == 1 ? EngineType::Cimbalom
+                     : id == 2 ? EngineType::Chromatic
+                               : EngineType::FMPiano;
+        processorRef.setEngineType (e);
         showEngineControls();
+        resized();
     };
     addAndMakeVisible (engineBox);
 
@@ -138,6 +142,47 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         processorRef.updateVoiceParams();
     };
 
+    // --- FM Piano controls ---
+    initLabel (fmPresetLabel, "Preset", this);
+    fmPresetBox.addItem ("Piano", 1);
+    fmPresetBox.addItem ("Electric Piano", 2);
+    fmPresetBox.addItem ("Vibraphone", 3);
+    fmPresetBox.addItem ("Bell", 4);
+    fmPresetBox.addItem ("Organ", 5);
+    fmPresetBox.addItem ("Bass", 6);
+    fmPresetBox.addItem ("Strings", 7);
+    fmPresetBox.addItem ("Brass", 8);
+    fmPresetBox.setSelectedId (1, juce::dontSendNotification);
+    fmPresetBox.onChange = [this]
+    {
+        static const FMPreset presets[] = {
+            FMPreset::Piano, FMPreset::ElectricPiano,
+            FMPreset::Vibraphone, FMPreset::Bell,
+            FMPreset::Organ, FMPreset::Bass,
+            FMPreset::Strings, FMPreset::Brass };
+        int idx = fmPresetBox.getSelectedId() - 1;
+        if (idx >= 0 && idx < 8)
+            processorRef.getFMParams().preset = presets[idx];
+        processorRef.updateVoiceParams();
+    };
+    addAndMakeVisible (fmPresetBox);
+
+    initLabel (fmDetuneLabel, "Detune", this);
+    initSlider (fmDetuneSlider, -5.0, 5.0, 0.1, 0.0, this);
+    fmDetuneSlider.onValueChange = [this]
+    {
+        processorRef.getFMParams().detune = fmDetuneSlider.getValue();
+        processorRef.updateVoiceParams();
+    };
+
+    initLabel (fmVolumeLabel, "Volume", this);
+    initSlider (fmVolumeSlider, 0.0, 1.0, 0.01, 0.8, this);
+    fmVolumeSlider.onValueChange = [this]
+    {
+        processorRef.getFMParams().masterVolume = fmVolumeSlider.getValue();
+        processorRef.updateVoiceParams();
+    };
+
     showEngineControls();
     setSize (760, 500);
 }
@@ -149,10 +194,20 @@ TsukiSynthEditor::~TsukiSynthEditor()
 
 void TsukiSynthEditor::showEngineControls()
 {
-    bool isCim = processorRef.getEngineType() == EngineType::Cimbalom;
+    auto eng = processorRef.getEngineType();
+    bool isCim = eng == EngineType::Cimbalom;
+    bool isChr = eng == EngineType::Chromatic;
+    bool isFM  = eng == EngineType::FMPiano;
     bool isWaterGong = processorRef.getChromaticParams().subEngine
                     == ChromaticSubEngine::WaterGong;
 
+    // Shared physical controls
+    materialLabel.setVisible (! isFM);
+    materialBox.setVisible (! isFM);
+    strikeLabel.setVisible (! isFM);
+    strikeSlider.setVisible (! isFM);
+
+    // Cimbalom
     exciterLabel.setVisible (isCim);
     exciterBox.setVisible (isCim);
     stringsLabel.setVisible (isCim);
@@ -162,10 +217,19 @@ void TsukiSynthEditor::showEngineControls()
     soundboardLabel.setVisible (isCim);
     soundboardSlider.setVisible (isCim);
 
-    subEngineLabel.setVisible (! isCim);
-    subEngineBox.setVisible (! isCim);
-    waterLabel.setVisible (! isCim && isWaterGong);
-    waterSlider.setVisible (! isCim && isWaterGong);
+    // Chromatic
+    subEngineLabel.setVisible (isChr);
+    subEngineBox.setVisible (isChr);
+    waterLabel.setVisible (isChr && isWaterGong);
+    waterSlider.setVisible (isChr && isWaterGong);
+
+    // FM Piano
+    fmPresetLabel.setVisible (isFM);
+    fmPresetBox.setVisible (isFM);
+    fmDetuneLabel.setVisible (isFM);
+    fmDetuneSlider.setVisible (isFM);
+    fmVolumeLabel.setVisible (isFM);
+    fmVolumeSlider.setVisible (isFM);
 }
 
 void TsukiSynthEditor::paint (juce::Graphics& g)
@@ -208,49 +272,71 @@ void TsukiSynthEditor::resized()
 
     ctrl.removeFromTop (gap);
 
-    // Row 1: Strike + engine-specific
-    row = ctrl.removeFromTop (rH);
-    strikeLabel.setBounds (row.removeFromLeft (labelW));
-    strikeSlider.setBounds (row.removeFromLeft (190));
-    row.removeFromLeft (20);
+    auto eng = processorRef.getEngineType();
 
-    if (processorRef.getEngineType() == EngineType::Cimbalom)
+    if (eng == EngineType::FMPiano)
     {
-        exciterLabel.setBounds (row.removeFromLeft (55));
-        exciterBox.setBounds (row.removeFromLeft (100));
-    }
-    else
-    {
-        subEngineLabel.setBounds (row.removeFromLeft (40));
-        subEngineBox.setBounds (row.removeFromLeft (150));
-    }
-
-    ctrl.removeFromTop (gap);
-
-    // Row 2
-    row = ctrl.removeFromTop (rH);
-    if (processorRef.getEngineType() == EngineType::Cimbalom)
-    {
-        stringsLabel.setBounds (row.removeFromLeft (labelW));
-        stringsSlider.setBounds (row.removeFromLeft (140));
+        // Row 1: Preset + Detune
+        row = ctrl.removeFromTop (rH);
+        fmPresetLabel.setBounds (row.removeFromLeft (labelW));
+        fmPresetBox.setBounds (row.removeFromLeft (160));
         row.removeFromLeft (20);
-        detuneLabel.setBounds (row.removeFromLeft (55));
-        detuneSlider.setBounds (row.removeFromLeft (160));
+        fmDetuneLabel.setBounds (row.removeFromLeft (55));
+        fmDetuneSlider.setBounds (row.removeFromLeft (160));
+
+        ctrl.removeFromTop (gap);
+
+        // Row 2: Volume
+        row = ctrl.removeFromTop (rH);
+        fmVolumeLabel.setBounds (row.removeFromLeft (labelW));
+        fmVolumeSlider.setBounds (row.removeFromLeft (200));
     }
     else
     {
-        waterLabel.setBounds (row.removeFromLeft (labelW));
-        waterSlider.setBounds (row.removeFromLeft (200));
-    }
+        // Row 1: Strike + engine-specific
+        row = ctrl.removeFromTop (rH);
+        strikeLabel.setBounds (row.removeFromLeft (labelW));
+        strikeSlider.setBounds (row.removeFromLeft (190));
+        row.removeFromLeft (20);
 
-    ctrl.removeFromTop (gap);
+        if (eng == EngineType::Cimbalom)
+        {
+            exciterLabel.setBounds (row.removeFromLeft (55));
+            exciterBox.setBounds (row.removeFromLeft (100));
+        }
+        else
+        {
+            subEngineLabel.setBounds (row.removeFromLeft (40));
+            subEngineBox.setBounds (row.removeFromLeft (150));
+        }
 
-    // Row 3 (Cimbalom only)
-    row = ctrl.removeFromTop (rH);
-    if (processorRef.getEngineType() == EngineType::Cimbalom)
-    {
-        soundboardLabel.setBounds (row.removeFromLeft (labelW));
-        soundboardSlider.setBounds (row.removeFromLeft (200));
+        ctrl.removeFromTop (gap);
+
+        // Row 2
+        row = ctrl.removeFromTop (rH);
+        if (eng == EngineType::Cimbalom)
+        {
+            stringsLabel.setBounds (row.removeFromLeft (labelW));
+            stringsSlider.setBounds (row.removeFromLeft (140));
+            row.removeFromLeft (20);
+            detuneLabel.setBounds (row.removeFromLeft (55));
+            detuneSlider.setBounds (row.removeFromLeft (160));
+        }
+        else
+        {
+            waterLabel.setBounds (row.removeFromLeft (labelW));
+            waterSlider.setBounds (row.removeFromLeft (200));
+        }
+
+        ctrl.removeFromTop (gap);
+
+        // Row 3 (Cimbalom only)
+        row = ctrl.removeFromTop (rH);
+        if (eng == EngineType::Cimbalom)
+        {
+            soundboardLabel.setBounds (row.removeFromLeft (labelW));
+            soundboardSlider.setBounds (row.removeFromLeft (200));
+        }
     }
 }
 
