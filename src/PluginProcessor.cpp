@@ -36,6 +36,8 @@ void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
 {
     synth.setCurrentPlaybackSampleRate (sampleRate);
     midiCollector.reset (sampleRate);
+    effectsChain.prepare (sampleRate);
+    effectsChain.setParameters (effectsParams);
 }
 
 void TsukiSynthProcessor::releaseResources() {}
@@ -54,6 +56,26 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     buffer.clear();
     midiCollector.removeNextBlockOfMessages (midiMessages, buffer.getNumSamples());
     synth.renderNextBlock (buffer, midiMessages, 0, buffer.getNumSamples());
+
+    int numSamples = buffer.getNumSamples();
+    int numChannels = buffer.getNumChannels();
+
+    if (numChannels >= 2)
+    {
+        float* left  = buffer.getWritePointer (0);
+        float* right = buffer.getWritePointer (1);
+        for (int i = 0; i < numSamples; ++i)
+            effectsChain.processStereo (left[i], right[i]);
+    }
+    else if (numChannels == 1)
+    {
+        float* mono = buffer.getWritePointer (0);
+        for (int i = 0; i < numSamples; ++i)
+        {
+            float dummy = mono[i];
+            effectsChain.processStereo (mono[i], dummy);
+        }
+    }
 }
 
 bool TsukiSynthProcessor::hasEditor() const { return true; }

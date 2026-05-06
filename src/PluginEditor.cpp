@@ -183,8 +183,39 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         processorRef.updateVoiceParams();
     };
 
+    // --- Effects section ---
+    initLabel (fxLabel, "-- Effects --", this);
+    fxLabel.setJustificationType (juce::Justification::centred);
+
+    initLabel (reverbLabel, "Reverb", this);
+    initSlider (reverbSlider, 0.0, 1.0, 0.01, 0.25, this);
+    reverbSlider.onValueChange = [this]
+    {
+        processorRef.getEffectsParams().reverbWet = static_cast<float> (reverbSlider.getValue());
+        processorRef.getEffectsParams().reverbEnabled = reverbSlider.getValue() > 0.001;
+        processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
+    };
+
+    initLabel (delayLabel, "Delay", this);
+    initSlider (delaySlider, 0.0, 1.0, 0.01, 0.0, this);
+    delaySlider.onValueChange = [this]
+    {
+        float wet = static_cast<float> (delaySlider.getValue());
+        processorRef.getEffectsParams().delayWet = wet;
+        processorRef.getEffectsParams().delayEnabled = wet > 0.001;
+        processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
+    };
+
+    initLabel (masterLabel, "Master", this);
+    initSlider (masterSlider, 0.0, 2.0, 0.01, 1.0, this);
+    masterSlider.onValueChange = [this]
+    {
+        processorRef.getEffectsParams().masterVolume = static_cast<float> (masterSlider.getValue());
+        processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
+    };
+
     showEngineControls();
-    setSize (760, 500);
+    setSize (760, 540);
 }
 
 TsukiSynthEditor::~TsukiSynthEditor()
@@ -250,6 +281,9 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
 
     g.setColour (juce::Colour (0xff333355));
     g.drawHorizontalLine (58, 20.0f, static_cast<float> (getWidth() - 20));
+
+    int fxLineY = getHeight() - 155;
+    g.drawHorizontalLine (fxLineY, 20.0f, static_cast<float> (getWidth() - 20));
 }
 
 void TsukiSynthEditor::resized()
@@ -338,6 +372,18 @@ void TsukiSynthEditor::resized()
             soundboardSlider.setBounds (row.removeFromLeft (200));
         }
     }
+
+    // Effects row (always visible)
+    ctrl.removeFromTop (gap + 5);
+    row = ctrl.removeFromTop (rH);
+    reverbLabel.setBounds (row.removeFromLeft (55));
+    reverbSlider.setBounds (row.removeFromLeft (140));
+    row.removeFromLeft (10);
+    delayLabel.setBounds (row.removeFromLeft (45));
+    delaySlider.setBounds (row.removeFromLeft (140));
+    row.removeFromLeft (10);
+    masterLabel.setBounds (row.removeFromLeft (55));
+    masterSlider.setBounds (row.removeFromLeft (140));
 }
 
 void TsukiSynthEditor::populateMaterialBox()

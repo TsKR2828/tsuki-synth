@@ -6,6 +6,7 @@
 #include "engines/ChromaticEngine.h"
 #include "engines/FMPianoEngine.h"
 #include "physics/MaterialDB.h"
+#include "dsp/EffectsChain.h"
 
 enum class EngineType { Cimbalom, Chromatic, FMPiano };
 
@@ -164,6 +165,8 @@ public:
     CimbalomParams& getCimbalomParams() { return cimbalomParams; }
     ChromaticParams& getChromaticParams() { return chromaticParams; }
     FMParams& getFMParams() { return fmParams; }
+    EffectsParams& getEffectsParams() { return effectsParams; }
+    EffectsChain& getEffectsChain() { return effectsChain; }
 
     EngineType getEngineType() const { return engineType; }
     void setEngineType (EngineType e);
@@ -179,6 +182,8 @@ private:
     CimbalomParams cimbalomParams;
     ChromaticParams chromaticParams;
     FMParams fmParams;
+    EffectsParams effectsParams;
+    EffectsChain effectsChain;
 
     static constexpr int numVoices = 12;
 

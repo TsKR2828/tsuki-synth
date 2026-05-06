@@ -58,5 +58,14 @@ private:
     juce::Slider fmVolumeSlider;
     juce::Label fmVolumeLabel;
 
+    // Effects section
+    juce::Label fxLabel;
+    juce::Slider reverbSlider;
+    juce::Label reverbLabel;
+    juce::Slider delaySlider;
+    juce::Label delayLabel;
+    juce::Slider masterSlider;
+    juce::Label masterLabel;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)
 };
