@@ -184,9 +184,6 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     };
 
     // --- Effects section ---
-    initLabel (fxLabel, "-- Effects --", this);
-    fxLabel.setJustificationType (juce::Justification::centred);
-
     initLabel (reverbLabel, "Reverb", this);
     initSlider (reverbSlider, 0.0, 1.0, 0.01, 0.25, this);
     reverbSlider.onValueChange = [this]
@@ -206,6 +203,18 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
     };
 
+    initLabel (compLabel, "Comp", this);
+    initSlider (compSlider, 0.0, 1.0, 0.01, 0.0, this);
+    compSlider.onValueChange = [this]
+    {
+        float v = static_cast<float> (compSlider.getValue());
+        processorRef.getEffectsParams().compressorEnabled = v > 0.001f;
+        processorRef.getEffectsParams().compThreshold = -6.0f - v * 18.0f;
+        processorRef.getEffectsParams().compRatio = 1.0f + v * 7.0f;
+        processorRef.getEffectsParams().compMakeup = v * 6.0f;
+        processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
+    };
+
     initLabel (masterLabel, "Master", this);
     initSlider (masterSlider, 0.0, 2.0, 0.01, 1.0, this);
     masterSlider.onValueChange = [this]
@@ -215,12 +224,69 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     };
 
     showEngineControls();
+    syncFromProcessor();
     setSize (760, 540);
+    startTimerHz (10);
 }
 
 TsukiSynthEditor::~TsukiSynthEditor()
 {
+    stopTimer();
     keyboardState.removeListener (this);
+}
+
+void TsukiSynthEditor::timerCallback()
+{
+    int engId = 0;
+    switch (processorRef.getEngineType())
+    {
+        case EngineType::Cimbalom: engId = 1; break;
+        case EngineType::Chromatic: engId = 2; break;
+        case EngineType::FMPiano: engId = 3; break;
+    }
+    if (engineBox.getSelectedId() != engId)
+        syncFromProcessor();
+}
+
+void TsukiSynthEditor::syncFromProcessor()
+{
+    int engId = 1;
+    switch (processorRef.getEngineType())
+    {
+        case EngineType::Cimbalom: engId = 1; break;
+        case EngineType::Chromatic: engId = 2; break;
+        case EngineType::FMPiano: engId = 3; break;
+    }
+    engineBox.setSelectedId (engId, juce::dontSendNotification);
+
+    // Cimbalom
+    auto& cim = processorRef.getCimbalomParams();
+    strikeSlider.setValue (cim.strikePosition, juce::dontSendNotification);
+    exciterBox.setSelectedId (static_cast<int> (cim.exciter) + 1, juce::dontSendNotification);
+    stringsSlider.setValue (cim.stringsPerCourse, juce::dontSendNotification);
+    detuneSlider.setValue (cim.detuneAmount, juce::dontSendNotification);
+    soundboardSlider.setValue (cim.soundboardAmount, juce::dontSendNotification);
+
+    // Chromatic
+    auto& chr = processorRef.getChromaticParams();
+    subEngineBox.setSelectedId (static_cast<int> (chr.subEngine) + 1, juce::dontSendNotification);
+    waterSlider.setValue (chr.waterLevel, juce::dontSendNotification);
+
+    // FM
+    auto& fm = processorRef.getFMParams();
+    fmPresetBox.setSelectedId (static_cast<int> (fm.preset) + 1, juce::dontSendNotification);
+    fmDetuneSlider.setValue (fm.detune, juce::dontSendNotification);
+    fmVolumeSlider.setValue (fm.masterVolume, juce::dontSendNotification);
+
+    // Effects
+    auto& fx = processorRef.getEffectsParams();
+    reverbSlider.setValue (fx.reverbWet, juce::dontSendNotification);
+    delaySlider.setValue (fx.delayWet, juce::dontSendNotification);
+    masterSlider.setValue (fx.masterVolume, juce::dontSendNotification);
+
+    populateMaterialBox();
+    showEngineControls();
+    resized();
 }
 
 void TsukiSynthEditor::showEngineControls()
@@ -376,14 +442,17 @@ void TsukiSynthEditor::resized()
     // Effects row (always visible)
     ctrl.removeFromTop (gap + 5);
     row = ctrl.removeFromTop (rH);
-    reverbLabel.setBounds (row.removeFromLeft (55));
-    reverbSlider.setBounds (row.removeFromLeft (140));
-    row.removeFromLeft (10);
-    delayLabel.setBounds (row.removeFromLeft (45));
-    delaySlider.setBounds (row.removeFromLeft (140));
-    row.removeFromLeft (10);
-    masterLabel.setBounds (row.removeFromLeft (55));
-    masterSlider.setBounds (row.removeFromLeft (140));
+    reverbLabel.setBounds (row.removeFromLeft (50));
+    reverbSlider.setBounds (row.removeFromLeft (110));
+    row.removeFromLeft (5);
+    delayLabel.setBounds (row.removeFromLeft (40));
+    delaySlider.setBounds (row.removeFromLeft (110));
+    row.removeFromLeft (5);
+    compLabel.setBounds (row.removeFromLeft (40));
+    compSlider.setBounds (row.removeFromLeft (100));
+    row.removeFromLeft (5);
+    masterLabel.setBounds (row.removeFromLeft (50));
+    masterSlider.setBounds (row.removeFromLeft (100));
 }
 
 void TsukiSynthEditor::populateMaterialBox()

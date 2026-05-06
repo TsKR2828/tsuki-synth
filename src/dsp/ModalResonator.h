@@ -94,6 +94,12 @@ public:
         return static_cast<float> (output);
     }
 
+    void scaleFrequencies (double factor)
+    {
+        for (auto& m : modes)
+            m.phaseInc = juce::MathConstants<double>::twoPi * m.frequency * factor / sampleRate;
+    }
+
     bool isActive() const { return active; }
     int getNumModes() const { return static_cast<int> (modes.size()); }
 

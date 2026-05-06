@@ -4,7 +4,8 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 
 class TsukiSynthEditor : public juce::AudioProcessorEditor,
-                          private juce::MidiKeyboardStateListener
+                          private juce::MidiKeyboardStateListener,
+                          private juce::Timer
 {
 public:
     explicit TsukiSynthEditor (TsukiSynthProcessor&);
@@ -16,8 +17,10 @@ public:
 private:
     void handleNoteOn (juce::MidiKeyboardState*, int, int, float) override;
     void handleNoteOff (juce::MidiKeyboardState*, int, int, float) override;
+    void timerCallback() override;
     void populateMaterialBox();
     void showEngineControls();
+    void syncFromProcessor();
 
     TsukiSynthProcessor& processorRef;
 
@@ -59,11 +62,12 @@ private:
     juce::Label fmVolumeLabel;
 
     // Effects section
-    juce::Label fxLabel;
     juce::Slider reverbSlider;
     juce::Label reverbLabel;
     juce::Slider delaySlider;
     juce::Label delayLabel;
+    juce::Slider compSlider;
+    juce::Label compLabel;
     juce::Slider masterSlider;
     juce::Label masterLabel;
 

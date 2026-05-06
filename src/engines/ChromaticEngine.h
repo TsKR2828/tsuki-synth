@@ -116,6 +116,9 @@ public:
             exciterSample = noise * exciterEnvelope.getNextSample();
         }
 
+        if (waterGlideActive)
+            resonator.scaleFrequencies (waterGlideFactor);
+
         float resonatorSample = resonator.getNextSample();
         active = resonator.isActive() || exciterEnvelope.isActive();
 
