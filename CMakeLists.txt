@@ -62,3 +62,34 @@ target_link_libraries(TsukiSynth
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# --- CLI Renderer ---
+juce_add_console_app(TsukiSynthCLI
+    PRODUCT_NAME "tsukisynth-cli"
+)
+
+target_sources(TsukiSynthCLI
+    PRIVATE
+        src/cli/RenderApp.cpp
+)
+
+target_include_directories(TsukiSynthCLI
+    PRIVATE
+        src
+)
+
+target_compile_definitions(TsukiSynthCLI
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+
+target_link_libraries(TsukiSynthCLI
+    PRIVATE
+        TsukiSynthData
+        juce::juce_core
+        juce::juce_audio_formats
+    PUBLIC
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_lto_flags
+)
