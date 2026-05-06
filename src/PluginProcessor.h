@@ -184,6 +184,7 @@ private:
     FMParams fmParams;
     EffectsParams effectsParams;
     EffectsChain effectsChain;
+    int currentProgram = 0;
 
     static constexpr int numVoices = 12;
 
