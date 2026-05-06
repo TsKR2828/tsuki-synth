@@ -1,25 +1,22 @@
 #include "PluginEditor.h"
 
-static juce::Label& setupLabel (juce::Label& label, const juce::String& text,
-                                 juce::Component* parent)
+static void initLabel (juce::Label& l, const juce::String& t, juce::Component* p)
 {
-    label.setText (text, juce::dontSendNotification);
-    label.setColour (juce::Label::textColourId, juce::Colour (0xffaaaaaa));
-    label.setFont (juce::FontOptions (12.0f));
-    parent->addAndMakeVisible (label);
-    return label;
+    l.setText (t, juce::dontSendNotification);
+    l.setColour (juce::Label::textColourId, juce::Colour (0xffaaaaaa));
+    l.setFont (juce::FontOptions (12.0f));
+    p->addAndMakeVisible (l);
 }
 
-static juce::Slider& setupSlider (juce::Slider& slider, double min, double max,
-                                   double step, double val, juce::Component* parent)
+static void initSlider (juce::Slider& s, double lo, double hi, double step,
+                         double val, juce::Component* p)
 {
-    slider.setRange (min, max, step);
-    slider.setValue (val, juce::dontSendNotification);
-    slider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 20);
-    slider.setColour (juce::Slider::thumbColourId, juce::Colour (0xffe0d6c8));
-    slider.setColour (juce::Slider::trackColourId, juce::Colour (0xff444466));
-    parent->addAndMakeVisible (slider);
-    return slider;
+    s.setRange (lo, hi, step);
+    s.setValue (val, juce::dontSendNotification);
+    s.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 20);
+    s.setColour (juce::Slider::thumbColourId, juce::Colour (0xffe0d6c8));
+    s.setColour (juce::Slider::trackColourId, juce::Colour (0xff444466));
+    p->addAndMakeVisible (s);
 }
 
 TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
@@ -30,8 +27,22 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     keyboardState.addListener (this);
     addAndMakeVisible (keyboardComponent);
 
+    // Engine selector
+    initLabel (engineLabel, "Engine", this);
+    engineBox.addItem ("Cimbalom", 1);
+    engineBox.addItem ("Chromatic", 2);
+    engineBox.setSelectedId (1, juce::dontSendNotification);
+    engineBox.onChange = [this]
+    {
+        processorRef.setEngineType (
+            engineBox.getSelectedId() == 1 ? EngineType::Cimbalom
+                                           : EngineType::Chromatic);
+        showEngineControls();
+    };
+    addAndMakeVisible (engineBox);
+
     // Material
-    setupLabel (materialLabel, "Material", this);
+    initLabel (materialLabel, "Material", this);
     populateMaterialBox();
     materialBox.onChange = [this]
     {
@@ -45,8 +56,18 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     };
     addAndMakeVisible (materialBox);
 
-    // Exciter
-    setupLabel (exciterLabel, "Exciter", this);
+    // Strike position
+    initLabel (strikeLabel, "Strike Pos", this);
+    initSlider (strikeSlider, 0.05, 0.95, 0.01, 0.3, this);
+    strikeSlider.onValueChange = [this]
+    {
+        processorRef.getCimbalomParams().strikePosition = strikeSlider.getValue();
+        processorRef.getChromaticParams().strikePosition = strikeSlider.getValue();
+        processorRef.updateVoiceParams();
+    };
+
+    // --- Cimbalom controls ---
+    initLabel (exciterLabel, "Exciter", this);
     exciterBox.addItem ("Cotton", 1);
     exciterBox.addItem ("Felt", 2);
     exciterBox.addItem ("Wood", 3);
@@ -54,30 +75,18 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     exciterBox.setSelectedId (3, juce::dontSendNotification);
     exciterBox.onChange = [this]
     {
-        auto& params = processorRef.getCimbalomParams();
-        switch (exciterBox.getSelectedId())
-        {
-            case 1: params.exciter = ExciterType::Cotton; break;
-            case 2: params.exciter = ExciterType::Felt;   break;
-            case 3: params.exciter = ExciterType::Wood;   break;
-            case 4: params.exciter = ExciterType::Metal;  break;
-        }
+        static const ExciterType types[] = {
+            ExciterType::Cotton, ExciterType::Felt,
+            ExciterType::Wood, ExciterType::Metal };
+        int idx = exciterBox.getSelectedId() - 1;
+        if (idx >= 0 && idx < 4)
+            processorRef.getCimbalomParams().exciter = types[idx];
         processorRef.updateVoiceParams();
     };
     addAndMakeVisible (exciterBox);
 
-    // Strike position
-    setupLabel (strikeLabel, "Strike Pos", this);
-    setupSlider (strikeSlider, 0.05, 0.95, 0.01, 0.3, this);
-    strikeSlider.onValueChange = [this]
-    {
-        processorRef.getCimbalomParams().strikePosition = strikeSlider.getValue();
-        processorRef.updateVoiceParams();
-    };
-
-    // Strings per course
-    setupLabel (stringsLabel, "Strings", this);
-    setupSlider (stringsSlider, 1, 5, 1, 3, this);
+    initLabel (stringsLabel, "Strings", this);
+    initSlider (stringsSlider, 1, 5, 1, 3, this);
     stringsSlider.onValueChange = [this]
     {
         processorRef.getCimbalomParams().stringsPerCourse =
@@ -85,25 +94,52 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         processorRef.updateVoiceParams();
     };
 
-    // Detune
-    setupLabel (detuneLabel, "Detune (ct)", this);
-    setupSlider (detuneSlider, 0.0, 15.0, 0.5, 3.0, this);
+    initLabel (detuneLabel, "Detune", this);
+    initSlider (detuneSlider, 0.0, 15.0, 0.5, 3.0, this);
     detuneSlider.onValueChange = [this]
     {
         processorRef.getCimbalomParams().detuneAmount = detuneSlider.getValue();
         processorRef.updateVoiceParams();
     };
 
-    // Soundboard coupling
-    setupLabel (soundboardLabel, "Soundboard", this);
-    setupSlider (soundboardSlider, 0.0, 1.0, 0.01, 0.3, this);
+    initLabel (soundboardLabel, "Soundboard", this);
+    initSlider (soundboardSlider, 0.0, 1.0, 0.01, 0.3, this);
     soundboardSlider.onValueChange = [this]
     {
         processorRef.getCimbalomParams().soundboardAmount = soundboardSlider.getValue();
         processorRef.updateVoiceParams();
     };
 
-    setSize (760, 480);
+    // --- Chromatic controls ---
+    initLabel (subEngineLabel, "Type", this);
+    subEngineBox.addItem ("Tongue Drum", 1);
+    subEngineBox.addItem ("Water Gong", 2);
+    subEngineBox.addItem ("Custom Harmonics", 3);
+    subEngineBox.setSelectedId (1, juce::dontSendNotification);
+    subEngineBox.onChange = [this]
+    {
+        static const ChromaticSubEngine subs[] = {
+            ChromaticSubEngine::TongueDrum,
+            ChromaticSubEngine::WaterGong,
+            ChromaticSubEngine::CustomHarmonics };
+        int idx = subEngineBox.getSelectedId() - 1;
+        if (idx >= 0 && idx < 3)
+            processorRef.getChromaticParams().subEngine = subs[idx];
+        processorRef.updateVoiceParams();
+        showEngineControls();
+    };
+    addAndMakeVisible (subEngineBox);
+
+    initLabel (waterLabel, "Water Level", this);
+    initSlider (waterSlider, 0.0, 1.0, 0.01, 0.0, this);
+    waterSlider.onValueChange = [this]
+    {
+        processorRef.getChromaticParams().waterLevel = waterSlider.getValue();
+        processorRef.updateVoiceParams();
+    };
+
+    showEngineControls();
+    setSize (760, 500);
 }
 
 TsukiSynthEditor::~TsukiSynthEditor()
@@ -111,101 +147,139 @@ TsukiSynthEditor::~TsukiSynthEditor()
     keyboardState.removeListener (this);
 }
 
+void TsukiSynthEditor::showEngineControls()
+{
+    bool isCim = processorRef.getEngineType() == EngineType::Cimbalom;
+    bool isWaterGong = processorRef.getChromaticParams().subEngine
+                    == ChromaticSubEngine::WaterGong;
+
+    exciterLabel.setVisible (isCim);
+    exciterBox.setVisible (isCim);
+    stringsLabel.setVisible (isCim);
+    stringsSlider.setVisible (isCim);
+    detuneLabel.setVisible (isCim);
+    detuneSlider.setVisible (isCim);
+    soundboardLabel.setVisible (isCim);
+    soundboardSlider.setVisible (isCim);
+
+    subEngineLabel.setVisible (! isCim);
+    subEngineBox.setVisible (! isCim);
+    waterLabel.setVisible (! isCim && isWaterGong);
+    waterSlider.setVisible (! isCim && isWaterGong);
+}
+
 void TsukiSynthEditor::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colour (0xff1a1a2e));
 
-    // Title
     g.setColour (juce::Colour (0xffe0d6c8));
     g.setFont (juce::FontOptions (22.0f));
-    g.drawText ("TsukiSynth - Cimbalom",
-                getLocalBounds().removeFromTop (42),
+    g.drawText ("TsukiSynth",
+                getLocalBounds().removeFromTop (40),
                 juce::Justification::centred);
 
-    // Subtitle
     g.setFont (juce::FontOptions (11.0f));
     g.setColour (juce::Colour (0xff666666));
-    g.drawText ("Physical Modeling String Synthesis",
-                getLocalBounds().removeFromTop (58),
+    g.drawText ("Physical Modeling Multi-Engine Synthesizer",
+                getLocalBounds().removeFromTop (55),
                 juce::Justification::centred);
 
-    // Separator line
     g.setColour (juce::Colour (0xff333355));
-    g.drawHorizontalLine (62, 20.0f, static_cast<float> (getWidth() - 20));
+    g.drawHorizontalLine (58, 20.0f, static_cast<float> (getWidth() - 20));
 }
 
 void TsukiSynthEditor::resized()
 {
     auto area = getLocalBounds();
-    auto keyboard = area.removeFromBottom (120).reduced (10, 0);
-    keyboardComponent.setBounds (keyboard);
+    keyboardComponent.setBounds (area.removeFromBottom (120).reduced (10, 0));
 
-    area.removeFromTop (68);
-    auto controls = area.reduced (20, 0);
+    area.removeFromTop (64);
+    auto ctrl = area.reduced (20, 0);
 
-    const int rowH = 30;
-    const int labelW = 90;
-    const int gap = 6;
+    const int rH = 28, labelW = 80, gap = 5;
 
-    // Row 1: Material + Exciter
-    auto row = controls.removeFromTop (rowH);
-    materialLabel.setBounds (row.removeFromLeft (labelW));
+    // Row 0: Engine + Material
+    auto row = ctrl.removeFromTop (rH);
+    engineLabel.setBounds (row.removeFromLeft (labelW));
+    engineBox.setBounds (row.removeFromLeft (140));
+    row.removeFromLeft (20);
+    materialLabel.setBounds (row.removeFromLeft (65));
     materialBox.setBounds (row.removeFromLeft (180));
-    row.removeFromLeft (20);
-    exciterLabel.setBounds (row.removeFromLeft (60));
-    exciterBox.setBounds (row.removeFromLeft (120));
 
-    controls.removeFromTop (gap);
+    ctrl.removeFromTop (gap);
 
-    // Row 2: Strike + Strings
-    row = controls.removeFromTop (rowH);
+    // Row 1: Strike + engine-specific
+    row = ctrl.removeFromTop (rH);
     strikeLabel.setBounds (row.removeFromLeft (labelW));
-    strikeSlider.setBounds (row.removeFromLeft (200));
+    strikeSlider.setBounds (row.removeFromLeft (190));
     row.removeFromLeft (20);
-    stringsLabel.setBounds (row.removeFromLeft (60));
-    stringsSlider.setBounds (row.removeFromLeft (140));
 
-    controls.removeFromTop (gap);
+    if (processorRef.getEngineType() == EngineType::Cimbalom)
+    {
+        exciterLabel.setBounds (row.removeFromLeft (55));
+        exciterBox.setBounds (row.removeFromLeft (100));
+    }
+    else
+    {
+        subEngineLabel.setBounds (row.removeFromLeft (40));
+        subEngineBox.setBounds (row.removeFromLeft (150));
+    }
 
-    // Row 3: Detune + Soundboard
-    row = controls.removeFromTop (rowH);
-    detuneLabel.setBounds (row.removeFromLeft (labelW));
-    detuneSlider.setBounds (row.removeFromLeft (200));
-    row.removeFromLeft (20);
-    soundboardLabel.setBounds (row.removeFromLeft (80));
-    soundboardSlider.setBounds (row.removeFromLeft (140));
+    ctrl.removeFromTop (gap);
+
+    // Row 2
+    row = ctrl.removeFromTop (rH);
+    if (processorRef.getEngineType() == EngineType::Cimbalom)
+    {
+        stringsLabel.setBounds (row.removeFromLeft (labelW));
+        stringsSlider.setBounds (row.removeFromLeft (140));
+        row.removeFromLeft (20);
+        detuneLabel.setBounds (row.removeFromLeft (55));
+        detuneSlider.setBounds (row.removeFromLeft (160));
+    }
+    else
+    {
+        waterLabel.setBounds (row.removeFromLeft (labelW));
+        waterSlider.setBounds (row.removeFromLeft (200));
+    }
+
+    ctrl.removeFromTop (gap);
+
+    // Row 3 (Cimbalom only)
+    row = ctrl.removeFromTop (rH);
+    if (processorRef.getEngineType() == EngineType::Cimbalom)
+    {
+        soundboardLabel.setBounds (row.removeFromLeft (labelW));
+        soundboardSlider.setBounds (row.removeFromLeft (200));
+    }
 }
 
 void TsukiSynthEditor::populateMaterialBox()
 {
     materialBox.clear();
     auto keys = processorRef.getMaterialDB().getMaterialKeys();
-
-    int id = 1;
-    int selectedId = 1;
+    int id = 1, sel = 1;
+    auto& activeKey = processorRef.getEngineType() == EngineType::Cimbalom
+                    ? processorRef.getCimbalomParams().materialKey
+                    : processorRef.getChromaticParams().materialKey;
     for (const auto& key : keys)
     {
         juce::String name (key);
         if (const auto* mat = processorRef.getMaterialDB().getMaterial (key))
             name = juce::String (mat->displayName);
         materialBox.addItem (name, id);
-        if (key == processorRef.getCimbalomParams().materialKey)
-            selectedId = id;
+        if (key == activeKey) sel = id;
         ++id;
     }
-    materialBox.setSelectedId (selectedId, juce::dontSendNotification);
+    materialBox.setSelectedId (sel, juce::dontSendNotification);
 }
 
-void TsukiSynthEditor::handleNoteOn (juce::MidiKeyboardState*, int midiChannel,
-                                      int midiNoteNumber, float velocity)
+void TsukiSynthEditor::handleNoteOn (juce::MidiKeyboardState*, int ch, int note, float vel)
 {
-    processorRef.addMidiMessage (
-        juce::MidiMessage::noteOn (midiChannel, midiNoteNumber, velocity));
+    processorRef.addMidiMessage (juce::MidiMessage::noteOn (ch, note, vel));
 }
 
-void TsukiSynthEditor::handleNoteOff (juce::MidiKeyboardState*, int midiChannel,
-                                       int midiNoteNumber, float velocity)
+void TsukiSynthEditor::handleNoteOff (juce::MidiKeyboardState*, int ch, int note, float vel)
 {
-    processorRef.addMidiMessage (
-        juce::MidiMessage::noteOff (midiChannel, midiNoteNumber, velocity));
+    processorRef.addMidiMessage (juce::MidiMessage::noteOff (ch, note, vel));
 }

@@ -10,10 +10,10 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     materialDB.loadFromString (juce::String::fromUTF8 (
         BinaryData::materials_json, static_cast<int> (BinaryData::materials_jsonSize)));
 
-    synth.addSound (new CimbalomSound());
+    synth.addSound (new MultiSound());
 
     for (int i = 0; i < numVoices; ++i)
-        synth.addVoice (new CimbalomJuceVoice());
+        synth.addVoice (new MultiVoice());
 
     updateVoiceParams();
 }
@@ -71,20 +71,35 @@ void TsukiSynthProcessor::addMidiMessage (const juce::MidiMessage& message)
     midiCollector.addMessageToQueue (message);
 }
 
+void TsukiSynthProcessor::setEngineType (EngineType e)
+{
+    engineType = e;
+    updateVoiceParams();
+}
+
 void TsukiSynthProcessor::setMaterial (const std::string& key)
 {
     cimbalomParams.materialKey = key;
+    chromaticParams.materialKey = key;
     updateVoiceParams();
 }
 
 void TsukiSynthProcessor::updateVoiceParams()
 {
-    const Material* mat = materialDB.getMaterial (cimbalomParams.materialKey);
+    const Material* mat = materialDB.getMaterial (
+        engineType == EngineType::Cimbalom
+            ? cimbalomParams.materialKey
+            : chromaticParams.materialKey);
 
     for (int i = 0; i < synth.getNumVoices(); ++i)
     {
-        if (auto* voice = dynamic_cast<CimbalomJuceVoice*> (synth.getVoice (i)))
-            voice->setParams (mat, &cimbalomParams);
+        if (auto* voice = dynamic_cast<MultiVoice*> (synth.getVoice (i)))
+        {
+            voice->setEngine (engineType);
+            voice->setMaterial (mat);
+            voice->setCimbalomParams (&cimbalomParams);
+            voice->setChromaticParams (&chromaticParams);
+        }
     }
 }
 

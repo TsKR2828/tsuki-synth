@@ -153,7 +153,9 @@ private:
             Mode m;
             m.frequency = sbFundamental * sbRatios[i];
             m.amplitude = 0.15 / (1.0 + i * 0.8);
-            m.decayTime = 0.3 + 0.2 / (1.0 + i);
+            double baseTau = 0.3 + 0.2 / (1.0 + i);
+            double damp = mat.damping.alpha + mat.damping.betaAir * m.frequency * m.frequency;
+            m.decayTime = (damp > 0.0) ? juce::jmin (baseTau, 1.0 / damp) : baseTau;
             sbModes.push_back (m);
         }
         soundboardResonator.prepare (sr);

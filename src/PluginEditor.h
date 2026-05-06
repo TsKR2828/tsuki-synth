@@ -14,31 +14,41 @@ public:
     void resized() override;
 
 private:
-    void handleNoteOn (juce::MidiKeyboardState*, int midiChannel, int midiNoteNumber, float velocity) override;
-    void handleNoteOff (juce::MidiKeyboardState*, int midiChannel, int midiNoteNumber, float velocity) override;
+    void handleNoteOn (juce::MidiKeyboardState*, int, int, float) override;
+    void handleNoteOff (juce::MidiKeyboardState*, int, int, float) override;
     void populateMaterialBox();
-    void syncParamsToGUI();
+    void showEngineControls();
 
     TsukiSynthProcessor& processorRef;
 
     juce::MidiKeyboardState keyboardState;
     juce::MidiKeyboardComponent keyboardComponent;
 
-    // Controls
-    juce::ComboBox materialBox;
-    juce::ComboBox exciterBox;
-    juce::Slider strikeSlider;
-    juce::Slider stringsSlider;
-    juce::Slider detuneSlider;
-    juce::Slider soundboardSlider;
+    // Engine switch
+    juce::ComboBox engineBox;
+    juce::Label engineLabel;
 
-    // Labels
+    // Shared
+    juce::ComboBox materialBox;
     juce::Label materialLabel;
-    juce::Label exciterLabel;
+    juce::Slider strikeSlider;
     juce::Label strikeLabel;
+
+    // Cimbalom-specific
+    juce::ComboBox exciterBox;
+    juce::Label exciterLabel;
+    juce::Slider stringsSlider;
     juce::Label stringsLabel;
+    juce::Slider detuneSlider;
     juce::Label detuneLabel;
+    juce::Slider soundboardSlider;
     juce::Label soundboardLabel;
+
+    // Chromatic-specific
+    juce::ComboBox subEngineBox;
+    juce::Label subEngineLabel;
+    juce::Slider waterSlider;
+    juce::Label waterLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)
 };

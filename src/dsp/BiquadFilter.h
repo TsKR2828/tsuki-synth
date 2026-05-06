@@ -21,7 +21,7 @@ public:
         const double sinw0 = std::sin (w0);
         const double alpha = sinw0 / (2.0 * Q);
 
-        double b0, b1, b2, a0, a1, a2;
+        double b0 = 0, b1 = 0, b2 = 0, a0 = 1, a1 = 0, a2 = 0;
 
         switch (type)
         {
