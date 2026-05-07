@@ -67,12 +67,24 @@ struct ScoreExport
     double endPosition    = 1.0;
 };
 
+struct ScoreLayer
+{
+    std::string source;
+    double regionStart = 0.0;
+    double regionEnd   = 1.0;
+    double gain        = 1.0;
+};
+
 struct Score
 {
     ScoreMeta   meta;
     ScoreGlobal global;
     std::vector<ScoreEvent> events;
     ScoreExport exportSettings;
+    std::vector<ScoreLayer> layers;
+    int crossfadeMs = 0;
+
+    bool hasLayers() const { return ! layers.empty(); }
 };
 
 inline int noteNameToMidi (const std::string& name)
@@ -201,6 +213,31 @@ public:
                 score.exportSettings.endPosition = exp->getProperty ("end_position");
         }
 
-        return ! score.events.empty();
+        if (auto* layersArr = obj->getProperty ("layers").getArray())
+        {
+            for (const auto& lv : *layersArr)
+            {
+                if (auto* l = lv.getDynamicObject())
+                {
+                    ScoreLayer layer;
+                    layer.source = l->getProperty ("source").toString().toStdString();
+                    if (l->hasProperty ("gain"))
+                        layer.gain = l->getProperty ("gain");
+                    if (auto* region = l->getProperty ("region").getArray())
+                    {
+                        if (region->size() >= 2)
+                        {
+                            layer.regionStart = (*region)[0];
+                            layer.regionEnd   = (*region)[1];
+                        }
+                    }
+                    score.layers.push_back (layer);
+                }
+            }
+        }
+        if (obj->hasProperty ("crossfade_ms"))
+            score.crossfadeMs = static_cast<int> ((int) obj->getProperty ("crossfade_ms"));
+
+        return ! score.events.empty() || score.hasLayers();
     }
 };

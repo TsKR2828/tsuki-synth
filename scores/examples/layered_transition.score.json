@@ -1,0 +1,46 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Layered Transition",
+    "id": "layered_transition_001",
+    "author": "Claude",
+    "description": "A+B 混合範例 — 前段鐘聲漸出，後段金屬扣合漸入",
+    "created": "2026-05-07",
+    "tags": ["layered", "transition", "composite"],
+    "mood": "mystical",
+    "use_case": "VTuber scene transition (dramatic)",
+    "category": "transition_sfx",
+    "worldview": "Akashic Library",
+    "variation_of": null,
+    "primary_type": "whoosh",
+    "sound_type": "oneshot",
+    "family_id": "layered_transition",
+    "character": ["metallic", "dark"]
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.85
+  },
+  "events": [],
+  "export": {
+    "filename": "layered_transition_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 200
+  },
+  "layers": [
+    {
+      "source": "akashic_bell.score.json",
+      "region": [0.0, 0.6],
+      "gain": 1.0
+    },
+    {
+      "source": "restraint_metal_click.score.json",
+      "region": [0.0, 1.0],
+      "gain": 0.8
+    }
+  ],
+  "crossfade_ms": 80
+}

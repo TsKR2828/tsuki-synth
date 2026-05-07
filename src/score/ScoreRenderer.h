@@ -12,6 +12,7 @@ class ScoreRenderer
 {
 public:
     void setMaterialDB (MaterialDB* db) { materialDB = db; }
+    void setBaseDir (const juce::File& dir) { baseDir = dir; }
 
     bool render (const Score& score, const juce::File& outputFile)
     {
@@ -81,6 +82,116 @@ public:
         }
 
         return WavWriter::write (outputFile, buffer, sr,
+                                 score.exportSettings.bitDepth,
+                                 score.exportSettings.normalize);
+    }
+
+    bool renderLayered (const Score& score, const juce::File& outputFile)
+    {
+        if (materialDB == nullptr || score.layers.empty())
+            return false;
+
+        double sr = score.global.sampleRate;
+        int crossfadeSamples = static_cast<int> (score.crossfadeMs / 1000.0 * sr);
+
+        struct RenderedLayer
+        {
+            juce::AudioBuffer<float> buffer;
+            int numSamples = 0;
+        };
+
+        std::vector<RenderedLayer> renderedLayers;
+        renderedLayers.reserve (score.layers.size());
+
+        for (const auto& layer : score.layers)
+        {
+            juce::File sourceFile = baseDir.getChildFile (juce::String (layer.source));
+            if (! sourceFile.existsAsFile())
+                return false;
+
+            Score subScore;
+            if (! ScoreParser::parse (sourceFile, subScore))
+                return false;
+
+            double subDuration = 0.0;
+            for (const auto& ev : subScore.events)
+                subDuration = std::max (subDuration, ev.time + ev.duration);
+            subDuration += subScore.exportSettings.tailSilenceMs / 1000.0;
+
+            int subTotalSamples = static_cast<int> (subDuration * sr) + 1;
+            juce::AudioBuffer<float> subBuffer (2, subTotalSamples);
+            subBuffer.clear();
+
+            for (const auto& ev : subScore.events)
+                renderEvent (ev, subBuffer, sr);
+
+            int regionStart = static_cast<int> (layer.regionStart * subTotalSamples);
+            int regionEnd   = static_cast<int> (layer.regionEnd * subTotalSamples);
+            int regionLen   = std::max (1, regionEnd - regionStart);
+
+            RenderedLayer rl;
+            rl.buffer.setSize (2, regionLen);
+            rl.buffer.copyFrom (0, 0, subBuffer, 0, regionStart, regionLen);
+            rl.buffer.copyFrom (1, 0, subBuffer, 1, regionStart, regionLen);
+            rl.buffer.applyGain (static_cast<float> (layer.gain));
+            rl.numSamples = regionLen;
+            renderedLayers.push_back (std::move (rl));
+        }
+
+        int totalOut = 0;
+        for (size_t i = 0; i < renderedLayers.size(); ++i)
+        {
+            if (i == 0)
+                totalOut = renderedLayers[i].numSamples;
+            else
+                totalOut += renderedLayers[i].numSamples - crossfadeSamples;
+        }
+        totalOut = std::max (totalOut, 1);
+
+        juce::AudioBuffer<float> output (2, totalOut);
+        output.clear();
+
+        int writePos = 0;
+        for (size_t i = 0; i < renderedLayers.size(); ++i)
+        {
+            const auto& rl = renderedLayers[i];
+
+            for (int s = 0; s < rl.numSamples; ++s)
+            {
+                int outIdx = writePos + s;
+                if (outIdx < 0 || outIdx >= totalOut) continue;
+
+                float sampleL = rl.buffer.getSample (0, s);
+                float sampleR = rl.buffer.getSample (1, s);
+
+                // Crossfade: fade in at start of layer (except first)
+                if (i > 0 && s < crossfadeSamples && crossfadeSamples > 0)
+                {
+                    float fadeIn = static_cast<float> (s) / crossfadeSamples;
+                    sampleL *= fadeIn;
+                    sampleR *= fadeIn;
+                }
+                // Crossfade: fade out at end of layer (except last)
+                if (i < renderedLayers.size() - 1)
+                {
+                    int fadeOutStart = rl.numSamples - crossfadeSamples;
+                    if (s >= fadeOutStart && crossfadeSamples > 0)
+                    {
+                        float fadeOut = static_cast<float> (rl.numSamples - s) / crossfadeSamples;
+                        sampleL *= fadeOut;
+                        sampleR *= fadeOut;
+                    }
+                }
+
+                output.addSample (0, outIdx, sampleL);
+                output.addSample (1, outIdx, sampleR);
+            }
+
+            if (i < renderedLayers.size() - 1)
+                writePos += rl.numSamples - crossfadeSamples;
+        }
+
+        return WavWriter::write (outputFile, output, sr,
                                  score.exportSettings.bitDepth,
                                  score.exportSettings.normalize);
     }

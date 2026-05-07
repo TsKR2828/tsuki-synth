@@ -40,9 +40,6 @@ static bool renderScore (const juce::File& scoreFile, const juce::File& outputDi
         return false;
     }
 
-    std::cout << "  Rendering: " << score.meta.title
-              << " (" << score.events.size() << " events)" << std::endl;
-
     outputDir.createDirectory();
 
     juce::String outName = score.exportSettings.filename.empty()
@@ -53,11 +50,29 @@ static bool renderScore (const juce::File& scoreFile, const juce::File& outputDi
 
     ScoreRenderer renderer;
     renderer.setMaterialDB (&globalMaterialDB);
+    renderer.setBaseDir (scoreFile.getParentDirectory());
 
-    if (renderer.render (score, outFile))
+    if (score.hasLayers())
     {
-        std::cout << "  -> " << outFile.getFullPathName() << std::endl;
-        return true;
+        std::cout << "  Layering: " << score.meta.title
+                  << " (" << score.layers.size() << " layers)" << std::endl;
+
+        if (renderer.renderLayered (score, outFile))
+        {
+            std::cout << "  -> " << outFile.getFullPathName() << std::endl;
+            return true;
+        }
+    }
+    else
+    {
+        std::cout << "  Rendering: " << score.meta.title
+                  << " (" << score.events.size() << " events)" << std::endl;
+
+        if (renderer.render (score, outFile))
+        {
+            std::cout << "  -> " << outFile.getFullPathName() << std::endl;
+            return true;
+        }
     }
 
     std::cout << "  FAILED to render: " << scoreFile.getFileName() << std::endl;

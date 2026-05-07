@@ -132,6 +132,31 @@
         "start_position":   { "type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Playback start offset (0=beginning, 0.5=middle)" },
         "end_position":     { "type": "number", "minimum": 0, "maximum": 1, "default": 1, "description": "Playback end offset (1=full length)" }
       }
+    },
+    "layers": {
+      "type": "array",
+      "description": "Combine multiple score sources into a single output (alternative to events-based rendering)",
+      "items": {
+        "type": "object",
+        "required": ["source"],
+        "properties": {
+          "source": { "type": "string", "description": "Relative path to a .score.json file" },
+          "region": {
+            "type": "array",
+            "items": { "type": "number", "minimum": 0, "maximum": 1 },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[start_fraction, end_fraction] of the rendered source to use"
+          },
+          "gain": { "type": "number", "minimum": 0, "maximum": 2, "default": 1, "description": "Volume multiplier for this layer" }
+        }
+      }
+    },
+    "crossfade_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Crossfade duration between consecutive layers in milliseconds"
     }
   }
 }
