@@ -1,0 +1,58 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Test: Distortion (Bitcrush)",
+    "id": "test_distortion_002",
+    "author": "TsukiSynth",
+    "description": "驗證 B — bitcrush 降位元測試",
+    "created": "2026-05-07",
+    "tags": ["test", "distortion", "glitch"],
+    "mood": "aggressive",
+    "use_case": "game action feedback",
+    "category": "character_ui",
+    "worldview": "Restraint",
+    "primary_type": "impact",
+    "sound_type": "oneshot",
+    "family_id": "test",
+    "character": ["glitch", "dark"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.75,
+    "effects": {
+      "reverb": { "decay": 0.8, "wet": 0.1 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 },
+      "distortion": {
+        "type": "bitcrush",
+        "drive": 0.6,
+        "instability": 0.2,
+        "wet": 0.75
+      }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 1.0,
+      "engine": "beam",
+      "note": "E5",
+      "velocity": 0.7,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 2.0,
+        "length_mm": 35,
+        "width_mm": 10,
+        "strike_position": 0.3,
+        "exciter": "hard_plastic"
+      }
+    }
+  ],
+  "export": {
+    "filename": "test_distortion_bitcrush",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 150
+  }
+}
