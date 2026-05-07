@@ -1,0 +1,89 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Restraint Chain Drag",
+    "id": "restraint_transition_001",
+    "author": "TsukiSynth",
+    "description": "鎖鏈拖行 — 金屬碰撞+弦摩擦，黑暗轉場",
+    "created": "2026-05-07",
+    "tags": ["chain", "metal", "transition", "dark", "industrial"],
+    "mood": "ominous",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Restraint",
+    "variation_of": null,
+    "primary_type": "whoosh",
+    "sound_type": "oneshot",
+    "family_id": "restraint_transition",
+    "character": ["dark", "metallic"]
+  },
+  "global": {
+    "bpm": 90,
+    "sample_rate": 48000,
+    "master_volume": 0.8,
+    "effects": {
+      "reverb": { "decay": 2.5, "wet": 0.35 },
+      "delay": { "time_ms": 180, "feedback": 0.15, "wet": 0.08 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 1.2,
+      "engine": "string",
+      "note": "C2",
+      "velocity": 0.85,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 2.0,
+        "length_mm": 120,
+        "tension_n": 600,
+        "strike_position": 0.05,
+        "exciter": "metal_scrape",
+        "damping_override": 3.0
+      },
+      "comment": "低頻鎖鏈摩擦"
+    },
+    {
+      "time": 0.3,
+      "duration": 0.8,
+      "engine": "plate",
+      "note": "F#3",
+      "velocity": 0.6,
+      "params": {
+        "material": "iron",
+        "thickness_mm": 3.0,
+        "width_mm": 80,
+        "height_mm": 80,
+        "strike_position_x": 0.2,
+        "strike_position_y": 0.3,
+        "exciter": "metal_hammer"
+      },
+      "comment": "鐵板碰撞，不和諧"
+    },
+    {
+      "time": 0.8,
+      "duration": 1.5,
+      "engine": "string",
+      "note": "D#2",
+      "velocity": 0.7,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.8,
+        "length_mm": 100,
+        "tension_n": 500,
+        "strike_position": 0.08,
+        "exciter": "metal_scrape",
+        "damping_override": 4.0
+      }
+    }
+  ],
+  "export": {
+    "filename": "restraint_transition_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 300,
+    "export_filename": "Whoosh_Dark_OneShot_C2"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Restraint Iron Drone",
+    "id": "restraint_ambient_001",
+    "author": "TsukiSynth",
+    "description": "鐵牢低鳴 — 長衰減弦共鳴，壓迫感環境音",
+    "created": "2026-05-07",
+    "tags": ["drone", "ambient", "dark", "low", "industrial"],
+    "mood": "oppressive",
+    "use_case": "ambient background",
+    "category": "worldview_sfx",
+    "worldview": "Restraint",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "oneshot",
+    "family_id": "restraint_ambient",
+    "character": ["dark", "metallic"]
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.6,
+    "effects": {
+      "reverb": { "decay": 5.0, "wet": 0.5 },
+      "delay": { "time_ms": 400, "feedback": 0.3, "wet": 0.12 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 6.0,
+      "engine": "string",
+      "note": "D1",
+      "velocity": 0.3,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 3.0,
+        "length_mm": 200,
+        "tension_n": 400,
+        "strike_position": 0.5,
+        "exciter": "bow_slow",
+        "damping_override": 0.5
+      },
+      "comment": "極低阻尼弓奏，持續共鳴"
+    },
+    {
+      "time": 2.0,
+      "duration": 5.0,
+      "engine": "plate",
+      "note": "A1",
+      "velocity": 0.2,
+      "params": {
+        "material": "iron",
+        "thickness_mm": 4.0,
+        "width_mm": 200,
+        "height_mm": 200,
+        "strike_position_x": 0.3,
+        "strike_position_y": 0.7,
+        "exciter": "bow_slow"
+      },
+      "comment": "鐵板弓奏，增加空間壓迫"
+    },
+    {
+      "time": 4.5,
+      "duration": 6.0,
+      "engine": "string",
+      "note": "E1",
+      "velocity": 0.25,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 3.0,
+        "length_mm": 180,
+        "tension_n": 350,
+        "strike_position": 0.45,
+        "exciter": "bow_slow",
+        "damping_override": 0.4
+      }
+    }
+  ],
+  "export": {
+    "filename": "restraint_ambient_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 800,
+    "export_filename": "Ambience_Dark_OneShot_D1"
+  }
+}
