@@ -1,0 +1,70 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Akashic Gate Open",
+    "id": "akashic_transition_001",
+    "author": "TsukiSynth",
+    "description": "阿卡西紀錄之門開啟 — 雙層青銅圓板敲擊，長殘響場景轉換",
+    "created": "2026-05-07",
+    "tags": ["bell", "mystical", "transition", "reverb-heavy", "sacred"],
+    "mood": "sacred",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Akashic Library",
+    "variation_of": null,
+    "primary_type": "magic",
+    "sound_type": "oneshot",
+    "family_id": "akashic_transition",
+    "character": ["metallic", "airy"]
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.85,
+    "effects": {
+      "reverb": { "decay": 8.0, "wet": 0.6 },
+      "delay": { "time_ms": 320, "feedback": 0.25, "wet": 0.15 },
+      "wall": { "distance_m": 15, "material": "stone" }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 7.0,
+      "engine": "plate",
+      "note": "C4",
+      "velocity": 0.7,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 4.0,
+        "radius_mm": 150,
+        "strike_position": 0.3,
+        "exciter": "felt_mallet"
+      },
+      "comment": "低音層 — 厚青銅板，felt 柔觸產生溫暖基底"
+    },
+    {
+      "time": 0.15,
+      "duration": 7.0,
+      "engine": "plate",
+      "note": "G5",
+      "velocity": 0.45,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 2.5,
+        "radius_mm": 80,
+        "strike_position": 0.45,
+        "exciter": "metal_mallet"
+      },
+      "comment": "高音層 — 薄銅片偏中心敲擊，泛音較少但清亮"
+    }
+  ],
+  "export": {
+    "filename": "akashic_transition_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 500,
+    "export_filename": "Magic_Metallic_OneShot_C4"
+  }
+}
