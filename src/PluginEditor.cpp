@@ -3,36 +3,104 @@
 TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p)
 {
-    setupCombo  (materialCombo,    "cim_material",    "Material");
-    setupCombo  (hammerCombo,      "cim_hammer",      "Hammer");
-    setupSlider (strikePosSlider,  "cim_strike_pos",  "Strike Pos");
-    setupSlider (diameterSlider,   "cim_diameter",    "Diameter",     "mm");
-    setupSlider (numStringsSlider, "cim_num_strings", "Strings");
-    setupSlider (detuningSlider,   "cim_detuning",    "Detuning",    "ct");
+    // Engine selector
+    setupCombo (engineCombo, "engine", "Engine");
 
-    setSize (520, 380);
+    // Cimbalom controls
+    setupCombo  (cimMaterialCombo,    "cim_material",    "Material");
+    setupCombo  (cimHammerCombo,      "cim_hammer",      "Hammer");
+    setupSlider (cimStrikePosSlider,  "cim_strike_pos",  "Strike Pos");
+    setupSlider (cimDiameterSlider,   "cim_diameter",    "Diameter",  "mm");
+    setupSlider (cimNumStringsSlider, "cim_num_strings", "Strings");
+    setupSlider (cimDetuningSlider,   "cim_detuning",    "Detuning",  "ct");
+
+    // Chromatic controls
+    setupCombo  (chrSubEngineCombo,   "chr_sub_engine",  "Type");
+    setupCombo  (chrMaterialCombo,    "chr_material",    "Material");
+    setupSlider (chrStrikePosSlider,  "chr_strike_pos",  "Strike Pos");
+    setupSlider (chrThicknessSlider,  "chr_thickness",   "Thickness", "mm");
+    setupSlider (chrSizeSlider,       "chr_size",        "Size",      "mm");
+    setupCombo  (chrExciterCombo,     "chr_exciter",     "Exciter");
+    setupSlider (chrPitchGlideSlider, "chr_pitch_glide", "Pitch Glide");
+
+    // Listen for engine changes
+    processorRef.apvts.addParameterListener ("engine", this);
+
+    updateEngineVisibility();
+    setSize (520, 440);
 }
 
-TsukiSynthEditor::~TsukiSynthEditor() {}
+TsukiSynthEditor::~TsukiSynthEditor()
+{
+    processorRef.apvts.removeParameterListener ("engine", this);
+}
+
+void TsukiSynthEditor::parameterChanged (const juce::String& parameterID, float)
+{
+    if (parameterID == "engine")
+    {
+        // Must be called on message thread
+        juce::MessageManager::callAsync ([this]() { updateEngineVisibility(); });
+    }
+}
+
+void TsukiSynthEditor::updateEngineVisibility()
+{
+    int engine = (int) processorRef.apvts.getRawParameterValue ("engine")->load();
+    bool isCim = (engine == 0);
+    bool isChr = (engine == 1);
+
+    setComponentVisible (cimMaterialCombo,    isCim);
+    setComponentVisible (cimHammerCombo,      isCim);
+    setComponentVisible (cimStrikePosSlider,  isCim);
+    setComponentVisible (cimDiameterSlider,   isCim);
+    setComponentVisible (cimNumStringsSlider, isCim);
+    setComponentVisible (cimDetuningSlider,   isCim);
+
+    setComponentVisible (chrSubEngineCombo,   isChr);
+    setComponentVisible (chrMaterialCombo,    isChr);
+    setComponentVisible (chrStrikePosSlider,  isChr);
+    setComponentVisible (chrThicknessSlider,  isChr);
+    setComponentVisible (chrSizeSlider,       isChr);
+    setComponentVisible (chrExciterCombo,     isChr);
+    setComponentVisible (chrPitchGlideSlider, isChr);
+
+    repaint();
+}
+
+void TsukiSynthEditor::setComponentVisible (ParamCombo& pc, bool visible)
+{
+    pc.combo->setVisible (visible);
+    pc.label->setVisible (visible);
+}
+
+void TsukiSynthEditor::setComponentVisible (ParamSlider& ps, bool visible)
+{
+    ps.slider->setVisible (visible);
+    ps.label->setVisible (visible);
+}
 
 void TsukiSynthEditor::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colour (0xff1a1a2e));
 
-    // 標題
+    // Title
     g.setColour (juce::Colour (0xffe0e0e0));
     g.setFont (juce::FontOptions (24.0f));
     g.drawFittedText ("TsukiSynth", 0, 8, getWidth(), 30,
                       juce::Justification::centred, 1);
 
-    // 副標
+    // Subtitle changes with engine
+    int engine = (int) processorRef.apvts.getRawParameterValue ("engine")->load();
     g.setColour (juce::Colour (0xff888888));
     g.setFont (juce::FontOptions (12.0f));
-    g.drawFittedText ("Cimbalom Engine  |  Physical Modeling String",
-                      0, 34, getWidth(), 18,
+    juce::String subtitle = (engine == 0)
+        ? "Cimbalom Engine  |  Physical Modeling String"
+        : "Chromatic Engine  |  Beam / Plate / Custom";
+    g.drawFittedText (subtitle, 0, 34, getWidth(), 18,
                       juce::Justification::centred, 1);
 
-    // 分隔線
+    // Divider
     g.setColour (juce::Colour (0xff333355));
     g.drawHorizontalLine (56, 20.0f, (float) getWidth() - 20.0f);
 }
@@ -40,40 +108,88 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
 void TsukiSynthEditor::resized()
 {
     auto area = getLocalBounds().reduced (20).withTrimmedTop (50);
-    int rowH = 50;
+    int rowH = 44;
+    int labelW = 80;
+    int gap = 6;
 
-    // Row 1: Material + Hammer
-    auto row1 = area.removeFromTop (rowH);
-    auto half = row1.getWidth() / 2;
-    materialCombo.label->setBounds (row1.removeFromLeft (70));
-    materialCombo.combo->setBounds (row1.removeFromLeft (half - 80).reduced (2));
-    row1.removeFromLeft (20);
-    hammerCombo.label->setBounds (row1.removeFromLeft (60));
-    hammerCombo.combo->setBounds (row1.reduced (2));
+    // Row 0: Engine selector
+    auto row0 = area.removeFromTop (rowH);
+    engineCombo.label->setBounds (row0.removeFromLeft (labelW));
+    engineCombo.combo->setBounds (row0.reduced (2));
+    area.removeFromTop (gap);
 
-    area.removeFromTop (8);
+    // ===== Cimbalom layout =====
+    int engine = (int) processorRef.apvts.getRawParameterValue ("engine")->load();
 
-    // Row 2: Strike Position
-    auto row2 = area.removeFromTop (rowH);
-    strikePosSlider.label->setBounds (row2.removeFromLeft (80));
-    strikePosSlider.slider->setBounds (row2.reduced (2));
+    if (engine == 0)
+    {
+        // Row 1: Material + Hammer
+        auto row1 = area.removeFromTop (rowH);
+        int half = row1.getWidth() / 2;
+        cimMaterialCombo.label->setBounds (row1.removeFromLeft (labelW));
+        cimMaterialCombo.combo->setBounds (row1.removeFromLeft (half - labelW - 10).reduced (2));
+        row1.removeFromLeft (20);
+        cimHammerCombo.label->setBounds (row1.removeFromLeft (60));
+        cimHammerCombo.combo->setBounds (row1.reduced (2));
+        area.removeFromTop (gap);
 
-    area.removeFromTop (4);
+        // Row 2: Strike Position
+        auto row2 = area.removeFromTop (rowH);
+        cimStrikePosSlider.label->setBounds (row2.removeFromLeft (labelW));
+        cimStrikePosSlider.slider->setBounds (row2.reduced (2));
+        area.removeFromTop (gap);
 
-    // Row 3: Diameter
-    auto row3 = area.removeFromTop (rowH);
-    diameterSlider.label->setBounds (row3.removeFromLeft (80));
-    diameterSlider.slider->setBounds (row3.reduced (2));
+        // Row 3: Diameter
+        auto row3 = area.removeFromTop (rowH);
+        cimDiameterSlider.label->setBounds (row3.removeFromLeft (labelW));
+        cimDiameterSlider.slider->setBounds (row3.reduced (2));
+        area.removeFromTop (gap);
 
-    area.removeFromTop (4);
+        // Row 4: Strings + Detuning
+        auto row4 = area.removeFromTop (rowH);
+        auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
+        cimNumStringsSlider.label->setBounds (r4left.removeFromLeft (labelW));
+        cimNumStringsSlider.slider->setBounds (r4left.reduced (2));
+        cimDetuningSlider.label->setBounds (row4.removeFromLeft (labelW));
+        cimDetuningSlider.slider->setBounds (row4.reduced (2));
+    }
+    else
+    {
+        // ===== Chromatic layout =====
 
-    // Row 4: Strings + Detuning
-    auto row4 = area.removeFromTop (rowH);
-    auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
-    numStringsSlider.label->setBounds (r4left.removeFromLeft (80));
-    numStringsSlider.slider->setBounds (r4left.reduced (2));
-    detuningSlider.label->setBounds (row4.removeFromLeft (80));
-    detuningSlider.slider->setBounds (row4.reduced (2));
+        // Row 1: Sub-engine + Material
+        auto row1 = area.removeFromTop (rowH);
+        int half = row1.getWidth() / 2;
+        chrSubEngineCombo.label->setBounds (row1.removeFromLeft (60));
+        chrSubEngineCombo.combo->setBounds (row1.removeFromLeft (half - 70).reduced (2));
+        row1.removeFromLeft (20);
+        chrMaterialCombo.label->setBounds (row1.removeFromLeft (60));
+        chrMaterialCombo.combo->setBounds (row1.reduced (2));
+        area.removeFromTop (gap);
+
+        // Row 2: Strike Position
+        auto row2 = area.removeFromTop (rowH);
+        chrStrikePosSlider.label->setBounds (row2.removeFromLeft (labelW));
+        chrStrikePosSlider.slider->setBounds (row2.reduced (2));
+        area.removeFromTop (gap);
+
+        // Row 3: Thickness + Size
+        auto row3 = area.removeFromTop (rowH);
+        auto r3left = row3.removeFromLeft (row3.getWidth() / 2);
+        chrThicknessSlider.label->setBounds (r3left.removeFromLeft (labelW));
+        chrThicknessSlider.slider->setBounds (r3left.reduced (2));
+        chrSizeSlider.label->setBounds (row3.removeFromLeft (labelW));
+        chrSizeSlider.slider->setBounds (row3.reduced (2));
+        area.removeFromTop (gap);
+
+        // Row 4: Exciter + Pitch Glide
+        auto row4 = area.removeFromTop (rowH);
+        auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
+        chrExciterCombo.label->setBounds (r4left.removeFromLeft (60));
+        chrExciterCombo.combo->setBounds (r4left.reduced (2));
+        chrPitchGlideSlider.label->setBounds (row4.removeFromLeft (labelW));
+        chrPitchGlideSlider.slider->setBounds (row4.reduced (2));
+    }
 }
 
 void TsukiSynthEditor::setupCombo (ParamCombo& pc, const juce::String& paramID,
@@ -82,7 +198,6 @@ void TsukiSynthEditor::setupCombo (ParamCombo& pc, const juce::String& paramID,
     pc.combo = std::make_unique<juce::ComboBox>();
     pc.label = std::make_unique<juce::Label> ("", labelText);
 
-    // 從 APVTS 取得選項
     if (auto* param = dynamic_cast<juce::AudioParameterChoice*> (
             processorRef.apvts.getParameter (paramID)))
     {

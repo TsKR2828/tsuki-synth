@@ -34,7 +34,11 @@ public:
     MaterialDB materialDB;
 
 private:
-    juce::Synthesiser synth;
+    juce::Synthesiser cimbalomSynth;
+    juce::Synthesiser chromaticSynth;
+
+    std::atomic<float>* pEngine = nullptr;
+    int lastEngine = -1;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout
         createParameterLayout();

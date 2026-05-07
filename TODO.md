@@ -30,15 +30,18 @@
 - [ ] 響板耦合（soundboard）— 延後，Phase 7 GUI 一起做
 - [ ] 在 Cubase 中 A/B 對比 HTML 原型 — 待月月測試
 
-## 當前：Phase 4 — Chromatic Synth
+## 已完成：Phase 4 — Chromatic Synth（三合一物理建模）
 
-- [ ] `src/physics/BeamModel.h` — Euler-Bernoulli 梁（空靈鼓）
-- [ ] `src/physics/PlateModel.h` — Kirchhoff 圓板（水鑼）+ Bessel 零點
-- [ ] `src/engines/ChromaticEngine.h` — 三合一引擎（beam/plate/custom）
-- [ ] PluginProcessor 加入引擎切換參數
-- [ ] 圓板 pitch glide（水鑼浸水效果）
+- [x] `src/physics/BeamModel.h` — Euler-Bernoulli 梁（空靈鼓）
+- [x] `src/physics/PlateModel.h` — Kirchhoff 圓板（水鑼）+ Bessel 零點
+- [x] `src/engines/ChromaticEngine.h` — 三合一引擎（beam/plate/custom）
+- [x] PluginProcessor 加入引擎切換參數（engine: Cimbalom/Chromatic）
+- [x] Chromatic 7 參數 APVTS 整合（sub_engine/material/strike_pos/thickness/size/exciter/pitch_glide）
+- [x] PluginEditor 引擎切換 UI（ComboBox + 參數面板動態顯示/隱藏）
+- [x] 圓板 pitch glide（水鑼浸水效果）
+- [x] 編譯通過（VST3 + Standalone）
 
-## 待辦：Phase 5 — FM Piano
+## 當前：Phase 5 — FM Piano
 
 - [ ] `src/engines/FMPianoEngine.h` — FM 合成移植
 - [ ] carrier + modulator + index envelope

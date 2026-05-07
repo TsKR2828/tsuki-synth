@@ -1,7 +1,8 @@
 #pragma once
 #include "PluginProcessor.h"
 
-class TsukiSynthEditor : public juce::AudioProcessorEditor
+class TsukiSynthEditor : public juce::AudioProcessorEditor,
+                          private juce::AudioProcessorValueTreeState::Listener
 {
 public:
     explicit TsukiSynthEditor (TsukiSynthProcessor&);
@@ -13,7 +14,10 @@ public:
 private:
     TsukiSynthProcessor& processorRef;
 
-    // 參數 UI 元件
+    void parameterChanged (const juce::String& parameterID, float newValue) override;
+    void updateEngineVisibility();
+
+    // UI helpers
     struct ParamSlider
     {
         std::unique_ptr<juce::Slider> slider;
@@ -28,17 +32,33 @@ private:
         std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
     };
 
-    ParamCombo  materialCombo;
-    ParamCombo  hammerCombo;
-    ParamSlider strikePosSlider;
-    ParamSlider diameterSlider;
-    ParamSlider numStringsSlider;
-    ParamSlider detuningSlider;
+    // Engine selector
+    ParamCombo engineCombo;
+
+    // --- Cimbalom controls ---
+    ParamCombo  cimMaterialCombo;
+    ParamCombo  cimHammerCombo;
+    ParamSlider cimStrikePosSlider;
+    ParamSlider cimDiameterSlider;
+    ParamSlider cimNumStringsSlider;
+    ParamSlider cimDetuningSlider;
+
+    // --- Chromatic controls ---
+    ParamCombo  chrSubEngineCombo;
+    ParamCombo  chrMaterialCombo;
+    ParamSlider chrStrikePosSlider;
+    ParamSlider chrThicknessSlider;
+    ParamSlider chrSizeSlider;
+    ParamCombo  chrExciterCombo;
+    ParamSlider chrPitchGlideSlider;
 
     void setupCombo (ParamCombo& pc, const juce::String& paramID,
                      const juce::String& labelText);
     void setupSlider (ParamSlider& ps, const juce::String& paramID,
                       const juce::String& labelText, const juce::String& suffix = {});
+
+    void setComponentVisible (ParamCombo& pc, bool visible);
+    void setComponentVisible (ParamSlider& ps, bool visible);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)
 };

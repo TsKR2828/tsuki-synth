@@ -2,6 +2,41 @@
 
 ---
 
+## 2026-05-08 — Phase 4 完成：Chromatic Synth（三合一物理建模引擎）
+
+**新增物理模型：**
+- `src/physics/BeamModel.h` — Euler-Bernoulli 梁振動模型（空靈鼓 Tongue Drum）
+  - Free-free beam eigenvalues：β₁=4.730, β₂=7.853, β₃=10.996, β₄=14.137, β₅=17.279
+  - 非諧波模態序列（ratio: 1.000, 2.757, 5.404, 8.933, 13.345）→ 空靈鼓特有的「鐘聲感」
+  - MIDI note → 舌片長度自動計算（A4=0.12m 基準，L ∝ 1/√f）
+- `src/physics/PlateModel.h` — Kirchhoff 圓板振動模型（水鑼 Water Gong）
+  - 20 組 Bessel 函數零點 j(m,n)，涵蓋 m=0~8, n=1~4
+  - 2D 擊打位置建模：中心敲擊 → 軸對稱模態(m=0)強，邊緣 → 高 m 模態強
+  - MIDI note → 圓板半徑自動計算（A4=0.15m 基準，R ∝ 1/√f）
+
+**新增引擎：**
+- `src/engines/ChromaticEngine.h` — ChromaticVoice 三合一引擎
+  - Sub-engine 0: Tongue Drum（BeamModel 驅動，12 模態）
+  - Sub-engine 1: Water Gong（PlateModel 驅動，20 模態）
+  - Sub-engine 2: Custom（使用者自填 ratio/amplitude，8 組泛音）
+  - Water Gong pitch glide：持續降低模態頻率模擬浸水效果（最大 15% pitch drop）
+  - Exciter 噪音脈衝：4 級硬度（Soft/Medium/Hard/Sharp）→ LP 濾波 + 脈衝寬度
+
+**PluginProcessor 重構：**
+- 雙引擎架構：`cimbalomSynth` + `chromaticSynth`，各 16 voice
+- 新增全域 `engine` 參數（Cimbalom / Chromatic 切換）
+- 新增 7 個 Chromatic 參數（chr_sub_engine, chr_material, chr_strike_pos, chr_thickness, chr_size, chr_exciter, chr_pitch_glide）
+- processBlock 引擎路由：切換時自動 allNotesOff 防止殘留音符
+- prepareToPlay 同時設定兩個 synth 的 sample rate
+
+**PluginEditor 更新：**
+- 引擎選擇器 ComboBox（頂部）
+- 參數面板動態切換：選 Cimbalom 顯示弦參數，選 Chromatic 顯示梁/板參數
+- APVTS Listener 監聽 engine 參數變化 → MessageThread 安全更新 UI
+- 副標題隨引擎切換：「Cimbalom Engine | Physical Modeling String」/「Chromatic Engine | Beam / Plate / Custom」
+
+---
+
 ## 2026-05-08 — Phase 3 完成：Cimbalom 引擎（物理建模弦）
 
 **核心完成：**
