@@ -20,7 +20,10 @@
     "string": "弦類 — 弦模型，揚琴/鋼琴",
     "alert": "警告/提示音 — 短促高頻",
     "ambient": "氛圍 — 長音、環境填充",
-    "motif": "短旋律片段 — 多音符序列"
+    "motif": "短旋律片段 — 多音符序列",
+    "click": "點擊 — 極短觸發、UI 回饋",
+    "mechanical": "機械 — 齒輪、彈簧、金屬碰撞",
+    "organic": "有機 — 木質、植物、自然素材"
   },
 
   "sound_types": ["oneshot", "loop", "variant"],
@@ -45,7 +48,10 @@
     "playful": "活潑、可愛",
     "calm": "平靜、療癒",
     "epic": "壯闊、史詩",
-    "melancholic": "憂鬱、感傷"
+    "melancholic": "憂鬱、感傷",
+    "neutral": "中性、無明顯情緒",
+    "aggressive": "激烈、攻擊性",
+    "oppressive": "壓迫、窒息感"
   },
 
   "energy_levels": ["very-low", "low", "medium", "high", "very-high"],
