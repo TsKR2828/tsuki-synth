@@ -22,6 +22,8 @@ private:
     void showEngineControls();
     void syncFromProcessor();
 
+    void paintSectionPanel (juce::Graphics&, juce::Rectangle<int>, const juce::String& title);
+
     TsukiSynthProcessor& processorRef;
 
     juce::MidiKeyboardState keyboardState;
@@ -70,6 +72,21 @@ private:
     juce::Label compLabel;
     juce::Slider masterSlider;
     juce::Label masterLabel;
+
+    // Distortion section
+    juce::ComboBox distTypeBox;
+    juce::Label distTypeLabel;
+    juce::Slider distDriveSlider;
+    juce::Label distDriveLabel;
+    juce::Slider distInstSlider;
+    juce::Label distInstLabel;
+    juce::Slider distWetSlider;
+    juce::Label distWetLabel;
+
+    // Layout rects (cached in resized for paint)
+    juce::Rectangle<int> enginePanelBounds;
+    juce::Rectangle<int> effectsPanelBounds;
+    juce::Rectangle<int> distortionPanelBounds;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)
 };

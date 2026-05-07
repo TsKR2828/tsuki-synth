@@ -1,21 +1,52 @@
 #include "PluginEditor.h"
 
+namespace Colours
+{
+    static const juce::Colour bg         (0xff12121c);
+    static const juce::Colour panelBg    (0xff1e1e2e);
+    static const juce::Colour panelBorder (0xff2a2a40);
+    static const juce::Colour accent     (0xffc8a2c8);
+    static const juce::Colour accentDim  (0xff8b6f8b);
+    static const juce::Colour text       (0xffe8e0f0);
+    static const juce::Colour textDim    (0xff9090a8);
+    static const juce::Colour knobTrack  (0xff3a3a52);
+    static const juce::Colour knobFill   (0xff9478b8);
+}
+
 static void initLabel (juce::Label& l, const juce::String& t, juce::Component* p)
 {
     l.setText (t, juce::dontSendNotification);
-    l.setColour (juce::Label::textColourId, juce::Colour (0xffaaaaaa));
-    l.setFont (juce::FontOptions (12.0f));
+    l.setColour (juce::Label::textColourId, Colours::textDim);
+    l.setFont (juce::FontOptions (11.5f));
+    l.setJustificationType (juce::Justification::centred);
     p->addAndMakeVisible (l);
 }
 
-static void initSlider (juce::Slider& s, double lo, double hi, double step,
+static void initRotary (juce::Slider& s, double lo, double hi, double step,
+                         double val, juce::Component* p)
+{
+    s.setSliderStyle (juce::Slider::RotaryVerticalDrag);
+    s.setRange (lo, hi, step);
+    s.setValue (val, juce::dontSendNotification);
+    s.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 46, 14);
+    s.setColour (juce::Slider::rotarySliderFillColourId, Colours::knobFill);
+    s.setColour (juce::Slider::rotarySliderOutlineColourId, Colours::knobTrack);
+    s.setColour (juce::Slider::thumbColourId, Colours::accent);
+    s.setColour (juce::Slider::textBoxTextColourId, Colours::textDim);
+    s.setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+    p->addAndMakeVisible (s);
+}
+
+static void initLinear (juce::Slider& s, double lo, double hi, double step,
                          double val, juce::Component* p)
 {
     s.setRange (lo, hi, step);
     s.setValue (val, juce::dontSendNotification);
-    s.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 20);
-    s.setColour (juce::Slider::thumbColourId, juce::Colour (0xffe0d6c8));
-    s.setColour (juce::Slider::trackColourId, juce::Colour (0xff444466));
+    s.setTextBoxStyle (juce::Slider::TextBoxRight, false, 44, 18);
+    s.setColour (juce::Slider::thumbColourId, Colours::accent);
+    s.setColour (juce::Slider::trackColourId, Colours::knobTrack);
+    s.setColour (juce::Slider::textBoxTextColourId, Colours::textDim);
+    s.setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
     p->addAndMakeVisible (s);
 }
 
@@ -25,14 +56,23 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
       keyboardComponent (keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
 {
     keyboardState.addListener (this);
+    keyboardComponent.setColour (juce::MidiKeyboardComponent::keyDownOverlayColourId,
+                                 Colours::accent.withAlpha (0.4f));
+    keyboardComponent.setColour (juce::MidiKeyboardComponent::whiteNoteColourId,
+                                 juce::Colour (0xfff0ecf4));
+    keyboardComponent.setColour (juce::MidiKeyboardComponent::blackNoteColourId,
+                                 juce::Colour (0xff2a2a3a));
     addAndMakeVisible (keyboardComponent);
 
     // Engine selector
-    initLabel (engineLabel, "Engine", this);
+    initLabel (engineLabel, "ENGINE", this);
     engineBox.addItem ("Cimbalom", 1);
     engineBox.addItem ("Chromatic", 2);
     engineBox.addItem ("FM Piano", 3);
     engineBox.setSelectedId (1, juce::dontSendNotification);
+    engineBox.setColour (juce::ComboBox::backgroundColourId, Colours::panelBg);
+    engineBox.setColour (juce::ComboBox::outlineColourId, Colours::panelBorder);
+    engineBox.setColour (juce::ComboBox::textColourId, Colours::text);
     engineBox.onChange = [this]
     {
         int id = engineBox.getSelectedId();
@@ -46,8 +86,11 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     addAndMakeVisible (engineBox);
 
     // Material
-    initLabel (materialLabel, "Material", this);
+    initLabel (materialLabel, "MATERIAL", this);
     populateMaterialBox();
+    materialBox.setColour (juce::ComboBox::backgroundColourId, Colours::panelBg);
+    materialBox.setColour (juce::ComboBox::outlineColourId, Colours::panelBorder);
+    materialBox.setColour (juce::ComboBox::textColourId, Colours::text);
     materialBox.onChange = [this]
     {
         int idx = materialBox.getSelectedId() - 1;
@@ -61,8 +104,8 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     addAndMakeVisible (materialBox);
 
     // Strike position
-    initLabel (strikeLabel, "Strike Pos", this);
-    initSlider (strikeSlider, 0.05, 0.95, 0.01, 0.3, this);
+    initLabel (strikeLabel, "STRIKE", this);
+    initLinear (strikeSlider, 0.05, 0.95, 0.01, 0.3, this);
     strikeSlider.onValueChange = [this]
     {
         processorRef.getCimbalomParams().strikePosition = strikeSlider.getValue();
@@ -71,12 +114,15 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     };
 
     // --- Cimbalom controls ---
-    initLabel (exciterLabel, "Exciter", this);
+    initLabel (exciterLabel, "EXCITER", this);
     exciterBox.addItem ("Cotton", 1);
     exciterBox.addItem ("Felt", 2);
     exciterBox.addItem ("Wood", 3);
     exciterBox.addItem ("Metal", 4);
     exciterBox.setSelectedId (3, juce::dontSendNotification);
+    exciterBox.setColour (juce::ComboBox::backgroundColourId, Colours::panelBg);
+    exciterBox.setColour (juce::ComboBox::outlineColourId, Colours::panelBorder);
+    exciterBox.setColour (juce::ComboBox::textColourId, Colours::text);
     exciterBox.onChange = [this]
     {
         static const ExciterType types[] = {
@@ -89,8 +135,8 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     };
     addAndMakeVisible (exciterBox);
 
-    initLabel (stringsLabel, "Strings", this);
-    initSlider (stringsSlider, 1, 5, 1, 3, this);
+    initLabel (stringsLabel, "STRINGS", this);
+    initLinear (stringsSlider, 1, 5, 1, 3, this);
     stringsSlider.onValueChange = [this]
     {
         processorRef.getCimbalomParams().stringsPerCourse =
@@ -98,16 +144,16 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         processorRef.updateVoiceParams();
     };
 
-    initLabel (detuneLabel, "Detune", this);
-    initSlider (detuneSlider, 0.0, 15.0, 0.5, 3.0, this);
+    initLabel (detuneLabel, "DETUNE", this);
+    initLinear (detuneSlider, 0.0, 15.0, 0.5, 3.0, this);
     detuneSlider.onValueChange = [this]
     {
         processorRef.getCimbalomParams().detuneAmount = detuneSlider.getValue();
         processorRef.updateVoiceParams();
     };
 
-    initLabel (soundboardLabel, "Soundboard", this);
-    initSlider (soundboardSlider, 0.0, 1.0, 0.01, 0.3, this);
+    initLabel (soundboardLabel, "BOARD", this);
+    initLinear (soundboardSlider, 0.0, 1.0, 0.01, 0.3, this);
     soundboardSlider.onValueChange = [this]
     {
         processorRef.getCimbalomParams().soundboardAmount = soundboardSlider.getValue();
@@ -115,11 +161,14 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     };
 
     // --- Chromatic controls ---
-    initLabel (subEngineLabel, "Type", this);
+    initLabel (subEngineLabel, "TYPE", this);
     subEngineBox.addItem ("Tongue Drum", 1);
     subEngineBox.addItem ("Water Gong", 2);
     subEngineBox.addItem ("Custom Harmonics", 3);
     subEngineBox.setSelectedId (1, juce::dontSendNotification);
+    subEngineBox.setColour (juce::ComboBox::backgroundColourId, Colours::panelBg);
+    subEngineBox.setColour (juce::ComboBox::outlineColourId, Colours::panelBorder);
+    subEngineBox.setColour (juce::ComboBox::textColourId, Colours::text);
     subEngineBox.onChange = [this]
     {
         static const ChromaticSubEngine subs[] = {
@@ -134,8 +183,8 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     };
     addAndMakeVisible (subEngineBox);
 
-    initLabel (waterLabel, "Water Level", this);
-    initSlider (waterSlider, 0.0, 1.0, 0.01, 0.0, this);
+    initLabel (waterLabel, "WATER", this);
+    initLinear (waterSlider, 0.0, 1.0, 0.01, 0.0, this);
     waterSlider.onValueChange = [this]
     {
         processorRef.getChromaticParams().waterLevel = waterSlider.getValue();
@@ -143,7 +192,7 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     };
 
     // --- FM Piano controls ---
-    initLabel (fmPresetLabel, "Preset", this);
+    initLabel (fmPresetLabel, "PRESET", this);
     fmPresetBox.addItem ("Piano", 1);
     fmPresetBox.addItem ("Electric Piano", 2);
     fmPresetBox.addItem ("Vibraphone", 3);
@@ -153,6 +202,9 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     fmPresetBox.addItem ("Strings", 7);
     fmPresetBox.addItem ("Brass", 8);
     fmPresetBox.setSelectedId (1, juce::dontSendNotification);
+    fmPresetBox.setColour (juce::ComboBox::backgroundColourId, Colours::panelBg);
+    fmPresetBox.setColour (juce::ComboBox::outlineColourId, Colours::panelBorder);
+    fmPresetBox.setColour (juce::ComboBox::textColourId, Colours::text);
     fmPresetBox.onChange = [this]
     {
         static const FMPreset presets[] = {
@@ -167,25 +219,25 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     };
     addAndMakeVisible (fmPresetBox);
 
-    initLabel (fmDetuneLabel, "Detune", this);
-    initSlider (fmDetuneSlider, -5.0, 5.0, 0.1, 0.0, this);
+    initLabel (fmDetuneLabel, "DETUNE", this);
+    initLinear (fmDetuneSlider, -5.0, 5.0, 0.1, 0.0, this);
     fmDetuneSlider.onValueChange = [this]
     {
         processorRef.getFMParams().detune = fmDetuneSlider.getValue();
         processorRef.updateVoiceParams();
     };
 
-    initLabel (fmVolumeLabel, "Volume", this);
-    initSlider (fmVolumeSlider, 0.0, 1.0, 0.01, 0.8, this);
+    initLabel (fmVolumeLabel, "VOLUME", this);
+    initLinear (fmVolumeSlider, 0.0, 1.0, 0.01, 0.8, this);
     fmVolumeSlider.onValueChange = [this]
     {
         processorRef.getFMParams().masterVolume = fmVolumeSlider.getValue();
         processorRef.updateVoiceParams();
     };
 
-    // --- Effects section ---
-    initLabel (reverbLabel, "Reverb", this);
-    initSlider (reverbSlider, 0.0, 1.0, 0.01, 0.25, this);
+    // --- Effects section (rotary knobs) ---
+    initLabel (reverbLabel, "REVERB", this);
+    initRotary (reverbSlider, 0.0, 1.0, 0.01, 0.25, this);
     reverbSlider.onValueChange = [this]
     {
         processorRef.getEffectsParams().reverbWet = static_cast<float> (reverbSlider.getValue());
@@ -193,8 +245,8 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
     };
 
-    initLabel (delayLabel, "Delay", this);
-    initSlider (delaySlider, 0.0, 1.0, 0.01, 0.0, this);
+    initLabel (delayLabel, "DELAY", this);
+    initRotary (delaySlider, 0.0, 1.0, 0.01, 0.0, this);
     delaySlider.onValueChange = [this]
     {
         float wet = static_cast<float> (delaySlider.getValue());
@@ -203,8 +255,8 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
     };
 
-    initLabel (compLabel, "Comp", this);
-    initSlider (compSlider, 0.0, 1.0, 0.01, 0.0, this);
+    initLabel (compLabel, "COMP", this);
+    initRotary (compSlider, 0.0, 1.0, 0.01, 0.0, this);
     compSlider.onValueChange = [this]
     {
         float v = static_cast<float> (compSlider.getValue());
@@ -215,17 +267,69 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
     };
 
-    initLabel (masterLabel, "Master", this);
-    initSlider (masterSlider, 0.0, 2.0, 0.01, 1.0, this);
+    initLabel (masterLabel, "MASTER", this);
+    initRotary (masterSlider, 0.0, 2.0, 0.01, 1.0, this);
     masterSlider.onValueChange = [this]
     {
         processorRef.getEffectsParams().masterVolume = static_cast<float> (masterSlider.getValue());
         processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
     };
 
+    // --- Distortion section ---
+    initLabel (distTypeLabel, "TYPE", this);
+    distTypeBox.addItem ("Overdrive", 1);
+    distTypeBox.addItem ("Bitcrush", 2);
+    distTypeBox.addItem ("Wavefold", 3);
+    distTypeBox.setSelectedId (1, juce::dontSendNotification);
+    distTypeBox.setColour (juce::ComboBox::backgroundColourId, Colours::panelBg);
+    distTypeBox.setColour (juce::ComboBox::outlineColourId, Colours::panelBorder);
+    distTypeBox.setColour (juce::ComboBox::textColourId, Colours::text);
+    distTypeBox.onChange = [this]
+    {
+        static const DistortionType types[] = {
+            DistortionType::Overdrive,
+            DistortionType::Bitcrush,
+            DistortionType::Wavefold };
+        int idx = distTypeBox.getSelectedId() - 1;
+        if (idx >= 0 && idx < 3)
+        {
+            processorRef.getEffectsParams().distortionType = types[idx];
+            processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
+        }
+    };
+    addAndMakeVisible (distTypeBox);
+
+    initLabel (distDriveLabel, "DRIVE", this);
+    initRotary (distDriveSlider, 0.0, 1.0, 0.01, 0.0, this);
+    distDriveSlider.onValueChange = [this]
+    {
+        float v = static_cast<float> (distDriveSlider.getValue());
+        processorRef.getEffectsParams().distortionDrive = v;
+        processorRef.getEffectsParams().distortionEnabled = v > 0.001f;
+        processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
+    };
+
+    initLabel (distInstLabel, "UNSTABLE", this);
+    initRotary (distInstSlider, 0.0, 1.0, 0.01, 0.0, this);
+    distInstSlider.onValueChange = [this]
+    {
+        processorRef.getEffectsParams().distortionInstability =
+            static_cast<float> (distInstSlider.getValue());
+        processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
+    };
+
+    initLabel (distWetLabel, "MIX", this);
+    initRotary (distWetSlider, 0.0, 1.0, 0.01, 0.5, this);
+    distWetSlider.onValueChange = [this]
+    {
+        processorRef.getEffectsParams().distortionWet =
+            static_cast<float> (distWetSlider.getValue());
+        processorRef.getEffectsChain().setParameters (processorRef.getEffectsParams());
+    };
+
     showEngineControls();
     syncFromProcessor();
-    setSize (760, 540);
+    setSize (820, 620);
     startTimerHz (10);
 }
 
@@ -259,7 +363,6 @@ void TsukiSynthEditor::syncFromProcessor()
     }
     engineBox.setSelectedId (engId, juce::dontSendNotification);
 
-    // Cimbalom
     auto& cim = processorRef.getCimbalomParams();
     strikeSlider.setValue (cim.strikePosition, juce::dontSendNotification);
     exciterBox.setSelectedId (static_cast<int> (cim.exciter) + 1, juce::dontSendNotification);
@@ -267,22 +370,31 @@ void TsukiSynthEditor::syncFromProcessor()
     detuneSlider.setValue (cim.detuneAmount, juce::dontSendNotification);
     soundboardSlider.setValue (cim.soundboardAmount, juce::dontSendNotification);
 
-    // Chromatic
     auto& chr = processorRef.getChromaticParams();
     subEngineBox.setSelectedId (static_cast<int> (chr.subEngine) + 1, juce::dontSendNotification);
     waterSlider.setValue (chr.waterLevel, juce::dontSendNotification);
 
-    // FM
     auto& fm = processorRef.getFMParams();
     fmPresetBox.setSelectedId (static_cast<int> (fm.preset) + 1, juce::dontSendNotification);
     fmDetuneSlider.setValue (fm.detune, juce::dontSendNotification);
     fmVolumeSlider.setValue (fm.masterVolume, juce::dontSendNotification);
 
-    // Effects
     auto& fx = processorRef.getEffectsParams();
     reverbSlider.setValue (fx.reverbWet, juce::dontSendNotification);
     delaySlider.setValue (fx.delayWet, juce::dontSendNotification);
     masterSlider.setValue (fx.masterVolume, juce::dontSendNotification);
+    distDriveSlider.setValue (fx.distortionDrive, juce::dontSendNotification);
+    distInstSlider.setValue (fx.distortionInstability, juce::dontSendNotification);
+    distWetSlider.setValue (fx.distortionWet, juce::dontSendNotification);
+
+    int distId = 1;
+    switch (fx.distortionType)
+    {
+        case DistortionType::Overdrive: distId = 1; break;
+        case DistortionType::Bitcrush:  distId = 2; break;
+        case DistortionType::Wavefold:  distId = 3; break;
+    }
+    distTypeBox.setSelectedId (distId, juce::dontSendNotification);
 
     populateMaterialBox();
     showEngineControls();
@@ -298,13 +410,11 @@ void TsukiSynthEditor::showEngineControls()
     bool isWaterGong = processorRef.getChromaticParams().subEngine
                     == ChromaticSubEngine::WaterGong;
 
-    // Shared physical controls
     materialLabel.setVisible (! isFM);
     materialBox.setVisible (! isFM);
     strikeLabel.setVisible (! isFM);
     strikeSlider.setVisible (! isFM);
 
-    // Cimbalom
     exciterLabel.setVisible (isCim);
     exciterBox.setVisible (isCim);
     stringsLabel.setVisible (isCim);
@@ -314,13 +424,11 @@ void TsukiSynthEditor::showEngineControls()
     soundboardLabel.setVisible (isCim);
     soundboardSlider.setVisible (isCim);
 
-    // Chromatic
     subEngineLabel.setVisible (isChr);
     subEngineBox.setVisible (isChr);
     waterLabel.setVisible (isChr && isWaterGong);
     waterSlider.setVisible (isChr && isWaterGong);
 
-    // FM Piano
     fmPresetLabel.setVisible (isFM);
     fmPresetBox.setVisible (isFM);
     fmDetuneLabel.setVisible (isFM);
@@ -329,130 +437,206 @@ void TsukiSynthEditor::showEngineControls()
     fmVolumeSlider.setVisible (isFM);
 }
 
+void TsukiSynthEditor::paintSectionPanel (juce::Graphics& g,
+                                            juce::Rectangle<int> bounds,
+                                            const juce::String& title)
+{
+    g.setColour (Colours::panelBg);
+    g.fillRoundedRectangle (bounds.toFloat(), 6.0f);
+    g.setColour (Colours::panelBorder);
+    g.drawRoundedRectangle (bounds.toFloat().reduced (0.5f), 6.0f, 1.0f);
+
+    if (title.isNotEmpty())
+    {
+        g.setColour (Colours::accentDim);
+        g.setFont (juce::FontOptions (10.0f));
+        g.drawText (title, bounds.getX() + 10, bounds.getY() + 4, 120, 14,
+                    juce::Justification::centredLeft);
+    }
+}
+
 void TsukiSynthEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colour (0xff1a1a2e));
+    g.fillAll (Colours::bg);
 
-    g.setColour (juce::Colour (0xffe0d6c8));
-    g.setFont (juce::FontOptions (22.0f));
-    g.drawText ("TsukiSynth",
-                getLocalBounds().removeFromTop (40),
-                juce::Justification::centred);
+    // Header
+    auto headerArea = getLocalBounds().removeFromTop (50);
+    g.setColour (Colours::accent);
+    g.setFont (juce::FontOptions (20.0f));
+    g.drawText (juce::CharPointer_UTF8 ("\xe6\x9c\x88\xe5\x85\x89\xe5\x90\x88\xe6\x88\x90\xe5\x99\xa8"),
+                headerArea.removeFromLeft (140).withTrimmedLeft (16),
+                juce::Justification::centredLeft);
+    g.setColour (Colours::text);
+    g.setFont (juce::FontOptions (18.0f));
+    g.drawText ("TsukiSynth", headerArea.removeFromLeft (130),
+                juce::Justification::centredLeft);
 
-    g.setFont (juce::FontOptions (11.0f));
-    g.setColour (juce::Colour (0xff666666));
-    g.drawText ("Physical Modeling Multi-Engine Synthesizer",
-                getLocalBounds().removeFromTop (55),
-                juce::Justification::centred);
+    g.setColour (Colours::textDim);
+    g.setFont (juce::FontOptions (10.0f));
+    g.drawText ("Physical Modeling Multi-Engine",
+                headerArea, juce::Justification::centredLeft);
 
-    g.setColour (juce::Colour (0xff333355));
-    g.drawHorizontalLine (58, 20.0f, static_cast<float> (getWidth() - 20));
-
-    int fxLineY = getHeight() - 155;
-    g.drawHorizontalLine (fxLineY, 20.0f, static_cast<float> (getWidth() - 20));
+    // Section panels
+    paintSectionPanel (g, enginePanelBounds, "ENGINE");
+    paintSectionPanel (g, effectsPanelBounds, "EFFECTS");
+    paintSectionPanel (g, distortionPanelBounds, "DISTORTION");
 }
 
 void TsukiSynthEditor::resized()
 {
     auto area = getLocalBounds();
-    keyboardComponent.setBounds (area.removeFromBottom (120).reduced (10, 0));
 
-    area.removeFromTop (64);
-    auto ctrl = area.reduced (20, 0);
+    // Keyboard at bottom
+    keyboardComponent.setBounds (area.removeFromBottom (90).reduced (8, 4));
 
-    const int rH = 28, labelW = 80, gap = 5;
+    // Header
+    area.removeFromTop (54);
 
-    // Row 0: Engine + Material
-    auto row = ctrl.removeFromTop (rH);
-    engineLabel.setBounds (row.removeFromLeft (labelW));
-    engineBox.setBounds (row.removeFromLeft (140));
-    row.removeFromLeft (20);
-    materialLabel.setBounds (row.removeFromLeft (65));
-    materialBox.setBounds (row.removeFromLeft (180));
+    auto content = area.reduced (10, 0);
 
-    ctrl.removeFromTop (gap);
-
-    auto eng = processorRef.getEngineType();
-
-    if (eng == EngineType::FMPiano)
+    // Engine panel (top section)
+    enginePanelBounds = content.removeFromTop (150);
     {
-        // Row 1: Preset + Detune
-        row = ctrl.removeFromTop (rH);
-        fmPresetLabel.setBounds (row.removeFromLeft (labelW));
-        fmPresetBox.setBounds (row.removeFromLeft (160));
-        row.removeFromLeft (20);
-        fmDetuneLabel.setBounds (row.removeFromLeft (55));
-        fmDetuneSlider.setBounds (row.removeFromLeft (160));
+        auto inner = enginePanelBounds.reduced (12, 20);
+        inner.removeFromTop (2);
 
-        ctrl.removeFromTop (gap);
+        const int rH = 26, labelW = 70, gap = 4;
 
-        // Row 2: Volume
-        row = ctrl.removeFromTop (rH);
-        fmVolumeLabel.setBounds (row.removeFromLeft (labelW));
-        fmVolumeSlider.setBounds (row.removeFromLeft (200));
-    }
-    else
-    {
-        // Row 1: Strike + engine-specific
-        row = ctrl.removeFromTop (rH);
-        strikeLabel.setBounds (row.removeFromLeft (labelW));
-        strikeSlider.setBounds (row.removeFromLeft (190));
-        row.removeFromLeft (20);
-
-        if (eng == EngineType::Cimbalom)
+        // Row 0: Engine selector + Material
+        auto row = inner.removeFromTop (rH);
+        engineLabel.setBounds (row.removeFromLeft (labelW));
+        engineBox.setBounds (row.removeFromLeft (130));
+        row.removeFromLeft (16);
+        if (materialBox.isVisible())
         {
-            exciterLabel.setBounds (row.removeFromLeft (55));
-            exciterBox.setBounds (row.removeFromLeft (100));
+            materialLabel.setBounds (row.removeFromLeft (65));
+            materialBox.setBounds (row.removeFromLeft (180));
+        }
+
+        inner.removeFromTop (gap);
+        auto eng = processorRef.getEngineType();
+
+        if (eng == EngineType::FMPiano)
+        {
+            row = inner.removeFromTop (rH);
+            fmPresetLabel.setBounds (row.removeFromLeft (labelW));
+            fmPresetBox.setBounds (row.removeFromLeft (160));
+            row.removeFromLeft (16);
+            fmDetuneLabel.setBounds (row.removeFromLeft (55));
+            fmDetuneSlider.setBounds (row.removeFromLeft (180));
+
+            inner.removeFromTop (gap);
+            row = inner.removeFromTop (rH);
+            fmVolumeLabel.setBounds (row.removeFromLeft (labelW));
+            fmVolumeSlider.setBounds (row.removeFromLeft (200));
         }
         else
         {
-            subEngineLabel.setBounds (row.removeFromLeft (40));
-            subEngineBox.setBounds (row.removeFromLeft (150));
-        }
+            row = inner.removeFromTop (rH);
+            strikeLabel.setBounds (row.removeFromLeft (labelW));
+            strikeSlider.setBounds (row.removeFromLeft (180));
+            row.removeFromLeft (16);
 
-        ctrl.removeFromTop (gap);
+            if (eng == EngineType::Cimbalom)
+            {
+                exciterLabel.setBounds (row.removeFromLeft (55));
+                exciterBox.setBounds (row.removeFromLeft (100));
+            }
+            else
+            {
+                subEngineLabel.setBounds (row.removeFromLeft (40));
+                subEngineBox.setBounds (row.removeFromLeft (150));
+            }
 
-        // Row 2
-        row = ctrl.removeFromTop (rH);
-        if (eng == EngineType::Cimbalom)
-        {
-            stringsLabel.setBounds (row.removeFromLeft (labelW));
-            stringsSlider.setBounds (row.removeFromLeft (140));
-            row.removeFromLeft (20);
-            detuneLabel.setBounds (row.removeFromLeft (55));
-            detuneSlider.setBounds (row.removeFromLeft (160));
-        }
-        else
-        {
-            waterLabel.setBounds (row.removeFromLeft (labelW));
-            waterSlider.setBounds (row.removeFromLeft (200));
-        }
+            inner.removeFromTop (gap);
+            row = inner.removeFromTop (rH);
+            if (eng == EngineType::Cimbalom)
+            {
+                stringsLabel.setBounds (row.removeFromLeft (labelW));
+                stringsSlider.setBounds (row.removeFromLeft (130));
+                row.removeFromLeft (16);
+                detuneLabel.setBounds (row.removeFromLeft (55));
+                detuneSlider.setBounds (row.removeFromLeft (160));
+            }
+            else
+            {
+                waterLabel.setBounds (row.removeFromLeft (labelW));
+                waterSlider.setBounds (row.removeFromLeft (200));
+            }
 
-        ctrl.removeFromTop (gap);
-
-        // Row 3 (Cimbalom only)
-        row = ctrl.removeFromTop (rH);
-        if (eng == EngineType::Cimbalom)
-        {
-            soundboardLabel.setBounds (row.removeFromLeft (labelW));
-            soundboardSlider.setBounds (row.removeFromLeft (200));
+            inner.removeFromTop (gap);
+            row = inner.removeFromTop (rH);
+            if (eng == EngineType::Cimbalom)
+            {
+                soundboardLabel.setBounds (row.removeFromLeft (labelW));
+                soundboardSlider.setBounds (row.removeFromLeft (200));
+            }
         }
     }
 
-    // Effects row (always visible)
-    ctrl.removeFromTop (gap + 5);
-    row = ctrl.removeFromTop (rH);
-    reverbLabel.setBounds (row.removeFromLeft (50));
-    reverbSlider.setBounds (row.removeFromLeft (110));
-    row.removeFromLeft (5);
-    delayLabel.setBounds (row.removeFromLeft (40));
-    delaySlider.setBounds (row.removeFromLeft (110));
-    row.removeFromLeft (5);
-    compLabel.setBounds (row.removeFromLeft (40));
-    compSlider.setBounds (row.removeFromLeft (100));
-    row.removeFromLeft (5);
-    masterLabel.setBounds (row.removeFromLeft (50));
-    masterSlider.setBounds (row.removeFromLeft (100));
+    content.removeFromTop (8);
+
+    // Bottom area: Effects left, Distortion right
+    auto bottomPanels = content.removeFromTop (180);
+
+    // Effects panel (left)
+    effectsPanelBounds = bottomPanels.removeFromLeft (bottomPanels.getWidth() * 3 / 5 - 4);
+    {
+        auto inner = effectsPanelBounds.reduced (10, 22);
+        const int knobW = 70, knobH = 80;
+        auto knobRow = inner.removeFromTop (knobH);
+
+        auto slot = knobRow.removeFromLeft (knobW);
+        reverbLabel.setBounds (slot.removeFromTop (14));
+        reverbSlider.setBounds (slot);
+
+        knobRow.removeFromLeft (8);
+        slot = knobRow.removeFromLeft (knobW);
+        delayLabel.setBounds (slot.removeFromTop (14));
+        delaySlider.setBounds (slot);
+
+        knobRow.removeFromLeft (8);
+        slot = knobRow.removeFromLeft (knobW);
+        compLabel.setBounds (slot.removeFromTop (14));
+        compSlider.setBounds (slot);
+
+        knobRow.removeFromLeft (8);
+        slot = knobRow.removeFromLeft (knobW);
+        masterLabel.setBounds (slot.removeFromTop (14));
+        masterSlider.setBounds (slot);
+    }
+
+    bottomPanels.removeFromLeft (8);
+
+    // Distortion panel (right)
+    distortionPanelBounds = bottomPanels;
+    {
+        auto inner = distortionPanelBounds.reduced (10, 22);
+
+        // Type selector row
+        auto typeRow = inner.removeFromTop (24);
+        distTypeLabel.setBounds (typeRow.removeFromLeft (34));
+        distTypeBox.setBounds (typeRow.removeFromLeft (110));
+
+        inner.removeFromTop (8);
+
+        const int knobW = 64, knobH = 80;
+        auto knobRow = inner.removeFromTop (knobH);
+
+        auto slot = knobRow.removeFromLeft (knobW);
+        distDriveLabel.setBounds (slot.removeFromTop (14));
+        distDriveSlider.setBounds (slot);
+
+        knobRow.removeFromLeft (6);
+        slot = knobRow.removeFromLeft (knobW);
+        distInstLabel.setBounds (slot.removeFromTop (14));
+        distInstSlider.setBounds (slot);
+
+        knobRow.removeFromLeft (6);
+        slot = knobRow.removeFromLeft (knobW);
+        distWetLabel.setBounds (slot.removeFromTop (14));
+        distWetSlider.setBounds (slot);
+    }
 }
 
 void TsukiSynthEditor::populateMaterialBox()
