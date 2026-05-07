@@ -1,0 +1,54 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Rabbit Carrot Button",
+    "id": "rabbit_ui_001",
+    "author": "TsukiSynth",
+    "description": "蘿蔔按鈕 — 木質短觸，圓潤可愛",
+    "created": "2026-05-07",
+    "tags": ["ui", "click", "wood", "short", "cute"],
+    "mood": "playful",
+    "use_case": "UI button click",
+    "category": "character_ui",
+    "worldview": "Rabbit",
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "rabbit_ui",
+    "character": ["soft", "punch"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.75,
+    "effects": {
+      "reverb": { "decay": 0.5, "wet": 0.1 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.15,
+      "engine": "beam",
+      "note": "A5",
+      "velocity": 0.55,
+      "params": {
+        "material": "wood_maple",
+        "thickness_mm": 4.0,
+        "length_mm": 25,
+        "width_mm": 15,
+        "strike_position": 0.3,
+        "exciter": "wood_mallet"
+      }
+    }
+  ],
+  "export": {
+    "filename": "rabbit_ui_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 50,
+    "export_filename": "UI_Soft_OneShot_A5"
+  }
+}
