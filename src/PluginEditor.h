@@ -35,6 +35,10 @@ private:
     // Engine selector
     ParamCombo engineCombo;
 
+    // Preset selector (non-APVTS, manually managed)
+    std::unique_ptr<juce::ComboBox> presetCombo;
+    std::unique_ptr<juce::Label>    presetLabel;
+
     // --- Cimbalom controls ---
     ParamCombo  cimMaterialCombo;
     ParamCombo  cimHammerCombo;

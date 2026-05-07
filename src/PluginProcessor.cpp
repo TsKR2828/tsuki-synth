@@ -3,6 +3,7 @@
 #include "engines/CimbalomEngine.h"
 #include "engines/ChromaticEngine.h"
 #include "engines/FMPianoEngine.h"
+#include "Presets.h"
 #include "BinaryData.h"
 
 // == Parameter Layout ==
@@ -352,6 +353,52 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
     auto xml = getXmlFromBinary (data, sizeInBytes);
     if (xml != nullptr && xml->hasTagName (apvts.state.getType()))
         apvts.replaceState (juce::ValueTree::fromXml (*xml));
+}
+
+// == Programs (Factory Presets) ==
+int TsukiSynthProcessor::getNumPrograms()
+{
+    int count = 0;
+    getFactoryPresetList (count);
+    return count;
+}
+
+int TsukiSynthProcessor::getCurrentProgram()
+{
+    return currentProgram;
+}
+
+void TsukiSynthProcessor::setCurrentProgram (int index)
+{
+    int count = 0;
+    auto* presets = getFactoryPresetList (count);
+
+    if (index < 0 || index >= count)
+        return;
+
+    currentProgram = index;
+    const auto& preset = presets[index];
+
+    for (int i = 0; i < preset.numParams; ++i)
+    {
+        const auto& entry = preset.params[i];
+        if (auto* param = apvts.getParameter (entry.paramID))
+        {
+            float normalized = param->convertTo0to1 (entry.rawValue);
+            param->setValueNotifyingHost (normalized);
+        }
+    }
+}
+
+const juce::String TsukiSynthProcessor::getProgramName (int index)
+{
+    int count = 0;
+    auto* presets = getFactoryPresetList (count);
+
+    if (index >= 0 && index < count)
+        return presets[index].name;
+
+    return {};
 }
 
 // == Editor ==

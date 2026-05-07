@@ -2,6 +2,41 @@
 
 ---
 
+## 2026-05-08 — Phase 8 完成：出廠預設 + 收尾
+
+**Factory Presets（12 組出廠音色）：**
+
+| # | 名稱 | 引擎 | 特色 |
+|---|------|------|------|
+| 0 | Steel Hammered Dulcimer | Cimbalom | 經典揚琴音色（Steel + Wood hammer） |
+| 1 | Copper Warm Strings | Cimbalom | 溫暖厚實（Copper + Felt hammer） |
+| 2 | Glass Wind Chimes | Cimbalom | 風鈴效果（Glass + Metal + 高失諧） |
+| 3 | Muted Felt Piano | Cimbalom | 悶棉音色（Cotton hammer + 高擊打位置） |
+| 4 | Crystal Tongue Drum | Chromatic | 空靈鼓（Aluminum + Tongue Drum） |
+| 5 | Bronze Water Gong | Chromatic | 水鑼（Bronze + pitch glide 0.6） |
+| 6 | Wooden Kalimba | Chromatic | 拇指琴（Spruce + Tongue Drum） |
+| 7 | Ethereal Steel Bells | Chromatic | 空靈鐘聲（Custom harmonics + Delay） |
+| 8 | Acoustic Piano | FM Piano | FM 鋼琴（ratio=1, index=5, bright=0.7） |
+| 9 | Electric Rhodes | FM Piano | Rhodes 電鋼琴（ratio=1 + delay） |
+| 10 | DX7 Crystal Bell | FM Piano | DX7 水晶鈴（ratio=7, index=8） |
+| 11 | Church Organ | FM Piano | 管風琴（ratio=1, feedback=0.5） |
+
+**Preset 系統：**
+- `src/Presets.h` — 靜態預設陣列，raw parameter values
+- PluginProcessor 實作 `getNumPrograms/setCurrentProgram/getProgramName`
+- 使用 `param->convertTo0to1(raw)` + `setValueNotifyingHost()` 正確轉換參數值
+- DAW preset browser 相容（VST3 program change）
+- PluginEditor 頂部 Preset ComboBox（與 Engine selector 並排）
+
+**目前插件總覽：**
+- 3 個合成引擎（Cimbalom / Chromatic / FM Piano）
+- 28 個可自動化 APVTS 參數
+- 7 個效果參數（Reverb / Delay / Compressor）
+- 12 個出廠預設
+- VST3 + Standalone 雙格式輸出
+
+---
+
 ## 2026-05-08 — Phase 6 完成：效果鏈
 
 **新增效果模組（`src/effects/`）：**

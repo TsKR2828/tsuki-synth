@@ -64,18 +64,22 @@
 - [x] PluginEditor 效果控制面板（always visible, 底部三行）
 - [x] 編譯通過（VST3 + Standalone）
 
-## 待辦：Phase 7 — GUI
+## 待辦：Phase 7 — GUI（需月月參與設計）
 
-- [ ] 深色木質調介面
-- [ ] 引擎切換 tabs
-- [ ] 物理參數旋鈕
+- [ ] 深色木質調介面（需設計方向確認）
+- [ ] 自訂旋鈕 / 滑桿視覺
 - [ ] 模態分佈視覺化
+- [x] 引擎切換 UI（已有 ComboBox + 面板切換）
 
-## 待辦：Phase 8 — 預設 + 收尾
+## 已完成：Phase 8 — 預設 + 收尾
 
-- [ ] 出廠預設音色
-- [ ] DAW Automation 驗證
-- [ ] 多 DAW 測試
+- [x] 出廠預設音色（12 組：Cimbalom×4 + Chromatic×4 + FM Piano×4）
+- [x] Preset selector ComboBox（PluginEditor 頂部）
+- [x] JUCE getNumPrograms/setCurrentProgram 整合（DAW preset browser 可用）
+- [x] DAW Automation — 28 個 APVTS 參數全部可自動化
+- [x] State save/load（APVTS → XML）
+- [ ] 多 DAW 測試 — 待月月在 Cubase 中驗證
+- [ ] A/B 對比 HTML 原型 — 待月月測試
 
 ## 低優先
 

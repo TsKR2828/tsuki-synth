@@ -1,8 +1,31 @@
 #include "PluginEditor.h"
+#include "Presets.h"
 
 TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p)
 {
+    // Preset selector (manual, not APVTS)
+    presetCombo = std::make_unique<juce::ComboBox>();
+    presetLabel = std::make_unique<juce::Label> ("", "Preset");
+    {
+        int count = 0;
+        auto* presets = getFactoryPresetList (count);
+        for (int i = 0; i < count; ++i)
+            presetCombo->addItem (presets[i].name, i + 1);
+        presetCombo->setSelectedId (processorRef.getCurrentProgram() + 1,
+                                    juce::dontSendNotification);
+        presetCombo->onChange = [this]()
+        {
+            int idx = presetCombo->getSelectedId() - 1;
+            if (idx >= 0)
+                processorRef.setCurrentProgram (idx);
+        };
+    }
+    presetLabel->setColour (juce::Label::textColourId, juce::Colour (0xffcccccc));
+    presetLabel->setFont (juce::FontOptions (12.0f));
+    addAndMakeVisible (*presetCombo);
+    addAndMakeVisible (*presetLabel);
+
     // Engine selector
     setupCombo (engineCombo, "engine", "Engine");
 
@@ -161,9 +184,14 @@ void TsukiSynthEditor::resized()
     int labelW = 80;
     int gap = 4;
 
-    // Row 0: Engine selector
+    // Row 0: Preset + Engine selector (side by side)
     auto row0 = area.removeFromTop (rowH);
-    engineCombo.label->setBounds (row0.removeFromLeft (labelW));
+    int half0 = row0.getWidth() / 2;
+    auto r0left = row0.removeFromLeft (half0);
+    presetLabel->setBounds (r0left.removeFromLeft (50));
+    presetCombo->setBounds (r0left.reduced (2));
+    row0.removeFromLeft (10);
+    engineCombo.label->setBounds (row0.removeFromLeft (55));
     engineCombo.combo->setBounds (row0.reduced (2));
     area.removeFromTop (gap);
 

@@ -22,10 +22,10 @@ public:
     bool isMidiEffect() const override { return false; }
     double getTailLengthSeconds() const override { return 2.0; }
 
-    int getNumPrograms() override { return 1; }
-    int getCurrentProgram() override { return 0; }
-    void setCurrentProgram (int) override {}
-    const juce::String getProgramName (int) override { return {}; }
+    int getNumPrograms() override;
+    int getCurrentProgram() override;
+    void setCurrentProgram (int index) override;
+    const juce::String getProgramName (int index) override;
     void changeProgramName (int, const juce::String&) override {}
 
     void getStateInformation (juce::MemoryBlock& destData) override;
@@ -43,6 +43,7 @@ private:
 
     std::atomic<float>* pEngine = nullptr;
     int lastEngine = -1;
+    int currentProgram = 0;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout
         createParameterLayout();
