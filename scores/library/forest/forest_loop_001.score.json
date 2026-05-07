@@ -1,0 +1,57 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Forest Rain Pattern",
+    "id": "forest_loop_001",
+    "author": "TsukiSynth",
+    "description": "雨滴節奏 — 4小節竹管規律滴落，自然循環",
+    "created": "2026-05-07",
+    "tags": ["loop", "rain", "bamboo", "gentle", "rhythm"],
+    "mood": "calm",
+    "use_case": "BGM motif / loop element",
+    "category": "worldview_sfx",
+    "worldview": "Forest",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "loop",
+    "family_id": "forest_ambient",
+    "character": ["soft", "pulse"],
+    "loop_bpm": 80,
+    "loop_bars": 4
+  },
+  "global": {
+    "bpm": 80,
+    "sample_rate": 48000,
+    "master_volume": 0.55,
+    "effects": {
+      "reverb": { "decay": 2.5, "wet": 0.35 },
+      "delay": { "time_ms": 375, "feedback": 0.2, "wet": 0.08 }
+    }
+  },
+  "events": [
+    { "time": 0.0, "duration": 0.8, "engine": "beam", "note": "G5", "velocity": 0.25, "params": { "material": "bamboo", "thickness_mm": 2.0, "length_mm": 28, "width_mm": 7, "strike_position": 0.45, "exciter": "finger_tap" } },
+    { "time": 0.75, "duration": 0.8, "engine": "beam", "note": "D6", "velocity": 0.18, "params": { "material": "bamboo", "thickness_mm": 1.8, "length_mm": 20, "width_mm": 6, "strike_position": 0.4, "exciter": "finger_tap" } },
+    { "time": 1.5, "duration": 0.8, "engine": "beam", "note": "A5", "velocity": 0.22, "params": { "material": "bamboo", "thickness_mm": 2.0, "length_mm": 25, "width_mm": 7, "strike_position": 0.5, "exciter": "finger_tap" } },
+    { "time": 2.25, "duration": 0.8, "engine": "beam", "note": "E6", "velocity": 0.2, "params": { "material": "bamboo", "thickness_mm": 1.5, "length_mm": 18, "width_mm": 6, "strike_position": 0.42, "exciter": "finger_tap" } },
+    { "time": 3.0, "duration": 0.8, "engine": "beam", "note": "B5", "velocity": 0.24, "params": { "material": "bamboo", "thickness_mm": 2.0, "length_mm": 23, "width_mm": 7, "strike_position": 0.48, "exciter": "finger_tap" } },
+    { "time": 3.75, "duration": 0.8, "engine": "beam", "note": "F#6", "velocity": 0.16, "params": { "material": "bamboo", "thickness_mm": 1.5, "length_mm": 16, "width_mm": 6, "strike_position": 0.38, "exciter": "finger_tap" } },
+    { "time": 4.5, "duration": 0.8, "engine": "beam", "note": "C6", "velocity": 0.23, "params": { "material": "bamboo", "thickness_mm": 1.8, "length_mm": 21, "width_mm": 7, "strike_position": 0.44, "exciter": "finger_tap" } },
+    { "time": 5.25, "duration": 0.8, "engine": "beam", "note": "G5", "velocity": 0.2, "params": { "material": "bamboo", "thickness_mm": 2.0, "length_mm": 28, "width_mm": 7, "strike_position": 0.5, "exciter": "finger_tap" } },
+    { "time": 6.0, "duration": 0.8, "engine": "beam", "note": "D6", "velocity": 0.22, "params": { "material": "bamboo", "thickness_mm": 1.8, "length_mm": 20, "width_mm": 6, "strike_position": 0.46, "exciter": "finger_tap" } },
+    { "time": 6.75, "duration": 0.8, "engine": "beam", "note": "A5", "velocity": 0.19, "params": { "material": "bamboo", "thickness_mm": 2.0, "length_mm": 25, "width_mm": 7, "strike_position": 0.42, "exciter": "finger_tap" } },
+    { "time": 7.5, "duration": 0.8, "engine": "beam", "note": "E6", "velocity": 0.21, "params": { "material": "bamboo", "thickness_mm": 1.5, "length_mm": 18, "width_mm": 6, "strike_position": 0.5, "exciter": "finger_tap" } },
+    { "time": 8.25, "duration": 0.8, "engine": "beam", "note": "B5", "velocity": 0.17, "params": { "material": "bamboo", "thickness_mm": 2.0, "length_mm": 23, "width_mm": 7, "strike_position": 0.45, "exciter": "finger_tap" } },
+    { "time": 9.0, "duration": 0.8, "engine": "beam", "note": "F#5", "velocity": 0.24, "params": { "material": "bamboo", "thickness_mm": 2.2, "length_mm": 30, "width_mm": 8, "strike_position": 0.4, "exciter": "finger_tap" } },
+    { "time": 9.75, "duration": 0.8, "engine": "beam", "note": "C6", "velocity": 0.18, "params": { "material": "bamboo", "thickness_mm": 1.8, "length_mm": 21, "width_mm": 7, "strike_position": 0.48, "exciter": "finger_tap" } },
+    { "time": 10.5, "duration": 0.8, "engine": "beam", "note": "G5", "velocity": 0.2, "params": { "material": "bamboo", "thickness_mm": 2.0, "length_mm": 28, "width_mm": 7, "strike_position": 0.42, "exciter": "finger_tap" } },
+    { "time": 11.25, "duration": 0.8, "engine": "beam", "note": "D6", "velocity": 0.15, "params": { "material": "bamboo", "thickness_mm": 1.8, "length_mm": 20, "width_mm": 6, "strike_position": 0.5, "exciter": "finger_tap" } }
+  ],
+  "export": {
+    "filename": "forest_loop_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 0,
+    "export_filename": "Ambience_Soft_Loop_G5"
+  }
+}

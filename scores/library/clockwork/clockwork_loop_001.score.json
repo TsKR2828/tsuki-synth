@@ -1,0 +1,51 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Clockwork Tick Loop",
+    "id": "clockwork_loop_001",
+    "author": "TsukiSynth",
+    "description": "鐘擺節奏 — 2小節精密黃銅 tick-tock + 齒輪碎音點綴",
+    "created": "2026-05-07",
+    "tags": ["loop", "tick", "precise", "mechanical", "rhythm"],
+    "mood": "neutral",
+    "use_case": "BGM motif / loop element",
+    "category": "worldview_sfx",
+    "worldview": "Clockwork",
+    "variation_of": null,
+    "primary_type": "mechanical",
+    "sound_type": "loop",
+    "family_id": "clockwork_ambient",
+    "character": ["pulse", "metallic"],
+    "loop_bpm": 120,
+    "loop_bars": 2
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.65,
+    "effects": {
+      "reverb": { "decay": 1.5, "wet": 0.2 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    { "time": 0.0, "duration": 0.05, "engine": "beam", "note": "F5", "velocity": 0.4, "params": { "material": "brass", "thickness_mm": 2.0, "length_mm": 15, "width_mm": 5, "strike_position": 0.1, "exciter": "metal_tip" } },
+    { "time": 0.5, "duration": 0.05, "engine": "beam", "note": "F5", "velocity": 0.3, "params": { "material": "brass", "thickness_mm": 2.0, "length_mm": 15, "width_mm": 5, "strike_position": 0.1, "exciter": "metal_tip" } },
+    { "time": 1.0, "duration": 0.05, "engine": "beam", "note": "F5", "velocity": 0.4, "params": { "material": "brass", "thickness_mm": 2.0, "length_mm": 15, "width_mm": 5, "strike_position": 0.1, "exciter": "metal_tip" } },
+    { "time": 1.25, "duration": 0.08, "engine": "beam", "note": "C6", "velocity": 0.25, "params": { "material": "brass", "thickness_mm": 1.5, "length_mm": 10, "width_mm": 4, "strike_position": 0.15, "exciter": "metal_tip" } },
+    { "time": 1.5, "duration": 0.05, "engine": "beam", "note": "F5", "velocity": 0.3, "params": { "material": "brass", "thickness_mm": 2.0, "length_mm": 15, "width_mm": 5, "strike_position": 0.1, "exciter": "metal_tip" } },
+    { "time": 2.0, "duration": 0.05, "engine": "beam", "note": "F5", "velocity": 0.4, "params": { "material": "brass", "thickness_mm": 2.0, "length_mm": 15, "width_mm": 5, "strike_position": 0.1, "exciter": "metal_tip" } },
+    { "time": 2.5, "duration": 0.05, "engine": "beam", "note": "F5", "velocity": 0.3, "params": { "material": "brass", "thickness_mm": 2.0, "length_mm": 15, "width_mm": 5, "strike_position": 0.1, "exciter": "metal_tip" } },
+    { "time": 3.0, "duration": 0.05, "engine": "beam", "note": "F5", "velocity": 0.4, "params": { "material": "brass", "thickness_mm": 2.0, "length_mm": 15, "width_mm": 5, "strike_position": 0.1, "exciter": "metal_tip" } },
+    { "time": 3.25, "duration": 0.08, "engine": "beam", "note": "E6", "velocity": 0.22, "params": { "material": "brass", "thickness_mm": 1.5, "length_mm": 10, "width_mm": 4, "strike_position": 0.15, "exciter": "metal_tip" } },
+    { "time": 3.5, "duration": 0.05, "engine": "beam", "note": "F5", "velocity": 0.3, "params": { "material": "brass", "thickness_mm": 2.0, "length_mm": 15, "width_mm": 5, "strike_position": 0.1, "exciter": "metal_tip" } }
+  ],
+  "export": {
+    "filename": "clockwork_loop_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 0,
+    "export_filename": "Mechanical_Pulse_Loop_F5"
+  }
+}

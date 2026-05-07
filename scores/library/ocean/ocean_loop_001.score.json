@@ -1,0 +1,105 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Ocean Wave Cycle",
+    "id": "ocean_loop_001",
+    "author": "TsukiSynth",
+    "description": "浪潮循環 — 2小節弓奏弦起伏+氣泡點綴，水底節奏",
+    "created": "2026-05-07",
+    "tags": ["loop", "wave", "deep", "liquid", "slow"],
+    "mood": "mystical",
+    "use_case": "BGM motif / loop element",
+    "category": "worldview_sfx",
+    "worldview": "Ocean",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "loop",
+    "family_id": "ocean_ambient",
+    "character": ["dark", "pulse"],
+    "loop_bpm": 60,
+    "loop_bars": 2
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.6,
+    "effects": {
+      "reverb": { "decay": 5.0, "wet": 0.5 },
+      "delay": { "time_ms": 500, "feedback": 0.25, "wet": 0.1 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 4.0,
+      "engine": "string",
+      "note": "C2",
+      "velocity": 0.3,
+      "params": {
+        "material": "nylon",
+        "diameter_mm": 3.0,
+        "length_mm": 200,
+        "tension_n": 300,
+        "strike_position": 0.5,
+        "exciter": "bow_slow",
+        "damping_override": 0.5
+      }
+    },
+    {
+      "time": 1.5,
+      "duration": 0.3,
+      "engine": "beam",
+      "note": "G5",
+      "velocity": 0.2,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 1.0,
+        "length_mm": 15,
+        "width_mm": 15,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "glide": { "from_note": "E5", "duration_ms": 80, "curve": "exponential" }
+    },
+    {
+      "time": 4.0,
+      "duration": 4.0,
+      "engine": "string",
+      "note": "E2",
+      "velocity": 0.28,
+      "params": {
+        "material": "nylon",
+        "diameter_mm": 3.0,
+        "length_mm": 180,
+        "tension_n": 320,
+        "strike_position": 0.45,
+        "exciter": "bow_slow",
+        "damping_override": 0.5
+      }
+    },
+    {
+      "time": 5.5,
+      "duration": 0.3,
+      "engine": "beam",
+      "note": "A5",
+      "velocity": 0.18,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 1.0,
+        "length_mm": 12,
+        "width_mm": 12,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "glide": { "from_note": "F5", "duration_ms": 80, "curve": "exponential" }
+    }
+  ],
+  "export": {
+    "filename": "ocean_loop_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 0,
+    "export_filename": "Ambience_Dark_Loop_C2"
+  }
+}
