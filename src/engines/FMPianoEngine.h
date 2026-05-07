@@ -160,6 +160,13 @@ public:
 
     bool isActive() const { return active; }
 
+    void scaleFrequency (double factor)
+    {
+        carrierInc = juce::MathConstants<double>::twoPi * carrierFreq * factor / sr;
+        mod1Inc    = juce::MathConstants<double>::twoPi * mod1Freq * factor / sr;
+        mod2Inc    = juce::MathConstants<double>::twoPi * mod2Freq * factor / sr;
+    }
+
 private:
     double calcDecayFactor (double seconds)
     {

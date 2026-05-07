@@ -127,6 +127,11 @@ public:
 
     bool isActive() const { return active; }
 
+    void scaleFrequencies (double factor)
+    {
+        resonator.scaleFrequencies (factor);
+    }
+
 private:
     std::vector<Mode> buildTongueDrumModes (const Material& mat,
                                              const ChromaticParams& params,

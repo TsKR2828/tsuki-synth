@@ -140,6 +140,13 @@ public:
 
     bool isActive() const { return active; }
 
+    void scaleFrequencies (double factor)
+    {
+        for (int s = 0; s < numStrings; ++s)
+            stringResonators[static_cast<size_t>(s)].scaleFrequencies (factor);
+        soundboardResonator.scaleFrequencies (factor);
+    }
+
 private:
     void setupSoundboard (const Material& mat, const CimbalomParams& params,
                           double fundamental, float velocity)

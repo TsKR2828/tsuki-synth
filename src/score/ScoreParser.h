@@ -19,6 +19,11 @@ struct ScoreEffects
     double delayTimeMs = 0.0;
     double delayFeedback = 0.0;
     double delayWet    = 0.0;
+
+    std::string distortionType = "overdrive";
+    double distortionDrive       = 0.0;
+    double distortionInstability = 0.0;
+    double distortionWet         = 0.0;
 };
 
 struct ScoreGlobal
@@ -44,6 +49,11 @@ struct ScoreEvent
     double      widthMm        = 25.0;
     std::string exciter;
     int         fmPreset       = 0;
+
+    bool        hasGlide       = false;
+    std::string glideFromNote;
+    double      glideDurationMs = 0.0;
+    std::string glideCurve     = "linear";
 };
 
 struct ScoreExport
@@ -53,6 +63,8 @@ struct ScoreExport
     int    bitDepth       = 24;
     bool   normalize      = true;
     double tailSilenceMs  = 500.0;
+    double startPosition  = 0.0;
+    double endPosition    = 1.0;
 };
 
 struct Score
@@ -126,6 +138,13 @@ public:
                     score.global.effects.delayFeedback = del->getProperty ("feedback");
                     score.global.effects.delayWet = del->getProperty ("wet");
                 }
+                if (auto* dist = fx->getProperty ("distortion").getDynamicObject())
+                {
+                    score.global.effects.distortionType = dist->getProperty ("type").toString().toStdString();
+                    score.global.effects.distortionDrive = dist->getProperty ("drive");
+                    score.global.effects.distortionInstability = dist->getProperty ("instability");
+                    score.global.effects.distortionWet = dist->getProperty ("wet");
+                }
             }
         }
 
@@ -155,6 +174,15 @@ public:
                             se.fmPreset = static_cast<int> ((int) p->getProperty ("fm_preset"));
                     }
 
+                    if (auto* gl = e->getProperty ("glide").getDynamicObject())
+                    {
+                        se.hasGlide = true;
+                        se.glideFromNote = gl->getProperty ("from_note").toString().toStdString();
+                        se.glideDurationMs = gl->getProperty ("duration_ms");
+                        if (gl->hasProperty ("curve"))
+                            se.glideCurve = gl->getProperty ("curve").toString().toStdString();
+                    }
+
                     score.events.push_back (se);
                 }
             }
@@ -167,6 +195,10 @@ public:
             score.exportSettings.bitDepth = static_cast<int> ((int) exp->getProperty ("bit_depth"));
             score.exportSettings.normalize = (bool) exp->getProperty ("normalize");
             score.exportSettings.tailSilenceMs = exp->getProperty ("tail_silence_ms");
+            if (exp->hasProperty ("start_position"))
+                score.exportSettings.startPosition = exp->getProperty ("start_position");
+            if (exp->hasProperty ("end_position"))
+                score.exportSettings.endPosition = exp->getProperty ("end_position");
         }
 
         return ! score.events.empty();

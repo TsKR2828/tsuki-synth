@@ -42,6 +42,18 @@ public:
         fxp.delayWet = static_cast<float> (score.global.effects.delayWet);
         fxp.delayTime = score.global.effects.delayTimeMs / 1000.0;
         fxp.delayFeedback = static_cast<float> (score.global.effects.delayFeedback);
+
+        fxp.distortionEnabled = score.global.effects.distortionWet > 0.001;
+        fxp.distortionDrive = static_cast<float> (score.global.effects.distortionDrive);
+        fxp.distortionInstability = static_cast<float> (score.global.effects.distortionInstability);
+        fxp.distortionWet = static_cast<float> (score.global.effects.distortionWet);
+        if (score.global.effects.distortionType == "bitcrush")
+            fxp.distortionType = DistortionType::Bitcrush;
+        else if (score.global.effects.distortionType == "wavefold")
+            fxp.distortionType = DistortionType::Wavefold;
+        else
+            fxp.distortionType = DistortionType::Overdrive;
+
         fxp.masterVolume = static_cast<float> (score.global.masterVolume);
         fx.setParameters (fxp);
 
@@ -49,6 +61,24 @@ public:
         float* right = buffer.getWritePointer (1);
         for (int i = 0; i < totalSamples; ++i)
             fx.processStereo (left[i], right[i]);
+
+        double sp = std::clamp (score.exportSettings.startPosition, 0.0, 1.0);
+        double ep = std::clamp (score.exportSettings.endPosition, sp, 1.0);
+        if (sp > 0.0 || ep < 1.0)
+        {
+            int trimStart = static_cast<int> (sp * totalSamples);
+            int trimEnd   = static_cast<int> (ep * totalSamples);
+            int trimLen   = trimEnd - trimStart;
+            if (trimLen > 0 && trimLen < totalSamples)
+            {
+                juce::AudioBuffer<float> trimmed (2, trimLen);
+                trimmed.copyFrom (0, 0, buffer, 0, trimStart, trimLen);
+                trimmed.copyFrom (1, 0, buffer, 1, trimStart, trimLen);
+                return WavWriter::write (outputFile, trimmed, sr,
+                                         score.exportSettings.bitDepth,
+                                         score.exportSettings.normalize);
+            }
+        }
 
         return WavWriter::write (outputFile, buffer, sr,
                                  score.exportSettings.bitDepth,
@@ -112,9 +142,36 @@ private:
 
         int noteOffSample = start + static_cast<int> (ev.duration * sr * 0.9);
 
+        int glideSamples = 0;
+        double glideStartRatio = 1.0;
+        bool useExpCurve = false;
+        if (ev.hasGlide)
+        {
+            int fromMidi = noteNameToMidi (ev.glideFromNote);
+            double fromFreq = juce::MidiMessage::getMidiNoteInHertz (fromMidi);
+            double toFreq   = juce::MidiMessage::getMidiNoteInHertz (midiNote);
+            glideStartRatio = fromFreq / toFreq;
+            glideSamples = static_cast<int> (ev.glideDurationMs / 1000.0 * sr);
+            useExpCurve = (ev.glideCurve == "exponential");
+        }
+
         for (int i = start; i < end && voice.isActive(); ++i)
         {
             if (i == noteOffSample) voice.noteOff();
+
+            if (ev.hasGlide && (i - start) < glideSamples)
+            {
+                double t = static_cast<double> (i - start) / glideSamples;
+                double factor = useExpCurve
+                    ? glideStartRatio * std::exp (std::log (1.0 / glideStartRatio) * t)
+                    : glideStartRatio + (1.0 - glideStartRatio) * t;
+                voice.scaleFrequencies (factor);
+            }
+            else if (ev.hasGlide && (i - start) == glideSamples)
+            {
+                voice.scaleFrequencies (1.0);
+            }
+
             float v = voice.getNextSample() * 0.15f;
             buf.addSample (0, i, v);
             buf.addSample (1, i, v);
@@ -143,9 +200,36 @@ private:
 
         int noteOffSample = start + static_cast<int> (ev.duration * sr * 0.9);
 
+        int glideSamples = 0;
+        double glideStartRatio = 1.0;
+        bool useExpCurve = false;
+        if (ev.hasGlide)
+        {
+            int fromMidi = noteNameToMidi (ev.glideFromNote);
+            double fromFreq = juce::MidiMessage::getMidiNoteInHertz (fromMidi);
+            double toFreq   = juce::MidiMessage::getMidiNoteInHertz (midiNote);
+            glideStartRatio = fromFreq / toFreq;
+            glideSamples = static_cast<int> (ev.glideDurationMs / 1000.0 * sr);
+            useExpCurve = (ev.glideCurve == "exponential");
+        }
+
         for (int i = start; i < end && voice.isActive(); ++i)
         {
             if (i == noteOffSample) voice.noteOff();
+
+            if (ev.hasGlide && (i - start) < glideSamples)
+            {
+                double t = static_cast<double> (i - start) / glideSamples;
+                double factor = useExpCurve
+                    ? glideStartRatio * std::exp (std::log (1.0 / glideStartRatio) * t)
+                    : glideStartRatio + (1.0 - glideStartRatio) * t;
+                voice.scaleFrequencies (factor);
+            }
+            else if (ev.hasGlide && (i - start) == glideSamples)
+            {
+                voice.scaleFrequencies (1.0);
+            }
+
             float v = voice.getNextSample() * 0.15f;
             buf.addSample (0, i, v);
             buf.addSample (1, i, v);
@@ -165,9 +249,36 @@ private:
 
         int noteOffSample = start + static_cast<int> (ev.duration * sr * 0.9);
 
+        int glideSamples = 0;
+        double glideStartRatio = 1.0;
+        bool useExpCurve = false;
+        if (ev.hasGlide)
+        {
+            int fromMidi = noteNameToMidi (ev.glideFromNote);
+            double fromFreq = juce::MidiMessage::getMidiNoteInHertz (fromMidi);
+            double toFreq   = juce::MidiMessage::getMidiNoteInHertz (midiNote);
+            glideStartRatio = fromFreq / toFreq;
+            glideSamples = static_cast<int> (ev.glideDurationMs / 1000.0 * sr);
+            useExpCurve = (ev.glideCurve == "exponential");
+        }
+
         for (int i = start; i < end && voice.isActive(); ++i)
         {
             if (i == noteOffSample) voice.noteOff();
+
+            if (ev.hasGlide && (i - start) < glideSamples)
+            {
+                double t = static_cast<double> (i - start) / glideSamples;
+                double factor = useExpCurve
+                    ? glideStartRatio * std::exp (std::log (1.0 / glideStartRatio) * t)
+                    : glideStartRatio + (1.0 - glideStartRatio) * t;
+                voice.scaleFrequency (factor);
+            }
+            else if (ev.hasGlide && (i - start) == glideSamples)
+            {
+                voice.scaleFrequency (1.0);
+            }
+
             float v = voice.getNextSample() * 0.15f;
             buf.addSample (0, i, v);
             buf.addSample (1, i, v);

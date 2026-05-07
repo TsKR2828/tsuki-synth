@@ -5,8 +5,11 @@
       "id": "akashic_bell_001",
       "name": "Akashic Bell",
       "name_zh": "阿卡西之鐘",
-      "category": "bell",
-      "subcategory": "mystical",
+      "primary_type": "magic",
+      "subcategory": "bell",
+      "sound_type": "oneshot",
+      "family_id": "akashic_bell",
+      "character": ["metallic", "airy"],
       "tags": ["bell", "mystical", "transition", "reverb-heavy", "sacred"],
       "mood": "sacred",
       "energy": "low",
@@ -15,15 +18,20 @@
       "world": "akashic",
       "score_file": "scores/examples/akashic_bell.score.json",
       "wav_file": "exports/wav/akashic_bell_001.wav",
+      "export_filename": "Magic_Metallic_OneShot_C5",
       "engine": "plate",
-      "primary_material": "bronze"
+      "primary_material": "bronze",
+      "variant_description": null
     },
     {
       "id": "rabbit_warning_001",
       "name": "Rabbit Warning",
       "name_zh": "兔兔警告",
-      "category": "alert",
-      "subcategory": "character-sfx",
+      "primary_type": "ui",
+      "subcategory": "alert",
+      "sound_type": "oneshot",
+      "family_id": "rabbit_warning",
+      "character": ["bright", "punch"],
       "tags": ["warning", "alert", "short", "character-sfx", "bright"],
       "mood": "tense",
       "energy": "high",
@@ -32,15 +40,20 @@
       "world": "rabbit",
       "score_file": "scores/examples/rabbit_warning.score.json",
       "wav_file": "exports/wav/rabbit_warning_001.wav",
+      "export_filename": "UI_Bright_OneShot_E6",
       "engine": "beam",
-      "primary_material": "aluminum"
+      "primary_material": "aluminum",
+      "variant_description": null
     },
     {
       "id": "restraint_metal_click_001",
       "name": "Restraint Metal Click",
       "name_zh": "拘束扣合",
-      "category": "mechanical",
-      "subcategory": "impact",
+      "primary_type": "impact",
+      "subcategory": "mechanical",
+      "sound_type": "oneshot",
+      "family_id": "restraint_metal_click",
+      "character": ["dark", "metallic"],
       "tags": ["metal", "click", "mechanical", "dark", "impact", "short"],
       "mood": "ominous",
       "energy": "medium",
@@ -49,8 +62,10 @@
       "world": "restraint",
       "score_file": "scores/examples/restraint_metal_click.score.json",
       "wav_file": "exports/wav/restraint_metal_click_001.wav",
+      "export_filename": "Impact_Dark_OneShot_C2",
       "engine": "string+plate",
-      "primary_material": "steel"
+      "primary_material": "steel",
+      "variant_description": null
     }
   ]
 }

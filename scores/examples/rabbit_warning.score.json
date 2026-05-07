@@ -11,7 +11,11 @@
     "use_case": "VTuber character reaction / UI alert",
     "category": "character_ui",
     "worldview": "Rabbit",
-    "variation_of": null
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "rabbit_warning",
+    "character": ["bright", "punch"]
   },
   "global": {
     "bpm": 140,
