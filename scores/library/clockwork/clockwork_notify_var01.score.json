@@ -1,0 +1,61 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Clockwork Bell Strike (Wavefold)",
+    "id": "clockwork_notify_var01",
+    "author": "TsukiSynth",
+    "description": "報時敲鐘（波折） — 原版加 wavefold 失真，異常運轉感",
+    "created": "2026-05-07",
+    "tags": ["bell", "notification", "distorted", "wavefold", "glitch"],
+    "mood": "tense",
+    "use_case": "VTuber reaction / emote",
+    "category": "character_ui",
+    "worldview": "Clockwork",
+    "variation_of": "clockwork_notify_001",
+    "primary_type": "ui",
+    "sound_type": "variant",
+    "family_id": "clockwork_notify",
+    "character": ["glitch", "metallic"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.78,
+    "effects": {
+      "reverb": { "decay": 1.5, "wet": 0.2 },
+      "delay": { "time_ms": 62, "feedback": 0.3, "wet": 0.1 },
+      "distortion": {
+        "type": "wavefold",
+        "drive": 0.5,
+        "instability": 0.25,
+        "wet": 0.6
+      }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 1.0,
+      "engine": "beam",
+      "note": "E5",
+      "velocity": 0.8,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 3.0,
+        "length_mm": 45,
+        "width_mm": 20,
+        "strike_position": 0.25,
+        "exciter": "metal_hammer"
+      },
+      "comment": "wavefold 使泛音扭曲，故障鐘聲"
+    }
+  ],
+  "export": {
+    "filename": "clockwork_notify_var01",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 150,
+    "export_filename": "UI_Glitch_OneShot_E5"
+  }
+}
