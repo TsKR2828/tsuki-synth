@@ -41,13 +41,20 @@
 - [x] 圓板 pitch glide（水鑼浸水效果）
 - [x] 編譯通過（VST3 + Standalone）
 
-## 當前：Phase 5 — FM Piano
+## 已完成：Phase 5 — FM Piano（2-operator FM 合成）
 
-- [ ] `src/engines/FMPianoEngine.h` — FM 合成移植
-- [ ] carrier + modulator + index envelope
-- [ ] velocity 感應 + 高頻 brightness 衰減
+- [x] `src/engines/FMPianoEngine.h` — FM 合成引擎
+- [x] carrier + modulator + index envelope（指數衰減 brightness）
+- [x] modulator self-feedback（organ/brass 音色用）
+- [x] velocity 感應（影響 gain + modulation index）
+- [x] 高頻 brightness 衰減（高音符 index 衰減更快）
+- [x] 8 種 sound type preset（Piano/E.Piano/Vibraphone/Bell/Organ/Pad/Bass/Brass）
+- [x] 7 個 APVTS 參數（type/ratio/index/brightness/feedback/attack/release）
+- [x] PluginProcessor 三引擎路由完成
+- [x] PluginEditor 三引擎面板切換
+- [x] 編譯通過（VST3 + Standalone）
 
-## 待辦：Phase 6 — 效果鏈
+## 當前：Phase 6 — 效果鏈
 
 - [ ] Reverb（Freeverb or Schroeder）
 - [ ] Delay（複用 DelayLine）

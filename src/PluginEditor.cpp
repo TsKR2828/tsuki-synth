@@ -23,6 +23,15 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     setupCombo  (chrExciterCombo,     "chr_exciter",     "Exciter");
     setupSlider (chrPitchGlideSlider, "chr_pitch_glide", "Pitch Glide");
 
+    // FM Piano controls
+    setupCombo  (fmTypeCombo,         "fm_type",         "Type");
+    setupSlider (fmRatioSlider,       "fm_ratio",        "Ratio");
+    setupSlider (fmIndexSlider,       "fm_index",        "Mod Index");
+    setupSlider (fmBrightnessSlider,  "fm_brightness",   "Brightness");
+    setupSlider (fmFeedbackSlider,    "fm_feedback",     "Feedback");
+    setupSlider (fmAttackSlider,      "fm_attack",       "Attack",    "ms");
+    setupSlider (fmReleaseSlider,     "fm_release",      "Release",   "ms");
+
     // Listen for engine changes
     processorRef.apvts.addParameterListener ("engine", this);
 
@@ -39,8 +48,10 @@ void TsukiSynthEditor::parameterChanged (const juce::String& parameterID, float)
 {
     if (parameterID == "engine")
     {
-        // Must be called on message thread
-        juce::MessageManager::callAsync ([this]() { updateEngineVisibility(); });
+        juce::MessageManager::callAsync ([this]() {
+            updateEngineVisibility();
+            resized();
+        });
     }
 }
 
@@ -49,7 +60,9 @@ void TsukiSynthEditor::updateEngineVisibility()
     int engine = (int) processorRef.apvts.getRawParameterValue ("engine")->load();
     bool isCim = (engine == 0);
     bool isChr = (engine == 1);
+    bool isFM  = (engine == 2);
 
+    // Cimbalom
     setComponentVisible (cimMaterialCombo,    isCim);
     setComponentVisible (cimHammerCombo,      isCim);
     setComponentVisible (cimStrikePosSlider,  isCim);
@@ -57,6 +70,7 @@ void TsukiSynthEditor::updateEngineVisibility()
     setComponentVisible (cimNumStringsSlider, isCim);
     setComponentVisible (cimDetuningSlider,   isCim);
 
+    // Chromatic
     setComponentVisible (chrSubEngineCombo,   isChr);
     setComponentVisible (chrMaterialCombo,    isChr);
     setComponentVisible (chrStrikePosSlider,  isChr);
@@ -64,6 +78,15 @@ void TsukiSynthEditor::updateEngineVisibility()
     setComponentVisible (chrSizeSlider,       isChr);
     setComponentVisible (chrExciterCombo,     isChr);
     setComponentVisible (chrPitchGlideSlider, isChr);
+
+    // FM Piano
+    setComponentVisible (fmTypeCombo,        isFM);
+    setComponentVisible (fmRatioSlider,      isFM);
+    setComponentVisible (fmIndexSlider,      isFM);
+    setComponentVisible (fmBrightnessSlider, isFM);
+    setComponentVisible (fmFeedbackSlider,   isFM);
+    setComponentVisible (fmAttackSlider,     isFM);
+    setComponentVisible (fmReleaseSlider,    isFM);
 
     repaint();
 }
@@ -94,9 +117,14 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
     int engine = (int) processorRef.apvts.getRawParameterValue ("engine")->load();
     g.setColour (juce::Colour (0xff888888));
     g.setFont (juce::FontOptions (12.0f));
-    juce::String subtitle = (engine == 0)
-        ? "Cimbalom Engine  |  Physical Modeling String"
-        : "Chromatic Engine  |  Beam / Plate / Custom";
+    juce::String subtitle;
+    switch (engine)
+    {
+        case 0: subtitle = "Cimbalom Engine  |  Physical Modeling String"; break;
+        case 1: subtitle = "Chromatic Engine  |  Beam / Plate / Custom"; break;
+        case 2: subtitle = "FM Piano Engine  |  Frequency Modulation Synthesis"; break;
+        default: subtitle = "TsukiSynth"; break;
+    }
     g.drawFittedText (subtitle, 0, 34, getWidth(), 18,
                       juce::Justification::centred, 1);
 
@@ -118,11 +146,12 @@ void TsukiSynthEditor::resized()
     engineCombo.combo->setBounds (row0.reduced (2));
     area.removeFromTop (gap);
 
-    // ===== Cimbalom layout =====
     int engine = (int) processorRef.apvts.getRawParameterValue ("engine")->load();
 
     if (engine == 0)
     {
+        // ===== Cimbalom layout =====
+
         // Row 1: Material + Hammer
         auto row1 = area.removeFromTop (rowH);
         int half = row1.getWidth() / 2;
@@ -153,7 +182,7 @@ void TsukiSynthEditor::resized()
         cimDetuningSlider.label->setBounds (row4.removeFromLeft (labelW));
         cimDetuningSlider.slider->setBounds (row4.reduced (2));
     }
-    else
+    else if (engine == 1)
     {
         // ===== Chromatic layout =====
 
@@ -189,6 +218,42 @@ void TsukiSynthEditor::resized()
         chrExciterCombo.combo->setBounds (r4left.reduced (2));
         chrPitchGlideSlider.label->setBounds (row4.removeFromLeft (labelW));
         chrPitchGlideSlider.slider->setBounds (row4.reduced (2));
+    }
+    else
+    {
+        // ===== FM Piano layout =====
+
+        // Row 1: Sound Type
+        auto row1 = area.removeFromTop (rowH);
+        fmTypeCombo.label->setBounds (row1.removeFromLeft (labelW));
+        fmTypeCombo.combo->setBounds (row1.reduced (2));
+        area.removeFromTop (gap);
+
+        // Row 2: Ratio + Mod Index
+        auto row2 = area.removeFromTop (rowH);
+        auto r2left = row2.removeFromLeft (row2.getWidth() / 2);
+        fmRatioSlider.label->setBounds (r2left.removeFromLeft (labelW));
+        fmRatioSlider.slider->setBounds (r2left.reduced (2));
+        fmIndexSlider.label->setBounds (row2.removeFromLeft (labelW));
+        fmIndexSlider.slider->setBounds (row2.reduced (2));
+        area.removeFromTop (gap);
+
+        // Row 3: Brightness + Feedback
+        auto row3 = area.removeFromTop (rowH);
+        auto r3left = row3.removeFromLeft (row3.getWidth() / 2);
+        fmBrightnessSlider.label->setBounds (r3left.removeFromLeft (labelW));
+        fmBrightnessSlider.slider->setBounds (r3left.reduced (2));
+        fmFeedbackSlider.label->setBounds (row3.removeFromLeft (labelW));
+        fmFeedbackSlider.slider->setBounds (row3.reduced (2));
+        area.removeFromTop (gap);
+
+        // Row 4: Attack + Release
+        auto row4 = area.removeFromTop (rowH);
+        auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
+        fmAttackSlider.label->setBounds (r4left.removeFromLeft (labelW));
+        fmAttackSlider.slider->setBounds (r4left.reduced (2));
+        fmReleaseSlider.label->setBounds (row4.removeFromLeft (labelW));
+        fmReleaseSlider.slider->setBounds (row4.reduced (2));
     }
 }
 

@@ -2,6 +2,7 @@
 #include "PluginEditor.h"
 #include "engines/CimbalomEngine.h"
 #include "engines/ChromaticEngine.h"
+#include "engines/FMPianoEngine.h"
 #include "BinaryData.h"
 
 // == Parameter Layout ==
@@ -14,7 +15,7 @@ TsukiSynthProcessor::createParameterLayout()
     params.push_back (std::make_unique<juce::AudioParameterChoice> (
         juce::ParameterID { "engine", 1 },
         "Engine",
-        juce::StringArray { "Cimbalom", "Chromatic" },
+        juce::StringArray { "Cimbalom", "Chromatic", "FM Piano" },
         0));
 
     // ---- Cimbalom parameters ----
@@ -100,6 +101,50 @@ TsukiSynthProcessor::createParameterLayout()
         juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
         0.0f));
 
+    // ---- FM Piano parameters ----
+    params.push_back (std::make_unique<juce::AudioParameterChoice> (
+        juce::ParameterID { "fm_type", 1 },
+        "Sound Type",
+        juce::StringArray { "Piano", "E.Piano", "Vibraphone", "Bell",
+                            "Organ", "Pad", "Bass", "Brass" },
+        0));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fm_ratio", 1 },
+        "FM Ratio",
+        juce::NormalisableRange<float> (0.5f, 16.0f, 0.01f, 0.4f),
+        1.0f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fm_index", 1 },
+        "Mod Index",
+        juce::NormalisableRange<float> (0.0f, 25.0f, 0.1f),
+        5.0f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fm_brightness", 1 },
+        "Brightness",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+        0.6f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fm_feedback", 1 },
+        "Feedback",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+        0.0f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fm_attack", 1 },
+        "FM Attack (ms)",
+        juce::NormalisableRange<float> (1.0f, 2000.0f, 1.0f, 0.4f),
+        10.0f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fm_release", 1 },
+        "FM Release (ms)",
+        juce::NormalisableRange<float> (10.0f, 5000.0f, 1.0f, 0.4f),
+        300.0f));
+
     return { params.begin(), params.end() };
 }
 
@@ -167,6 +212,32 @@ TsukiSynthProcessor::TsukiSynthProcessor()
             chromaticSynth.addVoice (voice);
         }
     }
+
+    // ---- FM Piano engine ----
+    {
+        auto* pType       = apvts.getRawParameterValue ("fm_type");
+        auto* pRatio      = apvts.getRawParameterValue ("fm_ratio");
+        auto* pIndex      = apvts.getRawParameterValue ("fm_index");
+        auto* pBrightness = apvts.getRawParameterValue ("fm_brightness");
+        auto* pFeedback   = apvts.getRawParameterValue ("fm_feedback");
+        auto* pAttack     = apvts.getRawParameterValue ("fm_attack");
+        auto* pRelease    = apvts.getRawParameterValue ("fm_release");
+
+        fmPianoSynth.addSound (new FMPianoSound());
+
+        for (int i = 0; i < 16; ++i)
+        {
+            auto* voice = new FMPianoVoice();
+            voice->pType       = pType;
+            voice->pRatio      = pRatio;
+            voice->pIndex      = pIndex;
+            voice->pBrightness = pBrightness;
+            voice->pFeedback   = pFeedback;
+            voice->pAttack     = pAttack;
+            voice->pRelease    = pRelease;
+            fmPianoSynth.addVoice (voice);
+        }
+    }
 }
 
 TsukiSynthProcessor::~TsukiSynthProcessor() {}
@@ -176,6 +247,7 @@ void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
 {
     cimbalomSynth.setCurrentPlaybackSampleRate (sampleRate);
     chromaticSynth.setCurrentPlaybackSampleRate (sampleRate);
+    fmPianoSynth.setCurrentPlaybackSampleRate (sampleRate);
 }
 
 void TsukiSynthProcessor::releaseResources() {}
@@ -195,15 +267,20 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             cimbalomSynth.allNotesOff (0, false);
         else if (lastEngine == 1)
             chromaticSynth.allNotesOff (0, false);
+        else if (lastEngine == 2)
+            fmPianoSynth.allNotesOff (0, false);
         lastEngine = currentEngine;
     }
 
     if (currentEngine == 0)
         cimbalomSynth.renderNextBlock (buffer, midiMessages,
                                        0, buffer.getNumSamples());
-    else
+    else if (currentEngine == 1)
         chromaticSynth.renderNextBlock (buffer, midiMessages,
                                         0, buffer.getNumSamples());
+    else
+        fmPianoSynth.renderNextBlock (buffer, midiMessages,
+                                      0, buffer.getNumSamples());
 }
 
 // == State ==

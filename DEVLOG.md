@@ -2,6 +2,38 @@
 
 ---
 
+## 2026-05-08 — Phase 5 完成：FM Piano 引擎
+
+**新增引擎：**
+- `src/engines/FMPianoEngine.h` — 2-operator FM 合成
+  - 核心公式：output = sin(carrierPhase + I(t) * sin(modulatorPhase + fb*lastMod))
+  - Modulator self-feedback：產生更豐富的泛音（organ、brass 音色的關鍵）
+  - Index envelope：獨立的指數衰減控制 brightness（與 amplitude ADSR 分離）
+  - Velocity 雙重感應：影響 gain（音量）+ modulation index（亮度）
+  - Note-dependent brightness：高音符的 index 衰減更快（自然鋼琴行為）
+  - 8 種 Sound Type preset 控制 ADSR 形狀：
+    - Piano (fast decay, low sustain)
+    - E.Piano (medium decay)
+    - Vibraphone (long decay, low sustain)
+    - Bell (very long decay, no sustain)
+    - Organ (instant to full sustain)
+    - Pad (full sustain, for long notes)
+    - Bass (fast decay)
+    - Brass (medium sustain)
+
+**PluginProcessor 更新：**
+- 三引擎架構完成：cimbalomSynth + chromaticSynth + fmPianoSynth
+- Engine 選擇器擴展為 3 選項（Cimbalom / Chromatic / FM Piano）
+- 新增 7 個 FM 參數：fm_type, fm_ratio, fm_index, fm_brightness, fm_feedback, fm_attack, fm_release
+- fm_ratio 使用 skewed range (0.4) 讓低 ratio 區間（鋼琴常用的 1.0~2.0）有更高解析度
+
+**PluginEditor 更新：**
+- 三引擎面板切換完成
+- FM Piano 面板：Type 選擇器 + Ratio/Index、Brightness/Feedback、Attack/Release 三行佈局
+- 副標題：「FM Piano Engine | Frequency Modulation Synthesis」
+
+---
+
 ## 2026-05-08 — Phase 4 完成：Chromatic Synth（三合一物理建模引擎）
 
 **新增物理模型：**

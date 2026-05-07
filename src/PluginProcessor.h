@@ -36,6 +36,7 @@ public:
 private:
     juce::Synthesiser cimbalomSynth;
     juce::Synthesiser chromaticSynth;
+    juce::Synthesiser fmPianoSynth;
 
     std::atomic<float>* pEngine = nullptr;
     int lastEngine = -1;

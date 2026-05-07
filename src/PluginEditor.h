@@ -52,6 +52,15 @@ private:
     ParamCombo  chrExciterCombo;
     ParamSlider chrPitchGlideSlider;
 
+    // --- FM Piano controls ---
+    ParamCombo  fmTypeCombo;
+    ParamSlider fmRatioSlider;
+    ParamSlider fmIndexSlider;
+    ParamSlider fmBrightnessSlider;
+    ParamSlider fmFeedbackSlider;
+    ParamSlider fmAttackSlider;
+    ParamSlider fmReleaseSlider;
+
     void setupCombo (ParamCombo& pc, const juce::String& paramID,
                      const juce::String& labelText);
     void setupSlider (ParamSlider& ps, const juce::String& paramID,
