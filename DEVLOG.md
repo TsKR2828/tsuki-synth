@@ -2,6 +2,28 @@
 
 ---
 
+## 2026-05-08 — Phase 3 完成：Cimbalom 引擎（物理建模弦）
+
+**核心完成：**
+- `src/engines/CimbalomEngine.h` — CimbalomVoice（取代 Phase 1 的 SineVoice）
+  - ModalResonator + StringModel 驅動，MIDI note → 物理弦參數 → 40 模態渲染
+  - 多弦 beating：每 course 1~5 條弦，可調失諧量（0~15 cents）
+  - Exciter 噪音脈衝：槌硬度（cotton/felt/wood/metal）→ LP 濾波頻寬
+  - Damper 控制：note off + CC#64 sustain pedal
+- PluginProcessor 改用 APVTS（AudioProcessorValueTreeState）
+  - 6 個可自動化參數：Material / Strike Position / Diameter / Hammer / Strings / Detuning
+  - 支援 preset save/load（ValueTree → XML）
+  - MaterialDB 透過 BinaryData 嵌入（不依賴外部 JSON 路徑）
+- PluginEditor 改為參數控制介面（ComboBox + Slider + Label）
+
+**Build 修正：**
+- CMakeLists 加 `add_compile_options(/utf-8)` 解決 MSVC codepage 950 與 UTF-8 中文註解衝突
+- `juce_add_binary_data` 嵌入 `data/materials.json`
+- MaterialDB 新增 `loadFromString()` / `loadFromBinary()` 方法
+- `getOrderedKeys()` 靜態方法提供固定材質排序（給 AudioParameterChoice 用）
+
+---
+
 ## 2026-05-08 — Phase 1 + Phase 2 完成
 
 ### Phase 1：環境建置 + 骨架

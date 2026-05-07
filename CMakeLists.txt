@@ -4,6 +4,11 @@ project(TsukiSynth VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# MSVC: treat source files as UTF-8 (fixes codepage 950 parsing errors)
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 add_subdirectory(libs/JUCE)
 
 juce_add_plugin(TsukiSynth
@@ -15,6 +20,10 @@ juce_add_plugin(TsukiSynth
     PLUGIN_CODE TkSy
     FORMATS VST3 Standalone
     PRODUCT_NAME "TsukiSynth"
+)
+
+juce_add_binary_data(TsukiSynthData SOURCES
+    data/materials.json
 )
 
 target_sources(TsukiSynth PRIVATE
@@ -32,6 +41,7 @@ target_compile_definitions(TsukiSynth PUBLIC
 
 target_link_libraries(TsukiSynth
     PRIVATE
+        TsukiSynthData
         juce::juce_audio_utils
     PUBLIC
         juce::juce_recommended_config_flags

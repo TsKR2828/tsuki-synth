@@ -4,39 +4,45 @@
 
 ---
 
-## 當前：Phase 3 — Cimbalom 引擎（物理建模弦）
+## 已完成：Phase 3 — Cimbalom 引擎（物理建模弦）
 
-- [ ] 建立 `src/engines/CimbalomEngine.h/.cpp`
-  - [ ] 繼承 juce::SynthesiserVoice，替換現有 SineVoice
-  - [ ] 內部持有 ModalResonator + StringModel
-  - [ ] noteOn → 從 MIDI note 計算弦長/張力 → StringModel 算模態 → excite
-  - [ ] noteOff → damp
-- [ ] PluginProcessor 改用 CimbalomEngine
-  - [ ] 啟動時載入 MaterialDB（`data/materials.json`）
-  - [ ] 預設材質：steel
-- [ ] 加入可調參數（AudioParameterFloat）
-  - [ ] 材質選擇（steel / copper / bronze / aluminum / ...）
-  - [ ] 擊打位置（0.05 ~ 0.95）
-  - [ ] 弦徑（0.3mm ~ 2.0mm）
-  - [ ] 槌硬度（影響噪音瞬態頻寬）
-- [ ] 多弦 beating
-  - [ ] 每 course 2~5 條弦，微失諧 0~15 cent
-- [ ] 共鳴弦（sympathetic strings）
-  - [ ] 八度 / 五度頻率的弦被動共振
-- [ ] 響板耦合（soundboard）
-  - [ ] 低頻 body resonance（簡易 2D plate 模型 or biquad 共振）
-- [ ] Damper 控制（CC#64 sustain pedal）
-- [ ] 在 Cubase 中測試，A/B 對比 HTML 原型
+- [x] 建立 `src/engines/CimbalomEngine.h`
+  - [x] CimbalomVoice 繼承 juce::SynthesiserVoice，替換 SineVoice
+  - [x] 內部持有 ModalResonator + StringModel
+  - [x] noteOn → 從 MIDI note 計算弦長/張力 → StringModel 算模態 → excite
+  - [x] noteOff → damp
+  - [x] Exciter 噪音脈衝（槌硬度控制頻寬）
+- [x] PluginProcessor 改用 CimbalomEngine + APVTS
+  - [x] BinaryData 嵌入 MaterialDB
+  - [x] 預設材質：steel
+- [x] 6 個可自動化參數
+  - [x] 材質選擇（9 種）
+  - [x] 擊打位置（0.05 ~ 0.95）
+  - [x] 弦徑（0.3mm ~ 2.0mm）
+  - [x] 槌硬度（Cotton / Felt / Wood / Metal）
+  - [x] 弦數（1~5 per course）
+  - [x] 失諧量（0~15 cents）
+- [x] 多弦 beating（微失諧）
+- [x] Damper 控制（CC#64 sustain pedal + note off）
+- [x] PluginEditor 參數介面（ComboBox + Slider）
+- [x] Preset save/load（APVTS → XML）
+- [ ] 共鳴弦（sympathetic strings）— 延後，需要跨 voice 通訊
+- [ ] 響板耦合（soundboard）— 延後，Phase 7 GUI 一起做
+- [ ] 在 Cubase 中 A/B 對比 HTML 原型 — 待月月測試
 
-## 待辦：Phase 4 — Chromatic Synth
+## 當前：Phase 4 — Chromatic Synth
 
 - [ ] `src/physics/BeamModel.h` — Euler-Bernoulli 梁（空靈鼓）
 - [ ] `src/physics/PlateModel.h` — Kirchhoff 圓板（水鑼）+ Bessel 零點
-- [ ] `src/engines/ChromaticEngine.h/.cpp` — 三合一切換
+- [ ] `src/engines/ChromaticEngine.h` — 三合一引擎（beam/plate/custom）
+- [ ] PluginProcessor 加入引擎切換參數
+- [ ] 圓板 pitch glide（水鑼浸水效果）
 
 ## 待辦：Phase 5 — FM Piano
 
-- [ ] `src/engines/FMPianoEngine.h/.cpp` — FM 合成移植
+- [ ] `src/engines/FMPianoEngine.h` — FM 合成移植
+- [ ] carrier + modulator + index envelope
+- [ ] velocity 感應 + 高頻 brightness 衰減
 
 ## 待辦：Phase 6 — 效果鏈
 
@@ -44,6 +50,7 @@
 - [ ] Delay（複用 DelayLine）
 - [ ] Wall Reflection（3-tap delay + LP）
 - [ ] Compressor
+- [ ] EffectChain 串接
 
 ## 待辦：Phase 7 — GUI
 
@@ -55,8 +62,7 @@
 ## 待辦：Phase 8 — 預設 + 收尾
 
 - [ ] 出廠預設音色
-- [ ] Preset save/load
-- [ ] DAW Automation
+- [ ] DAW Automation 驗證
 - [ ] 多 DAW 測試
 
 ## 低優先

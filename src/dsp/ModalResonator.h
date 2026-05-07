@@ -5,30 +5,30 @@
 #include <juce_core/juce_core.h>
 
 /**
- * Modal Resonator — TsukiSynth 的核心 DSP 元件
+ * Modal Resonator - core DSP component of TsukiSynth
  *
- * 原理：將物體振動分解為 N 個獨立的衰減正弦波（模態），
- *       每個模態有自己的頻率、振幅、衰減時間。
+ * Decomposes vibration into N independent decaying sinusoids (modes).
+ * Each mode has its own frequency, amplitude, and decay time.
  *
- *   output(t) = Σ amplitude[n] × exp(-t / decay[n]) × sin(2π × freq[n] × t)
+ *   output(t) = sum[ amp[n] * exp(-t/decay[n]) * sin(2*pi*freq[n]*t) ]
  *
- * 模態參數由外部物理模型（StringModel / BeamModel / PlateModel）計算後傳入。
- * 本模組只負責高效渲染。
+ * Mode parameters are computed by physics models (StringModel / BeamModel / PlateModel)
+ * and passed in. This module only handles efficient rendering.
  */
 class ModalResonator
 {
 public:
-    /// 單一模態的物理描述
+    /// Physical description of a single mode
     struct Mode
     {
         float frequency = 440.0f;   // Hz
-        float amplitude = 1.0f;     // 初始振幅（由擊打位置決定）
-        float decayTime = 1.0f;     // 秒（由材質阻尼決定）
+        float amplitude = 1.0f;     // initial amplitude (from strike position)
+        float decayTime = 1.0f;     // seconds (from material damping)
     };
 
     void setSampleRate (double sr) { sampleRate = sr; }
 
-    /// 設定模態組（由物理模型計算後傳入）
+    /// Set modes (computed by physics model, passed in)
     void setModes (const std::vector<Mode>& newModes)
     {
         int n = (int) newModes.size();
@@ -46,13 +46,13 @@ public:
         }
     }
 
-    /// 激發（MIDI note on）
+    /// Excite (MIDI note on)
     void excite (float velocity)
     {
         active = true;
         for (auto& m : modes)
         {
-            // 跳過超出人耳範圍的模態
+            // skip modes outside audible range
             if (m.freq > 20000.0f || m.freq < 20.0f)
             {
                 m.currentAmp = 0.0f;
@@ -63,7 +63,7 @@ public:
             m.phase      = 0.0f;
             m.phaseDelta = m.freq * (float) juce::MathConstants<double>::twoPi / (float) sampleRate;
 
-            // 衰減係數：在 decayTime 秒後降到 -60dB (~0.001)
+            // decay coefficient: reach -60dB (~0.001) after decayTime seconds
             if (m.decayTime > 0.0f)
                 m.decayCoeff = std::exp (-6.9078f / (m.decayTime * (float) sampleRate));
             else
@@ -71,21 +71,20 @@ public:
         }
     }
 
-    /// 制音（damper off / note off → 加速衰減）
+    /// Damp (damper off / note off - accelerate decay)
     void damp (float factor = 0.05f)
     {
         for (auto& m : modes)
         {
-            // 將衰減時間縮短到 factor 倍
-            float newDecay = m.decayTime * factor;
-            if (newDecay > 0.0f)
-                m.decayCoeff = std::exp (-6.9078f / (newDecay * (float) sampleRate));
+            float shortened = m.decayTime * factor;
+            if (shortened > 0.0f)
+                m.decayCoeff = std::exp (-6.9078f / (shortened * (float) sampleRate));
             else
                 m.decayCoeff = 0.0f;
         }
     }
 
-    /// 渲染一個 sample
+    /// Render one sample
     float processSample()
     {
         if (! active)
@@ -115,7 +114,7 @@ public:
         return output;
     }
 
-    /// 渲染一個 buffer
+    /// Render into a buffer (additive)
     void processBlock (float* buffer, int numSamples)
     {
         for (int i = 0; i < numSamples; ++i)

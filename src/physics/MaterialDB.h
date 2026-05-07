@@ -32,6 +32,17 @@ public:
         Damping damping;
     };
 
+    bool loadFromString (const juce::String& jsonText)
+    {
+        auto parsed = juce::JSON::parse (jsonText);
+        return parseJson (parsed);
+    }
+
+    bool loadFromBinary (const char* data, int sizeInBytes)
+    {
+        return loadFromString (juce::String::fromUTF8 (data, sizeInBytes));
+    }
+
     bool loadFromFile (const juce::File& jsonFile)
     {
         if (! jsonFile.existsAsFile())
@@ -39,7 +50,35 @@ public:
 
         auto text = jsonFile.loadFileAsString();
         auto parsed = juce::JSON::parse (text);
+        return parseJson (parsed);
+    }
 
+    const Material* getMaterial (const juce::String& name) const
+    {
+        auto it = materials.find (name);
+        return it != materials.end() ? &it->second : nullptr;
+    }
+
+    std::vector<juce::String> getMaterialNames() const
+    {
+        std::vector<juce::String> names;
+        for (const auto& pair : materials)
+            names.push_back (pair.first);
+        return names;
+    }
+
+    int size() const { return (int) materials.size(); }
+
+    /// 以固定順序取得材質 key（給 AudioParameterChoice 用）
+    static juce::StringArray getOrderedKeys()
+    {
+        return { "steel", "copper", "bronze", "aluminum", "brass",
+                 "wood_spruce", "wood_maple", "glass", "rubber" };
+    }
+
+private:
+    bool parseJson (const juce::var& parsed)
+    {
         if (parsed.isVoid())
             return false;
 
@@ -79,22 +118,5 @@ public:
         return ! materials.empty();
     }
 
-    const Material* getMaterial (const juce::String& name) const
-    {
-        auto it = materials.find (name);
-        return it != materials.end() ? &it->second : nullptr;
-    }
-
-    std::vector<juce::String> getMaterialNames() const
-    {
-        std::vector<juce::String> names;
-        for (const auto& pair : materials)
-            names.push_back (pair.first);
-        return names;
-    }
-
-    int size() const { return (int) materials.size(); }
-
-private:
     std::map<juce::String, Material> materials;
 };
