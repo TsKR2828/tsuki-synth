@@ -1,0 +1,129 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Forest Bamboo Rain",
+    "id": "forest_ambient_001",
+    "author": "TsukiSynth",
+    "description": "竹林雨滴 — 隨機音高竹管輕觸，綿密背景",
+    "created": "2026-05-07",
+    "tags": ["bamboo", "ambient", "rain", "gentle", "random"],
+    "mood": "calm",
+    "use_case": "ambient background",
+    "category": "worldview_sfx",
+    "worldview": "Forest",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "oneshot",
+    "family_id": "forest_ambient",
+    "character": ["soft", "airy"]
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.55,
+    "effects": {
+      "reverb": { "decay": 3.5, "wet": 0.45 },
+      "delay": { "time_ms": 300, "feedback": 0.25, "wet": 0.1 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 1.5,
+      "engine": "beam",
+      "note": "G5",
+      "velocity": 0.15,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 2.0,
+        "length_mm": 30,
+        "width_mm": 8,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      }
+    },
+    {
+      "time": 0.5,
+      "duration": 1.5,
+      "engine": "beam",
+      "note": "D6",
+      "velocity": 0.12,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 22,
+        "width_mm": 7,
+        "strike_position": 0.4,
+        "exciter": "finger_tap"
+      }
+    },
+    {
+      "time": 1.1,
+      "duration": 1.5,
+      "engine": "beam",
+      "note": "A5",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 2.2,
+        "length_mm": 28,
+        "width_mm": 8,
+        "strike_position": 0.45,
+        "exciter": "finger_tap"
+      }
+    },
+    {
+      "time": 1.8,
+      "duration": 1.5,
+      "engine": "beam",
+      "note": "F#6",
+      "velocity": 0.1,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.5,
+        "length_mm": 18,
+        "width_mm": 6,
+        "strike_position": 0.55,
+        "exciter": "finger_tap"
+      }
+    },
+    {
+      "time": 2.5,
+      "duration": 1.8,
+      "engine": "beam",
+      "note": "B5",
+      "velocity": 0.14,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 2.0,
+        "length_mm": 25,
+        "width_mm": 7,
+        "strike_position": 0.42,
+        "exciter": "finger_tap"
+      }
+    },
+    {
+      "time": 3.3,
+      "duration": 1.5,
+      "engine": "beam",
+      "note": "E6",
+      "velocity": 0.13,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 20,
+        "width_mm": 6,
+        "strike_position": 0.48,
+        "exciter": "finger_tap"
+      }
+    }
+  ],
+  "export": {
+    "filename": "forest_ambient_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 600,
+    "export_filename": "Ambience_Soft_OneShot_G5"
+  }
+}

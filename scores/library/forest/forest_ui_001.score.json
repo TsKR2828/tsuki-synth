@@ -1,0 +1,55 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Forest Acorn Tap",
+    "id": "forest_ui_001",
+    "author": "TsukiSynth",
+    "description": "橡果點擊 — 圓潤木頭短觸，自然 UI 音",
+    "created": "2026-05-07",
+    "tags": ["ui", "click", "wood", "short", "round"],
+    "mood": "playful",
+    "use_case": "UI button click",
+    "category": "character_ui",
+    "worldview": "Forest",
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "forest_ui",
+    "character": ["soft", "bright"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.68,
+    "effects": {
+      "reverb": { "decay": 0.4, "wet": 0.12 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.1,
+      "engine": "beam",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "wood_oak",
+        "thickness_mm": 8.0,
+        "length_mm": 15,
+        "width_mm": 15,
+        "strike_position": 0.3,
+        "exciter": "wood_mallet"
+      },
+      "comment": "厚實圓球感"
+    }
+  ],
+  "export": {
+    "filename": "forest_ui_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 40,
+    "export_filename": "UI_Soft_OneShot_F5"
+  }
+}

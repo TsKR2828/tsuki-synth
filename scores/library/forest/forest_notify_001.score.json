@@ -1,0 +1,70 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Forest Bird Call",
+    "id": "forest_notify_001",
+    "author": "TsukiSynth",
+    "description": "鳥鳴提示 — 竹管高音雙音，清脆自然",
+    "created": "2026-05-07",
+    "tags": ["bamboo", "notification", "bright", "short", "organic"],
+    "mood": "playful",
+    "use_case": "chat notification",
+    "category": "character_ui",
+    "worldview": "Forest",
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "forest_notify",
+    "character": ["bright", "airy"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.7,
+    "effects": {
+      "reverb": { "decay": 1.2, "wet": 0.25 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.4,
+      "engine": "beam",
+      "note": "B6",
+      "velocity": 0.6,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 2.0,
+        "length_mm": 20,
+        "width_mm": 8,
+        "strike_position": 0.3,
+        "exciter": "wood_mallet"
+      }
+    },
+    {
+      "time": 0.12,
+      "duration": 0.5,
+      "engine": "beam",
+      "note": "E7",
+      "velocity": 0.5,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.5,
+        "length_mm": 15,
+        "width_mm": 6,
+        "strike_position": 0.35,
+        "exciter": "wood_mallet"
+      },
+      "comment": "上行雙音模仿鳥鳴"
+    }
+  ],
+  "export": {
+    "filename": "forest_notify_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 150,
+    "export_filename": "UI_Bright_OneShot_B6"
+  }
+}
