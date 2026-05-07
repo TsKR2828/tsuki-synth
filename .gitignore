@@ -15,8 +15,7 @@ out/
 *.xcworkspace
 xcuserdata/
 
-# JUCE
-libs/JUCE/
+# JUCE (tracked as git submodule, don't ignore)
 
 # Compiled plugins
 *.vst3
