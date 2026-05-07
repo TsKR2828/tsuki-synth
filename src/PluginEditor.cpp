@@ -32,11 +32,20 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     setupSlider (fmAttackSlider,      "fm_attack",       "Attack",    "ms");
     setupSlider (fmReleaseSlider,     "fm_release",      "Release",   "ms");
 
+    // Effect chain controls (always visible)
+    setupSlider (fxReverbMixSlider,   "fx_reverb_mix",      "Reverb");
+    setupSlider (fxReverbSizeSlider,  "fx_reverb_size",     "Room Size");
+    setupSlider (fxDelayTimeSlider,   "fx_delay_time",      "Delay",     "ms");
+    setupSlider (fxDelayFbSlider,     "fx_delay_feedback",  "Dly FB");
+    setupSlider (fxDelayMixSlider,    "fx_delay_mix",       "Dly Mix");
+    setupSlider (fxCompThreshSlider,  "fx_comp_threshold",  "Comp",      "dB");
+    setupSlider (fxCompRatioSlider,   "fx_comp_ratio",      "Ratio");
+
     // Listen for engine changes
     processorRef.apvts.addParameterListener ("engine", this);
 
     updateEngineVisibility();
-    setSize (520, 440);
+    setSize (520, 580);
 }
 
 TsukiSynthEditor::~TsukiSynthEditor()
@@ -88,6 +97,7 @@ void TsukiSynthEditor::updateEngineVisibility()
     setComponentVisible (fmAttackSlider,     isFM);
     setComponentVisible (fmReleaseSlider,    isFM);
 
+    // Effects are always visible
     repaint();
 }
 
@@ -128,17 +138,28 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
     g.drawFittedText (subtitle, 0, 34, getWidth(), 18,
                       juce::Justification::centred, 1);
 
-    // Divider
+    // Divider after engine subtitle
     g.setColour (juce::Colour (0xff333355));
     g.drawHorizontalLine (56, 20.0f, (float) getWidth() - 20.0f);
+
+    // Divider before effects section
+    int fxDividerY = getHeight() - 155;
+    g.setColour (juce::Colour (0xff333355));
+    g.drawHorizontalLine (fxDividerY, 20.0f, (float) getWidth() - 20.0f);
+
+    // Effects section label
+    g.setColour (juce::Colour (0xff7788aa));
+    g.setFont (juce::FontOptions (11.0f));
+    g.drawFittedText ("EFFECTS", 20, fxDividerY + 2, 60, 14,
+                      juce::Justification::centredLeft, 1);
 }
 
 void TsukiSynthEditor::resized()
 {
     auto area = getLocalBounds().reduced (20).withTrimmedTop (50);
-    int rowH = 44;
+    int rowH = 40;
     int labelW = 80;
-    int gap = 6;
+    int gap = 4;
 
     // Row 0: Engine selector
     auto row0 = area.removeFromTop (rowH);
@@ -151,8 +172,6 @@ void TsukiSynthEditor::resized()
     if (engine == 0)
     {
         // ===== Cimbalom layout =====
-
-        // Row 1: Material + Hammer
         auto row1 = area.removeFromTop (rowH);
         int half = row1.getWidth() / 2;
         cimMaterialCombo.label->setBounds (row1.removeFromLeft (labelW));
@@ -162,19 +181,16 @@ void TsukiSynthEditor::resized()
         cimHammerCombo.combo->setBounds (row1.reduced (2));
         area.removeFromTop (gap);
 
-        // Row 2: Strike Position
         auto row2 = area.removeFromTop (rowH);
         cimStrikePosSlider.label->setBounds (row2.removeFromLeft (labelW));
         cimStrikePosSlider.slider->setBounds (row2.reduced (2));
         area.removeFromTop (gap);
 
-        // Row 3: Diameter
         auto row3 = area.removeFromTop (rowH);
         cimDiameterSlider.label->setBounds (row3.removeFromLeft (labelW));
         cimDiameterSlider.slider->setBounds (row3.reduced (2));
         area.removeFromTop (gap);
 
-        // Row 4: Strings + Detuning
         auto row4 = area.removeFromTop (rowH);
         auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
         cimNumStringsSlider.label->setBounds (r4left.removeFromLeft (labelW));
@@ -185,8 +201,6 @@ void TsukiSynthEditor::resized()
     else if (engine == 1)
     {
         // ===== Chromatic layout =====
-
-        // Row 1: Sub-engine + Material
         auto row1 = area.removeFromTop (rowH);
         int half = row1.getWidth() / 2;
         chrSubEngineCombo.label->setBounds (row1.removeFromLeft (60));
@@ -196,13 +210,11 @@ void TsukiSynthEditor::resized()
         chrMaterialCombo.combo->setBounds (row1.reduced (2));
         area.removeFromTop (gap);
 
-        // Row 2: Strike Position
         auto row2 = area.removeFromTop (rowH);
         chrStrikePosSlider.label->setBounds (row2.removeFromLeft (labelW));
         chrStrikePosSlider.slider->setBounds (row2.reduced (2));
         area.removeFromTop (gap);
 
-        // Row 3: Thickness + Size
         auto row3 = area.removeFromTop (rowH);
         auto r3left = row3.removeFromLeft (row3.getWidth() / 2);
         chrThicknessSlider.label->setBounds (r3left.removeFromLeft (labelW));
@@ -211,7 +223,6 @@ void TsukiSynthEditor::resized()
         chrSizeSlider.slider->setBounds (row3.reduced (2));
         area.removeFromTop (gap);
 
-        // Row 4: Exciter + Pitch Glide
         auto row4 = area.removeFromTop (rowH);
         auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
         chrExciterCombo.label->setBounds (r4left.removeFromLeft (60));
@@ -222,14 +233,11 @@ void TsukiSynthEditor::resized()
     else
     {
         // ===== FM Piano layout =====
-
-        // Row 1: Sound Type
         auto row1 = area.removeFromTop (rowH);
         fmTypeCombo.label->setBounds (row1.removeFromLeft (labelW));
         fmTypeCombo.combo->setBounds (row1.reduced (2));
         area.removeFromTop (gap);
 
-        // Row 2: Ratio + Mod Index
         auto row2 = area.removeFromTop (rowH);
         auto r2left = row2.removeFromLeft (row2.getWidth() / 2);
         fmRatioSlider.label->setBounds (r2left.removeFromLeft (labelW));
@@ -238,7 +246,6 @@ void TsukiSynthEditor::resized()
         fmIndexSlider.slider->setBounds (row2.reduced (2));
         area.removeFromTop (gap);
 
-        // Row 3: Brightness + Feedback
         auto row3 = area.removeFromTop (rowH);
         auto r3left = row3.removeFromLeft (row3.getWidth() / 2);
         fmBrightnessSlider.label->setBounds (r3left.removeFromLeft (labelW));
@@ -247,7 +254,6 @@ void TsukiSynthEditor::resized()
         fmFeedbackSlider.slider->setBounds (row3.reduced (2));
         area.removeFromTop (gap);
 
-        // Row 4: Attack + Release
         auto row4 = area.removeFromTop (rowH);
         auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
         fmAttackSlider.label->setBounds (r4left.removeFromLeft (labelW));
@@ -255,6 +261,41 @@ void TsukiSynthEditor::resized()
         fmReleaseSlider.label->setBounds (row4.removeFromLeft (labelW));
         fmReleaseSlider.slider->setBounds (row4.reduced (2));
     }
+
+    // ===== Effects section (always visible, bottom area) =====
+    int fxLabelW = 70;
+    auto fxArea = getLocalBounds().reduced (20);
+    fxArea = fxArea.withTop (getHeight() - 140);
+
+    // FX Row 1: Reverb Mix + Room Size
+    auto fxRow1 = fxArea.removeFromTop (36);
+    auto fx1left = fxRow1.removeFromLeft (fxRow1.getWidth() / 2);
+    fxReverbMixSlider.label->setBounds (fx1left.removeFromLeft (fxLabelW));
+    fxReverbMixSlider.slider->setBounds (fx1left.reduced (2));
+    fxReverbSizeSlider.label->setBounds (fxRow1.removeFromLeft (fxLabelW));
+    fxReverbSizeSlider.slider->setBounds (fxRow1.reduced (2));
+    fxArea.removeFromTop (2);
+
+    // FX Row 2: Delay Time + Delay Feedback + Delay Mix
+    auto fxRow2 = fxArea.removeFromTop (36);
+    int thirdW = fxRow2.getWidth() / 3;
+    auto fx2a = fxRow2.removeFromLeft (thirdW);
+    auto fx2b = fxRow2.removeFromLeft (thirdW);
+    fxDelayTimeSlider.label->setBounds (fx2a.removeFromLeft (fxLabelW));
+    fxDelayTimeSlider.slider->setBounds (fx2a.reduced (2));
+    fxDelayFbSlider.label->setBounds (fx2b.removeFromLeft (50));
+    fxDelayFbSlider.slider->setBounds (fx2b.reduced (2));
+    fxDelayMixSlider.label->setBounds (fxRow2.removeFromLeft (55));
+    fxDelayMixSlider.slider->setBounds (fxRow2.reduced (2));
+    fxArea.removeFromTop (2);
+
+    // FX Row 3: Compressor Threshold + Ratio
+    auto fxRow3 = fxArea.removeFromTop (36);
+    auto fx3left = fxRow3.removeFromLeft (fxRow3.getWidth() / 2);
+    fxCompThreshSlider.label->setBounds (fx3left.removeFromLeft (fxLabelW));
+    fxCompThreshSlider.slider->setBounds (fx3left.reduced (2));
+    fxCompRatioSlider.label->setBounds (fxRow3.removeFromLeft (fxLabelW));
+    fxCompRatioSlider.slider->setBounds (fxRow3.reduced (2));
 }
 
 void TsukiSynthEditor::setupCombo (ParamCombo& pc, const juce::String& paramID,
@@ -289,12 +330,12 @@ void TsukiSynthEditor::setupSlider (ParamSlider& ps, const juce::String& paramID
                                                  juce::Slider::TextBoxRight);
     ps.label  = std::make_unique<juce::Label> ("", labelText);
 
-    ps.slider->setTextBoxStyle (juce::Slider::TextBoxRight, false, 60, 24);
+    ps.slider->setTextBoxStyle (juce::Slider::TextBoxRight, false, 55, 22);
     if (suffix.isNotEmpty())
         ps.slider->setTextValueSuffix (" " + suffix);
 
     ps.label->setColour (juce::Label::textColourId, juce::Colour (0xffcccccc));
-    ps.label->setFont (juce::FontOptions (13.0f));
+    ps.label->setFont (juce::FontOptions (12.0f));
 
     addAndMakeVisible (*ps.slider);
     addAndMakeVisible (*ps.label);

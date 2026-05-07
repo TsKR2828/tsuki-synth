@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "physics/MaterialDB.h"
+#include "effects/EffectChain.h"
 
 class TsukiSynthProcessor : public juce::AudioProcessor
 {
@@ -37,6 +38,8 @@ private:
     juce::Synthesiser cimbalomSynth;
     juce::Synthesiser chromaticSynth;
     juce::Synthesiser fmPianoSynth;
+
+    EffectChain effectChain;
 
     std::atomic<float>* pEngine = nullptr;
     int lastEngine = -1;

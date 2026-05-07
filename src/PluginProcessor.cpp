@@ -145,6 +145,49 @@ TsukiSynthProcessor::createParameterLayout()
         juce::NormalisableRange<float> (10.0f, 5000.0f, 1.0f, 0.4f),
         300.0f));
 
+    // ---- Effect chain parameters ----
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fx_reverb_mix", 1 },
+        "Reverb Mix",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+        0.2f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fx_reverb_size", 1 },
+        "Room Size",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+        0.5f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fx_delay_time", 1 },
+        "Delay Time (ms)",
+        juce::NormalisableRange<float> (50.0f, 2000.0f, 1.0f, 0.4f),
+        300.0f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fx_delay_feedback", 1 },
+        "Delay Feedback",
+        juce::NormalisableRange<float> (0.0f, 0.95f, 0.01f),
+        0.3f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fx_delay_mix", 1 },
+        "Delay Mix",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+        0.0f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fx_comp_threshold", 1 },
+        "Comp Threshold (dB)",
+        juce::NormalisableRange<float> (-40.0f, 0.0f, 0.1f),
+        -12.0f));
+
+    params.push_back (std::make_unique<juce::AudioParameterFloat> (
+        juce::ParameterID { "fx_comp_ratio", 1 },
+        "Comp Ratio",
+        juce::NormalisableRange<float> (1.0f, 20.0f, 0.1f, 0.5f),
+        4.0f));
+
     return { params.begin(), params.end() };
 }
 
@@ -238,6 +281,15 @@ TsukiSynthProcessor::TsukiSynthProcessor()
             fmPianoSynth.addVoice (voice);
         }
     }
+
+    // ---- Effect chain ----
+    effectChain.pReverbMix     = apvts.getRawParameterValue ("fx_reverb_mix");
+    effectChain.pReverbSize    = apvts.getRawParameterValue ("fx_reverb_size");
+    effectChain.pDelayTime     = apvts.getRawParameterValue ("fx_delay_time");
+    effectChain.pDelayFeedback = apvts.getRawParameterValue ("fx_delay_feedback");
+    effectChain.pDelayMix      = apvts.getRawParameterValue ("fx_delay_mix");
+    effectChain.pCompThreshold = apvts.getRawParameterValue ("fx_comp_threshold");
+    effectChain.pCompRatio     = apvts.getRawParameterValue ("fx_comp_ratio");
 }
 
 TsukiSynthProcessor::~TsukiSynthProcessor() {}
@@ -248,6 +300,7 @@ void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
     cimbalomSynth.setCurrentPlaybackSampleRate (sampleRate);
     chromaticSynth.setCurrentPlaybackSampleRate (sampleRate);
     fmPianoSynth.setCurrentPlaybackSampleRate (sampleRate);
+    effectChain.prepare (sampleRate);
 }
 
 void TsukiSynthProcessor::releaseResources() {}
@@ -281,6 +334,9 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     else
         fmPianoSynth.renderNextBlock (buffer, midiMessages,
                                       0, buffer.getNumSamples());
+
+    // Global effect chain: Compressor → Delay → Reverb
+    effectChain.processBlock (buffer);
 }
 
 // == State ==

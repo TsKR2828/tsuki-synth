@@ -2,6 +2,43 @@
 
 ---
 
+## 2026-05-08 — Phase 6 完成：效果鏈
+
+**新增效果模組（`src/effects/`）：**
+- `SimpleReverb.h` — Freeverb-style Schroeder reverb
+  - 8 parallel comb filters with LP damping in feedback loop
+  - 4 serial allpass filters for diffusion
+  - Stereo spread: R channel delay offset +23 samples
+  - Parameters: room size, damping, wet/dry mix
+- `StereoDelay.h` — Stereo delay effect
+  - 複用 DelayLine module (circular buffer + linear interpolation)
+  - One-pole LP filter in feedback path (~4kHz cutoff) for warm repeats
+  - R channel 10% longer delay for spatial width
+  - Parameters: time (50~2000ms), feedback (0~0.95), mix
+- `Compressor.h` — Peak compressor/limiter
+  - Linked stereo detection (max of L/R) to prevent image shift
+  - Fixed attack 5ms / release 100ms for clean operation
+  - Auto makeup gain (compensates for average gain reduction)
+  - Parameters: threshold (-40~0 dB), ratio (1~20)
+- `EffectChain.h` — Global chain orchestrator
+  - Processing order: Compressor → Delay → Reverb
+  - Reads APVTS atomic parameters per block
+  - Stereo-aware processing (mono fallback supported)
+
+**PluginProcessor 更新：**
+- Effect chain integrated in processBlock (after synth engine render)
+- 7 new APVTS parameters: fx_reverb_mix, fx_reverb_size, fx_delay_time, fx_delay_feedback, fx_delay_mix, fx_comp_threshold, fx_comp_ratio
+- effectChain.prepare() called in prepareToPlay
+
+**PluginEditor 更新：**
+- Window height increased to 580px to accommodate effect section
+- Bottom section: EFFECTS label + divider, always visible regardless of engine
+- 3 rows: Reverb (mix + room), Delay (time + feedback + mix), Compressor (threshold + ratio)
+
+**目前總參數量：** 1 global + 6 cimbalom + 7 chromatic + 7 fm piano + 7 effects = **28 parameters**
+
+---
+
 ## 2026-05-08 — Phase 5 完成：FM Piano 引擎
 
 **新增引擎：**

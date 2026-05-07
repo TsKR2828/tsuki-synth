@@ -54,13 +54,15 @@
 - [x] PluginEditor 三引擎面板切換
 - [x] 編譯通過（VST3 + Standalone）
 
-## 當前：Phase 6 — 效果鏈
+## 已完成：Phase 6 — 效果鏈
 
-- [ ] Reverb（Freeverb or Schroeder）
-- [ ] Delay（複用 DelayLine）
-- [ ] Wall Reflection（3-tap delay + LP）
-- [ ] Compressor
-- [ ] EffectChain 串接
+- [x] Reverb — Freeverb-style（8 comb + 4 allpass, stereo spread）
+- [x] Delay — Stereo delay（LP in feedback, 10% R offset for width）
+- [x] Compressor — Peak compressor（linked stereo, auto makeup gain）
+- [x] EffectChain 串接（Compressor → Delay → Reverb）
+- [x] 7 個 FX 參數 APVTS 整合
+- [x] PluginEditor 效果控制面板（always visible, 底部三行）
+- [x] 編譯通過（VST3 + Standalone）
 
 ## 待辦：Phase 7 — GUI
 
