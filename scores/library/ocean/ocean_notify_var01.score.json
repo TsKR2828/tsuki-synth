@@ -1,0 +1,60 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Ocean Bubble Pop (Deep)",
+    "id": "ocean_notify_var01",
+    "author": "TsukiSynth",
+    "description": "深水氣泡 — 原版降八度+更長 reverb，沉重版",
+    "created": "2026-05-07",
+    "tags": ["bubble", "notification", "deep", "dark", "liquid"],
+    "mood": "mystical",
+    "use_case": "VTuber reaction / emote",
+    "category": "character_ui",
+    "worldview": "Ocean",
+    "variation_of": "ocean_notify_001",
+    "primary_type": "ui",
+    "sound_type": "variant",
+    "family_id": "ocean_notify",
+    "character": ["dark", "soft"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.7,
+    "effects": {
+      "reverb": { "decay": 3.0, "wet": 0.45 },
+      "delay": { "time_ms": 200, "feedback": 0.15, "wet": 0.08 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.5,
+      "engine": "beam",
+      "note": "C5",
+      "velocity": 0.5,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 2.0,
+        "length_mm": 30,
+        "width_mm": 30,
+        "strike_position": 0.5,
+        "exciter": "rubber_mallet"
+      },
+      "glide": {
+        "from_note": "A4",
+        "duration_ms": 100,
+        "curve": "exponential"
+      },
+      "comment": "低八度版，緩慢上浮"
+    }
+  ],
+  "export": {
+    "filename": "ocean_notify_var01",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 200,
+    "export_filename": "UI_Dark_OneShot_C5"
+  }
+}

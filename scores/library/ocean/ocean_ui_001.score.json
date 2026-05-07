@@ -1,0 +1,55 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Ocean Droplet Tap",
+    "id": "ocean_ui_001",
+    "author": "TsukiSynth",
+    "description": "水滴點擊 — 玻璃短觸，乾淨水感 UI",
+    "created": "2026-05-07",
+    "tags": ["ui", "click", "glass", "short", "liquid"],
+    "mood": "calm",
+    "use_case": "UI button click",
+    "category": "character_ui",
+    "worldview": "Ocean",
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "ocean_ui",
+    "character": ["bright", "soft"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.65,
+    "effects": {
+      "reverb": { "decay": 0.8, "wet": 0.2 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.15,
+      "engine": "beam",
+      "note": "A5",
+      "velocity": 0.45,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 1.5,
+        "length_mm": 12,
+        "width_mm": 12,
+        "strike_position": 0.4,
+        "exciter": "finger_tap"
+      },
+      "comment": "水滴落下的瞬間"
+    }
+  ],
+  "export": {
+    "filename": "ocean_ui_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 50,
+    "export_filename": "UI_Bright_OneShot_A5"
+  }
+}
