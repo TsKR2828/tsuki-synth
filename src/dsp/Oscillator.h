@@ -1,71 +1,59 @@
 #pragma once
-
 #include <cmath>
 #include <juce_core/juce_core.h>
 
-enum class Waveform { Sine, Saw, Square, Triangle };
-
+/**
+ * 基礎振盪器 — 相位累加器 + 多波形
+ * 用途：LFO 的底層、FM Piano 的 carrier/modulator、測試用
+ */
 class Oscillator
 {
 public:
-    void prepare (double newSampleRate)
-    {
-        sampleRate = newSampleRate;
-        updateIncrement();
-    }
+    enum class Waveform { Sine, Saw, Square, Triangle };
 
-    void setFrequency (double freq)
-    {
-        frequency = freq;
-        updateIncrement();
-    }
-
-    void setWaveform (Waveform w) { waveform = w; }
+    void setSampleRate (double sr) { sampleRate = sr; updateDelta(); }
+    void setFrequency (double hz)  { frequency = hz;  updateDelta(); }
+    void setWaveform (Waveform w)  { waveform = w; }
 
     void reset() { phase = 0.0; }
 
-    float getNextSample()
+    float processSample()
     {
-        float output = 0.0f;
+        float out = 0.0f;
 
         switch (waveform)
         {
             case Waveform::Sine:
-                output = static_cast<float> (std::sin (phase));
+                out = (float) std::sin (phase);
                 break;
-
             case Waveform::Saw:
-                output = static_cast<float> (1.0 - 2.0 * phase / juce::MathConstants<double>::twoPi);
+                out = (float) (1.0 - phase / juce::MathConstants<double>::pi);
                 break;
-
             case Waveform::Square:
-                output = (phase < juce::MathConstants<double>::pi) ? 1.0f : -1.0f;
+                out = phase < juce::MathConstants<double>::pi ? 1.0f : -1.0f;
                 break;
-
             case Waveform::Triangle:
-            {
-                double t = phase / juce::MathConstants<double>::twoPi;
-                output = static_cast<float> (4.0 * std::abs (t - 0.5) - 1.0);
+                out = (float) (2.0 * std::abs (1.0 - phase / juce::MathConstants<double>::pi) - 1.0);
                 break;
-            }
         }
 
-        phase += phaseIncrement;
+        phase += phaseDelta;
         if (phase >= juce::MathConstants<double>::twoPi)
             phase -= juce::MathConstants<double>::twoPi;
 
-        return output;
+        return out;
     }
 
 private:
-    void updateIncrement()
+    void updateDelta()
     {
-        phaseIncrement = juce::MathConstants<double>::twoPi * frequency / sampleRate;
+        if (sampleRate > 0.0)
+            phaseDelta = frequency * juce::MathConstants<double>::twoPi / sampleRate;
     }
 
-    double sampleRate      = 44100.0;
-    double frequency       = 440.0;
-    double phase           = 0.0;
-    double phaseIncrement  = 0.0;
-    Waveform waveform      = Waveform::Sine;
+    double sampleRate  = 44100.0;
+    double frequency   = 440.0;
+    double phase       = 0.0;
+    double phaseDelta  = 0.0;
+    Waveform waveform  = Waveform::Sine;
 };

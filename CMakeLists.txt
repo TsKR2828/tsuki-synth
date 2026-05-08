@@ -1,23 +1,16 @@
 cmake_minimum_required(VERSION 3.22)
-project(TsukiSynth VERSION 0.1.0 LANGUAGES CXX)
+project(TsukiSynth VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include(FetchContent)
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
 
-FetchContent_Declare(
-    JUCE
-    GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-    GIT_TAG        8.0.1
-    GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
-)
+add_subdirectory(libs/JUCE)
 
-FetchContent_MakeAvailable(JUCE)
-
-# --- AAX Support (Phase 9) ---
-# To build AAX: cmake -B build -DTSUKI_AAX=ON -DAAX_SDK_PATH="C:/path/to/AAX_SDK"
+# --- AAX / AU support ---
 option(TSUKI_AAX "Build AAX format (requires Avid AAX SDK)" OFF)
 option(TSUKI_AU  "Build AU format (macOS only)" OFF)
 
@@ -30,8 +23,7 @@ endif()
 
 if(TSUKI_AAX)
     if(NOT DEFINED AAX_SDK_PATH)
-        message(FATAL_ERROR "TSUKI_AAX=ON but AAX_SDK_PATH not set. "
-            "Download from https://developer.avid.com and set -DAAX_SDK_PATH=...")
+        message(FATAL_ERROR "TSUKI_AAX=ON but AAX_SDK_PATH not set.")
     endif()
     juce_set_aax_sdk_path("${AAX_SDK_PATH}")
     list(APPEND PLUGIN_FORMATS AAX)
@@ -39,72 +31,58 @@ if(TSUKI_AAX)
 endif()
 
 juce_add_plugin(TsukiSynth
-    COMPANY_NAME        "TsKR"
+    COMPANY_NAME "TsKR"
+    IS_SYNTH TRUE
+    NEEDS_MIDI_INPUT TRUE
+    NEEDS_MIDI_OUTPUT FALSE
     PLUGIN_MANUFACTURER_CODE TsKR
-    PLUGIN_CODE         TkSy
-    FORMATS             ${PLUGIN_FORMATS}
-    PRODUCT_NAME        "TsukiSynth"
-    IS_SYNTH            TRUE
-    NEEDS_MIDI_INPUT    TRUE
-    NEEDS_MIDI_OUTPUT   FALSE
-    IS_MIDI_EFFECT      FALSE
-    COPY_PLUGIN_AFTER_BUILD FALSE
-    AAX_CATEGORY        AAX_ePlugInCategory_SWGenerators
+    PLUGIN_CODE TkSy
+    FORMATS ${PLUGIN_FORMATS}
+    PRODUCT_NAME "TsukiSynth"
+    AAX_CATEGORY AAX_ePlugInCategory_SWGenerators
 )
 
-juce_add_binary_data(TsukiSynthData
-    SOURCES
-        data/materials.json
+juce_add_binary_data(TsukiSynthData SOURCES
+    data/materials.json
 )
 
-target_sources(TsukiSynth
-    PRIVATE
-        src/PluginProcessor.cpp
-        src/PluginEditor.cpp
+target_sources(TsukiSynth PRIVATE
+    src/PluginProcessor.cpp
+    src/PluginEditor.cpp
 )
 
-target_include_directories(TsukiSynth
-    PRIVATE
-        src
-)
+target_include_directories(TsukiSynth PRIVATE src)
 
-target_compile_definitions(TsukiSynth
-    PUBLIC
-        JUCE_WEB_BROWSER=0
-        JUCE_USE_CURL=0
-        JUCE_VST3_CAN_REPLACE_VST2=0
+target_compile_definitions(TsukiSynth PUBLIC
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+    JUCE_VST3_CAN_REPLACE_VST2=0
 )
 
 target_link_libraries(TsukiSynth
     PRIVATE
         TsukiSynthData
         juce::juce_audio_utils
-        juce::juce_dsp
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
 
-# --- CLI Renderer ---
+# --- CLI Score Renderer ---
 juce_add_console_app(TsukiSynthCLI
     PRODUCT_NAME "tsukisynth-cli"
 )
 
-target_sources(TsukiSynthCLI
-    PRIVATE
-        src/cli/RenderApp.cpp
+target_sources(TsukiSynthCLI PRIVATE
+    src/cli/RenderApp.cpp
 )
 
-target_include_directories(TsukiSynthCLI
-    PRIVATE
-        src
-)
+target_include_directories(TsukiSynthCLI PRIVATE src)
 
-target_compile_definitions(TsukiSynthCLI
-    PRIVATE
-        JUCE_WEB_BROWSER=0
-        JUCE_USE_CURL=0
+target_compile_definitions(TsukiSynthCLI PRIVATE
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
 )
 
 target_link_libraries(TsukiSynthCLI

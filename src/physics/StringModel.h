@@ -1,91 +1,119 @@
 #pragma once
-
 #include "MaterialDB.h"
 #include "../dsp/ModalResonator.h"
-#include <cmath>
 #include <vector>
+#include <cmath>
+#include <juce_core/juce_core.h>
 
-struct StringParams
-{
-    double stringLength   = 0.35;   // L in meters
-    double stringDiameter = 0.8e-3; // d in meters (0.8mm)
-    double tension        = 800.0;  // T in Newtons
-    double strikePosition = 0.3;    // x_hit / L (0.0 ~ 1.0)
-    int    numModes       = 40;
-};
-
+/**
+ * 弦振動物理模型 — Phase 3 Cimbalom 引擎的核心
+ *
+ * 模態頻率：  f(n) = (n / 2L) × √(T / μ) × √(1 + B × n²)
+ * 非諧性：    B = (π³ × E × d⁴) / (64 × T × L²)
+ * 衰減時間：  τ(n) = 1 / (α + β_air × f(n)² + γ_radiation × f(n))
+ * 激發振幅：  a(n) = sin(n × π × x_hit / L)
+ *
+ * 其中：
+ *   L = 弦長 (m),  T = 張力 (N),  d = 弦徑 (m)
+ *   μ = 線密度 = ρ × π × (d/2)²  (kg/m)
+ *   E = 楊氏模量 (Pa),  ρ = 密度 (kg/m³)
+ */
 class StringModel
 {
 public:
-    static std::vector<Mode> calculateModes (const Material& mat,
-                                              const StringParams& params)
+    struct Params
     {
-        const double L   = params.stringLength;
-        const double d   = params.stringDiameter;
-        const double T   = params.tension;
-        const double x   = params.strikePosition;
-        const int    N   = params.numModes;
-        const double rho = mat.density;
-        const double E   = mat.youngsModulus;
+        float length         = 0.35f;    // 弦長 (m)
+        float tension        = 800.0f;   // 張力 (N)
+        float diameter       = 0.0008f;  // 弦徑 (m)  = 0.8mm
+        float strikePosition = 0.3f;     // 擊打位置 (0~1)
+        int   numModes       = 40;       // 模態數
+    };
 
-        // linear density: mu = rho * pi * (d/2)^2
-        const double radius = d * 0.5;
-        const double mu = rho * juce::MathConstants<double>::pi * radius * radius;
+    /**
+     * 從物理參數計算所有模態
+     * @return 模態列表，可直接傳入 ModalResonator::setModes()
+     */
+    static std::vector<ModalResonator::Mode> calculateModes (
+        const Params& params,
+        const MaterialDB::Material& material)
+    {
+        std::vector<ModalResonator::Mode> modes;
+        modes.reserve ((size_t) params.numModes);
 
-        if (mu <= 0.0 || T <= 0.0 || L <= 0.0)
-            return {};
+        const float L = params.length;
+        const float T = params.tension;
+        const float d = params.diameter;
+        const float r = d / 2.0f;
 
-        // ideal fundamental: f1 = (1 / 2L) * sqrt(T / mu)
-        const double f1_ideal = std::sqrt (T / mu) / (2.0 * L);
+        // 線密度 μ = ρ × π × r²
+        const float mu = material.density
+                         * juce::MathConstants<float>::pi * r * r;
 
-        // inharmonicity coefficient: B = (pi^3 * E * d^4) / (64 * T * L^2)
-        const double pi3 = juce::MathConstants<double>::pi
-                         * juce::MathConstants<double>::pi
-                         * juce::MathConstants<double>::pi;
-        const double d4  = d * d * d * d;
-        const double B   = (pi3 * E * d4) / (64.0 * T * L * L);
+        // 基頻 f1 = 1/(2L) × √(T/μ)
+        const float f1 = (1.0f / (2.0f * L))
+                         * std::sqrt (T / mu);
 
-        const double alpha = mat.damping.alpha;
-        const double beta  = mat.damping.betaAir;
-        const double gamma = mat.damping.gammaRadiation;
+        // 非諧性係數 B = π³ × E × d⁴ / (64 × T × L²)
+        const float pi3 = juce::MathConstants<float>::pi
+                         * juce::MathConstants<float>::pi
+                         * juce::MathConstants<float>::pi;
+        const float d4 = d * d * d * d;
+        const float B = (pi3 * material.youngsModulus * d4)
+                        / (64.0f * T * L * L);
 
-        std::vector<Mode> modes;
-        modes.reserve (static_cast<size_t> (N));
+        // 阻尼參數
+        const float alpha = material.damping.alpha;
+        const float beta  = material.damping.beta_air;
+        const float gamma = material.damping.gamma_radiation;
 
-        for (int n = 1; n <= N; ++n)
+        for (int n = 1; n <= params.numModes; ++n)
         {
-            // f(n) = n * f1 * sqrt(1 + B * n^2)
-            const double nn = static_cast<double> (n);
-            const double freq = nn * f1_ideal * std::sqrt (1.0 + B * nn * nn);
+            float fn = (float) n;
 
-            // tau(n) = 1 / (alpha + beta * f^2 + gamma * f)
-            const double denominator = alpha + beta * freq * freq + gamma * freq;
-            const double tau = (denominator > 0.0) ? 1.0 / denominator : 10.0;
+            // 模態頻率（含剛性修正）
+            float freq = fn * f1 * std::sqrt (1.0f + B * fn * fn);
 
-            // amplitude(n) = sin(n * pi * x_hit / L)
-            const double amp = std::abs (
-                std::sin (nn * juce::MathConstants<double>::pi * x));
+            // 超出人耳範圍就截斷
+            if (freq > 20000.0f)
+                break;
 
-            Mode m;
-            m.frequency = freq;
-            m.amplitude = amp;
-            m.decayTime = tau;
+            // 衰減時間
+            float decayDenom = alpha + beta * freq * freq + gamma * freq;
+            float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 10.0f;
 
-            modes.push_back (m);
+            // 擊打位置影響振幅
+            float amp = std::abs (std::sin (fn * juce::MathConstants<float>::pi
+                                            * params.strikePosition));
+
+            modes.push_back ({ freq, amp, decay });
         }
 
         return modes;
     }
 
-    static double calculateFundamental (const Material& mat,
-                                         const StringParams& params)
+    /**
+     * 從 MIDI 音符計算弦長
+     * 假設基準：A4 (MIDI 69) = 0.35m，每升一個八度弦長減半
+     */
+    static float lengthFromMidiNote (int midiNote, float referenceLength = 0.35f)
     {
-        const double radius = params.stringDiameter * 0.5;
-        const double mu = mat.density * juce::MathConstants<double>::pi * radius * radius;
+        float semitoneOffset = (float) (midiNote - 69);
+        return referenceLength * std::pow (2.0f, -semitoneOffset / 12.0f);
+    }
 
-        if (mu <= 0.0 || params.tension <= 0.0 || params.stringLength <= 0.0)
-            return 0.0;
-
-        return std::sqrt (params.tension / mu) / (2.0 * params.stringLength);
+    /**
+     * 從 MIDI 音符計算所需張力
+     * 給定弦長、弦徑、材質密度，反推需要多少張力才能得到正確基頻
+     *   T = μ × (2L × f1)²
+     */
+    static float tensionForNote (int midiNote, float length, float diameter,
+                                 float density)
+    {
+        float targetFreq = 440.0f * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
+        float r = diameter / 2.0f;
+        float mu = density * juce::MathConstants<float>::pi * r * r;
+        float v = 2.0f * length * targetFreq;  // 弦上波速
+        return mu * v * v;
     }
 };

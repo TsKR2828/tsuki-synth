@@ -1,110 +1,149 @@
 #pragma once
-
-#include <cmath>
 #include <vector>
+#include <cmath>
 #include <algorithm>
 #include <juce_core/juce_core.h>
 
-struct Mode
-{
-    double frequency   = 0.0;
-    double amplitude   = 0.0;
-    double decayTime   = 0.0;  // tau in seconds
-
-    double phase       = 0.0;
-    double phaseInc    = 0.0;
-    double currentAmp  = 0.0;
-    double decayFactor = 0.0;  // per-sample multiplier
-};
-
+/**
+ * Modal Resonator - core DSP component of TsukiSynth
+ *
+ * Decomposes vibration into N independent decaying sinusoids (modes).
+ * Each mode has its own frequency, amplitude, and decay time.
+ *
+ *   output(t) = sum[ amp[n] * exp(-t/decay[n]) * sin(2*pi*freq[n]*t) ]
+ *
+ * Mode parameters are computed by physics models (StringModel / BeamModel / PlateModel)
+ * and passed in. This module only handles efficient rendering.
+ */
 class ModalResonator
 {
 public:
-    void prepare (double newSampleRate)
+    /// Physical description of a single mode
+    struct Mode
     {
-        sampleRate = newSampleRate;
-    }
+        float frequency = 440.0f;   // Hz
+        float amplitude = 1.0f;     // initial amplitude (from strike position)
+        float decayTime = 1.0f;     // seconds (from material damping)
+    };
 
+    void setSampleRate (double sr) { sampleRate = sr; }
+
+    /// Set modes (computed by physics model, passed in)
     void setModes (const std::vector<Mode>& newModes)
     {
-        modes = newModes;
-        const double nyquist = sampleRate * 0.5;
+        int n = (int) newModes.size();
+        modes.resize ((size_t) n);
 
-        modes.erase (
-            std::remove_if (modes.begin(), modes.end(),
-                [nyquist] (const Mode& m) { return m.frequency >= nyquist || m.frequency <= 0.0; }),
-            modes.end());
-
-        for (auto& m : modes)
+        for (int i = 0; i < n; ++i)
         {
-            m.phaseInc    = juce::MathConstants<double>::twoPi * m.frequency / sampleRate;
-            m.decayFactor = std::exp (-1.0 / (m.decayTime * sampleRate));
-            m.currentAmp  = m.amplitude;
-            m.phase       = 0.0;
+            modes[(size_t) i].freq       = newModes[(size_t) i].frequency;
+            modes[(size_t) i].baseAmp    = newModes[(size_t) i].amplitude;
+            modes[(size_t) i].decayTime  = newModes[(size_t) i].decayTime;
+            modes[(size_t) i].phase      = 0.0f;
+            modes[(size_t) i].currentAmp = 0.0f;
+            modes[(size_t) i].decayCoeff = 1.0f;
+            modes[(size_t) i].phaseDelta = 0.0f;
         }
-
-        active = ! modes.empty();
     }
 
-    void trigger (float velocity)
+    /// Excite (MIDI note on)
+    void excite (float velocity)
     {
-        const double vel = static_cast<double> (velocity);
+        active = true;
         for (auto& m : modes)
         {
-            m.currentAmp = m.amplitude * vel;
-            m.phase      = 0.0;
+            // skip modes outside audible range
+            if (m.freq > 20000.0f || m.freq < 20.0f)
+            {
+                m.currentAmp = 0.0f;
+                continue;
+            }
+
+            m.currentAmp = m.baseAmp * velocity;
+            m.phase      = 0.0f;
+            m.phaseDelta = m.freq * (float) juce::MathConstants<double>::twoPi / (float) sampleRate;
+
+            // decay coefficient: reach -60dB (~0.001) after decayTime seconds
+            if (m.decayTime > 0.0f)
+                m.decayCoeff = std::exp (-6.9078f / (m.decayTime * (float) sampleRate));
+            else
+                m.decayCoeff = 0.0f;
         }
-        active = ! modes.empty();
     }
 
-    void release (float damping = 1.0f)
+    /// Damp (damper off / note off - accelerate decay)
+    void damp (float factor = 0.05f)
     {
-        const double d = static_cast<double> (damping);
         for (auto& m : modes)
         {
-            double fastDecay = std::exp (-d * 20.0 / (m.decayTime * sampleRate));
-            m.decayFactor = fastDecay;
+            float shortened = m.decayTime * factor;
+            if (shortened > 0.0f)
+                m.decayCoeff = std::exp (-6.9078f / (shortened * (float) sampleRate));
+            else
+                m.decayCoeff = 0.0f;
         }
     }
 
-    float getNextSample()
+    /// Render one sample
+    float processSample()
     {
         if (! active)
             return 0.0f;
 
-        double output = 0.0;
-        bool anyAlive = false;
+        float output = 0.0f;
+        bool anyActive = false;
 
         for (auto& m : modes)
         {
-            if (m.currentAmp < 1e-7)
+            if (m.currentAmp < 0.0001f)
                 continue;
 
             output += m.currentAmp * std::sin (m.phase);
-            m.phase += m.phaseInc;
 
-            if (m.phase >= juce::MathConstants<double>::twoPi)
-                m.phase -= juce::MathConstants<double>::twoPi;
+            m.phase += m.phaseDelta;
+            if (m.phase >= (float) juce::MathConstants<double>::twoPi)
+                m.phase -= (float) juce::MathConstants<double>::twoPi;
 
-            m.currentAmp *= m.decayFactor;
-            anyAlive = true;
+            m.currentAmp *= m.decayCoeff;
+            anyActive = true;
         }
 
-        active = anyAlive;
-        return static_cast<float> (output);
+        if (! anyActive)
+            active = false;
+
+        return output;
     }
 
-    void scaleFrequencies (double factor)
+    /// Render into a buffer (additive)
+    void processBlock (float* buffer, int numSamples)
     {
-        for (auto& m : modes)
-            m.phaseInc = juce::MathConstants<double>::twoPi * m.frequency * factor / sampleRate;
+        for (int i = 0; i < numSamples; ++i)
+            buffer[i] += processSample();
     }
 
     bool isActive() const { return active; }
-    int getNumModes() const { return static_cast<int> (modes.size()); }
+
+    int getActiveModeCount() const
+    {
+        int count = 0;
+        for (const auto& m : modes)
+            if (m.currentAmp >= 0.0001f) ++count;
+        return count;
+    }
 
 private:
-    std::vector<Mode> modes;
+    struct ModeState
+    {
+        float freq       = 0.0f;
+        float baseAmp    = 0.0f;
+        float decayTime  = 0.0f;
+        float phase      = 0.0f;
+        float phaseDelta = 0.0f;
+        float currentAmp = 0.0f;
+        float decayCoeff = 1.0f;
+    };
+
     double sampleRate = 44100.0;
+    std::vector<ModeState> modes;
     bool active = false;
 };

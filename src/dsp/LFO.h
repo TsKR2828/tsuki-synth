@@ -1,31 +1,31 @@
 #pragma once
-
 #include "Oscillator.h"
 
+/**
+ * 低頻振盪器 — 調變用
+ * 底層複用 Oscillator，加上 depth / bipolar 控制
+ * 用途：vibrato、tremolo、filter modulation
+ */
 class LFO
 {
 public:
-    void prepare (double sampleRate)
-    {
-        osc.prepare (sampleRate);
-    }
-
-    void setRate (double hz)       { osc.setFrequency (hz); }
-    void setWaveform (Waveform w)  { osc.setWaveform (w); }
+    void setSampleRate (double sr) { osc.setSampleRate (sr); }
+    void setRate (float hz)        { osc.setFrequency (hz); }
     void setDepth (float d)        { depth = d; }
+    void setWaveform (Oscillator::Waveform w) { osc.setWaveform (w); }
 
     void reset() { osc.reset(); }
 
-    // Returns bipolar value in [-depth, +depth]
-    float getNextSample()
+    // 回傳 [-depth, +depth]
+    float processSample()
     {
-        return osc.getNextSample() * depth;
+        return osc.processSample() * depth;
     }
 
-    // Returns unipolar value in [0, depth]
-    float getNextSampleUnipolar()
+    // 回傳 [0, depth]（單極性，適合 amplitude modulation）
+    float processUnipolar()
     {
-        return (osc.getNextSample() + 1.0f) * 0.5f * depth;
+        return (osc.processSample() * 0.5f + 0.5f) * depth;
     }
 
 private:

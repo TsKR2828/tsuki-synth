@@ -1,80 +1,99 @@
 #pragma once
-
 #include "MaterialDB.h"
 #include "../dsp/ModalResonator.h"
-#include <cmath>
 #include <vector>
-#include <array>
+#include <cmath>
+#include <juce_core/juce_core.h>
 
-struct BeamParams
-{
-    double length    = 0.15;    // L in meters
-    double width     = 0.025;   // b in meters
-    double thickness = 0.003;   // h in meters
-    double strikePosition = 0.5;
-    int    numModes  = 20;
-};
-
+/**
+ * Euler-Bernoulli 梁振動模型 — 空靈鼓 (Tongue Drum) 引擎
+ *
+ * 模態頻率：f(n) = (beta_n^2 / (2*pi*L^2)) * sqrt(E*I / (rho*A))
+ *
+ * Free-free beam beta_n values:
+ *   beta_1=4.730, beta_2=7.853, beta_3=10.996, beta_4=14.137, beta_5=17.279
+ *   -> ratio: 1.000, 2.757, 5.404, 8.933, 13.345
+ *
+ * 特徵：非諧波模態序列（不是整數倍），產生空靈鼓特有的「鐘聲感」
+ */
 class BeamModel
 {
 public:
-    // Euler-Bernoulli beam (free-free boundary conditions)
-    // f(n) = (beta_n^2 / (2*pi*L^2)) * sqrt(E*I / (rho*A))
-    static std::vector<Mode> calculateModes (const Material& mat,
-                                              const BeamParams& params)
+    struct Params
     {
-        const double L   = params.length;
-        const double b   = params.width;
-        const double h   = params.thickness;
-        const double rho = mat.density;
-        const double E   = mat.youngsModulus;
+        float length    = 0.12f;     // 舌片長度 (m)
+        float width     = 0.02f;     // 舌片寬度 (m)
+        float thickness = 0.003f;    // 舌片厚度 (m)
+        float strikePosition = 0.5f; // 擊打位置 (0~1)
+        int   numModes  = 12;        // 模態數（梁模態密度低，12 足夠）
+    };
 
-        // Cross-section area and second moment of area
-        const double A = b * h;
-        const double I = b * h * h * h / 12.0;
+    static std::vector<ModalResonator::Mode> calculateModes (
+        const Params& params,
+        const MaterialDB::Material& material)
+    {
+        std::vector<ModalResonator::Mode> modes;
+        modes.reserve ((size_t) params.numModes);
 
-        if (A <= 0.0 || I <= 0.0 || L <= 0.0 || rho <= 0.0)
-            return {};
+        const float L = params.length;
+        const float w = params.width;
+        const float h = params.thickness;
 
-        // Free-free beam beta_n values (first 20 modes)
-        static const std::array<double, 20> betaL = {
-            4.73004, 7.85320, 10.9956, 14.1372, 17.2788,
-            20.4204, 23.5619, 26.7035, 29.8451, 32.9867,
-            36.1283, 39.2699, 42.4115, 45.5531, 48.6947,
-            51.8363, 54.9779, 58.1195, 61.2611, 64.4026
+        // 截面慣性矩 I = w * h^3 / 12
+        const float I = w * h * h * h / 12.0f;
+        // 截面積 A = w * h
+        const float A = w * h;
+
+        // sqrt(E*I / (rho*A))
+        const float stiffness = std::sqrt (
+            material.youngsModulus * I / (material.density * A));
+
+        // Free-free beam eigenvalues (beta_n * L)
+        // 前 5 個精確值，之後用近似公式 beta_n ≈ (2n+1)*pi/2
+        static constexpr float betaL[] = {
+            4.7300f, 7.8532f, 10.9956f, 14.1372f, 17.2788f
         };
 
-        const double alpha = mat.damping.alpha;
-        const double beta  = mat.damping.betaAir;
-        const double gamma = mat.damping.gammaRadiation;
-        const double x     = params.strikePosition;
+        const float alpha = material.damping.alpha;
+        const float beta  = material.damping.beta_air;
+        const float gamma = material.damping.gamma_radiation;
 
-        const double coeff = std::sqrt (E * I / (rho * A))
-                           / (juce::MathConstants<double>::twoPi * L * L);
+        const float twoPiL2 = juce::MathConstants<float>::twoPi * L * L;
 
-        std::vector<Mode> modes;
-        const int N = juce::jmin (params.numModes, 20);
-
-        for (int n = 0; n < N; ++n)
+        for (int n = 0; n < params.numModes; ++n)
         {
-            const double bn   = betaL[static_cast<size_t>(n)];
-            const double freq = bn * bn * coeff;
+            // beta_n * L
+            float bn;
+            if (n < 5)
+                bn = betaL[n];
+            else
+                bn = ((float) (2 * (n + 1) + 1)) * juce::MathConstants<float>::pi / 2.0f;
 
-            const double denominator = alpha + beta * freq * freq + gamma * freq;
-            const double tau = (denominator > 0.0) ? 1.0 / denominator : 5.0;
+            // 模態頻率
+            float freq = (bn * bn / twoPiL2) * stiffness;
 
-            // Approximate strike position excitation for beam
-            const double nn = static_cast<double> (n + 1);
-            const double amp = std::abs (
-                std::sin (nn * juce::MathConstants<double>::pi * x));
+            if (freq > 20000.0f)
+                break;
 
-            Mode m;
-            m.frequency = freq;
-            m.amplitude = amp / (1.0 + nn * 0.1);
-            m.decayTime = tau;
-            modes.push_back (m);
+            // 衰減（梁比弦衰減快，damping 加權）
+            float decayDenom = alpha * 2.0f + beta * freq * freq + gamma * freq;
+            float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 5.0f;
+
+            // 擊打位置影響（free-free beam mode shape 近似）
+            float x = params.strikePosition;
+            float amp = std::abs (std::sin (((float) (n + 1)) * juce::MathConstants<float>::pi * x));
+
+            modes.push_back ({ freq, amp, decay });
         }
 
         return modes;
+    }
+
+    /// 從 MIDI 音符計算舌片長度（A4=0.12m 基準）
+    static float lengthFromMidiNote (int midiNote, float referenceLength = 0.12f)
+    {
+        float semitoneOffset = (float) (midiNote - 69);
+        // 梁頻率 ∝ 1/L^2，所以 L ∝ 1/sqrt(f)
+        return referenceLength * std::pow (2.0f, -semitoneOffset / 24.0f);
     }
 };

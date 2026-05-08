@@ -1,33 +1,46 @@
 #pragma once
-
 #include <juce_core/juce_core.h>
 #include <map>
-#include <string>
 
-struct MaterialDamping
-{
-    double alpha          = 0.0;
-    double betaAir        = 0.0;
-    double gammaRadiation = 0.0;
-};
-
-struct Material
-{
-    std::string key;
-    std::string displayName;
-    double density       = 0.0;
-    double youngsModulus  = 0.0;
-    double poissonRatio   = 0.0;
-    MaterialDamping damping;
-};
-
+/**
+ * 材質數據庫 — 載入 data/materials.json
+ *
+ * 每種材質包含：
+ *   density        (kg/m³)   — 影響模態頻率
+ *   youngs_modulus  (Pa)      — 材質剛性
+ *   poisson_ratio   (無量綱)  — 橫向變形
+ *   damping.alpha             — 材質內部阻尼
+ *   damping.beta_air          — 空氣黏滯阻尼
+ *   damping.gamma_radiation   — 聲輻射損耗
+ */
 class MaterialDB
 {
 public:
+    struct Damping
+    {
+        float alpha          = 0.5f;
+        float beta_air       = 1.2e-7f;
+        float gamma_radiation = 2e-5f;
+    };
+
+    struct Material
+    {
+        juce::String displayName;
+        float density        = 7800.0f;   // kg/m³
+        float youngsModulus   = 200e9f;    // Pa
+        float poissonRatio    = 0.29f;
+        Damping damping;
+    };
+
     bool loadFromString (const juce::String& jsonText)
     {
         auto parsed = juce::JSON::parse (jsonText);
         return parseJson (parsed);
+    }
+
+    bool loadFromBinary (const char* data, int sizeInBytes)
+    {
+        return loadFromString (juce::String::fromUTF8 (data, sizeInBytes));
     }
 
     bool loadFromFile (const juce::File& jsonFile)
@@ -35,58 +48,69 @@ public:
         if (! jsonFile.existsAsFile())
             return false;
 
-        auto parsed = juce::JSON::parse (jsonFile.loadFileAsString());
+        auto text = jsonFile.loadFileAsString();
+        auto parsed = juce::JSON::parse (text);
         return parseJson (parsed);
     }
 
-    const Material* getMaterial (const std::string& key) const
+    const Material* getMaterial (const juce::String& name) const
     {
-        auto it = materials.find (key);
+        auto it = materials.find (name);
         return it != materials.end() ? &it->second : nullptr;
     }
 
-    std::vector<std::string> getMaterialKeys() const
+    std::vector<juce::String> getMaterialNames() const
     {
-        std::vector<std::string> keys;
+        std::vector<juce::String> names;
         for (const auto& pair : materials)
-            keys.push_back (pair.first);
-        return keys;
+            names.push_back (pair.first);
+        return names;
     }
 
-    int getNumMaterials() const { return static_cast<int> (materials.size()); }
+    int size() const { return (int) materials.size(); }
+
+    /// 以固定順序取得材質 key（給 AudioParameterChoice 用）
+    static juce::StringArray getOrderedKeys()
+    {
+        return { "steel", "copper", "bronze", "aluminum", "brass",
+                 "wood_spruce", "wood_maple", "glass", "rubber" };
+    }
 
 private:
     bool parseJson (const juce::var& parsed)
     {
-        if (! parsed.isObject())
+        if (parsed.isVoid())
             return false;
 
-        materials.clear();
-
-        auto materialsVar = parsed.getProperty ("materials", {});
-        auto* obj = materialsVar.isObject()
-                  ? materialsVar.getDynamicObject()
-                  : parsed.getDynamicObject();
-
+        auto* obj = parsed.getDynamicObject();
         if (obj == nullptr)
             return false;
 
-        for (const auto& prop : obj->getProperties())
+        auto materialsVar = obj->getProperty ("materials");
+        auto* materialsObj = materialsVar.getDynamicObject();
+        if (materialsObj == nullptr)
+            return false;
+
+        materials.clear();
+        for (const auto& prop : materialsObj->getProperties())
         {
-            auto key = prop.name.toString().toStdString();
-            auto& val = prop.value;
+            auto key = prop.name.toString();
+            auto* matObj = prop.value.getDynamicObject();
+            if (matObj == nullptr) continue;
 
             Material mat;
-            mat.key           = key;
-            mat.displayName   = val["display_name"].toString().toStdString();
-            mat.density       = static_cast<double> (val["density"]);
-            mat.youngsModulus  = static_cast<double> (val["youngs_modulus"]);
-            mat.poissonRatio  = static_cast<double> (val["poisson_ratio"]);
+            mat.displayName  = matObj->getProperty ("display_name").toString();
+            mat.density      = (float) (double) matObj->getProperty ("density");
+            mat.youngsModulus = (float) (double) matObj->getProperty ("youngs_modulus");
+            mat.poissonRatio  = (float) (double) matObj->getProperty ("poisson_ratio");
 
-            auto damp = val["damping"];
-            mat.damping.alpha          = static_cast<double> (damp["alpha"]);
-            mat.damping.betaAir        = static_cast<double> (damp["beta_air"]);
-            mat.damping.gammaRadiation = static_cast<double> (damp["gamma_radiation"]);
+            auto dampingVar = matObj->getProperty ("damping");
+            if (auto* dampObj = dampingVar.getDynamicObject())
+            {
+                mat.damping.alpha           = (float) (double) dampObj->getProperty ("alpha");
+                mat.damping.beta_air        = (float) (double) dampObj->getProperty ("beta_air");
+                mat.damping.gamma_radiation  = (float) (double) dampObj->getProperty ("gamma_radiation");
+            }
 
             materials[key] = mat;
         }
@@ -94,5 +118,5 @@ private:
         return ! materials.empty();
     }
 
-    std::map<std::string, Material> materials;
+    std::map<juce::String, Material> materials;
 };

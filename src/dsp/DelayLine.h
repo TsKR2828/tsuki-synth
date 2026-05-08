@@ -1,68 +1,73 @@
 #pragma once
-
 #include <vector>
 #include <cmath>
 
+/**
+ * 延遲線 — 環狀緩衝 + 線性插值 + feedback
+ * 用途：Delay 效果、Wall Reflection、Karplus-Strong
+ */
 class DelayLine
 {
 public:
-    void prepare (double newSampleRate, double maxDelaySeconds = 2.0)
+    void prepare (double sr, float maxDelaySec = 2.0f)
     {
-        sampleRate = newSampleRate;
-        int maxSamples = static_cast<int> (maxDelaySeconds * sampleRate) + 1;
-        buffer.resize (static_cast<size_t> (maxSamples), 0.0f);
-        writeIndex = 0;
+        sampleRate = sr;
+        int maxSamples = (int) (maxDelaySec * sr) + 1;
+        buffer.assign ((size_t) maxSamples, 0.0f);
+        writePos = 0;
     }
 
-    void setDelay (double delaySeconds)
+    void setDelay (float delaySec)
     {
-        delaySamples = delaySeconds * sampleRate;
-        if (delaySamples >= static_cast<double> (buffer.size()))
-            delaySamples = static_cast<double> (buffer.size()) - 1.0;
-        if (delaySamples < 0.0)
-            delaySamples = 0.0;
+        delaySamples = (float) (delaySec * sampleRate);
+        if (delaySamples >= (float) buffer.size())
+            delaySamples = (float) buffer.size() - 1.0f;
+        if (delaySamples < 0.0f)
+            delaySamples = 0.0f;
     }
 
-    void setFeedback (float fb) { feedback = fb; }
-    void setWetDry (float wet)  { wetMix = wet; }
+    void setFeedback (float fb) { feedback = std::clamp (fb, 0.0f, 0.95f); }
+    void setWetDry   (float w)  { wet = std::clamp (w, 0.0f, 1.0f); }
+
+    void reset()
+    {
+        std::fill (buffer.begin(), buffer.end(), 0.0f);
+        writePos = 0;
+    }
 
     float processSample (float input)
     {
         float delayed = readSample();
         float toWrite = input + delayed * feedback;
 
-        buffer[static_cast<size_t> (writeIndex)] = toWrite;
-        writeIndex = (writeIndex + 1) % static_cast<int> (buffer.size());
+        buffer[(size_t) writePos] = toWrite;
+        writePos = (writePos + 1) % (int) buffer.size();
 
-        return input * (1.0f - wetMix) + delayed * wetMix;
+        return input * (1.0f - wet) + delayed * wet;
     }
 
-    void reset()
-    {
-        std::fill (buffer.begin(), buffer.end(), 0.0f);
-        writeIndex = 0;
-    }
+    // 直接讀寫（給 Karplus-Strong 等演算法用）
+    void  pushSample (float s) { buffer[(size_t) writePos] = s; writePos = (writePos + 1) % (int) buffer.size(); }
+    float popSample() const    { return readSample(); }
 
 private:
     float readSample() const
     {
-        double readPos = static_cast<double> (writeIndex) - delaySamples;
-        if (readPos < 0.0)
-            readPos += static_cast<double> (buffer.size());
+        float readPos = (float) writePos - delaySamples;
+        if (readPos < 0.0f)
+            readPos += (float) buffer.size();
 
-        int idx0 = static_cast<int> (readPos);
-        int idx1 = (idx0 + 1) % static_cast<int> (buffer.size());
-        double frac = readPos - static_cast<double> (idx0);
+        int   idx0 = (int) readPos;
+        int   idx1 = (idx0 + 1) % (int) buffer.size();
+        float frac = readPos - (float) idx0;
 
-        return static_cast<float> (
-            buffer[static_cast<size_t> (idx0)] * (1.0 - frac)
-          + buffer[static_cast<size_t> (idx1)] * frac);
+        return buffer[(size_t) idx0] * (1.0f - frac) + buffer[(size_t) idx1] * frac;
     }
 
+    double sampleRate    = 44100.0;
     std::vector<float> buffer;
-    double sampleRate   = 44100.0;
-    double delaySamples = 0.0;
-    int    writeIndex   = 0;
-    float  feedback     = 0.0f;
-    float  wetMix       = 0.5f;
+    int   writePos       = 0;
+    float delaySamples   = 0.0f;
+    float feedback       = 0.0f;
+    float wet            = 0.5f;
 };

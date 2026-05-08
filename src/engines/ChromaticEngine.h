@@ -1,225 +1,230 @@
 #pragma once
-
+#include <juce_audio_processors/juce_audio_processors.h>
 #include "../dsp/ModalResonator.h"
 #include "../dsp/NoiseGen.h"
 #include "../dsp/BiquadFilter.h"
 #include "../dsp/Envelope.h"
-#include "../physics/MaterialDB.h"
 #include "../physics/BeamModel.h"
 #include "../physics/PlateModel.h"
-#include <juce_core/juce_core.h>
+#include "../physics/MaterialDB.h"
 
-enum class ChromaticSubEngine { TongueDrum, WaterGong, CustomHarmonics };
+/**
+ * Chromatic Synth 引擎 — 三合一
+ *   0 = Tongue Drum（Euler-Bernoulli 梁）
+ *   1 = Water Gong （Kirchhoff 圓板）
+ *   2 = Custom     （使用者自填 ratio/amplitude）
+ */
 
-struct ChromaticParams
-{
-    ChromaticSubEngine subEngine = ChromaticSubEngine::TongueDrum;
-    std::string materialKey     = "aluminum";
-
-    // Tongue drum (beam)
-    double tongueLength    = 0.12;
-    double tongueWidth     = 0.025;
-    double tongueThickness = 0.003;
-
-    // Water gong (plate)
-    double plateRadius     = 0.15;
-    double plateThickness  = 0.002;
-    double waterLevel      = 0.0;  // 0 = dry, 1 = fully submerged
-
-    // Shared
-    double strikePosition  = 0.5;
-    int    numModes        = 20;
-
-    // Custom harmonics
-    struct Harmonic { double ratio; double amplitude; };
-    std::vector<Harmonic> customHarmonics = {
-        {1.0, 1.0}, {2.0, 0.5}, {3.0, 0.25}, {4.16, 0.15},
-        {5.43, 0.1}, {6.8, 0.06}, {8.2, 0.03}
-    };
-};
-
-class ChromaticVoice
+class ChromaticSound : public juce::SynthesiserSound
 {
 public:
-    void prepare (double sampleRate)
+    bool appliesToNote (int) override    { return true; }
+    bool appliesToChannel (int) override { return true; }
+};
+
+class ChromaticVoice : public juce::SynthesiserVoice
+{
+public:
+    void setMaterialDB (MaterialDB* db) { materialDB = db; }
+
+    // 參數指標（由 Processor 設定）
+    std::atomic<float>* pSubEngine     = nullptr;  // 0=beam, 1=plate, 2=custom
+    std::atomic<float>* pMaterial      = nullptr;
+    std::atomic<float>* pStrikePos     = nullptr;
+    std::atomic<float>* pThickness     = nullptr;  // mm
+    std::atomic<float>* pSize          = nullptr;   // mm (beam=length, plate=radius)
+    std::atomic<float>* pExciter       = nullptr;   // 0~3
+    std::atomic<float>* pPitchGlide    = nullptr;   // water gong 水位效果 (0~1)
+
+    bool canPlaySound (juce::SynthesiserSound* s) override
     {
-        sr = sampleRate;
-        resonator.prepare (sampleRate);
-        exciterEnvelope.prepare (sampleRate);
-        exciterNoise.setType (NoiseType::White);
-        exciterFilter.prepare (sampleRate);
+        return dynamic_cast<ChromaticSound*> (s) != nullptr;
     }
 
-    void noteOn (int midiNote, float velocity, const Material& mat,
-                 const ChromaticParams& params)
+    void startNote (int midiNoteNumber, float velocity,
+                    juce::SynthesiserSound*, int) override
     {
-        active = true;
-        double targetFreq = juce::MidiMessage::getMidiNoteInHertz (midiNote);
+        if (materialDB == nullptr) return;
 
-        std::vector<Mode> modes;
+        auto keys = MaterialDB::getOrderedKeys();
+        int matIdx = juce::jlimit (0, keys.size() - 1, (int) pMaterial->load());
+        auto* mat = materialDB->getMaterial (keys[matIdx]);
+        if (mat == nullptr) return;
 
-        switch (params.subEngine)
+        int subEngine = (int) pSubEngine->load();
+        float strikePos = pStrikePos->load();
+        float thickness = pThickness->load() * 0.001f;  // mm -> m
+        float size      = pSize->load() * 0.001f;       // mm -> m
+        float exciter   = pExciter->load();
+        glideAmount     = pPitchGlide->load();
+
+        std::vector<ModalResonator::Mode> modes;
+
+        if (subEngine == 0)  // Tongue Drum (beam)
         {
-            case ChromaticSubEngine::TongueDrum:
-                modes = buildTongueDrumModes (mat, params, targetFreq);
-                break;
-
-            case ChromaticSubEngine::WaterGong:
-                modes = buildWaterGongModes (mat, params, targetFreq);
-                waterGlideActive = params.waterLevel > 0.01;
-                waterGlidePhase = 0.0;
-                waterGlideFactor = 1.0;
-                waterGlideTarget = 1.0 / (1.0 + params.waterLevel * 0.6);
-                waterGlideSpeed = 0.5 + params.waterLevel * 2.0;
-                break;
-
-            case ChromaticSubEngine::CustomHarmonics:
-                modes = buildCustomModes (params, targetFreq, mat);
-                break;
+            BeamModel::Params bp;
+            bp.length    = BeamModel::lengthFromMidiNote (midiNoteNumber);
+            bp.width     = size > 0.001f ? size : 0.02f;
+            bp.thickness = thickness > 0.0001f ? thickness : 0.003f;
+            bp.strikePosition = strikePos;
+            bp.numModes  = 12;
+            modes = BeamModel::calculateModes (bp, *mat);
+        }
+        else if (subEngine == 1)  // Water Gong (plate)
+        {
+            PlateModel::Params pp;
+            pp.radius    = PlateModel::radiusFromMidiNote (midiNoteNumber);
+            pp.thickness = thickness > 0.0001f ? thickness : 0.003f;
+            pp.strikePosition = strikePos;
+            pp.numModes  = 20;
+            modes = PlateModel::calculateModes (pp, *mat);
+        }
+        else  // Custom harmonics
+        {
+            modes = buildCustomModes (midiNoteNumber, *mat);
         }
 
-        resonator.prepare (sr);
+        // 保存基礎模態用於 pitch glide
+        baseModes = modes;
+        glidePhase = 0.0f;
+
+        resonator.setSampleRate (getSampleRate());
         resonator.setModes (modes);
-        resonator.trigger (velocity);
+        resonator.excite (velocity);
 
-        // Exciter
-        double cutoff = 4000.0;
-        double decay  = 4.0;
-        exciterFilter.setParameters (FilterType::LowPass, cutoff, 0.7);
-        exciterEnvelope.setDecayTime (decay / 1000.0);
-        exciterEnvelope.trigger (velocity);
+        setupExciter (exciter, velocity);
+        damped = false;
     }
 
-    void noteOff()
+    void stopNote (float, bool allowTailOff) override
     {
-        resonator.release();
-    }
-
-    float getNextSample()
-    {
-        if (! active)
-            return 0.0f;
-
-        // Water gong pitch glide effect
-        if (waterGlideActive && waterGlideFactor > waterGlideTarget)
+        if (allowTailOff)
         {
-            waterGlidePhase += 1.0 / sr;
-            double progress = 1.0 - std::exp (-waterGlidePhase * waterGlideSpeed);
-            waterGlideFactor = 1.0 - progress * (1.0 - waterGlideTarget);
+            if (! damped)
+            {
+                resonator.damp (0.08f);
+                damped = true;
+            }
+        }
+        else
+        {
+            clearCurrentNote();
+        }
+    }
+
+    void pitchWheelMoved (int) override {}
+    void controllerMoved (int cc, int val) override
+    {
+        if (cc == 64 && val < 64 && ! damped)
+        {
+            resonator.damp (0.08f);
+            damped = true;
+        }
+    }
+
+    void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
+                          int startSample, int numSamples) override
+    {
+        bool anyActive = false;
+
+        // Water gong pitch glide（持續降低模態頻率模擬浸水效果）
+        if (glideAmount > 0.01f && ! baseModes.empty())
+        {
+            glidePhase += glideAmount * 0.00002f;  // slow glide
+            if (glidePhase < 0.5f)
+            {
+                float glideMul = 1.0f - glidePhase * 0.3f;  // max 15% pitch drop
+                auto glidedModes = baseModes;
+                for (auto& m : glidedModes)
+                    m.frequency *= glideMul;
+                // 只更新頻率，不重新 excite
+                resonator.setModes (glidedModes);
+            }
         }
 
-        float exciterSample = 0.0f;
-        if (exciterEnvelope.isActive())
+        while (--numSamples >= 0)
         {
-            float noise = exciterNoise.getNextSample();
-            noise = exciterFilter.processSample (noise);
-            exciterSample = noise * exciterEnvelope.getNextSample();
+            float sample = 0.0f;
+
+            if (resonator.isActive())
+            {
+                sample += resonator.processSample();
+                anyActive = true;
+            }
+
+            if (exciterEnv.isActive())
+            {
+                float noise = noiseGen.processSample();
+                noise = exciterFilter.processSample (noise);
+                sample += noise * exciterEnv.process();
+                anyActive = true;
+            }
+
+            sample *= 0.2f;
+
+            for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
+                outputBuffer.addSample (ch, startSample, sample);
+
+            ++startSample;
         }
 
-        if (waterGlideActive)
-            resonator.scaleFrequencies (waterGlideFactor);
-
-        float resonatorSample = resonator.getNextSample();
-        active = resonator.isActive() || exciterEnvelope.isActive();
-
-        return exciterSample * 0.2f + resonatorSample;
-    }
-
-    bool isActive() const { return active; }
-
-    void scaleFrequencies (double factor)
-    {
-        resonator.scaleFrequencies (factor);
+        if (! anyActive)
+            clearCurrentNote();
     }
 
 private:
-    std::vector<Mode> buildTongueDrumModes (const Material& mat,
-                                             const ChromaticParams& params,
-                                             double targetFreq)
+    /// Custom harmonics mode: user-defined ratio/amplitude
+    std::vector<ModalResonator::Mode> buildCustomModes (
+        int midiNote, const MaterialDB::Material& mat)
     {
-        BeamParams bp;
-        bp.length    = params.tongueLength;
-        bp.width     = params.tongueWidth;
-        bp.thickness = params.tongueThickness;
-        bp.strikePosition = params.strikePosition;
-        bp.numModes  = params.numModes;
+        float fundamental = 440.0f * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
+        // 預設 custom ratios（模擬原型 chromatic-synth.html 的手動泛音）
+        static constexpr float ratios[]  = { 1.0f, 2.0f, 3.0f, 4.16f, 5.43f, 6.98f, 8.21f, 10.0f };
+        static constexpr float amps[]    = { 1.0f, 0.7f, 0.5f, 0.35f, 0.25f, 0.18f, 0.12f, 0.08f };
+        static constexpr int count = 8;
 
-        auto modes = BeamModel::calculateModes (mat, bp);
+        std::vector<ModalResonator::Mode> modes;
+        const float alpha = mat.damping.alpha;
+        const float beta  = mat.damping.beta_air;
+        const float gamma = mat.damping.gamma_radiation;
 
-        if (modes.empty())
-            return modes;
-
-        // Scale all modes so fundamental matches target MIDI frequency
-        double ratio = targetFreq / modes[0].frequency;
-        for (auto& m : modes)
-            m.frequency *= ratio;
-
-        return modes;
-    }
-
-    std::vector<Mode> buildWaterGongModes (const Material& mat,
-                                            const ChromaticParams& params,
-                                            double targetFreq)
-    {
-        PlateParams pp;
-        pp.radius    = params.plateRadius;
-        pp.thickness = params.plateThickness;
-        pp.strikePosition = params.strikePosition;
-        pp.numModes  = params.numModes;
-
-        auto modes = PlateModel::calculateModes (mat, pp);
-
-        if (modes.empty())
-            return modes;
-
-        double ratio = targetFreq / modes[0].frequency;
-        for (auto& m : modes)
+        for (int i = 0; i < count; ++i)
         {
-            m.frequency *= ratio;
-            // Water adds mass, increases damping
-            m.decayTime *= (1.0 - params.waterLevel * 0.4);
-        }
+            float freq = fundamental * ratios[i];
+            if (freq > 20000.0f) break;
 
+            float decayDenom = alpha + beta * freq * freq + gamma * freq;
+            float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 5.0f;
+
+            modes.push_back ({ freq, amps[i], decay });
+        }
         return modes;
     }
 
-    std::vector<Mode> buildCustomModes (const ChromaticParams& params,
-                                         double targetFreq,
-                                         const Material& mat)
+    void setupExciter (float hardness, float velocity)
     {
-        std::vector<Mode> modes;
-        const double alpha = mat.damping.alpha;
-        const double beta  = mat.damping.betaAir;
-        const double gamma = mat.damping.gammaRadiation;
+        static constexpr float cutoffs[]   = { 500.0f, 1500.0f, 4000.0f, 10000.0f };
+        static constexpr float durations[] = { 0.005f, 0.003f,  0.002f,  0.001f };
+        int idx = juce::jlimit (0, 3, (int) hardness);
 
-        for (const auto& h : params.customHarmonics)
-        {
-            double freq = targetFreq * h.ratio;
-            double denom = alpha + beta * freq * freq + gamma * freq;
-            double tau = (denom > 0.0) ? 1.0 / denom : 3.0;
-
-            Mode m;
-            m.frequency = freq;
-            m.amplitude = h.amplitude;
-            m.decayTime = tau;
-            modes.push_back (m);
-        }
-
-        return modes;
+        exciterFilter.setSampleRate (getSampleRate());
+        exciterFilter.setParams (BiquadFilter::Type::LowPass, cutoffs[idx], 0.707f);
+        exciterFilter.reset();
+        noiseGen.setType (NoiseGen::Type::White);
+        noiseGen.reset();
+        exciterEnv.trigger (velocity * 0.2f, durations[idx], getSampleRate());
     }
 
-    double sr = 44100.0;
-    bool active = false;
-
+    MaterialDB*    materialDB = nullptr;
     ModalResonator resonator;
-    NoiseGen exciterNoise;
-    BiquadFilter exciterFilter;
-    ExpDecayEnvelope exciterEnvelope;
+    bool           damped = false;
 
-    // Water gong pitch glide
-    bool   waterGlideActive = false;
-    double waterGlidePhase  = 0.0;
-    double waterGlideFactor = 1.0;
-    double waterGlideTarget = 1.0;
-    double waterGlideSpeed  = 1.0;
+    NoiseGen           noiseGen;
+    BiquadFilter       exciterFilter;
+    Envelope::ExpDecay exciterEnv;
+
+    // Pitch glide state (water gong)
+    std::vector<ModalResonator::Mode> baseModes;
+    float glideAmount = 0.0f;
+    float glidePhase  = 0.0f;
 };

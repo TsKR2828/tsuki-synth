@@ -1,87 +1,85 @@
 #pragma once
-
 #include <cmath>
 #include <juce_core/juce_core.h>
 
-enum class FilterType { LowPass, HighPass, BandPass };
-
+/**
+ * Biquad IIR 濾波器 — LP / HP / BP / Notch
+ * 係數公式來源：Robert Bristow-Johnson Audio EQ Cookbook
+ */
 class BiquadFilter
 {
 public:
-    void prepare (double newSampleRate)
-    {
-        sampleRate = newSampleRate;
-        reset();
-    }
+    enum class Type { LowPass, HighPass, BandPass, Notch };
 
-    void setParameters (FilterType type, double frequency, double Q = 0.707)
-    {
-        const double w0    = juce::MathConstants<double>::twoPi * frequency / sampleRate;
-        const double cosw0 = std::cos (w0);
-        const double sinw0 = std::sin (w0);
-        const double alpha = sinw0 / (2.0 * Q);
+    void setSampleRate (double sr) { sampleRate = sr; }
 
-        double b0 = 0, b1 = 0, b2 = 0, a0 = 1, a1 = 0, a2 = 0;
+    void setParams (Type type, float cutoffHz, float q = 0.707f)
+    {
+        float w0 = juce::MathConstants<float>::twoPi * cutoffHz / (float) sampleRate;
+        float cosW0 = std::cos (w0);
+        float sinW0 = std::sin (w0);
+        float alpha = sinW0 / (2.0f * q);
+
+        float b0, b1, b2, a0, a1, a2;
 
         switch (type)
         {
-            case FilterType::LowPass:
-                b0 = (1.0 - cosw0) / 2.0;
-                b1 =  1.0 - cosw0;
-                b2 = (1.0 - cosw0) / 2.0;
-                a0 =  1.0 + alpha;
-                a1 = -2.0 * cosw0;
-                a2 =  1.0 - alpha;
+            case Type::LowPass:
+                b0 = (1.0f - cosW0) / 2.0f;
+                b1 =  1.0f - cosW0;
+                b2 = (1.0f - cosW0) / 2.0f;
+                a0 =  1.0f + alpha;
+                a1 = -2.0f * cosW0;
+                a2 =  1.0f - alpha;
                 break;
 
-            case FilterType::HighPass:
-                b0 =  (1.0 + cosw0) / 2.0;
-                b1 = -(1.0 + cosw0);
-                b2 =  (1.0 + cosw0) / 2.0;
-                a0 =  1.0 + alpha;
-                a1 = -2.0 * cosw0;
-                a2 =  1.0 - alpha;
+            case Type::HighPass:
+                b0 =  (1.0f + cosW0) / 2.0f;
+                b1 = -(1.0f + cosW0);
+                b2 =  (1.0f + cosW0) / 2.0f;
+                a0 =  1.0f + alpha;
+                a1 = -2.0f * cosW0;
+                a2 =  1.0f - alpha;
                 break;
 
-            case FilterType::BandPass:
+            case Type::BandPass:
                 b0 =  alpha;
-                b1 =  0.0;
+                b1 =  0.0f;
                 b2 = -alpha;
-                a0 =  1.0 + alpha;
-                a1 = -2.0 * cosw0;
-                a2 =  1.0 - alpha;
+                a0 =  1.0f + alpha;
+                a1 = -2.0f * cosW0;
+                a2 =  1.0f - alpha;
+                break;
+
+            case Type::Notch:
+                b0 =  1.0f;
+                b1 = -2.0f * cosW0;
+                b2 =  1.0f;
+                a0 =  1.0f + alpha;
+                a1 = -2.0f * cosW0;
+                a2 =  1.0f - alpha;
                 break;
         }
 
-        coeffB0 = b0 / a0;
-        coeffB1 = b1 / a0;
-        coeffB2 = b2 / a0;
-        coeffA1 = a1 / a0;
-        coeffA2 = a2 / a0;
+        // normalize
+        cb0 = b0 / a0;  cb1 = b1 / a0;  cb2 = b2 / a0;
+        ca1 = a1 / a0;  ca2 = a2 / a0;
     }
 
-    float processSample (float input)
-    {
-        double x = static_cast<double> (input);
-        double y = coeffB0 * x + coeffB1 * x1 + coeffB2 * x2
-                                - coeffA1 * y1 - coeffA2 * y2;
-        x2 = x1;
-        x1 = x;
-        y2 = y1;
-        y1 = y;
+    void reset() { x1 = x2 = y1 = y2 = 0.0f; }
 
-        return static_cast<float> (y);
-    }
-
-    void reset()
+    float processSample (float x0)
     {
-        x1 = x2 = y1 = y2 = 0.0;
+        float y0 = cb0 * x0 + cb1 * x1 + cb2 * x2 - ca1 * y1 - ca2 * y2;
+        x2 = x1;  x1 = x0;
+        y2 = y1;  y1 = y0;
+        return y0;
     }
 
 private:
     double sampleRate = 44100.0;
-    double coeffB0 = 1.0, coeffB1 = 0.0, coeffB2 = 0.0;
-    double coeffA1 = 0.0, coeffA2 = 0.0;
-    double x1 = 0.0, x2 = 0.0;
-    double y1 = 0.0, y2 = 0.0;
+    float cb0 = 1.0f, cb1 = 0.0f, cb2 = 0.0f;
+    float ca1 = 0.0f, ca2 = 0.0f;
+    float x1 = 0.0f, x2 = 0.0f;
+    float y1 = 0.0f, y2 = 0.0f;
 };

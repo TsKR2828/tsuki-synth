@@ -1,59 +1,119 @@
 #pragma once
-
 #include <cmath>
 #include <algorithm>
 
-class ExpDecayEnvelope
+/**
+ * 包絡產生器 — 兩種模式
+ *   1. ADSR：傳統 Attack-Decay-Sustain-Release（FM Piano 用）
+ *   2. Exponential Decay：單純指數衰減（Modal Synthesis 每個模態用）
+ */
+class Envelope
 {
 public:
-    void prepare (double newSampleRate) { sampleRate = newSampleRate; }
+    enum class State { Idle, Attack, Decay, Sustain, Release };
 
-    void setDecayTime (double seconds)
+    // ── ADSR 參數（秒）──
+    void setAttack  (float seconds) { attackTime  = std::max (0.001f, seconds); }
+    void setDecay   (float seconds) { decayTime   = std::max (0.001f, seconds); }
+    void setSustain (float level)   { sustainLevel = std::clamp (level, 0.0f, 1.0f); }
+    void setRelease (float seconds) { releaseTime = std::max (0.001f, seconds); }
+
+    void setSampleRate (double sr) { sampleRate = sr; }
+
+    void noteOn()
     {
-        decayTime = seconds;
-        if (sampleRate > 0.0 && decayTime > 0.0)
-            decayFactor = std::exp (-1.0 / (decayTime * sampleRate));
-        else
-            decayFactor = 0.0;
+        state = State::Attack;
+        currentLevel = 0.0f;
     }
 
-    void trigger (float velocity = 1.0f)
+    void noteOff()
     {
-        currentLevel = static_cast<double> (velocity);
-        active = true;
+        if (state != State::Idle)
+            state = State::Release;
     }
 
-    void release (double fastDecaySeconds = 0.05)
-    {
-        if (sampleRate > 0.0 && fastDecaySeconds > 0.0)
-            decayFactor = std::exp (-1.0 / (fastDecaySeconds * sampleRate));
-        else
-            currentLevel = 0.0;
-    }
+    bool isActive() const { return state != State::Idle; }
+    State getState() const { return state; }
 
     float getNextSample()
     {
-        if (! active)
-            return 0.0f;
+        float rate;
 
-        float out = static_cast<float> (currentLevel);
-        currentLevel *= decayFactor;
-
-        if (currentLevel < 1e-7)
+        switch (state)
         {
-            currentLevel = 0.0;
-            active = false;
+            case State::Idle:
+                return 0.0f;
+
+            case State::Attack:
+                rate = 1.0f / (attackTime * (float) sampleRate);
+                currentLevel += rate;
+                if (currentLevel >= 1.0f)
+                {
+                    currentLevel = 1.0f;
+                    state = State::Decay;
+                }
+                break;
+
+            case State::Decay:
+                rate = (1.0f - sustainLevel) / (decayTime * (float) sampleRate);
+                currentLevel -= rate;
+                if (currentLevel <= sustainLevel)
+                {
+                    currentLevel = sustainLevel;
+                    state = State::Sustain;
+                }
+                break;
+
+            case State::Sustain:
+                break;
+
+            case State::Release:
+                rate = currentLevel / (releaseTime * (float) sampleRate);
+                currentLevel -= rate;
+                if (currentLevel <= 0.001f)
+                {
+                    currentLevel = 0.0f;
+                    state = State::Idle;
+                }
+                break;
         }
 
-        return out;
+        return currentLevel;
     }
 
-    bool isActive() const { return active; }
+    // ── Exponential Decay 模式（Modal Synthesis 用）──
+    // decayTime 秒後衰減到 ~0.1% (-60dB)
+    struct ExpDecay
+    {
+        float level      = 0.0f;
+        float decayCoeff = 1.0f;  // 每 sample 的乘法因子
+
+        void trigger (float velocity, float decayTimeSec, double sr)
+        {
+            level = velocity;
+            // exp(-6.9/τ/sr) → 在 τ 秒後衰減到 ~0.1%
+            if (decayTimeSec > 0.0f && sr > 0.0)
+                decayCoeff = (float) std::exp (-6.9078 / (decayTimeSec * sr));
+            else
+                decayCoeff = 0.0f;
+        }
+
+        float process()
+        {
+            float out = level;
+            level *= decayCoeff;
+            return out;
+        }
+
+        bool isActive() const { return level > 0.0001f; }
+    };
 
 private:
     double sampleRate   = 44100.0;
-    double decayTime    = 1.0;
-    double decayFactor  = 0.999;
-    double currentLevel = 0.0;
-    bool   active       = false;
+    float attackTime    = 0.01f;
+    float decayTime     = 0.1f;
+    float sustainLevel  = 0.7f;
+    float releaseTime   = 0.3f;
+    float currentLevel  = 0.0f;
+    State state         = State::Idle;
 };

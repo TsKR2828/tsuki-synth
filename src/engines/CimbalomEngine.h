@@ -1,207 +1,210 @@
 #pragma once
-
+#include <juce_audio_processors/juce_audio_processors.h>
 #include "../dsp/ModalResonator.h"
 #include "../dsp/NoiseGen.h"
 #include "../dsp/BiquadFilter.h"
 #include "../dsp/Envelope.h"
-#include "../physics/MaterialDB.h"
 #include "../physics/StringModel.h"
-#include <juce_core/juce_core.h>
-#include <array>
+#include "../physics/MaterialDB.h"
 
-enum class ExciterType { Felt, Cotton, Wood, Metal };
+/**
+ * Cimbalom 引擎 — 物理建模弦振動
+ *
+ * 架構：
+ *   MIDI Note On → Exciter (槌頭噪音脈衝)
+ *                → String Resonator ×N (微失諧 beating)
+ *                → output
+ *
+ *   MIDI Note Off / CC#64 → Damper (加速衰減)
+ */
 
-struct CimbalomParams
-{
-    std::string materialKey  = "steel";
-    double stringDiameter    = 0.8e-3;  // meters
-    double stringLength      = 0.35;    // meters
-    double strikePosition    = 0.3;     // 0~1 ratio
-    ExciterType exciter      = ExciterType::Wood;
-    int    stringsPerCourse  = 3;       // 1~5
-    double detuneAmount      = 3.0;     // cents
-    double sympatheticAmount = 0.3;     // 0~1
-    double soundboardAmount  = 0.3;     // 0~1
-    int    numModes          = 40;
-};
+static constexpr int kMaxStringsPerCourse = 5;
 
-class CimbalomVoice
+// ─── Sound ───
+class CimbalomSound : public juce::SynthesiserSound
 {
 public:
-    void prepare (double sampleRate)
+    bool appliesToNote (int) override    { return true; }
+    bool appliesToChannel (int) override { return true; }
+};
+
+// ─── Voice ───
+class CimbalomVoice : public juce::SynthesiserVoice
+{
+public:
+    void setMaterialDB (MaterialDB* db) { materialDB = db; }
+
+    // 參數指標（由 Processor 設定，指向 APVTS 的 raw parameter）
+    std::atomic<float>* pMaterial       = nullptr;  // index
+    std::atomic<float>* pStrikePos      = nullptr;  // 0.05 ~ 0.95
+    std::atomic<float>* pDiameter       = nullptr;  // mm
+    std::atomic<float>* pHammerHardness = nullptr;  // 0~3
+    std::atomic<float>* pNumStrings     = nullptr;  // 1~5
+    std::atomic<float>* pDetuning       = nullptr;  // cents
+
+    bool canPlaySound (juce::SynthesiserSound* sound) override
     {
-        sr = sampleRate;
-        for (auto& r : stringResonators)
-            r.prepare (sampleRate);
-        soundboardResonator.prepare (sampleRate);
-        exciterEnvelope.prepare (sampleRate);
-        exciterNoise.setType (NoiseType::White);
-        exciterFilter.prepare (sampleRate);
+        return dynamic_cast<CimbalomSound*> (sound) != nullptr;
     }
 
-    void noteOn (int midiNote, float velocity, const Material& mat,
-                 const CimbalomParams& params)
+    void startNote (int midiNoteNumber, float velocity,
+                    juce::SynthesiserSound*, int) override
     {
-        currentVelocity = velocity;
-        active = true;
+        if (materialDB == nullptr) return;
 
-        double targetFreq = juce::MidiMessage::getMidiNoteInHertz (midiNote);
+        // ── 讀取參數 ──
+        auto keys = MaterialDB::getOrderedKeys();
+        int matIdx = juce::jlimit (0, keys.size() - 1,
+                                   (int) pMaterial->load());
+        auto* mat = materialDB->getMaterial (keys[matIdx]);
+        if (mat == nullptr) return;
 
-        double radius = params.stringDiameter * 0.5;
-        double mu = mat.density * juce::MathConstants<double>::pi * radius * radius;
-        double tension = mu * std::pow (2.0 * params.stringLength * targetFreq, 2.0);
+        float strikePos = pStrikePos->load();
+        float diameter  = pDiameter->load() * 0.001f;   // mm → m
+        int   nStrings  = juce::jlimit (1, kMaxStringsPerCourse,
+                                        (int) pNumStrings->load());
+        float detCents  = pDetuning->load();
+        float hammer    = pHammerHardness->load();
 
-        StringParams sp;
-        sp.stringLength   = params.stringLength;
-        sp.stringDiameter = params.stringDiameter;
-        sp.tension        = tension;
-        sp.strikePosition = params.strikePosition;
-        sp.numModes       = params.numModes;
+        // ── 弦參數 ──
+        StringModel::Params sp;
+        sp.length         = StringModel::lengthFromMidiNote (midiNoteNumber);
+        sp.tension        = StringModel::tensionForNote (midiNoteNumber,
+                                sp.length, diameter, mat->density);
+        sp.diameter       = diameter;
+        sp.strikePosition = strikePos;
+        sp.numModes       = 40;
 
-        numStrings = juce::jlimit (1, maxStringsPerCourse, params.stringsPerCourse);
+        auto baseModes = StringModel::calculateModes (sp, *mat);
 
-        for (int s = 0; s < numStrings; ++s)
+        // ── 多弦 beating ──
+        numActiveStrings = nStrings;
+        float gain = 1.0f / std::sqrt ((float) numActiveStrings);
+
+        for (int s = 0; s < numActiveStrings; ++s)
         {
-            double detuneCents = 0.0;
-            if (numStrings > 1)
-            {
-                double spread = params.detuneAmount;
-                detuneCents = -spread + 2.0 * spread * s / (numStrings - 1);
-            }
-            double detuneRatio = std::pow (2.0, detuneCents / 1200.0);
+            float centOffset = 0.0f;
+            if (numActiveStrings > 1)
+                centOffset = detCents
+                    * (2.0f * (float) s / (float) (numActiveStrings - 1) - 1.0f);
 
-            auto modes = StringModel::calculateModes (mat, sp);
+            float freqMul = std::pow (2.0f, centOffset / 1200.0f);
+
+            auto modes = baseModes;
             for (auto& m : modes)
-                m.frequency *= detuneRatio;
-
-            stringResonators[static_cast<size_t>(s)].prepare (sr);
-            stringResonators[static_cast<size_t>(s)].setModes (modes);
-            stringResonators[static_cast<size_t>(s)].trigger (velocity);
-        }
-
-        setupSoundboard (mat, params, targetFreq, velocity);
-        setupExciter (params.exciter, velocity);
-
-        sympatheticMix = static_cast<float> (params.sympatheticAmount);
-        soundboardMix  = static_cast<float> (params.soundboardAmount);
-    }
-
-    void noteOff ()
-    {
-        for (int s = 0; s < numStrings; ++s)
-            stringResonators[static_cast<size_t>(s)].release (0.8f);
-        soundboardResonator.release (0.5f);
-    }
-
-    float getNextSample()
-    {
-        if (! active)
-            return 0.0f;
-
-        // Exciter noise burst (hammer impact transient)
-        float exciterSample = 0.0f;
-        if (exciterEnvelope.isActive())
-        {
-            float noise = exciterNoise.getNextSample();
-            noise = exciterFilter.processSample (noise);
-            exciterSample = noise * exciterEnvelope.getNextSample() * currentVelocity;
-        }
-
-        // Sum strings
-        float stringSum = 0.0f;
-        bool anyActive = false;
-        for (int s = 0; s < numStrings; ++s)
-        {
-            auto& res = stringResonators[static_cast<size_t>(s)];
-            if (res.isActive())
             {
-                stringSum += res.getNextSample();
+                m.frequency *= freqMul;
+                m.amplitude *= gain;
+            }
+
+            strings[s].setSampleRate (getSampleRate());
+            strings[s].setModes (modes);
+            strings[s].excite (velocity);
+        }
+
+        // ── Exciter（槌頭噪音脈衝）──
+        setupExciter (hammer, velocity);
+        damped = false;
+    }
+
+    void stopNote (float, bool allowTailOff) override
+    {
+        if (allowTailOff)
+        {
+            applyDamp();
+        }
+        else
+        {
+            clearCurrentNote();
+        }
+    }
+
+    void pitchWheelMoved (int) override {}
+
+    void controllerMoved (int controller, int value) override
+    {
+        // CC#64 Sustain Pedal：放開時制音
+        if (controller == 64 && value < 64)
+            applyDamp();
+    }
+
+    void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
+                          int startSample, int numSamples) override
+    {
+        bool anyActive = false;
+
+        while (--numSamples >= 0)
+        {
+            float sample = 0.0f;
+
+            // 弦共振
+            for (int s = 0; s < numActiveStrings; ++s)
+            {
+                if (strings[s].isActive())
+                {
+                    sample += strings[s].processSample();
+                    anyActive = true;
+                }
+            }
+
+            // 槌頭瞬態噪音
+            if (exciterEnv.isActive())
+            {
+                float noise = noiseGen.processSample();
+                noise = exciterFilter.processSample (noise);
+                sample += noise * exciterEnv.process();
                 anyActive = true;
             }
+
+            // 輸出（master gain 防 clipping）
+            sample *= 0.15f;
+
+            for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
+                outputBuffer.addSample (ch, startSample, sample);
+
+            ++startSample;
         }
 
-        if (numStrings > 1)
-            stringSum /= std::sqrt (static_cast<float> (numStrings));
-
-        // Soundboard body resonance
-        float sbSample = 0.0f;
-        if (soundboardResonator.isActive())
-        {
-            sbSample = soundboardResonator.getNextSample();
-            anyActive = true;
-        }
-
-        active = anyActive || exciterEnvelope.isActive();
-
-        return exciterSample * 0.3f
-             + stringSum
-             + sbSample * soundboardMix;
-    }
-
-    bool isActive() const { return active; }
-
-    void scaleFrequencies (double factor)
-    {
-        for (int s = 0; s < numStrings; ++s)
-            stringResonators[static_cast<size_t>(s)].scaleFrequencies (factor);
-        soundboardResonator.scaleFrequencies (factor);
+        if (! anyActive)
+            clearCurrentNote();
     }
 
 private:
-    void setupSoundboard (const Material& mat, const CimbalomParams& params,
-                          double fundamental, float velocity)
+    void applyDamp()
     {
-        // Soundboard: low-frequency body modes (simplified plate-like)
-        std::vector<Mode> sbModes;
-        double sbFundamental = fundamental * 0.5;
-        double sbRatios[] = { 1.0, 1.58, 2.24, 2.92, 3.61, 4.47 };
-        for (int i = 0; i < 6; ++i)
+        if (! damped)
         {
-            Mode m;
-            m.frequency = sbFundamental * sbRatios[i];
-            m.amplitude = 0.15 / (1.0 + i * 0.8);
-            double baseTau = 0.3 + 0.2 / (1.0 + i);
-            double damp = mat.damping.alpha + mat.damping.betaAir * m.frequency * m.frequency;
-            m.decayTime = (damp > 0.0) ? juce::jmin (baseTau, 1.0 / damp) : baseTau;
-            sbModes.push_back (m);
+            for (int s = 0; s < numActiveStrings; ++s)
+                strings[s].damp (0.05f);
+            damped = true;
         }
-        soundboardResonator.prepare (sr);
-        soundboardResonator.setModes (sbModes);
-        soundboardResonator.trigger (velocity * static_cast<float> (params.soundboardAmount));
     }
 
-    void setupExciter (ExciterType type, float velocity)
+    void setupExciter (float hardness, float velocity)
     {
-        double cutoff = 2000.0;
-        double decayMs = 5.0;
+        // 槌硬度 → 噪音頻寬
+        //   0=cotton(柔) 1=felt 2=wood 3=metal(硬)
+        static constexpr float cutoffs[]   = { 500.0f, 1500.0f, 4000.0f, 10000.0f };
+        static constexpr float durations[] = { 0.004f, 0.003f,  0.002f,  0.001f };
 
-        switch (type)
-        {
-            case ExciterType::Cotton: cutoff = 1500.0;  decayMs = 8.0;  break;
-            case ExciterType::Felt:   cutoff = 2500.0;  decayMs = 6.0;  break;
-            case ExciterType::Wood:   cutoff = 6000.0;  decayMs = 3.0;  break;
-            case ExciterType::Metal:  cutoff = 12000.0; decayMs = 2.0;  break;
-        }
+        int idx = juce::jlimit (0, 3, (int) hardness);
 
-        exciterFilter.setParameters (FilterType::LowPass, cutoff, 0.7);
-        exciterEnvelope.setDecayTime (decayMs / 1000.0);
-        exciterEnvelope.trigger (velocity);
+        exciterFilter.setSampleRate (getSampleRate());
+        exciterFilter.setParams (BiquadFilter::Type::LowPass, cutoffs[idx], 0.707f);
+        exciterFilter.reset();
+
+        noiseGen.setType (NoiseGen::Type::White);
+        noiseGen.reset();
+
+        exciterEnv.trigger (velocity * 0.25f, durations[idx], getSampleRate());
     }
 
-    static constexpr int maxStringsPerCourse = 5;
+    MaterialDB*    materialDB = nullptr;
+    ModalResonator strings[kMaxStringsPerCourse];
+    int            numActiveStrings = 1;
+    bool           damped = false;
 
-    double sr = 44100.0;
-    float currentVelocity = 0.0f;
-    bool active = false;
-    int numStrings = 3;
-
-    std::array<ModalResonator, maxStringsPerCourse> stringResonators;
-    ModalResonator soundboardResonator;
-
-    NoiseGen exciterNoise;
-    BiquadFilter exciterFilter;
-    ExpDecayEnvelope exciterEnvelope;
-
-    float sympatheticMix = 0.3f;
-    float soundboardMix  = 0.3f;
+    NoiseGen           noiseGen;
+    BiquadFilter       exciterFilter;
+    Envelope::ExpDecay exciterEnv;
 };
