@@ -1,185 +1,226 @@
 # TsukiSynth — Multi-Engine VST3/AU Plugin
 
-> Physical Modeling / Modal Synthesis 多引擎軟體合成器 — VST3 / AU 插件
+> Physical Modeling / Modal Synthesis multi-engine software synthesizer — VST3 / AU plugin
+>
+> **This is an independent project. It has no relation to haguruma-engine or any other project.**
 
-## 概述
+## Current Status
 
-TsukiSynth 是一款基於 **物理建模（Physical Modeling）** 的多引擎軟體合成器插件。核心引擎使用 Modal Synthesis — 從材質密度、板厚、弦長、擊打位置等物理參數，自動計算振動模態頻率與衰減，產生物理正確的合成音色。
+| Component | Status |
+|-----------|--------|
+| Cimbalom Engine (Modal Synthesis, String) | Done |
+| Chromatic Engine (Beam / Plate / Custom) | Done |
+| FM Piano Engine (2-op FM Synthesis) | Done |
+| Effect Chain (Reverb / Delay / Compressor / Distortion) | Done |
+| Oscilloscope (lock-free FIFO) | Done |
+| 8 Macro Parameters (DAW automation) | Done |
+| Preset Manager (12 factory + user save/load) | Done |
+| Custom LookAndFeel (dark theme, arc knobs) | Done |
+| MIDI Keyboard (on-screen) | Done |
+| CLI Score Renderer (JSON -> WAV) | Done |
+| **JUCE submodule initialized** | **Not on this machine** |
+| **CMake / MSVC toolchain** | **Not on this machine** |
+| **Actual VST3 build** | **Blocked** |
+| **DAW plugin host validation** | **Blocked** |
 
-原型源自 [piano-play](https://github.com/TsKR2828/piano-play) 等 Web Audio 實驗，以 C++ / JUCE 重寫為 VST3 與 AU 格式，供 DAW（Cubase、Logic Pro、FL Studio、Reaper 等）直接使用。
+**Biggest blocker**: The code is complete but has never been built on this machine. JUCE submodule is not initialized, CMake and Visual Studio are not installed. Next step is environment setup and actual build.
 
-## 支援格式
+## Overview
 
-| 格式 | 對應 DAW | 狀態 |
-|------|----------|------|
-| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | 計畫中 |
-| AU (Audio Unit) | Logic Pro, GarageBand, MainStage | 計畫中 |
-| AAX | Pro Tools | 評估中（需 Avid SDK 審核） |
-| Standalone | 獨立執行，無需 DAW | 計畫中 |
+TsukiSynth is a multi-engine software synthesizer plugin based on **Physical Modeling (Modal Synthesis)**. The core engines calculate vibration mode frequencies and decay from physical parameters (material density, plate thickness, string length, strike position), producing physically correct synthesized timbres.
 
-## 音色引擎
+The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-play) and other Web Audio experiments. The codebase has been rewritten in C++ / JUCE as VST3 and AU format for use in DAWs (Cubase, Logic Pro, FL Studio, Reaper, etc.).
 
-### Engine 1: FM Piano
-- FM 合成鋼琴音色
-- 原型來源：`Synth/synth.html`
-- 演算法：雙振盪器 FM + ADSR 包絡 + 高頻衰減
+## Plugin Formats
 
-### Engine 2: Cimbalom（匈牙利揚琴）— Physical Modeling
-- **Modal Synthesis 弦模型** + 多弦 beating + 共鳴弦 + 響板耦合
-- 原型來源：`cimbalom.html`
-- 演算法：從物理參數（材質密度、弦徑、張力、弦長）計算 N 個振動模態，含剛性修正 (inharmonicity)
-- 擊打位置影響各模態振幅分佈
-- 特色參數：弦材質（steel/copper/aluminum）、弦直徑、張力、擊打位置、槌頭材質
+| Format | Target DAWs | Status |
+|--------|-------------|--------|
+| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | In code (build pending) |
+| Standalone | No DAW required | In code (build pending) |
+| AU (Audio Unit) | Logic Pro, GarageBand, MainStage | CMake option ready |
+| AAX | Pro Tools | CMake option ready (requires Avid SDK) |
 
-### Engine 3: Chromatic Synth（色彩合成器）— Physical Modeling
-- 三合一引擎：空靈鼓 / 水鑼 / 自訂泛音
-- 原型來源：`chromatic-synth.html`
-- 演算法：
-  - 空靈鼓：**Euler-Bernoulli 梁模型**（非諧波模態由物理公式計算）
-  - 水鑼：**Kirchhoff 圓板模型**（Bessel 函數零點計算模態 + 浸水物理 pitch glide）
-  - 自訂泛音：使用者可編輯 ratio/amplitude 的手動模式（保留彈性）
+## Sound Engines
 
-### 全域效果鏈
+### Engine 1: Cimbalom (Hungarian Dulcimer) — Physical Modeling
+- **Modal Synthesis string model** + multi-string beating + damper (CC#64)
+- From physical parameters (material density, string diameter, tension, length) calculates N vibration modes with inharmonicity correction
+- Strike position affects modal amplitude distribution
+- Parameters: string material (9 types), diameter, hammer hardness (cotton/felt/wood/metal), strike position, strings per course (1-5), detuning
+
+### Engine 2: Chromatic Synth — Physical Modeling
+- Three-in-one engine: Tongue Drum / Water Gong / Custom Harmonics
+- Tongue Drum: **Euler-Bernoulli beam model** (non-harmonic modes from eigenvalue formula)
+- Water Gong: **Kirchhoff circular plate model** (Bessel function zeros + pitch glide simulating water immersion)
+- Custom: user-editable ratio/amplitude manual mode
+- Parameters: sub-engine, material, exciter hardness, strike position, thickness, size, pitch glide
+
+### Engine 3: FM Piano — Frequency Modulation
+- 2-operator FM synthesis with self-feedback
+- 8 sound type presets: Piano, E.Piano, Vibraphone, Bell, Organ, Pad, Bass, Brass
+- Velocity-sensitive modulation index + note-dependent brightness decay
+- Parameters: sound type, FM ratio, mod index, brightness, feedback, attack, release
+
+## Macro Parameters
+
+8 global macro knobs that cross-map to all three engines via DAW automation:
+
+| Macro | Cimbalom | Chromatic | FM Piano |
+|-------|----------|-----------|----------|
+| Material | sustain scaling | sustain scaling | slight ratio detune |
+| Tension | mode frequency | mode frequency | ratio scale |
+| Damping | decay speed | decay speed | release time |
+| Strike | strike position blend | strike position blend | attack time |
+| Brightness | exciter cutoff | exciter cutoff | index scale |
+| Body | detuning spread | resonator size | feedback scale |
+| Noise | exciter amplitude | exciter amplitude | noise injection |
+| Output | post-FX final gain (SmoothedValue) | same | same |
+
+Output is applied **after** the effect chain with per-sample `juce::SmoothedValue` to prevent clicks.
+
+## Effect Chain
+
 ```
-[Engine Output] → Compressor → Delay (w/ feedback) → Wall Reflection Sim → Master Gain → Reverb → Output
+[Engine Output] -> Distortion -> Compressor -> Delay -> Reverb -> [Macro Output] -> Output
 ```
 
-Wall Reflection（牆壁反射模擬）：
-- 距離 → 控制 early reflection delay time（聲速 343m/s 往返計算）
-- 材質 → LP filter cutoff（玻璃 16kHz → 地毯 300Hz）
+- **Distortion**: Overdrive / Bitcrush / Wavefold with instability control
+- **Compressor**: Peak-based, linked stereo detection, auto makeup gain
+- **Delay**: Stereo with LP-filtered feedback, R channel offset for width
+- **Reverb**: Schroeder (8 comb + 4 allpass), stereo spread
 
-## 技術堆疊
+## Analyzer
 
-| 項目 | 技術 |
-|------|------|
-| 語言 | C++17 |
-| 框架 | JUCE 7.x |
-| 建構 | CMake 3.22+ |
-| 合成方式 | Modal Synthesis（物理建模）+ FM Synthesis |
-| DSP 參考 | DaisySP (MIT)、STK (MIT-like) |
-| GUI | JUCE Component（旋鈕/滑桿/引擎切換/模態視覺化） |
-| 材質資料 | JSON 格式材質數據庫（density, Young's modulus, Poisson ratio, damping） |
-| 平台 | Windows (MSVC), macOS (Clang) |
+- **Oscilloscope**: Lock-free AudioFIFO pipeline, 30Hz refresh, zero-crossing trigger, engine-colored waveform
+- **Spectrum**: Planned (AnalyzerPanel has slot for SpectrumView)
 
-## 目錄結構（規劃）
+## Preset System
+
+- 12 factory presets (4 per engine) compiled as static arrays
+- User preset save/load (`.tsukipreset` XML files in AppData)
+- DAW program change compatible (VST3 `getNumPrograms` / `setCurrentProgram`)
+- Dirty indicator + Init button
+- Full state serialization (`getStateInformation` / `setStateInformation`)
+
+## Tech Stack
+
+| Item | Technology |
+|------|-----------|
+| Language | C++17 |
+| Framework | JUCE 7.x (git submodule) |
+| Build | CMake 3.22+ |
+| Synthesis | Modal Synthesis (Physical Modeling) + FM Synthesis |
+| DSP Reference | DaisySP (MIT), STK (MIT-like) |
+| GUI | Custom LookAndFeel (arc knobs, gradient faces, engine-colored accents) |
+| Material Data | JSON embedded via BinaryData (density, Young's modulus, Poisson ratio, damping) |
+| Platform | Windows (MSVC), macOS (Clang) planned |
+
+## Directory Structure
 
 ```
-Synth-VST/
-├── README.md                 ← 本文件
-├── ROADMAP.md                ← 開發進度報告
-├── CMakeLists.txt            ← 頂層 CMake
+tsuki-synth/
+├── README.md
+├── ROADMAP.md
+├── DEV-LOG.md / DEVLOG.md
+├── CONTEXT.md
+├── CMakeLists.txt
 ├── libs/
-│   └── JUCE/                 ← JUCE 子模組
+│   └── JUCE/                     <- git submodule (not initialized on this machine)
 ├── src/
-│   ├── PluginProcessor.h/.cpp    ← 主音頻處理器
-│   ├── PluginEditor.h/.cpp       ← GUI 編輯器
+│   ├── PluginProcessor.h/.cpp    <- main audio processor (APVTS, 3 synths, effect chain)
+│   ├── PluginEditor.h/.cpp       <- GUI editor (540x850, tab switching, preset bar)
+│   ├── PresetManager.h           <- factory + user preset load/save/dirty tracking
+│   ├── Presets.h                 <- 12 factory preset definitions (static arrays)
+│   ├── TsukiLookAndFeel.h        <- custom knobs, combos, tabs, colour palette
 │   ├── engines/
-│   │   ├── FMPianoEngine.h/.cpp
-│   │   ├── CimbalomEngine.h/.cpp  ← 弦物理建模
-│   │   └── ChromaticEngine.h/.cpp ← 梁/圓板物理建模
+│   │   ├── CimbalomEngine.h      <- string physical modeling (40 modes, multi-string beating)
+│   │   ├── ChromaticEngine.h     <- beam/plate/custom three-in-one
+│   │   └── FMPianoEngine.h       <- 2-operator FM with 8 sound types
 │   ├── dsp/
-│   │   ├── Oscillator.h         ← 低階正弦/波表振盪器
-│   │   ├── ModalResonator.h     ← 核心：N 模態共振器
-│   │   ├── Envelope.h           ← ADSR / exponential decay
-│   │   ├── Filter.h             ← Biquad IIR
-│   │   ├── Delay.h              ← Feedback delay line
-│   │   └── Reverb.h             ← FreeVerb 或 convolution wrapper
+│   │   ├── ModalResonator.h      <- core: N-mode decaying sine renderer
+│   │   ├── AudioFIFO.h           <- lock-free FIFO for analyzer
+│   │   ├── BiquadFilter.h        <- IIR biquad (LP/HP/BP/Notch)
+│   │   ├── Compressor.h          <- peak compressor (dsp-level)
+│   │   ├── DelayLine.h           <- circular buffer + linear interpolation
+│   │   ├── Distortion.h          <- overdrive / bitcrush / wavefold
+│   │   ├── Envelope.h            <- ADSR + ExpDecay
+│   │   ├── LFO.h                 <- low-frequency oscillator
+│   │   ├── NoiseGen.h            <- white + pink noise
+│   │   ├── Oscillator.h          <- phase accumulator (sin/saw/square/tri)
+│   │   └── Reverb.h              <- (legacy, replaced by effects/SimpleReverb)
+│   ├── effects/
+│   │   ├── EffectChain.h         <- global chain: Distortion -> Comp -> Delay -> Reverb
+│   │   ├── Compressor.h          <- peak compressor with linked stereo
+│   │   ├── StereoDelay.h         <- stereo delay with LP feedback
+│   │   └── SimpleReverb.h        <- Schroeder reverb (8 comb + 4 allpass)
 │   ├── physics/
-│   │   ├── StringModel.h        ← 弦模態頻率計算
-│   │   ├── BeamModel.h          ← 梁模態頻率計算 (Euler-Bernoulli)
-│   │   ├── PlateModel.h         ← 圓板模態計算 (Bessel zeros)
-│   │   └── MaterialDB.h         ← 材質數據庫載入/查詢
-│   └── utils/
-│       ├── MidiUtils.h
-│       └── ParamLayout.h
+│   │   ├── StringModel.h         <- string mode frequency (inharmonicity, physical decay)
+│   │   ├── BeamModel.h           <- Euler-Bernoulli beam (tongue drum)
+│   │   ├── PlateModel.h          <- Kirchhoff circular plate (Bessel zeros)
+│   │   └── MaterialDB.h          <- JSON material database loader (9 materials)
+│   ├── analyzer/
+│   │   ├── AnalyzerPanel.h       <- container for oscilloscope + future spectrum
+│   │   └── OscilloscopeView.h    <- real-time waveform display (30Hz, zero-crossing trigger)
+│   ├── score/
+│   │   ├── ScoreParser.h         <- JSON score file parser
+│   │   ├── ScoreRenderer.h       <- offline rendering using DSP engines
+│   │   └── WavWriter.h           <- 24-bit WAV output with normalization
+│   └── cli/
+│       └── RenderApp.cpp         <- CLI entry point (single + --batch mode)
 ├── data/
-│   └── materials.json           ← 材質物理參數 (density, E, ν, damping)
-├── scores/                      ← AI JSON 樂譜 (Phase 10)
+│   └── materials.json            <- 9 material physical parameters
+├── scores/
 │   ├── schema/
-│   │   └── score.schema.json    ← JSON Schema 驗證定義
-│   └── examples/
-│       ├── akashic_bell.score.json
-│       ├── rabbit_warning.score.json
-│       └── restraint_metal_click.score.json
-├── sound_library/               ← 音色庫索引 + 分類法
-│   ├── sound_names.json         ← 音色名稱/標籤/世界觀/用途
-│   └── tags.json                ← 分類法定義 (category/mood/energy/world)
-├── exports/
-│   └── wav/                     ← 渲染輸出的 WAV 檔案
-├── resources/
-│   └── gui/                     ← 圖片/字型資源
-├── presets/
-│   └── factory/                 ← 出廠預設音色 (.json)
-└── builds/
-    ├── windows/
-    └── macos/
+│   │   └── score.schema.json     <- JSON Schema validation
+│   └── examples/                 <- 36+ score files (6 worlds x 6)
+├── sound_library/
+│   ├── sound_names.json          <- sound library index
+│   └── tags.json                 <- taxonomy (category/mood/energy/world)
+├── uiux/                         <- HTML/CSS UI reference mockup
+└── presets/
+    └── factory/                  <- (reserved for future preset files)
 ```
 
 ## AI JSON Score Pipeline
 
-TsukiSynth 除了作為 VST/AU 插件，也支援 **AI 驅動的音效生成**。
+TsukiSynth supports **AI-driven sound generation** via JSON score files.
 
-物理建模參數是語義化的（材質、尺寸、敲擊位置），AI 可直接生成 JSON 樂譜：
+Physical modeling parameters are semantic (material, size, strike position). AI can directly generate JSON scores:
 
 ```bash
-# AI 生成 score.json → TsukiSynth 渲染為 WAV
+# AI generates score.json -> TsukiSynth renders to WAV
 tsukisynth-cli render scores/examples/akashic_bell.score.json
 
-# 批次渲染
+# Batch render
 tsukisynth-cli --batch scores/examples/*.score.json --output exports/wav/
 ```
 
-用途：VTuber 音效、角色 UI 音效、短 BGM motif、個人世界觀音色庫。
+Use cases: VTuber sound effects, character UI sounds, short BGM motifs, worldview sound libraries.
 
-### score.json 欄位說明
+## Build Instructions (pending environment setup)
 
-| 區塊 | 必要 | 內容 |
-|------|------|------|
-| `$schema` | — | 格式版本，固定為 `"TsukiSynth Score v1"` |
-| `meta` | ✅ | 素材 ID、名稱、作者、描述、標籤、情緒、用途、世界觀、變體來源 |
-| `global` | ✅ | BPM、sample rate、master volume、全域效果 (reverb/delay/wall) |
-| `events` | ✅ | 發聲事件陣列 — 每個事件包含 time、duration、engine、note、velocity、params |
-| `export` | ✅ | 輸出設定 — filename、format (wav/flac)、bit depth、normalize、tail silence |
-
-`events[].params` 承載引擎專屬的物理參數（material、thickness、radius、strike_position、exciter、damping 等），由物理建模引擎解讀並自動計算模態。
-
-完整 JSON Schema：[`scores/schema/score.schema.json`](scores/schema/score.schema.json)
-
-### 範例：akashic_bell.score.json
-
-`akashic_bell.score.json` 是 TsukiSynth Score v1 的第一個範例，展示 AI 如何描述一個物理建模音效。它包含素材描述（meta）、全域效果（global）、兩個發聲事件（events）與 WAV 匯出設定（export）。同一面青銅板在不同位置被敲擊，激發不同模態組合，產生豐富的泛音層次。
-
-### Sound Naming System
-
-`score.json` 負責聲音生成配方。`sound_names.json` 負責素材命名、分類、用途、情緒與世界觀管理。兩者透過 `meta.id` 關聯。
-
-詳見 [ROADMAP.md](ROADMAP.md) Phase 10。
-
-## 建構指南（待實作後更新）
-
-### 前置需求
-- **Windows**: Visual Studio 2022 (Community), CMake 3.22+
+### Prerequisites
+- **Windows**: Visual Studio 2022+ (Community), CMake 3.22+
 - **macOS**: Xcode 14+, CMake 3.22+
-- JUCE 7.x（作為 git submodule 引入）
+- JUCE 7.x (as git submodule)
 
-### 編譯步驟
+### Steps
 ```bash
-git clone --recurse-submodules https://github.com/TsKR2828/synth-vst.git
-cd synth-vst
-cmake -B build -DCMAKE_BUILD_TYPE=Release
+git submodule update --init --recursive
+cmake -B build -G "Visual Studio 17 2022"
 cmake --build build --config Release
 ```
 
-產出檔案位於：
+Output:
 - Windows: `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3`
-- macOS: `build/TsukiSynth_artefacts/Release/AU/TsukiSynth.component`
+- Standalone: `build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe`
 
-## 授權
+## License
 
-待定（個人使用 / GPL / 商業授權評估中）
+TBD (personal use / MIT / commercial evaluation in progress)
 
-## 相關連結
+## Links
 
-- Web 版原型：https://github.com/TsKR2828/piano-play
-- JUCE 框架：https://juce.com/
-- VST3 SDK 說明：https://steinbergmedia.github.io/vst3_dev_portal/
+- Web prototype: https://github.com/TsKR2828/piano-play
+- GitHub: https://github.com/TsKR2828/tsuki-synth
+- JUCE: https://juce.com/

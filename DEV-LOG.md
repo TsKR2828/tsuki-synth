@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-05-08 -- Document Sync + Build Environment Audit
+
+### Recent Commits
+- `dc33843` feat: add 8 synth macro parameters with DAW automation
+  - 8 Macro knobs: Material / Tension / Damping / Strike / Brightness / Body / Noise / Output
+  - Cross-mapped to all three engines (CimbalomVoice, ChromaticVoice, FMPianoVoice)
+  - All macros are APVTS parameters → DAW automation ready
+- `a26ca48` fix: move Output to post-FX final gain with per-sample smoothing
+  - Output macro now applied **after** EffectChain.processBlock()
+  - Uses `juce::SmoothedValue` with 20ms ramp to prevent clicks
+  - Previous behavior had Output before FX, causing gain-dependent reverb tail
+
+### Build Validation Status
+- Previous sessions completed feature development (Phase 1-12 in git log)
+- Previous build validation was done on a **different machine** (VS2026, CMake 4.3.2, Cubase LE)
+- On current machine (`DESKTOP-HA8VHD7`), no build has ever been attempted:
+  - `libs/JUCE` submodule: registered in `.gitmodules` but **NOT initialized** (empty directory)
+  - CMake: **not installed** (`cmake --version` fails)
+  - Visual Studio / MSVC: **not installed** (no VS directory found)
+  - `build/` directory: **does not exist**
+  - Git: 2.53.0 ✅
+  - winget: 1.28 ✅
+
+### Document Updates
+- README.md: updated to reflect actual repo state (3 engines, oscilloscope, 8 macros, build blocker)
+- ROADMAP.md: restructured phases (Phase 0-3 done, build validation in progress, TODO list)
+- DEV-LOG.md: this entry
+
+### Next Steps
+1. `git submodule update --init --recursive` (clone JUCE)
+2. Install Visual Studio 2022+ with C++ Desktop workload
+3. Install CMake 3.22+
+4. `cmake -B build` + `cmake --build build --config Release`
+5. Verify `TsukiSynth.vst3` output
+6. Load in DAW for plugin host scan + MIDI + audio validation
+7. Test automation list + state restore
+
+---
+
 ## 2026-05-07 -- Phase 9: AAX + AU Build Support
 
 ### Phase 9 (commit TBD)
