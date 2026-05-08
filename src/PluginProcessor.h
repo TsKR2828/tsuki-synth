@@ -53,6 +53,7 @@ private:
 
     std::atomic<float>* pEngine = nullptr;
     std::atomic<float>* pMacroOutput = nullptr;
+    juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout

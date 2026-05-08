@@ -315,6 +315,7 @@ void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
     chromaticSynth.setCurrentPlaybackSampleRate (sampleRate);
     fmPianoSynth.setCurrentPlaybackSampleRate (sampleRate);
     effectChain.prepare (sampleRate);
+    smoothedOutput.reset (sampleRate, 0.02);
 }
 
 void TsukiSynthProcessor::releaseResources() {}
@@ -352,15 +353,21 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         fmPianoSynth.renderNextBlock (buffer, midiMessages,
                                       0, buffer.getNumSamples());
 
-    // Macro: Output gain (pre-effects)
-    {
-        float g = pMacroOutput->load();
-        if (g < 0.999f)
-            buffer.applyGain (g);
-    }
-
     // Global effect chain: Compressor → Delay → Reverb
     effectChain.processBlock (buffer);
+
+    // Macro: Output — final gain (post-FX, per-sample smoothed)
+    {
+        smoothedOutput.setTargetValue (pMacroOutput->load());
+        int n  = buffer.getNumSamples();
+        int ch = buffer.getNumChannels();
+        for (int i = 0; i < n; ++i)
+        {
+            float g = smoothedOutput.getNextValue();
+            for (int c = 0; c < ch; ++c)
+                buffer.getWritePointer (c)[i] *= g;
+        }
+    }
 
     // Mix to mono and push to analyzer FIFO (no lock, no alloc)
     {
