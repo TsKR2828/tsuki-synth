@@ -17,13 +17,13 @@
 | Preset Manager (12 factory + user save/load) | Done |
 | Custom LookAndFeel (dark theme, arc knobs) | Done |
 | MIDI Keyboard (on-screen) | Done |
-| CLI Score Renderer (JSON -> WAV) | Done |
-| **JUCE submodule initialized** | **Not on this machine** |
-| **CMake / MSVC toolchain** | **Not on this machine** |
-| **Actual VST3 build** | **Blocked** |
-| **DAW plugin host validation** | **Blocked** |
+| CLI Score Renderer (JSON -> WAV) | Code done (CLI build broken — known issue) |
+| **VST3 build** | **Passed** (6.7 MB, zero warnings) |
+| **Standalone build** | **Passed** (6.5 MB, zero warnings) |
+| **Standalone launch** | **Passed** (smoke test OK) |
+| **DAW plugin host validation** | Pending (no DAW on current machine) |
 
-**Biggest blocker**: The code is complete but has never been built on this machine. JUCE submodule is not initialized, CMake and Visual Studio are not installed. Next step is environment setup and actual build.
+**Tag**: `playable-vst3-clean-build-v0` — VST3 + Standalone clean build, zero warnings, zero errors.
 
 ## Overview
 
@@ -35,8 +35,8 @@ The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-pl
 
 | Format | Target DAWs | Status |
 |--------|-------------|--------|
-| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | In code (build pending) |
-| Standalone | No DAW required | In code (build pending) |
+| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | **Built** (6.7 MB) |
+| Standalone | No DAW required | **Built** (6.5 MB) |
 | AU (Audio Unit) | Logic Pro, GarageBand, MainStage | CMake option ready |
 | AAX | Pro Tools | CMake option ready (requires Avid SDK) |
 
@@ -107,7 +107,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 | Item | Technology |
 |------|-----------|
 | Language | C++17 |
-| Framework | JUCE 7.x (git submodule) |
+| Framework | JUCE 8.0.12 (git submodule) |
 | Build | CMake 3.22+ |
 | Synthesis | Modal Synthesis (Physical Modeling) + FM Synthesis |
 | DSP Reference | DaisySP (MIT), STK (MIT-like) |
@@ -125,7 +125,7 @@ tsuki-synth/
 ├── CONTEXT.md
 ├── CMakeLists.txt
 ├── libs/
-│   └── JUCE/                     <- git submodule (not initialized on this machine)
+│   └── JUCE/                     <- git submodule (JUCE 8.0.12)
 ├── src/
 │   ├── PluginProcessor.h/.cpp    <- main audio processor (APVTS, 3 synths, effect chain)
 │   ├── PluginEditor.h/.cpp       <- GUI editor (540x850, tab switching, preset bar)
@@ -197,23 +197,27 @@ tsukisynth-cli --batch scores/examples/*.score.json --output exports/wav/
 
 Use cases: VTuber sound effects, character UI sounds, short BGM motifs, worldview sound libraries.
 
-## Build Instructions (pending environment setup)
+## Build Instructions
 
 ### Prerequisites
-- **Windows**: Visual Studio 2022+ (Community), CMake 3.22+
+- **Windows**: Visual Studio 2022 Build Tools (VCTools workload), CMake 3.22+
 - **macOS**: Xcode 14+, CMake 3.22+
-- JUCE 7.x (as git submodule)
+- JUCE 8.x (as git submodule, auto-fetched)
 
 ### Steps
 ```bash
 git submodule update --init --recursive
 cmake -B build -G "Visual Studio 17 2022"
-cmake --build build --config Release
+cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynth_Standalone
 ```
 
-Output:
-- Windows: `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3`
-- Standalone: `build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe`
+### Output
+- VST3: `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3` (6.7 MB)
+- Standalone: `build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe` (6.5 MB)
+
+### Verified Build Environment
+- VS 2022 Build Tools 17.14.31, MSVC 19.44, Windows SDK 10.0.26100.0
+- CMake 4.3.2, JUCE 8.0.12
 
 ## License
 

@@ -1,105 +1,91 @@
-# TsukiSynth — 接續開發上下文
+# TsukiSynth — Session Handoff Context
 
-> 複製本文件內容到新對話視窗，即可無縫接續。
+> Copy this into a new conversation to continue seamlessly.
 
 ---
 
-## 專案一句話
+## One-liner
 
-物理建模（Modal Synthesis）多引擎 VST3/AU 合成器插件 + AI JSON 音效生成器。
+Physical Modeling (Modal Synthesis) multi-engine VST3/AU synthesizer plugin + AI JSON sound generator.
 
 ## GitHub
 
 https://github.com/TsKR2828/tsuki-synth
 
-## 本機路徑
+## Local Path
 
 ```
-C:\Users\admin\Desktop\Claude\VoiceMusic\tsuki-synth\
+C:\Users\User.DESKTOP-HA8VHD7\Documents\Claude\tsuki-synth\
 ```
 
-## 目前進度
+## Current Progress
 
-**Phase 0 完成** — 規劃文件 + JSON schema + 範例已全部 push 到 main。
+**VST3 + Standalone clean build passed** on `DESKTOP-HA8VHD7` (2026-05-08).
+Tag: `playable-vst3-clean-build-v0`, branch: `phase1/juce-skeleton`.
 
-下一步是 **Phase 1：環境建置 + JUCE 骨架**。
+All feature code (Phase 0-3) is complete. DAW validation pending (no DAW on current machine).
 
-## 關鍵文件
+## Build Environment
 
-| 檔案 | 內容 |
-|------|------|
-| `README.md` | 專案總覽、引擎規格、目錄結構、AI Score Pipeline 說明 |
-| `ROADMAP.md` | 10 Phase 開發計畫（含物理建模 MVP 規格、公式、驗收標準、Research References） |
-| `data/materials.json` | 9 種材質物理參數（density, youngs_modulus, poisson_ratio, damping） |
-| `scores/schema/score.schema.json` | JSON Schema 驗證定義 |
-| `scores/examples/*.score.json` | 3 個 AI 生成範例（akashic_bell, rabbit_warning, restraint_metal_click） |
-| `sound_library/sound_names.json` | 音色庫索引 |
-| `sound_library/tags.json` | 分類法（category/mood/energy/world） |
+| Item | Version |
+|------|---------|
+| JUCE | 8.0.12 (git submodule at `libs/JUCE`) |
+| CMake | 4.3.2 |
+| VS Build Tools | 17.14.31, MSVC 19.44 |
+| Windows SDK | 10.0.26100.0 |
 
-## 技術架構
+## Build Commands
 
-- **語言**：C++17
-- **框架**：JUCE 7.x
-- **建構**：CMake 3.22+
-- **DSP 參考**：DaisySP (MIT)、STK (MIT-like)
-- **架構參考**：RipplerX (GPL-3, 只讀不抄)
-- **平台**：先 Windows (VS2022)，後 macOS
-
-## 引擎列表
-
-| # | 引擎 | 合成方式 | 物理模型 |
-|---|------|---------|---------|
-| 1 | FM Piano | FM 合成 | — (不做物理建模) |
-| 2 | Cimbalom | Modal Synthesis | 1D 弦模型 + inharmonicity + sympathetic |
-| 3 | Chromatic: 空靈鼓 | Modal Synthesis | Euler-Bernoulli 梁 |
-| 4 | Chromatic: 水鑼 | Modal Synthesis | Kirchhoff 圓板 (Bessel zeros) |
-| 5 | Chromatic: 自訂泛音 | 手動加法合成 | — (使用者自填 ratio) |
-
-## 物理建模核心公式（弦 MVP）
-
-```
-f(n) = (n/2L) × √(T/μ) × √(1 + B×n²)     // 模態頻率 + 剛性修正
-τ(n) = 1 / (α + β×f(n)² + γ×f(n))          // 物理衰減
-a(n) = sin(nπ × x_hit/L) × velocity         // 擊打位置激發
-output = Σ a(n) × exp(-t/τ(n)) × sin(2πf(n)t)  // DSP
+```bash
+git submodule update --init --recursive
+cmake -B build -G "Visual Studio 17 2022"
+cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynth_Standalone
 ```
 
-## Phase 1 任務（下一步）
+## Key Files
 
-| 任務 | 說明 |
-|------|------|
-| 1.1 | 安裝 Visual Studio 2022 + CMake（使用者操作） |
-| 1.2 | 建立 JUCE 專案骨架 CMakeLists.txt |
-| 1.3 | PluginProcessor：接收 MIDI → 發正弦波 |
-| 1.4 | 確認 VST3 可在 Reaper/Cubase 中載入 |
+| File | Content |
+|------|---------|
+| `README.md` | Project overview, engine specs, directory structure |
+| `ROADMAP.md` | Phase 0-3 done, build validation done, DAW validation pending |
+| `DEV-LOG.md` | Per-session progress log |
+| `TODO.md` | Prioritized task list |
+| `CMakeLists.txt` | JUCE submodule, VST3 + Standalone + CLI targets |
+| `src/PluginProcessor.h/.cpp` | Main processor (APVTS, 3 synths, effect chain, 40 params) |
+| `src/PluginEditor.h/.cpp` | GUI editor (540x850, tabs, preset bar, MIDI keyboard) |
+| `src/engines/` | CimbalomEngine, ChromaticEngine, FMPianoEngine |
+| `src/effects/EffectChain.h` | Distortion -> Compressor -> Delay -> Reverb |
+| `src/PresetManager.h` | 12 factory + user presets, dirty tracking |
+| `data/materials.json` | 9 material physical parameters |
 
-**交付標準**：在 DAW 中掛載插件、按 MIDI 鍵盤能聽到聲音。
+## Engines
 
-## Phase 10 (AI Score Pipeline) 要點
+| # | Engine | Synthesis | Physical Model |
+|---|--------|-----------|----------------|
+| 1 | Cimbalom | Modal Synthesis | 1D string + inharmonicity + multi-string beating |
+| 2 | Chromatic: Tongue Drum | Modal Synthesis | Euler-Bernoulli beam |
+| 3 | Chromatic: Water Gong | Modal Synthesis | Kirchhoff circular plate (Bessel zeros) |
+| 4 | Chromatic: Custom | Additive | User-defined ratio/amplitude |
+| 5 | FM Piano | FM Synthesis | 2-operator with self-feedback, 8 presets |
 
-- `score.json`：AI 直接寫物理參數（材質/尺寸/打法）→ 引擎渲染 → WAV
-- Standalone CLI 批次渲染：`tsukisynth-cli --batch scores/*.score.json`
-- 用途：VTuber 音效、UI 音效、BGM motif、世界觀素材庫
+## APVTS Parameters (40 total)
 
-## 原型來源（Web Audio 版）
+Global(1) + Macro(8) + Cimbalom(6) + Chromatic(7) + FM(7) + Reverb(2) + Delay(3) + Compressor(2) + Distortion(4)
 
-| 原型 | 路徑 | GitHub |
-|------|------|--------|
-| FM Piano + Piano Roll | `C:\Users\admin\Desktop\Claude\Synth\synth.html` | https://github.com/TsKR2828/piano-play |
-| Cimbalom 揚琴 | `C:\Users\admin\Downloads\cimbalom.html` | — |
-| Chromatic Synth | `C:\Users\admin\Downloads\chromatic-synth (1).html` | — |
+## Signal Chain
 
-## 重要決策
+```
+Engine -> Distortion -> Compressor -> Delay -> Reverb -> Output (SmoothedValue 20ms) -> Analyzer FIFO
+```
 
-- 授權：建議 MIT（保留商業可能），不碰 GPL 程式碼
-- 單一插件 + 引擎切換（非多個獨立 .vst3）
-- 先 Windows → 日後加 macOS
-- AAX 最低優先
-- 不自動 commit，月月自己審完再決定
+## Known Issues
 
-## 要求 Claude 遵守的規則
+- CLI target (`TsukiSynthCLI`) does not compile — `ScoreRenderer.h` voice API mismatch. Not blocking plugin.
+- DAW validation not yet done (no DAW on current machine).
 
-1. 改檔案時預設留 unstaged，不自動 commit/push
-2. 每次只完成當前批次任務，不自行擴張範圍
-3. 不要刪除 legacy prototype
-4. 進 Phase 1 後建 branch 開發，不直接改 main
+## Rules for Claude
+
+1. Leave files unstaged by default, don't auto commit/push
+2. Only do the current batch task, don't expand scope
+3. Don't delete legacy prototypes
+4. Work on branch, not directly on main

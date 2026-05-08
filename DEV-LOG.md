@@ -4,6 +4,19 @@
 
 ---
 
+## 2026-05-08 -- Warning Cleanup + Clean Build Confirmed
+
+### Warning Fixes (2 files)
+1. **`src/dsp/BiquadFilter.h`** — C4701: initialized local vars `b0..a2` to suppress false-positive uninitialized warning (all switch paths covered, MSVC doesn't track enum exhaustiveness)
+2. **`src/PluginEditor.cpp`** — C4996: `Font::getStringWidthFloat()` deprecated in JUCE 8, replaced with `GlyphArrangement::getStringWidth()`
+
+### Rebuild Result
+- VST3 + Standalone: **zero warnings, zero errors**
+- Standalone launch: smoke test passed (process running, 32MB memory)
+- Tag: `playable-vst3-clean-build-v0` at commit `df5bd26`
+
+---
+
 ## 2026-05-08 -- Build Validation (DESKTOP-HA8VHD7)
 
 ### Environment Setup

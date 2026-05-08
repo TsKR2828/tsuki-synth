@@ -15,7 +15,8 @@
 | Phase 1 | JUCE / VST3 skeleton + DSP modules | **Done** |
 | Phase 2 | Three sound engines (Cimbalom / Chromatic / FM Piano) | **Done** |
 | Phase 3 | Oscilloscope + 8 Macro parameters + Preset Manager | **Done** |
-| — | **Build / DAW validation** | **In Progress (blocked)** |
+| — | Build validation (VST3 + Standalone) | **Done** |
+| — | DAW validation (host scan / automation / state) | Pending (no DAW on current machine) |
 
 ---
 
@@ -108,9 +109,9 @@
 
 ---
 
-## Currently In Progress: Build / DAW Validation
+## Build Validation ✅ (2026-05-08)
 
-**Status**: VST3 + Standalone build on `DESKTOP-HA8VHD7` (2026-05-08). CLI target broken.
+**Status**: VST3 + Standalone clean build passed. Zero warnings, zero errors. Tag: `playable-vst3-clean-build-v0`.
 
 ### Build Environment
 
@@ -123,15 +124,16 @@
 | Standalone output | ✅ 6.5 MB |
 | CLI output | ❌ ScoreRenderer API mismatch |
 
-### Remaining Steps
+### DAW Validation (pending — needs DAW on home machine)
 
-1. ~~Build VST3 + Standalone~~ ✅
-2. Copy VST3 to `C:\Program Files\Common Files\VST3\` (needs admin)
-3. Install DAW (Cubase / Reaper) for host scan validation
-4. Verify plugin scan + MIDI input + audio output in DAW
-5. Test automation list — verify all 40 APVTS parameters appear
-6. Test state restore — save/load DAW session, verify preset recall
-7. Fix CLI target (ScoreRenderer needs JUCE voice API rewrite)
+1. Copy VST3 to `C:\Program Files\Common Files\VST3\` (needs admin)
+2. Load in DAW (Cubase / Reaper) — verify plugin scan, MIDI input, audio output
+3. Test automation list — verify all 40 APVTS parameters appear in DAW lanes
+4. Test state restore — save/load DAW session, verify preset recall
+
+### Known Issues
+
+- CLI target (`TsukiSynthCLI`) does not compile — `ScoreRenderer.h` uses standalone voice API mismatched with JUCE `SynthesiserVoice` interface. Low priority, not blocking plugin usage.
 
 ### Previous Build History
 
