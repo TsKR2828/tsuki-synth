@@ -3,6 +3,7 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "physics/MaterialDB.h"
 #include "effects/EffectChain.h"
+#include "dsp/AudioFIFO.h"
 #include "PresetManager.h"
 
 class TsukiSynthProcessor : public juce::AudioProcessor
@@ -39,6 +40,7 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presetManager { apvts };
+    AudioFIFO analyzerFifo { 4096 };
     juce::MidiKeyboardState keyboardState;
     MaterialDB materialDB;
 

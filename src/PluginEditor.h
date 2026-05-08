@@ -2,6 +2,7 @@
 
 #include "PluginProcessor.h"
 #include "TsukiLookAndFeel.h"
+#include "analyzer/AnalyzerPanel.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 
 class TsukiSynthEditor : public juce::AudioProcessorEditor,
@@ -93,8 +94,11 @@ private:
     ComboParam  distType;
     KnobParam   distDrive, distInstability, distMix;
 
+    // Analyzer
+    AnalyzerPanel analyzerPanel;
+
     // Layout bounds (stored in resized, used in paint)
-    juce::Rectangle<int> engineArea_, effectsRow_, distRow_;
+    juce::Rectangle<int> engineArea_, effectsRow_, distRow_, analyzerRow_;
     juce::Rectangle<int> reverbBounds_, delayBounds_, compBounds_, distPanelBounds_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)

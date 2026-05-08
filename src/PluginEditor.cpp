@@ -4,7 +4,7 @@
 namespace
 {
     constexpr int kW = 540;
-    constexpr int kH = 680;
+    constexpr int kH = 760;
 
     constexpr float kRotaryStart = juce::MathConstants<float>::pi * 1.25f;
     constexpr float kRotaryEnd   = juce::MathConstants<float>::pi * 2.75f;
@@ -13,8 +13,9 @@ namespace
     constexpr int kPresetH   = 44;
     constexpr int kTabH      = 36;
     constexpr int kEffectsH  = 108;
-    constexpr int kDistH     = 70;
-    constexpr int kKeyboardH = 80;
+    constexpr int kDistH      = 70;
+    constexpr int kAnalyzerH  = 80;
+    constexpr int kKeyboardH  = 80;
     constexpr int kSidePad   = 16;
 }
 
@@ -24,7 +25,8 @@ namespace
 TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     : AudioProcessorEditor (&p),
       proc (p),
-      keyboard (p.keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
+      keyboard (p.keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard),
+      analyzerPanel (p.analyzerFifo)
 {
     setLookAndFeel (&lnf);
 
@@ -149,6 +151,10 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     setupKnob  (distInstability, "fx_dist_instability",  "INSTABILITY", true);
     setupKnob  (distMix,         "fx_dist_mix",          "MIX",         true);
 
+    // ── Analyzer ─────────────────────────────────────────────────
+    addAndMakeVisible (analyzerPanel);
+    analyzerPanel.setActive (true);
+
     // ── Engine listener + initial state ────────────────────────
     proc.apvts.addParameterListener ("engine", this);
     updateEngine();
@@ -221,6 +227,7 @@ void TsukiSynthEditor::updateEngine()
 
     keyboard.setColour (juce::MidiKeyboardComponent::keyDownOverlayColourId,
                         lnf.accent.withAlpha (0.35f));
+    analyzerPanel.setAccent (lnf.accent);
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -508,9 +515,18 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         paintPanel (g, distPanelBounds_, "DISTORTION");
     }
 
+    // ── analyzer row ────────────────────────────────────────────
+    {
+        int y = analyzerRow_.getY();
+        g.setColour (Clr::effectsBg);
+        g.fillRect (0, y, w, analyzerRow_.getHeight());
+        g.setColour (Clr::borderLight);
+        g.drawHorizontalLine (y, 0.0f, (float) w);
+    }
+
     // ── keyboard footer ─────────────────────────────────────────
     {
-        int y = distRow_.getBottom();
+        int y = analyzerRow_.getBottom();
         g.setColour (Clr::kbFooter);
         g.fillRect (0, y, w, getHeight() - y);
         g.setColour (Clr::borderLight);
@@ -560,6 +576,9 @@ void TsukiSynthEditor::resized()
     // ── bottom sections (fixed sizes, from bottom up) ───────────
     auto kbArea = area.removeFromBottom (kKeyboardH);
     keyboard.setBounds (kbArea.reduced (14, 10));
+
+    analyzerRow_ = area.removeFromBottom (kAnalyzerH);
+    analyzerPanel.setBounds (analyzerRow_.reduced (kSidePad, 4));
 
     distRow_ = area.removeFromBottom (kDistH);
     {

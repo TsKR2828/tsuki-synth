@@ -293,6 +293,19 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     // Global effect chain: Compressor → Delay → Reverb
     effectChain.processBlock (buffer);
+
+    // Mix to mono and push to analyzer FIFO (no lock, no alloc)
+    {
+        constexpr int kMaxBlock = 2048;
+        float mono[kMaxBlock];
+        int n = juce::jmin (buffer.getNumSamples(), kMaxBlock);
+        const float* L = buffer.getReadPointer (0);
+        const float* R = buffer.getNumChannels() > 1
+                             ? buffer.getReadPointer (1) : L;
+        for (int i = 0; i < n; ++i)
+            mono[i] = (L[i] + R[i]) * 0.5f;
+        analyzerFifo.push (mono, n);
+    }
 }
 
 // == State ==
