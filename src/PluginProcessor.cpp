@@ -6,215 +6,136 @@
 #include "Presets.h"
 #include "BinaryData.h"
 
-// == Parameter Layout ==
+// == Parameter Layout (grouped for DAW automation lanes) ==
 juce::AudioProcessorValueTreeState::ParameterLayout
 TsukiSynthProcessor::createParameterLayout()
 {
-    std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+    using FloatParam  = juce::AudioParameterFloat;
+    using ChoiceParam = juce::AudioParameterChoice;
+    using IntParam    = juce::AudioParameterInt;
+    using Group       = juce::AudioProcessorParameterGroup;
+    using Range       = juce::NormalisableRange<float>;
+    using PID         = juce::ParameterID;
 
-    // ---- Global ----
-    params.push_back (std::make_unique<juce::AudioParameterChoice> (
-        juce::ParameterID { "engine", 1 },
-        "Engine",
-        juce::StringArray { "Cimbalom", "Chromatic", "FM Piano" },
-        0));
+    auto global = std::make_unique<Group> ("global", "Global", "|");
+    global->addChild (std::make_unique<ChoiceParam> (
+        PID { "engine", 1 }, "Engine",
+        juce::StringArray { "Cimbalom", "Chromatic", "FM Piano" }, 0));
 
-    // ---- Cimbalom parameters ----
-    params.push_back (std::make_unique<juce::AudioParameterChoice> (
-        juce::ParameterID { "cim_material", 1 },
-        "Material",
-        juce::StringArray {
-            "Steel", "Copper", "Bronze", "Aluminum", "Brass",
-            "Spruce", "Maple", "Glass", "Rubber" },
-        0));
+    auto cim = std::make_unique<Group> ("cimbalom", "Cimbalom", "|");
+    cim->addChild (std::make_unique<ChoiceParam> (
+        PID { "cim_material", 1 }, "Material",
+        juce::StringArray { "Steel", "Copper", "Bronze", "Aluminum", "Brass",
+                            "Spruce", "Maple", "Glass", "Rubber" }, 0));
+    cim->addChild (std::make_unique<ChoiceParam> (
+        PID { "cim_hammer", 1 }, "Hammer",
+        juce::StringArray { "Cotton", "Felt", "Wood", "Metal" }, 2));
+    cim->addChild (std::make_unique<FloatParam> (
+        PID { "cim_strike_pos", 1 }, "Strike Position",
+        Range (0.05f, 0.95f, 0.01f), 0.3f));
+    cim->addChild (std::make_unique<FloatParam> (
+        PID { "cim_diameter", 1 }, "String Diameter (mm)",
+        Range (0.3f, 2.0f, 0.01f), 0.8f));
+    cim->addChild (std::make_unique<IntParam> (
+        PID { "cim_num_strings", 1 }, "Strings / Course", 1, 5, 3));
+    cim->addChild (std::make_unique<FloatParam> (
+        PID { "cim_detuning", 1 }, "Detuning (cents)",
+        Range (0.0f, 15.0f, 0.1f), 5.0f));
 
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "cim_strike_pos", 1 },
-        "Strike Position",
-        juce::NormalisableRange<float> (0.05f, 0.95f, 0.01f),
-        0.3f));
+    auto chr = std::make_unique<Group> ("chromatic", "Chromatic", "|");
+    chr->addChild (std::make_unique<ChoiceParam> (
+        PID { "chr_sub_engine", 1 }, "Sub-Engine",
+        juce::StringArray { "Tongue Drum", "Water Gong", "Custom" }, 0));
+    chr->addChild (std::make_unique<ChoiceParam> (
+        PID { "chr_material", 1 }, "Material",
+        juce::StringArray { "Steel", "Copper", "Bronze", "Aluminum", "Brass",
+                            "Spruce", "Maple", "Glass", "Rubber" }, 0));
+    chr->addChild (std::make_unique<ChoiceParam> (
+        PID { "chr_exciter", 1 }, "Exciter",
+        juce::StringArray { "Soft", "Medium", "Hard", "Sharp" }, 1));
+    chr->addChild (std::make_unique<FloatParam> (
+        PID { "chr_strike_pos", 1 }, "Strike Position",
+        Range (0.0f, 1.0f, 0.01f), 0.35f));
+    chr->addChild (std::make_unique<FloatParam> (
+        PID { "chr_thickness", 1 }, "Thickness (mm)",
+        Range (0.5f, 10.0f, 0.1f), 3.0f));
+    chr->addChild (std::make_unique<FloatParam> (
+        PID { "chr_size", 1 }, "Size (mm)",
+        Range (10.0f, 100.0f, 1.0f), 20.0f));
+    chr->addChild (std::make_unique<FloatParam> (
+        PID { "chr_pitch_glide", 1 }, "Pitch Glide",
+        Range (0.0f, 1.0f, 0.01f), 0.0f));
 
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "cim_diameter", 1 },
-        "String Diameter (mm)",
-        juce::NormalisableRange<float> (0.3f, 2.0f, 0.01f),
-        0.8f));
-
-    params.push_back (std::make_unique<juce::AudioParameterChoice> (
-        juce::ParameterID { "cim_hammer", 1 },
-        "Hammer",
-        juce::StringArray { "Cotton", "Felt", "Wood", "Metal" },
-        2));
-
-    params.push_back (std::make_unique<juce::AudioParameterInt> (
-        juce::ParameterID { "cim_num_strings", 1 },
-        "Strings / Course",
-        1, 5, 3));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "cim_detuning", 1 },
-        "Detuning (cents)",
-        juce::NormalisableRange<float> (0.0f, 15.0f, 0.1f),
-        5.0f));
-
-    // ---- Chromatic parameters ----
-    params.push_back (std::make_unique<juce::AudioParameterChoice> (
-        juce::ParameterID { "chr_sub_engine", 1 },
-        "Sub-Engine",
-        juce::StringArray { "Tongue Drum", "Water Gong", "Custom" },
-        0));
-
-    params.push_back (std::make_unique<juce::AudioParameterChoice> (
-        juce::ParameterID { "chr_material", 1 },
-        "Chr Material",
-        juce::StringArray {
-            "Steel", "Copper", "Bronze", "Aluminum", "Brass",
-            "Spruce", "Maple", "Glass", "Rubber" },
-        0));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "chr_strike_pos", 1 },
-        "Chr Strike Position",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.35f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "chr_thickness", 1 },
-        "Thickness (mm)",
-        juce::NormalisableRange<float> (0.5f, 10.0f, 0.1f),
-        3.0f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "chr_size", 1 },
-        "Size (mm)",
-        juce::NormalisableRange<float> (10.0f, 100.0f, 1.0f),
-        20.0f));
-
-    params.push_back (std::make_unique<juce::AudioParameterChoice> (
-        juce::ParameterID { "chr_exciter", 1 },
-        "Exciter",
-        juce::StringArray { "Soft", "Medium", "Hard", "Sharp" },
-        1));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "chr_pitch_glide", 1 },
-        "Pitch Glide",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.0f));
-
-    // ---- FM Piano parameters ----
-    params.push_back (std::make_unique<juce::AudioParameterChoice> (
-        juce::ParameterID { "fm_type", 1 },
-        "Sound Type",
+    auto fm = std::make_unique<Group> ("fm", "FM Piano", "|");
+    fm->addChild (std::make_unique<ChoiceParam> (
+        PID { "fm_type", 1 }, "Sound Type",
         juce::StringArray { "Piano", "E.Piano", "Vibraphone", "Bell",
-                            "Organ", "Pad", "Bass", "Brass" },
-        0));
+                            "Organ", "Pad", "Bass", "Brass" }, 0));
+    fm->addChild (std::make_unique<FloatParam> (
+        PID { "fm_ratio", 1 }, "FM Ratio",
+        Range (0.5f, 16.0f, 0.01f, 0.4f), 1.0f));
+    fm->addChild (std::make_unique<FloatParam> (
+        PID { "fm_index", 1 }, "Mod Index",
+        Range (0.0f, 25.0f, 0.1f), 5.0f));
+    fm->addChild (std::make_unique<FloatParam> (
+        PID { "fm_brightness", 1 }, "Brightness",
+        Range (0.0f, 1.0f, 0.01f), 0.6f));
+    fm->addChild (std::make_unique<FloatParam> (
+        PID { "fm_feedback", 1 }, "Feedback",
+        Range (0.0f, 1.0f, 0.01f), 0.0f));
+    fm->addChild (std::make_unique<FloatParam> (
+        PID { "fm_attack", 1 }, "FM Attack (ms)",
+        Range (1.0f, 2000.0f, 1.0f, 0.4f), 10.0f));
+    fm->addChild (std::make_unique<FloatParam> (
+        PID { "fm_release", 1 }, "FM Release (ms)",
+        Range (10.0f, 5000.0f, 1.0f, 0.4f), 300.0f));
 
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fm_ratio", 1 },
-        "FM Ratio",
-        juce::NormalisableRange<float> (0.5f, 16.0f, 0.01f, 0.4f),
-        1.0f));
+    auto rev = std::make_unique<Group> ("reverb", "Reverb", "|");
+    rev->addChild (std::make_unique<FloatParam> (
+        PID { "fx_reverb_mix", 1 }, "Reverb Mix",
+        Range (0.0f, 1.0f, 0.01f), 0.2f));
+    rev->addChild (std::make_unique<FloatParam> (
+        PID { "fx_reverb_size", 1 }, "Room Size",
+        Range (0.0f, 1.0f, 0.01f), 0.5f));
 
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fm_index", 1 },
-        "Mod Index",
-        juce::NormalisableRange<float> (0.0f, 25.0f, 0.1f),
-        5.0f));
+    auto dly = std::make_unique<Group> ("delay", "Delay", "|");
+    dly->addChild (std::make_unique<FloatParam> (
+        PID { "fx_delay_time", 1 }, "Delay Time (ms)",
+        Range (50.0f, 2000.0f, 1.0f, 0.4f), 300.0f));
+    dly->addChild (std::make_unique<FloatParam> (
+        PID { "fx_delay_feedback", 1 }, "Delay Feedback",
+        Range (0.0f, 0.95f, 0.01f), 0.3f));
+    dly->addChild (std::make_unique<FloatParam> (
+        PID { "fx_delay_mix", 1 }, "Delay Mix",
+        Range (0.0f, 1.0f, 0.01f), 0.0f));
 
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fm_brightness", 1 },
-        "Brightness",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.6f));
+    auto comp = std::make_unique<Group> ("comp", "Compressor", "|");
+    comp->addChild (std::make_unique<FloatParam> (
+        PID { "fx_comp_threshold", 1 }, "Threshold (dB)",
+        Range (-40.0f, 0.0f, 0.1f), -12.0f));
+    comp->addChild (std::make_unique<FloatParam> (
+        PID { "fx_comp_ratio", 1 }, "Ratio",
+        Range (1.0f, 20.0f, 0.1f, 0.5f), 4.0f));
 
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fm_feedback", 1 },
-        "Feedback",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.0f));
+    auto dist = std::make_unique<Group> ("dist", "Distortion", "|");
+    dist->addChild (std::make_unique<ChoiceParam> (
+        PID { "fx_dist_type", 1 }, "Type",
+        juce::StringArray { "Overdrive", "Bitcrush", "Wavefold" }, 0));
+    dist->addChild (std::make_unique<FloatParam> (
+        PID { "fx_dist_drive", 1 }, "Drive",
+        Range (0.0f, 1.0f, 0.01f), 0.0f));
+    dist->addChild (std::make_unique<FloatParam> (
+        PID { "fx_dist_instability", 1 }, "Instability",
+        Range (0.0f, 1.0f, 0.01f), 0.0f));
+    dist->addChild (std::make_unique<FloatParam> (
+        PID { "fx_dist_mix", 1 }, "Mix",
+        Range (0.0f, 1.0f, 0.01f), 0.5f));
 
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fm_attack", 1 },
-        "FM Attack (ms)",
-        juce::NormalisableRange<float> (1.0f, 2000.0f, 1.0f, 0.4f),
-        10.0f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fm_release", 1 },
-        "FM Release (ms)",
-        juce::NormalisableRange<float> (10.0f, 5000.0f, 1.0f, 0.4f),
-        300.0f));
-
-    // ---- Effect chain parameters ----
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_reverb_mix", 1 },
-        "Reverb Mix",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.2f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_reverb_size", 1 },
-        "Room Size",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.5f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_delay_time", 1 },
-        "Delay Time (ms)",
-        juce::NormalisableRange<float> (50.0f, 2000.0f, 1.0f, 0.4f),
-        300.0f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_delay_feedback", 1 },
-        "Delay Feedback",
-        juce::NormalisableRange<float> (0.0f, 0.95f, 0.01f),
-        0.3f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_delay_mix", 1 },
-        "Delay Mix",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.0f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_comp_threshold", 1 },
-        "Comp Threshold (dB)",
-        juce::NormalisableRange<float> (-40.0f, 0.0f, 0.1f),
-        -12.0f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_comp_ratio", 1 },
-        "Comp Ratio",
-        juce::NormalisableRange<float> (1.0f, 20.0f, 0.1f, 0.5f),
-        4.0f));
-
-    // ---- Distortion parameters ----
-    params.push_back (std::make_unique<juce::AudioParameterChoice> (
-        juce::ParameterID { "fx_dist_type", 1 },
-        "Distortion Type",
-        juce::StringArray { "Overdrive", "Bitcrush", "Wavefold" },
-        0));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_dist_drive", 1 },
-        "Distortion Drive",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.0f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_dist_instability", 1 },
-        "Instability",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.0f));
-
-    params.push_back (std::make_unique<juce::AudioParameterFloat> (
-        juce::ParameterID { "fx_dist_mix", 1 },
-        "Distortion Mix",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
-        0.5f));
-
-    return { params.begin(), params.end() };
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+    layout.add (std::move (global), std::move (cim), std::move (chr),
+                std::move (fm), std::move (rev), std::move (dly),
+                std::move (comp), std::move (dist));
+    return layout;
 }
 
 // == Constructor ==

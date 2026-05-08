@@ -149,9 +149,10 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     setupKnob  (distInstability, "fx_dist_instability",  "INSTABILITY", true);
     setupKnob  (distMix,         "fx_dist_mix",          "MIX",         true);
 
-    // ── Engine listener ─────────────────────────────────────────
+    // ── Engine listener + initial state ────────────────────────
     proc.apvts.addParameterListener ("engine", this);
     updateEngine();
+    updateDirtyIndicator();
     startTimerHz (5);
     setSize (kW, kH);
 }

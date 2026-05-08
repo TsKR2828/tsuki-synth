@@ -142,7 +142,11 @@ public:
     int  getCurrentIndex() const { return currentIndex; }
     bool isDirty()         const { return dirty; }
 
-    void setCurrentIndex (int i) { currentIndex = i; dirty = false; }
+    void setCurrentIndex (int i)
+    {
+        currentIndex = juce::jlimit (-1, getNumPresets() - 1, i);
+        dirty = false;
+    }
 
     // ── Scan disk ───────────────────────────────────────────────
 
@@ -187,8 +191,8 @@ private:
     juce::ValueTree defaultState;
     juce::Array<UserPreset> userPresets;
     int  currentIndex = 0;
-    bool dirty   = false;
-    bool loading = false;
+    std::atomic<bool> dirty   { false };
+    std::atomic<bool> loading { false };
 
     // ── ValueTree::Listener ─────────────────────────────────────
 

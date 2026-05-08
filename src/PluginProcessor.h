@@ -23,6 +23,10 @@ public:
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
     double getTailLengthSeconds() const override { return 2.0; }
+    bool isBusesLayoutSupported (const BusesLayout& layouts) const override
+    {
+        return layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
+    }
 
     int getNumPrograms() override;
     int getCurrentProgram() override;
