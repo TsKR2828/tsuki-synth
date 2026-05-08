@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PluginProcessor.h"
+#include "TsukiLookAndFeel.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 
 class TsukiSynthEditor : public juce::AudioProcessorEditor,
@@ -17,70 +18,77 @@ private:
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ComboAttachment  = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
-    struct ParamSlider
+    struct KnobParam
     {
-        std::unique_ptr<juce::Slider> slider;
-        std::unique_ptr<juce::Label>  label;
+        juce::Slider slider;
+        juce::Label  label;
         std::unique_ptr<SliderAttachment> attachment;
     };
 
-    struct ParamCombo
+    struct ComboParam
     {
-        std::unique_ptr<juce::ComboBox> combo;
-        std::unique_ptr<juce::Label>    label;
+        juce::ComboBox combo;
+        juce::Label    label;
         std::unique_ptr<ComboAttachment> attachment;
     };
 
     void parameterChanged (const juce::String& parameterID, float newValue) override;
-    void updateEngineVisibility();
 
-    void setupSlider (ParamSlider&, const juce::String& paramID,
-                      const juce::String& labelText, bool rotary = false);
-    void setupCombo  (ParamCombo&, const juce::String& paramID,
-                      const juce::String& labelText);
-    void setVisible  (ParamSlider&, bool);
-    void setVisible  (ParamCombo&, bool);
+    void setupKnob  (KnobParam&,  const juce::String& paramID,
+                     const juce::String& labelText, bool small = false);
+    void setupCombo  (ComboParam&, const juce::String& paramID,
+                     const juce::String& labelText);
+    void setVisible  (KnobParam&,  bool);
+    void setVisible  (ComboParam&, bool);
+    void updateEngine();
+    int  currentEngine() const;
+    juce::Colour accentForEngine (int eng) const;
 
     void paintPanel (juce::Graphics&, juce::Rectangle<int>, const juce::String& title);
+    void layoutKnobCell  (juce::Rectangle<int> cell, KnobParam&);
+    void layoutComboCell (juce::Rectangle<int> cell, ComboParam&);
+    void layoutFxKnob    (juce::Rectangle<int> cell, KnobParam&);
 
-    TsukiSynthProcessor& processorRef;
+    TsukiSynthProcessor& proc;
+    TsukiLookAndFeel lnf;
 
     // Keyboard
     juce::MidiKeyboardState keyboardState;
-    juce::MidiKeyboardComponent keyboardComponent;
+    juce::MidiKeyboardComponent keyboard;
 
-    // Engine
-    ParamCombo engineCombo;
+    // Engine tabs
+    juce::TextButton tabCim { "Cimbalom" };
+    juce::TextButton tabChr { "Chromatic" };
+    juce::TextButton tabFM  { "FM Piano" };
 
-    // Preset (manual, not APVTS)
-    std::unique_ptr<juce::ComboBox> presetCombo;
-    std::unique_ptr<juce::Label>    presetLabel;
+    // Preset
+    juce::ComboBox   presetCombo;
+    juce::TextButton presetPrev, presetNext;
 
     // Cimbalom
-    ParamCombo  cimMaterial, cimHammer;
-    ParamSlider cimStrike, cimDiameter, cimStrings, cimDetune;
+    ComboParam  cimMaterial, cimHammer;
+    KnobParam   cimStrike, cimDiameter, cimStrings, cimDetune;
 
     // Chromatic
-    ParamCombo  chrSubEngine, chrMaterial, chrExciter;
-    ParamSlider chrStrike, chrThickness, chrSize, chrGlide;
+    ComboParam  chrSubEngine, chrMaterial, chrExciter;
+    KnobParam   chrStrike, chrThickness, chrSize, chrGlide;
 
     // FM Piano
-    ParamCombo  fmType;
-    ParamSlider fmRatio, fmIndex, fmBrightness, fmFeedback, fmAttack, fmRelease;
+    ComboParam  fmType;
+    KnobParam   fmRatio, fmIndex, fmBrightness, fmFeedback, fmAttack, fmRelease;
 
     // Effects
-    ParamSlider fxRevMix, fxRevSize;
-    ParamSlider fxDlyTime, fxDlyFeedback, fxDlyMix;
-    ParamSlider fxCompThresh, fxCompRatio;
+    KnobParam fxRevMix, fxRevSize;
+    KnobParam fxDlyTime, fxDlyFeedback, fxDlyMix;
+    KnobParam fxCompThresh, fxCompRatio;
 
     // Distortion
-    ParamCombo  distType;
-    ParamSlider distDrive, distInstability, distMix;
+    ComboParam  distType;
+    KnobParam   distDrive, distInstability, distMix;
 
-    // Layout rects
-    juce::Rectangle<int> enginePanelBounds;
-    juce::Rectangle<int> effectsPanelBounds;
-    juce::Rectangle<int> distortionPanelBounds;
+    // Layout bounds (stored in resized, used in paint)
+    juce::Rectangle<int> engineArea_, effectsRow_, distRow_;
+    juce::Rectangle<int> reverbBounds_, delayBounds_, compBounds_, distPanelBounds_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)
 };
