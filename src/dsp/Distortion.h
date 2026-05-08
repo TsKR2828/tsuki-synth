@@ -20,8 +20,8 @@ class Distortion
 public:
     void prepare (double sampleRate)
     {
-        lfo.prepare (sampleRate);
-        lfo.setWaveform (Waveform::Sine);
+        lfo.setSampleRate (sampleRate);
+        lfo.setWaveform (Oscillator::Waveform::Sine);
         lfo.setRate (3.5);
         holdCounter = 0;
         holdSample  = 0.0f;
@@ -38,7 +38,7 @@ public:
         if (! params.enabled || params.wet < 0.001f)
             return input;
 
-        float driveNow = std::clamp (params.drive + lfo.getNextSample(), 0.0f, 1.0f);
+        float driveNow = std::clamp (params.drive + lfo.processSample(), 0.0f, 1.0f);
         float distorted = 0.0f;
 
         switch (params.type)

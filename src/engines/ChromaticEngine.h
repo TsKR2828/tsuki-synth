@@ -117,7 +117,7 @@ public:
         for (auto& m : modes)
         {
             m.frequency *= tScale;
-            m.decay *= matScale * dmpScale;
+            m.decayTime *= matScale * dmpScale;
         }
 
         // 保存基礎模態用於 pitch glide

@@ -45,8 +45,8 @@ public:
         delayR.prepare (sampleRate, 2.0);
         compL.prepare (sampleRate);
         compR.prepare (sampleRate);
-        hiCut.prepare (sampleRate);
-        hiCut.setParameters (FilterType::LowPass, 16000.0, 0.707);
+        hiCut.setSampleRate (sampleRate);
+        hiCut.setParams (BiquadFilter::Type::LowPass, 16000.0f, 0.707f);
     }
 
     void setParameters (const EffectsParams& p)

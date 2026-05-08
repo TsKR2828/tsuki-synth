@@ -110,29 +110,28 @@
 
 ## Currently In Progress: Build / DAW Validation
 
-**Status**: Code is complete but has never been built on this machine.
+**Status**: VST3 + Standalone build on `DESKTOP-HA8VHD7` (2026-05-08). CLI target broken.
 
-### Blockers
+### Build Environment
 
 | Item | Status |
 |------|--------|
-| JUCE submodule (`libs/JUCE`) | Registered in `.gitmodules` but **not initialized** |
-| CMake | **Not installed** |
-| Visual Studio / MSVC | **Not installed** |
-| `build/` directory | **Does not exist** |
+| JUCE submodule (`libs/JUCE`) | ✅ JUCE 8.0.12 (commit `501c076`) |
+| CMake | ✅ 4.3.2 |
+| Visual Studio / MSVC | ✅ Build Tools 17.14.31, MSVC 19.44 |
+| VST3 output | ✅ 6.7 MB |
+| Standalone output | ✅ 6.5 MB |
+| CLI output | ❌ ScoreRenderer API mismatch |
 
-### Required Steps
+### Remaining Steps
 
-1. `git submodule update --init --recursive` — clone JUCE (~200MB)
-2. Install Visual Studio 2022+ with "Desktop development with C++" workload
-3. Install CMake 3.22+ (or use the one bundled with VS)
-4. `cmake -B build -G "Visual Studio 17 2022"` — configure
-5. `cmake --build build --config Release` — build
-6. Verify `TsukiSynth.vst3` output exists
-7. Copy VST3 to `C:\Program Files\Common Files\VST3\`
-8. Load in DAW (Cubase / Reaper) — verify plugin scan, MIDI input, audio output
-9. Test automation list — verify all APVTS parameters appear
-10. Test state restore — save/load DAW session, verify preset recall
+1. ~~Build VST3 + Standalone~~ ✅
+2. Copy VST3 to `C:\Program Files\Common Files\VST3\` (needs admin)
+3. Install DAW (Cubase / Reaper) for host scan validation
+4. Verify plugin scan + MIDI input + audio output in DAW
+5. Test automation list — verify all 40 APVTS parameters appear
+6. Test state restore — save/load DAW session, verify preset recall
+7. Fix CLI target (ScoreRenderer needs JUCE voice API rewrite)
 
 ### Previous Build History
 

@@ -110,7 +110,7 @@ public:
         for (auto& m : baseModes)
         {
             m.frequency *= tScale;
-            m.decay *= matScale * dmpScale;
+            m.decayTime *= matScale * dmpScale;
         }
 
         // ── 多弦 beating ──

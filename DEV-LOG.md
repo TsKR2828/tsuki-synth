@@ -4,6 +4,64 @@
 
 ---
 
+## 2026-05-08 -- Build Validation (DESKTOP-HA8VHD7)
+
+### Environment Setup
+- JUCE submodule initialized: `libs/JUCE` → JUCE 8.0.12 (commit `501c076`)
+- CMake 4.3.2 installed via winget (`Kitware.CMake`)
+- VS 2022 Build Tools 17.14.31 installed via winget (`Microsoft.VisualStudio.2022.BuildTools`)
+  - MSVC 19.44.35226.0 (VCTools 14.44.35207)
+  - Windows SDK 10.0.26100.0
+
+### Build Fixes (4 files, 7 lines changed)
+1. **`src/dsp/Distortion.h`** — LFO API mismatch:
+   - `lfo.prepare()` → `lfo.setSampleRate()`
+   - `Waveform::Sine` → `Oscillator::Waveform::Sine`
+   - `lfo.getNextSample()` → `lfo.processSample()`
+2. **`src/engines/CimbalomEngine.h`** — `m.decay` → `m.decayTime` (ModalResonator::Mode field name)
+3. **`src/engines/ChromaticEngine.h`** — same `m.decay` → `m.decayTime` fix
+4. **`src/dsp/EffectsChain.h`** — BiquadFilter API mismatch:
+   - `hiCut.prepare()` → `hiCut.setSampleRate()`
+   - `FilterType::LowPass` → `BiquadFilter::Type::LowPass`
+
+### Build Results
+```
+cmake -B build -G "Visual Studio 17 2022"
+cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynth_Standalone
+```
+- **VST3**: `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3` — 6.7 MB ✅
+- **Standalone**: `build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe` — 6.5 MB ✅
+- **CLI**: ❌ ScoreRenderer.h has extensive API mismatches (uses standalone voice API that doesn't match JUCE SynthesiserVoice interface — needs rewrite)
+- Warnings: BiquadFilter.h C4701 (uninitialized vars in unreachable switch default), Font::getStringWidthFloat deprecation
+
+### VST3 Metadata (moduleinfo.json)
+- Name: TsukiSynth, Vendor: TsKR, Version: 0.1.0
+- Category: Audio Module Class, Sub Categories: Instrument / Synth
+- SDK: VST 3.8.0
+
+### Validation (Code Inspection)
+- **Standalone launch**: Process starts successfully (2 windows — main editor + MIDI keyboard)
+- **40 APVTS parameters**: 9 groups verified (Global/Macro/Cimbalom/Chromatic/FM/Reverb/Delay/Comp/Distortion)
+- **8 Macros**: All registered as automatable FloatParam, default 0.5 (Noise=0.0, Output=1.0)
+- **Output macro**: Post-FX, per-sample SmoothedValue (20ms ramp) ✅
+- **Signal chain**: Synth → EffectChain (Distortion→Compressor→Delay→Reverb) → Output → Analyzer FIFO ✅
+- **State save**: APVTS XML + presetIndex property ✅
+- **State restore**: replaceState() + setCurrentIndex() ✅
+- **Program change**: getNumPrograms/setCurrentProgram via PresetManager ✅
+
+### Not Validated (no DAW installed)
+- VST3 host scan (no Cubase/Reaper on this machine)
+- DAW automation lane enumeration
+- DAW state save/load round-trip
+- MIDI input via external controller
+
+### Known Issues
+- CLI target (`TsukiSynthCLI`) does not compile — `ScoreRenderer.h` uses a standalone voice API (`prepare()`, `noteOn()`, `getNextSample()`) that doesn't match the actual JUCE `SynthesiserVoice` interface (`startNote()`, `renderNextBlock()`)
+- `dsp/EffectsChain.h` (CLI-only) had BiquadFilter API mismatches (fixed but CLI still fails on ScoreRenderer)
+- BiquadFilter.h: C4701 warnings (uninitialized vars) — cosmetic, all switch paths covered
+
+---
+
 ## 2026-05-08 -- Document Sync + Build Environment Audit
 
 ### Recent Commits
