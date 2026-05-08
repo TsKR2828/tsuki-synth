@@ -442,7 +442,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.setColour (Clr::textMid);
         auto nameStr = eName + " ENGINE";
         g.drawText (nameStr, 40, 36, 200, 14, juce::Justification::centredLeft);
-        int nameW = (int) subFont.getStringWidthFloat (nameStr);
+        int nameW = (int) juce::GlyphArrangement::getStringWidth (subFont, nameStr);
         g.setColour (juce::Colour (0xff3a3a5a));
         g.drawText ("|", 40 + nameW + 4, 36, 10, 14, juce::Justification::centred);
         g.setColour (Clr::textDim);
