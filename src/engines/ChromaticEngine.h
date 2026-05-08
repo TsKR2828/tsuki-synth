@@ -36,6 +36,15 @@ public:
     std::atomic<float>* pExciter       = nullptr;   // 0~3
     std::atomic<float>* pPitchGlide    = nullptr;   // water gong 水位效果 (0~1)
 
+    // Macro 參數指標
+    std::atomic<float>* pMacroMaterial   = nullptr;
+    std::atomic<float>* pMacroTension    = nullptr;
+    std::atomic<float>* pMacroDamping    = nullptr;
+    std::atomic<float>* pMacroStrike     = nullptr;
+    std::atomic<float>* pMacroBrightness = nullptr;
+    std::atomic<float>* pMacroBody       = nullptr;
+    std::atomic<float>* pMacroNoise      = nullptr;
+
     bool canPlaySound (juce::SynthesiserSound* s) override
     {
         return dynamic_cast<ChromaticSound*> (s) != nullptr;
@@ -57,6 +66,22 @@ public:
         float size      = pSize->load() * 0.001f;       // mm -> m
         float exciter   = pExciter->load();
         glideAmount     = pPitchGlide->load();
+
+        // ── 讀取 Macro ──
+        float mMaterial   = pMacroMaterial   ? pMacroMaterial->load()   : 0.5f;
+        float mTension    = pMacroTension    ? pMacroTension->load()    : 0.5f;
+        float mDamping    = pMacroDamping    ? pMacroDamping->load()    : 0.5f;
+        float mStrike     = pMacroStrike     ? pMacroStrike->load()     : 0.5f;
+        float mBrightness = pMacroBrightness ? pMacroBrightness->load() : 0.5f;
+        float mBody       = pMacroBody       ? pMacroBody->load()       : 0.5f;
+        float mNoise      = pMacroNoise      ? pMacroNoise->load()      : 0.0f;
+
+        // Macro: Strike → blend with per-engine strike
+        strikePos *= (0.5f + mStrike);
+        strikePos = juce::jlimit (0.0f, 1.0f, strikePos);
+
+        // Macro: Body → resonator size modifier
+        size *= (0.5f + mBody);
 
         std::vector<ModalResonator::Mode> modes;
 
@@ -84,6 +109,17 @@ public:
             modes = buildCustomModes (midiNoteNumber, *mat);
         }
 
+        // Macro: Tension → frequency, Material → sustain, Damping → decay
+        float tScale = 0.85f + mTension * 0.30f;
+        float matScale = 0.5f + mMaterial;
+        float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
+
+        for (auto& m : modes)
+        {
+            m.frequency *= tScale;
+            m.decay *= matScale * dmpScale;
+        }
+
         // 保存基礎模態用於 pitch glide
         baseModes = modes;
         glidePhase = 0.0f;
@@ -92,7 +128,7 @@ public:
         resonator.setModes (modes);
         resonator.excite (velocity);
 
-        setupExciter (exciter, velocity);
+        setupExciter (exciter, velocity, mBrightness, mNoise);
         damped = false;
     }
 
@@ -201,18 +237,24 @@ private:
         return modes;
     }
 
-    void setupExciter (float hardness, float velocity)
+    void setupExciter (float hardness, float velocity,
+                       float brightMacro = 0.5f, float noiseMacro = 0.0f)
     {
         static constexpr float cutoffs[]   = { 500.0f, 1500.0f, 4000.0f, 10000.0f };
         static constexpr float durations[] = { 0.005f, 0.003f,  0.002f,  0.001f };
         int idx = juce::jlimit (0, 3, (int) hardness);
 
+        float cutoff = cutoffs[idx] * (0.3f + brightMacro * 1.4f);
+        cutoff = juce::jlimit (200.0f, 16000.0f, cutoff);
+
         exciterFilter.setSampleRate (getSampleRate());
-        exciterFilter.setParams (BiquadFilter::Type::LowPass, cutoffs[idx], 0.707f);
+        exciterFilter.setParams (BiquadFilter::Type::LowPass, cutoff, 0.707f);
         exciterFilter.reset();
         noiseGen.setType (NoiseGen::Type::White);
         noiseGen.reset();
-        exciterEnv.trigger (velocity * 0.2f, durations[idx], getSampleRate());
+
+        float amp = velocity * 0.2f * (1.0f + noiseMacro * 3.0f);
+        exciterEnv.trigger (amp, durations[idx], getSampleRate());
     }
 
     MaterialDB*    materialDB = nullptr;

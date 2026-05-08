@@ -85,6 +85,10 @@ private:
     ComboParam  fmType;
     KnobParam   fmRatio, fmIndex, fmBrightness, fmFeedback, fmAttack, fmRelease;
 
+    // Macro
+    KnobParam macroMaterial, macroTension, macroDamping, macroStrike;
+    KnobParam macroBrightness, macroBody, macroNoise, macroOutput;
+
     // Effects
     KnobParam fxRevMix, fxRevSize;
     KnobParam fxDlyTime, fxDlyFeedback, fxDlyMix;
@@ -98,7 +102,7 @@ private:
     AnalyzerPanel analyzerPanel;
 
     // Layout bounds (stored in resized, used in paint)
-    juce::Rectangle<int> engineArea_, effectsRow_, distRow_, analyzerRow_;
+    juce::Rectangle<int> macroArea_, engineArea_, effectsRow_, distRow_, analyzerRow_;
     juce::Rectangle<int> reverbBounds_, delayBounds_, compBounds_, distPanelBounds_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)

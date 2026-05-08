@@ -22,6 +22,32 @@ TsukiSynthProcessor::createParameterLayout()
         PID { "engine", 1 }, "Engine",
         juce::StringArray { "Cimbalom", "Chromatic", "FM Piano" }, 0));
 
+    auto macro = std::make_unique<Group> ("macro", "Macro", "|");
+    macro->addChild (std::make_unique<FloatParam> (
+        PID { "macro_material", 1 }, "Material",
+        Range (0.0f, 1.0f, 0.01f), 0.5f));
+    macro->addChild (std::make_unique<FloatParam> (
+        PID { "macro_tension", 1 }, "Tension",
+        Range (0.0f, 1.0f, 0.01f), 0.5f));
+    macro->addChild (std::make_unique<FloatParam> (
+        PID { "macro_damping", 1 }, "Damping",
+        Range (0.0f, 1.0f, 0.01f), 0.5f));
+    macro->addChild (std::make_unique<FloatParam> (
+        PID { "macro_strike", 1 }, "Strike",
+        Range (0.0f, 1.0f, 0.01f), 0.5f));
+    macro->addChild (std::make_unique<FloatParam> (
+        PID { "macro_brightness", 1 }, "Brightness",
+        Range (0.0f, 1.0f, 0.01f), 0.5f));
+    macro->addChild (std::make_unique<FloatParam> (
+        PID { "macro_body", 1 }, "Body",
+        Range (0.0f, 1.0f, 0.01f), 0.5f));
+    macro->addChild (std::make_unique<FloatParam> (
+        PID { "macro_noise", 1 }, "Noise",
+        Range (0.0f, 1.0f, 0.01f), 0.0f));
+    macro->addChild (std::make_unique<FloatParam> (
+        PID { "macro_output", 1 }, "Output",
+        Range (0.0f, 1.0f, 0.01f), 1.0f));
+
     auto cim = std::make_unique<Group> ("cimbalom", "Cimbalom", "|");
     cim->addChild (std::make_unique<ChoiceParam> (
         PID { "cim_material", 1 }, "Material",
@@ -132,9 +158,9 @@ TsukiSynthProcessor::createParameterLayout()
         Range (0.0f, 1.0f, 0.01f), 0.5f));
 
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    layout.add (std::move (global), std::move (cim), std::move (chr),
-                std::move (fm), std::move (rev), std::move (dly),
-                std::move (comp), std::move (dist));
+    layout.add (std::move (global), std::move (macro), std::move (cim),
+                std::move (chr), std::move (fm), std::move (rev),
+                std::move (dly), std::move (comp), std::move (dist));
     return layout;
 }
 
@@ -229,6 +255,41 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         }
     }
 
+    // ---- Macro parameters ----
+    {
+        auto* pMM = apvts.getRawParameterValue ("macro_material");
+        auto* pMT = apvts.getRawParameterValue ("macro_tension");
+        auto* pMD = apvts.getRawParameterValue ("macro_damping");
+        auto* pMS = apvts.getRawParameterValue ("macro_strike");
+        auto* pMB = apvts.getRawParameterValue ("macro_brightness");
+        auto* pMY = apvts.getRawParameterValue ("macro_body");
+        auto* pMN = apvts.getRawParameterValue ("macro_noise");
+        pMacroOutput = apvts.getRawParameterValue ("macro_output");
+
+        auto wireMacros = [=] (auto* voice)
+        {
+            voice->pMacroMaterial   = pMM;
+            voice->pMacroTension    = pMT;
+            voice->pMacroDamping    = pMD;
+            voice->pMacroStrike     = pMS;
+            voice->pMacroBrightness = pMB;
+            voice->pMacroBody       = pMY;
+            voice->pMacroNoise      = pMN;
+        };
+
+        for (int i = 0; i < cimbalomSynth.getNumVoices(); ++i)
+            if (auto* v = dynamic_cast<CimbalomVoice*> (cimbalomSynth.getVoice (i)))
+                wireMacros (v);
+
+        for (int i = 0; i < chromaticSynth.getNumVoices(); ++i)
+            if (auto* v = dynamic_cast<ChromaticVoice*> (chromaticSynth.getVoice (i)))
+                wireMacros (v);
+
+        for (int i = 0; i < fmPianoSynth.getNumVoices(); ++i)
+            if (auto* v = dynamic_cast<FMPianoVoice*> (fmPianoSynth.getVoice (i)))
+                wireMacros (v);
+    }
+
     // ---- Effect chain ----
     effectChain.pReverbMix     = apvts.getRawParameterValue ("fx_reverb_mix");
     effectChain.pReverbSize    = apvts.getRawParameterValue ("fx_reverb_size");
@@ -290,6 +351,13 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     else
         fmPianoSynth.renderNextBlock (buffer, midiMessages,
                                       0, buffer.getNumSamples());
+
+    // Macro: Output gain (pre-effects)
+    {
+        float g = pMacroOutput->load();
+        if (g < 0.999f)
+            buffer.applyGain (g);
+    }
 
     // Global effect chain: Compressor → Delay → Reverb
     effectChain.processBlock (buffer);

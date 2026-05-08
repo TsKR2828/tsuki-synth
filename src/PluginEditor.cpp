@@ -4,7 +4,7 @@
 namespace
 {
     constexpr int kW = 540;
-    constexpr int kH = 760;
+    constexpr int kH = 850;
 
     constexpr float kRotaryStart = juce::MathConstants<float>::pi * 1.25f;
     constexpr float kRotaryEnd   = juce::MathConstants<float>::pi * 2.75f;
@@ -12,6 +12,7 @@ namespace
     constexpr int kTitleH    = 56;
     constexpr int kPresetH   = 44;
     constexpr int kTabH      = 36;
+    constexpr int kMacroH    = 90;
     constexpr int kEffectsH  = 108;
     constexpr int kDistH      = 70;
     constexpr int kAnalyzerH  = 80;
@@ -150,6 +151,16 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     setupKnob  (distDrive,       "fx_dist_drive",       "DRIVE",       true);
     setupKnob  (distInstability, "fx_dist_instability",  "INSTABILITY", true);
     setupKnob  (distMix,         "fx_dist_mix",          "MIX",         true);
+
+    // ── Macro ────────────────────────────────────────────────────
+    setupKnob (macroMaterial,   "macro_material",   "MATERIAL",   true);
+    setupKnob (macroTension,    "macro_tension",    "TENSION",    true);
+    setupKnob (macroDamping,    "macro_damping",    "DAMPING",    true);
+    setupKnob (macroStrike,     "macro_strike",     "STRIKE",     true);
+    setupKnob (macroBrightness, "macro_brightness", "BRIGHT",     true);
+    setupKnob (macroBody,       "macro_body",       "BODY",       true);
+    setupKnob (macroNoise,      "macro_noise",      "NOISE",      true);
+    setupKnob (macroOutput,     "macro_output",     "OUTPUT",     true);
 
     // ── Analyzer ─────────────────────────────────────────────────
     addAndMakeVisible (analyzerPanel);
@@ -457,6 +468,31 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.fillRect (0, y, w, kTabH);
     }
 
+    // ── macro section ──────────────────────────────────────────
+    {
+        int y = macroArea_.getY();
+        int h = macroArea_.getHeight();
+        g.setGradientFill (juce::ColourGradient (
+            Clr::engineTop, 0.0f, (float) y,
+            Clr::engineBot, 0.0f, (float) (y + h), false));
+        g.fillRect (0, y, w, h);
+        g.setColour (Clr::borderLight);
+        g.drawHorizontalLine (y, 0.0f, (float) w);
+
+        g.setColour (Clr::divLabel);
+        g.setFont (juce::Font (juce::FontOptions (9.0f)).boldened()
+                       .withExtraKerningFactor (0.2f));
+        g.drawText ("MACRO", kSidePad, y + 6, 56, 14, juce::Justification::centredLeft);
+
+        g.setColour (juce::Colour (0xff334455));
+        g.setFont (juce::FontOptions (9.0f));
+        g.drawText ("8 params", kSidePad + 52, y + 6,
+                    60, 14, juce::Justification::centredLeft);
+
+        g.setColour (Clr::border.withAlpha (0.5f));
+        g.fillRect (kSidePad + 114, y + 12, w - kSidePad * 2 - 114, 1);
+    }
+
     // ── engine section ──────────────────────────────────────────
     {
         int y = engineArea_.getY();
@@ -571,6 +607,21 @@ void TsukiSynthEditor::resized()
         tabCim.setBounds (inner.removeFromLeft (tw));
         tabChr.setBounds (inner.removeFromLeft (tw));
         tabFM.setBounds  (inner);
+    }
+
+    // ── macro row ───────────────────────────────────────────────
+    macroArea_ = area.removeFromTop (kMacroH);
+    {
+        auto inner = macroArea_.reduced (kSidePad, 0).withTrimmedTop (22);
+        int knobW = inner.getWidth() / 8;
+        layoutFxKnob (inner.removeFromLeft (knobW), macroMaterial);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroTension);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroDamping);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroStrike);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroBrightness);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroBody);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroNoise);
+        layoutFxKnob (inner, macroOutput);
     }
 
     // ── bottom sections (fixed sizes, from bottom up) ───────────

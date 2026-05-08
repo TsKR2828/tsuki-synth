@@ -52,6 +52,7 @@ private:
     EffectChain effectChain;
 
     std::atomic<float>* pEngine = nullptr;
+    std::atomic<float>* pMacroOutput = nullptr;
     int lastEngine = -1;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout

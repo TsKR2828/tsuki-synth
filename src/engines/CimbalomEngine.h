@@ -42,6 +42,15 @@ public:
     std::atomic<float>* pNumStrings     = nullptr;  // 1~5
     std::atomic<float>* pDetuning       = nullptr;  // cents
 
+    // Macro 參數指標
+    std::atomic<float>* pMacroMaterial   = nullptr;
+    std::atomic<float>* pMacroTension    = nullptr;
+    std::atomic<float>* pMacroDamping    = nullptr;
+    std::atomic<float>* pMacroStrike     = nullptr;
+    std::atomic<float>* pMacroBrightness = nullptr;
+    std::atomic<float>* pMacroBody       = nullptr;
+    std::atomic<float>* pMacroNoise      = nullptr;
+
     bool canPlaySound (juce::SynthesiserSound* sound) override
     {
         return dynamic_cast<CimbalomSound*> (sound) != nullptr;
@@ -66,6 +75,22 @@ public:
         float detCents  = pDetuning->load();
         float hammer    = pHammerHardness->load();
 
+        // ── 讀取 Macro（中心 0.5 = 無變化）──
+        float mMaterial   = pMacroMaterial   ? pMacroMaterial->load()   : 0.5f;
+        float mTension    = pMacroTension    ? pMacroTension->load()    : 0.5f;
+        float mDamping    = pMacroDamping    ? pMacroDamping->load()    : 0.5f;
+        float mStrike     = pMacroStrike     ? pMacroStrike->load()     : 0.5f;
+        float mBrightness = pMacroBrightness ? pMacroBrightness->load() : 0.5f;
+        float mBody       = pMacroBody       ? pMacroBody->load()       : 0.5f;
+        float mNoise      = pMacroNoise      ? pMacroNoise->load()      : 0.0f;
+
+        // Macro: Strike → blend with per-engine strike
+        strikePos *= (0.5f + mStrike);
+        strikePos = juce::jlimit (0.05f, 0.95f, strikePos);
+
+        // Macro: Body → detuning spread
+        detCents *= (0.4f + mBody * 1.2f);
+
         // ── 弦參數 ──
         StringModel::Params sp;
         sp.length         = StringModel::lengthFromMidiNote (midiNoteNumber);
@@ -76,6 +101,17 @@ public:
         sp.numModes       = 40;
 
         auto baseModes = StringModel::calculateModes (sp, *mat);
+
+        // Macro: Tension → mode frequency, Material → sustain, Damping → decay
+        float tScale = 0.85f + mTension * 0.30f;
+        float matScale = 0.5f + mMaterial;
+        float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
+
+        for (auto& m : baseModes)
+        {
+            m.frequency *= tScale;
+            m.decay *= matScale * dmpScale;
+        }
 
         // ── 多弦 beating ──
         numActiveStrings = nStrings;
@@ -103,7 +139,7 @@ public:
         }
 
         // ── Exciter（槌頭噪音脈衝）──
-        setupExciter (hammer, velocity);
+        setupExciter (hammer, velocity, mBrightness, mNoise);
         damped = false;
     }
 
@@ -180,7 +216,8 @@ private:
         }
     }
 
-    void setupExciter (float hardness, float velocity)
+    void setupExciter (float hardness, float velocity,
+                       float brightMacro = 0.5f, float noiseMacro = 0.0f)
     {
         // 槌硬度 → 噪音頻寬
         //   0=cotton(柔) 1=felt 2=wood 3=metal(硬)
@@ -189,14 +226,20 @@ private:
 
         int idx = juce::jlimit (0, 3, (int) hardness);
 
+        // Brightness macro: scale cutoff (0→×0.3, 0.5→×1.0, 1→×1.7)
+        float cutoff = cutoffs[idx] * (0.3f + brightMacro * 1.4f);
+        cutoff = juce::jlimit (200.0f, 16000.0f, cutoff);
+
         exciterFilter.setSampleRate (getSampleRate());
-        exciterFilter.setParams (BiquadFilter::Type::LowPass, cutoffs[idx], 0.707f);
+        exciterFilter.setParams (BiquadFilter::Type::LowPass, cutoff, 0.707f);
         exciterFilter.reset();
 
         noiseGen.setType (NoiseGen::Type::White);
         noiseGen.reset();
 
-        exciterEnv.trigger (velocity * 0.25f, durations[idx], getSampleRate());
+        // Noise macro: boost exciter amplitude (0→×1, 1→×4)
+        float amp = velocity * 0.25f * (1.0f + noiseMacro * 3.0f);
+        exciterEnv.trigger (amp, durations[idx], getSampleRate());
     }
 
     MaterialDB*    materialDB = nullptr;
