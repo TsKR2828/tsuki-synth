@@ -24,7 +24,7 @@ namespace
 TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     : AudioProcessorEditor (&p),
       proc (p),
-      keyboard (keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
+      keyboard (p.keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
 {
     setLookAndFeel (&lnf);
 
@@ -59,12 +59,14 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     presetCombo.setColour (juce::ComboBox::backgroundColourId, Clr::comboBg);
     presetCombo.setColour (juce::ComboBox::outlineColourId,    Clr::comboBorder);
     presetCombo.setColour (juce::ComboBox::textColourId,       Clr::goldLight);
-    int presetCount = 0;
-    auto* presetList = getFactoryPresetList (presetCount);
-    for (int i = 0; i < presetCount; ++i)
-        presetCombo.addItem (presetList[i].name, i + 1);
-    presetCombo.setSelectedId (proc.getCurrentProgram() + 1, juce::dontSendNotification);
-    presetCombo.onChange = [this] { proc.setCurrentProgram (presetCombo.getSelectedId() - 1); };
+    rebuildPresetCombo();
+    presetCombo.onChange = [this]
+    {
+        int id = presetCombo.getSelectedId();
+        if (id > 0)
+            proc.setCurrentProgram (id - 1);
+        updateDirtyIndicator();
+    };
     addAndMakeVisible (presetCombo);
 
     presetPrev.setComponentID ("step");
@@ -86,6 +88,25 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         presetCombo.setSelectedId (cur < n ? cur + 1 : 1);
     };
     addAndMakeVisible (presetNext);
+
+    presetSave.setComponentID ("step");
+    presetSave.onClick = [this] { promptSavePreset(); };
+    addAndMakeVisible (presetSave);
+
+    presetInit.setComponentID ("step");
+    presetInit.onClick = [this]
+    {
+        proc.presetManager.initPreset();
+        rebuildPresetCombo();
+        updateDirtyIndicator();
+    };
+    addAndMakeVisible (presetInit);
+
+    dirtyLabel.setText ("", juce::dontSendNotification);
+    dirtyLabel.setFont (juce::Font (juce::FontOptions (14.0f)).boldened());
+    dirtyLabel.setColour (juce::Label::textColourId, Clr::gold);
+    dirtyLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (dirtyLabel);
 
     // ── Cimbalom ────────────────────────────────────────────────
     setupCombo (cimMaterial, "cim_material",    "MATERIAL");
@@ -131,11 +152,13 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     // ── Engine listener ─────────────────────────────────────────
     proc.apvts.addParameterListener ("engine", this);
     updateEngine();
+    startTimerHz (5);
     setSize (kW, kH);
 }
 
 TsukiSynthEditor::~TsukiSynthEditor()
 {
+    stopTimer();
     setLookAndFeel (nullptr);
     proc.apvts.removeParameterListener ("engine", this);
 }
@@ -147,6 +170,11 @@ void TsukiSynthEditor::parameterChanged (const juce::String& id, float)
 {
     if (id == "engine")
         juce::MessageManager::callAsync ([this] { updateEngine(); resized(); repaint(); });
+}
+
+void TsukiSynthEditor::timerCallback()
+{
+    updateDirtyIndicator();
 }
 
 int TsukiSynthEditor::currentEngine() const
@@ -251,6 +279,64 @@ void TsukiSynthEditor::setVisible (ComboParam& c, bool v)
 {
     c.combo.setVisible (v);
     c.label.setVisible (v);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  Preset helpers
+// ════════════════════════════════════════════════════════════════════════
+void TsukiSynthEditor::rebuildPresetCombo()
+{
+    presetCombo.clear (juce::dontSendNotification);
+
+    auto& pm = proc.presetManager;
+    int nFactory = pm.getNumFactoryPresets();
+    int nUser    = pm.getNumUserPresets();
+
+    for (int i = 0; i < nFactory; ++i)
+        presetCombo.addItem (pm.getPresetName (i), i + 1);
+
+    if (nUser > 0)
+    {
+        presetCombo.addSeparator();
+        for (int i = 0; i < nUser; ++i)
+            presetCombo.addItem (pm.getPresetName (nFactory + i), nFactory + i + 1);
+    }
+
+    int cur = pm.getCurrentIndex();
+    if (cur >= 0 && cur < pm.getNumPresets())
+        presetCombo.setSelectedId (cur + 1, juce::dontSendNotification);
+}
+
+void TsukiSynthEditor::updateDirtyIndicator()
+{
+    dirtyLabel.setText (proc.presetManager.isDirty() ? "*" : "",
+                        juce::dontSendNotification);
+}
+
+void TsukiSynthEditor::promptSavePreset()
+{
+    auto* aw = new juce::AlertWindow ("Save Preset",
+                                       "Enter a name for the preset:",
+                                       juce::AlertWindow::NoIcon, this);
+    aw->addTextEditor ("name", "My Preset", "Preset Name:");
+    aw->addButton ("Save",   1);
+    aw->addButton ("Cancel", 0);
+
+    aw->enterModalState (true, juce::ModalCallbackFunction::create (
+        [this, aw] (int result)
+        {
+            if (result == 1)
+            {
+                auto name = aw->getTextEditorContents ("name").trim();
+                if (name.isNotEmpty())
+                {
+                    proc.presetManager.saveUserPreset (name);
+                    rebuildPresetCombo();
+                    updateDirtyIndicator();
+                }
+            }
+            delete aw;
+        }));
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -445,10 +531,18 @@ void TsukiSynthEditor::resized()
     {
         auto row   = area.removeFromTop (kPresetH);
         auto inner = row.reduced (kSidePad, 8);
+
         presetPrev.setBounds (inner.removeFromLeft (20).reduced (0, 1));
         inner.removeFromLeft (2);
         presetNext.setBounds (inner.removeFromLeft (20).reduced (0, 1));
-        inner.removeFromLeft (8);
+        inner.removeFromLeft (6);
+
+        presetInit.setBounds (inner.removeFromRight (30).reduced (0, 1));
+        inner.removeFromRight (4);
+        presetSave.setBounds (inner.removeFromRight (36).reduced (0, 1));
+        inner.removeFromRight (4);
+        dirtyLabel.setBounds (inner.removeFromRight (14));
+
         presetCombo.setBounds (inner);
     }
 

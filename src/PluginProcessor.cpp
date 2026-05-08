@@ -343,6 +343,9 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     juce::ScopedNoDenormals noDenormals;
     buffer.clear();
 
+    keyboardState.processNextMidiBuffer (midiMessages, 0,
+                                         buffer.getNumSamples(), true);
+
     int currentEngine = (int) pEngine->load();
 
     // Handle engine switch: kill notes on the old engine
@@ -375,6 +378,7 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
+    state.setProperty ("presetIndex", presetManager.getCurrentIndex(), nullptr);
     auto xml = state.createXml();
     copyXmlToBinary (*xml, destData);
 }
@@ -383,53 +387,33 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
 {
     auto xml = getXmlFromBinary (data, sizeInBytes);
     if (xml != nullptr && xml->hasTagName (apvts.state.getType()))
-        apvts.replaceState (juce::ValueTree::fromXml (*xml));
+    {
+        auto tree = juce::ValueTree::fromXml (*xml);
+        int idx = tree.getProperty ("presetIndex", 0);
+        apvts.replaceState (tree);
+        presetManager.setCurrentIndex (idx);
+    }
 }
 
-// == Programs (Factory Presets) ==
+// == Programs (routed through PresetManager) ==
 int TsukiSynthProcessor::getNumPrograms()
 {
-    int count = 0;
-    getFactoryPresetList (count);
-    return count;
+    return juce::jmax (1, presetManager.getNumPresets());
 }
 
 int TsukiSynthProcessor::getCurrentProgram()
 {
-    return currentProgram;
+    return juce::jmax (0, presetManager.getCurrentIndex());
 }
 
 void TsukiSynthProcessor::setCurrentProgram (int index)
 {
-    int count = 0;
-    auto* presets = getFactoryPresetList (count);
-
-    if (index < 0 || index >= count)
-        return;
-
-    currentProgram = index;
-    const auto& preset = presets[index];
-
-    for (int i = 0; i < preset.numParams; ++i)
-    {
-        const auto& entry = preset.params[i];
-        if (auto* param = apvts.getParameter (entry.paramID))
-        {
-            float normalized = param->convertTo0to1 (entry.rawValue);
-            param->setValueNotifyingHost (normalized);
-        }
-    }
+    presetManager.loadPreset (index);
 }
 
 const juce::String TsukiSynthProcessor::getProgramName (int index)
 {
-    int count = 0;
-    auto* presets = getFactoryPresetList (count);
-
-    if (index >= 0 && index < count)
-        return presets[index].name;
-
-    return {};
+    return presetManager.getPresetName (index);
 }
 
 // == Editor ==

@@ -5,7 +5,8 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 
 class TsukiSynthEditor : public juce::AudioProcessorEditor,
-                          private juce::AudioProcessorValueTreeState::Listener
+                          private juce::AudioProcessorValueTreeState::Listener,
+                          private juce::Timer
 {
 public:
     explicit TsukiSynthEditor (TsukiSynthProcessor&);
@@ -33,6 +34,7 @@ private:
     };
 
     void parameterChanged (const juce::String& parameterID, float newValue) override;
+    void timerCallback() override;
 
     void setupKnob  (KnobParam&,  const juce::String& paramID,
                      const juce::String& labelText, bool small = false);
@@ -52,8 +54,7 @@ private:
     TsukiSynthProcessor& proc;
     TsukiLookAndFeel lnf;
 
-    // Keyboard
-    juce::MidiKeyboardState keyboardState;
+    // Keyboard (state lives in processor for MIDI injection)
     juce::MidiKeyboardComponent keyboard;
 
     // Engine tabs
@@ -64,6 +65,12 @@ private:
     // Preset
     juce::ComboBox   presetCombo;
     juce::TextButton presetPrev, presetNext;
+    juce::TextButton presetSave { "Save" };
+    juce::TextButton presetInit { "Init" };
+    juce::Label      dirtyLabel;
+    void rebuildPresetCombo();
+    void updateDirtyIndicator();
+    void promptSavePreset();
 
     // Cimbalom
     ComboParam  cimMaterial, cimHammer;

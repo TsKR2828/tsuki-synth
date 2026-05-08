@@ -1,7 +1,9 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_audio_utils/juce_audio_utils.h>
 #include "physics/MaterialDB.h"
 #include "effects/EffectChain.h"
+#include "PresetManager.h"
 
 class TsukiSynthProcessor : public juce::AudioProcessor
 {
@@ -32,6 +34,8 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState apvts;
+    PresetManager presetManager { apvts };
+    juce::MidiKeyboardState keyboardState;
     MaterialDB materialDB;
 
 private:
@@ -43,7 +47,6 @@ private:
 
     std::atomic<float>* pEngine = nullptr;
     int lastEngine = -1;
-    int currentProgram = 0;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout
         createParameterLayout();
