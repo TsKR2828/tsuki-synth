@@ -1,0 +1,39 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Test: Sound Layering",
+    "id": "test_layer_001",
+    "author": "TsukiSynth",
+    "description": "驗證 C — 組合兩個 score + 50ms crossfade，確認接縫平滑",
+    "created": "2026-05-07",
+    "tags": ["test", "layer"],
+    "mood": "neutral",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Akashic",
+    "primary_type": "whoosh",
+    "sound_type": "oneshot",
+    "family_id": "test",
+    "character": ["metallic", "airy"]
+  },
+  "layers": [
+    {
+      "source": "scores/library/akashic/akashic_notify_001.score.json",
+      "region": [0.0, 0.8],
+      "gain": 1.0
+    },
+    {
+      "source": "scores/library/akashic/akashic_ui_001.score.json",
+      "region": [0.0, 1.0],
+      "gain": 0.9
+    }
+  ],
+  "crossfade_ms": 50,
+  "export": {
+    "filename": "test_layer",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 200
+  }
+}

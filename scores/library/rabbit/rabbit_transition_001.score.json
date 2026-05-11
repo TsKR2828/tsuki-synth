@@ -1,0 +1,85 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Rabbit Hop Transition",
+    "id": "rabbit_transition_001",
+    "author": "TsukiSynth",
+    "description": "兔跳轉場 — 三音快速下行，活潑彈跳感",
+    "created": "2026-05-07",
+    "tags": ["chime", "transition", "playful", "fast", "bright"],
+    "mood": "playful",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Rabbit",
+    "variation_of": null,
+    "primary_type": "whoosh",
+    "sound_type": "oneshot",
+    "family_id": "rabbit_transition",
+    "character": ["bright", "punch"]
+  },
+  "global": {
+    "bpm": 160,
+    "sample_rate": 48000,
+    "master_volume": 0.82,
+    "effects": {
+      "reverb": { "decay": 1.5, "wet": 0.25 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.5,
+      "engine": "beam",
+      "note": "A6",
+      "velocity": 0.8,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 2.0,
+        "length_mm": 28,
+        "width_mm": 10,
+        "strike_position": 0.25,
+        "exciter": "hard_plastic"
+      }
+    },
+    {
+      "time": 0.1,
+      "duration": 0.5,
+      "engine": "beam",
+      "note": "E6",
+      "velocity": 0.75,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 2.0,
+        "length_mm": 35,
+        "width_mm": 10,
+        "strike_position": 0.25,
+        "exciter": "hard_plastic"
+      }
+    },
+    {
+      "time": 0.2,
+      "duration": 0.6,
+      "engine": "beam",
+      "note": "C6",
+      "velocity": 0.85,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 2.0,
+        "length_mm": 42,
+        "width_mm": 10,
+        "strike_position": 0.2,
+        "exciter": "hard_plastic"
+      },
+      "comment": "最後一擊最強，落地感"
+    }
+  ],
+  "export": {
+    "filename": "rabbit_transition_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 200,
+    "export_filename": "Whoosh_Bright_OneShot_A6"
+  }
+}

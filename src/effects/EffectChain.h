@@ -2,14 +2,9 @@
 #include "Compressor.h"
 #include "StereoDelay.h"
 #include "SimpleReverb.h"
+#include "dsp/Distortion.h"
 #include <juce_audio_basics/juce_audio_basics.h>
 
-/**
- * Global effect chain: Compressor → Delay → Reverb
- *
- * Processes the full audio buffer after synth engine rendering.
- * Each effect has its own parameters controlled via atomic pointers.
- */
 class EffectChain
 {
 public:
@@ -22,8 +17,16 @@ public:
     std::atomic<float>* pCompThreshold  = nullptr;
     std::atomic<float>* pCompRatio      = nullptr;
 
+    // Distortion pointers
+    std::atomic<float>* pDistType        = nullptr;
+    std::atomic<float>* pDistDrive       = nullptr;
+    std::atomic<float>* pDistInstability = nullptr;
+    std::atomic<float>* pDistMix         = nullptr;
+
     void prepare (double sampleRate)
     {
+        distortionL.prepare (sampleRate);
+        distortionR.prepare (sampleRate);
         compressor.prepare (sampleRate);
         delay.prepare (sampleRate);
         reverb.prepare (sampleRate);
@@ -31,6 +34,8 @@ public:
 
     void reset()
     {
+        distortionL.reset();
+        distortionR.reset();
         compressor.reset();
         delay.reset();
         reverb.reset();
@@ -38,7 +43,7 @@ public:
 
     void processBlock (juce::AudioBuffer<float>& buffer)
     {
-        // Read parameters
+        // Read effect parameters
         if (pCompThreshold != nullptr)
             compressor.setThreshold (pCompThreshold->load());
         if (pCompRatio != nullptr)
@@ -54,10 +59,24 @@ public:
         if (pReverbMix != nullptr)
             reverb.setMix (pReverbMix->load());
 
+        // Read distortion parameters
+        if (pDistDrive != nullptr)
+        {
+            DistortionParams dp;
+            float drive = pDistDrive->load();
+            dp.enabled     = drive > 0.001f;
+            dp.type        = static_cast<DistortionType> (
+                                 pDistType ? (int) pDistType->load() : 0);
+            dp.drive       = drive;
+            dp.instability = pDistInstability ? pDistInstability->load() : 0.0f;
+            dp.wet         = pDistMix ? pDistMix->load() : 0.5f;
+            distortionL.setParameters (dp);
+            distortionR.setParameters (dp);
+        }
+
         int numSamples  = buffer.getNumSamples();
         int numChannels = buffer.getNumChannels();
 
-        // Ensure we have at least stereo (or mono)
         float* chL = buffer.getWritePointer (0);
         float* chR = (numChannels > 1) ? buffer.getWritePointer (1) : chL;
 
@@ -66,7 +85,9 @@ public:
             float left  = chL[i];
             float right = chR[i];
 
-            // Chain: Compressor → Delay → Reverb
+            // Chain: Distortion → Compressor → Delay → Reverb
+            left  = distortionL.processSample (left);
+            right = distortionR.processSample (right);
             compressor.processStereo (left, right);
             delay.processStereo (left, right);
             reverb.processStereo (left, right);
@@ -78,7 +99,8 @@ public:
     }
 
 private:
-    Compressor  compressor;
-    StereoDelay delay;
+    Distortion   distortionL, distortionR;
+    Compressor   compressor;
+    StereoDelay  delay;
     SimpleReverb reverb;
 };

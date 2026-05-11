@@ -1,373 +1,890 @@
 #include "PluginEditor.h"
 #include "Presets.h"
 
-TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
-    : AudioProcessorEditor (&p), processorRef (p)
+namespace
 {
-    // Preset selector (manual, not APVTS)
-    presetCombo = std::make_unique<juce::ComboBox>();
-    presetLabel = std::make_unique<juce::Label> ("", "Preset");
+    constexpr int kW = 540;
+    constexpr int kH = 850;
+
+    constexpr float kRotaryStart = juce::MathConstants<float>::pi * 1.25f;
+    constexpr float kRotaryEnd   = juce::MathConstants<float>::pi * 2.75f;
+
+    constexpr int kTitleH    = 56;
+    constexpr int kPresetH   = 44;
+    constexpr int kTabH      = 36;
+    constexpr int kMacroH    = 90;
+    constexpr int kEffectsH  = 108;
+    constexpr int kDistH      = 70;
+    constexpr int kAnalyzerH  = 80;
+    constexpr int kKeyboardH  = 80;
+    constexpr int kSidePad   = 16;
+}
+
+// ========================================================================
+//  Constructor
+// ========================================================================
+TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
+    : AudioProcessorEditor (&p),
+      proc (p),
+      keyboard (p.keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard),
+      analyzerPanel (p.analyzerFifo)
+{
+    setLookAndFeel (&lnf);
+
+    // -- Keyboard --------------------------------------------------------
+    keyboard.setColour (juce::MidiKeyboardComponent::whiteNoteColourId,     Clr::whiteKey);
+    keyboard.setColour (juce::MidiKeyboardComponent::blackNoteColourId,     Clr::blackKey);
+    keyboard.setColour (juce::MidiKeyboardComponent::keySeparatorLineColourId, juce::Colour (0x28000000));
+    keyboard.setColour (juce::MidiKeyboardComponent::shadowColourId,        juce::Colour (0x30000000));
+    keyboard.setColour (juce::MidiKeyboardComponent::keyDownOverlayColourId, Clr::gold.withAlpha (0.35f));
+    addAndMakeVisible (keyboard);
+
+    // -- Tab buttons -----------------------------------------------------
+    auto initTab = [this] (juce::TextButton& btn, int idx)
     {
-        int count = 0;
-        auto* presets = getFactoryPresetList (count);
-        for (int i = 0; i < count; ++i)
-            presetCombo->addItem (presets[i].name, i + 1);
-        presetCombo->setSelectedId (processorRef.getCurrentProgram() + 1,
-                                    juce::dontSendNotification);
-        presetCombo->onChange = [this]()
+        btn.setComponentID ("tab");
+        btn.setClickingTogglesState (true);
+        btn.setRadioGroupId (1001);
+        btn.onClick = [this, idx]
         {
-            int idx = presetCombo->getSelectedId() - 1;
-            if (idx >= 0)
-                processorRef.setCurrentProgram (idx);
+            auto* param = proc.apvts.getParameter ("engine");
+            param->beginChangeGesture();
+            param->setValueNotifyingHost (param->convertTo0to1 ((float) idx));
+            param->endChangeGesture();
         };
-    }
-    presetLabel->setColour (juce::Label::textColourId, juce::Colour (0xffcccccc));
-    presetLabel->setFont (juce::FontOptions (12.0f));
-    addAndMakeVisible (*presetCombo);
-    addAndMakeVisible (*presetLabel);
+        addAndMakeVisible (btn);
+    };
+    initTab (tabCim, 0);
+    initTab (tabChr, 1);
+    initTab (tabFM,  2);
 
-    // Engine selector
-    setupCombo (engineCombo, "engine", "Engine");
+    // -- Language toggle -------------------------------------------------
+    langToggle.setComponentID ("step");
+    langToggle.setButtonText (UiLocale::toggleLabel());
+    langToggle.onClick = [this]
+    {
+        if (UiLocale::isChinese())
+            UiLocale::setLanguage (UiLanguage::English);
+        else
+            UiLocale::setLanguage (UiLanguage::Chinese);
+        langToggle.setButtonText (UiLocale::toggleLabel());
+        refreshLocalizedText();
+        repaint();
+    };
+    addAndMakeVisible (langToggle);
 
-    // Cimbalom controls
-    setupCombo  (cimMaterialCombo,    "cim_material",    "Material");
-    setupCombo  (cimHammerCombo,      "cim_hammer",      "Hammer");
-    setupSlider (cimStrikePosSlider,  "cim_strike_pos",  "Strike Pos");
-    setupSlider (cimDiameterSlider,   "cim_diameter",    "Diameter",  "mm");
-    setupSlider (cimNumStringsSlider, "cim_num_strings", "Strings");
-    setupSlider (cimDetuningSlider,   "cim_detuning",    "Detuning",  "ct");
+    // -- Preset ----------------------------------------------------------
+    presetCombo.setColour (juce::ComboBox::backgroundColourId, Clr::comboBg);
+    presetCombo.setColour (juce::ComboBox::outlineColourId,    Clr::comboBorder);
+    presetCombo.setColour (juce::ComboBox::textColourId,       Clr::goldLight);
+    rebuildPresetCombo();
+    presetCombo.onChange = [this]
+    {
+        int id = presetCombo.getSelectedId();
+        if (id > 0)
+            proc.setCurrentProgram (id - 1);
+        updateDirtyIndicator();
+    };
+    addAndMakeVisible (presetCombo);
 
-    // Chromatic controls
-    setupCombo  (chrSubEngineCombo,   "chr_sub_engine",  "Type");
-    setupCombo  (chrMaterialCombo,    "chr_material",    "Material");
-    setupSlider (chrStrikePosSlider,  "chr_strike_pos",  "Strike Pos");
-    setupSlider (chrThicknessSlider,  "chr_thickness",   "Thickness", "mm");
-    setupSlider (chrSizeSlider,       "chr_size",        "Size",      "mm");
-    setupCombo  (chrExciterCombo,     "chr_exciter",     "Exciter");
-    setupSlider (chrPitchGlideSlider, "chr_pitch_glide", "Pitch Glide");
+    presetPrev.setComponentID ("step");
+    presetPrev.setButtonText ("<");
+    presetPrev.onClick = [this]
+    {
+        int cur = presetCombo.getSelectedId();
+        int n   = presetCombo.getNumItems();
+        presetCombo.setSelectedId (cur > 1 ? cur - 1 : n);
+    };
+    addAndMakeVisible (presetPrev);
 
-    // FM Piano controls
-    setupCombo  (fmTypeCombo,         "fm_type",         "Type");
-    setupSlider (fmRatioSlider,       "fm_ratio",        "Ratio");
-    setupSlider (fmIndexSlider,       "fm_index",        "Mod Index");
-    setupSlider (fmBrightnessSlider,  "fm_brightness",   "Brightness");
-    setupSlider (fmFeedbackSlider,    "fm_feedback",     "Feedback");
-    setupSlider (fmAttackSlider,      "fm_attack",       "Attack",    "ms");
-    setupSlider (fmReleaseSlider,     "fm_release",      "Release",   "ms");
+    presetNext.setComponentID ("step");
+    presetNext.setButtonText (">");
+    presetNext.onClick = [this]
+    {
+        int cur = presetCombo.getSelectedId();
+        int n   = presetCombo.getNumItems();
+        presetCombo.setSelectedId (cur < n ? cur + 1 : 1);
+    };
+    addAndMakeVisible (presetNext);
 
-    // Effect chain controls (always visible)
-    setupSlider (fxReverbMixSlider,   "fx_reverb_mix",      "Reverb");
-    setupSlider (fxReverbSizeSlider,  "fx_reverb_size",     "Room Size");
-    setupSlider (fxDelayTimeSlider,   "fx_delay_time",      "Delay",     "ms");
-    setupSlider (fxDelayFbSlider,     "fx_delay_feedback",  "Dly FB");
-    setupSlider (fxDelayMixSlider,    "fx_delay_mix",       "Dly Mix");
-    setupSlider (fxCompThreshSlider,  "fx_comp_threshold",  "Comp",      "dB");
-    setupSlider (fxCompRatioSlider,   "fx_comp_ratio",      "Ratio");
+    presetSave.setComponentID ("step");
+    presetSave.onClick = [this] { promptSavePreset(); };
+    addAndMakeVisible (presetSave);
 
-    // Listen for engine changes
-    processorRef.apvts.addParameterListener ("engine", this);
+    presetInit.setComponentID ("step");
+    presetInit.onClick = [this]
+    {
+        proc.presetManager.initPreset();
+        rebuildPresetCombo();
+        updateDirtyIndicator();
+    };
+    addAndMakeVisible (presetInit);
 
-    updateEngineVisibility();
-    setSize (520, 580);
+    dirtyLabel.setText ("", juce::dontSendNotification);
+    dirtyLabel.setFont (juce::Font (juce::FontOptions (14.0f)).boldened());
+    dirtyLabel.setColour (juce::Label::textColourId, Clr::gold);
+    dirtyLabel.setJustificationType (juce::Justification::centred);
+    addAndMakeVisible (dirtyLabel);
+
+    // -- Cimbalom --------------------------------------------------------
+    setupCombo (cimMaterial, "cim_material");
+    setupCombo (cimHammer,   "cim_hammer");
+    setupKnob  (cimStrike,   "cim_strike_pos");
+    setupKnob  (cimDiameter, "cim_diameter");
+    setupKnob  (cimStrings,  "cim_num_strings");
+    setupKnob  (cimDetune,   "cim_detuning");
+
+    // -- Chromatic -------------------------------------------------------
+    setupCombo (chrSubEngine, "chr_sub_engine");
+    setupCombo (chrMaterial,  "chr_material");
+    setupCombo (chrExciter,   "chr_exciter");
+    setupKnob  (chrStrike,    "chr_strike_pos");
+    setupKnob  (chrThickness, "chr_thickness");
+    setupKnob  (chrSize,      "chr_size");
+    setupKnob  (chrGlide,     "chr_pitch_glide");
+
+    // -- FM Piano --------------------------------------------------------
+    setupCombo (fmType,       "fm_type");
+    setupKnob  (fmRatio,      "fm_ratio");
+    setupKnob  (fmIndex,      "fm_index");
+    setupKnob  (fmBrightness, "fm_brightness");
+    setupKnob  (fmFeedback,   "fm_feedback");
+    setupKnob  (fmAttack,     "fm_attack");
+    setupKnob  (fmRelease,    "fm_release");
+
+    // -- Effects ---------------------------------------------------------
+    setupKnob (fxRevMix,      "fx_reverb_mix",      true);
+    setupKnob (fxRevSize,     "fx_reverb_size",     true);
+    setupKnob (fxDlyTime,     "fx_delay_time",      true);
+    setupKnob (fxDlyFeedback, "fx_delay_feedback",  true);
+    setupKnob (fxDlyMix,      "fx_delay_mix",       true);
+    setupKnob (fxCompThresh,  "fx_comp_threshold",  true);
+    setupKnob (fxCompRatio,   "fx_comp_ratio",      true);
+
+    // -- Distortion ------------------------------------------------------
+    setupCombo (distType,        "fx_dist_type");
+    setupKnob  (distDrive,       "fx_dist_drive",        true);
+    setupKnob  (distInstability, "fx_dist_instability",   true);
+    setupKnob  (distMix,         "fx_dist_mix",           true);
+
+    // -- Macro -----------------------------------------------------------
+    setupKnob (macroMaterial,   "macro_material",   true);
+    setupKnob (macroTension,    "macro_tension",    true);
+    setupKnob (macroDamping,    "macro_damping",    true);
+    setupKnob (macroStrike,     "macro_strike",     true);
+    setupKnob (macroBrightness, "macro_brightness", true);
+    setupKnob (macroBody,       "macro_body",       true);
+    setupKnob (macroNoise,      "macro_noise",      true);
+    setupKnob (macroOutput,     "macro_output",     true);
+
+    // -- Analyzer --------------------------------------------------------
+    addAndMakeVisible (analyzerPanel);
+    analyzerPanel.setActive (true);
+
+    // -- Engine listener + initial state ---------------------------------
+    proc.apvts.addParameterListener ("engine", this);
+    updateEngine();
+    updateDirtyIndicator();
+    startTimerHz (5);
+    setSize (kW, kH);
 }
 
 TsukiSynthEditor::~TsukiSynthEditor()
 {
-    processorRef.apvts.removeParameterListener ("engine", this);
+    stopTimer();
+    setLookAndFeel (nullptr);
+    proc.apvts.removeParameterListener ("engine", this);
 }
 
-void TsukiSynthEditor::parameterChanged (const juce::String& parameterID, float)
+// ========================================================================
+//  Engine switching
+// ========================================================================
+void TsukiSynthEditor::parameterChanged (const juce::String& id, float)
 {
-    if (parameterID == "engine")
+    if (id == "engine")
+        juce::MessageManager::callAsync ([this] { updateEngine(); resized(); repaint(); });
+}
+
+void TsukiSynthEditor::timerCallback()
+{
+    updateDirtyIndicator();
+}
+
+int TsukiSynthEditor::currentEngine() const
+{
+    return (int) proc.apvts.getRawParameterValue ("engine")->load();
+}
+
+juce::Colour TsukiSynthEditor::accentForEngine (int eng) const
+{
+    switch (eng)
     {
-        juce::MessageManager::callAsync ([this]() {
-            updateEngineVisibility();
-            resized();
-        });
+        case 0:  return Clr::cimbalom;
+        case 1:  return Clr::chromatic;
+        case 2:  return Clr::fm;
+        default: return Clr::gold;
     }
 }
 
-void TsukiSynthEditor::updateEngineVisibility()
+void TsukiSynthEditor::updateEngine()
 {
-    int engine = (int) processorRef.apvts.getRawParameterValue ("engine")->load();
-    bool isCim = (engine == 0);
-    bool isChr = (engine == 1);
-    bool isFM  = (engine == 2);
+    int eng = currentEngine();
+    lnf.accent = accentForEngine (eng);
 
-    // Cimbalom
-    setComponentVisible (cimMaterialCombo,    isCim);
-    setComponentVisible (cimHammerCombo,      isCim);
-    setComponentVisible (cimStrikePosSlider,  isCim);
-    setComponentVisible (cimDiameterSlider,   isCim);
-    setComponentVisible (cimNumStringsSlider, isCim);
-    setComponentVisible (cimDetuningSlider,   isCim);
+    tabCim.setToggleState (eng == 0, juce::dontSendNotification);
+    tabChr.setToggleState (eng == 1, juce::dontSendNotification);
+    tabFM.setToggleState  (eng == 2, juce::dontSendNotification);
 
-    // Chromatic
-    setComponentVisible (chrSubEngineCombo,   isChr);
-    setComponentVisible (chrMaterialCombo,    isChr);
-    setComponentVisible (chrStrikePosSlider,  isChr);
-    setComponentVisible (chrThicknessSlider,  isChr);
-    setComponentVisible (chrSizeSlider,       isChr);
-    setComponentVisible (chrExciterCombo,     isChr);
-    setComponentVisible (chrPitchGlideSlider, isChr);
+    bool isCim = (eng == 0), isChr = (eng == 1), isFM = (eng == 2);
 
-    // FM Piano
-    setComponentVisible (fmTypeCombo,        isFM);
-    setComponentVisible (fmRatioSlider,      isFM);
-    setComponentVisible (fmIndexSlider,      isFM);
-    setComponentVisible (fmBrightnessSlider, isFM);
-    setComponentVisible (fmFeedbackSlider,   isFM);
-    setComponentVisible (fmAttackSlider,     isFM);
-    setComponentVisible (fmReleaseSlider,    isFM);
+    setVisible (cimMaterial, isCim);  setVisible (cimHammer,   isCim);
+    setVisible (cimStrike,   isCim);  setVisible (cimDiameter, isCim);
+    setVisible (cimStrings,  isCim);  setVisible (cimDetune,   isCim);
 
-    // Effects are always visible
-    repaint();
+    setVisible (chrSubEngine, isChr); setVisible (chrMaterial,  isChr);
+    setVisible (chrExciter,   isChr); setVisible (chrStrike,    isChr);
+    setVisible (chrThickness, isChr); setVisible (chrSize,      isChr);
+    setVisible (chrGlide,     isChr);
+
+    setVisible (fmType,       isFM);  setVisible (fmRatio,      isFM);
+    setVisible (fmIndex,      isFM);  setVisible (fmBrightness, isFM);
+    setVisible (fmFeedback,   isFM);  setVisible (fmAttack,     isFM);
+    setVisible (fmRelease,    isFM);
+
+    keyboard.setColour (juce::MidiKeyboardComponent::keyDownOverlayColourId,
+                        lnf.accent.withAlpha (0.35f));
+    analyzerPanel.setAccent (lnf.accent);
 }
 
-void TsukiSynthEditor::setComponentVisible (ParamCombo& pc, bool visible)
+// ========================================================================
+//  Setup helpers
+// ========================================================================
+void TsukiSynthEditor::setupKnob (KnobParam& k, const juce::String& paramID,
+                                    bool small)
 {
-    pc.combo->setVisible (visible);
-    pc.label->setVisible (visible);
+    k.paramID = paramID;
+
+    auto& s = k.slider;
+    s.setSliderStyle (juce::Slider::RotaryVerticalDrag);
+    s.setTextBoxStyle (juce::Slider::TextBoxBelow, true,
+                       small ? 42 : 54, small ? 11 : 14);
+    s.setRotaryParameters ({ kRotaryStart, kRotaryEnd, true });
+    s.setColour (juce::Slider::textBoxTextColourId,       Clr::valueText);
+    s.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
+    s.setColour (juce::Slider::textBoxOutlineColourId,    juce::Colours::transparentBlack);
+    addAndMakeVisible (s);
+
+    auto& l = k.label;
+    l.setText (UiLocale::label (paramID), juce::dontSendNotification);
+    l.setFont (juce::Font (juce::FontOptions (small ? 8.0f : 9.5f)).boldened());
+    l.setJustificationType (juce::Justification::centred);
+    l.setColour (juce::Label::textColourId, small ? Clr::fxTitle : Clr::label);
+    addAndMakeVisible (l);
+
+    k.attachment = std::make_unique<SliderAttachment> (proc.apvts, paramID, s);
 }
 
-void TsukiSynthEditor::setComponentVisible (ParamSlider& ps, bool visible)
+void TsukiSynthEditor::setupCombo (ComboParam& c, const juce::String& paramID)
 {
-    ps.slider->setVisible (visible);
-    ps.label->setVisible (visible);
+    c.paramID = paramID;
+
+    // Populate items: use UiLocale if available, else APVTS choices
+    auto localizedItems = UiLocale::comboItems (paramID);
+
+    if (localizedItems.isEmpty())
+    {
+        if (auto* cp = dynamic_cast<juce::AudioParameterChoice*> (
+                proc.apvts.getParameter (paramID)))
+        {
+            int id = 1;
+            for (const auto& choice : cp->choices)
+                c.combo.addItem (choice, id++);
+        }
+    }
+    else
+    {
+        int id = 1;
+        for (const auto& item : localizedItems)
+            c.combo.addItem (item, id++);
+    }
+
+    addAndMakeVisible (c.combo);
+
+    c.label.setText (UiLocale::label (paramID), juce::dontSendNotification);
+    c.label.setFont (juce::Font (juce::FontOptions (9.0f)).boldened());
+    c.label.setJustificationType (juce::Justification::centred);
+    c.label.setColour (juce::Label::textColourId, Clr::label);
+    addAndMakeVisible (c.label);
+
+    c.attachment = std::make_unique<ComboAttachment> (proc.apvts, paramID, c.combo);
+}
+
+void TsukiSynthEditor::setVisible (KnobParam& k, bool v)
+{
+    k.slider.setVisible (v);
+    k.label.setVisible (v);
+}
+
+void TsukiSynthEditor::setVisible (ComboParam& c, bool v)
+{
+    c.combo.setVisible (v);
+    c.label.setVisible (v);
+}
+
+// ========================================================================
+//  Localization
+// ========================================================================
+void TsukiSynthEditor::refreshComboItems (ComboParam& cp)
+{
+    auto items = UiLocale::comboItems (cp.paramID);
+
+    // If UiLocale has no items for this param, use APVTS choices
+    if (items.isEmpty())
+    {
+        if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
+                proc.apvts.getParameter (cp.paramID)))
+            items = p->choices;
+    }
+
+    if (items.isEmpty())
+        return;
+
+    int currentId = cp.combo.getSelectedId();
+    cp.combo.clear (juce::dontSendNotification);
+
+    int id = 1;
+    for (const auto& item : items)
+        cp.combo.addItem (item, id++);
+
+    if (currentId > 0 && currentId <= items.size())
+        cp.combo.setSelectedId (currentId, juce::dontSendNotification);
+}
+
+void TsukiSynthEditor::refreshLocalizedText()
+{
+    // Helper lambdas
+    auto refreshKnobLabel = [] (KnobParam& k)
+    {
+        k.label.setText (UiLocale::label (k.paramID), juce::dontSendNotification);
+    };
+    auto refreshComboLabel = [this] (ComboParam& c)
+    {
+        c.label.setText (UiLocale::label (c.paramID), juce::dontSendNotification);
+        refreshComboItems (c);
+    };
+
+    // -- Macro knobs --
+    refreshKnobLabel (macroMaterial);
+    refreshKnobLabel (macroTension);
+    refreshKnobLabel (macroDamping);
+    refreshKnobLabel (macroStrike);
+    refreshKnobLabel (macroBrightness);
+    refreshKnobLabel (macroBody);
+    refreshKnobLabel (macroNoise);
+    refreshKnobLabel (macroOutput);
+
+    // -- Cimbalom --
+    refreshComboLabel (cimMaterial);
+    refreshComboLabel (cimHammer);
+    refreshKnobLabel  (cimStrike);
+    refreshKnobLabel  (cimDiameter);
+    refreshKnobLabel  (cimStrings);
+    refreshKnobLabel  (cimDetune);
+
+    // -- Chromatic --
+    refreshComboLabel (chrSubEngine);
+    refreshComboLabel (chrMaterial);
+    refreshComboLabel (chrExciter);
+    refreshKnobLabel  (chrStrike);
+    refreshKnobLabel  (chrThickness);
+    refreshKnobLabel  (chrSize);
+    refreshKnobLabel  (chrGlide);
+
+    // -- FM Piano --
+    refreshComboLabel (fmType);
+    refreshKnobLabel  (fmRatio);
+    refreshKnobLabel  (fmIndex);
+    refreshKnobLabel  (fmBrightness);
+    refreshKnobLabel  (fmFeedback);
+    refreshKnobLabel  (fmAttack);
+    refreshKnobLabel  (fmRelease);
+
+    // -- Effects --
+    refreshKnobLabel (fxRevMix);
+    refreshKnobLabel (fxRevSize);
+    refreshKnobLabel (fxDlyTime);
+    refreshKnobLabel (fxDlyFeedback);
+    refreshKnobLabel (fxDlyMix);
+    refreshKnobLabel (fxCompThresh);
+    refreshKnobLabel (fxCompRatio);
+
+    // -- Distortion --
+    refreshComboLabel (distType);
+    refreshKnobLabel  (distDrive);
+    refreshKnobLabel  (distInstability);
+    refreshKnobLabel  (distMix);
+}
+
+// ========================================================================
+//  Preset helpers
+// ========================================================================
+void TsukiSynthEditor::rebuildPresetCombo()
+{
+    presetCombo.clear (juce::dontSendNotification);
+
+    auto& pm = proc.presetManager;
+    int nFactory = pm.getNumFactoryPresets();
+    int nUser    = pm.getNumUserPresets();
+
+    for (int i = 0; i < nFactory; ++i)
+        presetCombo.addItem (pm.getPresetName (i), i + 1);
+
+    if (nUser > 0)
+    {
+        presetCombo.addSeparator();
+        for (int i = 0; i < nUser; ++i)
+            presetCombo.addItem (pm.getPresetName (nFactory + i), nFactory + i + 1);
+    }
+
+    int cur = pm.getCurrentIndex();
+    if (cur >= 0 && cur < pm.getNumPresets())
+        presetCombo.setSelectedId (cur + 1, juce::dontSendNotification);
+}
+
+void TsukiSynthEditor::updateDirtyIndicator()
+{
+    dirtyLabel.setText (proc.presetManager.isDirty() ? "*" : "",
+                        juce::dontSendNotification);
+}
+
+void TsukiSynthEditor::promptSavePreset()
+{
+    auto* aw = new juce::AlertWindow ("Save Preset",
+                                       "Enter a name for the preset:",
+                                       juce::AlertWindow::NoIcon, this);
+    aw->addTextEditor ("name", "My Preset", "Preset Name:");
+    aw->addButton ("Save",   1);
+    aw->addButton ("Cancel", 0);
+
+    aw->enterModalState (true, juce::ModalCallbackFunction::create (
+        [this, aw] (int result)
+        {
+            if (result == 1)
+            {
+                auto name = aw->getTextEditorContents ("name").trim();
+                if (name.isNotEmpty())
+                {
+                    proc.presetManager.saveUserPreset (name);
+                    rebuildPresetCombo();
+                    updateDirtyIndicator();
+                }
+            }
+            delete aw;
+        }));
+}
+
+// ========================================================================
+//  Layout helpers
+// ========================================================================
+void TsukiSynthEditor::layoutKnobCell (juce::Rectangle<int> cell, KnobParam& k)
+{
+    auto c = cell.reduced (0, 1);
+    k.label.setBounds (c.removeFromTop (12));
+    k.slider.setBounds (c.withSizeKeepingCentre (juce::jmin (58, c.getWidth()), c.getHeight()));
+}
+
+void TsukiSynthEditor::layoutComboCell (juce::Rectangle<int> cell, ComboParam& p)
+{
+    auto c = cell.reduced (10, 1);
+    p.label.setBounds (c.removeFromTop (12));
+    c.removeFromTop (4);
+    p.combo.setBounds (c.removeFromTop (26));
+}
+
+void TsukiSynthEditor::layoutFxKnob (juce::Rectangle<int> cell, KnobParam& k)
+{
+    auto c = cell.reduced (2, 0);
+    k.label.setBounds (c.removeFromTop (10));
+    k.slider.setBounds (c.withSizeKeepingCentre (juce::jmin (44, c.getWidth()), c.getHeight()));
+}
+
+// ========================================================================
+//  Paint
+// ========================================================================
+void TsukiSynthEditor::paintPanel (juce::Graphics& g, juce::Rectangle<int> bounds,
+                                     const juce::String& title)
+{
+    g.setColour (Clr::panelBg);
+    g.fillRoundedRectangle (bounds.toFloat(), 5.0f);
+    g.setColour (Clr::effectBorder);
+    g.drawRoundedRectangle (bounds.toFloat().reduced (0.5f), 5.0f, 0.5f);
+
+    g.setColour (Clr::fxTitle);
+    g.setFont (juce::Font (juce::FontOptions (9.0f)).boldened());
+    g.drawText (title, bounds.getX() + 8, bounds.getY() + 6,
+                bounds.getWidth() - 16, 12, juce::Justification::centredLeft);
 }
 
 void TsukiSynthEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colour (0xff1a1a2e));
+    // -- plugin background gradient --------------------------------------
+    g.setGradientFill (juce::ColourGradient (
+        Clr::pluginTop, 0.0f, 0.0f,
+        Clr::pluginBot, 0.0f, (float) getHeight(), false));
+    g.fillAll();
 
-    // Title
-    g.setColour (juce::Colour (0xffe0e0e0));
-    g.setFont (juce::FontOptions (24.0f));
-    g.drawFittedText ("TsukiSynth", 0, 8, getWidth(), 30,
-                      juce::Justification::centred, 1);
+    int w = getWidth();
 
-    // Subtitle changes with engine
-    int engine = (int) processorRef.apvts.getRawParameterValue ("engine")->load();
-    g.setColour (juce::Colour (0xff888888));
-    g.setFont (juce::FontOptions (12.0f));
-    juce::String subtitle;
-    switch (engine)
+    // -- title bar -------------------------------------------------------
     {
-        case 0: subtitle = "Cimbalom Engine  |  Physical Modeling String"; break;
-        case 1: subtitle = "Chromatic Engine  |  Beam / Plate / Custom"; break;
-        case 2: subtitle = "FM Piano Engine  |  Frequency Modulation Synthesis"; break;
-        default: subtitle = "TsukiSynth"; break;
+        g.setGradientFill (juce::ColourGradient (
+            juce::Colour (0x04ffffff), 0.0f, 0.0f,
+            juce::Colours::transparentBlack, 0.0f, (float) kTitleH, false));
+        g.fillRect (0, 0, w, kTitleH);
+
+        // moon crescent (two overlapping circles)
+        g.setColour (Clr::goldBright.withAlpha (0.92f));
+        g.fillEllipse (18.0f, 16.0f, 15.0f, 15.0f);
+        g.setColour (juce::Colour (0xff1a1a2d));
+        g.fillEllipse (23.0f, 13.0f, 14.0f, 14.0f);
+
+        // wordmark
+        g.setFont (juce::Font (juce::FontOptions (20.0f)).boldened()
+                       .withExtraKerningFactor (0.04f));
+        g.setColour (Clr::goldBright);
+        g.drawText ("TsukiSynth", 38, 14, 150, 22, juce::Justification::centredLeft);
+
+        // subtitle
+        int eng = currentEngine();
+        auto eName = eng == 0 ? juce::String ("CIMBALOM")
+                   : eng == 1 ? juce::String ("CHROMATIC")
+                   :            juce::String ("FM PIANO");
+        auto eType = eng == 0 ? juce::String ("PHYSICAL MODELING STRING")
+                   : eng == 1 ? juce::String ("BEAM / PLATE / CUSTOM")
+                   :            juce::String ("FREQUENCY MODULATION");
+        auto subFont = juce::Font (juce::FontOptions (10.0f)).withExtraKerningFactor (0.1f);
+        g.setFont (subFont);
+        g.setColour (Clr::textMid);
+        auto nameStr = eName + " ENGINE";
+        g.drawText (nameStr, 40, 36, 200, 14, juce::Justification::centredLeft);
+        int nameW = (int) juce::GlyphArrangement::getStringWidth (subFont, nameStr);
+        g.setColour (juce::Colour (0xff3a3a5a));
+        g.drawText ("|", 40 + nameW + 4, 36, 10, 14, juce::Justification::centred);
+        g.setColour (Clr::textDim);
+        g.drawText (eType, 40 + nameW + 16, 36, 300, 14, juce::Justification::centredLeft);
+
+        g.setColour (Clr::borderLight);
+        g.drawHorizontalLine (kTitleH - 1, 0.0f, (float) w);
     }
-    g.drawFittedText (subtitle, 0, 34, getWidth(), 18,
-                      juce::Justification::centred, 1);
 
-    // Divider after engine subtitle
-    g.setColour (juce::Colour (0xff333355));
-    g.drawHorizontalLine (56, 20.0f, (float) getWidth() - 20.0f);
+    // -- preset row background -------------------------------------------
+    {
+        int y = kTitleH;
+        g.setColour (Clr::presetBg);
+        g.fillRect (0, y, w, kPresetH);
+        g.setColour (Clr::borderLight);
+        g.drawHorizontalLine (y + kPresetH - 1, 0.0f, (float) w);
+    }
 
-    // Divider before effects section
-    int fxDividerY = getHeight() - 155;
-    g.setColour (juce::Colour (0xff333355));
-    g.drawHorizontalLine (fxDividerY, 20.0f, (float) getWidth() - 20.0f);
+    // -- tabs background -------------------------------------------------
+    {
+        int y = kTitleH + kPresetH;
+        g.setColour (Clr::presetBg);
+        g.fillRect (0, y, w, kTabH);
+    }
 
-    // Effects section label
-    g.setColour (juce::Colour (0xff7788aa));
-    g.setFont (juce::FontOptions (11.0f));
-    g.drawFittedText ("EFFECTS", 20, fxDividerY + 2, 60, 14,
-                      juce::Justification::centredLeft, 1);
+    // -- macro section ---------------------------------------------------
+    {
+        int y = macroArea_.getY();
+        int h = macroArea_.getHeight();
+        g.setGradientFill (juce::ColourGradient (
+            Clr::engineTop, 0.0f, (float) y,
+            Clr::engineBot, 0.0f, (float) (y + h), false));
+        g.fillRect (0, y, w, h);
+        g.setColour (Clr::borderLight);
+        g.drawHorizontalLine (y, 0.0f, (float) w);
+
+        g.setColour (Clr::divLabel);
+        g.setFont (juce::Font (juce::FontOptions (9.0f)).boldened()
+                       .withExtraKerningFactor (0.2f));
+        g.drawText ("MACRO", kSidePad, y + 6, 56, 14, juce::Justification::centredLeft);
+
+        g.setColour (juce::Colour (0xff334455));
+        g.setFont (juce::FontOptions (9.0f));
+        g.drawText ("8 params", kSidePad + 52, y + 6,
+                    60, 14, juce::Justification::centredLeft);
+
+        g.setColour (Clr::border.withAlpha (0.5f));
+        g.fillRect (kSidePad + 114, y + 12, w - kSidePad * 2 - 114, 1);
+    }
+
+    // -- engine section --------------------------------------------------
+    {
+        int y = engineArea_.getY();
+        int h = engineArea_.getHeight();
+        g.setGradientFill (juce::ColourGradient (
+            Clr::engineTop, 0.0f, (float) y,
+            Clr::engineBot, 0.0f, (float) (y + h), false));
+        g.fillRect (0, y, w, h);
+        g.setColour (Clr::borderLight);
+        g.drawHorizontalLine (y, 0.0f, (float) w);
+
+        // divider label
+        g.setColour (Clr::divLabel);
+        g.setFont (juce::Font (juce::FontOptions (9.0f)).boldened()
+                       .withExtraKerningFactor (0.2f));
+        g.drawText ("ENGINE", kSidePad, y + 6, 56, 14, juce::Justification::centredLeft);
+
+        int eng = currentEngine();
+        int pc  = (eng == 0) ? 6 : 7;
+        g.setColour (juce::Colour (0xff334455));
+        g.setFont (juce::FontOptions (9.0f));
+        g.drawText (juce::String (pc) + " params", kSidePad + 58, y + 6,
+                    60, 14, juce::Justification::centredLeft);
+
+        // divider line
+        g.setColour (Clr::border.withAlpha (0.5f));
+        g.fillRect (kSidePad + 120, y + 12, w - kSidePad * 2 - 120, 1);
+    }
+
+    // -- effects section -------------------------------------------------
+    {
+        int y = effectsRow_.getY();
+        int h = effectsRow_.getHeight();
+        g.setColour (Clr::effectsBg);
+        g.fillRect (0, y, w, h);
+        g.setColour (Clr::borderLight);
+        g.drawHorizontalLine (y, 0.0f, (float) w);
+
+        g.setColour (Clr::divLabel);
+        g.setFont (juce::Font (juce::FontOptions (9.0f)).boldened()
+                       .withExtraKerningFactor (0.2f));
+        g.drawText ("EFFECTS", kSidePad, y + 6, 60, 14, juce::Justification::centredLeft);
+        g.setColour (Clr::border.withAlpha (0.5f));
+        g.fillRect (kSidePad + 64, y + 12, w - kSidePad * 2 - 64, 1);
+
+        paintPanel (g, reverbBounds_, "REVERB");
+        paintPanel (g, delayBounds_,  "DELAY");
+        paintPanel (g, compBounds_,   "COMPRESSOR");
+    }
+
+    // -- distortion row --------------------------------------------------
+    {
+        int y = distRow_.getY();
+        g.setColour (Clr::effectsBg);
+        g.fillRect (0, y, w, distRow_.getHeight());
+        paintPanel (g, distPanelBounds_, "DISTORTION");
+    }
+
+    // -- analyzer row ----------------------------------------------------
+    {
+        int y = analyzerRow_.getY();
+        g.setColour (Clr::effectsBg);
+        g.fillRect (0, y, w, analyzerRow_.getHeight());
+        g.setColour (Clr::borderLight);
+        g.drawHorizontalLine (y, 0.0f, (float) w);
+    }
+
+    // -- keyboard footer -------------------------------------------------
+    {
+        int y = analyzerRow_.getBottom();
+        g.setColour (Clr::kbFooter);
+        g.fillRect (0, y, w, getHeight() - y);
+        g.setColour (Clr::borderLight);
+        g.drawHorizontalLine (y, 0.0f, (float) w);
+    }
 }
 
+// ========================================================================
+//  Resized -- top-to-bottom layout
+// ========================================================================
 void TsukiSynthEditor::resized()
 {
-    auto area = getLocalBounds().reduced (20).withTrimmedTop (50);
-    int rowH = 40;
-    int labelW = 80;
-    int gap = 4;
+    auto area = getLocalBounds();
+    int w = area.getWidth();
 
-    // Row 0: Preset + Engine selector (side by side)
-    auto row0 = area.removeFromTop (rowH);
-    int half0 = row0.getWidth() / 2;
-    auto r0left = row0.removeFromLeft (half0);
-    presetLabel->setBounds (r0left.removeFromLeft (50));
-    presetCombo->setBounds (r0left.reduced (2));
-    row0.removeFromLeft (10);
-    engineCombo.label->setBounds (row0.removeFromLeft (55));
-    engineCombo.combo->setBounds (row0.reduced (2));
-    area.removeFromTop (gap);
+    // -- title (paint only) + language toggle in title bar ----------------
+    area.removeFromTop (kTitleH);
+    langToggle.setBounds (w - 60, 20, 44, 18);
 
-    int engine = (int) processorRef.apvts.getRawParameterValue ("engine")->load();
-
-    if (engine == 0)
+    // -- preset row ------------------------------------------------------
     {
-        // ===== Cimbalom layout =====
-        auto row1 = area.removeFromTop (rowH);
-        int half = row1.getWidth() / 2;
-        cimMaterialCombo.label->setBounds (row1.removeFromLeft (labelW));
-        cimMaterialCombo.combo->setBounds (row1.removeFromLeft (half - labelW - 10).reduced (2));
-        row1.removeFromLeft (20);
-        cimHammerCombo.label->setBounds (row1.removeFromLeft (60));
-        cimHammerCombo.combo->setBounds (row1.reduced (2));
-        area.removeFromTop (gap);
+        auto row   = area.removeFromTop (kPresetH);
+        auto inner = row.reduced (kSidePad, 8);
 
-        auto row2 = area.removeFromTop (rowH);
-        cimStrikePosSlider.label->setBounds (row2.removeFromLeft (labelW));
-        cimStrikePosSlider.slider->setBounds (row2.reduced (2));
-        area.removeFromTop (gap);
+        presetPrev.setBounds (inner.removeFromLeft (20).reduced (0, 1));
+        inner.removeFromLeft (2);
+        presetNext.setBounds (inner.removeFromLeft (20).reduced (0, 1));
+        inner.removeFromLeft (6);
 
-        auto row3 = area.removeFromTop (rowH);
-        cimDiameterSlider.label->setBounds (row3.removeFromLeft (labelW));
-        cimDiameterSlider.slider->setBounds (row3.reduced (2));
-        area.removeFromTop (gap);
+        presetInit.setBounds (inner.removeFromRight (30).reduced (0, 1));
+        inner.removeFromRight (4);
+        presetSave.setBounds (inner.removeFromRight (36).reduced (0, 1));
+        inner.removeFromRight (4);
+        dirtyLabel.setBounds (inner.removeFromRight (14));
 
-        auto row4 = area.removeFromTop (rowH);
-        auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
-        cimNumStringsSlider.label->setBounds (r4left.removeFromLeft (labelW));
-        cimNumStringsSlider.slider->setBounds (r4left.reduced (2));
-        cimDetuningSlider.label->setBounds (row4.removeFromLeft (labelW));
-        cimDetuningSlider.slider->setBounds (row4.reduced (2));
-    }
-    else if (engine == 1)
-    {
-        // ===== Chromatic layout =====
-        auto row1 = area.removeFromTop (rowH);
-        int half = row1.getWidth() / 2;
-        chrSubEngineCombo.label->setBounds (row1.removeFromLeft (60));
-        chrSubEngineCombo.combo->setBounds (row1.removeFromLeft (half - 70).reduced (2));
-        row1.removeFromLeft (20);
-        chrMaterialCombo.label->setBounds (row1.removeFromLeft (60));
-        chrMaterialCombo.combo->setBounds (row1.reduced (2));
-        area.removeFromTop (gap);
-
-        auto row2 = area.removeFromTop (rowH);
-        chrStrikePosSlider.label->setBounds (row2.removeFromLeft (labelW));
-        chrStrikePosSlider.slider->setBounds (row2.reduced (2));
-        area.removeFromTop (gap);
-
-        auto row3 = area.removeFromTop (rowH);
-        auto r3left = row3.removeFromLeft (row3.getWidth() / 2);
-        chrThicknessSlider.label->setBounds (r3left.removeFromLeft (labelW));
-        chrThicknessSlider.slider->setBounds (r3left.reduced (2));
-        chrSizeSlider.label->setBounds (row3.removeFromLeft (labelW));
-        chrSizeSlider.slider->setBounds (row3.reduced (2));
-        area.removeFromTop (gap);
-
-        auto row4 = area.removeFromTop (rowH);
-        auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
-        chrExciterCombo.label->setBounds (r4left.removeFromLeft (60));
-        chrExciterCombo.combo->setBounds (r4left.reduced (2));
-        chrPitchGlideSlider.label->setBounds (row4.removeFromLeft (labelW));
-        chrPitchGlideSlider.slider->setBounds (row4.reduced (2));
-    }
-    else
-    {
-        // ===== FM Piano layout =====
-        auto row1 = area.removeFromTop (rowH);
-        fmTypeCombo.label->setBounds (row1.removeFromLeft (labelW));
-        fmTypeCombo.combo->setBounds (row1.reduced (2));
-        area.removeFromTop (gap);
-
-        auto row2 = area.removeFromTop (rowH);
-        auto r2left = row2.removeFromLeft (row2.getWidth() / 2);
-        fmRatioSlider.label->setBounds (r2left.removeFromLeft (labelW));
-        fmRatioSlider.slider->setBounds (r2left.reduced (2));
-        fmIndexSlider.label->setBounds (row2.removeFromLeft (labelW));
-        fmIndexSlider.slider->setBounds (row2.reduced (2));
-        area.removeFromTop (gap);
-
-        auto row3 = area.removeFromTop (rowH);
-        auto r3left = row3.removeFromLeft (row3.getWidth() / 2);
-        fmBrightnessSlider.label->setBounds (r3left.removeFromLeft (labelW));
-        fmBrightnessSlider.slider->setBounds (r3left.reduced (2));
-        fmFeedbackSlider.label->setBounds (row3.removeFromLeft (labelW));
-        fmFeedbackSlider.slider->setBounds (row3.reduced (2));
-        area.removeFromTop (gap);
-
-        auto row4 = area.removeFromTop (rowH);
-        auto r4left = row4.removeFromLeft (row4.getWidth() / 2);
-        fmAttackSlider.label->setBounds (r4left.removeFromLeft (labelW));
-        fmAttackSlider.slider->setBounds (r4left.reduced (2));
-        fmReleaseSlider.label->setBounds (row4.removeFromLeft (labelW));
-        fmReleaseSlider.slider->setBounds (row4.reduced (2));
+        presetCombo.setBounds (inner);
     }
 
-    // ===== Effects section (always visible, bottom area) =====
-    int fxLabelW = 70;
-    auto fxArea = getLocalBounds().reduced (20);
-    fxArea = fxArea.withTop (getHeight() - 140);
-
-    // FX Row 1: Reverb Mix + Room Size
-    auto fxRow1 = fxArea.removeFromTop (36);
-    auto fx1left = fxRow1.removeFromLeft (fxRow1.getWidth() / 2);
-    fxReverbMixSlider.label->setBounds (fx1left.removeFromLeft (fxLabelW));
-    fxReverbMixSlider.slider->setBounds (fx1left.reduced (2));
-    fxReverbSizeSlider.label->setBounds (fxRow1.removeFromLeft (fxLabelW));
-    fxReverbSizeSlider.slider->setBounds (fxRow1.reduced (2));
-    fxArea.removeFromTop (2);
-
-    // FX Row 2: Delay Time + Delay Feedback + Delay Mix
-    auto fxRow2 = fxArea.removeFromTop (36);
-    int thirdW = fxRow2.getWidth() / 3;
-    auto fx2a = fxRow2.removeFromLeft (thirdW);
-    auto fx2b = fxRow2.removeFromLeft (thirdW);
-    fxDelayTimeSlider.label->setBounds (fx2a.removeFromLeft (fxLabelW));
-    fxDelayTimeSlider.slider->setBounds (fx2a.reduced (2));
-    fxDelayFbSlider.label->setBounds (fx2b.removeFromLeft (50));
-    fxDelayFbSlider.slider->setBounds (fx2b.reduced (2));
-    fxDelayMixSlider.label->setBounds (fxRow2.removeFromLeft (55));
-    fxDelayMixSlider.slider->setBounds (fxRow2.reduced (2));
-    fxArea.removeFromTop (2);
-
-    // FX Row 3: Compressor Threshold + Ratio
-    auto fxRow3 = fxArea.removeFromTop (36);
-    auto fx3left = fxRow3.removeFromLeft (fxRow3.getWidth() / 2);
-    fxCompThreshSlider.label->setBounds (fx3left.removeFromLeft (fxLabelW));
-    fxCompThreshSlider.slider->setBounds (fx3left.reduced (2));
-    fxCompRatioSlider.label->setBounds (fxRow3.removeFromLeft (fxLabelW));
-    fxCompRatioSlider.slider->setBounds (fxRow3.reduced (2));
-}
-
-void TsukiSynthEditor::setupCombo (ParamCombo& pc, const juce::String& paramID,
-                                    const juce::String& labelText)
-{
-    pc.combo = std::make_unique<juce::ComboBox>();
-    pc.label = std::make_unique<juce::Label> ("", labelText);
-
-    if (auto* param = dynamic_cast<juce::AudioParameterChoice*> (
-            processorRef.apvts.getParameter (paramID)))
+    // -- engine tabs -----------------------------------------------------
     {
-        int id = 1;
-        for (auto& choice : param->choices)
-            pc.combo->addItem (choice, id++);
+        auto row   = area.removeFromTop (kTabH);
+        auto inner = row.reduced (kSidePad, 0).withTrimmedTop (4);
+        int tw = inner.getWidth() / 3;
+        tabCim.setBounds (inner.removeFromLeft (tw));
+        tabChr.setBounds (inner.removeFromLeft (tw));
+        tabFM.setBounds  (inner);
     }
 
-    pc.label->setColour (juce::Label::textColourId, juce::Colour (0xffcccccc));
-    pc.label->setFont (juce::FontOptions (13.0f));
+    // -- macro row -------------------------------------------------------
+    macroArea_ = area.removeFromTop (kMacroH);
+    {
+        auto inner = macroArea_.reduced (kSidePad, 0).withTrimmedTop (22);
+        int knobW = inner.getWidth() / 8;
+        layoutFxKnob (inner.removeFromLeft (knobW), macroMaterial);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroTension);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroDamping);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroStrike);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroBrightness);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroBody);
+        layoutFxKnob (inner.removeFromLeft (knobW), macroNoise);
+        layoutFxKnob (inner, macroOutput);
+    }
 
-    addAndMakeVisible (*pc.combo);
-    addAndMakeVisible (*pc.label);
+    // -- bottom sections (fixed sizes, from bottom up) -------------------
+    auto kbArea = area.removeFromBottom (kKeyboardH);
+    keyboard.setBounds (kbArea.reduced (14, 10));
 
-    pc.attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (
-        processorRef.apvts, paramID, *pc.combo);
-}
+    analyzerRow_ = area.removeFromBottom (kAnalyzerH);
+    analyzerPanel.setBounds (analyzerRow_.reduced (kSidePad, 4));
 
-void TsukiSynthEditor::setupSlider (ParamSlider& ps, const juce::String& paramID,
-                                     const juce::String& labelText,
-                                     const juce::String& suffix)
-{
-    ps.slider = std::make_unique<juce::Slider> (juce::Slider::LinearHorizontal,
-                                                 juce::Slider::TextBoxRight);
-    ps.label  = std::make_unique<juce::Label> ("", labelText);
+    distRow_ = area.removeFromBottom (kDistH);
+    {
+        distPanelBounds_ = distRow_.reduced (kSidePad, 4);
+        auto inner = distPanelBounds_.reduced (8, 0).withTrimmedTop (22);
 
-    ps.slider->setTextBoxStyle (juce::Slider::TextBoxRight, false, 55, 22);
-    if (suffix.isNotEmpty())
-        ps.slider->setTextValueSuffix (" " + suffix);
+        auto typeArea = inner.removeFromLeft (inner.getWidth() * 2 / 7);
+        distType.label.setBounds (typeArea.removeFromTop (12));
+        typeArea.removeFromTop (4);
+        distType.combo.setBounds (typeArea.removeFromTop (26));
 
-    ps.label->setColour (juce::Label::textColourId, juce::Colour (0xffcccccc));
-    ps.label->setFont (juce::FontOptions (12.0f));
+        inner.removeFromLeft (10);
+        int knobW = inner.getWidth() / 3;
+        layoutFxKnob (inner.removeFromLeft (knobW), distDrive);
+        layoutFxKnob (inner.removeFromLeft (knobW), distInstability);
+        layoutFxKnob (inner, distMix);
+    }
 
-    addAndMakeVisible (*ps.slider);
-    addAndMakeVisible (*ps.label);
+    effectsRow_ = area.removeFromBottom (kEffectsH);
+    {
+        auto inner = effectsRow_.reduced (kSidePad, 0).withTrimmedTop (24);
+        int gap   = 8;
+        int avail = inner.getWidth() - gap * 2;
+        int revW  = avail * 29 / 100;
+        int dlyW  = avail * 40 / 100;
+        int cmpW  = avail - revW - dlyW;
 
-    ps.attachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
-        processorRef.apvts, paramID, *ps.slider);
+        reverbBounds_ = inner.removeFromLeft (revW);
+        inner.removeFromLeft (gap);
+        delayBounds_ = inner.removeFromLeft (dlyW);
+        inner.removeFromLeft (gap);
+        compBounds_ = inner.withWidth (cmpW);
+
+        // reverb knobs
+        {
+            auto p = reverbBounds_.reduced (6, 0).withTrimmedTop (22);
+            int kw = p.getWidth() / 2;
+            layoutFxKnob (p.removeFromLeft (kw), fxRevMix);
+            layoutFxKnob (p, fxRevSize);
+        }
+        // delay knobs
+        {
+            auto p = delayBounds_.reduced (6, 0).withTrimmedTop (22);
+            int kw = p.getWidth() / 3;
+            layoutFxKnob (p.removeFromLeft (kw), fxDlyTime);
+            layoutFxKnob (p.removeFromLeft (kw), fxDlyFeedback);
+            layoutFxKnob (p, fxDlyMix);
+        }
+        // compressor knobs
+        {
+            auto p = compBounds_.reduced (6, 0).withTrimmedTop (22);
+            int kw = p.getWidth() / 2;
+            layoutFxKnob (p.removeFromLeft (kw), fxCompThresh);
+            layoutFxKnob (p, fxCompRatio);
+        }
+    }
+
+    // -- engine section (remaining space) --------------------------------
+    engineArea_ = area;
+    {
+        auto inner = engineArea_.reduced (kSidePad, 0).withTrimmedTop (24);
+        int eng = currentEngine();
+
+        int numRows = (eng == 0) ? 3 : 4;
+        int gap     = 6;
+        int rowH    = (inner.getHeight() - (numRows - 1) * gap) / numRows;
+        int colGap  = 14;
+        int colW    = (inner.getWidth() - colGap) / 2;
+
+        auto takeRow = [&]() -> std::pair<juce::Rectangle<int>, juce::Rectangle<int>>
+        {
+            auto row  = inner.removeFromTop (rowH);
+            inner.removeFromTop (gap);
+            auto left = row.removeFromLeft (colW);
+            row.removeFromLeft (colGap);
+            auto right = row.withWidth (colW);
+            return { left, right };
+        };
+
+        if (eng == 0)
+        {
+            auto [l0, r0] = takeRow();
+            layoutComboCell (l0, cimMaterial);
+            layoutComboCell (r0, cimHammer);
+
+            auto [l1, r1] = takeRow();
+            layoutKnobCell (l1, cimStrike);
+            layoutKnobCell (r1, cimDiameter);
+
+            auto [l2, r2] = takeRow();
+            layoutKnobCell (l2, cimStrings);
+            layoutKnobCell (r2, cimDetune);
+        }
+        else if (eng == 1)
+        {
+            auto [l0, r0] = takeRow();
+            layoutComboCell (l0, chrMaterial);
+            layoutComboCell (r0, chrSubEngine);
+
+            auto [l1, r1] = takeRow();
+            layoutKnobCell (l1, chrStrike);
+            layoutKnobCell (r1, chrThickness);
+
+            auto [l2, r2] = takeRow();
+            layoutKnobCell (l2, chrSize);
+            layoutComboCell (r2, chrExciter);
+
+            auto [l3, r3] = takeRow();
+            layoutKnobCell (l3, chrGlide);
+            (void) r3;
+        }
+        else
+        {
+            auto [l0, r0] = takeRow();
+            layoutComboCell (l0, fmType);
+            (void) r0;
+
+            auto [l1, r1] = takeRow();
+            layoutKnobCell (l1, fmRatio);
+            layoutKnobCell (r1, fmIndex);
+
+            auto [l2, r2] = takeRow();
+            layoutKnobCell (l2, fmBrightness);
+            layoutKnobCell (r2, fmFeedback);
+
+            auto [l3, r3] = takeRow();
+            layoutKnobCell (l3, fmAttack);
+            layoutKnobCell (r3, fmRelease);
+        }
+    }
 }

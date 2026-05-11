@@ -1,0 +1,60 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Ocean Bubble Pop",
+    "id": "ocean_notify_001",
+    "author": "TsukiSynth",
+    "description": "氣泡彈出 — 短促上揚音，水下通知",
+    "created": "2026-05-07",
+    "tags": ["bubble", "notification", "short", "bright", "liquid"],
+    "mood": "playful",
+    "use_case": "chat notification",
+    "category": "character_ui",
+    "worldview": "Ocean",
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "ocean_notify",
+    "character": ["bright", "soft"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.72,
+    "effects": {
+      "reverb": { "decay": 1.5, "wet": 0.3 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.3,
+      "engine": "beam",
+      "note": "C6",
+      "velocity": 0.55,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 1.0,
+        "length_mm": 18,
+        "width_mm": 18,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "glide": {
+        "from_note": "A5",
+        "duration_ms": 60,
+        "curve": "exponential"
+      },
+      "comment": "氣泡上浮的 pitch rise"
+    }
+  ],
+  "export": {
+    "filename": "ocean_notify_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 120,
+    "export_filename": "UI_Bright_OneShot_C6"
+  }
+}

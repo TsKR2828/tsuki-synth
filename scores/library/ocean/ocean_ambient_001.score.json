@@ -1,0 +1,88 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Ocean Abyss Hum",
+    "id": "ocean_ambient_001",
+    "author": "TsukiSynth",
+    "description": "深淵低鳴 — 多層弦弓奏+薄板共鳴，水底環境",
+    "created": "2026-05-07",
+    "tags": ["drone", "ambient", "deep", "underwater", "mysterious"],
+    "mood": "mystical",
+    "use_case": "ambient background",
+    "category": "worldview_sfx",
+    "worldview": "Ocean",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "oneshot",
+    "family_id": "ocean_ambient",
+    "character": ["dark", "airy"]
+  },
+  "global": {
+    "bpm": 50,
+    "sample_rate": 48000,
+    "master_volume": 0.55,
+    "effects": {
+      "reverb": { "decay": 6.0, "wet": 0.55 },
+      "delay": { "time_ms": 500, "feedback": 0.3, "wet": 0.15 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 8.0,
+      "engine": "string",
+      "note": "E1",
+      "velocity": 0.2,
+      "params": {
+        "material": "nylon",
+        "diameter_mm": 3.5,
+        "length_mm": 250,
+        "tension_n": 250,
+        "strike_position": 0.5,
+        "exciter": "bow_slow",
+        "damping_override": 0.3
+      }
+    },
+    {
+      "time": 2.0,
+      "duration": 7.0,
+      "engine": "plate",
+      "note": "B1",
+      "velocity": 0.15,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 0.8,
+        "width_mm": 250,
+        "height_mm": 250,
+        "strike_position_x": 0.4,
+        "strike_position_y": 0.6,
+        "exciter": "bow_slow"
+      },
+      "comment": "薄銅板弓奏，空間迴響"
+    },
+    {
+      "time": 4.0,
+      "duration": 6.0,
+      "engine": "string",
+      "note": "G#1",
+      "velocity": 0.18,
+      "params": {
+        "material": "nylon",
+        "diameter_mm": 3.0,
+        "length_mm": 220,
+        "tension_n": 280,
+        "strike_position": 0.45,
+        "exciter": "bow_slow",
+        "damping_override": 0.35
+      }
+    }
+  ],
+  "export": {
+    "filename": "ocean_ambient_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 1000,
+    "export_filename": "Ambience_Dark_OneShot_E1"
+  }
+}

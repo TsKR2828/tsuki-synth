@@ -1,0 +1,114 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Rabbit Wind Chimes",
+    "id": "rabbit_ambient_001",
+    "author": "TsukiSynth",
+    "description": "草地風鈴 — 多音隨機散落，輕柔背景",
+    "created": "2026-05-07",
+    "tags": ["chime", "ambient", "gentle", "random", "airy"],
+    "mood": "calm",
+    "use_case": "ambient background",
+    "category": "worldview_sfx",
+    "worldview": "Rabbit",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "oneshot",
+    "family_id": "rabbit_ambient",
+    "character": ["airy", "bright"]
+  },
+  "global": {
+    "bpm": 80,
+    "sample_rate": 48000,
+    "master_volume": 0.65,
+    "effects": {
+      "reverb": { "decay": 3.0, "wet": 0.4 },
+      "delay": { "time_ms": 250, "feedback": 0.2, "wet": 0.1 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 2.0,
+      "engine": "beam",
+      "note": "C6",
+      "velocity": 0.25,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 1.5,
+        "length_mm": 40,
+        "width_mm": 8,
+        "strike_position": 0.4,
+        "exciter": "cotton_mallet"
+      }
+    },
+    {
+      "time": 0.7,
+      "duration": 2.0,
+      "engine": "beam",
+      "note": "E6",
+      "velocity": 0.2,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 1.5,
+        "length_mm": 34,
+        "width_mm": 8,
+        "strike_position": 0.45,
+        "exciter": "cotton_mallet"
+      }
+    },
+    {
+      "time": 1.5,
+      "duration": 2.0,
+      "engine": "beam",
+      "note": "G6",
+      "velocity": 0.22,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 1.5,
+        "length_mm": 28,
+        "width_mm": 8,
+        "strike_position": 0.35,
+        "exciter": "cotton_mallet"
+      }
+    },
+    {
+      "time": 2.3,
+      "duration": 2.0,
+      "engine": "beam",
+      "note": "D6",
+      "velocity": 0.18,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 1.5,
+        "length_mm": 37,
+        "width_mm": 8,
+        "strike_position": 0.5,
+        "exciter": "cotton_mallet"
+      }
+    },
+    {
+      "time": 3.2,
+      "duration": 2.5,
+      "engine": "beam",
+      "note": "A6",
+      "velocity": 0.15,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 1.5,
+        "length_mm": 25,
+        "width_mm": 8,
+        "strike_position": 0.42,
+        "exciter": "cotton_mallet"
+      }
+    }
+  ],
+  "export": {
+    "filename": "rabbit_ambient_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 500,
+    "export_filename": "Ambience_Airy_OneShot_C6"
+  }
+}

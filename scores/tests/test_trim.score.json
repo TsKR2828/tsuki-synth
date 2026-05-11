@@ -1,0 +1,55 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Test: Playback Trim",
+    "id": "test_trim_001",
+    "author": "TsukiSynth",
+    "description": "驗證 C — start_position 0.25, end_position 0.75，輸出約原時長 50%",
+    "created": "2026-05-07",
+    "tags": ["test", "trim"],
+    "mood": "calm",
+    "use_case": "ambient background",
+    "category": "worldview_sfx",
+    "worldview": "Akashic",
+    "primary_type": "ambience",
+    "sound_type": "oneshot",
+    "family_id": "test",
+    "character": ["airy", "soft"]
+  },
+  "global": {
+    "bpm": 80,
+    "sample_rate": 48000,
+    "master_volume": 0.7,
+    "effects": {
+      "reverb": { "decay": 3.0, "wet": 0.4 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 4.0,
+      "engine": "plate",
+      "note": "C4",
+      "velocity": 0.4,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 2.0,
+        "width_mm": 120,
+        "height_mm": 120,
+        "strike_position_x": 0.5,
+        "strike_position_y": 0.5,
+        "exciter": "cotton_mallet"
+      }
+    }
+  ],
+  "export": {
+    "filename": "test_trim",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 100,
+    "start_position": 0.25,
+    "end_position": 0.75
+  }
+}

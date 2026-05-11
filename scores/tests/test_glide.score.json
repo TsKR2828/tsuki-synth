@@ -1,0 +1,79 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Test: Glide / Portamento",
+    "id": "test_glide_001",
+    "author": "TsukiSynth",
+    "description": "驗證 B — 滑音效果測試，C4→G4 線性 + E5→C6 指數",
+    "created": "2026-05-07",
+    "tags": ["test", "glide"],
+    "mood": "mystical",
+    "use_case": "game action feedback",
+    "category": "character_ui",
+    "worldview": "Ocean",
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "test",
+    "character": ["bright", "airy"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.75,
+    "effects": {
+      "reverb": { "decay": 2.0, "wet": 0.3 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 1.5,
+      "engine": "beam",
+      "note": "G4",
+      "velocity": 0.6,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 2.0,
+        "length_mm": 45,
+        "width_mm": 12,
+        "strike_position": 0.3,
+        "exciter": "wood_mallet"
+      },
+      "glide": {
+        "from_note": "C4",
+        "duration_ms": 300,
+        "curve": "linear"
+      },
+      "comment": "線性滑音：C4 → G4 in 300ms"
+    },
+    {
+      "time": 2.0,
+      "duration": 1.5,
+      "engine": "beam",
+      "note": "C6",
+      "velocity": 0.55,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 1.5,
+        "length_mm": 20,
+        "width_mm": 20,
+        "strike_position": 0.4,
+        "exciter": "finger_tap"
+      },
+      "glide": {
+        "from_note": "E5",
+        "duration_ms": 200,
+        "curve": "exponential"
+      },
+      "comment": "指數滑音：E5 → C6 in 200ms"
+    }
+  ],
+  "export": {
+    "filename": "test_glide",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 300
+  }
+}

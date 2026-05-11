@@ -1,0 +1,105 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Akashic Meditation Loop",
+    "id": "akashic_loop_001",
+    "author": "TsukiSynth",
+    "description": "冥想循環 — 4小節緩慢銅鐘節奏，可無縫循環",
+    "created": "2026-05-07",
+    "tags": ["loop", "bell", "meditation", "sacred", "slow"],
+    "mood": "sacred",
+    "use_case": "BGM motif / loop element",
+    "category": "worldview_sfx",
+    "worldview": "Akashic",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "loop",
+    "family_id": "akashic_ambient",
+    "character": ["airy", "metallic"],
+    "loop_bpm": 60,
+    "loop_bars": 4
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.6,
+    "effects": {
+      "reverb": { "decay": 6.0, "wet": 0.55 },
+      "delay": { "time_ms": 500, "feedback": 0.2, "wet": 0.08 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 3.5,
+      "engine": "plate",
+      "note": "C4",
+      "velocity": 0.35,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 2.5,
+        "width_mm": 150,
+        "height_mm": 150,
+        "strike_position_x": 0.4,
+        "strike_position_y": 0.4,
+        "exciter": "cotton_mallet"
+      }
+    },
+    {
+      "time": 4.0,
+      "duration": 3.5,
+      "engine": "plate",
+      "note": "G4",
+      "velocity": 0.28,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 2.0,
+        "width_mm": 120,
+        "height_mm": 120,
+        "strike_position_x": 0.5,
+        "strike_position_y": 0.5,
+        "exciter": "cotton_mallet"
+      }
+    },
+    {
+      "time": 8.0,
+      "duration": 3.5,
+      "engine": "plate",
+      "note": "E4",
+      "velocity": 0.3,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 2.2,
+        "width_mm": 130,
+        "height_mm": 130,
+        "strike_position_x": 0.45,
+        "strike_position_y": 0.55,
+        "exciter": "cotton_mallet"
+      }
+    },
+    {
+      "time": 12.0,
+      "duration": 3.5,
+      "engine": "plate",
+      "note": "D4",
+      "velocity": 0.25,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 2.3,
+        "width_mm": 140,
+        "height_mm": 140,
+        "strike_position_x": 0.5,
+        "strike_position_y": 0.4,
+        "exciter": "cotton_mallet"
+      }
+    }
+  ],
+  "export": {
+    "filename": "akashic_loop_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 0,
+    "export_filename": "Ambience_Airy_Loop_C4"
+  }
+}
