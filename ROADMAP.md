@@ -16,6 +16,7 @@
 | Phase 2 | Three sound engines (Cimbalom / Chromatic / FM Piano) | **Done** |
 | Phase 3 | Oscilloscope + 8 Macro parameters + Preset Manager | **Done** |
 | — | Build validation (VST3 + Standalone) | **Done** |
+| — | Cimbalom playability pass (hammer + material DSP) | **Done** |
 | — | DAW validation (host scan / automation / state) | Pending (no DAW on current machine) |
 
 ---
@@ -53,7 +54,9 @@
 **Cimbalom Engine (`CimbalomEngine.h`):**
 - Modal Synthesis string model, 40 modes per voice
 - Multi-string beating (1-5 strings per course, adjustable detuning)
-- Exciter noise burst (4 hammer hardness levels)
+- Material spectral tilt: log₁₀(E)-based overtone rolloff (stiff → bright, soft → warm)
+- Hammer force spectrum shaping: 2nd-order LP on mode amplitudes (cotton cutoff=3rd partial, metal=60th)
+- Exciter noise burst with material-dependent brightness and hammer-dependent amplitude
 - Damper via note-off + CC#64 sustain pedal
 - 6 parameters: Material, Strike Position, Diameter, Hammer, Strings, Detuning
 
@@ -106,6 +109,20 @@
 - Single file + `--batch` mode
 - 36 example scores (6 worlds x 6)
 - `TsukiSynthCLI` CMake target
+
+---
+
+## Cimbalom Playability Pass ✅ (2026-05-08)
+
+**Problem**: Hammer types (Cotton/Felt/Wood/Metal) sounded nearly identical; materials had insufficient timbral differentiation.
+
+**Root cause**: Hammer only affected a 1-4ms noise burst, not the modal resonator excitation. Material differences were cancelled by auto-tension (T = μ×(2L×f1)²).
+
+**Fixes** (1 file: `CimbalomEngine.h`):
+- Hammer spectral shaping: `hammerCutoffPartial[] = {3, 8, 20, 60}` — 2nd-order LP on mode amplitudes
+- Hammer-dependent noise amplitude: `noiseAmps[] = {0.10, 0.20, 0.40, 0.70}`
+- Material spectral tilt: `pow(tilt, (partialN-1)*0.2)` from log₁₀(Young's modulus)
+- Material-dependent exciter brightness and duration
 
 ---
 

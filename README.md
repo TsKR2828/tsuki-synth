@@ -46,6 +46,8 @@ The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-pl
 - **Modal Synthesis string model** + multi-string beating + damper (CC#64)
 - From physical parameters (material density, string diameter, tension, length) calculates N vibration modes with inharmonicity correction
 - Strike position affects modal amplitude distribution
+- Material stiffness controls overtone spectral tilt (stiffer → brighter, more harmonics)
+- Hammer hardness shapes modal excitation spectrum (cotton = warm fundamental, metal = full spectrum)
 - Parameters: string material (9 types), diameter, hammer hardness (cotton/felt/wood/metal), strike position, strings per course (1-5), detuning
 
 ### Engine 2: Chromatic Synth — Physical Modeling
@@ -168,7 +170,7 @@ tsuki-synth/
 │   └── cli/
 │       └── RenderApp.cpp         <- CLI entry point (single + --batch mode)
 ├── data/
-│   └── materials.json            <- 9 material physical parameters
+│   └── materials.json            <- 14 material physical parameters (9 exposed in UI)
 ├── scores/
 │   ├── schema/
 │   │   └── score.schema.json     <- JSON Schema validation

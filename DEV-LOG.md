@@ -4,6 +4,99 @@
 
 ---
 
+## 2026-05-11 -- UiLocale Localization Layer + Chinese Mojibake Fix
+
+### Problem
+Phase 2 (UI consistency + Chinese labels) introduced `u8"..."` strings for Traditional Chinese
+combo items and labels. Standalone displayed them as mojibake (garbled characters). Additionally,
+there was no mechanism to switch between English and Chinese at runtime.
+
+### Root Cause
+1. `u8""` literals produce `char8_t` in C++17, which JUCE's `String` constructor interprets via
+   the system ANSI codepage (Big5 on Traditional Chinese Windows) rather than UTF-8.
+2. JUCE's default sans-serif font (Segoe UI) lacks CJK glyphs.
+
+### Solution — UiLocale System (4 files changed)
+
+1. **`src/UiLocale.h`** (NEW) — Centralized localization layer:
+   - `enum class UiLanguage { English, Chinese }` with static getter/setter
+   - `T()` helper: `juce::String(juce::CharPointer_UTF8(utf8))` — safe UTF-8 decoding
+   - `label(paramID)` — returns localized display label from lookup table (39 params)
+   - `comboItems(paramID)` — returns localized StringArray for materials/hammers/sub-engines
+   - `toggleLabel()` — returns "EN" in Chinese mode, "中文" in English mode
+   - Default language: Chinese
+
+2. **`src/TsukiLookAndFeel.h`** — Added CJK font:
+   - `setDefaultSansSerifTypefaceName("Microsoft JhengHei")` in constructor
+
+3. **`src/PluginEditor.h`** — Added paramID to KnobParam/ComboParam structs,
+   language toggle button, `refreshLocalizedText()` and `refreshComboItems()` methods
+
+4. **`src/PluginEditor.cpp`** — Integrated UiLocale throughout:
+   - All `u8""` strings removed entirely
+   - `setupKnob()` / `setupCombo()` use `UiLocale::label()` / `UiLocale::comboItems()`
+   - Language toggle (EN / 中文) in title bar
+   - `refreshLocalizedText()` updates all 39 labels + 7 combo items
+   - `refreshComboItems()` uses `dontSendNotification` to preserve parameter index
+
+### UI Consistency (preserved from Phase 2)
+- Chromatic: Material on left, SubEngine on right (matches Cimbalom: Material left, Hammer right)
+
+### Build Result
+- VST3 + Standalone: **zero warnings, zero errors**
+
+### Visual Verification (Standalone screenshot)
+- ✅ Chinese displays correctly: 材質, 張力, 阻尼, 槌頭, 子引擎, 楓木, 木槌, 自訂泛音
+- ✅ Language toggle works: EN ↔ 中文 switches all labels and combo items
+- ✅ Material/Hammer/SubEngine layout consistent across Cimbalom and Chromatic
+- ✅ Parameter values preserved after language switch (no reset)
+
+---
+
+## 2026-05-08 -- Cimbalom Playability Pass
+
+### Problem
+Standalone 聽感驗收發現：
+- Cimbalom 4 種 Hammer (Cotton/Felt/Wood/Metal) 聽起來幾乎一樣
+- 不同 Material (Steel/Copper/Spruce/Maple) 差異太小
+
+### Root Cause Analysis
+
+**Hammer 無差異原因**：`hammer` 參數只影響 exciter 噪音脈衝（1-4ms），不影響 modal resonator 的模態振幅分佈。Modal resonator 產生 99% 的聲音，且所有 40 個泛音以相同振幅被激發。
+
+**Material 無差異原因**：`StringModel::tensionForNote()` 自動計算張力 T = μ×(2L×f1)²，抵消了密度對基頻的影響。非諧性 B ≈ E/ρ（比剛度），Steel/Glass/Wood 的比剛度都在 25-28×10⁶ 附近。只有阻尼 α 不同，但金屬間差異太小。
+
+### Fixes (1 file: `src/engines/CimbalomEngine.h`)
+
+1. **Hammer 模態整形** — 新增 `hammerCutoffPartial[]`，對 baseModes 套用 2 階低通衰減 `1/(1+(n/cutoff)²)`
+   - Cotton: 截止在第 3 泛音（只有基頻和前幾個泛音）
+   - Felt: 截止在第 8 泛音
+   - Wood: 截止在第 20 泛音（大部分泛音保留）
+   - Metal: 截止在第 60 泛音（全通）
+
+2. **Hammer 噪音振幅** — `noiseAmps[] = {0.10, 0.20, 0.40, 0.70}`，Metal 的 click 是 Cotton 的 7 倍
+
+3. **材質頻譜傾斜** — 以 log₁₀(楊氏模量) 計算 `spectralTilt`，高次泛音乘以 `pow(tilt, (n-1)×0.2)`
+   - Steel (tilt=0.95): 明亮，保留大部分泛音
+   - Glass (tilt=0.84): 清脆
+   - Wood (tilt=0.65): 溫暖，高次泛音衰減
+   - Rubber (tilt=0.10): 極悶，幾乎只有基頻
+
+4. **材質激發器亮度** — exciter 截止頻率乘以 `materialBright`（Steel ×1.9, Rubber ×0.15）
+
+5. **材質激發器時長** — `durScale`，Steel 短促(×0.63)，Rubber 長厚(×2.3)
+
+### Build Result
+- VST3 + Standalone: **零警告、零錯誤**
+- Standalone 啟動成功
+
+### Standalone 聽感驗收（使用者回報）
+- Hammer: Cotton/Felt/Wood/Metal 改善前幾乎無差異 → 修正後待驗收
+- Material: Steel/Copper 有細微差異但不夠明顯 → 修正後待驗收
+- Chromatic: 水鑼 Copper/Bronze 有細微差異可接受，空靈鼓差異明顯
+
+---
+
 ## 2026-05-08 -- Warning Cleanup + Clean Build Confirmed
 
 ### Warning Fixes (2 files)

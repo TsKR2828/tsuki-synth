@@ -20,9 +20,9 @@ namespace
     constexpr int kSidePad   = 16;
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 //  Constructor
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     : AudioProcessorEditor (&p),
       proc (p),
@@ -31,7 +31,7 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
 {
     setLookAndFeel (&lnf);
 
-    // ── Keyboard ────────────────────────────────────────────────
+    // -- Keyboard --------------------------------------------------------
     keyboard.setColour (juce::MidiKeyboardComponent::whiteNoteColourId,     Clr::whiteKey);
     keyboard.setColour (juce::MidiKeyboardComponent::blackNoteColourId,     Clr::blackKey);
     keyboard.setColour (juce::MidiKeyboardComponent::keySeparatorLineColourId, juce::Colour (0x28000000));
@@ -39,7 +39,7 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     keyboard.setColour (juce::MidiKeyboardComponent::keyDownOverlayColourId, Clr::gold.withAlpha (0.35f));
     addAndMakeVisible (keyboard);
 
-    // ── Tab buttons ─────────────────────────────────────────────
+    // -- Tab buttons -----------------------------------------------------
     auto initTab = [this] (juce::TextButton& btn, int idx)
     {
         btn.setComponentID ("tab");
@@ -58,7 +58,22 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     initTab (tabChr, 1);
     initTab (tabFM,  2);
 
-    // ── Preset ──────────────────────────────────────────────────
+    // -- Language toggle -------------------------------------------------
+    langToggle.setComponentID ("step");
+    langToggle.setButtonText (UiLocale::toggleLabel());
+    langToggle.onClick = [this]
+    {
+        if (UiLocale::isChinese())
+            UiLocale::setLanguage (UiLanguage::English);
+        else
+            UiLocale::setLanguage (UiLanguage::Chinese);
+        langToggle.setButtonText (UiLocale::toggleLabel());
+        refreshLocalizedText();
+        repaint();
+    };
+    addAndMakeVisible (langToggle);
+
+    // -- Preset ----------------------------------------------------------
     presetCombo.setColour (juce::ComboBox::backgroundColourId, Clr::comboBg);
     presetCombo.setColour (juce::ComboBox::outlineColourId,    Clr::comboBorder);
     presetCombo.setColour (juce::ComboBox::textColourId,       Clr::goldLight);
@@ -111,62 +126,62 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     dirtyLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (dirtyLabel);
 
-    // ── Cimbalom ────────────────────────────────────────────────
-    setupCombo (cimMaterial, "cim_material",    "MATERIAL");
-    setupCombo (cimHammer,   "cim_hammer",      "HAMMER");
-    setupKnob  (cimStrike,   "cim_strike_pos",  "STRIKE POS");
-    setupKnob  (cimDiameter, "cim_diameter",    "DIAMETER");
-    setupKnob  (cimStrings,  "cim_num_strings", "STRINGS");
-    setupKnob  (cimDetune,   "cim_detuning",    "DETUNING");
+    // -- Cimbalom --------------------------------------------------------
+    setupCombo (cimMaterial, "cim_material");
+    setupCombo (cimHammer,   "cim_hammer");
+    setupKnob  (cimStrike,   "cim_strike_pos");
+    setupKnob  (cimDiameter, "cim_diameter");
+    setupKnob  (cimStrings,  "cim_num_strings");
+    setupKnob  (cimDetune,   "cim_detuning");
 
-    // ── Chromatic ───────────────────────────────────────────────
-    setupCombo (chrSubEngine, "chr_sub_engine", "SUB-ENGINE");
-    setupCombo (chrMaterial,  "chr_material",   "MATERIAL");
-    setupCombo (chrExciter,   "chr_exciter",    "EXCITER");
-    setupKnob  (chrStrike,    "chr_strike_pos", "STRIKE POS");
-    setupKnob  (chrThickness, "chr_thickness",  "THICKNESS");
-    setupKnob  (chrSize,      "chr_size",       "SIZE");
-    setupKnob  (chrGlide,     "chr_pitch_glide","PITCH GLIDE");
+    // -- Chromatic -------------------------------------------------------
+    setupCombo (chrSubEngine, "chr_sub_engine");
+    setupCombo (chrMaterial,  "chr_material");
+    setupCombo (chrExciter,   "chr_exciter");
+    setupKnob  (chrStrike,    "chr_strike_pos");
+    setupKnob  (chrThickness, "chr_thickness");
+    setupKnob  (chrSize,      "chr_size");
+    setupKnob  (chrGlide,     "chr_pitch_glide");
 
-    // ── FM Piano ────────────────────────────────────────────────
-    setupCombo (fmType,       "fm_type",       "SOUND TYPE");
-    setupKnob  (fmRatio,      "fm_ratio",      "RATIO");
-    setupKnob  (fmIndex,      "fm_index",      "MOD INDEX");
-    setupKnob  (fmBrightness, "fm_brightness", "BRIGHTNESS");
-    setupKnob  (fmFeedback,   "fm_feedback",   "FEEDBACK");
-    setupKnob  (fmAttack,     "fm_attack",     "ATTACK");
-    setupKnob  (fmRelease,    "fm_release",    "RELEASE");
+    // -- FM Piano --------------------------------------------------------
+    setupCombo (fmType,       "fm_type");
+    setupKnob  (fmRatio,      "fm_ratio");
+    setupKnob  (fmIndex,      "fm_index");
+    setupKnob  (fmBrightness, "fm_brightness");
+    setupKnob  (fmFeedback,   "fm_feedback");
+    setupKnob  (fmAttack,     "fm_attack");
+    setupKnob  (fmRelease,    "fm_release");
 
-    // ── Effects ─────────────────────────────────────────────────
-    setupKnob (fxRevMix,      "fx_reverb_mix",      "MIX",    true);
-    setupKnob (fxRevSize,     "fx_reverb_size",      "SIZE",   true);
-    setupKnob (fxDlyTime,     "fx_delay_time",       "TIME",   true);
-    setupKnob (fxDlyFeedback, "fx_delay_feedback",   "FB",     true);
-    setupKnob (fxDlyMix,      "fx_delay_mix",        "MIX",    true);
-    setupKnob (fxCompThresh,  "fx_comp_threshold",   "THRESH", true);
-    setupKnob (fxCompRatio,   "fx_comp_ratio",       "RATIO",  true);
+    // -- Effects ---------------------------------------------------------
+    setupKnob (fxRevMix,      "fx_reverb_mix",      true);
+    setupKnob (fxRevSize,     "fx_reverb_size",     true);
+    setupKnob (fxDlyTime,     "fx_delay_time",      true);
+    setupKnob (fxDlyFeedback, "fx_delay_feedback",  true);
+    setupKnob (fxDlyMix,      "fx_delay_mix",       true);
+    setupKnob (fxCompThresh,  "fx_comp_threshold",  true);
+    setupKnob (fxCompRatio,   "fx_comp_ratio",      true);
 
-    // ── Distortion ──────────────────────────────────────────────
-    setupCombo (distType,        "fx_dist_type",        "TYPE");
-    setupKnob  (distDrive,       "fx_dist_drive",       "DRIVE",       true);
-    setupKnob  (distInstability, "fx_dist_instability",  "INSTABILITY", true);
-    setupKnob  (distMix,         "fx_dist_mix",          "MIX",         true);
+    // -- Distortion ------------------------------------------------------
+    setupCombo (distType,        "fx_dist_type");
+    setupKnob  (distDrive,       "fx_dist_drive",        true);
+    setupKnob  (distInstability, "fx_dist_instability",   true);
+    setupKnob  (distMix,         "fx_dist_mix",           true);
 
-    // ── Macro ────────────────────────────────────────────────────
-    setupKnob (macroMaterial,   "macro_material",   "MATERIAL",   true);
-    setupKnob (macroTension,    "macro_tension",    "TENSION",    true);
-    setupKnob (macroDamping,    "macro_damping",    "DAMPING",    true);
-    setupKnob (macroStrike,     "macro_strike",     "STRIKE",     true);
-    setupKnob (macroBrightness, "macro_brightness", "BRIGHT",     true);
-    setupKnob (macroBody,       "macro_body",       "BODY",       true);
-    setupKnob (macroNoise,      "macro_noise",      "NOISE",      true);
-    setupKnob (macroOutput,     "macro_output",     "OUTPUT",     true);
+    // -- Macro -----------------------------------------------------------
+    setupKnob (macroMaterial,   "macro_material",   true);
+    setupKnob (macroTension,    "macro_tension",    true);
+    setupKnob (macroDamping,    "macro_damping",    true);
+    setupKnob (macroStrike,     "macro_strike",     true);
+    setupKnob (macroBrightness, "macro_brightness", true);
+    setupKnob (macroBody,       "macro_body",       true);
+    setupKnob (macroNoise,      "macro_noise",      true);
+    setupKnob (macroOutput,     "macro_output",     true);
 
-    // ── Analyzer ─────────────────────────────────────────────────
+    // -- Analyzer --------------------------------------------------------
     addAndMakeVisible (analyzerPanel);
     analyzerPanel.setActive (true);
 
-    // ── Engine listener + initial state ────────────────────────
+    // -- Engine listener + initial state ---------------------------------
     proc.apvts.addParameterListener ("engine", this);
     updateEngine();
     updateDirtyIndicator();
@@ -181,9 +196,9 @@ TsukiSynthEditor::~TsukiSynthEditor()
     proc.apvts.removeParameterListener ("engine", this);
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 //  Engine switching
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 void TsukiSynthEditor::parameterChanged (const juce::String& id, float)
 {
     if (id == "engine")
@@ -241,12 +256,14 @@ void TsukiSynthEditor::updateEngine()
     analyzerPanel.setAccent (lnf.accent);
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 //  Setup helpers
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 void TsukiSynthEditor::setupKnob (KnobParam& k, const juce::String& paramID,
-                                    const juce::String& text, bool small)
+                                    bool small)
 {
+    k.paramID = paramID;
+
     auto& s = k.slider;
     s.setSliderStyle (juce::Slider::RotaryVerticalDrag);
     s.setTextBoxStyle (juce::Slider::TextBoxBelow, true,
@@ -258,7 +275,7 @@ void TsukiSynthEditor::setupKnob (KnobParam& k, const juce::String& paramID,
     addAndMakeVisible (s);
 
     auto& l = k.label;
-    l.setText (text, juce::dontSendNotification);
+    l.setText (UiLocale::label (paramID), juce::dontSendNotification);
     l.setFont (juce::Font (juce::FontOptions (small ? 8.0f : 9.5f)).boldened());
     l.setJustificationType (juce::Justification::centred);
     l.setColour (juce::Label::textColourId, small ? Clr::fxTitle : Clr::label);
@@ -267,19 +284,33 @@ void TsukiSynthEditor::setupKnob (KnobParam& k, const juce::String& paramID,
     k.attachment = std::make_unique<SliderAttachment> (proc.apvts, paramID, s);
 }
 
-void TsukiSynthEditor::setupCombo (ComboParam& c, const juce::String& paramID,
-                                     const juce::String& text)
+void TsukiSynthEditor::setupCombo (ComboParam& c, const juce::String& paramID)
 {
-    if (auto* cp = dynamic_cast<juce::AudioParameterChoice*> (
-            proc.apvts.getParameter (paramID)))
+    c.paramID = paramID;
+
+    // Populate items: use UiLocale if available, else APVTS choices
+    auto localizedItems = UiLocale::comboItems (paramID);
+
+    if (localizedItems.isEmpty())
+    {
+        if (auto* cp = dynamic_cast<juce::AudioParameterChoice*> (
+                proc.apvts.getParameter (paramID)))
+        {
+            int id = 1;
+            for (const auto& choice : cp->choices)
+                c.combo.addItem (choice, id++);
+        }
+    }
+    else
     {
         int id = 1;
-        for (const auto& choice : cp->choices)
-            c.combo.addItem (choice, id++);
+        for (const auto& item : localizedItems)
+            c.combo.addItem (item, id++);
     }
+
     addAndMakeVisible (c.combo);
 
-    c.label.setText (text, juce::dontSendNotification);
+    c.label.setText (UiLocale::label (paramID), juce::dontSendNotification);
     c.label.setFont (juce::Font (juce::FontOptions (9.0f)).boldened());
     c.label.setJustificationType (juce::Justification::centred);
     c.label.setColour (juce::Label::textColourId, Clr::label);
@@ -300,9 +331,103 @@ void TsukiSynthEditor::setVisible (ComboParam& c, bool v)
     c.label.setVisible (v);
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
+//  Localization
+// ========================================================================
+void TsukiSynthEditor::refreshComboItems (ComboParam& cp)
+{
+    auto items = UiLocale::comboItems (cp.paramID);
+
+    // If UiLocale has no items for this param, use APVTS choices
+    if (items.isEmpty())
+    {
+        if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
+                proc.apvts.getParameter (cp.paramID)))
+            items = p->choices;
+    }
+
+    if (items.isEmpty())
+        return;
+
+    int currentId = cp.combo.getSelectedId();
+    cp.combo.clear (juce::dontSendNotification);
+
+    int id = 1;
+    for (const auto& item : items)
+        cp.combo.addItem (item, id++);
+
+    if (currentId > 0 && currentId <= items.size())
+        cp.combo.setSelectedId (currentId, juce::dontSendNotification);
+}
+
+void TsukiSynthEditor::refreshLocalizedText()
+{
+    // Helper lambdas
+    auto refreshKnobLabel = [] (KnobParam& k)
+    {
+        k.label.setText (UiLocale::label (k.paramID), juce::dontSendNotification);
+    };
+    auto refreshComboLabel = [this] (ComboParam& c)
+    {
+        c.label.setText (UiLocale::label (c.paramID), juce::dontSendNotification);
+        refreshComboItems (c);
+    };
+
+    // -- Macro knobs --
+    refreshKnobLabel (macroMaterial);
+    refreshKnobLabel (macroTension);
+    refreshKnobLabel (macroDamping);
+    refreshKnobLabel (macroStrike);
+    refreshKnobLabel (macroBrightness);
+    refreshKnobLabel (macroBody);
+    refreshKnobLabel (macroNoise);
+    refreshKnobLabel (macroOutput);
+
+    // -- Cimbalom --
+    refreshComboLabel (cimMaterial);
+    refreshComboLabel (cimHammer);
+    refreshKnobLabel  (cimStrike);
+    refreshKnobLabel  (cimDiameter);
+    refreshKnobLabel  (cimStrings);
+    refreshKnobLabel  (cimDetune);
+
+    // -- Chromatic --
+    refreshComboLabel (chrSubEngine);
+    refreshComboLabel (chrMaterial);
+    refreshComboLabel (chrExciter);
+    refreshKnobLabel  (chrStrike);
+    refreshKnobLabel  (chrThickness);
+    refreshKnobLabel  (chrSize);
+    refreshKnobLabel  (chrGlide);
+
+    // -- FM Piano --
+    refreshComboLabel (fmType);
+    refreshKnobLabel  (fmRatio);
+    refreshKnobLabel  (fmIndex);
+    refreshKnobLabel  (fmBrightness);
+    refreshKnobLabel  (fmFeedback);
+    refreshKnobLabel  (fmAttack);
+    refreshKnobLabel  (fmRelease);
+
+    // -- Effects --
+    refreshKnobLabel (fxRevMix);
+    refreshKnobLabel (fxRevSize);
+    refreshKnobLabel (fxDlyTime);
+    refreshKnobLabel (fxDlyFeedback);
+    refreshKnobLabel (fxDlyMix);
+    refreshKnobLabel (fxCompThresh);
+    refreshKnobLabel (fxCompRatio);
+
+    // -- Distortion --
+    refreshComboLabel (distType);
+    refreshKnobLabel  (distDrive);
+    refreshKnobLabel  (distInstability);
+    refreshKnobLabel  (distMix);
+}
+
+// ========================================================================
 //  Preset helpers
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 void TsukiSynthEditor::rebuildPresetCombo()
 {
     presetCombo.clear (juce::dontSendNotification);
@@ -358,9 +483,9 @@ void TsukiSynthEditor::promptSavePreset()
         }));
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 //  Layout helpers
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 void TsukiSynthEditor::layoutKnobCell (juce::Rectangle<int> cell, KnobParam& k)
 {
     auto c = cell.reduced (0, 1);
@@ -383,9 +508,9 @@ void TsukiSynthEditor::layoutFxKnob (juce::Rectangle<int> cell, KnobParam& k)
     k.slider.setBounds (c.withSizeKeepingCentre (juce::jmin (44, c.getWidth()), c.getHeight()));
 }
 
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 //  Paint
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
 void TsukiSynthEditor::paintPanel (juce::Graphics& g, juce::Rectangle<int> bounds,
                                      const juce::String& title)
 {
@@ -402,7 +527,7 @@ void TsukiSynthEditor::paintPanel (juce::Graphics& g, juce::Rectangle<int> bound
 
 void TsukiSynthEditor::paint (juce::Graphics& g)
 {
-    // ── plugin background gradient ──────────────────────────────
+    // -- plugin background gradient --------------------------------------
     g.setGradientFill (juce::ColourGradient (
         Clr::pluginTop, 0.0f, 0.0f,
         Clr::pluginBot, 0.0f, (float) getHeight(), false));
@@ -410,7 +535,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
 
     int w = getWidth();
 
-    // ── title bar ───────────────────────────────────────────────
+    // -- title bar -------------------------------------------------------
     {
         g.setGradientFill (juce::ColourGradient (
             juce::Colour (0x04ffffff), 0.0f, 0.0f,
@@ -452,7 +577,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.drawHorizontalLine (kTitleH - 1, 0.0f, (float) w);
     }
 
-    // ── preset row background ───────────────────────────────────
+    // -- preset row background -------------------------------------------
     {
         int y = kTitleH;
         g.setColour (Clr::presetBg);
@@ -461,14 +586,14 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.drawHorizontalLine (y + kPresetH - 1, 0.0f, (float) w);
     }
 
-    // ── tabs background ─────────────────────────────────────────
+    // -- tabs background -------------------------------------------------
     {
         int y = kTitleH + kPresetH;
         g.setColour (Clr::presetBg);
         g.fillRect (0, y, w, kTabH);
     }
 
-    // ── macro section ──────────────────────────────────────────
+    // -- macro section ---------------------------------------------------
     {
         int y = macroArea_.getY();
         int h = macroArea_.getHeight();
@@ -493,7 +618,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.fillRect (kSidePad + 114, y + 12, w - kSidePad * 2 - 114, 1);
     }
 
-    // ── engine section ──────────────────────────────────────────
+    // -- engine section --------------------------------------------------
     {
         int y = engineArea_.getY();
         int h = engineArea_.getHeight();
@@ -522,7 +647,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.fillRect (kSidePad + 120, y + 12, w - kSidePad * 2 - 120, 1);
     }
 
-    // ── effects section ─────────────────────────────────────────
+    // -- effects section -------------------------------------------------
     {
         int y = effectsRow_.getY();
         int h = effectsRow_.getHeight();
@@ -543,7 +668,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         paintPanel (g, compBounds_,   "COMPRESSOR");
     }
 
-    // ── distortion row ──────────────────────────────────────────
+    // -- distortion row --------------------------------------------------
     {
         int y = distRow_.getY();
         g.setColour (Clr::effectsBg);
@@ -551,7 +676,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         paintPanel (g, distPanelBounds_, "DISTORTION");
     }
 
-    // ── analyzer row ────────────────────────────────────────────
+    // -- analyzer row ----------------------------------------------------
     {
         int y = analyzerRow_.getY();
         g.setColour (Clr::effectsBg);
@@ -560,7 +685,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.drawHorizontalLine (y, 0.0f, (float) w);
     }
 
-    // ── keyboard footer ─────────────────────────────────────────
+    // -- keyboard footer -------------------------------------------------
     {
         int y = analyzerRow_.getBottom();
         g.setColour (Clr::kbFooter);
@@ -570,17 +695,19 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════
-//  Resized — top-to-bottom layout
-// ════════════════════════════════════════════════════════════════════════
+// ========================================================================
+//  Resized -- top-to-bottom layout
+// ========================================================================
 void TsukiSynthEditor::resized()
 {
     auto area = getLocalBounds();
+    int w = area.getWidth();
 
-    // ── title (paint only) ──────────────────────────────────────
+    // -- title (paint only) + language toggle in title bar ----------------
     area.removeFromTop (kTitleH);
+    langToggle.setBounds (w - 60, 20, 44, 18);
 
-    // ── preset row ──────────────────────────────────────────────
+    // -- preset row ------------------------------------------------------
     {
         auto row   = area.removeFromTop (kPresetH);
         auto inner = row.reduced (kSidePad, 8);
@@ -599,7 +726,7 @@ void TsukiSynthEditor::resized()
         presetCombo.setBounds (inner);
     }
 
-    // ── engine tabs ─────────────────────────────────────────────
+    // -- engine tabs -----------------------------------------------------
     {
         auto row   = area.removeFromTop (kTabH);
         auto inner = row.reduced (kSidePad, 0).withTrimmedTop (4);
@@ -609,7 +736,7 @@ void TsukiSynthEditor::resized()
         tabFM.setBounds  (inner);
     }
 
-    // ── macro row ───────────────────────────────────────────────
+    // -- macro row -------------------------------------------------------
     macroArea_ = area.removeFromTop (kMacroH);
     {
         auto inner = macroArea_.reduced (kSidePad, 0).withTrimmedTop (22);
@@ -624,7 +751,7 @@ void TsukiSynthEditor::resized()
         layoutFxKnob (inner, macroOutput);
     }
 
-    // ── bottom sections (fixed sizes, from bottom up) ───────────
+    // -- bottom sections (fixed sizes, from bottom up) -------------------
     auto kbArea = area.removeFromBottom (kKeyboardH);
     keyboard.setBounds (kbArea.reduced (14, 10));
 
@@ -687,7 +814,7 @@ void TsukiSynthEditor::resized()
         }
     }
 
-    // ── engine section (remaining space) ────────────────────────
+    // -- engine section (remaining space) --------------------------------
     engineArea_ = area;
     {
         auto inner = engineArea_.reduced (kSidePad, 0).withTrimmedTop (24);
@@ -726,8 +853,8 @@ void TsukiSynthEditor::resized()
         else if (eng == 1)
         {
             auto [l0, r0] = takeRow();
-            layoutComboCell (l0, chrSubEngine);
-            layoutComboCell (r0, chrMaterial);
+            layoutComboCell (l0, chrMaterial);
+            layoutComboCell (r0, chrSubEngine);
 
             auto [l1, r1] = takeRow();
             layoutKnobCell (l1, chrStrike);

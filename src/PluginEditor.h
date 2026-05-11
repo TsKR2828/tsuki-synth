@@ -2,6 +2,7 @@
 
 #include "PluginProcessor.h"
 #include "TsukiLookAndFeel.h"
+#include "UiLocale.h"
 #include "analyzer/AnalyzerPanel.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 
@@ -25,6 +26,7 @@ private:
         juce::Slider slider;
         juce::Label  label;
         std::unique_ptr<SliderAttachment> attachment;
+        juce::String paramID;
     };
 
     struct ComboParam
@@ -32,20 +34,23 @@ private:
         juce::ComboBox combo;
         juce::Label    label;
         std::unique_ptr<ComboAttachment> attachment;
+        juce::String paramID;
     };
 
     void parameterChanged (const juce::String& parameterID, float newValue) override;
     void timerCallback() override;
 
-    void setupKnob  (KnobParam&,  const juce::String& paramID,
-                     const juce::String& labelText, bool small = false);
-    void setupCombo  (ComboParam&, const juce::String& paramID,
-                     const juce::String& labelText);
+    void setupKnob  (KnobParam&,  const juce::String& paramID, bool small = false);
+    void setupCombo  (ComboParam&, const juce::String& paramID);
     void setVisible  (KnobParam&,  bool);
     void setVisible  (ComboParam&, bool);
     void updateEngine();
     int  currentEngine() const;
     juce::Colour accentForEngine (int eng) const;
+
+    // Localization
+    void refreshLocalizedText();
+    void refreshComboItems (ComboParam&);
 
     void paintPanel (juce::Graphics&, juce::Rectangle<int>, const juce::String& title);
     void layoutKnobCell  (juce::Rectangle<int> cell, KnobParam&);
@@ -62,6 +67,9 @@ private:
     juce::TextButton tabCim { "Cimbalom" };
     juce::TextButton tabChr { "Chromatic" };
     juce::TextButton tabFM  { "FM Piano" };
+
+    // Language toggle
+    juce::TextButton langToggle;
 
     // Preset
     juce::ComboBox   presetCombo;

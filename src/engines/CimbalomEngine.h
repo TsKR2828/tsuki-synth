@@ -102,6 +102,27 @@ public:
 
         auto baseModes = StringModel::calculateModes (sp, *mat);
 
+        // Material spectral tilt: stiffer materials sustain more overtones
+        float logE = std::log10 (mat->youngsModulus);
+        float spectralTilt = juce::jlimit (0.1f, 1.0f, (logE - 7.5f) / 4.0f);
+
+        // Hammer force spectrum: soft hammers excite fewer high partials
+        int hammerIdx = juce::jlimit (0, 3, (int) hammer);
+        static constexpr float hammerCutoffPartial[] = { 3.0f, 8.0f, 20.0f, 60.0f };
+        float hCut = hammerCutoffPartial[hammerIdx];
+
+        if (! baseModes.empty())
+        {
+            float f1ref = baseModes[0].frequency;
+            for (auto& m : baseModes)
+            {
+                float partialN = m.frequency / f1ref;
+                m.amplitude *= std::pow (spectralTilt, (partialN - 1.0f) * 0.2f);
+                float r = partialN / hCut;
+                m.amplitude *= 1.0f / (1.0f + r * r);
+            }
+        }
+
         // Macro: Tension → mode frequency, Material → sustain, Damping → decay
         float tScale = 0.85f + mTension * 0.30f;
         float matScale = 0.5f + mMaterial;
@@ -139,7 +160,8 @@ public:
         }
 
         // ── Exciter（槌頭噪音脈衝）──
-        setupExciter (hammer, velocity, mBrightness, mNoise);
+        float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
+        setupExciter (hammer, velocity, mBrightness, mNoise, materialBright);
         damped = false;
     }
 
@@ -217,7 +239,8 @@ private:
     }
 
     void setupExciter (float hardness, float velocity,
-                       float brightMacro = 0.5f, float noiseMacro = 0.0f)
+                       float brightMacro = 0.5f, float noiseMacro = 0.0f,
+                       float materialBright = 1.0f)
     {
         // 槌硬度 → 噪音頻寬
         //   0=cotton(柔) 1=felt 2=wood 3=metal(硬)
@@ -227,7 +250,7 @@ private:
         int idx = juce::jlimit (0, 3, (int) hardness);
 
         // Brightness macro: scale cutoff (0→×0.3, 0.5→×1.0, 1→×1.7)
-        float cutoff = cutoffs[idx] * (0.3f + brightMacro * 1.4f);
+        float cutoff = cutoffs[idx] * (0.3f + brightMacro * 1.4f) * materialBright;
         cutoff = juce::jlimit (200.0f, 16000.0f, cutoff);
 
         exciterFilter.setSampleRate (getSampleRate());
@@ -237,9 +260,11 @@ private:
         noiseGen.setType (NoiseGen::Type::White);
         noiseGen.reset();
 
-        // Noise macro: boost exciter amplitude (0→×1, 1→×4)
-        float amp = velocity * 0.25f * (1.0f + noiseMacro * 3.0f);
-        exciterEnv.trigger (amp, durations[idx], getSampleRate());
+        // Hammer-dependent noise: harder hammers produce louder click
+        static constexpr float noiseAmps[] = { 0.10f, 0.20f, 0.40f, 0.70f };
+        float amp = velocity * noiseAmps[idx] * (1.0f + noiseMacro * 3.0f);
+        float durScale = juce::jlimit (0.5f, 3.0f, 1.5f / (materialBright + 0.5f));
+        exciterEnv.trigger (amp, durations[idx] * durScale, getSampleRate());
     }
 
     MaterialDB*    materialDB = nullptr;

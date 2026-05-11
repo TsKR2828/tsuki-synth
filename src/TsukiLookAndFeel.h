@@ -61,6 +61,11 @@ public:
 
     TsukiLookAndFeel()
     {
+        // CJK-capable font — required for Traditional Chinese UI labels.
+        // Microsoft JhengHei is bundled with all Chinese Windows editions
+        // and has good ASCII coverage. Falls back to system default if absent.
+        setDefaultSansSerifTypefaceName ("Microsoft JhengHei");
+
         setColour (juce::PopupMenu::backgroundColourId,            juce::Colour (0xff20203a));
         setColour (juce::PopupMenu::highlightedBackgroundColourId, Clr::gold.withAlpha (0.10f));
         setColour (juce::PopupMenu::textColourId,                  Clr::comboText);
