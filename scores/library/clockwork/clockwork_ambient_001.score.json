@@ -1,0 +1,147 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Clockwork Ticking Room",
+    "id": "clockwork_ambient_001",
+    "author": "TsukiSynth",
+    "description": "鐘錶房 — 多層節拍黃銅觸碰，精密環境音",
+    "created": "2026-05-07",
+    "tags": ["tick", "ambient", "mechanical", "rhythm", "precise"],
+    "mood": "neutral",
+    "use_case": "ambient background",
+    "category": "worldview_sfx",
+    "worldview": "Clockwork",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "oneshot",
+    "family_id": "clockwork_ambient",
+    "character": ["pulse", "metallic"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.5,
+    "effects": {
+      "reverb": { "decay": 2.0, "wet": 0.3 },
+      "delay": { "time_ms": 250, "feedback": 0.15, "wet": 0.06 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.05,
+      "engine": "beam",
+      "note": "F5",
+      "velocity": 0.3,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 2.0,
+        "length_mm": 15,
+        "width_mm": 5,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      }
+    },
+    {
+      "time": 0.5,
+      "duration": 0.05,
+      "engine": "beam",
+      "note": "F5",
+      "velocity": 0.25,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 2.0,
+        "length_mm": 15,
+        "width_mm": 5,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      }
+    },
+    {
+      "time": 1.0,
+      "duration": 0.05,
+      "engine": "beam",
+      "note": "F5",
+      "velocity": 0.3,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 2.0,
+        "length_mm": 15,
+        "width_mm": 5,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      }
+    },
+    {
+      "time": 1.5,
+      "duration": 0.05,
+      "engine": "beam",
+      "note": "F5",
+      "velocity": 0.25,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 2.0,
+        "length_mm": 15,
+        "width_mm": 5,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      }
+    },
+    {
+      "time": 2.0,
+      "duration": 0.05,
+      "engine": "beam",
+      "note": "F5",
+      "velocity": 0.3,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 2.0,
+        "length_mm": 15,
+        "width_mm": 5,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      }
+    },
+    {
+      "time": 2.5,
+      "duration": 0.05,
+      "engine": "beam",
+      "note": "F5",
+      "velocity": 0.25,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 2.0,
+        "length_mm": 15,
+        "width_mm": 5,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      },
+      "comment": "等間距 tick-tock 節奏"
+    },
+    {
+      "time": 1.0,
+      "duration": 3.0,
+      "engine": "plate",
+      "note": "C3",
+      "velocity": 0.1,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 1.5,
+        "width_mm": 100,
+        "height_mm": 100,
+        "strike_position_x": 0.5,
+        "strike_position_y": 0.5,
+        "exciter": "bow_slow"
+      },
+      "comment": "底層溫暖黃銅共鳴"
+    }
+  ],
+  "export": {
+    "filename": "clockwork_ambient_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 400,
+    "export_filename": "Ambience_Pulse_OneShot_F5"
+  }
+}

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>Charta Workbench — SEO Content Studio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles/charta.css" />
+  <style>
+    html, body { margin: 0; padding: 0; background: #f0eee9; }
+    * { box-sizing: border-box; }
+    /* Make all artboards fill their assigned size and clip overflow */
+    .ab { width: 100%; height: 100%; overflow: hidden; }
+    .ab > .charta-app { width: 100%; height: 100%; }
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="screens/charta-shell.jsx"></script>
+  <script type="text/babel" src="screens/screen1-overview.jsx"></script>
+  <script type="text/babel" src="screens/screen2-config.jsx"></script>
+  <script type="text/babel" src="screens/screen3-newtask.jsx"></script>
+  <script type="text/babel" src="screens/screen4-research.jsx"></script>
+  <script type="text/babel" src="screens/screen5-body.jsx"></script>
+  <script type="text/babel" src="screens/screen6-review.jsx"></script>
+  <script type="text/babel" src="screens/screen7-refine.jsx"></script>
+  <script type="text/babel" src="screens/screen8-special.jsx"></script>
+  <script type="text/babel" src="screens/screen9-links.jsx"></script>
+  <script type="text/babel" src="screens/screen10-export.jsx"></script>
+  <script type="text/babel" src="screens/screen11-log.jsx"></script>
+  <script type="text/babel" src="screens/design-system.jsx"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const Frame = ({ children }) => (
+      <div className="ab"><div className="charta-app">{children}</div></div>
+    );
+
+    const W = 1440, H = 900;
+
+    function App() {
+      return (
+        <DesignCanvas>
+          <DCSection id="kernel" title="Workbench Core" subtitle="H2 生成 · Review · Refine · Export — 設計重點四件組">
+            <DCArtboard id="s5" label="05 · H2 分段生成" width={W} height={H}><Frame><Screen5 /></Frame></DCArtboard>
+            <DCArtboard id="s6" label="06 · 審稿 / Blocker" width={W} height={H}><Frame><Screen6 /></Frame></DCArtboard>
+            <DCArtboard id="s7" label="07 · 局部重跑 / Diff" width={W} height={H}><Frame><Screen7 /></Frame></DCArtboard>
+            <DCArtboard id="s10" label="10 · 導出 Gate" width={W} height={H}><Frame><Screen10 /></Frame></DCArtboard>
+            <DCArtboard id="modal" label="High-Risk Modal" width={W} height={H}><Frame><HighRiskModal /></Frame></DCArtboard>
+          </DCSection>
+
+          <DCSection id="entry" title="Entry & Setup" subtitle="專案總覽 · 站點設定 · 新任務 · 研究">
+            <DCArtboard id="s1" label="01 · 專案總覽" width={W} height={H}><Frame><Screen1 /></Frame></DCArtboard>
+            <DCArtboard id="s2" label="02 · 文風指南" width={W} height={H}><Frame><Screen2 /></Frame></DCArtboard>
+            <DCArtboard id="s3" label="03 · 建立任務" width={W} height={H}><Frame><Screen3 /></Frame></DCArtboard>
+            <DCArtboard id="s4" label="04 · Keyword / SERP / Brief" width={W} height={H}><Frame><Screen4 /></Frame></DCArtboard>
+          </DCSection>
+
+          <DCSection id="rest" title="Special · Links · Archive" subtitle="KT / FAQ · 內外連 · Log / 版本紀錄">
+            <DCArtboard id="s8" label="08 · KT / FAQ" width={W} height={H}><Frame><Screen8 /></Frame></DCArtboard>
+            <DCArtboard id="s9" label="09 · 內外連" width={W} height={H}><Frame><Screen9 /></Frame></DCArtboard>
+            <DCArtboard id="s11" label="11 · Log / 版本紀錄" width={W} height={H}><Frame><Screen11 /></Frame></DCArtboard>
+          </DCSection>
+
+          <DCSection id="ds" title="Design System" subtitle="Charta 視覺語彙 — 色彩 · 字體 · 元件 · 裝飾">
+            <DCArtboard id="ds1" label="Charta Design System" width={1280} height={1100}><Frame><DesignSystem /></Frame></DCArtboard>
+          </DCSection>
+
+          <DCPostIt x={40} y={20}>
+            設計脈絡：花札牌面 · 黃銅儀表 · 藏書票。
+            深底 + 燙金 + 米色，密度高但克制。
+            從「Workbench Core」四件組看起。
+          </DCPostIt>
+        </DesignCanvas>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

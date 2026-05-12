@@ -1,0 +1,101 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Clockwork Gear Shift",
+    "id": "clockwork_transition_001",
+    "author": "TsukiSynth",
+    "description": "齒輪換檔 — 多層黃銅碰撞序列，機械轉場",
+    "created": "2026-05-07",
+    "tags": ["gear", "mechanical", "transition", "brass", "precise"],
+    "mood": "neutral",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Clockwork",
+    "variation_of": null,
+    "primary_type": "mechanical",
+    "sound_type": "oneshot",
+    "family_id": "clockwork_transition",
+    "character": ["metallic", "pulse"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.78,
+    "effects": {
+      "reverb": { "decay": 1.2, "wet": 0.2 },
+      "delay": { "time_ms": 125, "feedback": 0.2, "wet": 0.08 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.3,
+      "engine": "beam",
+      "note": "C4",
+      "velocity": 0.7,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 4.0,
+        "length_mm": 40,
+        "width_mm": 15,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      },
+      "comment": "齒輪咬合第一擊"
+    },
+    {
+      "time": 0.12,
+      "duration": 0.25,
+      "engine": "beam",
+      "note": "E4",
+      "velocity": 0.6,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 3.5,
+        "length_mm": 35,
+        "width_mm": 12,
+        "strike_position": 0.15,
+        "exciter": "metal_tip"
+      }
+    },
+    {
+      "time": 0.24,
+      "duration": 0.25,
+      "engine": "beam",
+      "note": "G4",
+      "velocity": 0.55,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 3.0,
+        "length_mm": 30,
+        "width_mm": 10,
+        "strike_position": 0.12,
+        "exciter": "metal_tip"
+      }
+    },
+    {
+      "time": 0.36,
+      "duration": 0.4,
+      "engine": "beam",
+      "note": "C5",
+      "velocity": 0.75,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 2.5,
+        "length_mm": 25,
+        "width_mm": 8,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      },
+      "comment": "最後定位鎖定"
+    }
+  ],
+  "export": {
+    "filename": "clockwork_transition_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 200,
+    "export_filename": "Mechanical_Metallic_OneShot_C4"
+  }
+}

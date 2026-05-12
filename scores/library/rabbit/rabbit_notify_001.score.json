@@ -1,0 +1,54 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Rabbit Ding",
+    "id": "rabbit_notify_001",
+    "author": "TsukiSynth",
+    "description": "兔兔叮 — 高音鋁片單叮，可愛乾淨",
+    "created": "2026-05-07",
+    "tags": ["chime", "notification", "cute", "short", "bright"],
+    "mood": "playful",
+    "use_case": "chat notification",
+    "category": "character_ui",
+    "worldview": "Rabbit",
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "rabbit_notify",
+    "character": ["bright", "soft"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.78,
+    "effects": {
+      "reverb": { "decay": 1.0, "wet": 0.2 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.8,
+      "engine": "beam",
+      "note": "G6",
+      "velocity": 0.65,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 1.8,
+        "length_mm": 32,
+        "width_mm": 10,
+        "strike_position": 0.3,
+        "exciter": "wood_mallet"
+      }
+    }
+  ],
+  "export": {
+    "filename": "rabbit_notify_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 150,
+    "export_filename": "UI_Bright_OneShot_G6"
+  }
+}

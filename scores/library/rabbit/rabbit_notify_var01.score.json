@@ -1,0 +1,55 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Rabbit Ding (Angry)",
+    "id": "rabbit_notify_var01",
+    "author": "TsukiSynth",
+    "description": "兔兔叮（怒） — 鋼材取代鋁，高 velocity，尖銳警告",
+    "created": "2026-05-07",
+    "tags": ["chime", "alert", "angry", "sharp", "metallic"],
+    "mood": "tense",
+    "use_case": "VTuber reaction / emote",
+    "category": "character_ui",
+    "worldview": "Rabbit",
+    "variation_of": "rabbit_notify_001",
+    "primary_type": "ui",
+    "sound_type": "variant",
+    "family_id": "rabbit_notify",
+    "character": ["metallic", "punch"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.82,
+    "effects": {
+      "reverb": { "decay": 1.5, "wet": 0.25 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.6,
+      "engine": "beam",
+      "note": "G6",
+      "velocity": 0.95,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 1.8,
+        "length_mm": 32,
+        "width_mm": 10,
+        "strike_position": 0.15,
+        "exciter": "metal_mallet"
+      },
+      "comment": "鋼材+邊緣敲+最大力度 = 尖銳刺耳"
+    }
+  ],
+  "export": {
+    "filename": "rabbit_notify_var01",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 150,
+    "export_filename": "UI_Metallic_OneShot_G6"
+  }
+}

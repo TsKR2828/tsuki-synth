@@ -1,0 +1,55 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Restraint Bolt Click",
+    "id": "restraint_ui_001",
+    "author": "TsukiSynth",
+    "description": "螺栓扣位 — 極短鐵管碰觸，冷冽 UI 音",
+    "created": "2026-05-07",
+    "tags": ["ui", "click", "metal", "short", "cold"],
+    "mood": "neutral",
+    "use_case": "UI button click",
+    "category": "character_ui",
+    "worldview": "Restraint",
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "restraint_ui",
+    "character": ["metallic", "dark"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.7,
+    "effects": {
+      "reverb": { "decay": 0.3, "wet": 0.1 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.08,
+      "engine": "beam",
+      "note": "G3",
+      "velocity": 0.65,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 5.0,
+        "length_mm": 20,
+        "width_mm": 8,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      },
+      "comment": "極短鋼塊觸發，乾淨利落"
+    }
+  ],
+  "export": {
+    "filename": "restraint_ui_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 30,
+    "export_filename": "UI_Metallic_OneShot_G3"
+  }
+}

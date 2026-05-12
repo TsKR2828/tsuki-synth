@@ -63,6 +63,41 @@
       "youngs_modulus": 70e9,
       "poisson_ratio": 0.22,
       "damping": { "alpha": 0.15, "beta_air": 0.5e-7, "gamma_radiation": 1e-5 }
+    },
+    "iron": {
+      "display_name": "鐵 Iron (Cast)",
+      "density": 7200,
+      "youngs_modulus": 170e9,
+      "poisson_ratio": 0.26,
+      "damping": { "alpha": 1.5, "beta_air": 1.8e-7, "gamma_radiation": 3e-5 }
+    },
+    "nylon": {
+      "display_name": "尼龍 Nylon",
+      "density": 1150,
+      "youngs_modulus": 3e9,
+      "poisson_ratio": 0.4,
+      "damping": { "alpha": 25.0, "beta_air": 5e-7, "gamma_radiation": 3e-5 }
+    },
+    "bamboo": {
+      "display_name": "竹 Bamboo",
+      "density": 700,
+      "youngs_modulus": 18e9,
+      "poisson_ratio": 0.3,
+      "damping": { "alpha": 5.0, "beta_air": 2e-7, "gamma_radiation": 3.5e-5 }
+    },
+    "wood_birch": {
+      "display_name": "樺木 Birch",
+      "density": 650,
+      "youngs_modulus": 15e9,
+      "poisson_ratio": 0.35,
+      "damping": { "alpha": 7.0, "beta_air": 2.8e-7, "gamma_radiation": 4.2e-5 }
+    },
+    "wood_oak": {
+      "display_name": "橡木 Oak",
+      "density": 720,
+      "youngs_modulus": 12e9,
+      "poisson_ratio": 0.35,
+      "damping": { "alpha": 7.5, "beta_air": 3e-7, "gamma_radiation": 4.8e-5 }
     }
   }
 }

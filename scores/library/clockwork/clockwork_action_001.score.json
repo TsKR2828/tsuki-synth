@@ -1,0 +1,72 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Clockwork Spring Release",
+    "id": "clockwork_action_001",
+    "author": "TsukiSynth",
+    "description": "發條釋放 — 彈簧弦急速震動+金屬撞擊",
+    "created": "2026-05-07",
+    "tags": ["spring", "mechanical", "release", "fast", "tense"],
+    "mood": "tense",
+    "use_case": "VTuber reaction / emote",
+    "category": "character_ui",
+    "worldview": "Clockwork",
+    "variation_of": null,
+    "primary_type": "mechanical",
+    "sound_type": "oneshot",
+    "family_id": "clockwork_action",
+    "character": ["metallic", "punch"]
+  },
+  "global": {
+    "bpm": 140,
+    "sample_rate": 48000,
+    "master_volume": 0.82,
+    "effects": {
+      "reverb": { "decay": 0.8, "wet": 0.15 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.4,
+      "engine": "string",
+      "note": "A3",
+      "velocity": 0.85,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.5,
+        "length_mm": 40,
+        "tension_n": 200,
+        "strike_position": 0.05,
+        "exciter": "pluck",
+        "damping_override": 5.0
+      },
+      "comment": "彈簧急速釋放"
+    },
+    {
+      "time": 0.05,
+      "duration": 0.2,
+      "engine": "beam",
+      "note": "F4",
+      "velocity": 0.75,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 5.0,
+        "length_mm": 20,
+        "width_mm": 10,
+        "strike_position": 0.1,
+        "exciter": "metal_hammer"
+      },
+      "comment": "擋板撞擊"
+    }
+  ],
+  "export": {
+    "filename": "clockwork_action_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 100,
+    "export_filename": "Mechanical_Punch_OneShot_A3"
+  }
+}

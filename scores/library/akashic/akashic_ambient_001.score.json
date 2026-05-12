@@ -1,0 +1,70 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Akashic Library Drone",
+    "id": "akashic_ambient_001",
+    "author": "TsukiSynth",
+    "description": "圖書館低鳴 — 極低力度青銅板持續共鳴，作為場景底層",
+    "created": "2026-05-07",
+    "tags": ["ambient", "drone", "low", "sacred", "reverb-heavy"],
+    "mood": "mystical",
+    "use_case": "ambient background",
+    "category": "worldview_sfx",
+    "worldview": "Akashic Library",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "oneshot",
+    "family_id": "akashic_ambient",
+    "character": ["dark", "airy"]
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.70,
+    "effects": {
+      "reverb": { "decay": 12.0, "wet": 0.75 },
+      "delay": { "time_ms": 600, "feedback": 0.4, "wet": 0.2 },
+      "wall": { "distance_m": 25, "material": "stone" }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 15.0,
+      "engine": "plate",
+      "note": "C3",
+      "velocity": 0.15,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 5.0,
+        "radius_mm": 200,
+        "strike_position": 0.5,
+        "exciter": "cotton_mallet"
+      },
+      "comment": "極厚板+棉槌+中心擊 → 偶數泛音消失，純基頻嗡鳴"
+    },
+    {
+      "time": 3.0,
+      "duration": 12.0,
+      "engine": "plate",
+      "note": "G3",
+      "velocity": 0.1,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 5.0,
+        "radius_mm": 180,
+        "strike_position": 0.48,
+        "exciter": "cotton_mallet"
+      },
+      "comment": "延遲進入的五度音 — 加深空間共鳴"
+    }
+  ],
+  "export": {
+    "filename": "akashic_ambient_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 1000,
+    "export_filename": "Ambience_Dark_OneShot_C3"
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Forest Bird Call (Alarm)",
+    "id": "forest_notify_var01",
+    "author": "TsukiSynth",
+    "description": "鳥鳴警報 — 急促三連音竹管，警覺感",
+    "created": "2026-05-07",
+    "tags": ["bamboo", "alert", "fast", "triple", "tense"],
+    "mood": "tense",
+    "use_case": "VTuber reaction / emote",
+    "category": "character_ui",
+    "worldview": "Forest",
+    "variation_of": "forest_notify_001",
+    "primary_type": "ui",
+    "sound_type": "variant",
+    "family_id": "forest_notify",
+    "character": ["bright", "punch"]
+  },
+  "global": {
+    "bpm": 160,
+    "sample_rate": 48000,
+    "master_volume": 0.75,
+    "effects": {
+      "reverb": { "decay": 0.8, "wet": 0.18 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.2,
+      "engine": "beam",
+      "note": "E7",
+      "velocity": 0.75,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.5,
+        "length_mm": 15,
+        "width_mm": 6,
+        "strike_position": 0.25,
+        "exciter": "hard_plastic"
+      }
+    },
+    {
+      "time": 0.08,
+      "duration": 0.2,
+      "engine": "beam",
+      "note": "E7",
+      "velocity": 0.8,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.5,
+        "length_mm": 15,
+        "width_mm": 6,
+        "strike_position": 0.2,
+        "exciter": "hard_plastic"
+      }
+    },
+    {
+      "time": 0.16,
+      "duration": 0.3,
+      "engine": "beam",
+      "note": "G#7",
+      "velocity": 0.85,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.2,
+        "length_mm": 12,
+        "width_mm": 5,
+        "strike_position": 0.2,
+        "exciter": "hard_plastic"
+      },
+      "comment": "末尾跳高，警覺上揚"
+    }
+  ],
+  "export": {
+    "filename": "forest_notify_var01",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 100,
+    "export_filename": "UI_Bright_OneShot_E7"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Forest Leaf Sweep",
+    "id": "forest_transition_001",
+    "author": "TsukiSynth",
+    "description": "落葉掃過 — 多層木片漸入漸出，自然轉場",
+    "created": "2026-05-07",
+    "tags": ["wood", "sweep", "transition", "organic", "gentle"],
+    "mood": "calm",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Forest",
+    "variation_of": null,
+    "primary_type": "whoosh",
+    "sound_type": "oneshot",
+    "family_id": "forest_transition",
+    "character": ["airy", "soft"]
+  },
+  "global": {
+    "bpm": 70,
+    "sample_rate": 48000,
+    "master_volume": 0.72,
+    "effects": {
+      "reverb": { "decay": 2.0, "wet": 0.35 },
+      "delay": { "time_ms": 200, "feedback": 0.1, "wet": 0.05 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 1.0,
+      "engine": "beam",
+      "note": "D5",
+      "velocity": 0.35,
+      "params": {
+        "material": "wood_birch",
+        "thickness_mm": 3.0,
+        "length_mm": 60,
+        "width_mm": 20,
+        "strike_position": 0.4,
+        "exciter": "brush"
+      }
+    },
+    {
+      "time": 0.3,
+      "duration": 1.2,
+      "engine": "beam",
+      "note": "F#5",
+      "velocity": 0.4,
+      "params": {
+        "material": "wood_birch",
+        "thickness_mm": 2.5,
+        "length_mm": 50,
+        "width_mm": 18,
+        "strike_position": 0.45,
+        "exciter": "brush"
+      }
+    },
+    {
+      "time": 0.7,
+      "duration": 1.5,
+      "engine": "beam",
+      "note": "A5",
+      "velocity": 0.45,
+      "params": {
+        "material": "wood_birch",
+        "thickness_mm": 2.0,
+        "length_mm": 45,
+        "width_mm": 15,
+        "strike_position": 0.5,
+        "exciter": "brush"
+      }
+    },
+    {
+      "time": 1.2,
+      "duration": 1.0,
+      "engine": "beam",
+      "note": "E5",
+      "velocity": 0.3,
+      "params": {
+        "material": "wood_birch",
+        "thickness_mm": 3.0,
+        "length_mm": 55,
+        "width_mm": 20,
+        "strike_position": 0.35,
+        "exciter": "brush"
+      }
+    }
+  ],
+  "export": {
+    "filename": "forest_transition_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 300,
+    "export_filename": "Whoosh_Airy_OneShot_D5"
+  }
+}

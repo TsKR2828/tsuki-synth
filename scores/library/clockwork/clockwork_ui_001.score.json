@@ -1,0 +1,54 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Clockwork Gear Click",
+    "id": "clockwork_ui_001",
+    "author": "TsukiSynth",
+    "description": "齒輪咬合 — 極短黃銅碰觸，機械 UI 音",
+    "created": "2026-05-07",
+    "tags": ["ui", "click", "brass", "short", "mechanical"],
+    "mood": "neutral",
+    "use_case": "UI button click",
+    "category": "character_ui",
+    "worldview": "Clockwork",
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "clockwork_ui",
+    "character": ["metallic", "pulse"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.7,
+    "effects": {
+      "reverb": { "decay": 0.3, "wet": 0.08 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.06,
+      "engine": "beam",
+      "note": "D5",
+      "velocity": 0.6,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 4.0,
+        "length_mm": 12,
+        "width_mm": 8,
+        "strike_position": 0.1,
+        "exciter": "metal_tip"
+      }
+    }
+  ],
+  "export": {
+    "filename": "clockwork_ui_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 30,
+    "export_filename": "UI_Metallic_OneShot_D5"
+  }
+}

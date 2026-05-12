@@ -1,0 +1,88 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Ocean Tide Wash",
+    "id": "ocean_transition_001",
+    "author": "TsukiSynth",
+    "description": "潮汐湧入 — 低頻弦掃 + 金屬泛音上升，水體轉場",
+    "created": "2026-05-07",
+    "tags": ["wave", "sweep", "transition", "deep", "liquid"],
+    "mood": "mystical",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Ocean",
+    "variation_of": null,
+    "primary_type": "whoosh",
+    "sound_type": "oneshot",
+    "family_id": "ocean_transition",
+    "character": ["dark", "airy"]
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.75,
+    "effects": {
+      "reverb": { "decay": 4.0, "wet": 0.5 },
+      "delay": { "time_ms": 350, "feedback": 0.25, "wet": 0.12 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 3.0,
+      "engine": "string",
+      "note": "C2",
+      "velocity": 0.5,
+      "params": {
+        "material": "nylon",
+        "diameter_mm": 2.0,
+        "length_mm": 200,
+        "tension_n": 300,
+        "strike_position": 0.5,
+        "exciter": "bow_slow",
+        "damping_override": 0.8
+      },
+      "comment": "深海低頻弓奏基底"
+    },
+    {
+      "time": 0.5,
+      "duration": 2.5,
+      "engine": "plate",
+      "note": "G3",
+      "velocity": 0.3,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 1.0,
+        "width_mm": 150,
+        "height_mm": 150,
+        "strike_position_x": 0.5,
+        "strike_position_y": 0.5,
+        "exciter": "cotton_mallet"
+      }
+    },
+    {
+      "time": 1.5,
+      "duration": 2.0,
+      "engine": "beam",
+      "note": "D5",
+      "velocity": 0.25,
+      "params": {
+        "material": "aluminum",
+        "thickness_mm": 1.0,
+        "length_mm": 60,
+        "width_mm": 5,
+        "strike_position": 0.5,
+        "exciter": "cotton_mallet"
+      },
+      "comment": "浮上水面的泛音亮點"
+    }
+  ],
+  "export": {
+    "filename": "ocean_transition_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 500,
+    "export_filename": "Whoosh_Dark_OneShot_C2"
+  }
+}

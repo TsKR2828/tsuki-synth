@@ -11,7 +11,11 @@
     "use_case": "VTuber character action / game UI interaction",
     "category": "worldview_sfx",
     "worldview": "Restraint",
-    "variation_of": null
+    "variation_of": null,
+    "primary_type": "impact",
+    "sound_type": "oneshot",
+    "family_id": "restraint_metal_click",
+    "character": ["dark", "metallic"]
   },
   "global": {
     "bpm": 120,

@@ -1,0 +1,70 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Forest Branch Snap",
+    "id": "forest_action_001",
+    "author": "TsukiSynth",
+    "description": "斷枝 — 木材短促碎裂衝擊，動作回饋",
+    "created": "2026-05-07",
+    "tags": ["impact", "wood", "snap", "short", "organic"],
+    "mood": "neutral",
+    "use_case": "VTuber reaction / emote",
+    "category": "character_ui",
+    "worldview": "Forest",
+    "variation_of": null,
+    "primary_type": "impact",
+    "sound_type": "oneshot",
+    "family_id": "forest_action",
+    "character": ["punch", "soft"]
+  },
+  "global": {
+    "bpm": 130,
+    "sample_rate": 48000,
+    "master_volume": 0.8,
+    "effects": {
+      "reverb": { "decay": 0.6, "wet": 0.15 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.12,
+      "engine": "beam",
+      "note": "C4",
+      "velocity": 0.9,
+      "params": {
+        "material": "wood_oak",
+        "thickness_mm": 6.0,
+        "length_mm": 30,
+        "width_mm": 12,
+        "strike_position": 0.1,
+        "exciter": "hard_strike"
+      },
+      "comment": "乾燥橡木碎裂"
+    },
+    {
+      "time": 0.03,
+      "duration": 0.08,
+      "engine": "beam",
+      "note": "G4",
+      "velocity": 0.7,
+      "params": {
+        "material": "wood_oak",
+        "thickness_mm": 3.0,
+        "length_mm": 18,
+        "width_mm": 8,
+        "strike_position": 0.15,
+        "exciter": "hard_strike"
+      }
+    }
+  ],
+  "export": {
+    "filename": "forest_action_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 80,
+    "export_filename": "Impact_Punch_OneShot_C4"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Akashic Gate Open (Dark)",
+    "id": "akashic_transition_var01",
+    "author": "TsukiSynth",
+    "description": "阿卡西之門（暗色版） — 銅材取代青銅，加 overdrive 微失真",
+    "created": "2026-05-07",
+    "tags": ["bell", "mystical", "transition", "dark", "distorted"],
+    "mood": "ominous",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Akashic Library",
+    "variation_of": "akashic_transition_001",
+    "primary_type": "magic",
+    "sound_type": "variant",
+    "family_id": "akashic_transition",
+    "character": ["dark", "metallic"]
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.80,
+    "effects": {
+      "reverb": { "decay": 10.0, "wet": 0.65 },
+      "delay": { "time_ms": 400, "feedback": 0.35, "wet": 0.2 },
+      "wall": { "distance_m": 20, "material": "stone" },
+      "distortion": { "type": "overdrive", "drive": 0.3, "instability": 0.15, "wet": 0.25 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 8.0,
+      "engine": "plate",
+      "note": "C4",
+      "velocity": 0.8,
+      "params": {
+        "material": "copper",
+        "thickness_mm": 4.5,
+        "radius_mm": 160,
+        "strike_position": 0.25,
+        "exciter": "metal_mallet"
+      },
+      "comment": "銅材更暗、阻尼更高，金屬槌增加瞬態攻擊"
+    },
+    {
+      "time": 0.2,
+      "duration": 8.0,
+      "engine": "plate",
+      "note": "F#4",
+      "velocity": 0.5,
+      "params": {
+        "material": "copper",
+        "thickness_mm": 3.5,
+        "radius_mm": 100,
+        "strike_position": 0.4,
+        "exciter": "metal_mallet"
+      },
+      "comment": "三全音間隔 — 不安感，取代原版的純五度"
+    }
+  ],
+  "export": {
+    "filename": "akashic_transition_var01",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 500,
+    "export_filename": "Magic_Dark_OneShot_C4"
+  }
+}

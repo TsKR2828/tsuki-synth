@@ -24,7 +24,13 @@
         "use_case":     { "type": "string" },
         "category":     { "type": "string", "description": "e.g. transition_sfx, character_ui, worldview_sfx, bell, mechanical" },
         "worldview":    { "type": "string", "description": "World/universe this sound belongs to, e.g. Akashic Library, Rabbit, Restraint" },
-        "variation_of": { "type": ["string", "null"], "description": "ID of the parent sound if this is a variant, null otherwise" }
+        "variation_of": { "type": ["string", "null"], "description": "ID of the parent sound if this is a variant, null otherwise" },
+        "primary_type": { "type": "string", "enum": ["ambience", "creature", "magic", "ui", "whoosh", "impact", "foley", "mechanical"], "description": "Industry-standard top-level category" },
+        "sound_type":   { "type": "string", "enum": ["oneshot", "loop", "variant"], "description": "Playback type: single trigger, loopable, or derived variant" },
+        "family_id":    { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "Groups related sounds (oneshot + loop + variants share same family_id)" },
+        "character":    { "type": "array", "items": { "type": "string", "enum": ["punch", "soft", "dark", "bright", "pulse", "stomp", "airy", "metallic", "glitch"] }, "description": "Sonic texture descriptors" },
+        "loop_bpm":     { "type": "number", "minimum": 1, "description": "BPM for loop-type sounds" },
+        "loop_bars":    { "type": "integer", "minimum": 1, "description": "Bar count for loop-type sounds" }
       }
     },
     "global": {
@@ -57,6 +63,15 @@
               "properties": {
                 "distance_m": { "type": "number", "minimum": 0, "maximum": 100 },
                 "material":   { "type": "string" }
+              }
+            },
+            "distortion": {
+              "type": "object",
+              "properties": {
+                "type":        { "type": "string", "enum": ["overdrive", "bitcrush", "wavefold"], "default": "overdrive" },
+                "drive":       { "type": "number", "minimum": 0, "maximum": 1, "description": "Distortion intensity" },
+                "instability": { "type": "number", "minimum": 0, "maximum": 1, "description": "LFO-modulated drive wobble" },
+                "wet":         { "type": "number", "minimum": 0, "maximum": 1, "description": "Dry/wet mix" }
               }
             }
           }
@@ -91,6 +106,15 @@
               "damping_override": { "type": ["number", "null"], "description": "Override material damping alpha, null = use material default" }
             }
           },
+          "glide": {
+            "type": "object",
+            "description": "Portamento/slide from another pitch",
+            "properties": {
+              "from_note":    { "description": "Starting pitch as note name (C4) or MIDI number" },
+              "duration_ms":  { "type": "number", "minimum": 1, "maximum": 5000, "description": "Glide duration in milliseconds" },
+              "curve":        { "type": "string", "enum": ["linear", "exponential"], "default": "linear" }
+            }
+          },
           "comment": { "type": "string", "description": "Optional note for humans/AI explaining intent" }
         }
       }
@@ -103,8 +127,36 @@
         "format":           { "type": "string", "enum": ["wav", "flac"], "default": "wav" },
         "bit_depth":        { "type": "integer", "enum": [16, 24, 32], "default": 24 },
         "normalize":        { "type": "boolean", "default": true },
-        "tail_silence_ms":  { "type": "integer", "minimum": 0, "default": 300 }
+        "tail_silence_ms":  { "type": "integer", "minimum": 0, "default": 300 },
+        "export_filename":  { "type": "string", "description": "Industry-convention filename override (Type_Character_SoundType_Pitch)" },
+        "start_position":   { "type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Playback start offset (0=beginning, 0.5=middle)" },
+        "end_position":     { "type": "number", "minimum": 0, "maximum": 1, "default": 1, "description": "Playback end offset (1=full length)" }
       }
+    },
+    "layers": {
+      "type": "array",
+      "description": "Combine multiple score sources into a single output (alternative to events-based rendering)",
+      "items": {
+        "type": "object",
+        "required": ["source"],
+        "properties": {
+          "source": { "type": "string", "description": "Relative path to a .score.json file" },
+          "region": {
+            "type": "array",
+            "items": { "type": "number", "minimum": 0, "maximum": 1 },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[start_fraction, end_fraction] of the rendered source to use"
+          },
+          "gain": { "type": "number", "minimum": 0, "maximum": 2, "default": 1, "description": "Volume multiplier for this layer" }
+        }
+      }
+    },
+    "crossfade_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Crossfade duration between consecutive layers in milliseconds"
     }
   }
 }

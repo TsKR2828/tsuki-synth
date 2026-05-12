@@ -1,0 +1,73 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Restraint Shackle Slam",
+    "id": "restraint_action_001",
+    "author": "TsukiSynth",
+    "description": "枷鎖重擊 — 鐵板+低弦同時衝擊，暴力感",
+    "created": "2026-05-07",
+    "tags": ["impact", "slam", "heavy", "metal", "dark"],
+    "mood": "aggressive",
+    "use_case": "VTuber reaction / emote",
+    "category": "character_ui",
+    "worldview": "Restraint",
+    "variation_of": null,
+    "primary_type": "impact",
+    "sound_type": "oneshot",
+    "family_id": "restraint_action",
+    "character": ["stomp", "dark"]
+  },
+  "global": {
+    "bpm": 100,
+    "sample_rate": 48000,
+    "master_volume": 0.88,
+    "effects": {
+      "reverb": { "decay": 1.8, "wet": 0.2 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.6,
+      "engine": "plate",
+      "note": "C2",
+      "velocity": 0.95,
+      "params": {
+        "material": "iron",
+        "thickness_mm": 5.0,
+        "width_mm": 120,
+        "height_mm": 120,
+        "strike_position_x": 0.5,
+        "strike_position_y": 0.5,
+        "exciter": "metal_hammer"
+      },
+      "comment": "厚鐵板中心重擊"
+    },
+    {
+      "time": 0.02,
+      "duration": 0.5,
+      "engine": "string",
+      "note": "C1",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 2.5,
+        "length_mm": 150,
+        "tension_n": 800,
+        "strike_position": 0.1,
+        "exciter": "metal_hammer",
+        "damping_override": 8.0
+      },
+      "comment": "同步低弦衝擊，增加體感"
+    }
+  ],
+  "export": {
+    "filename": "restraint_action_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 150,
+    "export_filename": "Impact_Dark_OneShot_C2"
+  }
+}

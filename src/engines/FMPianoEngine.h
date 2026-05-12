@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../dsp/Envelope.h"
+#include "../dsp/NoiseGen.h"
 #include <cmath>
 
 /**
@@ -39,6 +40,15 @@ public:
     std::atomic<float>* pAttack     = nullptr;  // ADSR attack (ms)
     std::atomic<float>* pRelease    = nullptr;  // ADSR release (ms)
 
+    // Macro 參數指標
+    std::atomic<float>* pMacroMaterial   = nullptr;
+    std::atomic<float>* pMacroTension    = nullptr;
+    std::atomic<float>* pMacroDamping    = nullptr;
+    std::atomic<float>* pMacroStrike     = nullptr;
+    std::atomic<float>* pMacroBrightness = nullptr;
+    std::atomic<float>* pMacroBody       = nullptr;
+    std::atomic<float>* pMacroNoise      = nullptr;
+
     bool canPlaySound (juce::SynthesiserSound* s) override
     {
         return dynamic_cast<FMPianoSound*> (s) != nullptr;
@@ -59,6 +69,34 @@ public:
         float attackMs   = pAttack->load();
         float releaseMs  = pRelease->load();
 
+        // ── 讀取 Macro ──
+        float mMaterial   = pMacroMaterial   ? pMacroMaterial->load()   : 0.5f;
+        float mTension    = pMacroTension    ? pMacroTension->load()    : 0.5f;
+        float mDamping    = pMacroDamping    ? pMacroDamping->load()    : 0.5f;
+        float mStrike     = pMacroStrike     ? pMacroStrike->load()     : 0.5f;
+        float mBrightness = pMacroBrightness ? pMacroBrightness->load() : 0.5f;
+        float mBody       = pMacroBody       ? pMacroBody->load()       : 0.5f;
+        noiseMacroLevel   = pMacroNoise      ? pMacroNoise->load()      : 0.0f;
+
+        // Macro: Tension → ratio scale (0→×0.85, 0.5→×1.0, 1→×1.15)
+        ratio *= (0.85f + mTension * 0.30f);
+
+        // Macro: Material → slight ratio detune for metallic character
+        ratio *= (0.95f + mMaterial * 0.10f);
+
+        // Macro: Brightness → index scale (0→×0.3, 0.5→×1.0, 1→×1.7)
+        index *= (0.3f + mBrightness * 1.4f);
+
+        // Macro: Body → feedback scale (0→×0.4, 0.5→×1.0, 1→×1.6)
+        feedback *= (0.4f + mBody * 1.2f);
+
+        // Macro: Strike → attack time (0→faster, 0.5→neutral, 1→slower)
+        attackMs *= (0.5f + mStrike);
+
+        // Macro: Damping → release time (0→long, 0.5→neutral, 1→short)
+        float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
+        releaseMs *= dmpScale;
+
         // Phase increments
         carrierPhase   = 0.0;
         modulatorPhase = 0.0;
@@ -66,7 +104,7 @@ public:
         modulatorInc = freq * (double) ratio * juce::MathConstants<double>::twoPi / sr;
 
         // Feedback amount (scale to safe range)
-        feedbackAmount = feedback * 0.7f;
+        feedbackAmount = juce::jlimit (0.0f, 0.7f, feedback * 0.7f);
         lastModOutput  = 0.0f;
 
         // Velocity-dependent gain and brightness
@@ -92,6 +130,10 @@ public:
         ampEnv.setSustain (sustains[type]);
         ampEnv.setRelease (releaseMs * 0.001f);
         ampEnv.noteOn();
+
+        // Noise gen for macro noise injection
+        noiseGen.setType (NoiseGen::Type::White);
+        noiseGen.reset();
     }
 
     void stopNote (float, bool allowTailOff) override
@@ -135,6 +177,10 @@ public:
             float envVal = ampEnv.getNextSample();
             float sample = carrier * envVal * gain;
 
+            // Macro: Noise injection
+            if (noiseMacroLevel > 0.001f)
+                sample += noiseGen.processSample() * noiseMacroLevel * envVal * gain * 0.4f;
+
             // Phase accumulation
             carrierPhase   += carrierInc;
             modulatorPhase += modulatorInc;
@@ -171,4 +217,8 @@ private:
 
     // Amplitude envelope
     Envelope ampEnv;
+
+    // Noise (for macro noise injection)
+    NoiseGen noiseGen;
+    float noiseMacroLevel = 0.0f;
 };

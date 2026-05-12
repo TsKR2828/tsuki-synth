@@ -1,7 +1,10 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_audio_utils/juce_audio_utils.h>
 #include "physics/MaterialDB.h"
 #include "effects/EffectChain.h"
+#include "dsp/AudioFIFO.h"
+#include "PresetManager.h"
 
 class TsukiSynthProcessor : public juce::AudioProcessor
 {
@@ -21,6 +24,10 @@ public:
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
     double getTailLengthSeconds() const override { return 2.0; }
+    bool isBusesLayoutSupported (const BusesLayout& layouts) const override
+    {
+        return layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
+    }
 
     int getNumPrograms() override;
     int getCurrentProgram() override;
@@ -32,6 +39,9 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState apvts;
+    PresetManager presetManager { apvts };
+    AudioFIFO analyzerFifo { 4096 };
+    juce::MidiKeyboardState keyboardState;
     MaterialDB materialDB;
 
 private:
@@ -42,8 +52,9 @@ private:
     EffectChain effectChain;
 
     std::atomic<float>* pEngine = nullptr;
+    std::atomic<float>* pMacroOutput = nullptr;
+    juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
-    int currentProgram = 0;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout
         createParameterLayout();

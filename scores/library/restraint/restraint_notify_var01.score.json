@@ -1,0 +1,75 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Restraint Lock Click (Distorted)",
+    "id": "restraint_notify_var01",
+    "author": "TsukiSynth",
+    "description": "上鎖扣合（失真） — 原版加 bitcrush 數位感",
+    "created": "2026-05-07",
+    "tags": ["click", "metal", "notification", "distorted", "glitch"],
+    "mood": "aggressive",
+    "use_case": "VTuber reaction / emote",
+    "category": "character_ui",
+    "worldview": "Restraint",
+    "variation_of": "restraint_notify_001",
+    "primary_type": "ui",
+    "sound_type": "variant",
+    "family_id": "restraint_notify",
+    "character": ["glitch", "dark"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.78,
+    "effects": {
+      "reverb": { "decay": 0.8, "wet": 0.15 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 },
+      "distortion": {
+        "type": "bitcrush",
+        "drive": 0.6,
+        "instability": 0.15,
+        "wet": 0.7
+      }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 0.3,
+      "engine": "beam",
+      "note": "E4",
+      "velocity": 0.8,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 3.5,
+        "length_mm": 50,
+        "width_mm": 12,
+        "strike_position": 0.1,
+        "exciter": "metal_hammer"
+      }
+    },
+    {
+      "time": 0.05,
+      "duration": 0.2,
+      "engine": "beam",
+      "note": "B4",
+      "velocity": 0.55,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.5,
+        "length_mm": 35,
+        "width_mm": 10,
+        "strike_position": 0.15,
+        "exciter": "metal_hammer"
+      }
+    }
+  ],
+  "export": {
+    "filename": "restraint_notify_var01",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 100,
+    "export_filename": "UI_Glitch_OneShot_E4"
+  }
+}

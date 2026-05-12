@@ -11,7 +11,11 @@
     "use_case": "VTuber scene transition / notification",
     "category": "transition_sfx",
     "worldview": "Akashic Library",
-    "variation_of": null
+    "variation_of": null,
+    "primary_type": "magic",
+    "sound_type": "oneshot",
+    "family_id": "akashic_bell",
+    "character": ["metallic", "airy"]
   },
   "global": {
     "bpm": 60,
