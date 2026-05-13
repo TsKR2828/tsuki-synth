@@ -200,12 +200,59 @@ The code was previously built and verified on a different machine:
 
 ---
 
-## TODO (after UI enhancements)
+## Brand Asset Correction (2026-05-13)
+
+**Problem**: Logo rendering (moon crescent + wordmark + subtitle) diverged from the HTML/JSX design mockup in `uiux/`.
+
+**Root cause** (three layers):
+1. Moon crescent used `fillEllipse` + `addCentredArc` approximation instead of the original SVG path
+2. Arc approximation changes the design's curves/tension/tips — not a parameter drift, a shape replacement
+3. Wordmark font fell back to system font (Microsoft JhengHei from CJK LookAndFeel) instead of IBM Plex Sans SemiBold
+
+**Fixes** (`PluginEditor.cpp/h`, `CMakeLists.txt`):
+- Moon: `Drawable::parseSVGPath("M14 3 a8 8 0 1 0 0 14 a6 6 0 0 1 0 -14 z")` — exact path from `uiux/components.jsx`
+- Font: IBM Plex Sans SemiBold embedded via `juce_add_binary_data` → `Typeface::createSystemTypefaceFor`
+- Wordmark: `GlyphArrangement` → `Path` → gradient fill (`#f0e8d8` → `#c49a6c`), matching CSS exactly
+- All coordinates sourced from `uiux/TsukiSynth.html` CSS with inline comments tracing each value
+- `kTitleH` adjusted from 56 → 64 (CSS: 16 + 22 + 4 + 12 + 10)
+
+**New file**: `data/fonts/IBMPlexSans-SemiBold.ttf` (306 KB, OFL license)
+
+**Lesson**: Brand assets (SVG paths, fonts, colours) must be embedded directly from the design source, never approximated through code. The HTML/JSX design files in `uiux/` are the single source of truth.
+
+---
+
+## Version Roadmap
+
+| Version | Milestone | Status |
+|---------|-----------|--------|
+| v0.1 | Playable Build — 3 engines, effects, presets, analyzer, CLI | **Done** |
+| v0.2 | Polish — DAW validation, listening test, factory preset tuning | Next |
+| v0.3 | Sonic Identity — Sample Layer v0, world-themed preset library | Planned |
+| v0.4 | AI Sound Library — CLI batch export, metadata, AI workflow docs | Planned |
+| v0.5 | Advanced Sound Design — Granular mode, mod matrix lite, preset tags | Planned |
+| v1.0 | Product Release — Installer, manual, demo videos, licensing | Planned |
+
+---
+
+## TODO: v0.2 — Polish
+
+### Standalone Listening Test
+- Launch standalone, play all 3 engines via on-screen MIDI keyboard
+- Verify: each engine produces distinct timbre, effects chain audible, no clicks/pops
+- A/B compare with Web Audio prototypes (piano-play)
+
+### DAW Validation
+1. Copy VST3 to `C:\Program Files\Common Files\VST3\` (admin)
+2. DAW plugin scan → verify detected (Cubase / Reaper)
+3. MIDI input → audio output → verify all 3 engines
+4. Automation lanes → verify 56 APVTS parameters listed
+5. State save/load → verify preset recall across DAW sessions
 
 ### Factory Presets v1
 - Review and tune 12 factory presets with actual audio output
 - A/B compare with Web Audio prototypes
-- Consider adding more presets per engine
+- Consider adding more presets per engine (target: 6 per engine = 18)
 
 ### UI / UX Polish
 - Preset browser: preview/audition before loading
@@ -213,7 +260,52 @@ The code was previously built and verified on a different machine:
 - Keyboard range indicator
 - Version number display
 
-### Product Documentation
+---
+
+## TODO: v0.3 — Sonic Identity
+
+### Sample Layer v0
+- Single-shot WAV playback layer alongside modal engines
+- Use case: attack transients (hammer impact, pick noise) that physical modeling handles poorly
+- Implementation: JUCE `AudioFormatReader` + ADSR envelope, triggered alongside engine voice
+- One sample slot per engine, velocity-mapped amplitude
+
+### World-Themed Preset Library
+- 6 worlds x 6 presets = 36 factory presets (expanding from current 12)
+- Worlds: Akasha (空) / Moon (月) / Rabbit (兎) / Gear (歯車) / Water (水) / Ritual (祭)
+- Each world uses distinct material/engine combinations for cohesive sonic identity
+- Aligned with score examples in `scores/examples/`
+
+---
+
+## TODO: v0.4+ — Backlog
+
+### Planned (v0.4–v0.5)
+- CLI batch export pipeline with sound library metadata output
+- AI workflow documentation (JSON score → WAV pipeline tutorial)
+- Granular mode (stretch/freeze on sample layer)
+- Modulation matrix lite (2-4 slots, macro → any param)
+- Preset tag search UI (mood/energy/world taxonomy from `tags.json`)
+
+### Nice-to-Have (unscheduled)
+- Simple mixer (per-engine volume/pan before FX chain)
+- Pattern presets (short sequence patterns bundled with sound)
+- Sample import (user WAV for sample layer)
+- Built-in WAV export from GUI (not just CLI)
+- Theme/skin system
+- MIDI Learn
+
+### Not Planned
+These overlap with existing tools (Serum, Vital, Kontakt) and are outside TsukiSynth's core direction:
+- Wavetable synthesis — not the project's modeling approach
+- Full multisample engine — Kontakt/Decent Sampler territory
+- Spectral resynthesis — research scope, not product scope
+- Full modular routing — complexity vs. semantic parameter philosophy
+- Built-in sequencer — DAW responsibility
+
+---
+
+## Product Documentation (v1.0)
 - User manual (parameter reference, preset creation guide)
 - Sound design guide (material → timbre relationships)
 - AI Score Pipeline tutorial
@@ -226,7 +318,7 @@ The code was previously built and verified on a different machine:
 
 ---
 
-## Source File Inventory (39 files)
+## Source File Inventory (39 source files + 1 font)
 
 ```
 src/PluginProcessor.h          src/PluginProcessor.cpp
@@ -258,7 +350,29 @@ src/score/ScoreParser.h        src/score/ScoreRenderer.h
 src/score/WavWriter.h
 
 src/cli/RenderApp.cpp
+
+data/fonts/IBMPlexSans-SemiBold.ttf   <- brand wordmark font (embedded via BinaryData)
 ```
+
+## Parameter Name Reference (EN / 中文)
+
+| Parameter | 中文 | Notes |
+|-----------|------|-------|
+| Material | 材質 | Steel, Brass, Copper, Aluminum, Wood, Glass, etc. |
+| Hammer | 槌頭 | Cotton / Felt / Wood / Metal |
+| Strike Position | 敲擊位置 | 0.0 (edge) ~ 1.0 (center) |
+| Diameter | 弦徑 | String diameter in mm |
+| Strings | 弦數 | Strings per course (1–5) |
+| Detuning | 離調 | Multi-string beating spread |
+| Sub-Engine | 子引擎 | Tongue Drum / Water Gong / Custom |
+| Exciter | 激勵器 | Exciter hardness (0–3) |
+| Thickness | 厚度 | Plate/beam thickness in mm |
+| Size | 尺寸 | Beam length or plate radius in mm |
+| Pitch Glide | 音高滑移 | Water Gong immersion effect |
+| FM Ratio | FM 比率 | Carrier:modulator frequency ratio |
+| Mod Index | 調變指數 | FM modulation depth |
+| Brightness | 明亮度 | Overtone/modulation brightness |
+| Feedback | 回授 | Modulator self-feedback |
 
 ## APVTS Parameter Count
 

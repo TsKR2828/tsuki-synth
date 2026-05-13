@@ -35,6 +35,16 @@ TsukiSynth is a multi-engine software synthesizer plugin based on **Physical Mod
 
 The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-play) and other Web Audio experiments. The codebase has been rewritten in C++ / JUCE as VST3 and AU format for use in DAWs (Cubase, Logic Pro, FL Studio, Reaper, etc.).
 
+## Core Direction
+
+TsukiSynth is positioned as a **Physical Modeling synthesizer** with semantic parameters, not a general-purpose wavetable or subtractive synth. The core differentiators:
+
+- **Physical Modeling main body** — Modal Synthesis from real material properties (density, Young's modulus, damping)
+- **Semantic parameters** — "material = steel", "hammer = felt" instead of abstract oscillator/filter knobs
+- **AI JSON Score Pipeline** — AI can directly generate sound design via JSON score files
+- **VTuber / worldview sound design** — targeted at character UI sounds, world-themed sound libraries
+- **WAV export** — CLI batch rendering for sound library generation without a DAW
+
 ## Plugin Formats
 
 | Format | Target DAWs | Status |
@@ -119,6 +129,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 | Synthesis | Modal Synthesis (Physical Modeling) + FM Synthesis |
 | DSP Reference | DaisySP (MIT), STK (MIT-like) |
 | GUI | Custom LookAndFeel (arc knobs, gradient faces, engine-colored accents) |
+| Brand Assets | IBM Plex Sans SemiBold embedded via BinaryData; SVG moon path from design mockup |
 | Material Data | JSON embedded via BinaryData (density, Young's modulus, Poisson ratio, damping) |
 | Platform | Windows (MSVC), macOS (Clang) planned |
 
@@ -179,7 +190,9 @@ tsuki-synth/
 │   └── cli/
 │       └── RenderApp.cpp         <- CLI entry point (single + --batch mode)
 ├── data/
-│   └── materials.json            <- 14 material physical parameters (9 exposed in UI)
+│   ├── materials.json            <- 14 material physical parameters (9 exposed in UI)
+│   └── fonts/
+│       └── IBMPlexSans-SemiBold.ttf  <- brand wordmark font (embedded via BinaryData)
 ├── scores/
 │   ├── schema/
 │   │   └── score.schema.json     <- JSON Schema validation
@@ -229,6 +242,17 @@ cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynth_Standal
 ### Verified Build Environment
 - VS 2022 Build Tools 17.14.31, MSVC 19.44, Windows SDK 10.0.26100.0
 - CMake 4.3.2, JUCE 8.0.12
+
+## Version Roadmap
+
+| Version | Milestone | Key Items |
+|---------|-----------|-----------|
+| v0.1 | Playable Build | 3 engines, effects, presets, CLI — **Done** |
+| v0.2 | Polish | DAW validation, standalone listening test, factory preset tuning |
+| v0.3 | Sonic Identity | Sample Layer v0, world-themed preset library (6 worlds x 6) |
+| v0.4 | AI Sound Library | CLI batch export pipeline, sound library metadata, AI workflow docs |
+| v0.5 | Advanced Sound Design | Granular mode, modulation matrix lite, preset tag search |
+| v1.0 | Product Release | Installer, user manual, demo videos, commercial licensing |
 
 ## License
 

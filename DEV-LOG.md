@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-05-13 -- Logo / Brand Asset Correction
+
+### Problem
+Standalone + VST3 的 Logo（月牙 + wordmark + subtitle）與原始設計稿 (`uiux/TsukiSynth.html` + `components.jsx`) 不一致。
+
+### Root Cause (三層)
+
+1. **月牙被「概念重畫」而非沿用原始向量** — 原設計在 `uiux/components.jsx` 有明確 inline SVG (`M14 3 a8 8 0 1 0 0 14 a6 6 0 0 1 0 -14 z`)，但 JUCE 實作用 `fillEllipse()` 疊兩個圓近似。失去原設計的弧度、尖端收束與視覺重心。
+2. **`fillEllipse()` 疊月牙改掉弧度與張力** — 外弧變成標準橢圓弧、內弧像橢圓挖掉、尖端變鈍變厚、整體從品牌符號變成工程暫代圖。
+3. **Logo 字體 fallback** — 原設計指定 IBM Plex Sans SemiBold 600，但 CJK 修復 (`TsukiLookAndFeel.h`) 把預設字型改成 Microsoft JhengHei，wordmark 未明確指定 typeface 導致繼承 CJK 字型。後續嘗試用 `Segoe UI` 替代仍然不是原始字體。
+
+### 核心教訓
+HTML/SVG design 轉成 JUCE/C++ 時，把「已定稿的品牌資產」誤當成「可以重新畫的 UI 元件」。正確做法是直接回收原始資產，不是用參數去逼近。
+
+### Fixes (4 files)
+
+1. **`data/fonts/IBMPlexSans-SemiBold.ttf`** (NEW) — 嵌入原始設計字型
+2. **`CMakeLists.txt`** — 加入字型到 `juce_add_binary_data`
+3. **`src/PluginEditor.h`** — 新增 `moonPath` (juce::Path) + `wordmarkTypeface` (Typeface::Ptr) 成員
+4. **`src/PluginEditor.cpp`** — 三項修正：
+   - **月牙**：`Drawable::parseSVGPath("M14 3 a8 8 0 1 0 0 14 a6 6 0 0 1 0 -14 z")` 直接解析原始 SVG path
+   - **Wordmark**：`Typeface::createSystemTypefaceFor(BinaryData::IBMPlexSansSemiBold_ttf)` 嵌入字型，22px + gradient `#f0e8d8→#c49a6c`
+   - **定位**：所有座標直接取自 CSS（`padding: 16px 20px 10px`, `gap: 8px`, `translateY(2px)` 等），`kTitleH` 56→64 配合設計稿
+
+### Build Result
+- VST3 + Standalone: **零警告、零錯誤**
+
+---
+
 ## 2026-05-11 -- UiLocale Localization Layer + Chinese Mojibake Fix
 
 ### Problem

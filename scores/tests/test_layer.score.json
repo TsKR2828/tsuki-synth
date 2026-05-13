@@ -18,12 +18,12 @@
   },
   "layers": [
     {
-      "source": "scores/library/akashic/akashic_notify_001.score.json",
+      "source": "../library/akashic/akashic_notify_001.score.json",
       "region": [0.0, 0.8],
       "gain": 1.0
     },
     {
-      "source": "scores/library/akashic/akashic_ui_001.score.json",
+      "source": "../library/akashic/akashic_ui_001.score.json",
       "region": [0.0, 1.0],
       "gain": 0.9
     }

@@ -117,6 +117,10 @@ private:
     // Analyzer
     AnalyzerPanel analyzerPanel;
 
+    // Brand assets (loaded once in constructor)
+    juce::Path     moonPath;
+    juce::Typeface::Ptr wordmarkTypeface;
+
     // Layout bounds (stored in resized, used in paint)
     juce::Rectangle<int> macroArea_, engineArea_, effectsRow_, distRow_, analyzerRow_;
     juce::Rectangle<int> reverbBounds_, delayBounds_, compBounds_, distPanelBounds_;
