@@ -1,6 +1,6 @@
 # TsukiSynth — Development Roadmap
 
-> Last updated: 2026-05-08
+> Last updated: 2026-05-13
 >
 > This document tracks the real project status based on actual repo state,
 > not planned/estimated phases.
@@ -17,6 +17,8 @@
 | Phase 3 | Oscilloscope + 8 Macro parameters + Preset Manager | **Done** |
 | — | Build validation (VST3 + Standalone) | **Done** |
 | — | Cimbalom playability pass (hammer + material DSP) | **Done** |
+| Phase 4 | UI Enhancements (Spectrum / Preset Browser / Harmonic Editor / Responsive) | **Done** |
+| — | CLI build fix (standalone voice API + juce_dsp link) | **Done** |
 | — | DAW validation (host scan / automation / state) | Pending (no DAW on current machine) |
 
 ---
@@ -139,7 +141,7 @@
 | Visual Studio / MSVC | ✅ Build Tools 17.14.31, MSVC 19.44 |
 | VST3 output | ✅ 6.7 MB |
 | Standalone output | ✅ 6.5 MB |
-| CLI output | ❌ ScoreRenderer API mismatch |
+| CLI output | ✅ Batch render verified (4/4 scores) |
 
 ### DAW Validation (pending — needs DAW on home machine)
 
@@ -150,7 +152,7 @@
 
 ### Known Issues
 
-- CLI target (`TsukiSynthCLI`) does not compile — `ScoreRenderer.h` uses standalone voice API mismatched with JUCE `SynthesiserVoice` interface. Low priority, not blocking plugin usage.
+- (Resolved 2026-05-13) CLI target now compiles and renders — standalone DSP API added to all three engines, `juce_dsp` linked, `ScoreRenderer.h` `baseDir` member added.
 
 ### Previous Build History
 
@@ -162,29 +164,54 @@ The code was previously built and verified on a different machine:
 
 ---
 
-## TODO (after build validation)
+## Phase 4: UI Enhancements ✅ (2026-05-13)
+
+**Branch**: `feature/ui-enhancements`
+
+**CLI Build Fix:**
+- Added standalone DSP API (`prepare`, `noteOn`, `noteOff`, `isActive`, `getNextSample`) to all three engine voices
+- Added `juce::juce_dsp` to CMakeLists CLI target
+- Fixed `ScoreRenderer.h` missing `baseDir` member
+- Verified batch render: 4/4 scores rendered successfully
+
+**Spectrum Analyzer (`analyzer/SpectrumView.h`):**
+- FFT-based spectrum view (2048-sample Hann window, order 11)
+- Log-frequency X axis (30Hz–20kHz), dB Y axis (-80 to 0)
+- Smoothed magnitudes (factor 0.7), filled path rendering, 30Hz timer
+- Integrated into `AnalyzerPanel` with SCOPE/SPECTRUM toggle button
+- Sample rate forwarded from processor, accent color shared with oscilloscope
+
+**Preset Browser (`PresetBrowser.h`):**
+- Visual popup panel replacing ComboBox preset selector
+- Category filter buttons: All / Cimbalom / Chromatic / FM / User
+- Scrollable preset list with current-preset highlight
+- `PresetNameButton` with hover state and dropdown arrow
+
+**Harmonic Editor (`HarmonicEditor.h`):**
+- 8-partial ratio/amplitude visual editor for Chromatic Custom sub-engine
+- 16 new APVTS parameters: `chr_ratio_0`~`chr_ratio_7`, `chr_amp_0`~`chr_amp_7`
+- `ChromaticEngine.h` `buildCustomModes()` reads from APVTS instead of hardcoded arrays
+- Visible only when Chromatic engine + Custom sub-engine selected
+- `chr_sub_engine` parameter listener for auto-show/hide
+
+**Responsive UI:**
+- `setResizable(true, true)` with limits 420x700 ~ 900x1200
+- Existing `resized()` layout already handles flexible engine area
+
+---
+
+## TODO (after UI enhancements)
 
 ### Factory Presets v1
 - Review and tune 12 factory presets with actual audio output
 - A/B compare with Web Audio prototypes
 - Consider adding more presets per engine
 
-### Preset Browser
-- Visual preset browser in editor (currently ComboBox only)
-- Category filtering (by engine, mood, material)
-- Preview/audition before loading
-
-### Spectrum Analyzer
-- `AnalyzerPanel` already has slot for `SpectrumView`
-- FFT-based spectrum display alongside oscilloscope
-- Switchable Scope / Spectrum / Both views
-
 ### UI / UX Polish
-- Visual design refinement beyond current functional layout
-- Harmonic editor for Custom sub-engine
+- Preset browser: preview/audition before loading
 - Modal distribution visualization
-- Responsive resizing (currently fixed 540x850)
 - Keyboard range indicator
+- Version number display
 
 ### Product Documentation
 - User manual (parameter reference, preset creation guide)
@@ -199,13 +226,14 @@ The code was previously built and verified on a different machine:
 
 ---
 
-## Source File Inventory (35 files)
+## Source File Inventory (39 files)
 
 ```
 src/PluginProcessor.h          src/PluginProcessor.cpp
 src/PluginEditor.h             src/PluginEditor.cpp
 src/PresetManager.h            src/Presets.h
-src/TsukiLookAndFeel.h
+src/PresetBrowser.h            src/HarmonicEditor.h
+src/TsukiLookAndFeel.h         src/UiLocale.h
 
 src/engines/CimbalomEngine.h   src/engines/ChromaticEngine.h
 src/engines/FMPianoEngine.h
@@ -224,6 +252,7 @@ src/physics/StringModel.h      src/physics/BeamModel.h
 src/physics/PlateModel.h       src/physics/MaterialDB.h
 
 src/analyzer/AnalyzerPanel.h   src/analyzer/OscilloscopeView.h
+src/analyzer/SpectrumView.h
 
 src/score/ScoreParser.h        src/score/ScoreRenderer.h
 src/score/WavWriter.h
@@ -239,9 +268,10 @@ src/cli/RenderApp.cpp
 | Macro | 8 | macro_material, macro_tension, macro_damping, macro_strike, macro_brightness, macro_body, macro_noise, macro_output |
 | Cimbalom | 6 | cim_material, cim_hammer, cim_strike_pos, cim_diameter, cim_num_strings, cim_detuning |
 | Chromatic | 7 | chr_sub_engine, chr_material, chr_exciter, chr_strike_pos, chr_thickness, chr_size, chr_pitch_glide |
+| Chromatic Harmonics | 16 | chr_ratio_0~7, chr_amp_0~7 |
 | FM Piano | 7 | fm_type, fm_ratio, fm_index, fm_brightness, fm_feedback, fm_attack, fm_release |
 | Reverb | 2 | fx_reverb_mix, fx_reverb_size |
 | Delay | 3 | fx_delay_time, fx_delay_feedback, fx_delay_mix |
 | Compressor | 2 | fx_comp_threshold, fx_comp_ratio |
 | Distortion | 4 | fx_dist_type, fx_dist_drive, fx_dist_instability, fx_dist_mix |
-| **Total** | **40** | |
+| **Total** | **56** | |
