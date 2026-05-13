@@ -20,6 +20,18 @@
 
 static constexpr int kMaxStringsPerCourse = 5;
 
+enum class ExciterType { Cotton = 0, Felt = 1, Wood = 2, Metal = 3 };
+
+struct CimbalomParams
+{
+    std::string materialKey;
+    double strikePosition   = 0.3;
+    ExciterType exciter     = ExciterType::Wood;
+    double diameterMm       = 0.8;
+    int    numStrings       = 3;
+    float  detuningCents    = 5.0f;
+};
+
 // ─── Sound ───
 class CimbalomSound : public juce::SynthesiserSound
 {
@@ -161,7 +173,7 @@ public:
 
         // ── Exciter（槌頭噪音脈衝）──
         float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
-        setupExciter (hammer, velocity, mBrightness, mNoise, materialBright);
+        setupExciter (hammer, velocity, mBrightness, mNoise, materialBright, getSampleRate());
         damped = false;
     }
 
@@ -184,6 +196,111 @@ public:
         // CC#64 Sustain Pedal：放開時制音
         if (controller == 64 && value < 64)
             applyDamp();
+    }
+
+    // ── Standalone API (CLI / ScoreRenderer) ──
+
+    void prepare (double sr) { standaloneSR = sr; }
+
+    void noteOn (int midiNote, float velocity,
+                 const MaterialDB::Material& mat, const CimbalomParams& params)
+    {
+        double sr = standaloneSR;
+
+        float strikePos = juce::jlimit (0.05f, 0.95f,
+                                        static_cast<float> (params.strikePosition));
+        float diameter  = static_cast<float> (params.diameterMm) * 0.001f;
+        int   nStrings  = juce::jlimit (1, kMaxStringsPerCourse, params.numStrings);
+        float detCents  = params.detuningCents;
+        int   hammerIdx = juce::jlimit (0, 3, static_cast<int> (params.exciter));
+
+        StringModel::Params sp;
+        sp.length         = StringModel::lengthFromMidiNote (midiNote);
+        sp.tension        = StringModel::tensionForNote (midiNote,
+                                sp.length, diameter, mat.density);
+        sp.diameter       = diameter;
+        sp.strikePosition = strikePos;
+        sp.numModes       = 40;
+
+        auto baseModes = StringModel::calculateModes (sp, mat);
+
+        float logE = std::log10 (mat.youngsModulus);
+        float spectralTilt = juce::jlimit (0.1f, 1.0f, (logE - 7.5f) / 4.0f);
+
+        static constexpr float hCutPartial[] = { 3.0f, 8.0f, 20.0f, 60.0f };
+        float hCut = hCutPartial[hammerIdx];
+
+        if (! baseModes.empty())
+        {
+            float f1ref = baseModes[0].frequency;
+            for (auto& m : baseModes)
+            {
+                float partialN = m.frequency / f1ref;
+                m.amplitude *= std::pow (spectralTilt, (partialN - 1.0f) * 0.2f);
+                float r = partialN / hCut;
+                m.amplitude *= 1.0f / (1.0f + r * r);
+            }
+        }
+
+        numActiveStrings = nStrings;
+        float gain = 1.0f / std::sqrt ((float) numActiveStrings);
+
+        for (int s = 0; s < numActiveStrings; ++s)
+        {
+            float centOffset = 0.0f;
+            if (numActiveStrings > 1)
+                centOffset = detCents
+                    * (2.0f * (float) s / (float) (numActiveStrings - 1) - 1.0f);
+
+            float freqMul = std::pow (2.0f, centOffset / 1200.0f);
+
+            auto modes = baseModes;
+            for (auto& m : modes)
+            {
+                m.frequency *= freqMul;
+                m.amplitude *= gain;
+            }
+
+            strings[s].setSampleRate (sr);
+            strings[s].setModes (modes);
+            strings[s].excite (velocity);
+        }
+
+        float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
+        setupExciter (static_cast<float> (hammerIdx), velocity,
+                      0.5f, 0.0f, materialBright, sr);
+        damped = false;
+    }
+
+    void noteOff() { applyDamp(); }
+
+    bool isActive() const
+    {
+        for (int s = 0; s < numActiveStrings; ++s)
+            if (strings[s].isActive()) return true;
+        return exciterEnv.isActive();
+    }
+
+    float getNextSample()
+    {
+        float sample = 0.0f;
+        for (int s = 0; s < numActiveStrings; ++s)
+            if (strings[s].isActive())
+                sample += strings[s].processSample();
+
+        if (exciterEnv.isActive())
+        {
+            float noise = noiseGen.processSample();
+            noise = exciterFilter.processSample (noise);
+            sample += noise * exciterEnv.process();
+        }
+        return sample;
+    }
+
+    void scaleFrequencies (double factor)
+    {
+        for (int s = 0; s < numActiveStrings; ++s)
+            strings[s].scaleFrequencies (factor);
     }
 
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
@@ -239,35 +356,32 @@ private:
     }
 
     void setupExciter (float hardness, float velocity,
-                       float brightMacro = 0.5f, float noiseMacro = 0.0f,
-                       float materialBright = 1.0f)
+                       float brightMacro, float noiseMacro,
+                       float materialBright, double sr)
     {
-        // 槌硬度 → 噪音頻寬
-        //   0=cotton(柔) 1=felt 2=wood 3=metal(硬)
         static constexpr float cutoffs[]   = { 500.0f, 1500.0f, 4000.0f, 10000.0f };
         static constexpr float durations[] = { 0.004f, 0.003f,  0.002f,  0.001f };
 
         int idx = juce::jlimit (0, 3, (int) hardness);
 
-        // Brightness macro: scale cutoff (0→×0.3, 0.5→×1.0, 1→×1.7)
         float cutoff = cutoffs[idx] * (0.3f + brightMacro * 1.4f) * materialBright;
         cutoff = juce::jlimit (200.0f, 16000.0f, cutoff);
 
-        exciterFilter.setSampleRate (getSampleRate());
+        exciterFilter.setSampleRate (sr);
         exciterFilter.setParams (BiquadFilter::Type::LowPass, cutoff, 0.707f);
         exciterFilter.reset();
 
         noiseGen.setType (NoiseGen::Type::White);
         noiseGen.reset();
 
-        // Hammer-dependent noise: harder hammers produce louder click
         static constexpr float noiseAmps[] = { 0.10f, 0.20f, 0.40f, 0.70f };
         float amp = velocity * noiseAmps[idx] * (1.0f + noiseMacro * 3.0f);
         float durScale = juce::jlimit (0.5f, 3.0f, 1.5f / (materialBright + 0.5f));
-        exciterEnv.trigger (amp, durations[idx] * durScale, getSampleRate());
+        exciterEnv.trigger (amp, durations[idx] * durScale, sr);
     }
 
     MaterialDB*    materialDB = nullptr;
+    double         standaloneSR = 0.0;
     ModalResonator strings[kMaxStringsPerCourse];
     int            numActiveStrings = 1;
     bool           damped = false;

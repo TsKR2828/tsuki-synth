@@ -11,7 +11,7 @@ static MaterialDB globalMaterialDB;
 
 static void ensureMaterialDB()
 {
-    if (globalMaterialDB.getMaterialKeys().empty())
+    if (globalMaterialDB.size() == 0)
     {
         globalMaterialDB.loadFromString (juce::String::fromUTF8 (
             BinaryData::materials_json,

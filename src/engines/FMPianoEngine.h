@@ -21,6 +21,20 @@
  * Higher notes have faster brightness decay (natural piano behavior).
  */
 
+enum class FMPreset { Piano = 0, EPiano = 1, Vibraphone = 2, Bell = 3,
+                      Organ = 4, Pad = 5, Bass = 6, Brass = 7 };
+
+struct FMParams
+{
+    FMPreset preset    = FMPreset::Piano;
+    float    ratio     = 2.0f;
+    float    index     = 5.0f;
+    float    brightness = 0.5f;
+    float    feedback  = 0.0f;
+    float    attackMs  = 10.0f;
+    float    releaseMs = 300.0f;
+};
+
 class FMPianoSound : public juce::SynthesiserSound
 {
 public:
@@ -151,6 +165,93 @@ public:
     void pitchWheelMoved (int) override {}
     void controllerMoved (int, int) override {}
 
+    // ── Standalone API (CLI / ScoreRenderer) ──
+
+    void prepare (double sr) { standaloneSR = sr; }
+
+    void noteOn (int midiNote, float velocity, const FMParams& params)
+    {
+        double sr = standaloneSR;
+        float freq = 440.0f * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
+
+        int   type       = juce::jlimit (0, 7, static_cast<int> (params.preset));
+        float ratio      = params.ratio;
+        float index      = params.index;
+        float brightness = params.brightness;
+        float feedback   = params.feedback;
+        float attackMs   = params.attackMs;
+        float releaseMs  = params.releaseMs;
+
+        carrierPhase   = 0.0;
+        modulatorPhase = 0.0;
+        carrierInc   = freq * juce::MathConstants<double>::twoPi / sr;
+        modulatorInc = freq * (double) ratio * juce::MathConstants<double>::twoPi / sr;
+
+        feedbackAmount = juce::jlimit (0.0f, 0.7f, feedback * 0.7f);
+        lastModOutput  = 0.0f;
+
+        gain = 0.2f * velocity;
+        currentIndex = index * (0.3f + 0.7f * velocity);
+
+        float noteScaling = std::max (0.3f, 1.0f + (float) (midiNote - 60) * 0.015f);
+        float decayTime = (1.0f - brightness * 0.95f) * 4.0f + 0.01f;
+        decayTime /= noteScaling;
+        indexDecayCoeff = (float) std::exp (-6.9078 / (decayTime * sr));
+
+        static constexpr float decays[]   = { 0.8f,  1.2f,  2.0f,  3.5f, 0.01f, 0.01f, 0.3f,  0.5f  };
+        static constexpr float sustains[] = { 0.2f,  0.3f,  0.15f, 0.0f, 1.0f,  0.8f,  0.1f,  0.4f  };
+
+        ampEnv.setSampleRate (sr);
+        ampEnv.setAttack  (attackMs * 0.001f);
+        ampEnv.setDecay   (decays[type]);
+        ampEnv.setSustain (sustains[type]);
+        ampEnv.setRelease (releaseMs * 0.001f);
+        ampEnv.noteOn();
+
+        noiseMacroLevel = 0.0f;
+        noiseGen.setType (NoiseGen::Type::White);
+        noiseGen.reset();
+    }
+
+    void noteOff() { ampEnv.noteOff(); }
+
+    bool isActive() const { return ampEnv.isActive(); }
+
+    float getNextSample()
+    {
+        if (! ampEnv.isActive())
+            return 0.0f;
+
+        currentIndex *= indexDecayCoeff;
+
+        float modInput = (float) modulatorPhase + feedbackAmount * lastModOutput;
+        float modOutput = std::sin (modInput) * currentIndex;
+        lastModOutput = modOutput;
+
+        float carrier = std::sin ((float) carrierPhase + modOutput);
+        float envVal = ampEnv.getNextSample();
+        float sample = carrier * envVal * gain;
+
+        carrierPhase   += carrierInc;
+        modulatorPhase += modulatorInc;
+
+        if (carrierPhase >= juce::MathConstants<double>::twoPi * 65536.0)
+            carrierPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+        if (modulatorPhase >= juce::MathConstants<double>::twoPi * 65536.0)
+            modulatorPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+
+        return sample;
+    }
+
+    void scaleFrequency (double factor)
+    {
+        double sr = standaloneSR > 0.0 ? standaloneSR : getSampleRate();
+        double baseCarrier   = carrierInc   / (juce::MathConstants<double>::twoPi / sr);
+        double baseModulator = modulatorInc / (juce::MathConstants<double>::twoPi / sr);
+        carrierInc   = baseCarrier   * factor * juce::MathConstants<double>::twoPi / sr;
+        modulatorInc = baseModulator * factor * juce::MathConstants<double>::twoPi / sr;
+    }
+
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
                           int startSample, int numSamples) override
     {
@@ -202,6 +303,8 @@ public:
     }
 
 private:
+    double standaloneSR   = 0.0;
+
     // Oscillator state
     double carrierPhase   = 0.0;
     double modulatorPhase = 0.0;
@@ -222,3 +325,5 @@ private:
     NoiseGen noiseGen;
     float noiseMacroLevel = 0.0f;
 };
+
+using FMVoice = FMPianoVoice;

@@ -121,6 +121,13 @@ public:
             buffer[i] += processSample();
     }
 
+    void scaleFrequencies (double factor)
+    {
+        for (auto& m : modes)
+            m.phaseDelta = m.freq * (float) factor
+                           * (float) juce::MathConstants<double>::twoPi / (float) sampleRate;
+    }
+
     bool isActive() const { return active; }
 
     int getActiveModeCount() const

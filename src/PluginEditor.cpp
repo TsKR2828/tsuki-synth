@@ -27,6 +27,8 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     : AudioProcessorEditor (&p),
       proc (p),
       keyboard (p.keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard),
+      presetBrowser (p.presetManager),
+      harmonicEditor (p.apvts),
       analyzerPanel (p.analyzerFifo)
 {
     setLookAndFeel (&lnf);
@@ -74,26 +76,29 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     addAndMakeVisible (langToggle);
 
     // -- Preset ----------------------------------------------------------
-    presetCombo.setColour (juce::ComboBox::backgroundColourId, Clr::comboBg);
-    presetCombo.setColour (juce::ComboBox::outlineColourId,    Clr::comboBorder);
-    presetCombo.setColour (juce::ComboBox::textColourId,       Clr::goldLight);
-    rebuildPresetCombo();
-    presetCombo.onChange = [this]
+    presetNameBtn.onClick = [this] { showPresetBrowser(); };
+    updatePresetName();
+    addAndMakeVisible (presetNameBtn);
+
+    presetBrowser.onPresetSelected = [this] (int index)
     {
-        int id = presetCombo.getSelectedId();
-        if (id > 0)
-            proc.setCurrentProgram (id - 1);
+        proc.setCurrentProgram (index);
+        updatePresetName();
         updateDirtyIndicator();
+        hidePresetBrowser();
     };
-    addAndMakeVisible (presetCombo);
+    addChildComponent (presetBrowser);
 
     presetPrev.setComponentID ("step");
     presetPrev.setButtonText ("<");
     presetPrev.onClick = [this]
     {
-        int cur = presetCombo.getSelectedId();
-        int n   = presetCombo.getNumItems();
-        presetCombo.setSelectedId (cur > 1 ? cur - 1 : n);
+        auto& pm = proc.presetManager;
+        int cur = pm.getCurrentIndex();
+        int n   = pm.getNumPresets();
+        proc.setCurrentProgram (cur > 0 ? cur - 1 : n - 1);
+        updatePresetName();
+        updateDirtyIndicator();
     };
     addAndMakeVisible (presetPrev);
 
@@ -101,9 +106,12 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     presetNext.setButtonText (">");
     presetNext.onClick = [this]
     {
-        int cur = presetCombo.getSelectedId();
-        int n   = presetCombo.getNumItems();
-        presetCombo.setSelectedId (cur < n ? cur + 1 : 1);
+        auto& pm = proc.presetManager;
+        int cur = pm.getCurrentIndex();
+        int n   = pm.getNumPresets();
+        proc.setCurrentProgram (cur < n - 1 ? cur + 1 : 0);
+        updatePresetName();
+        updateDirtyIndicator();
     };
     addAndMakeVisible (presetNext);
 
@@ -115,7 +123,7 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     presetInit.onClick = [this]
     {
         proc.presetManager.initPreset();
-        rebuildPresetCombo();
+        updatePresetName();
         updateDirtyIndicator();
     };
     addAndMakeVisible (presetInit);
@@ -180,12 +188,17 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     // -- Analyzer --------------------------------------------------------
     addAndMakeVisible (analyzerPanel);
     analyzerPanel.setActive (true);
+    analyzerPanel.setSampleRate (proc.getSampleRate());
 
     // -- Engine listener + initial state ---------------------------------
+    addChildComponent (harmonicEditor);
     proc.apvts.addParameterListener ("engine", this);
+    proc.apvts.addParameterListener ("chr_sub_engine", this);
     updateEngine();
     updateDirtyIndicator();
     startTimerHz (5);
+    setResizable (true, true);
+    setResizeLimits (420, 700, 900, 1200);
     setSize (kW, kH);
 }
 
@@ -194,6 +207,7 @@ TsukiSynthEditor::~TsukiSynthEditor()
     stopTimer();
     setLookAndFeel (nullptr);
     proc.apvts.removeParameterListener ("engine", this);
+    proc.apvts.removeParameterListener ("chr_sub_engine", this);
 }
 
 // ========================================================================
@@ -201,7 +215,7 @@ TsukiSynthEditor::~TsukiSynthEditor()
 // ========================================================================
 void TsukiSynthEditor::parameterChanged (const juce::String& id, float)
 {
-    if (id == "engine")
+    if (id == "engine" || id == "chr_sub_engine")
         juce::MessageManager::callAsync ([this] { updateEngine(); resized(); repaint(); });
 }
 
@@ -245,6 +259,9 @@ void TsukiSynthEditor::updateEngine()
     setVisible (chrExciter,   isChr); setVisible (chrStrike,    isChr);
     setVisible (chrThickness, isChr); setVisible (chrSize,      isChr);
     setVisible (chrGlide,     isChr);
+
+    bool showHarmonic = isChr && (int) proc.apvts.getRawParameterValue ("chr_sub_engine")->load() == 2;
+    harmonicEditor.setVisible (showHarmonic);
 
     setVisible (fmType,       isFM);  setVisible (fmRatio,      isFM);
     setVisible (fmIndex,      isFM);  setVisible (fmBrightness, isFM);
@@ -428,27 +445,30 @@ void TsukiSynthEditor::refreshLocalizedText()
 // ========================================================================
 //  Preset helpers
 // ========================================================================
-void TsukiSynthEditor::rebuildPresetCombo()
+void TsukiSynthEditor::updatePresetName()
 {
-    presetCombo.clear (juce::dontSendNotification);
-
     auto& pm = proc.presetManager;
-    int nFactory = pm.getNumFactoryPresets();
-    int nUser    = pm.getNumUserPresets();
-
-    for (int i = 0; i < nFactory; ++i)
-        presetCombo.addItem (pm.getPresetName (i), i + 1);
-
-    if (nUser > 0)
-    {
-        presetCombo.addSeparator();
-        for (int i = 0; i < nUser; ++i)
-            presetCombo.addItem (pm.getPresetName (nFactory + i), nFactory + i + 1);
-    }
-
     int cur = pm.getCurrentIndex();
     if (cur >= 0 && cur < pm.getNumPresets())
-        presetCombo.setSelectedId (cur + 1, juce::dontSendNotification);
+        presetNameBtn.setName (pm.getPresetName (cur));
+    else
+        presetNameBtn.setName ("Init");
+}
+
+void TsukiSynthEditor::showPresetBrowser()
+{
+    presetBrowser.rebuild();
+    auto nameBounds = presetNameBtn.getBoundsInParent();
+    int browserH = juce::jmin (300, getHeight() - nameBounds.getBottom() - 10);
+    presetBrowser.setBounds (nameBounds.getX(), nameBounds.getBottom() + 2,
+                             nameBounds.getWidth(), browserH);
+    presetBrowser.setVisible (true);
+    presetBrowser.toFront (true);
+}
+
+void TsukiSynthEditor::hidePresetBrowser()
+{
+    presetBrowser.setVisible (false);
 }
 
 void TsukiSynthEditor::updateDirtyIndicator()
@@ -475,7 +495,7 @@ void TsukiSynthEditor::promptSavePreset()
                 if (name.isNotEmpty())
                 {
                     proc.presetManager.saveUserPreset (name);
-                    rebuildPresetCombo();
+                    updatePresetName();
                     updateDirtyIndicator();
                 }
             }
@@ -723,7 +743,7 @@ void TsukiSynthEditor::resized()
         inner.removeFromRight (4);
         dirtyLabel.setBounds (inner.removeFromRight (14));
 
-        presetCombo.setBounds (inner);
+        presetNameBtn.setBounds (inner);
     }
 
     // -- engine tabs -----------------------------------------------------
@@ -867,6 +887,12 @@ void TsukiSynthEditor::resized()
             auto [l3, r3] = takeRow();
             layoutKnobCell (l3, chrGlide);
             (void) r3;
+
+            if (harmonicEditor.isVisible())
+            {
+                auto hArea = inner.withHeight (juce::jmin (inner.getHeight(), 90));
+                harmonicEditor.setBounds (hArea);
+            }
         }
         else
         {

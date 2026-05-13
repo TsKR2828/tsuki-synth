@@ -10,6 +10,8 @@
 
 class ScoreRenderer
 {
+    using Material = MaterialDB::Material;
+
 public:
     void setMaterialDB (MaterialDB* db) { materialDB = db; }
     void setBaseDir (const juce::File& dir) { baseDir = dir; }
@@ -397,4 +399,5 @@ private:
     }
 
     MaterialDB* materialDB = nullptr;
+    juce::File  baseDir;
 };
