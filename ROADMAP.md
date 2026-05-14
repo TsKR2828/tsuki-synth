@@ -235,11 +235,24 @@ The code was previously built and verified on a different machine:
 
 ---
 
+## Anti-Click/Pop DSP Fixes (2026-05-15)
+
+**Critical bug fixed**: Water Gong pitch glide was calling `setModes()` (which resets phase/amplitude) every render block. Added `ModalResonator::updateFrequencies()` for phase-preserving frequency updates.
+
+**Voice stealing**: All three engines now apply a micro-damp (0.002s) before `clearCurrentNote()` on hard stop.
+
+**Engine switch**: Changed `allNotesOff(0, false)` → `allNotesOff(0, true)` for graceful tail-off.
+
+**FM retrigger**: `Envelope::noteOn()` no longer resets `currentLevel` to 0, avoiding click on retrigger.
+
+---
+
 ## TODO: v0.2 — Polish
 
 ### Standalone Listening Test
 - Launch standalone, play all 3 engines via on-screen MIDI keyboard
 - Verify: each engine produces distinct timbre, effects chain audible, no clicks/pops
+- **Specifically test**: Water Gong pitch glide (was broken, now fixed), retrigger clicks, engine switch clicks
 - A/B compare with Web Audio prototypes (piano-play)
 
 ### DAW Validation

@@ -185,6 +185,9 @@ public:
         }
         else
         {
+            // Quick fade-out to avoid click on voice stealing
+            for (int s = 0; s < numActiveStrings; ++s)
+                strings[s].damp (0.002f);
             clearCurrentNote();
         }
     }

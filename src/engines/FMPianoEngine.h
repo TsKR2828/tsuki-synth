@@ -158,6 +158,9 @@ public:
         }
         else
         {
+            // Force quick release to avoid click on voice stealing
+            ampEnv.setRelease (0.005f);
+            ampEnv.noteOff();
             clearCurrentNote();
         }
     }

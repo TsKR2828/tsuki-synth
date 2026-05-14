@@ -162,6 +162,7 @@ public:
         }
         else
         {
+            resonator.damp (0.002f);
             clearCurrentNote();
         }
     }
@@ -278,8 +279,7 @@ public:
                 auto glidedModes = baseModes;
                 for (auto& m : glidedModes)
                     m.frequency *= glideMul;
-                // 只更新頻率，不重新 excite
-                resonator.setModes (glidedModes);
+                resonator.updateFrequencies (glidedModes);
             }
         }
 

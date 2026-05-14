@@ -121,6 +121,18 @@ public:
             buffer[i] += processSample();
     }
 
+    /// Update mode frequencies without resetting phase or amplitude (for pitch glide)
+    void updateFrequencies (const std::vector<Mode>& newModes)
+    {
+        int n = juce::jmin ((int) modes.size(), (int) newModes.size());
+        for (int i = 0; i < n; ++i)
+        {
+            modes[(size_t) i].freq = newModes[(size_t) i].frequency;
+            modes[(size_t) i].phaseDelta = newModes[(size_t) i].frequency
+                * (float) juce::MathConstants<double>::twoPi / (float) sampleRate;
+        }
+    }
+
     void scaleFrequencies (double factor)
     {
         for (auto& m : modes)

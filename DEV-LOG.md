@@ -4,6 +4,43 @@
 
 ---
 
+## 2026-05-15 -- Anti-Click/Pop DSP Fixes + Water Gong Glide Bug
+
+### Problem
+Code review for v0.2 Standalone Listening Test found 1 critical bug and 3 click/pop risk patterns across all engines.
+
+### Critical Bug: Water Gong Pitch Glide Broken
+
+`ChromaticEngine.h:282` called `resonator.setModes(glidedModes)` every render block during glide.
+But `ModalResonator::setModes()` resets `phase = 0` and `currentAmp = 0` — killing all modes every block.
+The Water Gong glide effect was producing periodic silence or clicks instead of a smooth pitch drop.
+
+**Fix**: Added `ModalResonator::updateFrequencies()` that only updates `phaseDelta` without resetting phase or amplitude. ChromaticEngine glide now calls this instead of `setModes()`.
+
+### Click/Pop Fixes (3)
+
+1. **Voice stealing hard cut** — All three engines' `stopNote(allowTailOff=false)` called `clearCurrentNote()` with no fade-out, causing instant audio discontinuity.
+   - Cimbalom: added `strings[s].damp(0.002f)` before clear
+   - Chromatic: added `resonator.damp(0.002f)` before clear
+   - FM Piano: added `ampEnv.setRelease(0.005f)` + `ampEnv.noteOff()` before clear
+
+2. **Engine switch hard kill** — `PluginProcessor.cpp` called `allNotesOff(0, false)` on engine switch, hard-killing all voices. Changed to `allNotesOff(0, true)` for graceful tail-off.
+
+3. **FM ADSR retrigger click** — `Envelope::noteOn()` reset `currentLevel = 0.0f` instantly. Removed the reset so retrigger ramps from current level (no discontinuity).
+
+### Files Changed (6)
+- `src/dsp/ModalResonator.h` — added `updateFrequencies()` method
+- `src/dsp/Envelope.h` — removed hard reset in `noteOn()`
+- `src/engines/CimbalomEngine.h` — voice stealing damp
+- `src/engines/ChromaticEngine.h` — voice stealing damp + glide fix
+- `src/engines/FMPianoEngine.h` — voice stealing quick release
+- `src/PluginProcessor.cpp` — engine switch tail-off
+
+### Build Result
+- VST3 + Standalone + CLI: **zero warnings, zero errors**
+
+---
+
 ## 2026-05-13 -- Logo / Brand Asset Correction
 
 ### Problem

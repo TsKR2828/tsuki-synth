@@ -360,15 +360,15 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     int currentEngine = (int) pEngine->load();
 
-    // Handle engine switch: kill notes on the old engine
+    // Handle engine switch: graceful tail-off on the old engine
     if (currentEngine != lastEngine)
     {
         if (lastEngine == 0)
-            cimbalomSynth.allNotesOff (0, false);
+            cimbalomSynth.allNotesOff (0, true);
         else if (lastEngine == 1)
-            chromaticSynth.allNotesOff (0, false);
+            chromaticSynth.allNotesOff (0, true);
         else if (lastEngine == 2)
-            fmPianoSynth.allNotesOff (0, false);
+            fmPianoSynth.allNotesOff (0, true);
         lastEngine = currentEngine;
     }
 
