@@ -224,7 +224,17 @@ TsukiSynthEditor::~TsukiSynthEditor()
 void TsukiSynthEditor::parameterChanged (const juce::String& id, float)
 {
     if (id == "engine" || id == "chr_sub_engine")
-        juce::MessageManager::callAsync ([this] { updateEngine(); resized(); repaint(); });
+    {
+        auto safeThis = juce::Component::SafePointer<TsukiSynthEditor> (this);
+        juce::MessageManager::callAsync ([safeThis] {
+            if (safeThis != nullptr)
+            {
+                safeThis->updateEngine();
+                safeThis->resized();
+                safeThis->repaint();
+            }
+        });
+    }
 }
 
 void TsukiSynthEditor::timerCallback()
@@ -876,7 +886,7 @@ void TsukiSynthEditor::resized()
         auto inner = engineArea_.reduced (kSidePad, 0).withTrimmedTop (24);
         int eng = currentEngine();
 
-        int numRows = (eng == 0) ? 3 : 4;
+        int numRows = (eng == 0) ? 3 : (eng == 1 && harmonicEditor.isVisible()) ? 3 : 4;
         int gap     = 6;
         int rowH    = (inner.getHeight() - (numRows - 1) * gap) / numRows;
         int colGap  = 14;
@@ -916,18 +926,31 @@ void TsukiSynthEditor::resized()
             layoutKnobCell (l1, chrStrike);
             layoutKnobCell (r1, chrThickness);
 
-            auto [l2, r2] = takeRow();
-            layoutKnobCell (l2, chrSize);
-            layoutComboCell (r2, chrExciter);
-
-            auto [l3, r3] = takeRow();
-            layoutKnobCell (l3, chrGlide);
-            (void) r3;
-
             if (harmonicEditor.isVisible())
             {
-                auto hArea = inner.withHeight (juce::jmin (inner.getHeight(), 90));
+                // Compact: Size/Exciter/Glide in one row to make room for editor
+                auto [l2, r2] = takeRow();
+                layoutKnobCell (l2, chrSize);
+                layoutKnobCell (r2, chrGlide);
+
+                chrExciter.label.setVisible (false);
+                chrExciter.combo.setVisible (false);
+
+                auto hArea = inner.withHeight (juce::jmax (inner.getHeight(), 80));
                 harmonicEditor.setBounds (hArea);
+            }
+            else
+            {
+                chrExciter.label.setVisible (true);
+                chrExciter.combo.setVisible (true);
+
+                auto [l2, r2] = takeRow();
+                layoutKnobCell (l2, chrSize);
+                layoutComboCell (r2, chrExciter);
+
+                auto [l3, r3] = takeRow();
+                layoutKnobCell (l3, chrGlide);
+                (void) r3;
             }
         }
         else

@@ -127,9 +127,12 @@ public:
             for (const auto& ev : subScore.events)
                 renderEvent (ev, subBuffer, sr);
 
-            int regionStart = static_cast<int> (layer.regionStart * subTotalSamples);
-            int regionEnd   = static_cast<int> (layer.regionEnd * subTotalSamples);
-            int regionLen   = std::max (1, regionEnd - regionStart);
+            double rs = std::clamp (layer.regionStart, 0.0, 1.0);
+            double re = std::clamp (layer.regionEnd, 0.0, 1.0);
+            if (re < rs) std::swap (rs, re);
+            int regionStart = std::clamp (static_cast<int> (rs * subTotalSamples), 0, subTotalSamples - 1);
+            int regionEnd   = std::clamp (static_cast<int> (re * subTotalSamples), regionStart + 1, subTotalSamples);
+            int regionLen   = regionEnd - regionStart;
 
             RenderedLayer rl;
             rl.buffer.setSize (2, regionLen);
@@ -139,6 +142,13 @@ public:
             rl.numSamples = regionLen;
             renderedLayers.push_back (std::move (rl));
         }
+
+        // Clamp crossfade to shortest layer to prevent negative offsets
+        int minLayerLen = renderedLayers[0].numSamples;
+        for (const auto& rl : renderedLayers)
+            minLayerLen = std::min (minLayerLen, rl.numSamples);
+        crossfadeSamples = std::min (crossfadeSamples, minLayerLen - 1);
+        crossfadeSamples = std::max (crossfadeSamples, 0);
 
         int totalOut = 0;
         for (size_t i = 0; i < renderedLayers.size(); ++i)
@@ -219,10 +229,8 @@ private:
         }
         else if (ev.engine == "plate" || ev.engine == "water_gong")
         {
-            auto sub = (ev.engine == "water_gong") ? ChromaticSubEngine::WaterGong
-                                                   : ChromaticSubEngine::TongueDrum;
-            if (ev.engine == "plate") sub = ChromaticSubEngine::TongueDrum;
-            renderChromatic (ev, mat, midiNote, sub, startSample, endSample, buffer, sr);
+            renderChromatic (ev, mat, midiNote, ChromaticSubEngine::WaterGong,
+                             startSample, endSample, buffer, sr);
         }
         else if (ev.engine == "fm")
         {
@@ -243,10 +251,16 @@ private:
         CimbalomParams cp;
         cp.materialKey = ev.material;
         cp.strikePosition = ev.strikePosition;
+        cp.diameterMm = ev.diameterMm;
+        cp.tensionOverride = ev.tensionN;
+        cp.dampingOverride = ev.dampingOverride;
 
-        if (ev.exciter == "cotton") cp.exciter = ExciterType::Cotton;
-        else if (ev.exciter == "felt") cp.exciter = ExciterType::Felt;
-        else if (ev.exciter == "metal" || ev.exciter == "metal_mallet") cp.exciter = ExciterType::Metal;
+        if (ev.exciter == "cotton" || ev.exciter == "cotton_mallet") cp.exciter = ExciterType::Cotton;
+        else if (ev.exciter == "felt" || ev.exciter == "felt_mallet") cp.exciter = ExciterType::Felt;
+        else if (ev.exciter == "metal" || ev.exciter == "metal_mallet"
+                 || ev.exciter == "metal_hammer") cp.exciter = ExciterType::Metal;
+        else if (ev.exciter == "hard_plastic" || ev.exciter == "wood"
+                 || ev.exciter == "wood_mallet") cp.exciter = ExciterType::Wood;
         else cp.exciter = ExciterType::Wood;
 
         CimbalomVoice voice;

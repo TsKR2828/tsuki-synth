@@ -4,6 +4,46 @@
 
 ---
 
+## 2026-05-15 -- Code Audit: 8 Findings Fixed (4×P1 + 4×P2)
+
+### Context
+Post anti-click-fix comprehensive code audit identified 8 issues across Score pipeline, engine switch logic, WavWriter, and PluginEditor.
+
+### P1 — Critical Fixes (4)
+
+1. **Score plate→WaterGong mapping** (`ScoreRenderer.h`) — `"plate"` / `"water_gong"` engine strings were routed to TongueDrum sub-engine instead of WaterGong. Fixed mapping.
+
+2. **Score exciter string mismatch** (`ScoreRenderer.h`) — Schema allows `"cotton_mallet"`, `"felt_mallet"`, `"metal_hammer"`, `"wood_mallet"` but renderer only matched short forms. Added all alias variants.
+
+3. **Score tension/damping overrides not wired** (`ScoreRenderer.h` + `ScoreParser.h` + `CimbalomEngine.h`) — Score schema defined `tension_n`, `diameter_mm`, `damping_override` fields but parser didn't read them and renderer didn't forward them. Added `CimbalomParams::tensionOverride`/`dampingOverride` fields, parser parsing with `hasProperty` guards, and renderer wiring.
+
+4. **Engine switch tail-off not rendered** (`PluginProcessor.cpp` + `PluginProcessor.h`) — Previous fix changed `allNotesOff(false)` → `allNotesOff(true)` but tail-off voices were never rendered (only current engine got `renderNextBlock`). Added `tailOffEngine` tracking with dual-render: current engine renders with MIDI, old engine renders tail-off additively until all voices inactive.
+
+### P2 — Robustness Fixes (4)
+
+1. **WavWriter atomic write** (`WavWriter.h`) — Write directly to target file risked data loss on crash. Now writes to `_tmp` sibling, renames on success. Added `safeBitDepth` validation (16/24/32 only, default 24).
+
+2. **ScoreParser export defaults overwritten** (`ScoreParser.h`) — Missing JSON fields for `format`, `bit_depth`, `normalize`, `tail_silence_ms` overwrote `ScoreExport` struct defaults with zero. Added `hasProperty` guards for all export fields.
+
+3. **Harmonic editor layout overlap** (`PluginEditor.cpp`) — When Chromatic Custom sub-engine active, harmonic editor overlapped parameter row. Changed to `numRows = 3` when editor visible, compacted Size/Glide into single row, hide exciter combo.
+
+4. **PluginEditor async use-after-free** (`PluginEditor.cpp`) — `MessageManager::callAsync` lambda captured raw `this` pointer. If editor destroyed before callback fires → crash. Wrapped in `juce::Component::SafePointer`.
+
+### Files Changed (7)
+- `src/score/ScoreRenderer.h` — P1-1, P1-2, P1-3 (mapping, exciter, param wiring + region/crossfade clamp)
+- `src/score/ScoreParser.h` — P1-3, P2-2 (new fields + hasProperty guards)
+- `src/score/WavWriter.h` — P2-1 (atomic write + bitDepth validation)
+- `src/engines/CimbalomEngine.h` — P1-3 (tensionOverride / dampingOverride in CimbalomParams + noteOn)
+- `src/PluginProcessor.h` — P1-4 (tailOffEngine member)
+- `src/PluginProcessor.cpp` — P1-4 (dual-render engine switch logic)
+- `src/PluginEditor.cpp` — P2-3, P2-4 (layout fix, SafePointer)
+
+### Build Result
+- VST3 + Standalone + CLI: **zero warnings, zero errors**
+- Stats: +146 / -39 across 7 files
+
+---
+
 ## 2026-05-15 -- Anti-Click/Pop DSP Fixes + Water Gong Glide Bug
 
 ### Problem

@@ -55,6 +55,7 @@ private:
     std::atomic<float>* pMacroOutput = nullptr;
     juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
+    int tailOffEngine = -1;  // engine index still rendering tail-off after switch
 
     static juce::AudioProcessorValueTreeState::ParameterLayout
         createParameterLayout();

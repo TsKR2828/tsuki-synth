@@ -30,6 +30,8 @@ struct CimbalomParams
     double diameterMm       = 0.8;
     int    numStrings       = 3;
     float  detuningCents    = 5.0f;
+    double tensionOverride  = 0.0;   // >0 = use this tension (N), 0 = auto-calculate
+    double dampingOverride  = -1.0;  // >=0 = override material damping alpha
 };
 
 // ─── Sound ───
@@ -219,13 +221,23 @@ public:
 
         StringModel::Params sp;
         sp.length         = StringModel::lengthFromMidiNote (midiNote);
-        sp.tension        = StringModel::tensionForNote (midiNote,
-                                sp.length, diameter, mat.density);
+        sp.tension        = (params.tensionOverride > 0.0)
+                                ? static_cast<float> (params.tensionOverride)
+                                : StringModel::tensionForNote (midiNote,
+                                      sp.length, diameter, mat.density);
         sp.diameter       = diameter;
         sp.strikePosition = strikePos;
         sp.numModes       = 40;
 
         auto baseModes = StringModel::calculateModes (sp, mat);
+
+        // Apply damping override if specified
+        if (params.dampingOverride >= 0.0)
+        {
+            float alpha = static_cast<float> (params.dampingOverride);
+            for (auto& m : baseModes)
+                m.decayTime = (alpha > 0.0f) ? (1.0f / alpha) : 5.0f;
+        }
 
         float logE = std::log10 (mat.youngsModulus);
         float spectralTilt = juce::jlimit (0.1f, 1.0f, (logE - 7.5f) / 4.0f);

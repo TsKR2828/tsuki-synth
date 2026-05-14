@@ -1,6 +1,6 @@
 # TsukiSynth — Development Roadmap
 
-> Last updated: 2026-05-13
+> Last updated: 2026-05-15
 >
 > This document tracks the real project status based on actual repo state,
 > not planned/estimated phases.
@@ -244,6 +244,19 @@ The code was previously built and verified on a different machine:
 **Engine switch**: Changed `allNotesOff(0, false)` → `allNotesOff(0, true)` for graceful tail-off.
 
 **FM retrigger**: `Envelope::noteOn()` no longer resets `currentLevel` to 0, avoiding click on retrigger.
+
+---
+
+## Code Audit — 8 Findings Fixed (2026-05-15)
+
+**4× P1 (Critical):**
+- Score pipeline: plate→WaterGong mapping, exciter string aliases, tension/damping override wiring
+- Engine switch: `tailOffEngine` dual-render so old engine voices actually decay instead of being silently discarded
+
+**4× P2 (Robustness):**
+- WavWriter: atomic temp→rename write pattern + bitDepth validation
+- ScoreParser: `hasProperty` guards for export defaults
+- PluginEditor: harmonic editor layout fix + `SafePointer` for async callbacks
 
 ---
 

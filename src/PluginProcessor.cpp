@@ -363,15 +363,21 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Handle engine switch: graceful tail-off on the old engine
     if (currentEngine != lastEngine)
     {
-        if (lastEngine == 0)
-            cimbalomSynth.allNotesOff (0, true);
-        else if (lastEngine == 1)
-            chromaticSynth.allNotesOff (0, true);
-        else if (lastEngine == 2)
-            fmPianoSynth.allNotesOff (0, true);
+        if (lastEngine >= 0)
+        {
+            if (lastEngine == 0)
+                cimbalomSynth.allNotesOff (0, true);
+            else if (lastEngine == 1)
+                chromaticSynth.allNotesOff (0, true);
+            else if (lastEngine == 2)
+                fmPianoSynth.allNotesOff (0, true);
+            tailOffEngine = lastEngine;
+        }
         lastEngine = currentEngine;
     }
 
+    // Render current engine
+    juce::MidiBuffer empty;
     if (currentEngine == 0)
         cimbalomSynth.renderNextBlock (buffer, midiMessages,
                                        0, buffer.getNumSamples());
@@ -381,6 +387,29 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     else
         fmPianoSynth.renderNextBlock (buffer, midiMessages,
                                       0, buffer.getNumSamples());
+
+    // Continue rendering old engine's tail-off (no new MIDI, additive)
+    if (tailOffEngine >= 0 && tailOffEngine != currentEngine)
+    {
+        if (tailOffEngine == 0)
+            cimbalomSynth.renderNextBlock (buffer, empty, 0, buffer.getNumSamples());
+        else if (tailOffEngine == 1)
+            chromaticSynth.renderNextBlock (buffer, empty, 0, buffer.getNumSamples());
+        else if (tailOffEngine == 2)
+            fmPianoSynth.renderNextBlock (buffer, empty, 0, buffer.getNumSamples());
+
+        // Check if tail-off engine still has active voices
+        auto& tailSynth = (tailOffEngine == 0) ? cimbalomSynth
+                        : (tailOffEngine == 1) ? chromaticSynth
+                        :                        fmPianoSynth;
+        bool anyActive = false;
+        for (int v = 0; v < tailSynth.getNumVoices(); ++v)
+            if (auto* voice = tailSynth.getVoice (v))
+                if (voice->isVoiceActive())
+                    anyActive = true;
+        if (! anyActive)
+            tailOffEngine = -1;
+    }
 
     // Global effect chain: Compressor → Delay → Reverb
     effectChain.processBlock (buffer);

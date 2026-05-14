@@ -48,6 +48,9 @@ struct ScoreEvent
     double      lengthMm       = 100.0;
     double      widthMm        = 25.0;
     std::string exciter;
+    double      diameterMm     = 0.8;
+    double      tensionN       = 0.0;
+    double      dampingOverride = -1.0;  // <0 = use material default
     int         fmPreset       = 0;
 
     bool        hasGlide       = false;
@@ -182,6 +185,15 @@ public:
                         se.lengthMm = p->getProperty ("length_mm");
                         se.widthMm = p->getProperty ("width_mm");
                         se.exciter = p->getProperty ("exciter").toString().toStdString();
+                        if (p->hasProperty ("diameter_mm"))
+                            se.diameterMm = p->getProperty ("diameter_mm");
+                        if (p->hasProperty ("tension_n"))
+                            se.tensionN = p->getProperty ("tension_n");
+                        if (p->hasProperty ("damping_override"))
+                        {
+                            auto dv = p->getProperty ("damping_override");
+                            se.dampingOverride = dv.isVoid() ? -1.0 : (double) dv;
+                        }
                         if (p->hasProperty ("fm_preset"))
                             se.fmPreset = static_cast<int> ((int) p->getProperty ("fm_preset"));
                     }
@@ -203,10 +215,14 @@ public:
         if (auto* exp = obj->getProperty ("export").getDynamicObject())
         {
             score.exportSettings.filename = exp->getProperty ("filename").toString().toStdString();
-            score.exportSettings.format = exp->getProperty ("format").toString().toStdString();
-            score.exportSettings.bitDepth = static_cast<int> ((int) exp->getProperty ("bit_depth"));
-            score.exportSettings.normalize = (bool) exp->getProperty ("normalize");
-            score.exportSettings.tailSilenceMs = exp->getProperty ("tail_silence_ms");
+            if (exp->hasProperty ("format"))
+                score.exportSettings.format = exp->getProperty ("format").toString().toStdString();
+            if (exp->hasProperty ("bit_depth"))
+                score.exportSettings.bitDepth = static_cast<int> ((int) exp->getProperty ("bit_depth"));
+            if (exp->hasProperty ("normalize"))
+                score.exportSettings.normalize = (bool) exp->getProperty ("normalize");
+            if (exp->hasProperty ("tail_silence_ms"))
+                score.exportSettings.tailSilenceMs = exp->getProperty ("tail_silence_ms");
             if (exp->hasProperty ("start_position"))
                 score.exportSettings.startPosition = exp->getProperty ("start_position");
             if (exp->hasProperty ("end_position"))
