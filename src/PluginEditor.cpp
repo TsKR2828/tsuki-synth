@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include "Presets.h"
+#include "BinaryData.h"
 
 namespace
 {
@@ -9,7 +10,7 @@ namespace
     constexpr float kRotaryStart = juce::MathConstants<float>::pi * 1.25f;
     constexpr float kRotaryEnd   = juce::MathConstants<float>::pi * 2.75f;
 
-    constexpr int kTitleH    = 56;
+    constexpr int kTitleH    = 64;
     constexpr int kPresetH   = 44;
     constexpr int kTabH      = 36;
     constexpr int kMacroH    = 90;
@@ -27,9 +28,18 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     : AudioProcessorEditor (&p),
       proc (p),
       keyboard (p.keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard),
+      presetBrowser (p.presetManager),
+      harmonicEditor (p.apvts),
       analyzerPanel (p.analyzerFifo)
 {
     setLookAndFeel (&lnf);
+
+    // -- Brand assets (SVG moon + embedded font) -------------------------
+    moonPath = juce::Drawable::parseSVGPath (
+        "M14 3 a8 8 0 1 0 0 14 a6 6 0 0 1 0 -14 z");
+    wordmarkTypeface = juce::Typeface::createSystemTypefaceFor (
+        BinaryData::IBMPlexSansSemiBold_ttf,
+        BinaryData::IBMPlexSansSemiBold_ttfSize);
 
     // -- Keyboard --------------------------------------------------------
     keyboard.setColour (juce::MidiKeyboardComponent::whiteNoteColourId,     Clr::whiteKey);
@@ -74,26 +84,29 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     addAndMakeVisible (langToggle);
 
     // -- Preset ----------------------------------------------------------
-    presetCombo.setColour (juce::ComboBox::backgroundColourId, Clr::comboBg);
-    presetCombo.setColour (juce::ComboBox::outlineColourId,    Clr::comboBorder);
-    presetCombo.setColour (juce::ComboBox::textColourId,       Clr::goldLight);
-    rebuildPresetCombo();
-    presetCombo.onChange = [this]
+    presetNameBtn.onClick = [this] { showPresetBrowser(); };
+    updatePresetName();
+    addAndMakeVisible (presetNameBtn);
+
+    presetBrowser.onPresetSelected = [this] (int index)
     {
-        int id = presetCombo.getSelectedId();
-        if (id > 0)
-            proc.setCurrentProgram (id - 1);
+        proc.setCurrentProgram (index);
+        updatePresetName();
         updateDirtyIndicator();
+        hidePresetBrowser();
     };
-    addAndMakeVisible (presetCombo);
+    addChildComponent (presetBrowser);
 
     presetPrev.setComponentID ("step");
     presetPrev.setButtonText ("<");
     presetPrev.onClick = [this]
     {
-        int cur = presetCombo.getSelectedId();
-        int n   = presetCombo.getNumItems();
-        presetCombo.setSelectedId (cur > 1 ? cur - 1 : n);
+        auto& pm = proc.presetManager;
+        int cur = pm.getCurrentIndex();
+        int n   = pm.getNumPresets();
+        proc.setCurrentProgram (cur > 0 ? cur - 1 : n - 1);
+        updatePresetName();
+        updateDirtyIndicator();
     };
     addAndMakeVisible (presetPrev);
 
@@ -101,9 +114,12 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     presetNext.setButtonText (">");
     presetNext.onClick = [this]
     {
-        int cur = presetCombo.getSelectedId();
-        int n   = presetCombo.getNumItems();
-        presetCombo.setSelectedId (cur < n ? cur + 1 : 1);
+        auto& pm = proc.presetManager;
+        int cur = pm.getCurrentIndex();
+        int n   = pm.getNumPresets();
+        proc.setCurrentProgram (cur < n - 1 ? cur + 1 : 0);
+        updatePresetName();
+        updateDirtyIndicator();
     };
     addAndMakeVisible (presetNext);
 
@@ -115,7 +131,7 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     presetInit.onClick = [this]
     {
         proc.presetManager.initPreset();
-        rebuildPresetCombo();
+        updatePresetName();
         updateDirtyIndicator();
     };
     addAndMakeVisible (presetInit);
@@ -180,12 +196,17 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     // -- Analyzer --------------------------------------------------------
     addAndMakeVisible (analyzerPanel);
     analyzerPanel.setActive (true);
+    analyzerPanel.setSampleRate (proc.getSampleRate());
 
     // -- Engine listener + initial state ---------------------------------
+    addChildComponent (harmonicEditor);
     proc.apvts.addParameterListener ("engine", this);
+    proc.apvts.addParameterListener ("chr_sub_engine", this);
     updateEngine();
     updateDirtyIndicator();
     startTimerHz (5);
+    setResizable (true, true);
+    setResizeLimits (420, 700, 900, 1200);
     setSize (kW, kH);
 }
 
@@ -194,6 +215,7 @@ TsukiSynthEditor::~TsukiSynthEditor()
     stopTimer();
     setLookAndFeel (nullptr);
     proc.apvts.removeParameterListener ("engine", this);
+    proc.apvts.removeParameterListener ("chr_sub_engine", this);
 }
 
 // ========================================================================
@@ -201,7 +223,7 @@ TsukiSynthEditor::~TsukiSynthEditor()
 // ========================================================================
 void TsukiSynthEditor::parameterChanged (const juce::String& id, float)
 {
-    if (id == "engine")
+    if (id == "engine" || id == "chr_sub_engine")
         juce::MessageManager::callAsync ([this] { updateEngine(); resized(); repaint(); });
 }
 
@@ -245,6 +267,9 @@ void TsukiSynthEditor::updateEngine()
     setVisible (chrExciter,   isChr); setVisible (chrStrike,    isChr);
     setVisible (chrThickness, isChr); setVisible (chrSize,      isChr);
     setVisible (chrGlide,     isChr);
+
+    bool showHarmonic = isChr && (int) proc.apvts.getRawParameterValue ("chr_sub_engine")->load() == 2;
+    harmonicEditor.setVisible (showHarmonic);
 
     setVisible (fmType,       isFM);  setVisible (fmRatio,      isFM);
     setVisible (fmIndex,      isFM);  setVisible (fmBrightness, isFM);
@@ -428,27 +453,30 @@ void TsukiSynthEditor::refreshLocalizedText()
 // ========================================================================
 //  Preset helpers
 // ========================================================================
-void TsukiSynthEditor::rebuildPresetCombo()
+void TsukiSynthEditor::updatePresetName()
 {
-    presetCombo.clear (juce::dontSendNotification);
-
     auto& pm = proc.presetManager;
-    int nFactory = pm.getNumFactoryPresets();
-    int nUser    = pm.getNumUserPresets();
-
-    for (int i = 0; i < nFactory; ++i)
-        presetCombo.addItem (pm.getPresetName (i), i + 1);
-
-    if (nUser > 0)
-    {
-        presetCombo.addSeparator();
-        for (int i = 0; i < nUser; ++i)
-            presetCombo.addItem (pm.getPresetName (nFactory + i), nFactory + i + 1);
-    }
-
     int cur = pm.getCurrentIndex();
     if (cur >= 0 && cur < pm.getNumPresets())
-        presetCombo.setSelectedId (cur + 1, juce::dontSendNotification);
+        presetNameBtn.setName (pm.getPresetName (cur));
+    else
+        presetNameBtn.setName ("Init");
+}
+
+void TsukiSynthEditor::showPresetBrowser()
+{
+    presetBrowser.rebuild();
+    auto nameBounds = presetNameBtn.getBoundsInParent();
+    int browserH = juce::jmin (300, getHeight() - nameBounds.getBottom() - 10);
+    presetBrowser.setBounds (nameBounds.getX(), nameBounds.getBottom() + 2,
+                             nameBounds.getWidth(), browserH);
+    presetBrowser.setVisible (true);
+    presetBrowser.toFront (true);
+}
+
+void TsukiSynthEditor::hidePresetBrowser()
+{
+    presetBrowser.setVisible (false);
 }
 
 void TsukiSynthEditor::updateDirtyIndicator()
@@ -475,7 +503,7 @@ void TsukiSynthEditor::promptSavePreset()
                 if (name.isNotEmpty())
                 {
                     proc.presetManager.saveUserPreset (name);
-                    rebuildPresetCombo();
+                    updatePresetName();
                     updateDirtyIndicator();
                 }
             }
@@ -536,25 +564,51 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
     int w = getWidth();
 
     // -- title bar -------------------------------------------------------
+    //  All values from uiux/TsukiSynth.html CSS + uiux/app.jsx + uiux/components.jsx
+    //  .title-bar  { padding: 16px 20px 10px }        → padT=16, padL=20
+    //  .title-left { gap: 8px; margin-bottom: 4px }   → moonToWord=8, wordToSub=4
+    //  .title-moon { transform: translateY(2px) }      → moonDy=2
+    //  MoonIcon    size=18 color="#d4b896" opacity=0.95
+    //  .wordmark   font-size:22px letter-spacing:0.04em gradient:#f0e8d8→#c49a6c
+    //  .title-sub  font-size:10px letter-spacing:0.12em gap:7px
+    //              .sub-engine=#8899aa  .sub-pipe=#3a3a5a  .sub-tag=#667788
     {
+        constexpr int   padT = 16, padL = 20;
+        constexpr int   moonSize = 18, moonDy = 2, moonToWord = 8, wordToSub = 4;
+        constexpr int   wordH = 22, subH = 12;
+        constexpr int   wordX = padL + moonSize + moonToWord;   // 46
+        constexpr int   subY  = padT + wordH + wordToSub;       // 42
+
         g.setGradientFill (juce::ColourGradient (
             juce::Colour (0x04ffffff), 0.0f, 0.0f,
             juce::Colours::transparentBlack, 0.0f, (float) kTitleH, false));
         g.fillRect (0, 0, w, kTitleH);
 
-        // moon crescent (two overlapping circles)
-        g.setColour (Clr::goldBright.withAlpha (0.92f));
-        g.fillEllipse (18.0f, 16.0f, 15.0f, 15.0f);
-        g.setColour (juce::Colour (0xff1a1a2d));
-        g.fillEllipse (23.0f, 13.0f, 14.0f, 14.0f);
+        // moon — parseSVGPath 原始路徑, viewBox 20→18px, 位置 (padL, padT+moonDy)
+        {
+            auto scaled = moonPath;
+            scaled.applyTransform (juce::AffineTransform::scale ((float) moonSize / 20.0f)
+                                       .translated ((float) padL, (float)(padT + moonDy)));
+            g.setColour (juce::Colour (0xffd4b896).withAlpha (0.95f));
+            g.fillPath (scaled);
+        }
 
-        // wordmark
-        g.setFont (juce::Font (juce::FontOptions (20.0f)).boldened()
-                       .withExtraKerningFactor (0.04f));
-        g.setColour (Clr::goldBright);
-        g.drawText ("TsukiSynth", 38, 14, 150, 22, juce::Justification::centredLeft);
+        // wordmark — IBM Plex Sans SemiBold 22px, gradient #f0e8d8→#c49a6c
+        {
+            auto wmFont = juce::Font (juce::FontOptions ((float) wordH).withTypeface (wordmarkTypeface))
+                              .withExtraKerningFactor (0.04f);
+            juce::GlyphArrangement glyphs;
+            float baseline = (float) padT + wmFont.getAscent();
+            glyphs.addLineOfText (wmFont, "TsukiSynth", (float) wordX, baseline);
+            juce::Path textPath;
+            glyphs.createPath (textPath);
+            g.setGradientFill (juce::ColourGradient (
+                juce::Colour (0xfff0e8d8), 0.0f, (float) padT,
+                juce::Colour (0xffc49a6c), 0.0f, (float)(padT + wordH), false));
+            g.fillPath (textPath);
+        }
 
-        // subtitle
+        // subtitle — 10px, gap 7px between spans
         int eng = currentEngine();
         auto eName = eng == 0 ? juce::String ("CIMBALOM")
                    : eng == 1 ? juce::String ("CHROMATIC")
@@ -562,16 +616,18 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         auto eType = eng == 0 ? juce::String ("PHYSICAL MODELING STRING")
                    : eng == 1 ? juce::String ("BEAM / PLATE / CUSTOM")
                    :            juce::String ("FREQUENCY MODULATION");
-        auto subFont = juce::Font (juce::FontOptions (10.0f)).withExtraKerningFactor (0.1f);
+        auto subFont = juce::Font (juce::FontOptions (10.0f).withTypeface (wordmarkTypeface))
+                           .withExtraKerningFactor (0.12f);
         g.setFont (subFont);
-        g.setColour (Clr::textMid);
         auto nameStr = eName + " ENGINE";
-        g.drawText (nameStr, 40, 36, 200, 14, juce::Justification::centredLeft);
         int nameW = (int) juce::GlyphArrangement::getStringWidth (subFont, nameStr);
+
+        g.setColour (juce::Colour (0xff8899aa));
+        g.drawText (nameStr, padL, subY, nameW + 4, subH, juce::Justification::centredLeft);
         g.setColour (juce::Colour (0xff3a3a5a));
-        g.drawText ("|", 40 + nameW + 4, 36, 10, 14, juce::Justification::centred);
-        g.setColour (Clr::textDim);
-        g.drawText (eType, 40 + nameW + 16, 36, 300, 14, juce::Justification::centredLeft);
+        g.drawText ("|", padL + nameW + 7, subY, 10, subH, juce::Justification::centred);
+        g.setColour (juce::Colour (0xff667788));
+        g.drawText (eType, padL + nameW + 7 + 10 + 7, subY, 300, subH, juce::Justification::centredLeft);
 
         g.setColour (Clr::borderLight);
         g.drawHorizontalLine (kTitleH - 1, 0.0f, (float) w);
@@ -705,7 +761,7 @@ void TsukiSynthEditor::resized()
 
     // -- title (paint only) + language toggle in title bar ----------------
     area.removeFromTop (kTitleH);
-    langToggle.setBounds (w - 60, 20, 44, 18);
+    langToggle.setBounds (w - 60, 22, 44, 18);
 
     // -- preset row ------------------------------------------------------
     {
@@ -723,7 +779,7 @@ void TsukiSynthEditor::resized()
         inner.removeFromRight (4);
         dirtyLabel.setBounds (inner.removeFromRight (14));
 
-        presetCombo.setBounds (inner);
+        presetNameBtn.setBounds (inner);
     }
 
     // -- engine tabs -----------------------------------------------------
@@ -867,6 +923,12 @@ void TsukiSynthEditor::resized()
             auto [l3, r3] = takeRow();
             layoutKnobCell (l3, chrGlide);
             (void) r3;
+
+            if (harmonicEditor.isVisible())
+            {
+                auto hArea = inner.withHeight (juce::jmin (inner.getHeight(), 90));
+                harmonicEditor.setBounds (hArea);
+            }
         }
         else
         {

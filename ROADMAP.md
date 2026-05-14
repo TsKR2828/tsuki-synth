@@ -1,6 +1,6 @@
 # TsukiSynth — Development Roadmap
 
-> Last updated: 2026-05-08
+> Last updated: 2026-05-13
 >
 > This document tracks the real project status based on actual repo state,
 > not planned/estimated phases.
@@ -17,6 +17,8 @@
 | Phase 3 | Oscilloscope + 8 Macro parameters + Preset Manager | **Done** |
 | — | Build validation (VST3 + Standalone) | **Done** |
 | — | Cimbalom playability pass (hammer + material DSP) | **Done** |
+| Phase 4 | UI Enhancements (Spectrum / Preset Browser / Harmonic Editor / Responsive) | **Done** |
+| — | CLI build fix (standalone voice API + juce_dsp link) | **Done** |
 | — | DAW validation (host scan / automation / state) | Pending (no DAW on current machine) |
 
 ---
@@ -139,7 +141,7 @@
 | Visual Studio / MSVC | ✅ Build Tools 17.14.31, MSVC 19.44 |
 | VST3 output | ✅ 6.7 MB |
 | Standalone output | ✅ 6.5 MB |
-| CLI output | ❌ ScoreRenderer API mismatch |
+| CLI output | ✅ Batch render verified (4/4 scores) |
 
 ### DAW Validation (pending — needs DAW on home machine)
 
@@ -150,7 +152,7 @@
 
 ### Known Issues
 
-- CLI target (`TsukiSynthCLI`) does not compile — `ScoreRenderer.h` uses standalone voice API mismatched with JUCE `SynthesiserVoice` interface. Low priority, not blocking plugin usage.
+- (Resolved 2026-05-13) CLI target now compiles and renders — standalone DSP API added to all three engines, `juce_dsp` linked, `ScoreRenderer.h` `baseDir` member added.
 
 ### Previous Build History
 
@@ -162,31 +164,161 @@ The code was previously built and verified on a different machine:
 
 ---
 
-## TODO (after build validation)
+## Phase 4: UI Enhancements ✅ (2026-05-13)
+
+**Branch**: `feature/ui-enhancements`
+
+**CLI Build Fix:**
+- Added standalone DSP API (`prepare`, `noteOn`, `noteOff`, `isActive`, `getNextSample`) to all three engine voices
+- Added `juce::juce_dsp` to CMakeLists CLI target
+- Fixed `ScoreRenderer.h` missing `baseDir` member
+- Verified batch render: 4/4 scores rendered successfully
+
+**Spectrum Analyzer (`analyzer/SpectrumView.h`):**
+- FFT-based spectrum view (2048-sample Hann window, order 11)
+- Log-frequency X axis (30Hz–20kHz), dB Y axis (-80 to 0)
+- Smoothed magnitudes (factor 0.7), filled path rendering, 30Hz timer
+- Integrated into `AnalyzerPanel` with SCOPE/SPECTRUM toggle button
+- Sample rate forwarded from processor, accent color shared with oscilloscope
+
+**Preset Browser (`PresetBrowser.h`):**
+- Visual popup panel replacing ComboBox preset selector
+- Category filter buttons: All / Cimbalom / Chromatic / FM / User
+- Scrollable preset list with current-preset highlight
+- `PresetNameButton` with hover state and dropdown arrow
+
+**Harmonic Editor (`HarmonicEditor.h`):**
+- 8-partial ratio/amplitude visual editor for Chromatic Custom sub-engine
+- 16 new APVTS parameters: `chr_ratio_0`~`chr_ratio_7`, `chr_amp_0`~`chr_amp_7`
+- `ChromaticEngine.h` `buildCustomModes()` reads from APVTS instead of hardcoded arrays
+- Visible only when Chromatic engine + Custom sub-engine selected
+- `chr_sub_engine` parameter listener for auto-show/hide
+
+**Responsive UI:**
+- `setResizable(true, true)` with limits 420x700 ~ 900x1200
+- Existing `resized()` layout already handles flexible engine area
+
+---
+
+## Brand Asset Correction (2026-05-13)
+
+**Problem**: Logo rendering (moon crescent + wordmark + subtitle) diverged from the HTML/JSX design mockup in `uiux/`.
+
+**Root cause** (three layers):
+1. Moon crescent used `fillEllipse` + `addCentredArc` approximation instead of the original SVG path
+2. Arc approximation changes the design's curves/tension/tips — not a parameter drift, a shape replacement
+3. Wordmark font fell back to system font (Microsoft JhengHei from CJK LookAndFeel) instead of IBM Plex Sans SemiBold
+
+**Fixes** (`PluginEditor.cpp/h`, `CMakeLists.txt`):
+- Moon: `Drawable::parseSVGPath("M14 3 a8 8 0 1 0 0 14 a6 6 0 0 1 0 -14 z")` — exact path from `uiux/components.jsx`
+- Font: IBM Plex Sans SemiBold embedded via `juce_add_binary_data` → `Typeface::createSystemTypefaceFor`
+- Wordmark: `GlyphArrangement` → `Path` → gradient fill (`#f0e8d8` → `#c49a6c`), matching CSS exactly
+- All coordinates sourced from `uiux/TsukiSynth.html` CSS with inline comments tracing each value
+- `kTitleH` adjusted from 56 → 64 (CSS: 16 + 22 + 4 + 12 + 10)
+
+**New file**: `data/fonts/IBMPlexSans-SemiBold.ttf` (306 KB, OFL license)
+
+**Lesson**: Brand assets (SVG paths, fonts, colours) must be embedded directly from the design source, never approximated through code. The HTML/JSX design files in `uiux/` are the single source of truth.
+
+---
+
+## Version Roadmap
+
+| Version | Milestone | Status |
+|---------|-----------|--------|
+| v0.1 | Playable Build — 3 engines, effects, presets, analyzer, CLI | **Done** |
+| v0.2 | Polish — DAW validation, listening test, factory preset tuning | Next |
+| v0.3 | Sonic Identity — Sample Layer v0, world-themed preset library | Planned |
+| v0.4 | AI Sound Library — CLI batch export, metadata, AI workflow docs | Planned |
+| v0.5 | Advanced Sound Design — Granular mode, mod matrix lite, preset tags | Planned |
+| v1.0 | Product Release — Installer, manual, demo videos, licensing | Planned |
+
+---
+
+## Anti-Click/Pop DSP Fixes (2026-05-15)
+
+**Critical bug fixed**: Water Gong pitch glide was calling `setModes()` (which resets phase/amplitude) every render block. Added `ModalResonator::updateFrequencies()` for phase-preserving frequency updates.
+
+**Voice stealing**: All three engines now apply a micro-damp (0.002s) before `clearCurrentNote()` on hard stop.
+
+**Engine switch**: Changed `allNotesOff(0, false)` → `allNotesOff(0, true)` for graceful tail-off.
+
+**FM retrigger**: `Envelope::noteOn()` no longer resets `currentLevel` to 0, avoiding click on retrigger.
+
+---
+
+## TODO: v0.2 — Polish
+
+### Standalone Listening Test
+- Launch standalone, play all 3 engines via on-screen MIDI keyboard
+- Verify: each engine produces distinct timbre, effects chain audible, no clicks/pops
+- **Specifically test**: Water Gong pitch glide (was broken, now fixed), retrigger clicks, engine switch clicks
+- A/B compare with Web Audio prototypes (piano-play)
+
+### DAW Validation
+1. Copy VST3 to `C:\Program Files\Common Files\VST3\` (admin)
+2. DAW plugin scan → verify detected (Cubase / Reaper)
+3. MIDI input → audio output → verify all 3 engines
+4. Automation lanes → verify 56 APVTS parameters listed
+5. State save/load → verify preset recall across DAW sessions
 
 ### Factory Presets v1
 - Review and tune 12 factory presets with actual audio output
 - A/B compare with Web Audio prototypes
-- Consider adding more presets per engine
-
-### Preset Browser
-- Visual preset browser in editor (currently ComboBox only)
-- Category filtering (by engine, mood, material)
-- Preview/audition before loading
-
-### Spectrum Analyzer
-- `AnalyzerPanel` already has slot for `SpectrumView`
-- FFT-based spectrum display alongside oscilloscope
-- Switchable Scope / Spectrum / Both views
+- Consider adding more presets per engine (target: 6 per engine = 18)
 
 ### UI / UX Polish
-- Visual design refinement beyond current functional layout
-- Harmonic editor for Custom sub-engine
+- Preset browser: preview/audition before loading
 - Modal distribution visualization
-- Responsive resizing (currently fixed 540x850)
 - Keyboard range indicator
+- Version number display
 
-### Product Documentation
+---
+
+## TODO: v0.3 — Sonic Identity
+
+### Sample Layer v0
+- Single-shot WAV playback layer alongside modal engines
+- Use case: attack transients (hammer impact, pick noise) that physical modeling handles poorly
+- Implementation: JUCE `AudioFormatReader` + ADSR envelope, triggered alongside engine voice
+- One sample slot per engine, velocity-mapped amplitude
+
+### World-Themed Preset Library
+- 6 worlds x 6 presets = 36 factory presets (expanding from current 12)
+- Worlds: Akasha (空) / Moon (月) / Rabbit (兎) / Gear (歯車) / Water (水) / Ritual (祭)
+- Each world uses distinct material/engine combinations for cohesive sonic identity
+- Aligned with score examples in `scores/examples/`
+
+---
+
+## TODO: v0.4+ — Backlog
+
+### Planned (v0.4–v0.5)
+- CLI batch export pipeline with sound library metadata output
+- AI workflow documentation (JSON score → WAV pipeline tutorial)
+- Granular mode (stretch/freeze on sample layer)
+- Modulation matrix lite (2-4 slots, macro → any param)
+- Preset tag search UI (mood/energy/world taxonomy from `tags.json`)
+
+### Nice-to-Have (unscheduled)
+- Simple mixer (per-engine volume/pan before FX chain)
+- Pattern presets (short sequence patterns bundled with sound)
+- Sample import (user WAV for sample layer)
+- Built-in WAV export from GUI (not just CLI)
+- Theme/skin system
+- MIDI Learn
+
+### Not Planned
+These overlap with existing tools (Serum, Vital, Kontakt) and are outside TsukiSynth's core direction:
+- Wavetable synthesis — not the project's modeling approach
+- Full multisample engine — Kontakt/Decent Sampler territory
+- Spectral resynthesis — research scope, not product scope
+- Full modular routing — complexity vs. semantic parameter philosophy
+- Built-in sequencer — DAW responsibility
+
+---
+
+## Product Documentation (v1.0)
 - User manual (parameter reference, preset creation guide)
 - Sound design guide (material → timbre relationships)
 - AI Score Pipeline tutorial
@@ -199,13 +331,14 @@ The code was previously built and verified on a different machine:
 
 ---
 
-## Source File Inventory (35 files)
+## Source File Inventory (39 source files + 1 font)
 
 ```
 src/PluginProcessor.h          src/PluginProcessor.cpp
 src/PluginEditor.h             src/PluginEditor.cpp
 src/PresetManager.h            src/Presets.h
-src/TsukiLookAndFeel.h
+src/PresetBrowser.h            src/HarmonicEditor.h
+src/TsukiLookAndFeel.h         src/UiLocale.h
 
 src/engines/CimbalomEngine.h   src/engines/ChromaticEngine.h
 src/engines/FMPianoEngine.h
@@ -224,12 +357,35 @@ src/physics/StringModel.h      src/physics/BeamModel.h
 src/physics/PlateModel.h       src/physics/MaterialDB.h
 
 src/analyzer/AnalyzerPanel.h   src/analyzer/OscilloscopeView.h
+src/analyzer/SpectrumView.h
 
 src/score/ScoreParser.h        src/score/ScoreRenderer.h
 src/score/WavWriter.h
 
 src/cli/RenderApp.cpp
+
+data/fonts/IBMPlexSans-SemiBold.ttf   <- brand wordmark font (embedded via BinaryData)
 ```
+
+## Parameter Name Reference (EN / 中文)
+
+| Parameter | 中文 | Notes |
+|-----------|------|-------|
+| Material | 材質 | Steel, Brass, Copper, Aluminum, Wood, Glass, etc. |
+| Hammer | 槌頭 | Cotton / Felt / Wood / Metal |
+| Strike Position | 敲擊位置 | 0.0 (edge) ~ 1.0 (center) |
+| Diameter | 弦徑 | String diameter in mm |
+| Strings | 弦數 | Strings per course (1–5) |
+| Detuning | 離調 | Multi-string beating spread |
+| Sub-Engine | 子引擎 | Tongue Drum / Water Gong / Custom |
+| Exciter | 激勵器 | Exciter hardness (0–3) |
+| Thickness | 厚度 | Plate/beam thickness in mm |
+| Size | 尺寸 | Beam length or plate radius in mm |
+| Pitch Glide | 音高滑移 | Water Gong immersion effect |
+| FM Ratio | FM 比率 | Carrier:modulator frequency ratio |
+| Mod Index | 調變指數 | FM modulation depth |
+| Brightness | 明亮度 | Overtone/modulation brightness |
+| Feedback | 回授 | Modulator self-feedback |
 
 ## APVTS Parameter Count
 
@@ -239,9 +395,10 @@ src/cli/RenderApp.cpp
 | Macro | 8 | macro_material, macro_tension, macro_damping, macro_strike, macro_brightness, macro_body, macro_noise, macro_output |
 | Cimbalom | 6 | cim_material, cim_hammer, cim_strike_pos, cim_diameter, cim_num_strings, cim_detuning |
 | Chromatic | 7 | chr_sub_engine, chr_material, chr_exciter, chr_strike_pos, chr_thickness, chr_size, chr_pitch_glide |
+| Chromatic Harmonics | 16 | chr_ratio_0~7, chr_amp_0~7 |
 | FM Piano | 7 | fm_type, fm_ratio, fm_index, fm_brightness, fm_feedback, fm_attack, fm_release |
 | Reverb | 2 | fx_reverb_mix, fx_reverb_size |
 | Delay | 3 | fx_delay_time, fx_delay_feedback, fx_delay_mix |
 | Compressor | 2 | fx_comp_threshold, fx_comp_ratio |
 | Distortion | 4 | fx_dist_type, fx_dist_drive, fx_dist_instability, fx_dist_mix |
-| **Total** | **40** | |
+| **Total** | **56** | |

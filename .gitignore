@@ -17,6 +17,9 @@ xcuserdata/
 
 # JUCE (tracked as git submodule, don't ignore)
 
+# CLI render output
+exports/
+
 # Compiled plugins
 *.vst3
 *.component

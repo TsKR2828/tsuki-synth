@@ -22,17 +22,18 @@ C:\Users\User.DESKTOP-HA8VHD7\Documents\Claude\tsuki-synth\
 
 ## Current Progress
 
-**VST3 + Standalone clean build passed** on `DESKTOP-HA8VHD7` (2026-05-08).
-Tag: `playable-vst3-clean-build-v0`, branch: `phase1/juce-skeleton`.
+**Phase 0–4 complete.** Branch: `feature/ui-enhancements`.
 
-All feature code (Phase 0-3) is complete. DAW validation pending (no DAW on current machine).
+**Phase 4 (2026-05-13):**
+- CLI build fixed (standalone DSP API, juce_dsp linked, batch render 4/4 verified)
+- Spectrum Analyzer (FFT SpectrumView + SCOPE/SPECTRUM toggle)
+- Preset Browser (visual popup + category filter replacing ComboBox)
+- Harmonic Editor (8-partial ratio/amplitude, 16 new APVTS params)
+- Responsive UI (resizable 420x700 ~ 900x1200)
 
 **Cimbalom playability pass done** (2026-05-08):
-- Hammer spectral shaping: Cotton/Felt/Wood/Metal now shape modal excitation spectrum (hammerCutoffPartial 3/8/20/60)
+- Hammer spectral shaping: Cotton/Felt/Wood/Metal shape modal spectrum
 - Material spectral tilt: overtone brightness scales with log₁₀(Young's modulus)
-- Material-dependent exciter brightness and duration
-- Hammer-dependent noise amplitude (noiseAmps 0.10/0.20/0.40/0.70)
-- Standalone 聽感二次驗收待確認
 
 **Pending**:
 - Standalone 聽感二次驗收（Hammer/Material 改善後）
@@ -64,13 +65,16 @@ cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynth_Standal
 | `DEV-LOG.md` | Per-session progress log |
 | `TODO.md` | Prioritized task list |
 | `CMakeLists.txt` | JUCE submodule, VST3 + Standalone + CLI targets |
-| `src/PluginProcessor.h/.cpp` | Main processor (APVTS, 3 synths, effect chain, 40 params) |
-| `src/PluginEditor.h/.cpp` | GUI editor (540x850, tabs, preset bar, MIDI keyboard) |
+| `src/PluginProcessor.h/.cpp` | Main processor (APVTS, 3 synths, effect chain, 56 params) |
+| `src/PluginEditor.h/.cpp` | GUI editor (resizable, tabs, preset browser, MIDI keyboard) |
 | `src/engines/CimbalomEngine.h` | Cimbalom: modal string + hammer spectral shaping + material tilt |
-| `src/engines/ChromaticEngine.h` | Chromatic: tongue drum / water gong / custom |
+| `src/engines/ChromaticEngine.h` | Chromatic: tongue drum / water gong / custom (APVTS harmonics) |
 | `src/engines/FMPianoEngine.h` | FM Piano: 2-op FM, 8 sound types |
 | `src/effects/EffectChain.h` | Distortion -> Compressor -> Delay -> Reverb |
 | `src/PresetManager.h` | 12 factory + user presets, dirty tracking |
+| `src/PresetBrowser.h` | Visual preset browser popup + category filter |
+| `src/HarmonicEditor.h` | 8-partial ratio/amplitude editor |
+| `src/analyzer/SpectrumView.h` | FFT spectrum (2048-sample, log-freq, smoothed dB) |
 | `data/materials.json` | 14 material physical parameters (9 exposed in UI) |
 
 ## Engines
@@ -83,9 +87,9 @@ cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynth_Standal
 | 4 | Chromatic: Custom | Additive | User-defined ratio/amplitude |
 | 5 | FM Piano | FM Synthesis | 2-operator with self-feedback, 8 presets |
 
-## APVTS Parameters (40 total)
+## APVTS Parameters (56 total)
 
-Global(1) + Macro(8) + Cimbalom(6) + Chromatic(7) + FM(7) + Reverb(2) + Delay(3) + Compressor(2) + Distortion(4)
+Global(1) + Macro(8) + Cimbalom(6) + Chromatic(7) + Chromatic Harmonics(16) + FM(7) + Reverb(2) + Delay(3) + Compressor(2) + Distortion(4)
 
 ## Signal Chain
 
@@ -109,7 +113,6 @@ Exciter noise: cutoff × materialBright, amplitude × noiseAmps[hammer], duratio
 
 ## Known Issues
 
-- CLI target (`TsukiSynthCLI`) does not compile — `ScoreRenderer.h` voice API mismatch. Not blocking plugin.
 - DAW validation not yet done (no DAW on current machine).
 - Spruce vs Maple 頻譜傾斜接近 (0.645 vs 0.649)，可能需要進一步調整
 

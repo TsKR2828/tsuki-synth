@@ -15,6 +15,20 @@
  *   2 = Custom     （使用者自填 ratio/amplitude）
  */
 
+enum class ChromaticSubEngine { TongueDrum = 0, WaterGong = 1, CustomHarmonics = 2 };
+
+struct ChromaticParams
+{
+    std::string materialKey;
+    ChromaticSubEngine subEngine = ChromaticSubEngine::TongueDrum;
+    double strikePosition   = 0.3;
+    double plateRadius      = 0.12;
+    double plateThickness   = 0.003;
+    double tongueLength     = 0.1;
+    double tongueWidth      = 0.025;
+    double tongueThickness  = 0.003;
+};
+
 class ChromaticSound : public juce::SynthesiserSound
 {
 public:
@@ -35,6 +49,10 @@ public:
     std::atomic<float>* pSize          = nullptr;   // mm (beam=length, plate=radius)
     std::atomic<float>* pExciter       = nullptr;   // 0~3
     std::atomic<float>* pPitchGlide    = nullptr;   // water gong 水位效果 (0~1)
+
+    // Custom harmonic parameters (8 ratios + 8 amplitudes)
+    std::atomic<float>* pRatio[8] = {};
+    std::atomic<float>* pAmp[8]   = {};
 
     // Macro 參數指標
     std::atomic<float>* pMacroMaterial   = nullptr;
@@ -128,7 +146,7 @@ public:
         resonator.setModes (modes);
         resonator.excite (velocity);
 
-        setupExciter (exciter, velocity, mBrightness, mNoise);
+        setupExciter (exciter, velocity, mBrightness, mNoise, getSampleRate());
         damped = false;
     }
 
@@ -144,6 +162,7 @@ public:
         }
         else
         {
+            resonator.damp (0.002f);
             clearCurrentNote();
         }
     }
@@ -156,6 +175,93 @@ public:
             resonator.damp (0.08f);
             damped = true;
         }
+    }
+
+    // ── Standalone API (CLI / ScoreRenderer) ──
+
+    void prepare (double sr) { standaloneSR = sr; }
+
+    void noteOn (int midiNote, float velocity,
+                 const MaterialDB::Material& mat, const ChromaticParams& params)
+    {
+        double sr = standaloneSR;
+
+        int subEng = static_cast<int> (params.subEngine);
+        float strikePos = juce::jlimit (0.0f, 1.0f,
+                                        static_cast<float> (params.strikePosition));
+        float thickness = static_cast<float> (params.plateThickness > 0.0001
+                                              ? params.plateThickness : 0.003);
+
+        glideAmount = 0.0f;
+
+        std::vector<ModalResonator::Mode> modes;
+
+        if (subEng == 0)
+        {
+            BeamModel::Params bp;
+            bp.length    = BeamModel::lengthFromMidiNote (midiNote);
+            bp.width     = static_cast<float> (params.tongueWidth);
+            bp.thickness = static_cast<float> (params.tongueThickness);
+            bp.strikePosition = strikePos;
+            bp.numModes  = 12;
+            modes = BeamModel::calculateModes (bp, mat);
+        }
+        else if (subEng == 1)
+        {
+            PlateModel::Params pp;
+            pp.radius    = PlateModel::radiusFromMidiNote (midiNote);
+            pp.thickness = thickness;
+            pp.strikePosition = strikePos;
+            pp.numModes  = 20;
+            modes = PlateModel::calculateModes (pp, mat);
+        }
+        else
+        {
+            modes = buildCustomModes (midiNote, mat);
+        }
+
+        baseModes = modes;
+        glidePhase = 0.0f;
+
+        resonator.setSampleRate (sr);
+        resonator.setModes (modes);
+        resonator.excite (velocity);
+
+        setupExciter (0.0f, velocity, 0.5f, 0.0f, sr);
+        damped = false;
+    }
+
+    void noteOff()
+    {
+        if (! damped)
+        {
+            resonator.damp (0.08f);
+            damped = true;
+        }
+    }
+
+    bool isActive() const
+    {
+        return resonator.isActive() || exciterEnv.isActive();
+    }
+
+    float getNextSample()
+    {
+        float sample = 0.0f;
+        if (resonator.isActive())
+            sample += resonator.processSample();
+        if (exciterEnv.isActive())
+        {
+            float noise = noiseGen.processSample();
+            noise = exciterFilter.processSample (noise);
+            sample += noise * exciterEnv.process();
+        }
+        return sample;
+    }
+
+    void scaleFrequencies (double factor)
+    {
+        resonator.scaleFrequencies (factor);
     }
 
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
@@ -173,8 +279,7 @@ public:
                 auto glidedModes = baseModes;
                 for (auto& m : glidedModes)
                     m.frequency *= glideMul;
-                // 只更新頻率，不重新 excite
-                resonator.setModes (glidedModes);
+                resonator.updateFrequencies (glidedModes);
             }
         }
 
@@ -214,9 +319,9 @@ private:
         int midiNote, const MaterialDB::Material& mat)
     {
         float fundamental = 440.0f * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
-        // 預設 custom ratios（模擬原型 chromatic-synth.html 的手動泛音）
-        static constexpr float ratios[]  = { 1.0f, 2.0f, 3.0f, 4.16f, 5.43f, 6.98f, 8.21f, 10.0f };
-        static constexpr float amps[]    = { 1.0f, 0.7f, 0.5f, 0.35f, 0.25f, 0.18f, 0.12f, 0.08f };
+
+        static constexpr float defRatios[] = { 1.0f, 2.0f, 3.0f, 4.16f, 5.43f, 6.98f, 8.21f, 10.0f };
+        static constexpr float defAmps[]   = { 1.0f, 0.7f, 0.5f, 0.35f, 0.25f, 0.18f, 0.12f, 0.08f };
         static constexpr int count = 8;
 
         std::vector<ModalResonator::Mode> modes;
@@ -226,19 +331,24 @@ private:
 
         for (int i = 0; i < count; ++i)
         {
-            float freq = fundamental * ratios[i];
+            float ratio = pRatio[i] ? pRatio[i]->load() : defRatios[i];
+            float amp   = pAmp[i]   ? pAmp[i]->load()   : defAmps[i];
+
+            if (amp < 0.01f) continue;
+
+            float freq = fundamental * ratio;
             if (freq > 20000.0f) break;
 
             float decayDenom = alpha + beta * freq * freq + gamma * freq;
             float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 5.0f;
 
-            modes.push_back ({ freq, amps[i], decay });
+            modes.push_back ({ freq, amp, decay });
         }
         return modes;
     }
 
     void setupExciter (float hardness, float velocity,
-                       float brightMacro = 0.5f, float noiseMacro = 0.0f)
+                       float brightMacro, float noiseMacro, double sr)
     {
         static constexpr float cutoffs[]   = { 500.0f, 1500.0f, 4000.0f, 10000.0f };
         static constexpr float durations[] = { 0.005f, 0.003f,  0.002f,  0.001f };
@@ -247,17 +357,18 @@ private:
         float cutoff = cutoffs[idx] * (0.3f + brightMacro * 1.4f);
         cutoff = juce::jlimit (200.0f, 16000.0f, cutoff);
 
-        exciterFilter.setSampleRate (getSampleRate());
+        exciterFilter.setSampleRate (sr);
         exciterFilter.setParams (BiquadFilter::Type::LowPass, cutoff, 0.707f);
         exciterFilter.reset();
         noiseGen.setType (NoiseGen::Type::White);
         noiseGen.reset();
 
         float amp = velocity * 0.2f * (1.0f + noiseMacro * 3.0f);
-        exciterEnv.trigger (amp, durations[idx], getSampleRate());
+        exciterEnv.trigger (amp, durations[idx], sr);
     }
 
     MaterialDB*    materialDB = nullptr;
+    double         standaloneSR = 0.0;
     ModalResonator resonator;
     bool           damped = false;
 

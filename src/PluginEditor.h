@@ -4,6 +4,8 @@
 #include "TsukiLookAndFeel.h"
 #include "UiLocale.h"
 #include "analyzer/AnalyzerPanel.h"
+#include "PresetBrowser.h"
+#include "HarmonicEditor.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 
 class TsukiSynthEditor : public juce::AudioProcessorEditor,
@@ -72,14 +74,17 @@ private:
     juce::TextButton langToggle;
 
     // Preset
-    juce::ComboBox   presetCombo;
+    PresetNameButton presetNameBtn;
+    PresetBrowser    presetBrowser;
     juce::TextButton presetPrev, presetNext;
     juce::TextButton presetSave { "Save" };
     juce::TextButton presetInit { "Init" };
     juce::Label      dirtyLabel;
-    void rebuildPresetCombo();
+    void updatePresetName();
     void updateDirtyIndicator();
     void promptSavePreset();
+    void showPresetBrowser();
+    void hidePresetBrowser();
 
     // Cimbalom
     ComboParam  cimMaterial, cimHammer;
@@ -106,8 +111,15 @@ private:
     ComboParam  distType;
     KnobParam   distDrive, distInstability, distMix;
 
+    // Harmonic editor (Chromatic Custom sub-engine)
+    HarmonicEditor harmonicEditor;
+
     // Analyzer
     AnalyzerPanel analyzerPanel;
+
+    // Brand assets (loaded once in constructor)
+    juce::Path     moonPath;
+    juce::Typeface::Ptr wordmarkTypeface;
 
     // Layout bounds (stored in resized, used in paint)
     juce::Rectangle<int> macroArea_, engineArea_, effectsRow_, distRow_, analyzerRow_;

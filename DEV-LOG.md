@@ -4,6 +4,72 @@
 
 ---
 
+## 2026-05-15 -- Anti-Click/Pop DSP Fixes + Water Gong Glide Bug
+
+### Problem
+Code review for v0.2 Standalone Listening Test found 1 critical bug and 3 click/pop risk patterns across all engines.
+
+### Critical Bug: Water Gong Pitch Glide Broken
+
+`ChromaticEngine.h:282` called `resonator.setModes(glidedModes)` every render block during glide.
+But `ModalResonator::setModes()` resets `phase = 0` and `currentAmp = 0` — killing all modes every block.
+The Water Gong glide effect was producing periodic silence or clicks instead of a smooth pitch drop.
+
+**Fix**: Added `ModalResonator::updateFrequencies()` that only updates `phaseDelta` without resetting phase or amplitude. ChromaticEngine glide now calls this instead of `setModes()`.
+
+### Click/Pop Fixes (3)
+
+1. **Voice stealing hard cut** — All three engines' `stopNote(allowTailOff=false)` called `clearCurrentNote()` with no fade-out, causing instant audio discontinuity.
+   - Cimbalom: added `strings[s].damp(0.002f)` before clear
+   - Chromatic: added `resonator.damp(0.002f)` before clear
+   - FM Piano: added `ampEnv.setRelease(0.005f)` + `ampEnv.noteOff()` before clear
+
+2. **Engine switch hard kill** — `PluginProcessor.cpp` called `allNotesOff(0, false)` on engine switch, hard-killing all voices. Changed to `allNotesOff(0, true)` for graceful tail-off.
+
+3. **FM ADSR retrigger click** — `Envelope::noteOn()` reset `currentLevel = 0.0f` instantly. Removed the reset so retrigger ramps from current level (no discontinuity).
+
+### Files Changed (6)
+- `src/dsp/ModalResonator.h` — added `updateFrequencies()` method
+- `src/dsp/Envelope.h` — removed hard reset in `noteOn()`
+- `src/engines/CimbalomEngine.h` — voice stealing damp
+- `src/engines/ChromaticEngine.h` — voice stealing damp + glide fix
+- `src/engines/FMPianoEngine.h` — voice stealing quick release
+- `src/PluginProcessor.cpp` — engine switch tail-off
+
+### Build Result
+- VST3 + Standalone + CLI: **zero warnings, zero errors**
+
+---
+
+## 2026-05-13 -- Logo / Brand Asset Correction
+
+### Problem
+Standalone + VST3 的 Logo（月牙 + wordmark + subtitle）與原始設計稿 (`uiux/TsukiSynth.html` + `components.jsx`) 不一致。
+
+### Root Cause (三層)
+
+1. **月牙被「概念重畫」而非沿用原始向量** — 原設計在 `uiux/components.jsx` 有明確 inline SVG (`M14 3 a8 8 0 1 0 0 14 a6 6 0 0 1 0 -14 z`)，但 JUCE 實作用 `fillEllipse()` 疊兩個圓近似。失去原設計的弧度、尖端收束與視覺重心。
+2. **`fillEllipse()` 疊月牙改掉弧度與張力** — 外弧變成標準橢圓弧、內弧像橢圓挖掉、尖端變鈍變厚、整體從品牌符號變成工程暫代圖。
+3. **Logo 字體 fallback** — 原設計指定 IBM Plex Sans SemiBold 600，但 CJK 修復 (`TsukiLookAndFeel.h`) 把預設字型改成 Microsoft JhengHei，wordmark 未明確指定 typeface 導致繼承 CJK 字型。後續嘗試用 `Segoe UI` 替代仍然不是原始字體。
+
+### 核心教訓
+HTML/SVG design 轉成 JUCE/C++ 時，把「已定稿的品牌資產」誤當成「可以重新畫的 UI 元件」。正確做法是直接回收原始資產，不是用參數去逼近。
+
+### Fixes (4 files)
+
+1. **`data/fonts/IBMPlexSans-SemiBold.ttf`** (NEW) — 嵌入原始設計字型
+2. **`CMakeLists.txt`** — 加入字型到 `juce_add_binary_data`
+3. **`src/PluginEditor.h`** — 新增 `moonPath` (juce::Path) + `wordmarkTypeface` (Typeface::Ptr) 成員
+4. **`src/PluginEditor.cpp`** — 三項修正：
+   - **月牙**：`Drawable::parseSVGPath("M14 3 a8 8 0 1 0 0 14 a6 6 0 0 1 0 -14 z")` 直接解析原始 SVG path
+   - **Wordmark**：`Typeface::createSystemTypefaceFor(BinaryData::IBMPlexSansSemiBold_ttf)` 嵌入字型，22px + gradient `#f0e8d8→#c49a6c`
+   - **定位**：所有座標直接取自 CSS（`padding: 16px 20px 10px`, `gap: 8px`, `translateY(2px)` 等），`kTitleH` 56→64 配合設計稿
+
+### Build Result
+- VST3 + Standalone: **零警告、零錯誤**
+
+---
+
 ## 2026-05-11 -- UiLocale Localization Layer + Chinese Mojibake Fix
 
 ### Problem

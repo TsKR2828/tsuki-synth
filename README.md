@@ -15,9 +15,13 @@
 | Oscilloscope (lock-free FIFO) | Done |
 | 8 Macro Parameters (DAW automation) | Done |
 | Preset Manager (12 factory + user save/load) | Done |
+| Preset Browser (visual popup + category filter) | Done |
+| Spectrum Analyzer (FFT, log-freq, toggle) | Done |
+| Harmonic Editor (Custom sub-engine, 8 partials) | Done |
+| Responsive UI (resizable 420x700 ~ 900x1200) | Done |
 | Custom LookAndFeel (dark theme, arc knobs) | Done |
 | MIDI Keyboard (on-screen) | Done |
-| CLI Score Renderer (JSON -> WAV) | Code done (CLI build broken — known issue) |
+| CLI Score Renderer (JSON -> WAV) | Done (batch render verified, 4/4 scores) |
 | **VST3 build** | **Passed** (6.7 MB, zero warnings) |
 | **Standalone build** | **Passed** (6.5 MB, zero warnings) |
 | **Standalone launch** | **Passed** (smoke test OK) |
@@ -30,6 +34,16 @@
 TsukiSynth is a multi-engine software synthesizer plugin based on **Physical Modeling (Modal Synthesis)**. The core engines calculate vibration mode frequencies and decay from physical parameters (material density, plate thickness, string length, strike position), producing physically correct synthesized timbres.
 
 The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-play) and other Web Audio experiments. The codebase has been rewritten in C++ / JUCE as VST3 and AU format for use in DAWs (Cubase, Logic Pro, FL Studio, Reaper, etc.).
+
+## Core Direction
+
+TsukiSynth is positioned as a **Physical Modeling synthesizer** with semantic parameters, not a general-purpose wavetable or subtractive synth. The core differentiators:
+
+- **Physical Modeling main body** — Modal Synthesis from real material properties (density, Young's modulus, damping)
+- **Semantic parameters** — "material = steel", "hammer = felt" instead of abstract oscillator/filter knobs
+- **AI JSON Score Pipeline** — AI can directly generate sound design via JSON score files
+- **VTuber / worldview sound design** — targeted at character UI sounds, world-themed sound libraries
+- **WAV export** — CLI batch rendering for sound library generation without a DAW
 
 ## Plugin Formats
 
@@ -54,8 +68,8 @@ The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-pl
 - Three-in-one engine: Tongue Drum / Water Gong / Custom Harmonics
 - Tongue Drum: **Euler-Bernoulli beam model** (non-harmonic modes from eigenvalue formula)
 - Water Gong: **Kirchhoff circular plate model** (Bessel function zeros + pitch glide simulating water immersion)
-- Custom: user-editable ratio/amplitude manual mode
-- Parameters: sub-engine, material, exciter hardness, strike position, thickness, size, pitch glide
+- Custom: user-editable ratio/amplitude via **Harmonic Editor** (8 partials with ratio + amplitude sliders, APVTS-driven)
+- Parameters: sub-engine, material, exciter hardness, strike position, thickness, size, pitch glide, 8 harmonic ratios, 8 harmonic amplitudes
 
 ### Engine 3: FM Piano — Frequency Modulation
 - 2-operator FM synthesis with self-feedback
@@ -94,12 +108,13 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 ## Analyzer
 
 - **Oscilloscope**: Lock-free AudioFIFO pipeline, 30Hz refresh, zero-crossing trigger, engine-colored waveform
-- **Spectrum**: Planned (AnalyzerPanel has slot for SpectrumView)
+- **Spectrum**: FFT-based SpectrumView (2048-sample Hann window, log-frequency 30Hz–20kHz, smoothed dB), toggle button in AnalyzerPanel
 
 ## Preset System
 
 - 12 factory presets (4 per engine) compiled as static arrays
 - User preset save/load (`.tsukipreset` XML files in AppData)
+- **Visual preset browser** with category filters (All / Cimbalom / Chromatic / FM / User)
 - DAW program change compatible (VST3 `getNumPrograms` / `setCurrentProgram`)
 - Dirty indicator + Init button
 - Full state serialization (`getStateInformation` / `setStateInformation`)
@@ -114,6 +129,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 | Synthesis | Modal Synthesis (Physical Modeling) + FM Synthesis |
 | DSP Reference | DaisySP (MIT), STK (MIT-like) |
 | GUI | Custom LookAndFeel (arc knobs, gradient faces, engine-colored accents) |
+| Brand Assets | IBM Plex Sans SemiBold embedded via BinaryData; SVG moon path from design mockup |
 | Material Data | JSON embedded via BinaryData (density, Young's modulus, Poisson ratio, damping) |
 | Platform | Windows (MSVC), macOS (Clang) planned |
 
@@ -132,8 +148,11 @@ tsuki-synth/
 │   ├── PluginProcessor.h/.cpp    <- main audio processor (APVTS, 3 synths, effect chain)
 │   ├── PluginEditor.h/.cpp       <- GUI editor (540x850, tab switching, preset bar)
 │   ├── PresetManager.h           <- factory + user preset load/save/dirty tracking
+│   ├── PresetBrowser.h           <- visual preset browser popup + category filter
 │   ├── Presets.h                 <- 12 factory preset definitions (static arrays)
+│   ├── HarmonicEditor.h          <- 8-partial ratio/amplitude editor (Custom sub-engine)
 │   ├── TsukiLookAndFeel.h        <- custom knobs, combos, tabs, colour palette
+│   ├── UiLocale.h                <- EN/中文 localization layer
 │   ├── engines/
 │   │   ├── CimbalomEngine.h      <- string physical modeling (40 modes, multi-string beating)
 │   │   ├── ChromaticEngine.h     <- beam/plate/custom three-in-one
@@ -161,8 +180,9 @@ tsuki-synth/
 │   │   ├── PlateModel.h          <- Kirchhoff circular plate (Bessel zeros)
 │   │   └── MaterialDB.h          <- JSON material database loader (9 materials)
 │   ├── analyzer/
-│   │   ├── AnalyzerPanel.h       <- container for oscilloscope + future spectrum
-│   │   └── OscilloscopeView.h    <- real-time waveform display (30Hz, zero-crossing trigger)
+│   │   ├── AnalyzerPanel.h       <- container with scope/spectrum toggle
+│   │   ├── OscilloscopeView.h    <- real-time waveform display (30Hz, zero-crossing trigger)
+│   │   └── SpectrumView.h        <- FFT spectrum (2048-sample, log-freq, smoothed dB)
 │   ├── score/
 │   │   ├── ScoreParser.h         <- JSON score file parser
 │   │   ├── ScoreRenderer.h       <- offline rendering using DSP engines
@@ -170,7 +190,9 @@ tsuki-synth/
 │   └── cli/
 │       └── RenderApp.cpp         <- CLI entry point (single + --batch mode)
 ├── data/
-│   └── materials.json            <- 14 material physical parameters (9 exposed in UI)
+│   ├── materials.json            <- 14 material physical parameters (9 exposed in UI)
+│   └── fonts/
+│       └── IBMPlexSans-SemiBold.ttf  <- brand wordmark font (embedded via BinaryData)
 ├── scores/
 │   ├── schema/
 │   │   └── score.schema.json     <- JSON Schema validation
@@ -220,6 +242,17 @@ cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynth_Standal
 ### Verified Build Environment
 - VS 2022 Build Tools 17.14.31, MSVC 19.44, Windows SDK 10.0.26100.0
 - CMake 4.3.2, JUCE 8.0.12
+
+## Version Roadmap
+
+| Version | Milestone | Key Items |
+|---------|-----------|-----------|
+| v0.1 | Playable Build | 3 engines, effects, presets, CLI — **Done** |
+| v0.2 | Polish | DAW validation, standalone listening test, factory preset tuning |
+| v0.3 | Sonic Identity | Sample Layer v0, world-themed preset library (6 worlds x 6) |
+| v0.4 | AI Sound Library | CLI batch export pipeline, sound library metadata, AI workflow docs |
+| v0.5 | Advanced Sound Design | Granular mode, modulation matrix lite, preset tag search |
+| v1.0 | Product Release | Installer, user manual, demo videos, commercial licensing |
 
 ## License
 

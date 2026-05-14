@@ -92,6 +92,22 @@ TsukiSynthProcessor::createParameterLayout()
         PID { "chr_pitch_glide", 1 }, "Pitch Glide",
         Range (0.0f, 1.0f, 0.01f), 0.0f));
 
+    {
+        static constexpr float defRatios[] = { 1.0f, 2.0f, 3.0f, 4.16f, 5.43f, 6.98f, 8.21f, 10.0f };
+        static constexpr float defAmps[]   = { 1.0f, 0.7f, 0.5f, 0.35f, 0.25f, 0.18f, 0.12f, 0.08f };
+        for (int i = 0; i < 8; ++i)
+        {
+            chr->addChild (std::make_unique<FloatParam> (
+                PID { "chr_ratio_" + juce::String (i), 1 },
+                "Harmonic " + juce::String (i + 1) + " Ratio",
+                Range (0.25f, 20.0f, 0.01f, 0.4f), defRatios[i]));
+            chr->addChild (std::make_unique<FloatParam> (
+                PID { "chr_amp_" + juce::String (i), 1 },
+                "Harmonic " + juce::String (i + 1) + " Amp",
+                Range (0.0f, 1.0f, 0.01f), defAmps[i]));
+        }
+    }
+
     auto fm = std::make_unique<Group> ("fm", "FM Piano", "|");
     fm->addChild (std::make_unique<ChoiceParam> (
         PID { "fm_type", 1 }, "Sound Type",
@@ -212,6 +228,14 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         auto* pExciter    = apvts.getRawParameterValue ("chr_exciter");
         auto* pPitchGlide = apvts.getRawParameterValue ("chr_pitch_glide");
 
+        std::atomic<float>* ratioParams[8] = {};
+        std::atomic<float>* ampParams[8]   = {};
+        for (int h = 0; h < 8; ++h)
+        {
+            ratioParams[h] = apvts.getRawParameterValue ("chr_ratio_" + juce::String (h));
+            ampParams[h]   = apvts.getRawParameterValue ("chr_amp_"   + juce::String (h));
+        }
+
         chromaticSynth.addSound (new ChromaticSound());
 
         for (int i = 0; i < 16; ++i)
@@ -225,6 +249,11 @@ TsukiSynthProcessor::TsukiSynthProcessor()
             voice->pSize       = pSize;
             voice->pExciter    = pExciter;
             voice->pPitchGlide = pPitchGlide;
+            for (int h = 0; h < 8; ++h)
+            {
+                voice->pRatio[h] = ratioParams[h];
+                voice->pAmp[h]   = ampParams[h];
+            }
             chromaticSynth.addVoice (voice);
         }
     }
@@ -331,15 +360,15 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     int currentEngine = (int) pEngine->load();
 
-    // Handle engine switch: kill notes on the old engine
+    // Handle engine switch: graceful tail-off on the old engine
     if (currentEngine != lastEngine)
     {
         if (lastEngine == 0)
-            cimbalomSynth.allNotesOff (0, false);
+            cimbalomSynth.allNotesOff (0, true);
         else if (lastEngine == 1)
-            chromaticSynth.allNotesOff (0, false);
+            chromaticSynth.allNotesOff (0, true);
         else if (lastEngine == 2)
-            fmPianoSynth.allNotesOff (0, false);
+            fmPianoSynth.allNotesOff (0, true);
         lastEngine = currentEngine;
     }
 

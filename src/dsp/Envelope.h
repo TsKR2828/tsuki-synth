@@ -23,7 +23,7 @@ public:
     void noteOn()
     {
         state = State::Attack;
-        currentLevel = 0.0f;
+        // Keep current level on retrigger to avoid click (ramp from where we are)
     }
 
     void noteOff()
