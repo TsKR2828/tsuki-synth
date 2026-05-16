@@ -370,6 +370,14 @@ private:
         FMParams fp;
         fp.preset = static_cast<FMPreset> (ev.fmPreset);
 
+        // Forward detailed FM params if specified in JSON (>=0 means explicitly set)
+        if (ev.fmRatio      >= 0.0f) fp.ratio      = ev.fmRatio;
+        if (ev.fmIndex      >= 0.0f) fp.index       = ev.fmIndex;
+        if (ev.fmBrightness >= 0.0f) fp.brightness  = ev.fmBrightness;
+        if (ev.fmFeedback   >= 0.0f) fp.feedback    = ev.fmFeedback;
+        if (ev.fmAttackMs   >= 0.0f) fp.attackMs    = ev.fmAttackMs;
+        if (ev.fmReleaseMs  >= 0.0f) fp.releaseMs   = ev.fmReleaseMs;
+
         FMVoice voice;
         voice.prepare (sr);
         voice.noteOn (midiNote, ev.velocity, fp);

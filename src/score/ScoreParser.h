@@ -52,6 +52,12 @@ struct ScoreEvent
     double      tensionN       = 0.0;
     double      dampingOverride = -1.0;  // <0 = use material default
     int         fmPreset       = 0;
+    float       fmRatio        = -1.0f;   // <0 = use FMParams default
+    float       fmIndex        = -1.0f;
+    float       fmBrightness   = -1.0f;
+    float       fmFeedback     = -1.0f;
+    float       fmAttackMs     = -1.0f;
+    float       fmReleaseMs    = -1.0f;
 
     bool        hasGlide       = false;
     std::string glideFromNote;
@@ -196,6 +202,18 @@ public:
                         }
                         if (p->hasProperty ("fm_preset"))
                             se.fmPreset = static_cast<int> ((int) p->getProperty ("fm_preset"));
+                        if (p->hasProperty ("fm_ratio"))
+                            se.fmRatio = static_cast<float> ((double) p->getProperty ("fm_ratio"));
+                        if (p->hasProperty ("fm_index"))
+                            se.fmIndex = static_cast<float> ((double) p->getProperty ("fm_index"));
+                        if (p->hasProperty ("fm_brightness"))
+                            se.fmBrightness = static_cast<float> ((double) p->getProperty ("fm_brightness"));
+                        if (p->hasProperty ("fm_feedback"))
+                            se.fmFeedback = static_cast<float> ((double) p->getProperty ("fm_feedback"));
+                        if (p->hasProperty ("fm_attack"))
+                            se.fmAttackMs = static_cast<float> ((double) p->getProperty ("fm_attack"));
+                        if (p->hasProperty ("fm_release"))
+                            se.fmReleaseMs = static_cast<float> ((double) p->getProperty ("fm_release"));
                     }
 
                     if (auto* gl = e->getProperty ("glide").getDynamicObject())

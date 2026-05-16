@@ -5,20 +5,20 @@
 #include <cmath>
 
 /**
- * FM Piano Engine — 2-operator FM synthesis
+ * FM Piano Engine — 2-operator FM with hammer transient + body resonance
  *
- * output = sin(2*pi*fc*t + I(t) * sin(2*pi*fm*t + fb*lastMod))
+ * Signal chain (per sample):
+ *   1. FM core:  sin(2π·fc·t + I(t) · sin(2π·fm·t + fb·lastMod))
+ *   2. Hammer noise: bandpass (1.5–6 kHz) noise burst, 15–45 ms
+ *   3. Body resonance: 2 soundboard modes (180 Hz + 340 Hz)
  *
- * fc = carrier frequency (from MIDI note)
- * fm = fc * ratio  (modulator frequency)
- * I(t) = peak index * exp(-t/tau)  (brightness envelope)
- * fb = self-feedback (0 = pure sine mod, >0 = richer harmonics)
+ * I(t) is a TWO-STAGE envelope (separates attack brightness from body damping):
+ *   attackIndex: high peak, fast exponential decay (~45 ms) — transient "hammer" brightness
+ *   bodyIndex:   moderate floor, slow decay (brightness param) — sustained tone color
+ *   effectiveIndex = attackIndex + bodyIndex
  *
- * Sound types control ADSR envelope shape:
+ * Sound types control ADSR shape + hammer/body amounts:
  *   Piano / E.Piano / Vibraphone / Bell / Organ / Pad / Bass / Brass
- *
- * Velocity affects both amplitude and modulation index (brightness).
- * Higher notes have faster brightness decay (natural piano behavior).
  */
 
 enum class FMPreset { Piano = 0, EPiano = 1, Vibraphone = 2, Bell = 3,
@@ -49,7 +49,7 @@ public:
     std::atomic<float>* pType       = nullptr;  // 0~7 sound type (ADSR shape)
     std::atomic<float>* pRatio      = nullptr;  // mod/carrier ratio (0.5~16)
     std::atomic<float>* pIndex      = nullptr;  // peak modulation index (0~25)
-    std::atomic<float>* pBrightness = nullptr;  // index decay speed (0=sustained, 1=fast)
+    std::atomic<float>* pBrightness = nullptr;  // body index decay speed (0=sustained, 1=fast)
     std::atomic<float>* pFeedback   = nullptr;  // modulator self-feedback (0~1)
     std::atomic<float>* pAttack     = nullptr;  // ADSR attack (ms)
     std::atomic<float>* pRelease    = nullptr;  // ADSR release (ms)
@@ -72,9 +72,7 @@ public:
                     juce::SynthesiserSound*, int) override
     {
         double sr = getSampleRate();
-        float freq = 440.0f * std::pow (2.0f, (float) (midiNoteNumber - 69) / 12.0f);
 
-        // Read parameters
         int   type       = juce::jlimit (0, 7, (int) pType->load());
         float ratio      = pRatio->load();
         float index      = pIndex->load();
@@ -111,43 +109,8 @@ public:
         float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
         releaseMs *= dmpScale;
 
-        // Phase increments
-        carrierPhase   = 0.0;
-        modulatorPhase = 0.0;
-        carrierInc   = freq * juce::MathConstants<double>::twoPi / sr;
-        modulatorInc = freq * (double) ratio * juce::MathConstants<double>::twoPi / sr;
-
-        // Feedback amount (scale to safe range)
-        feedbackAmount = juce::jlimit (0.0f, 0.7f, feedback * 0.7f);
-        lastModOutput  = 0.0f;
-
-        // Velocity-dependent gain and brightness
-        gain = 0.2f * velocity;
-        currentIndex = index * (0.3f + 0.7f * velocity);
-
-        // Index envelope decay
-        // Higher brightness = faster decay; higher notes also decay faster
-        float noteScaling = 1.0f + (float) (midiNoteNumber - 60) * 0.015f;
-        noteScaling = std::max (noteScaling, 0.3f);
-        float decayTime = (1.0f - brightness * 0.95f) * 4.0f + 0.01f;
-        decayTime /= noteScaling;
-        indexDecayCoeff = (float) std::exp (-6.9078 / (decayTime * sr));
-
-        // ADSR envelope: type presets control decay/sustain shape
-        static constexpr float decays[]   = { 0.8f,  1.2f,  2.0f,  3.5f, 0.01f, 0.01f, 0.3f,  0.5f  };
-        static constexpr float sustains[] = { 0.2f,  0.3f,  0.15f, 0.0f, 1.0f,  0.8f,  0.1f,  0.4f  };
-        //                                    Piano  EPiano Vibra  Bell  Organ  Pad    Bass   Brass
-
-        ampEnv.setSampleRate (sr);
-        ampEnv.setAttack  (attackMs * 0.001f);
-        ampEnv.setDecay   (decays[type]);
-        ampEnv.setSustain (sustains[type]);
-        ampEnv.setRelease (releaseMs * 0.001f);
-        ampEnv.noteOn();
-
-        // Noise gen for macro noise injection
-        noiseGen.setType (NoiseGen::Type::White);
-        noiseGen.reset();
+        initVoice (midiNoteNumber, velocity, type, ratio, index,
+                   brightness, feedback, attackMs, releaseMs, sr);
     }
 
     void stopNote (float, bool allowTailOff) override
@@ -174,46 +137,12 @@ public:
 
     void noteOn (int midiNote, float velocity, const FMParams& params)
     {
-        double sr = standaloneSR;
-        float freq = 440.0f * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
-
-        int   type       = juce::jlimit (0, 7, static_cast<int> (params.preset));
-        float ratio      = params.ratio;
-        float index      = params.index;
-        float brightness = params.brightness;
-        float feedback   = params.feedback;
-        float attackMs   = params.attackMs;
-        float releaseMs  = params.releaseMs;
-
-        carrierPhase   = 0.0;
-        modulatorPhase = 0.0;
-        carrierInc   = freq * juce::MathConstants<double>::twoPi / sr;
-        modulatorInc = freq * (double) ratio * juce::MathConstants<double>::twoPi / sr;
-
-        feedbackAmount = juce::jlimit (0.0f, 0.7f, feedback * 0.7f);
-        lastModOutput  = 0.0f;
-
-        gain = 0.2f * velocity;
-        currentIndex = index * (0.3f + 0.7f * velocity);
-
-        float noteScaling = std::max (0.3f, 1.0f + (float) (midiNote - 60) * 0.015f);
-        float decayTime = (1.0f - brightness * 0.95f) * 4.0f + 0.01f;
-        decayTime /= noteScaling;
-        indexDecayCoeff = (float) std::exp (-6.9078 / (decayTime * sr));
-
-        static constexpr float decays[]   = { 0.8f,  1.2f,  2.0f,  3.5f, 0.01f, 0.01f, 0.3f,  0.5f  };
-        static constexpr float sustains[] = { 0.2f,  0.3f,  0.15f, 0.0f, 1.0f,  0.8f,  0.1f,  0.4f  };
-
-        ampEnv.setSampleRate (sr);
-        ampEnv.setAttack  (attackMs * 0.001f);
-        ampEnv.setDecay   (decays[type]);
-        ampEnv.setSustain (sustains[type]);
-        ampEnv.setRelease (releaseMs * 0.001f);
-        ampEnv.noteOn();
-
         noiseMacroLevel = 0.0f;
-        noiseGen.setType (NoiseGen::Type::White);
-        noiseGen.reset();
+        initVoice (midiNote, velocity,
+                   juce::jlimit (0, 7, static_cast<int> (params.preset)),
+                   params.ratio, params.index, params.brightness,
+                   params.feedback, params.attackMs, params.releaseMs,
+                   standaloneSR);
     }
 
     void noteOff() { ampEnv.noteOff(); }
@@ -225,25 +154,7 @@ public:
         if (! ampEnv.isActive())
             return 0.0f;
 
-        currentIndex *= indexDecayCoeff;
-
-        float modInput = (float) modulatorPhase + feedbackAmount * lastModOutput;
-        float modOutput = std::sin (modInput) * currentIndex;
-        lastModOutput = modOutput;
-
-        float carrier = std::sin ((float) carrierPhase + modOutput);
-        float envVal = ampEnv.getNextSample();
-        float sample = carrier * envVal * gain;
-
-        carrierPhase   += carrierInc;
-        modulatorPhase += modulatorInc;
-
-        if (carrierPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-            carrierPhase -= juce::MathConstants<double>::twoPi * 65536.0;
-        if (modulatorPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-            modulatorPhase -= juce::MathConstants<double>::twoPi * 65536.0;
-
-        return sample;
+        return processSingleSample();
     }
 
     void scaleFrequency (double factor)
@@ -266,34 +177,7 @@ public:
 
         while (--numSamples >= 0)
         {
-            // Index envelope: exponential brightness decay
-            currentIndex *= indexDecayCoeff;
-
-            // Modulator with self-feedback
-            float modInput = (float) modulatorPhase + feedbackAmount * lastModOutput;
-            float modOutput = std::sin (modInput) * currentIndex;
-            lastModOutput = modOutput;
-
-            // Carrier with phase modulation from modulator
-            float carrier = std::sin ((float) carrierPhase + modOutput);
-
-            // Apply amplitude envelope
-            float envVal = ampEnv.getNextSample();
-            float sample = carrier * envVal * gain;
-
-            // Macro: Noise injection
-            if (noiseMacroLevel > 0.001f)
-                sample += noiseGen.processSample() * noiseMacroLevel * envVal * gain * 0.4f;
-
-            // Phase accumulation
-            carrierPhase   += carrierInc;
-            modulatorPhase += modulatorInc;
-
-            // Wrap phases to prevent floating point overflow
-            if (carrierPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-                carrierPhase -= juce::MathConstants<double>::twoPi * 65536.0;
-            if (modulatorPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-                modulatorPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+            float sample = processSingleSample();
 
             for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
                 outputBuffer.addSample (ch, startSample, sample);
@@ -306,27 +190,217 @@ public:
     }
 
 private:
-    double standaloneSR   = 0.0;
+    double standaloneSR = 0.0;
 
-    // Oscillator state
+    // ── FM oscillator ──
     double carrierPhase   = 0.0;
     double modulatorPhase = 0.0;
     double carrierInc     = 0.0;
     double modulatorInc   = 0.0;
+    float  feedbackAmount = 0.0f;
+    float  lastModOutput  = 0.0f;
+    float  gain           = 0.0f;
 
-    // FM state
-    float currentIndex    = 0.0f;
-    float indexDecayCoeff = 1.0f;
-    float feedbackAmount  = 0.0f;
-    float lastModOutput   = 0.0f;
-    float gain            = 0.0f;
+    // ── Two-stage modulation index ──
+    float attackIndex      = 0.0f;   // transient brightness — fast decay
+    float bodyIndex        = 0.0f;   // sustained tone color — slow decay
+    float attackDecayCoeff = 1.0f;
+    float bodyDecayCoeff   = 1.0f;
 
-    // Amplitude envelope
+    // ── Hammer noise transient ──
+    float    hammerLevel      = 0.0f;
+    float    hammerDecayCoeff = 1.0f;
+    float    hammerHPState    = 0.0f;   // one-pole HP filter state
+    float    hammerHPCoeff    = 0.0f;
+    float    hammerLPState    = 0.0f;   // one-pole LP filter state
+    float    hammerLPCoeff    = 0.0f;
+    uint32_t hammerNoiseSeed  = 0;      // independent LCG noise
+
+    // ── Body resonance (2 soundboard modes) ──
+    double bodyResPhase1   = 0.0;
+    double bodyResPhase2   = 0.0;
+    double bodyResInc1     = 0.0;
+    double bodyResInc2     = 0.0;
+    float  bodyResAmp1     = 0.0f;
+    float  bodyResAmp2     = 0.0f;
+    float  bodyResDecay1   = 1.0f;
+    float  bodyResDecay2   = 1.0f;
+
+    // ── Amplitude envelope + macro noise ──
     Envelope ampEnv;
-
-    // Noise (for macro noise injection)
     NoiseGen noiseGen;
-    float noiseMacroLevel = 0.0f;
+    float    noiseMacroLevel = 0.0f;
+
+    // ──────────────────────────────────────────────────────────
+    //  initVoice — shared setup for DAW (startNote) & CLI (noteOn)
+    // ──────────────────────────────────────────────────────────
+    void initVoice (int midiNote, float velocity, int type,
+                    float ratio, float index, float brightness,
+                    float feedback, float attackMs, float releaseMs,
+                    double sr)
+    {
+        float freq = 440.0f * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
+
+        // ── FM oscillator ──
+        carrierPhase   = 0.0;
+        modulatorPhase = 0.0;
+        carrierInc   = freq * juce::MathConstants<double>::twoPi / sr;
+        modulatorInc = freq * (double) ratio * juce::MathConstants<double>::twoPi / sr;
+
+        feedbackAmount = juce::jlimit (0.0f, 0.7f, feedback * 0.7f);
+        lastModOutput  = 0.0f;
+        gain = 0.2f * velocity;
+
+        // ── Two-stage modulation index ──
+        // Split peakIndex into fast-attack + slow-body:
+        //   effectiveIndex(t) = attackIndex·exp(-t/τ_fast) + bodyIndex·exp(-t/τ_slow)
+        // Piano: 70% in attack peak (decays in ~45ms), 30% in body (decays per brightness)
+        float peakIndex = index * (0.3f + 0.7f * velocity);
+
+        // ── Key scaling: reduce index for upper register ──
+        // Real piano upper strings are short → fewer partials → nearly pure tone
+        // C4(60)=1.0x, C5(72)=0.91x, C6(84)=0.77x, C7(96)=0.62x, C8(108)=0.48x
+        float noteIndexScale = juce::jlimit (0.45f, 1.0f,
+            1.2f - (float) (midiNote - 48) * 0.012f);
+        peakIndex *= noteIndexScale;
+
+        //  preset-dependent attack/body ratio      Piano  EPiano Vibra  Bell   Organ  Pad    Bass   Brass
+        static constexpr float atkRatios[]  = { 0.70f, 0.60f, 0.50f, 0.40f, 0.10f, 0.10f, 0.65f, 0.55f };
+        float aRatio = atkRatios[type];
+
+        attackIndex = peakIndex * aRatio;
+        bodyIndex   = peakIndex * (1.0f - aRatio);
+
+        float noteScaling = std::max (0.3f, 1.0f + (float) (midiNote - 60) * 0.025f);
+
+        // Attack decay: ~45 ms at C4, faster for higher notes
+        float attackTimeSec = 0.045f / noteScaling;
+        attackDecayCoeff = (float) std::exp (-6.9078 / (attackTimeSec * sr));
+
+        // Body decay: controlled by brightness param (higher = faster)
+        float bodyTimeSec = (1.0f - brightness * 0.95f) * 4.0f + 0.1f;
+        bodyTimeSec /= noteScaling;
+        bodyDecayCoeff = (float) std::exp (-6.9078 / (bodyTimeSec * sr));
+
+        // ── Hammer noise transient ──
+        // Bandpass-filtered (1.5–6 kHz) noise burst for physical strike character
+        // Amplitude & duration scale with velocity: hard hit → louder, shorter
+        //                                         Piano  EPiano Vibra  Bell   Organ  Pad    Bass   Brass
+        static constexpr float hammerAmts[]  = { 0.35f, 0.25f, 0.10f, 0.05f, 0.00f, 0.00f, 0.15f, 0.10f };
+
+        hammerLevel = hammerAmts[type] * velocity;
+        float hammerTimeSec = 0.015f + 0.030f * (1.0f - velocity);  // 15-45 ms
+        hammerDecayCoeff = (float) std::exp (-6.9078 / (hammerTimeSec * sr));
+
+        // One-pole HP ~1.5 kHz + LP ~6 kHz → bandpass for strike "click" contour
+        hammerHPCoeff = 1.0f - (float) std::exp (-juce::MathConstants<double>::twoPi * 1500.0 / sr);
+        hammerLPCoeff = (float) std::exp (-juce::MathConstants<double>::twoPi * 6000.0 / sr);
+        hammerHPState = 0.0f;
+        hammerLPState = 0.0f;
+        hammerNoiseSeed = static_cast<uint32_t> (midiNote * 17 + (int) (velocity * 1000.0f));
+
+        // ── Body resonance (2 soundboard modes) ──
+        // Fixed frequencies ~180 Hz (low warmth) + ~340 Hz (mid presence)
+        // representing the wooden body that colours all notes equally.
+        // Amplitude: full for low/mid register, tapers above C5 (high notes are
+        // naturally thinner; 180Hz body under C7 would sound disconnected)
+        //                                         Piano  EPiano Vibra  Bell   Organ  Pad    Bass   Brass
+        static constexpr float bodyResAmts[] = { 0.18f, 0.12f, 0.06f, 0.02f, 0.04f, 0.02f, 0.20f, 0.06f };
+
+        float bodyAmt = bodyResAmts[type] * (0.6f + 0.4f * velocity);
+        float noteBodyScale = juce::jlimit (0.2f, 1.0f,
+            1.0f - std::max (0.0f, (float) (midiNote - 72)) * 0.02f);
+
+        bodyResPhase1 = 0.0;
+        bodyResInc1   = 180.0 * juce::MathConstants<double>::twoPi / sr;
+        bodyResAmp1   = bodyAmt * 0.6f * noteBodyScale;
+        bodyResDecay1 = (float) std::exp (-6.9078 / (2.0 * sr));   // ~2 s
+
+        bodyResPhase2 = 0.0;
+        bodyResInc2   = 340.0 * juce::MathConstants<double>::twoPi / sr;
+        bodyResAmp2   = bodyAmt * 0.4f * noteBodyScale;
+        bodyResDecay2 = (float) std::exp (-6.9078 / (1.5 * sr));   // ~1.5 s
+
+        // ── ADSR envelope ──
+        static constexpr float decays[]   = { 3.5f,  1.2f,  2.0f,  3.5f, 0.01f, 0.01f, 0.3f,  0.5f  };
+        static constexpr float sustains[] = { 0.0f,  0.3f,  0.15f, 0.0f, 1.0f,  0.8f,  0.1f,  0.4f  };
+        //                                    Piano  EPiano Vibra  Bell  Organ  Pad    Bass   Brass
+
+        ampEnv.setSampleRate (sr);
+        ampEnv.setAttack  (attackMs * 0.001f);
+        ampEnv.setDecay   (decays[type]);
+        ampEnv.setSustain (sustains[type]);
+        ampEnv.setRelease (releaseMs * 0.001f);
+        ampEnv.noteOn();
+
+        noiseGen.setType (NoiseGen::Type::White);
+        noiseGen.reset();
+    }
+
+    // ──────────────────────────────────────────────────────────
+    //  processSingleSample — shared DSP for renderNextBlock & getNextSample
+    // ──────────────────────────────────────────────────────────
+    float processSingleSample()
+    {
+        // ── Two-stage modulation index ──
+        float effectiveIndex = attackIndex + bodyIndex;
+        attackIndex *= attackDecayCoeff;
+        bodyIndex   *= bodyDecayCoeff;
+
+        // ── FM synthesis ──
+        float modInput  = (float) modulatorPhase + feedbackAmount * lastModOutput;
+        float modOutput = std::sin (modInput) * effectiveIndex;
+        lastModOutput   = modOutput;
+
+        float carrier = std::sin ((float) carrierPhase + modOutput);
+        float envVal  = ampEnv.getNextSample();
+        float sample  = carrier * envVal * gain;
+
+        // ── Hammer noise transient (bandpass 1.5–6 kHz) ──
+        if (hammerLevel > 0.0001f)
+        {
+            // Independent LCG noise (avoids shared state with macro noiseGen)
+            hammerNoiseSeed = hammerNoiseSeed * 1664525u + 1013904223u;
+            float noise = (float) ((int32_t) hammerNoiseSeed) * (1.0f / 2147483648.0f);
+
+            // HP ~1.5 kHz (one-pole)
+            hammerHPState += hammerHPCoeff * (noise - hammerHPState);
+            float hp = noise - hammerHPState;
+            // LP ~6 kHz (one-pole)
+            hammerLPState = hammerLPCoeff * hammerLPState + (1.0f - hammerLPCoeff) * hp;
+
+            sample += hammerLPState * hammerLevel * gain;
+            hammerLevel *= hammerDecayCoeff;
+        }
+
+        // ── Body resonance (soundboard modes at 180 Hz + 340 Hz) ──
+        if (bodyResAmp1 > 0.0001f || bodyResAmp2 > 0.0001f)
+        {
+            float body = std::sin ((float) bodyResPhase1) * bodyResAmp1
+                       + std::sin ((float) bodyResPhase2) * bodyResAmp2;
+            sample += body * envVal * gain;
+
+            bodyResAmp1 *= bodyResDecay1;
+            bodyResAmp2 *= bodyResDecay2;
+            bodyResPhase1 += bodyResInc1;
+            bodyResPhase2 += bodyResInc2;
+        }
+
+        // ── Macro noise injection ──
+        if (noiseMacroLevel > 0.001f)
+            sample += noiseGen.processSample() * noiseMacroLevel * envVal * gain * 0.4f;
+
+        // ── Phase accumulation ──
+        carrierPhase   += carrierInc;
+        modulatorPhase += modulatorInc;
+
+        if (carrierPhase >= juce::MathConstants<double>::twoPi * 65536.0)
+            carrierPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+        if (modulatorPhase >= juce::MathConstants<double>::twoPi * 65536.0)
+            modulatorPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+
+        return sample;
+    }
 };
 
 using FMVoice = FMPianoVoice;

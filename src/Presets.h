@@ -159,13 +159,13 @@ PRESET_BEGIN (preset_acoustic_piano)
     { "engine",           2 },
     { "fm_type",          0 },       // Piano
     { "fm_ratio",         1.0f },
-    { "fm_index",         5.0f },
-    { "fm_brightness",    0.70f },
-    { "fm_feedback",      0.00f },
-    { "fm_attack",        10.0f },   // ms
-    { "fm_release",       300.0f },  // ms
-    { "fx_reverb_mix",    0.20f },
-    { "fx_reverb_size",   0.50f },
+    { "fm_index",         4.5f },    // two-stage: 70% attack peak (fast decay) + 30% body (slow)
+    { "fm_brightness",    0.77f },   // body index decay ~1.1s (attack index decays in ~45ms regardless)
+    { "fm_feedback",      0.02f },   // tiny feedback → subtle odd harmonics for body character
+    { "fm_attack",        5.0f },    // quick hammer
+    { "fm_release",       500.0f },  // natural string ring
+    { "fx_reverb_mix",    0.18f },
+    { "fx_reverb_size",   0.48f },
     { "fx_delay_mix",     0.00f },
 PRESET_END
 
