@@ -333,13 +333,20 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     effectChain.pDistDrive       = apvts.getRawParameterValue ("fx_dist_drive");
     effectChain.pDistInstability = apvts.getRawParameterValue ("fx_dist_instability");
     effectChain.pDistMix         = apvts.getRawParameterValue ("fx_dist_mix");
+
+    recordingThread.startThread();
 }
 
-TsukiSynthProcessor::~TsukiSynthProcessor() {}
+TsukiSynthProcessor::~TsukiSynthProcessor()
+{
+    stopRecording();
+    recordingThread.stopThread (1000);
+}
 
 // == Audio ==
 void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
 {
+    currentSampleRate = sampleRate;
     cimbalomSynth.setCurrentPlaybackSampleRate (sampleRate);
     chromaticSynth.setCurrentPlaybackSampleRate (sampleRate);
     fmPianoSynth.setCurrentPlaybackSampleRate (sampleRate);
@@ -347,7 +354,10 @@ void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
     smoothedOutput.reset (sampleRate, 0.02);
 }
 
-void TsukiSynthProcessor::releaseResources() {}
+void TsukiSynthProcessor::releaseResources()
+{
+    stopRecording();
+}
 
 void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                         juce::MidiBuffer& midiMessages)
@@ -427,6 +437,14 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
     }
 
+    // Standalone recorder captures the final audible output.
+    if (recordingActive.load())
+    {
+        const juce::ScopedLock sl (recordingLock);
+        if (recordingWriter != nullptr)
+            recordingWriter->write (buffer.getArrayOfReadPointers(), buffer.getNumSamples());
+    }
+
     // Mix to mono and push to analyzer FIFO (no lock, no alloc)
     {
         constexpr int kMaxBlock = 2048;
@@ -439,6 +457,86 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             mono[i] = (L[i] + R[i]) * 0.5f;
         analyzerFifo.push (mono, n);
     }
+}
+
+// == Recorder ==
+bool TsukiSynthProcessor::startRecording()
+{
+    const juce::ScopedLock sl (recordingLock);
+
+    if (recordingWriter != nullptr)
+        return true;
+
+    auto dir = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
+                   .getChildFile ("TsukiSynth")
+                   .getChildFile ("Recordings");
+    dir.createDirectory();
+
+    if (! dir.isDirectory())
+    {
+        recordingStatus = "Recording folder unavailable";
+        return false;
+    }
+
+    auto stamp = juce::Time::getCurrentTime().formatted ("%Y%m%d_%H%M%S");
+    auto file = dir.getChildFile ("TsukiSynth_" + stamp + ".wav");
+    int suffix = 1;
+    while (file.existsAsFile())
+        file = dir.getChildFile ("TsukiSynth_" + stamp + "_" + juce::String (suffix++) + ".wav");
+
+    juce::WavAudioFormat wavFormat;
+    std::unique_ptr<juce::FileOutputStream> stream (file.createOutputStream());
+
+    if (stream == nullptr || ! stream->openedOk())
+    {
+        recordingStatus = "Could not create recording file";
+        return false;
+    }
+
+    auto* writer = wavFormat.createWriterFor (stream.get(),
+                                              currentSampleRate,
+                                              (unsigned int) juce::jmax (1, getTotalNumOutputChannels()),
+                                              24,
+                                              {},
+                                              0);
+    if (writer == nullptr)
+    {
+        recordingStatus = "Could not create WAV writer";
+        return false;
+    }
+
+    stream.release();
+    recordingWriter = std::make_unique<juce::AudioFormatWriter::ThreadedWriter> (
+        writer, recordingThread, 32768);
+
+    lastRecordingFile = file;
+    recordingStatus = "Recording: " + file.getFullPathName();
+    recordingActive.store (true);
+    return true;
+}
+
+void TsukiSynthProcessor::stopRecording()
+{
+    recordingActive.store (false);
+
+    const juce::ScopedLock sl (recordingLock);
+    if (recordingWriter != nullptr)
+    {
+        recordingWriter.reset();
+        recordingStatus = "Saved: " + lastRecordingFile.getFullPathName();
+    }
+}
+
+juce::String TsukiSynthProcessor::getRecordingStatus() const
+{
+    const juce::ScopedLock sl (recordingLock);
+    return recordingStatus;
+}
+
+juce::File TsukiSynthProcessor::getLastRecordingFile() const
+{
+    const juce::ScopedLock sl (recordingLock);
+    return lastRecordingFile;
 }
 
 // == State ==

@@ -4,8 +4,6 @@
 #include "TsukiLookAndFeel.h"
 #include "UiLocale.h"
 #include "analyzer/AnalyzerPanel.h"
-#include "PresetBrowser.h"
-#include "HarmonicEditor.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 
 class TsukiSynthEditor : public juce::AudioProcessorEditor,
@@ -39,6 +37,19 @@ private:
         juce::String paramID;
     };
 
+    class LocalizedMidiKeyboard : public juce::MidiKeyboardComponent
+    {
+    public:
+        LocalizedMidiKeyboard (juce::MidiKeyboardState& state,
+                               juce::MidiKeyboardComponent::Orientation orientation)
+            : juce::MidiKeyboardComponent (state, orientation) {}
+
+        juce::String getWhiteNoteText (int midiNoteNumber) override
+        {
+            return juce::MidiKeyboardComponent::getWhiteNoteText (midiNoteNumber);
+        }
+    };
+
     void parameterChanged (const juce::String& parameterID, float newValue) override;
     void timerCallback() override;
 
@@ -53,6 +64,7 @@ private:
     // Localization
     void refreshLocalizedText();
     void refreshComboItems (ComboParam&);
+    void refreshRecorderText();
 
     void paintPanel (juce::Graphics&, juce::Rectangle<int>, const juce::String& title);
     void layoutKnobCell  (juce::Rectangle<int> cell, KnobParam&);
@@ -63,7 +75,7 @@ private:
     TsukiLookAndFeel lnf;
 
     // Keyboard (state lives in processor for MIDI injection)
-    juce::MidiKeyboardComponent keyboard;
+    LocalizedMidiKeyboard keyboard;
 
     // Engine tabs
     juce::TextButton tabCim { "Cimbalom" };
@@ -73,18 +85,18 @@ private:
     // Language toggle
     juce::TextButton langToggle;
 
+    // Standalone recorder
+    juce::TextButton recordButton { "REC" };
+
     // Preset
-    PresetNameButton presetNameBtn;
-    PresetBrowser    presetBrowser;
+    juce::ComboBox   presetCombo;
     juce::TextButton presetPrev, presetNext;
     juce::TextButton presetSave { "Save" };
     juce::TextButton presetInit { "Init" };
     juce::Label      dirtyLabel;
-    void updatePresetName();
+    void rebuildPresetCombo();
     void updateDirtyIndicator();
     void promptSavePreset();
-    void showPresetBrowser();
-    void hidePresetBrowser();
 
     // Cimbalom
     ComboParam  cimMaterial, cimHammer;
@@ -111,14 +123,11 @@ private:
     ComboParam  distType;
     KnobParam   distDrive, distInstability, distMix;
 
-    // Harmonic editor (Chromatic Custom sub-engine)
-    HarmonicEditor harmonicEditor;
-
     // Analyzer
     AnalyzerPanel analyzerPanel;
 
-    // Brand assets (loaded once in constructor)
-    juce::Path     moonPath;
+    // Brand assets
+    juce::Path moonPath;
     juce::Typeface::Ptr wordmarkTypeface;
 
     // Layout bounds (stored in resized, used in paint)

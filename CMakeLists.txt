@@ -63,6 +63,7 @@ target_compile_definitions(TsukiSynth PUBLIC
 target_link_libraries(TsukiSynth
     PRIVATE
         TsukiSynthData
+        juce::juce_audio_formats
         juce::juce_audio_utils
         juce::juce_dsp
     PUBLIC
