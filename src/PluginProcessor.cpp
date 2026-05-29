@@ -115,22 +115,22 @@ TsukiSynthProcessor::createParameterLayout()
                             "Organ", "Pad", "Bass", "Brass" }, 0));
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_ratio", 1 }, "FM Ratio",
-        Range (0.5f, 16.0f, 0.01f, 0.4f), 1.0f));
+        Range (0.5f, 16.0f, 0.01f, 0.4f), 1.0f));           // Piano: 1:1
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_index", 1 }, "Mod Index",
-        Range (0.0f, 25.0f, 0.1f), 5.0f));
+        Range (0.0f, 25.0f, 0.1f), 4.5f));                   // was 5.0 → Acoustic Piano direction
     fm->addChild (std::make_unique<FloatParam> (
-        PID { "fm_brightness", 1 }, "Brightness",
-        Range (0.0f, 1.0f, 0.01f), 0.6f));
+        PID { "fm_brightness", 1 }, "Tone Decay",
+        Range (0.0f, 1.0f, 0.01f), 0.6f));                   // label: body modulation decay speed
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_feedback", 1 }, "Feedback",
-        Range (0.0f, 1.0f, 0.01f), 0.0f));
+        Range (0.0f, 1.0f, 0.01f), 0.02f));                  // was 0.0 → subtle odd harmonics
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_attack", 1 }, "FM Attack (ms)",
-        Range (1.0f, 2000.0f, 1.0f, 0.4f), 10.0f));
+        Range (1.0f, 2000.0f, 1.0f, 0.4f), 5.0f));           // was 10 → quick hammer
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_release", 1 }, "FM Release (ms)",
-        Range (10.0f, 5000.0f, 1.0f, 0.4f), 300.0f));
+        Range (10.0f, 5000.0f, 1.0f, 0.4f), 500.0f));
 
     auto rev = std::make_unique<Group> ("reverb", "Reverb", "|");
     rev->addChild (std::make_unique<FloatParam> (

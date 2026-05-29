@@ -27,12 +27,12 @@ enum class FMPreset { Piano = 0, EPiano = 1, Vibraphone = 2, Bell = 3,
 struct FMParams
 {
     FMPreset preset    = FMPreset::Piano;
-    float    ratio     = 2.0f;
-    float    index     = 5.0f;
-    float    brightness = 0.5f;
-    float    feedback  = 0.0f;
-    float    attackMs  = 10.0f;
-    float    releaseMs = 300.0f;
+    float    ratio     = 1.0f;       // must match APVTS default
+    float    index     = 4.5f;       // must match APVTS default
+    float    brightness = 0.6f;      // must match APVTS default
+    float    feedback  = 0.02f;      // must match APVTS default
+    float    attackMs  = 5.0f;       // must match APVTS default
+    float    releaseMs = 500.0f;     // must match APVTS default
 };
 
 class FMPianoSound : public juce::SynthesiserSound

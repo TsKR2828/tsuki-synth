@@ -186,7 +186,7 @@ private:
             { "fm_type",           "SOUND TYPE",  "音色類型"   },
             { "fm_ratio",          "RATIO",       "比率"       },
             { "fm_index",          "MOD INDEX",   "調變指數"   },
-            { "fm_brightness",     "BRIGHTNESS",  "亮度"       },
+            { "fm_brightness",     "TONE DECAY",  "音色衰減"   },
             { "fm_feedback",       "FEEDBACK",    "回饋"       },
             { "fm_attack",         "ATTACK",      "起音"       },
             { "fm_release",        "RELEASE",     "釋放"       },

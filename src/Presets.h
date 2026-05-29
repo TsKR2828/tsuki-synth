@@ -10,7 +10,7 @@
  * Presets grouped by engine:
  *   0-5:  Cimbalom (physical modeling string)
  *   6-11: Chromatic (beam / plate / custom)
- *  12-17: FM Piano (frequency modulation)
+ *  12-19: FM Piano (frequency modulation, 8 presets matching 8 sound types)
  */
 struct PresetEntry
 {
@@ -291,6 +291,20 @@ PRESET_BEGIN (preset_ambient_pad)
     { "fx_delay_mix",     0.25f },
 PRESET_END
 
+PRESET_BEGIN (preset_fm_vibraphone)
+    { "engine",           2 },
+    { "fm_type",          2 },       // Vibraphone
+    { "fm_ratio",         3.0f },
+    { "fm_index",         4.2f },
+    { "fm_brightness",    0.35f },
+    { "fm_feedback",      0.02f },
+    { "fm_attack",        8.0f },
+    { "fm_release",       1200.0f },
+    { "fx_reverb_mix",    0.25f },
+    { "fx_reverb_size",   0.55f },
+    { "fx_delay_mix",     0.00f },
+PRESET_END
+
 PRESET_BEGIN (preset_fm_bass)
     { "engine",           2 },
     { "fm_type",          6 },       // Bass
@@ -305,6 +319,22 @@ PRESET_BEGIN (preset_fm_bass)
     { "fx_delay_mix",     0.00f },
     { "fx_comp_threshold", -8.0f },
     { "fx_comp_ratio",    6.0f },
+PRESET_END
+
+PRESET_BEGIN (preset_fm_brass)
+    { "engine",           2 },
+    { "fm_type",          7 },       // Brass
+    { "fm_ratio",         1.0f },
+    { "fm_index",         5.8f },
+    { "fm_brightness",    0.65f },
+    { "fm_feedback",      0.12f },
+    { "fm_attack",        35.0f },
+    { "fm_release",       350.0f },
+    { "fx_reverb_mix",    0.15f },
+    { "fx_reverb_size",   0.40f },
+    { "fx_delay_mix",     0.00f },
+    { "fx_comp_threshold", -10.0f },
+    { "fx_comp_ratio",    3.0f },
 PRESET_END
 
 // ========== Preset registry ==========
@@ -329,13 +359,15 @@ inline const FactoryPreset* getFactoryPresetList (int& count)
         { "Ethereal Steel Bells",     preset_ethereal_bells,      (int)(sizeof(preset_ethereal_bells)/sizeof(preset_ethereal_bells[0]))          },
         { "Glass Singing Bowl",       preset_glass_singing_bowl,  (int)(sizeof(preset_glass_singing_bowl)/sizeof(preset_glass_singing_bowl[0]))  },
         { "Rubber Tongue Pad",        preset_rubber_tongue_pad,   (int)(sizeof(preset_rubber_tongue_pad)/sizeof(preset_rubber_tongue_pad[0]))    },
-        // FM Piano (12-17)
+        // FM Piano (12-19) — one preset per sound type
         { "Acoustic Piano",           preset_acoustic_piano,      (int)(sizeof(preset_acoustic_piano)/sizeof(preset_acoustic_piano[0]))          },
         { "Electric Rhodes",          preset_electric_rhodes,     (int)(sizeof(preset_electric_rhodes)/sizeof(preset_electric_rhodes[0]))         },
+        { "FM Vibraphone",            preset_fm_vibraphone,       (int)(sizeof(preset_fm_vibraphone)/sizeof(preset_fm_vibraphone[0]))             },
         { "DX7 Crystal Bell",         preset_dx7_bell,            (int)(sizeof(preset_dx7_bell)/sizeof(preset_dx7_bell[0]))                      },
         { "Church Organ",             preset_church_organ,        (int)(sizeof(preset_church_organ)/sizeof(preset_church_organ[0]))               },
         { "Ambient Pad",              preset_ambient_pad,         (int)(sizeof(preset_ambient_pad)/sizeof(preset_ambient_pad[0]))                 },
         { "FM Bass",                  preset_fm_bass,             (int)(sizeof(preset_fm_bass)/sizeof(preset_fm_bass[0]))                         },
+        { "FM Brass",                 preset_fm_brass,            (int)(sizeof(preset_fm_brass)/sizeof(preset_fm_brass[0]))                       },
     };
 
     count = (int) (sizeof (presets) / sizeof (presets[0]));

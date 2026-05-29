@@ -31,7 +31,7 @@
 | EN/中文 localization | Done |
 | Standalone REC recording | Done |
 
-**Version**: `v0.2.0` — 18 factory presets, DAW validated, Codex audit 8/8 bugs fixed.
+**Version**: `v0.2.0` — 20 factory presets, DAW validated, Codex audit 8/8 bugs fixed.
 
 ## Overview
 
@@ -116,7 +116,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 
 ## Preset System
 
-- 18 factory presets (6 per engine) compiled as static arrays
+- 20 factory presets (6 per engine) compiled as static arrays
 - User preset save/load (`.tsukipreset` XML files in AppData)
 - **Visual preset browser** with category filters (All / Cimbalom / Chromatic / FM / User)
 - DAW program change compatible (VST3 `getNumPrograms` / `setCurrentProgram`)

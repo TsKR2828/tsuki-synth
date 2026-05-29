@@ -103,7 +103,14 @@
               "tension_n":        { "type": "number", "minimum": 1 },
               "strike_position":  { "type": "number", "minimum": 0, "maximum": 1, "description": "0=edge, 0.5=center, 1=opposite edge" },
               "exciter":          { "type": "string", "enum": ["cotton_mallet", "felt_mallet", "wood_mallet", "metal_mallet", "metal_hammer", "hard_plastic", "finger", "bow"], "description": "Excitation method" },
-              "damping_override": { "type": ["number", "null"], "description": "Override material damping alpha, null = use material default" }
+              "damping_override": { "type": ["number", "null"], "description": "Override material damping alpha, null = use material default" },
+              "fm_preset":    { "type": "integer", "minimum": 0, "maximum": 7, "description": "FM sound type: 0=Piano, 1=E.Piano, 2=Vibraphone, 3=Bell, 4=Organ, 5=Pad, 6=Bass, 7=Brass" },
+              "fm_ratio":     { "type": "number", "minimum": 0.25, "maximum": 16.0, "description": "Modulator/carrier frequency ratio" },
+              "fm_index":     { "type": "number", "minimum": 0.0, "maximum": 25.0, "description": "Peak modulation index (FM depth)" },
+              "fm_brightness": { "type": "number", "minimum": 0.0, "maximum": 1.0, "description": "Body modulation decay speed (higher = faster decay)" },
+              "fm_feedback":  { "type": "number", "minimum": 0.0, "maximum": 1.0, "description": "Modulator self-feedback amount" },
+              "fm_attack":    { "type": "number", "minimum": 0.001, "maximum": 5.0, "description": "Attack time in seconds" },
+              "fm_release":   { "type": "number", "minimum": 0.01, "maximum": 10.0, "description": "Release time in seconds" }
             }
           },
           "glide": {
