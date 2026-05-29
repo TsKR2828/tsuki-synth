@@ -254,10 +254,15 @@ private:
         gain = 0.2f * velocity;
 
         // ── Two-stage modulation index ──
-        // Split peakIndex into fast-attack + slow-body:
+        // Split peakIndex into fast-attack + slow-body with separate scale factors:
         //   effectiveIndex(t) = attackIndex·exp(-t/τ_fast) + bodyIndex·exp(-t/τ_slow)
-        // Piano: 70% in attack peak (decays in ~45ms), 30% in body (decays per brightness)
-        float peakIndex = index * (0.3f + 0.7f * velocity);
+        //
+        // P1-1: velocity-to-index — velocity shapes timbre, not just volume
+        //   soft: rounder, less hammer noise / hard: brighter, more transient
+        float velIndexScale  = 0.45f + 0.80f * velocity;  // vel 0→0.45, 0.5→0.85, 1.0→1.25
+        float velAttackBoost = 0.50f + 1.10f * velocity;  // attack index extra push at high vel
+        float velHammerScale = 0.20f + 1.20f * velocity;  // hammer noise velocity sensitivity
+        float peakIndex = index * velIndexScale;
 
         // ── Key scaling: reduce index for upper register ──
         // Real piano upper strings are short → fewer partials → nearly pure tone
@@ -266,12 +271,14 @@ private:
             1.2f - (float) (midiNote - 48) * 0.012f);
         peakIndex *= noteIndexScale;
 
-        //  preset-dependent attack/body ratio      Piano  EPiano Vibra  Bell   Organ  Pad    Bass   Brass
-        static constexpr float atkRatios[]  = { 0.70f, 0.60f, 0.50f, 0.40f, 0.10f, 0.10f, 0.65f, 0.55f };
-        float aRatio = atkRatios[type];
+        // P1-2: per-type attack/body scale factors (not ratio — can sum ≠ 1.0)
+        //   attackScale > 1 = louder transient; bodyScale < 1 = thinner sustain
+        //                                          Piano  EPiano Vibra  Bell   Organ  Pad    Bass   Brass
+        static constexpr float atkScales[] =  { 1.20f, 1.60f, 0.80f, 1.40f, 0.20f, 0.40f, 1.10f, 0.90f };
+        static constexpr float bdyScales[] =  { 0.55f, 0.45f, 0.70f, 0.80f, 0.80f, 0.70f, 0.80f, 0.65f };
 
-        attackIndex = peakIndex * aRatio;
-        bodyIndex   = peakIndex * (1.0f - aRatio);
+        attackIndex = peakIndex * atkScales[type] * velAttackBoost;
+        bodyIndex   = peakIndex * bdyScales[type];
 
         float noteScaling = std::max (0.3f, 1.0f + (float) (midiNote - 60) * 0.025f);
 
@@ -279,18 +286,18 @@ private:
         float attackTimeSec = 0.045f / noteScaling;
         attackDecayCoeff = (float) std::exp (-6.9078 / (attackTimeSec * sr));
 
-        // Body decay: controlled by brightness param (higher = faster)
+        // Body decay: controlled by tone decay param (higher = faster)
         float bodyTimeSec = (1.0f - brightness * 0.95f) * 4.0f + 0.1f;
         bodyTimeSec /= noteScaling;
         bodyDecayCoeff = (float) std::exp (-6.9078 / (bodyTimeSec * sr));
 
         // ── Hammer noise transient ──
         // Bandpass-filtered (1.5–6 kHz) noise burst for physical strike character
-        // Amplitude & duration scale with velocity: hard hit → louder, shorter
+        // P1-1: velHammerScale gives soft hits less noise, hard hits more bite
         //                                         Piano  EPiano Vibra  Bell   Organ  Pad    Bass   Brass
         static constexpr float hammerAmts[]  = { 0.35f, 0.25f, 0.10f, 0.05f, 0.00f, 0.00f, 0.15f, 0.10f };
 
-        hammerLevel = hammerAmts[type] * velocity;
+        hammerLevel = hammerAmts[type] * velHammerScale;
         float hammerTimeSec = 0.015f + 0.030f * (1.0f - velocity);  // 15-45 ms
         hammerDecayCoeff = (float) std::exp (-6.9078 / (hammerTimeSec * sr));
 
@@ -301,27 +308,28 @@ private:
         hammerLPState = 0.0f;
         hammerNoiseSeed = static_cast<uint32_t> (midiNote * 17 + (int) (velocity * 1000.0f));
 
-        // ── Body resonance (2 soundboard modes) ──
-        // Fixed frequencies ~180 Hz (low warmth) + ~340 Hz (mid presence)
-        // representing the wooden body that colours all notes equally.
-        // Amplitude: full for low/mid register, tapers above C5 (high notes are
-        // naturally thinner; 180Hz body under C7 would sound disconnected)
+        // ── P1-3: Per-type body resonance ──
+        // Each sound type has different resonance character to reduce "same box" feel
         //                                         Piano  EPiano Vibra  Bell   Organ  Pad    Bass   Brass
-        static constexpr float bodyResAmts[] = { 0.18f, 0.12f, 0.06f, 0.02f, 0.04f, 0.02f, 0.20f, 0.06f };
+        static constexpr float bodyResAmts[] = { 0.18f, 0.10f, 0.05f, 0.02f, 0.00f, 0.02f, 0.22f, 0.03f };
+        static constexpr float bodyF1[]      = {180.0f,220.0f,200.0f,  0.0f,  0.0f,120.0f, 90.0f,  0.0f };
+        static constexpr float bodyF2[]      = {340.0f,440.0f,400.0f,  0.0f,  0.0f,250.0f,180.0f,  0.0f };
+        static constexpr float bodyD1[]      = {  2.0f,  1.2f,  1.5f,  1.0f,  1.0f,  2.5f,  2.0f,  1.0f }; // decay sec
+        static constexpr float bodyD2[]      = {  1.5f,  0.8f,  1.0f,  1.0f,  1.0f,  2.0f,  1.5f,  1.0f };
 
         float bodyAmt = bodyResAmts[type] * (0.6f + 0.4f * velocity);
         float noteBodyScale = juce::jlimit (0.2f, 1.0f,
             1.0f - std::max (0.0f, (float) (midiNote - 72)) * 0.02f);
 
         bodyResPhase1 = 0.0;
-        bodyResInc1   = 180.0 * juce::MathConstants<double>::twoPi / sr;
-        bodyResAmp1   = bodyAmt * 0.6f * noteBodyScale;
-        bodyResDecay1 = (float) std::exp (-6.9078 / (2.0 * sr));   // ~2 s
+        bodyResInc1   = (double) bodyF1[type] * juce::MathConstants<double>::twoPi / sr;
+        bodyResAmp1   = (bodyF1[type] > 0.0f) ? bodyAmt * 0.6f * noteBodyScale : 0.0f;
+        bodyResDecay1 = (float) std::exp (-6.9078 / ((double) bodyD1[type] * sr));
 
         bodyResPhase2 = 0.0;
-        bodyResInc2   = 340.0 * juce::MathConstants<double>::twoPi / sr;
-        bodyResAmp2   = bodyAmt * 0.4f * noteBodyScale;
-        bodyResDecay2 = (float) std::exp (-6.9078 / (1.5 * sr));   // ~1.5 s
+        bodyResInc2   = (double) bodyF2[type] * juce::MathConstants<double>::twoPi / sr;
+        bodyResAmp2   = (bodyF2[type] > 0.0f) ? bodyAmt * 0.4f * noteBodyScale : 0.0f;
+        bodyResDecay2 = (float) std::exp (-6.9078 / ((double) bodyD2[type] * sr));
 
         // ── ADSR envelope ──
         static constexpr float decays[]   = { 3.5f,  1.2f,  2.0f,  3.5f, 0.01f, 0.01f, 0.3f,  0.5f  };
