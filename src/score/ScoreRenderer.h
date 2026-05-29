@@ -203,6 +203,49 @@ public:
                 writePos += rl.numSamples - crossfadeSamples;
         }
 
+        // Apply effects + master volume (same as render())
+        EffectsChain fx;
+        fx.prepare (sr);
+        EffectsParams fxp;
+        fxp.reverbEnabled = score.global.effects.reverbWet > 0.001;
+        fxp.reverbWet = static_cast<float> (score.global.effects.reverbWet);
+        fxp.reverbRoomSize = static_cast<float> (std::min (score.global.effects.reverbDecay / 10.0, 1.0));
+        fxp.delayEnabled = score.global.effects.delayWet > 0.001;
+        fxp.delayWet = static_cast<float> (score.global.effects.delayWet);
+        fxp.delayTime = score.global.effects.delayTimeMs / 1000.0;
+        fxp.delayFeedback = static_cast<float> (score.global.effects.delayFeedback);
+        fxp.distortionEnabled = score.global.effects.distortionWet > 0.001;
+        fxp.distortionDrive = static_cast<float> (score.global.effects.distortionDrive);
+        fxp.distortionInstability = static_cast<float> (score.global.effects.distortionInstability);
+        fxp.distortionWet = static_cast<float> (score.global.effects.distortionWet);
+        if (score.global.effects.distortionType == "bitcrush")
+            fxp.distortionType = DistortionType::Bitcrush;
+        else if (score.global.effects.distortionType == "wavefold")
+            fxp.distortionType = DistortionType::Wavefold;
+        else
+            fxp.distortionType = DistortionType::Overdrive;
+        fxp.masterVolume = static_cast<float> (score.global.masterVolume);
+        fx.setParameters (fxp);
+
+        float* left  = output.getWritePointer (0);
+        float* right = output.getWritePointer (1);
+        for (int i = 0; i < totalOut; ++i)
+            fx.processStereo (left[i], right[i]);
+
+        // Append tail silence
+        int tailSamples = static_cast<int> (score.exportSettings.tailSilenceMs / 1000.0 * sr);
+        if (tailSamples > 0)
+        {
+            output.setSize (2, totalOut + tailSamples, true);
+            for (int i = totalOut; i < totalOut + tailSamples; ++i)
+            {
+                float tl = 0.0f, tr = 0.0f;
+                fx.processStereo (tl, tr);
+                output.setSample (0, i, tl);
+                output.setSample (1, i, tr);
+            }
+        }
+
         return WavWriter::write (outputFile, output, sr,
                                  score.exportSettings.bitDepth,
                                  score.exportSettings.normalize);
@@ -212,8 +255,8 @@ private:
     void renderEvent (const ScoreEvent& ev, juce::AudioBuffer<float>& buffer, double sr)
     {
         int startSample = static_cast<int> (ev.time * sr);
-        int durationSamples = static_cast<int> (ev.duration * sr);
-        int endSample = std::min (startSample + durationSamples, buffer.getNumSamples());
+        // Let voice ring into tail region — isActive() stops the loop naturally
+        int endSample = buffer.getNumSamples();
 
         int midiNote = noteNameToMidi (ev.note);
         const Material* mat = materialDB->getMaterial (ev.material);
@@ -239,6 +282,11 @@ private:
         else if (ev.engine == "custom")
         {
             renderChromatic (ev, mat, midiNote, ChromaticSubEngine::CustomHarmonics,
+                             startSample, endSample, buffer, sr);
+        }
+        else if (ev.engine == "membrane")
+        {
+            renderChromatic (ev, mat, midiNote, ChromaticSubEngine::WaterGong,
                              startSample, endSample, buffer, sr);
         }
     }

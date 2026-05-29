@@ -30,6 +30,10 @@ exports/
 Thumbs.db
 *.swp
 *~
+*.lnk
+
+# Temp files
+*_tmp_*
 
 # Precompiled headers
 *.pch

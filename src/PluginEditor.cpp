@@ -334,6 +334,15 @@ void TsukiSynthEditor::updateEngine()
     keyboard.setColour (juce::MidiKeyboardComponent::keyDownOverlayColourId,
                         lnf.accent.withAlpha (0.35f));
     analyzerPanel.setAccent (lnf.accent);
+
+    // Keyboard range indicator — highlight each engine's "sweet spot"
+    switch (eng)
+    {
+        case 0:  keyboard.setRangeIndicator (36, 96, Clr::cimbalom);  break;  // C2–C7
+        case 1:  keyboard.setRangeIndicator (48, 84, Clr::chromatic); break;  // C3–C6
+        case 2:  keyboard.setRangeIndicator (24, 96, Clr::fm);       break;  // C1–C7
+        default: break;
+    }
 }
 
 // ========================================================================
@@ -700,6 +709,14 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.drawText ("|", padL + nameW + 7, subY, 10, subH, juce::Justification::centred);
         g.setColour (juce::Colour (0xff667788));
         g.drawText (eType, padL + nameW + 24, subY, 300, subH, juce::Justification::centredLeft);
+
+        // version number (right-aligned in title bar)
+        auto verFont = juce::Font (juce::FontOptions (fontSize (8.5f)))
+                           .withExtraKerningFactor (0.08f);
+        g.setFont (verFont);
+        g.setColour (juce::Colour (0xff556677));
+        g.drawText ("v" JucePlugin_VersionString,
+                     w - 70, subY, 60, subH, juce::Justification::centredRight);
 
         g.setColour (Clr::borderLight);
         g.drawHorizontalLine (kTitleH - 1, 0.0f, (float) w);

@@ -62,6 +62,7 @@ private:
     juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
     int tailOffEngine = -1;  // engine index still rendering tail-off after switch
+    bool skipNextProgramChange = false;  // suppress first setCurrentProgram after state restore
     double currentSampleRate = 44100.0;
 
     juce::TimeSliceThread recordingThread { "TsukiSynth Recorder" };

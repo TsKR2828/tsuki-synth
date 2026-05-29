@@ -4,7 +4,7 @@
   "title": "TsukiSynth Score",
   "description": "AI-readable physical modeling sound event format for TsukiSynth",
   "type": "object",
-  "required": ["meta", "global", "events", "export"],
+  "required": ["meta", "global", "export"],
   "properties": {
     "$schema": {
       "type": "string",
@@ -87,7 +87,7 @@
         "properties": {
           "time":     { "type": "number", "minimum": 0, "description": "Start time in seconds" },
           "duration": { "type": "number", "minimum": 0, "description": "Duration in seconds" },
-          "engine":   { "type": "string", "enum": ["string", "beam", "plate", "membrane", "fm"], "description": "Physical model type" },
+          "engine":   { "type": "string", "enum": ["string", "cimbalom", "beam", "tongue_drum", "plate", "water_gong", "membrane", "custom", "fm"], "description": "Physical model type" },
           "note":     { "description": "Pitch as note name (C5) or MIDI number (72)" },
           "velocity": { "type": "number", "minimum": 0, "maximum": 1 },
           "params": {

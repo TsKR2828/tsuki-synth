@@ -157,13 +157,11 @@ public:
         return processSingleSample();
     }
 
+    /** Scale frequency by an absolute ratio from the note-on pitch (not cumulative). */
     void scaleFrequency (double factor)
     {
-        double sr = standaloneSR > 0.0 ? standaloneSR : getSampleRate();
-        double baseCarrier   = carrierInc   / (juce::MathConstants<double>::twoPi / sr);
-        double baseModulator = modulatorInc / (juce::MathConstants<double>::twoPi / sr);
-        carrierInc   = baseCarrier   * factor * juce::MathConstants<double>::twoPi / sr;
-        modulatorInc = baseModulator * factor * juce::MathConstants<double>::twoPi / sr;
+        carrierInc   = originalCarrierInc   * factor;
+        modulatorInc = originalModulatorInc * factor;
     }
 
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
@@ -197,6 +195,8 @@ private:
     double modulatorPhase = 0.0;
     double carrierInc     = 0.0;
     double modulatorInc   = 0.0;
+    double originalCarrierInc   = 0.0;  // stored at noteOn for non-cumulative glide
+    double originalModulatorInc = 0.0;
     float  feedbackAmount = 0.0f;
     float  lastModOutput  = 0.0f;
     float  gain           = 0.0f;
@@ -246,6 +246,8 @@ private:
         modulatorPhase = 0.0;
         carrierInc   = freq * juce::MathConstants<double>::twoPi / sr;
         modulatorInc = freq * (double) ratio * juce::MathConstants<double>::twoPi / sr;
+        originalCarrierInc   = carrierInc;
+        originalModulatorInc = modulatorInc;
 
         feedbackAmount = juce::jlimit (0.0f, 0.7f, feedback * 0.7f);
         lastModOutput  = 0.0f;

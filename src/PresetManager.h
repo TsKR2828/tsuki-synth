@@ -75,9 +75,16 @@ public:
     {
         loading = true;
         apvts.replaceState (defaultState.createCopy());
+        reattachListener();
         loading = false;
         currentIndex = -1;
         dirty = false;
+    }
+
+    /** Re-subscribe to the (potentially new) ValueTree after replaceState(). */
+    void reattachListener()
+    {
+        apvts.state.addListener (this);
     }
 
     // ── Save user preset ────────────────────────────────────────
@@ -244,6 +251,7 @@ private:
 
         loading = true;
         apvts.replaceState (juce::ValueTree::fromXml (*paramsXml));
+        reattachListener();
         loading = false;
     }
 

@@ -76,16 +76,17 @@ public:
 
     void processStereo (float& left, float& right)
     {
+        // Chain: Distortion → Compressor → Delay → Reverb (matches plugin)
         if (params.distortionEnabled)
         {
             left  = distortionL.processSample (left);
             right = distortionR.processSample (right);
         }
 
-        if (params.reverbEnabled)
+        if (params.compressorEnabled)
         {
-            left  = reverbL.processSample (left);
-            right = reverbR.processSample (right);
+            left  = compL.processSample (left);
+            right = compR.processSample (right);
         }
 
         if (params.delayEnabled)
@@ -94,10 +95,10 @@ public:
             right = delayR.processSample (right);
         }
 
-        if (params.compressorEnabled)
+        if (params.reverbEnabled)
         {
-            left  = compL.processSample (left);
-            right = compR.processSample (right);
+            left  = reverbL.processSample (left);
+            right = reverbR.processSample (right);
         }
 
         left  *= params.masterVolume;

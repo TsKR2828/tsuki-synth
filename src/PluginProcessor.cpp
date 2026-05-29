@@ -539,6 +539,18 @@ juce::File TsukiSynthProcessor::getLastRecordingFile() const
     return lastRecordingFile;
 }
 
+// == Logging (Release-safe, writes to %APPDATA%/TsukiSynth/debug.log) ==
+static void tsukiLog (const juce::String& msg)
+{
+    static auto logFile = juce::File::getSpecialLocation (
+                              juce::File::userApplicationDataDirectory)
+                              .getChildFile ("TsukiSynth")
+                              .getChildFile ("debug.log");
+    logFile.getParentDirectory().createDirectory();
+    logFile.appendText (juce::Time::getCurrentTime().toString (true, true, true, true)
+                        + "  " + msg + "\n");
+}
+
 // == State ==
 void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
@@ -546,6 +558,16 @@ void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("presetIndex", presetManager.getCurrentIndex(), nullptr);
     auto xml = state.createXml();
     copyXmlToBinary (*xml, destData);
+
+    auto v = [&] (const char* id) -> juce::String {
+        if (auto* p = apvts.getParameter (id))
+            return juce::String (id) + "=" + juce::String (p->getValue(), 4);
+        return {};
+    };
+    tsukiLog ("SAVE  presetIdx=" + juce::String (presetManager.getCurrentIndex())
+              + "  " + v ("engine") + "  " + v ("chr_sub_engine")
+              + "  " + v ("chr_thickness") + "  " + v ("chr_size")
+              + "  " + v ("chr_pitch_glide") + "  " + v ("chr_strike_pos"));
 }
 
 void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -554,9 +576,21 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
     if (xml != nullptr && xml->hasTagName (apvts.state.getType()))
     {
         auto tree = juce::ValueTree::fromXml (*xml);
-        int idx = tree.getProperty ("presetIndex", 0);
+        int idx = tree.getProperty ("presetIndex", -1);
         apvts.replaceState (tree);
+        presetManager.reattachListener();
         presetManager.setCurrentIndex (idx);
+        skipNextProgramChange = true;
+
+        auto v = [&] (const char* id) -> juce::String {
+            if (auto* p = apvts.getParameter (id))
+                return juce::String (id) + "=" + juce::String (p->getValue(), 4);
+            return {};
+        };
+        tsukiLog ("RESTORE  presetIdx=" + juce::String (idx)
+                  + "  " + v ("engine") + "  " + v ("chr_sub_engine")
+                  + "  " + v ("chr_thickness") + "  " + v ("chr_size")
+                  + "  " + v ("chr_pitch_glide") + "  " + v ("chr_strike_pos"));
     }
 }
 
@@ -573,6 +607,14 @@ int TsukiSynthProcessor::getCurrentProgram()
 
 void TsukiSynthProcessor::setCurrentProgram (int index)
 {
+    if (skipNextProgramChange)
+    {
+        tsukiLog ("setCurrentProgram(" + juce::String (index) + ")  SKIPPED (post-restore)");
+        skipNextProgramChange = false;
+        return;
+    }
+
+    tsukiLog ("setCurrentProgram(" + juce::String (index) + ")  LOADING");
     presetManager.loadPreset (index);
 }
 

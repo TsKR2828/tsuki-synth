@@ -100,11 +100,23 @@ inline int noteNameToMidi (const std::string& name)
 {
     if (name.empty()) return 60;
 
+    // Pure numeric → MIDI number
     if (name[0] >= '0' && name[0] <= '9')
-        return std::stoi (name);
+    {
+        try { return std::stoi (name); }
+        catch (...) { return 60; }
+    }
 
-    static const int noteMap[] = { 9, 11, 0, 2, 4, 5, 7 };
-    int base = noteMap[name[0] - 'A'];
+    // Accept uppercase and lowercase note letters (A-G / a-g)
+    char letter = name[0];
+    if (letter >= 'a' && letter <= 'g')
+        letter = static_cast<char> (letter - 32);  // to uppercase
+
+    if (letter < 'A' || letter > 'G')
+        return 60;  // unknown letter → default C4
+
+    static const int noteMap[] = { 9, 11, 0, 2, 4, 5, 7 };  // A..G
+    int base = noteMap[letter - 'A'];
     int pos = 1;
     if (pos < static_cast<int> (name.size()) && name[static_cast<size_t> (pos)] == '#')
         { base++; pos++; }
@@ -113,7 +125,11 @@ inline int noteNameToMidi (const std::string& name)
 
     int octave = 4;
     if (pos < static_cast<int> (name.size()))
-        octave = name[static_cast<size_t> (pos)] - '0';
+    {
+        char c = name[static_cast<size_t> (pos)];
+        if (c >= '0' && c <= '9')
+            octave = c - '0';
+    }
 
     return (octave + 1) * 12 + base;
 }
