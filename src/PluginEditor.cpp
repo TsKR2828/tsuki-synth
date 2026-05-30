@@ -45,7 +45,7 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     : AudioProcessorEditor (&p),
       proc (p),
       keyboard (p.keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard),
-      analyzerPanel (p.analyzerFifo)
+      analyzerPanel (p.analyzerFifo, p.analyzerDryFifo)
 {
     setLookAndFeel (&lnf);
 
@@ -146,8 +146,8 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     presetCombo.onChange = [this]
     {
         int id = presetCombo.getSelectedId();
-        if (id > 0)
-            proc.setCurrentProgram (id - 1);
+        if (id > 0 && id <= (int) presetIdToIndex.size())
+            proc.setCurrentProgram (presetIdToIndex[(size_t) (id - 1)]);
         updateDirtyIndicator();
     };
     addAndMakeVisible (presetCombo);
@@ -245,6 +245,8 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     // -- Analyzer --------------------------------------------------------
     addAndMakeVisible (analyzerPanel);
     analyzerPanel.setActive (true);
+    analyzerPanel.setSampleRate (proc.getSampleRate() > 0.0 ? proc.getSampleRate() : 44100.0);
+    analyzerPanel.refreshText();
 
     // -- Engine listener + initial state ---------------------------------
     proc.apvts.addParameterListener ("engine", this);
@@ -288,6 +290,10 @@ void TsukiSynthEditor::timerCallback()
 {
     updateDirtyIndicator();
     refreshRecorderText();
+
+    double sr = proc.getSampleRate();
+    if (sr > 0.0)
+        analyzerPanel.setSampleRate (sr);
 }
 
 int TsukiSynthEditor::currentEngine() const
@@ -343,6 +349,8 @@ void TsukiSynthEditor::updateEngine()
         case 2:  keyboard.setRangeIndicator (24, 96, Clr::fm);       break;  // C1–C7
         default: break;
     }
+
+    rebuildPresetCombo();
 }
 
 // ========================================================================
@@ -522,6 +530,7 @@ void TsukiSynthEditor::refreshLocalizedText()
     langToggle.setButtonText (UiLocale::toggleLabel());
     refreshRecorderText();
     rebuildPresetCombo();
+    analyzerPanel.refreshText();
     keyboard.repaint();
 
     repaint();
@@ -544,24 +553,46 @@ void TsukiSynthEditor::refreshRecorderText()
 void TsukiSynthEditor::rebuildPresetCombo()
 {
     presetCombo.clear (juce::dontSendNotification);
+    presetIdToIndex.clear();
 
+    int eng = currentEngine();
     auto& pm = proc.presetManager;
+
     int nFactory = pm.getNumFactoryPresets();
     int nUser    = pm.getNumUserPresets();
+    int fc = 0;
+    auto* factoryList = getFactoryPresetList (fc);
 
+    int comboId = 1;
     for (int i = 0; i < nFactory; ++i)
-        presetCombo.addItem (UiLocale::presetName (pm.getPresetName (i)), i + 1);
+    {
+        if (getPresetEngine (factoryList[i]) != eng)
+            continue;
+        presetCombo.addItem (UiLocale::presetName (pm.getPresetName (i)), comboId);
+        presetIdToIndex.push_back (i);
+        ++comboId;
+    }
 
     if (nUser > 0)
     {
         presetCombo.addSeparator();
         for (int i = 0; i < nUser; ++i)
-            presetCombo.addItem (pm.getPresetName (nFactory + i), nFactory + i + 1);
+        {
+            presetCombo.addItem (pm.getPresetName (nFactory + i), comboId);
+            presetIdToIndex.push_back (nFactory + i);
+            ++comboId;
+        }
     }
 
     int cur = pm.getCurrentIndex();
-    if (cur >= 0 && cur < pm.getNumPresets())
-        presetCombo.setSelectedId (cur + 1, juce::dontSendNotification);
+    for (int c = 0; c < (int) presetIdToIndex.size(); ++c)
+    {
+        if (presetIdToIndex[(size_t) c] == cur)
+        {
+            presetCombo.setSelectedId (c + 1, juce::dontSendNotification);
+            break;
+        }
+    }
 }
 
 void TsukiSynthEditor::updateDirtyIndicator()

@@ -47,6 +47,7 @@ public:
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presetManager { apvts };
     AudioFIFO analyzerFifo { 4096 };
+    AudioFIFO analyzerDryFifo { 8192 };
     juce::MidiKeyboardState keyboardState;
     MaterialDB materialDB;
 

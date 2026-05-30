@@ -10,12 +10,19 @@
  * Signal chain (per sample):
  *   1. FM core:  sin(2π·fc·t + I(t) · sin(2π·fm·t + fb·lastMod))
  *   2. Hammer noise: bandpass (1.5–6 kHz) noise burst, 15–45 ms
- *   3. Body resonance: 2 soundboard modes (180 Hz + 340 Hz)
+ *   3. Body resonance: 2 soundboard modes (per-type frequencies)
  *
  * I(t) is a TWO-STAGE envelope (separates attack brightness from body damping):
  *   attackIndex: high peak, fast exponential decay (~45 ms) — transient "hammer" brightness
  *   bodyIndex:   moderate floor, slow decay (brightness param) — sustained tone color
  *   effectiveIndex = attackIndex + bodyIndex
+ *
+ * E.Piano 3-stack mode (P2):
+ *   When type == E.Piano, three parallel FM stacks run alongside the main path:
+ *     Stack A (Body):      ratio 1:1,  index 2.2, decay 650ms — piano body
+ *     Stack B (Tine/Bell): ratio 14:1, index 4.5, decay 80ms  — bright attack transient
+ *     Stack C (Shimmer):   ratio 3:1,  index 1.4, decay 900ms, +4 cents — glass tail
+ *   Output = 60% stacks + 40% original single-stack, for richer DX7-inspired timbre.
  *
  * Sound types control ADSR shape + hammer/body amounts:
  *   Piano / E.Piano / Vibraphone / Bell / Organ / Pad / Bass / Brass
@@ -162,6 +169,16 @@ public:
     {
         carrierInc   = originalCarrierInc   * factor;
         modulatorInc = originalModulatorInc * factor;
+
+        // Also scale multi-stack oscillators (E.Piano 3-stack)
+        if (useMultiStack)
+        {
+            for (int s = 0; s < kNumStacks; ++s)
+            {
+                stacks[s].carrierInc   = stacks[s].origCarrierInc   * factor;
+                stacks[s].modulatorInc = stacks[s].origModulatorInc * factor;
+            }
+        }
     }
 
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
@@ -225,6 +242,28 @@ private:
     float  bodyResAmp2     = 0.0f;
     float  bodyResDecay1   = 1.0f;
     float  bodyResDecay2   = 1.0f;
+
+    // ── E.Piano 3-stack mode (P2) ──
+    // Parallel FM operators: body(1:1), tine/bell(14:1), shimmer(3:1 +4¢)
+    // Only active when type == 1 (E.Piano); other types use single-stack path.
+    static constexpr int kNumStacks = 3;
+    bool useMultiStack = false;
+
+    struct FMStack
+    {
+        double carrierPhase   = 0.0;
+        double modulatorPhase = 0.0;
+        double carrierInc     = 0.0;
+        double modulatorInc   = 0.0;
+        double origCarrierInc = 0.0;   // for non-cumulative glide
+        double origModulatorInc = 0.0;
+        float  index          = 0.0f;
+        float  decayCoeff     = 1.0f;
+        float  feedbackAmt    = 0.0f;
+        float  lastModOut     = 0.0f;
+        float  level          = 0.0f;  // mix level relative to main output
+    };
+    FMStack stacks[kNumStacks];
 
     // ── Amplitude envelope + macro noise ──
     Envelope ampEnv;
@@ -345,6 +384,48 @@ private:
 
         noiseGen.setType (NoiseGen::Type::White);
         noiseGen.reset();
+
+        // ── P2: E.Piano 3-stack mode ──
+        // Only E.Piano (type 1) uses parallel stacks; all others single-stack.
+        useMultiStack = (type == 1);
+        if (useMultiStack)
+        {
+            // Stack definitions: { ratio, peakIndex, level, decayMs, feedback, detuneCents }
+            struct StackDef { float r; float idx; float lvl; float decMs; float fb; float detCents; };
+            static constexpr StackDef defs[kNumStacks] = {
+                { 1.0f,  2.2f, 0.75f, 650.0f, 0.02f,  0.0f },   // A: Body
+                { 14.0f, 4.5f, 0.30f,  80.0f, 0.00f,  0.0f },   // B: Tine / Bell attack
+                { 3.0f,  1.4f, 0.18f, 900.0f, 0.00f,  4.0f },   // C: Shimmer (+4 cents)
+            };
+
+            for (int s = 0; s < kNumStacks; ++s)
+            {
+                auto& st  = stacks[s];
+                auto& def = defs[s];
+
+                // Detune in cents → frequency multiplier
+                float detuneMul = (def.detCents != 0.0f)
+                    ? std::pow (2.0f, def.detCents / 1200.0f)
+                    : 1.0f;
+
+                double stackCarrierFreq = (double) freq * (double) detuneMul;
+
+                st.carrierPhase   = 0.0;
+                st.modulatorPhase = 0.0;
+                st.carrierInc     = stackCarrierFreq * juce::MathConstants<double>::twoPi / sr;
+                st.modulatorInc   = stackCarrierFreq * (double) def.r
+                                    * juce::MathConstants<double>::twoPi / sr;
+                st.origCarrierInc   = st.carrierInc;
+                st.origModulatorInc = st.modulatorInc;
+
+                // Index scaled by velocity (same velIndexScale as main path)
+                st.index     = def.idx * velIndexScale;
+                st.decayCoeff = (float) std::exp (-6.9078 / ((double) def.decMs * 0.001 * sr));
+                st.feedbackAmt = juce::jlimit (0.0f, 0.7f, def.fb * 0.7f);
+                st.lastModOut  = 0.0f;
+                st.level       = def.lvl;
+            }
+        }
     }
 
     // ──────────────────────────────────────────────────────────
@@ -357,14 +438,57 @@ private:
         attackIndex *= attackDecayCoeff;
         bodyIndex   *= bodyDecayCoeff;
 
-        // ── FM synthesis ──
-        float modInput  = (float) modulatorPhase + feedbackAmount * lastModOutput;
-        float modOutput = std::sin (modInput) * effectiveIndex;
-        lastModOutput   = modOutput;
+        float envVal = ampEnv.getNextSample();
+        float sample;
 
-        float carrier = std::sin ((float) carrierPhase + modOutput);
-        float envVal  = ampEnv.getNextSample();
-        float sample  = carrier * envVal * gain;
+        if (useMultiStack)
+        {
+            // ── P2: E.Piano 3-stack parallel FM ──
+            // Each stack is an independent 2-op FM: sin(carrier + I·sin(mod + fb·prev))
+            // Summed with per-stack level weights, sharing the same amplitude envelope.
+            float stackSum = 0.0f;
+
+            for (int s = 0; s < kNumStacks; ++s)
+            {
+                auto& st = stacks[s];
+
+                float modIn  = (float) st.modulatorPhase + st.feedbackAmt * st.lastModOut;
+                float modOut = std::sin (modIn) * st.index;
+                st.lastModOut = modOut;
+
+                float car = std::sin ((float) st.carrierPhase + modOut);
+                stackSum += car * st.level;
+
+                st.index *= st.decayCoeff;
+
+                st.carrierPhase   += st.carrierInc;
+                st.modulatorPhase += st.modulatorInc;
+                if (st.carrierPhase >= juce::MathConstants<double>::twoPi * 65536.0)
+                    st.carrierPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+                if (st.modulatorPhase >= juce::MathConstants<double>::twoPi * 65536.0)
+                    st.modulatorPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+            }
+
+            // Also add the main single-stack FM (preserves existing E.Piano character
+            // as a 4th layer, blended at reduced level for backward compatibility)
+            float modInput  = (float) modulatorPhase + feedbackAmount * lastModOutput;
+            float modOutput = std::sin (modInput) * effectiveIndex;
+            lastModOutput   = modOutput;
+            float mainCarrier = std::sin ((float) carrierPhase + modOutput);
+
+            // Blend: 60% multi-stack + 40% original single-stack
+            sample = (stackSum * 0.60f + mainCarrier * 0.40f) * envVal * gain;
+        }
+        else
+        {
+            // ── Original single-stack FM path (all types except E.Piano) ──
+            float modInput  = (float) modulatorPhase + feedbackAmount * lastModOutput;
+            float modOutput = std::sin (modInput) * effectiveIndex;
+            lastModOutput   = modOutput;
+
+            float carrier = std::sin ((float) carrierPhase + modOutput);
+            sample = carrier * envVal * gain;
+        }
 
         // ── Hammer noise transient (bandpass 1.5–6 kHz) ──
         if (hammerLevel > 0.0001f)

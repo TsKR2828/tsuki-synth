@@ -31,7 +31,7 @@
 | EN/中文 localization | Done |
 | Standalone REC recording | Done |
 
-**Version**: `v0.2.0` — 20 factory presets, DAW validated, Codex audit 8/8 bugs fixed.
+**Version**: `v0.2.0` — 21 factory presets, DAW validated, Codex audit 8/8 bugs fixed.
 
 ## Overview
 
@@ -78,8 +78,10 @@ TsukiSynth is positioned as a **Physical Modeling synthesizer** with semantic pa
 ### Engine 3: FM Piano — Frequency Modulation
 - 2-operator FM synthesis with self-feedback
 - 8 sound type presets: Piano, E.Piano, Vibraphone, Bell, Organ, Pad, Bass, Brass
+- **E.Piano 3-stack mode**: parallel body (1:1) + tine/bell (14:1) + shimmer (3:1, +4 cents) for DX7-inspired timbre
 - Velocity-sensitive modulation index + note-dependent brightness decay
-- Parameters: sound type, FM ratio, mod index, brightness, feedback, attack, release
+- Two-stage modulation envelope: fast attack transient + slow body decay
+- Parameters: sound type, FM ratio, mod index, tone decay, feedback, attack, release
 
 ## Macro Parameters
 
@@ -116,7 +118,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 
 ## Preset System
 
-- 20 factory presets (6 per engine) compiled as static arrays
+- 21 factory presets (6 Cim + 6 Chr + 9 FM) compiled as static arrays
 - User preset save/load (`.tsukipreset` XML files in AppData)
 - **Visual preset browser** with category filters (All / Cimbalom / Chromatic / FM / User)
 - DAW program change compatible (VST3 `getNumPrograms` / `setCurrentProgram`)

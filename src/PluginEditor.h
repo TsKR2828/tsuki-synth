@@ -142,6 +142,7 @@ private:
     juce::TextButton presetSave { "Save" };
     juce::TextButton presetInit { "Init" };
     juce::Label      dirtyLabel;
+    std::vector<int> presetIdToIndex;   // combo item ID → real preset index
     void rebuildPresetCombo();
     void updateDirtyIndicator();
     void promptSavePreset();

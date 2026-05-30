@@ -230,6 +230,8 @@ private:
 
             // -- Analyzer --
             { "ui_scope",            "SCOPE",      "示波器"     },
+            { "ui_spectrum",          "SPECTRUM",   "頻譜"       },
+            { "ui_tuner",            "TUNER",      "調音器"     },
 
             // -- Save dialog --
             { "ui_save_title",       "Save Preset",                 "儲存預設"       },
@@ -262,8 +264,13 @@ private:
             { "Ethereal Steel Bells",    "空靈鋼鐘"       },
             { "Acoustic Piano",          "原聲鋼琴"       },
             { "Electric Rhodes",         "電鋼琴"         },
+            { "Layered E.Piano",         "層疊電鋼琴"     },
             { "DX7 Crystal Bell",        "DX7 水晶鐘"     },
             { "Church Organ",            "教堂風琴"       },
+            { "Steel Dulcimer Body",     "鋼製揚琴 共鳴"  },
+            { "Copper Warm Body",        "銅弦暖音 共鳴"  },
+            { "Crystal Tongue Body",     "水晶空靈鼓 共鳴"},
+            { "Bronze Gong Body",        "青銅水鑼 共鳴"  },
         };
         return t;
     }

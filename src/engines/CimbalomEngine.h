@@ -3,6 +3,7 @@
 #include "../dsp/ModalResonator.h"
 #include "../dsp/NoiseGen.h"
 #include "../dsp/BiquadFilter.h"
+#include "../dsp/BodyResonance.h"
 #include "../dsp/Envelope.h"
 #include "../physics/StringModel.h"
 #include "../physics/MaterialDB.h"
@@ -102,8 +103,12 @@ public:
         strikePos *= (0.5f + mStrike);
         strikePos = juce::jlimit (0.05f, 0.95f, strikePos);
 
-        // Macro: Body → detuning spread
+        // Macro: Body → detuning spread + body resonance layer
         detCents *= (0.4f + mBody * 1.2f);
+
+        bodyRes.prepare (getSampleRate());
+        bodyRes.setAmount (mBody);
+        bodyRes.reset();
 
         // ── 弦參數 ──
         StringModel::Params sp;
@@ -284,6 +289,10 @@ public:
         float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
         setupExciter (static_cast<float> (hammerIdx), velocity,
                       0.5f, 0.0f, materialBright, sr);
+
+        bodyRes.prepare (sr);
+        bodyRes.setAmount (0.5f);
+        bodyRes.reset();
         damped = false;
     }
 
@@ -309,6 +318,8 @@ public:
             noise = exciterFilter.processSample (noise);
             sample += noise * exciterEnv.process();
         }
+
+        sample += bodyRes.processSample (sample);
         return sample;
     }
 
@@ -345,6 +356,9 @@ public:
                 sample += noise * exciterEnv.process();
                 anyActive = true;
             }
+
+            // Body resonance layer
+            sample += bodyRes.processSample (sample);
 
             // 輸出（master gain 防 clipping）
             sample *= 0.15f;
@@ -404,4 +418,5 @@ private:
     NoiseGen           noiseGen;
     BiquadFilter       exciterFilter;
     Envelope::ExpDecay exciterEnv;
+    BodyResonance      bodyRes;
 };

@@ -421,6 +421,19 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             tailOffEngine = -1;
     }
 
+    // Push dry (pre-FX) mono signal for tuner pitch detection
+    {
+        constexpr int kMaxBlock = 2048;
+        float mono[kMaxBlock];
+        int n = juce::jmin (buffer.getNumSamples(), kMaxBlock);
+        const float* L = buffer.getReadPointer (0);
+        const float* R = buffer.getNumChannels() > 1
+                             ? buffer.getReadPointer (1) : L;
+        for (int i = 0; i < n; ++i)
+            mono[i] = (L[i] + R[i]) * 0.5f;
+        analyzerDryFifo.push (mono, n);
+    }
+
     // Global effect chain: Compressor → Delay → Reverb
     effectChain.processBlock (buffer);
 

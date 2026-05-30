@@ -3,6 +3,7 @@
 #include "../dsp/ModalResonator.h"
 #include "../dsp/NoiseGen.h"
 #include "../dsp/BiquadFilter.h"
+#include "../dsp/BodyResonance.h"
 #include "../dsp/Envelope.h"
 #include "../physics/BeamModel.h"
 #include "../physics/PlateModel.h"
@@ -98,8 +99,12 @@ public:
         strikePos *= (0.5f + mStrike);
         strikePos = juce::jlimit (0.0f, 1.0f, strikePos);
 
-        // Macro: Body → resonator size modifier
+        // Macro: Body → resonator size modifier + body resonance layer
         size *= (0.5f + mBody);
+
+        bodyRes.prepare (getSampleRate());
+        bodyRes.setAmount (mBody);
+        bodyRes.reset();
 
         std::vector<ModalResonator::Mode> modes;
 
@@ -228,6 +233,10 @@ public:
         resonator.excite (velocity);
 
         setupExciter (0.0f, velocity, 0.5f, 0.0f, sr);
+
+        bodyRes.prepare (sr);
+        bodyRes.setAmount (0.5f);
+        bodyRes.reset();
         damped = false;
     }
 
@@ -256,6 +265,7 @@ public:
             noise = exciterFilter.processSample (noise);
             sample += noise * exciterEnv.process();
         }
+        sample += bodyRes.processSample (sample);
         return sample;
     }
 
@@ -301,6 +311,7 @@ public:
                 anyActive = true;
             }
 
+            sample += bodyRes.processSample (sample);
             sample *= 0.2f;
 
             for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
@@ -375,6 +386,7 @@ private:
     NoiseGen           noiseGen;
     BiquadFilter       exciterFilter;
     Envelope::ExpDecay exciterEnv;
+    BodyResonance      bodyRes;
 
     // Pitch glide state (water gong)
     std::vector<ModalResonator::Mode> baseModes;
