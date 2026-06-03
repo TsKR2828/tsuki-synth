@@ -62,6 +62,8 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     keyboard.setColour (juce::MidiKeyboardComponent::keySeparatorLineColourId, juce::Colour (0x28000000));
     keyboard.setColour (juce::MidiKeyboardComponent::shadowColourId,        juce::Colour (0x30000000));
     keyboard.setColour (juce::MidiKeyboardComponent::keyDownOverlayColourId, Clr::gold.withAlpha (0.35f));
+    // Use scientific pitch notation: middle C = MIDI 60 = "C4" (matches tuner display)
+    keyboard.setOctaveForMiddleC (4);
     addAndMakeVisible (keyboard);
 
     // -- Tab buttons -----------------------------------------------------
@@ -253,7 +255,9 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     updateEngine();
     refreshLocalizedText();
     updateDirtyIndicator();
-    startTimerHz (5);
+    // 20Hz matches analyzer/tuner tick rate so sample-rate sync is never more
+    // than one tuner tick stale even if host changes SR mid-session
+    startTimerHz (20);
     setResizable (true, true);
     setResizeLimits (540, 820, 1100, 1400);
     setSize (kW, kH);

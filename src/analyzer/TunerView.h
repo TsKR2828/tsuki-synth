@@ -101,6 +101,8 @@ private:
     juce::String currentNoteName;
     bool hasSignal = false;
     bool isActive  = false;
+    int  holdCounter = 0;
+    static constexpr int holdTicks = 3;  // ~150ms @ 20Hz — short enough to avoid stale wrong notes
 
     juce::Colour centColor() const
     {
@@ -125,7 +127,7 @@ private:
         int pulled = fifo.pull (pullBuffer.data(), (int) pullBuffer.size());
         if (pulled < 512)
         {
-            hasSignal = false;
+            decayHold();
             repaint();
             return;
         }
@@ -137,15 +139,16 @@ private:
 
         if (rms < 0.02f)
         {
-            hasSignal = false;
+            decayHold();
             repaint();
             return;
         }
 
         float freq = detectPitch (pullBuffer.data(), pulled);
-        if (freq >= 18.0f && freq < 10000.0f)
+        if (freq >= 18.0f && freq < 10000.0f && confidence >= 0.45f)
         {
             hasSignal = true;
+            holdCounter = holdTicks;
             detectedFreq = freq;
             float midiNote = 69.0f + 12.0f * std::log2 (freq / 440.0f);
             nearestMidi = juce::roundToInt (midiNote);
@@ -154,14 +157,32 @@ private:
         }
         else
         {
-            hasSignal = false;
+            decayHold();
         }
         repaint();
+    }
+
+    void decayHold()
+    {
+        if (holdCounter > 0)
+        {
+            --holdCounter;
+        }
+        else if (hasSignal)
+        {
+            // Hold expired — clear stale state so no wrong note persists
+            hasSignal = false;
+            currentNoteName.clear();
+            detectedFreq = 0.0f;
+            centOffset   = 0.0f;
+            nearestMidi  = -1;
+        }
     }
 
     // ── NSDF pitch detection (McLeod-style) ──────────────────────
     float detectPitch (const float* data, int numSamples)
     {
+        confidence = 0.0f;
         const int minLag = juce::jmax (2, (int) (sampleRate / 4000.0));
         const int maxLag = juce::jmin ((int) (sampleRate / 20.0),
                                        numSamples * 3 / 4);
@@ -186,7 +207,7 @@ private:
         }
 
         // Skip the zero-lag positive lobe: find first negative crossing
-        int zeroLagEnd = 2;
+        int zeroLagEnd = -1;
         for (int tau = 2; tau <= maxLag; ++tau)
         {
             if (nsdfBuf[(size_t) tau] <= 0.0f)
@@ -194,6 +215,22 @@ private:
                 zeroLagEnd = tau;
                 break;
             }
+        }
+        if (zeroLagEnd < 0)
+        {
+            // No negative crossing — find first local minimum as zero-lag lobe end
+            for (int tau = 3; tau < maxLag; ++tau)
+            {
+                if (nsdfBuf[(size_t) tau] < nsdfBuf[(size_t) (tau - 1)]
+                    && nsdfBuf[(size_t) tau] < nsdfBuf[(size_t) (tau + 1)])
+                {
+                    zeroLagEnd = tau;
+                    break;
+                }
+            }
+            // Absolute safe fallback
+            if (zeroLagEnd < 0)
+                zeroLagEnd = juce::jmax (minLag, (int) (sampleRate / 2000.0));
         }
 
         int searchStart = juce::jmax (minLag, zeroLagEnd);
@@ -232,11 +269,11 @@ private:
         for (const auto& p : peakBuf)
             globalMax = juce::jmax (globalMax, p.val);
 
-        if (globalMax < 0.5f)
+        if (globalMax < 0.35f)
             return 0.0f;
 
-        // First peak above 93 % of global max → fundamental
-        float threshold = globalMax * 0.93f;
+        // First peak above 80 % of global max → fundamental
+        float threshold = globalMax * 0.80f;
         int bestLag = 0;
         for (const auto& p : peakBuf)
         {
