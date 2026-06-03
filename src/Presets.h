@@ -155,6 +155,7 @@ PRESET_BEGIN (preset_rubber_pluck)
     { "cim_num_strings",  1 },
     { "cim_detuning",     0.0f },
     { "macro_body",       0.0f },    // Raw
+    { "macro_damping",    0.95f },   // Compensate for Rubber's longer decay — keep muted character
     { "fx_reverb_mix",    0.10f },
     { "fx_reverb_size",   0.30f },
     { "fx_delay_mix",     0.00f },
