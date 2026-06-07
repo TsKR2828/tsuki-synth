@@ -109,8 +109,8 @@
               "fm_index":     { "type": "number", "minimum": 0.0, "maximum": 25.0, "description": "Peak modulation index (FM depth)" },
               "fm_brightness": { "type": "number", "minimum": 0.0, "maximum": 1.0, "description": "Body modulation decay speed (higher = faster decay)" },
               "fm_feedback":  { "type": "number", "minimum": 0.0, "maximum": 1.0, "description": "Modulator self-feedback amount" },
-              "fm_attack":    { "type": "number", "minimum": 0.001, "maximum": 5.0, "description": "Attack time in seconds" },
-              "fm_release":   { "type": "number", "minimum": 0.01, "maximum": 10.0, "description": "Release time in seconds" }
+              "fm_attack":    { "type": "number", "minimum": 1, "maximum": 5000, "description": "Attack time in milliseconds" },
+              "fm_release":   { "type": "number", "minimum": 10, "maximum": 10000, "description": "Release time in milliseconds" }
             }
           },
           "glide": {

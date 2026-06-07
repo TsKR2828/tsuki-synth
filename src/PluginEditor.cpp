@@ -607,24 +607,25 @@ void TsukiSynthEditor::updateDirtyIndicator()
 
 void TsukiSynthEditor::promptSavePreset()
 {
+    auto safeThis = juce::Component::SafePointer<TsukiSynthEditor> (this);
     auto* aw = new juce::AlertWindow (UiLocale::label ("ui_save_title"),
                                        UiLocale::label ("ui_save_prompt"),
-                                       juce::AlertWindow::NoIcon, this);
+                                       juce::AlertWindow::NoIcon);
     aw->addTextEditor ("name", "My Preset", UiLocale::label ("ui_save_field"));
     aw->addButton (UiLocale::label ("ui_btn_save"),   1);
     aw->addButton (UiLocale::label ("ui_btn_cancel"), 0);
 
     aw->enterModalState (true, juce::ModalCallbackFunction::create (
-        [this, aw] (int result)
+        [safeThis, aw] (int result)
         {
-            if (result == 1)
+            if (safeThis != nullptr && result == 1)
             {
                 auto name = aw->getTextEditorContents ("name").trim();
                 if (name.isNotEmpty())
                 {
-                    proc.presetManager.saveUserPreset (name);
-                    rebuildPresetCombo();
-                    updateDirtyIndicator();
+                    safeThis->proc.presetManager.saveUserPreset (name);
+                    safeThis->rebuildPresetCombo();
+                    safeThis->updateDirtyIndicator();
                 }
             }
             delete aw;

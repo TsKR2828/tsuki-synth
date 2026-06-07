@@ -453,9 +453,12 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // Standalone recorder captures the final audible output.
     if (recordingActive.load())
     {
-        const juce::ScopedLock sl (recordingLock);
-        if (recordingWriter != nullptr)
-            recordingWriter->write (buffer.getArrayOfReadPointers(), buffer.getNumSamples());
+        if (recordingLock.tryEnter())
+        {
+            if (recordingWriter != nullptr)
+                recordingWriter->write (buffer.getArrayOfReadPointers(), buffer.getNumSamples());
+            recordingLock.exit();
+        }
     }
 
     // Mix to mono and push to analyzer FIFO (no lock, no alloc)

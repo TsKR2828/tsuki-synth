@@ -7,6 +7,7 @@
 #include "../engines/FMPianoEngine.h"
 #include "../physics/MaterialDB.h"
 #include "../dsp/EffectsChain.h"
+#include <algorithm>
 
 class ScoreRenderer
 {
@@ -22,12 +23,19 @@ public:
             return false;
 
         double sr = score.global.sampleRate;
+        if (! isValidSampleRate (sr))
+            return false;
+
         double totalDuration = 0.0;
         for (const auto& ev : score.events)
-            totalDuration = std::max (totalDuration, ev.time + ev.duration);
+            totalDuration = std::max (totalDuration,
+                                      std::max (0.0, ev.time)
+                                    + std::max (0.0, ev.duration));
 
         totalDuration += score.exportSettings.tailSilenceMs / 1000.0;
         int totalSamples = static_cast<int> (totalDuration * sr) + 1;
+        if (totalSamples <= 0)
+            return false;
 
         juce::AudioBuffer<float> buffer (2, totalSamples);
         buffer.clear();
@@ -94,6 +102,9 @@ public:
             return false;
 
         double sr = score.global.sampleRate;
+        if (! isValidSampleRate (sr))
+            return false;
+
         int crossfadeSamples = static_cast<int> (score.crossfadeMs / 1000.0 * sr);
 
         struct RenderedLayer
@@ -117,10 +128,15 @@ public:
 
             double subDuration = 0.0;
             for (const auto& ev : subScore.events)
-                subDuration = std::max (subDuration, ev.time + ev.duration);
+                subDuration = std::max (subDuration,
+                                        std::max (0.0, ev.time)
+                                      + std::max (0.0, ev.duration));
             subDuration += subScore.exportSettings.tailSilenceMs / 1000.0;
 
             int subTotalSamples = static_cast<int> (subDuration * sr) + 1;
+            if (subTotalSamples <= 0)
+                return false;
+
             juce::AudioBuffer<float> subBuffer (2, subTotalSamples);
             subBuffer.clear();
 
@@ -254,12 +270,17 @@ public:
 private:
     void renderEvent (const ScoreEvent& ev, juce::AudioBuffer<float>& buffer, double sr)
     {
-        int startSample = static_cast<int> (ev.time * sr);
+        int startSample = juce::jlimit (0, buffer.getNumSamples(),
+                                        static_cast<int> (std::max (0.0, ev.time) * sr));
         // Let voice ring into tail region — isActive() stops the loop naturally
         int endSample = buffer.getNumSamples();
+        if (startSample >= endSample)
+            return;
 
         int midiNote = noteNameToMidi (ev.note);
-        const Material* mat = materialDB->getMaterial (ev.material);
+        const Material* mat = materialDB->getMaterial (juce::String (ev.material));
+        if (mat == nullptr)
+            mat = materialDB->getMaterial ("steel");
 
         if (ev.engine == "string" || ev.engine == "cimbalom")
         {
@@ -315,7 +336,8 @@ private:
         voice.prepare (sr);
         voice.noteOn (midiNote, ev.velocity, *mat, cp);
 
-        int noteOffSample = start + static_cast<int> (ev.duration * sr * 0.9);
+        int noteOffSample = juce::jlimit (start, end,
+            start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
 
         int glideSamples = 0;
         double glideStartRatio = 1.0;
@@ -373,7 +395,8 @@ private:
         voice.prepare (sr);
         voice.noteOn (midiNote, ev.velocity, *mat, cp);
 
-        int noteOffSample = start + static_cast<int> (ev.duration * sr * 0.9);
+        int noteOffSample = juce::jlimit (start, end,
+            start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
 
         int glideSamples = 0;
         double glideStartRatio = 1.0;
@@ -430,7 +453,8 @@ private:
         voice.prepare (sr);
         voice.noteOn (midiNote, ev.velocity, fp);
 
-        int noteOffSample = start + static_cast<int> (ev.duration * sr * 0.9);
+        int noteOffSample = juce::jlimit (start, end,
+            start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
 
         int glideSamples = 0;
         double glideStartRatio = 1.0;
@@ -470,4 +494,9 @@ private:
 
     MaterialDB* materialDB = nullptr;
     juce::File  baseDir;
+
+    static bool isValidSampleRate (double sr)
+    {
+        return sr == 44100.0 || sr == 48000.0 || sr == 88200.0 || sr == 96000.0;
+    }
 };

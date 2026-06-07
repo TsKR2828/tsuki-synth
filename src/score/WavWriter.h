@@ -31,10 +31,8 @@ public:
         int safeBitDepth = (bitDepth == 16 || bitDepth == 24 || bitDepth == 32)
                                ? bitDepth : 24;
 
-        juce::File tempFile = file.getSiblingFile (file.getFileNameWithoutExtension()
-                                                   + "_tmp." + file.getFileExtension());
-        tempFile.deleteFile();
-        auto stream = tempFile.createOutputStream();
+        juce::TemporaryFile tempFile (file);
+        auto stream = tempFile.getFile().createOutputStream();
         if (stream == nullptr) return false;
 
         juce::WavAudioFormat wav;
@@ -45,14 +43,19 @@ public:
 
         if (writer == nullptr)
         {
-            tempFile.deleteFile();
+            tempFile.deleteTemporaryFile();
             return false;
         }
 
-        writer->writeFromAudioSampleBuffer (outBuf, 0, outBuf.getNumSamples());
+        bool wrote = writer->writeFromAudioSampleBuffer (outBuf, 0, outBuf.getNumSamples());
         writer.reset();
 
-        file.deleteFile();
-        return tempFile.moveFileTo (file);
+        if (! wrote)
+        {
+            tempFile.deleteTemporaryFile();
+            return false;
+        }
+
+        return tempFile.overwriteTargetFileWithTemporary();
     }
 };

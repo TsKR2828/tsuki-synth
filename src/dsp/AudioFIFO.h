@@ -1,5 +1,6 @@
 #pragma once
 #include <atomic>
+#include <cstdint>
 #include <vector>
 #include <algorithm>
 
@@ -20,34 +21,35 @@ public:
     {
         auto w = writePos.load (std::memory_order_relaxed);
         for (int i = 0; i < numSamples; ++i)
-            buffer[static_cast<size_t> ((w + i) & mask)] = data[i];
-        writePos.store (w + numSamples, std::memory_order_release);
+            buffer[static_cast<size_t> ((w + (uint64_t) i) & (uint64_t) mask)] = data[i];
+        writePos.store (w + (uint64_t) numSamples, std::memory_order_release);
     }
 
     int pull (float* dest, int maxSamples)
     {
         auto w = writePos.load (std::memory_order_acquire);
         auto r = readPos.load (std::memory_order_relaxed);
-        int available = w - r;
+        uint64_t available = w - r;
+        const auto cap = static_cast<uint64_t> (capacity());
 
-        if (available > capacity())
+        if (available > cap)
         {
-            r = w - capacity();
-            available = capacity();
+            r = w - cap;
+            available = cap;
         }
 
-        int n = std::min (available, maxSamples);
+        int n = std::min ((int) available, maxSamples);
         for (int i = 0; i < n; ++i)
-            dest[i] = buffer[static_cast<size_t> ((r + i) & mask)];
-        readPos.store (r + n, std::memory_order_release);
+            dest[i] = buffer[static_cast<size_t> ((r + (uint64_t) i) & (uint64_t) mask)];
+        readPos.store (r + (uint64_t) n, std::memory_order_release);
         return n;
     }
 
     int getAvailable() const
     {
-        int a = writePos.load (std::memory_order_acquire)
-              - readPos.load (std::memory_order_relaxed);
-        return std::min (a, capacity());
+        auto a = writePos.load (std::memory_order_acquire)
+               - readPos.load (std::memory_order_relaxed);
+        return static_cast<int> (std::min (a, static_cast<uint64_t> (capacity())));
     }
 
     int capacity() const { return mask + 1; }
@@ -61,6 +63,6 @@ public:
 private:
     std::vector<float> buffer;
     int mask;
-    std::atomic<int> writePos { 0 };
-    std::atomic<int> readPos  { 0 };
+    std::atomic<uint64_t> writePos { 0 };
+    std::atomic<uint64_t> readPos  { 0 };
 };
