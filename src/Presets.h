@@ -41,13 +41,13 @@ PRESET_BEGIN (preset_steel_dulcimer)
     { "engine",           0 },
     { "cim_material",     0 },       // Steel
     { "cim_strike_pos",   0.30f },
-    { "cim_diameter",     0.80f },   // mm
-    { "cim_hammer",       2 },       // Wood
-    { "cim_num_strings",  3 },
-    { "cim_detuning",     5.0f },    // cents
+    { "cim_diameter",     0.95f },   // mm — thicker response (Codex tuning)
+    { "cim_hammer",       1 },       // Felt
+    { "cim_num_strings",  4 },
+    { "cim_detuning",     7.0f },    // cents
     { "macro_body",       0.0f },    // Raw — no body resonance
     { "fx_reverb_mix",    0.20f },
-    { "fx_reverb_size",   0.50f },
+    { "fx_reverb_size",   0.62f },
     { "fx_delay_mix",     0.00f },
     { "fx_comp_threshold", -12.0f },
     { "fx_comp_ratio",    4.0f },
@@ -57,13 +57,13 @@ PRESET_BEGIN (preset_steel_dulcimer_body)
     { "engine",           0 },
     { "cim_material",     0 },       // Steel
     { "cim_strike_pos",   0.30f },
-    { "cim_diameter",     0.80f },
-    { "cim_hammer",       2 },       // Wood
-    { "cim_num_strings",  3 },
-    { "cim_detuning",     5.0f },
+    { "cim_diameter",     0.95f },   // Mirrors raw variant
+    { "cim_hammer",       1 },       // Felt
+    { "cim_num_strings",  4 },
+    { "cim_detuning",     7.0f },
     { "macro_body",       0.75f },   // Body-enhanced
     { "fx_reverb_mix",    0.20f },
-    { "fx_reverb_size",   0.50f },
+    { "fx_reverb_size",   0.62f },
     { "fx_delay_mix",     0.00f },
     { "fx_comp_threshold", -12.0f },
     { "fx_comp_ratio",    4.0f },
@@ -73,13 +73,13 @@ PRESET_BEGIN (preset_copper_warm)
     { "engine",           0 },
     { "cim_material",     1 },       // Copper
     { "cim_strike_pos",   0.45f },
-    { "cim_diameter",     1.20f },
+    { "cim_diameter",     1.35f },   // Thicker response (Codex tuning)
     { "cim_hammer",       1 },       // Felt
-    { "cim_num_strings",  4 },
-    { "cim_detuning",     8.0f },
+    { "cim_num_strings",  5 },
+    { "cim_detuning",     9.5f },
     { "macro_body",       0.0f },    // Raw
     { "fx_reverb_mix",    0.35f },
-    { "fx_reverb_size",   0.70f },
+    { "fx_reverb_size",   0.78f },
     { "fx_delay_mix",     0.00f },
     { "fx_comp_threshold", -15.0f },
     { "fx_comp_ratio",    3.0f },
@@ -89,13 +89,13 @@ PRESET_BEGIN (preset_copper_warm_body)
     { "engine",           0 },
     { "cim_material",     1 },       // Copper
     { "cim_strike_pos",   0.45f },
-    { "cim_diameter",     1.20f },
+    { "cim_diameter",     1.35f },   // Mirrors raw variant
     { "cim_hammer",       1 },       // Felt
-    { "cim_num_strings",  4 },
-    { "cim_detuning",     8.0f },
+    { "cim_num_strings",  5 },
+    { "cim_detuning",     9.5f },
     { "macro_body",       0.80f },   // Body-enhanced
     { "fx_reverb_mix",    0.35f },
-    { "fx_reverb_size",   0.70f },
+    { "fx_reverb_size",   0.78f },
     { "fx_delay_mix",     0.00f },
     { "fx_comp_threshold", -15.0f },
     { "fx_comp_ratio",    3.0f },
@@ -105,13 +105,13 @@ PRESET_BEGIN (preset_glass_chimes)
     { "engine",           0 },
     { "cim_material",     7 },       // Glass
     { "cim_strike_pos",   0.15f },
-    { "cim_diameter",     0.40f },
-    { "cim_hammer",       3 },       // Metal
+    { "cim_diameter",     0.55f },
+    { "cim_hammer",       2 },       // Wood
     { "cim_num_strings",  5 },
     { "cim_detuning",     12.0f },
     { "macro_body",       0.0f },    // Raw
     { "fx_reverb_mix",    0.50f },
-    { "fx_reverb_size",   0.80f },
+    { "fx_reverb_size",   0.88f },
     { "fx_delay_time",    400.0f },
     { "fx_delay_feedback", 0.25f },
     { "fx_delay_mix",     0.15f },
@@ -123,13 +123,13 @@ PRESET_BEGIN (preset_muted_felt)
     { "engine",           0 },
     { "cim_material",     0 },       // Steel
     { "cim_strike_pos",   0.50f },
-    { "cim_diameter",     1.00f },
+    { "cim_diameter",     1.25f },   // Thicker response (Codex tuning)
     { "cim_hammer",       0 },       // Cotton
-    { "cim_num_strings",  2 },
-    { "cim_detuning",     3.0f },
+    { "cim_num_strings",  4 },
+    { "cim_detuning",     6.0f },
     { "macro_body",       0.0f },    // Raw
     { "fx_reverb_mix",    0.15f },
-    { "fx_reverb_size",   0.40f },
+    { "fx_reverb_size",   0.55f },
     { "fx_delay_mix",     0.00f },
     { "fx_comp_threshold", -10.0f },
     { "fx_comp_ratio",    3.0f },
