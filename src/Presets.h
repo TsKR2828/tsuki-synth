@@ -8,10 +8,15 @@
  * Values are RAW parameter values (not normalized 0~1).
  * Applied via param->convertTo0to1(raw) then setValueNotifyingHost().
  *
+ * Current factory preset count: 25.
+ *
  * Presets grouped by engine:
- *   0-5:  Cimbalom (physical modeling string)
- *   6-11: Chromatic (beam / plate / custom)
- *  12-19: FM Piano (frequency modulation, 8 presets matching 8 sound types)
+ *   0-7:   Cimbalom (physical modeling string)
+ *          0-5 raw variants, 6-7 Body variants
+ *   8-15:  Chromatic (beam / plate / custom)
+ *          8-13 raw variants, 14-15 Body variants
+ *   16-24: FM Piano (frequency modulation)
+ *          8 sound-type presets plus Layered E.Piano
  */
 struct PresetEntry
 {
@@ -445,27 +450,32 @@ inline const FactoryPreset* getFactoryPresetList (int& count)
 {
     static const FactoryPreset presets[] =
     {
-        // Cimbalom Raw (0-5)
+        // Cimbalom (0-7)
+        // Raw variants (0-5)
         { "Steel Hammered Dulcimer",  preset_steel_dulcimer,      (int)(sizeof(preset_steel_dulcimer)/sizeof(preset_steel_dulcimer[0]))          },
         { "Copper Warm Strings",      preset_copper_warm,         (int)(sizeof(preset_copper_warm)/sizeof(preset_copper_warm[0]))                },
         { "Glass Wind Chimes",        preset_glass_chimes,        (int)(sizeof(preset_glass_chimes)/sizeof(preset_glass_chimes[0]))              },
         { "Muted Felt Piano",         preset_muted_felt,          (int)(sizeof(preset_muted_felt)/sizeof(preset_muted_felt[0]))                  },
         { "Brass Gamelan",            preset_brass_gamelan,       (int)(sizeof(preset_brass_gamelan)/sizeof(preset_brass_gamelan[0]))             },
         { "Rubber Muted Pluck",       preset_rubber_pluck,        (int)(sizeof(preset_rubber_pluck)/sizeof(preset_rubber_pluck[0]))              },
-        // Cimbalom Body (6-7)
-        { "Steel Dulcimer Body",      preset_steel_dulcimer_body, (int)(sizeof(preset_steel_dulcimer_body)/sizeof(preset_steel_dulcimer_body[0]))},
-        { "Copper Warm Body",         preset_copper_warm_body,    (int)(sizeof(preset_copper_warm_body)/sizeof(preset_copper_warm_body[0]))      },
-        // Chromatic Raw (8-13)
+        // Body variants (6-7)
+        { "Steel Hammered Dulcimer (Body)", preset_steel_dulcimer_body, (int)(sizeof(preset_steel_dulcimer_body)/sizeof(preset_steel_dulcimer_body[0]))},
+        { "Copper Warm Strings (Body)",     preset_copper_warm_body,    (int)(sizeof(preset_copper_warm_body)/sizeof(preset_copper_warm_body[0]))      },
+
+        // Chromatic (8-15)
+        // Raw variants (8-13)
         { "Crystal Tongue Drum",      preset_crystal_tongue,      (int)(sizeof(preset_crystal_tongue)/sizeof(preset_crystal_tongue[0]))          },
         { "Bronze Water Gong",        preset_bronze_gong,         (int)(sizeof(preset_bronze_gong)/sizeof(preset_bronze_gong[0]))                },
         { "Wooden Kalimba",           preset_wooden_kalimba,      (int)(sizeof(preset_wooden_kalimba)/sizeof(preset_wooden_kalimba[0]))          },
         { "Ethereal Steel Bells",     preset_ethereal_bells,      (int)(sizeof(preset_ethereal_bells)/sizeof(preset_ethereal_bells[0]))          },
         { "Glass Singing Bowl",       preset_glass_singing_bowl,  (int)(sizeof(preset_glass_singing_bowl)/sizeof(preset_glass_singing_bowl[0]))  },
         { "Rubber Tongue Pad",        preset_rubber_tongue_pad,   (int)(sizeof(preset_rubber_tongue_pad)/sizeof(preset_rubber_tongue_pad[0]))    },
-        // Chromatic Body (14-15)
-        { "Crystal Tongue Body",      preset_crystal_tongue_body, (int)(sizeof(preset_crystal_tongue_body)/sizeof(preset_crystal_tongue_body[0]))},
-        { "Bronze Gong Body",         preset_bronze_gong_body,    (int)(sizeof(preset_bronze_gong_body)/sizeof(preset_bronze_gong_body[0]))      },
-        // FM Piano (12-20) — one preset per sound type + layered E.Piano
+        // Body variants (14-15)
+        { "Crystal Tongue Drum (Body)", preset_crystal_tongue_body, (int)(sizeof(preset_crystal_tongue_body)/sizeof(preset_crystal_tongue_body[0]))},
+        { "Bronze Water Gong (Body)",   preset_bronze_gong_body,    (int)(sizeof(preset_bronze_gong_body)/sizeof(preset_bronze_gong_body[0]))      },
+
+        // FM Piano (16-24)
+        // One preset per sound type plus Layered E.Piano.
         { "Acoustic Piano",           preset_acoustic_piano,      (int)(sizeof(preset_acoustic_piano)/sizeof(preset_acoustic_piano[0]))          },
         { "Electric Rhodes",          preset_electric_rhodes,     (int)(sizeof(preset_electric_rhodes)/sizeof(preset_electric_rhodes[0]))         },
         { "Layered E.Piano",          preset_layered_epiano,      (int)(sizeof(preset_layered_epiano)/sizeof(preset_layered_epiano[0]))          },

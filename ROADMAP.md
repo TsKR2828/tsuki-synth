@@ -337,7 +337,9 @@ The code was previously built and verified on a different machine:
 
 ### World-Themed Preset Library
 - 6 worlds x 6 presets = 36 factory presets (expanding from current 12)
-- Worlds: Akasha (空) / Moon (月) / Rabbit (兎) / Gear (歯車) / Water (水) / Ritual (祭)
+- Official world taxonomy source of truth: `sound_library/tags.json`
+- Worlds: `akashic` / `rabbit` / `restraint` / `forest` / `ocean` / `clockwork`
+- Legacy taxonomy terms to avoid in new docs: Akasha / Moon / Gear / Water / Ritual
 - Each world uses distinct material/engine combinations for cohesive sonic identity
 - Aligned with score examples in `scores/examples/`
 
