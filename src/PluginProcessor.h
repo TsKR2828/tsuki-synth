@@ -51,6 +51,14 @@ public:
     juce::MidiKeyboardState keyboardState;
     MaterialDB materialDB;
 
+    /** Most recent noteOn MIDI number across any source (-1 = none).
+     *  Used by TunerView for synth-aware display on the Chromatic engine,
+     *  where inharmonic modal stacks make NSDF detection unreliable. */
+    std::atomic<int> lastNoteOnMidi { -1 };
+
+    /** Direct access to the engine choice param so analyzer/tuner can branch. */
+    std::atomic<float>* getEngineParam() noexcept { return pEngine; }
+
 private:
     juce::Synthesiser cimbalomSynth;
     juce::Synthesiser chromaticSynth;

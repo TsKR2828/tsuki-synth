@@ -1,5 +1,6 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <atomic>
 #include "../dsp/AudioFIFO.h"
 #include "../TsukiLookAndFeel.h"
 #include "../UiLocale.h"
@@ -58,6 +59,13 @@ public:
     {
         spectrumView.setSampleRate (sr);
         tunerView.setSampleRate (sr);
+    }
+
+    /** Wire processor atomics through to the tuner for synth-aware display. */
+    void setSynthAwareSources (std::atomic<int>* lastMidi,
+                               std::atomic<float>* engineParam) noexcept
+    {
+        tunerView.setSynthAwareSources (lastMidi, engineParam);
     }
 
     void refreshText()

@@ -248,6 +248,10 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     addAndMakeVisible (analyzerPanel);
     analyzerPanel.setActive (true);
     analyzerPanel.setSampleRate (proc.getSampleRate() > 0.0 ? proc.getSampleRate() : 44100.0);
+    // Wire synth-aware tuner sources: Chromatic (engine=1) displays the
+    // most recent noteOn MIDI directly instead of NSDF detection, which
+    // is unreliable on inharmonic beam/plate modal stacks.
+    analyzerPanel.setSynthAwareSources (&proc.lastNoteOnMidi, proc.getEngineParam());
     analyzerPanel.refreshText();
 
     // -- Engine listener + initial state ---------------------------------

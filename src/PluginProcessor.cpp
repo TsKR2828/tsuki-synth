@@ -368,6 +368,15 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     keyboardState.processNextMidiBuffer (midiMessages, 0,
                                          buffer.getNumSamples(), true);
 
+    // Track most recent noteOn (any source) for synth-aware tuner display.
+    // Scan after keyboardState injection so on-screen keyboard hits are captured.
+    for (const auto meta : midiMessages)
+    {
+        const auto msg = meta.getMessage();
+        if (msg.isNoteOn())
+            lastNoteOnMidi.store (msg.getNoteNumber(), std::memory_order_release);
+    }
+
     int currentEngine = (int) pEngine->load();
 
     // Handle engine switch: graceful tail-off on the old engine
@@ -383,6 +392,8 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                 fmPianoSynth.allNotesOff (0, true);
             tailOffEngine = lastEngine;
         }
+        // Drop stale noteOn so the new engine's tuner starts on "Awaiting note"
+        lastNoteOnMidi.store (-1, std::memory_order_release);
         lastEngine = currentEngine;
     }
 

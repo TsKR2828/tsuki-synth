@@ -2,6 +2,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../dsp/AudioFIFO.h"
 #include "../TsukiLookAndFeel.h"
+#include <atomic>
 #include <cmath>
 #include <vector>
 
@@ -12,6 +13,16 @@ public:
         : fifo (fifo), pullBuffer (8192, 0.0f) {}
 
     ~TunerView() override { stopTimer(); }
+
+    /** Wire processor atomics for synth-aware display. When the engine
+     *  param equals 1 (Chromatic), TunerView shows the last noteOn MIDI
+     *  note directly — NSDF is unreliable on inharmonic modal stacks. */
+    void setSynthAwareSources (std::atomic<int>* lastMidi,
+                               std::atomic<float>* engineParam) noexcept
+    {
+        pLastMidi    = lastMidi;
+        pEngineParam = engineParam;
+    }
 
     void setActive (bool active)
     {
@@ -43,7 +54,30 @@ public:
         {
             g.setColour (Clr::textDim.withAlpha (0.3f));
             g.setFont (TsukiLookAndFeel::scaledFont (10.0f));
-            g.drawText ("No signal", bounds, juce::Justification::centred);
+            const char* msg = synthAware ? "Awaiting note" : "No signal";
+            g.drawText (msg, bounds, juce::Justification::centred);
+            return;
+        }
+
+        // Synth-aware Chromatic layout: PLAYED label + note + target Hz, no cent bar
+        if (synthAware)
+        {
+            auto content = bounds.reduced (8.0f, 0.0f);
+
+            auto labelArea = content.removeFromLeft (content.getWidth() * 0.25f);
+            g.setColour (Clr::textDim);
+            g.setFont (TsukiLookAndFeel::scaledFont (9.0f));
+            g.drawText ("PLAYED", labelArea, juce::Justification::centred);
+
+            auto noteArea = content.removeFromLeft (content.getWidth() * 0.40f);
+            g.setColour (accentColour);
+            g.setFont (TsukiLookAndFeel::scaledFont (18.0f).boldened());
+            g.drawText (currentNoteName, noteArea, juce::Justification::centred);
+
+            g.setColour (Clr::text);
+            g.setFont (TsukiLookAndFeel::scaledFont (11.0f));
+            g.drawText (juce::String (detectedFreq, 1) + " Hz", content,
+                        juce::Justification::centred);
             return;
         }
 
@@ -104,6 +138,11 @@ private:
     int  holdCounter = 0;
     static constexpr int holdTicks = 3;  // ~150ms @ 20Hz — short enough to avoid stale wrong notes
 
+    // Synth-aware display sources (wired by Editor after construction)
+    std::atomic<int>*   pLastMidi    = nullptr;
+    std::atomic<float>* pEngineParam = nullptr;
+    bool synthAware = false;
+
     juce::Colour centColor() const
     {
         float a = std::abs (centOffset);
@@ -124,7 +163,47 @@ private:
 
     void timerCallback() override
     {
+        // Engine 1 = Chromatic → synth-aware display (NSDF unreliable on
+        // inharmonic beam/plate modal stacks)
+        const int engineIdx = pEngineParam ? (int) pEngineParam->load() : -1;
+        const bool useSynthAware = (engineIdx == 1);
+
+        if (useSynthAware != synthAware)
+        {
+            // Engine changed — reset display so no stale state leaks across modes
+            synthAware = useSynthAware;
+            hasSignal       = false;
+            currentNoteName.clear();
+            detectedFreq    = 0.0f;
+            centOffset      = 0.0f;
+            nearestMidi     = -1;
+            holdCounter     = 0;
+        }
+
+        // Always drain the FIFO so the audio thread doesn't lap us
         int pulled = fifo.pull (pullBuffer.data(), (int) pullBuffer.size());
+
+        if (synthAware)
+        {
+            const int midi = pLastMidi ? pLastMidi->load (std::memory_order_acquire) : -1;
+            if (midi >= 0 && midi <= 127)
+            {
+                hasSignal       = true;
+                nearestMidi     = midi;
+                detectedFreq    = 440.0f * std::pow (2.0f, (float) (midi - 69) / 12.0f);
+                centOffset      = 0.0f;
+                currentNoteName = midiToNoteName (midi);
+            }
+            else
+            {
+                hasSignal = false;
+                currentNoteName.clear();
+            }
+            repaint();
+            return;
+        }
+
+        // ── NSDF branch (Cimbalom / FM Piano) ──
         if (pulled < 512)
         {
             decayHold();
