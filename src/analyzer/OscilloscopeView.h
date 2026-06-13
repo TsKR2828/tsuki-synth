@@ -36,7 +36,7 @@ public:
         if (! isActive || displayCount < 2)
         {
             g.setColour (Clr::textDim.withAlpha (0.3f));
-            g.setFont (juce::FontOptions (10.0f));
+            g.setFont (TsukiLookAndFeel::scaledFont (10.0f));
             g.drawText ("No signal", bounds, juce::Justification::centred);
             return;
         }

@@ -115,22 +115,22 @@ TsukiSynthProcessor::createParameterLayout()
                             "Organ", "Pad", "Bass", "Brass" }, 0));
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_ratio", 1 }, "FM Ratio",
-        Range (0.5f, 16.0f, 0.01f, 0.4f), 1.0f));
+        Range (0.5f, 16.0f, 0.01f, 0.4f), 1.0f));           // Piano: 1:1
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_index", 1 }, "Mod Index",
-        Range (0.0f, 25.0f, 0.1f), 5.0f));
+        Range (0.0f, 25.0f, 0.1f), 4.5f));                   // was 5.0 → Acoustic Piano direction
     fm->addChild (std::make_unique<FloatParam> (
-        PID { "fm_brightness", 1 }, "Brightness",
-        Range (0.0f, 1.0f, 0.01f), 0.6f));
+        PID { "fm_brightness", 1 }, "Tone Decay",
+        Range (0.0f, 1.0f, 0.01f), 0.6f));                   // label: body modulation decay speed
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_feedback", 1 }, "Feedback",
-        Range (0.0f, 1.0f, 0.01f), 0.0f));
+        Range (0.0f, 1.0f, 0.01f), 0.02f));                  // was 0.0 → subtle odd harmonics
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_attack", 1 }, "FM Attack (ms)",
-        Range (1.0f, 2000.0f, 1.0f, 0.4f), 10.0f));
+        Range (1.0f, 2000.0f, 1.0f, 0.4f), 5.0f));           // was 10 → quick hammer
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_release", 1 }, "FM Release (ms)",
-        Range (10.0f, 5000.0f, 1.0f, 0.4f), 300.0f));
+        Range (10.0f, 5000.0f, 1.0f, 0.4f), 500.0f));
 
     auto rev = std::make_unique<Group> ("reverb", "Reverb", "|");
     rev->addChild (std::make_unique<FloatParam> (
@@ -333,13 +333,20 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     effectChain.pDistDrive       = apvts.getRawParameterValue ("fx_dist_drive");
     effectChain.pDistInstability = apvts.getRawParameterValue ("fx_dist_instability");
     effectChain.pDistMix         = apvts.getRawParameterValue ("fx_dist_mix");
+
+    recordingThread.startThread();
 }
 
-TsukiSynthProcessor::~TsukiSynthProcessor() {}
+TsukiSynthProcessor::~TsukiSynthProcessor()
+{
+    stopRecording();
+    recordingThread.stopThread (1000);
+}
 
 // == Audio ==
 void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
 {
+    currentSampleRate = sampleRate;
     cimbalomSynth.setCurrentPlaybackSampleRate (sampleRate);
     chromaticSynth.setCurrentPlaybackSampleRate (sampleRate);
     fmPianoSynth.setCurrentPlaybackSampleRate (sampleRate);
@@ -347,7 +354,10 @@ void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
     smoothedOutput.reset (sampleRate, 0.02);
 }
 
-void TsukiSynthProcessor::releaseResources() {}
+void TsukiSynthProcessor::releaseResources()
+{
+    stopRecording();
+}
 
 void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                         juce::MidiBuffer& midiMessages)
@@ -358,20 +368,37 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     keyboardState.processNextMidiBuffer (midiMessages, 0,
                                          buffer.getNumSamples(), true);
 
+    // Track most recent noteOn (any source) for synth-aware tuner display.
+    // Scan after keyboardState injection so on-screen keyboard hits are captured.
+    for (const auto meta : midiMessages)
+    {
+        const auto msg = meta.getMessage();
+        if (msg.isNoteOn())
+            lastNoteOnMidi.store (msg.getNoteNumber(), std::memory_order_release);
+    }
+
     int currentEngine = (int) pEngine->load();
 
     // Handle engine switch: graceful tail-off on the old engine
     if (currentEngine != lastEngine)
     {
-        if (lastEngine == 0)
-            cimbalomSynth.allNotesOff (0, true);
-        else if (lastEngine == 1)
-            chromaticSynth.allNotesOff (0, true);
-        else if (lastEngine == 2)
-            fmPianoSynth.allNotesOff (0, true);
+        if (lastEngine >= 0)
+        {
+            if (lastEngine == 0)
+                cimbalomSynth.allNotesOff (0, true);
+            else if (lastEngine == 1)
+                chromaticSynth.allNotesOff (0, true);
+            else if (lastEngine == 2)
+                fmPianoSynth.allNotesOff (0, true);
+            tailOffEngine = lastEngine;
+        }
+        // Drop stale noteOn so the new engine's tuner starts on "Awaiting note"
+        lastNoteOnMidi.store (-1, std::memory_order_release);
         lastEngine = currentEngine;
     }
 
+    // Render current engine
+    juce::MidiBuffer empty;
     if (currentEngine == 0)
         cimbalomSynth.renderNextBlock (buffer, midiMessages,
                                        0, buffer.getNumSamples());
@@ -381,6 +408,42 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     else
         fmPianoSynth.renderNextBlock (buffer, midiMessages,
                                       0, buffer.getNumSamples());
+
+    // Continue rendering old engine's tail-off (no new MIDI, additive)
+    if (tailOffEngine >= 0 && tailOffEngine != currentEngine)
+    {
+        if (tailOffEngine == 0)
+            cimbalomSynth.renderNextBlock (buffer, empty, 0, buffer.getNumSamples());
+        else if (tailOffEngine == 1)
+            chromaticSynth.renderNextBlock (buffer, empty, 0, buffer.getNumSamples());
+        else if (tailOffEngine == 2)
+            fmPianoSynth.renderNextBlock (buffer, empty, 0, buffer.getNumSamples());
+
+        // Check if tail-off engine still has active voices
+        auto& tailSynth = (tailOffEngine == 0) ? cimbalomSynth
+                        : (tailOffEngine == 1) ? chromaticSynth
+                        :                        fmPianoSynth;
+        bool anyActive = false;
+        for (int v = 0; v < tailSynth.getNumVoices(); ++v)
+            if (auto* voice = tailSynth.getVoice (v))
+                if (voice->isVoiceActive())
+                    anyActive = true;
+        if (! anyActive)
+            tailOffEngine = -1;
+    }
+
+    // Push dry (pre-FX) mono signal for tuner pitch detection
+    {
+        constexpr int kMaxBlock = 2048;
+        float mono[kMaxBlock];
+        int n = juce::jmin (buffer.getNumSamples(), kMaxBlock);
+        const float* L = buffer.getReadPointer (0);
+        const float* R = buffer.getNumChannels() > 1
+                             ? buffer.getReadPointer (1) : L;
+        for (int i = 0; i < n; ++i)
+            mono[i] = (L[i] + R[i]) * 0.5f;
+        analyzerDryFifo.push (mono, n);
+    }
 
     // Global effect chain: Compressor → Delay → Reverb
     effectChain.processBlock (buffer);
@@ -398,6 +461,17 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
     }
 
+    // Standalone recorder captures the final audible output.
+    if (recordingActive.load())
+    {
+        if (recordingLock.tryEnter())
+        {
+            if (recordingWriter != nullptr)
+                recordingWriter->write (buffer.getArrayOfReadPointers(), buffer.getNumSamples());
+            recordingLock.exit();
+        }
+    }
+
     // Mix to mono and push to analyzer FIFO (no lock, no alloc)
     {
         constexpr int kMaxBlock = 2048;
@@ -412,6 +486,98 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     }
 }
 
+// == Recorder ==
+bool TsukiSynthProcessor::startRecording()
+{
+    const juce::ScopedLock sl (recordingLock);
+
+    if (recordingWriter != nullptr)
+        return true;
+
+    auto dir = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
+                   .getChildFile ("TsukiSynth")
+                   .getChildFile ("Recordings");
+    dir.createDirectory();
+
+    if (! dir.isDirectory())
+    {
+        recordingStatus = "Recording folder unavailable";
+        return false;
+    }
+
+    auto stamp = juce::Time::getCurrentTime().formatted ("%Y%m%d_%H%M%S");
+    auto file = dir.getChildFile ("TsukiSynth_" + stamp + ".wav");
+    int suffix = 1;
+    while (file.existsAsFile())
+        file = dir.getChildFile ("TsukiSynth_" + stamp + "_" + juce::String (suffix++) + ".wav");
+
+    juce::WavAudioFormat wavFormat;
+    std::unique_ptr<juce::FileOutputStream> stream (file.createOutputStream());
+
+    if (stream == nullptr || ! stream->openedOk())
+    {
+        recordingStatus = "Could not create recording file";
+        return false;
+    }
+
+    auto* writer = wavFormat.createWriterFor (stream.get(),
+                                              currentSampleRate,
+                                              (unsigned int) juce::jmax (1, getTotalNumOutputChannels()),
+                                              24,
+                                              {},
+                                              0);
+    if (writer == nullptr)
+    {
+        recordingStatus = "Could not create WAV writer";
+        return false;
+    }
+
+    stream.release();
+    recordingWriter = std::make_unique<juce::AudioFormatWriter::ThreadedWriter> (
+        writer, recordingThread, 32768);
+
+    lastRecordingFile = file;
+    recordingStatus = "Recording: " + file.getFullPathName();
+    recordingActive.store (true);
+    return true;
+}
+
+void TsukiSynthProcessor::stopRecording()
+{
+    recordingActive.store (false);
+
+    const juce::ScopedLock sl (recordingLock);
+    if (recordingWriter != nullptr)
+    {
+        recordingWriter.reset();
+        recordingStatus = "Saved: " + lastRecordingFile.getFullPathName();
+    }
+}
+
+juce::String TsukiSynthProcessor::getRecordingStatus() const
+{
+    const juce::ScopedLock sl (recordingLock);
+    return recordingStatus;
+}
+
+juce::File TsukiSynthProcessor::getLastRecordingFile() const
+{
+    const juce::ScopedLock sl (recordingLock);
+    return lastRecordingFile;
+}
+
+// == Logging (Release-safe, writes to %APPDATA%/TsukiSynth/debug.log) ==
+static void tsukiLog (const juce::String& msg)
+{
+    static auto logFile = juce::File::getSpecialLocation (
+                              juce::File::userApplicationDataDirectory)
+                              .getChildFile ("TsukiSynth")
+                              .getChildFile ("debug.log");
+    logFile.getParentDirectory().createDirectory();
+    logFile.appendText (juce::Time::getCurrentTime().toString (true, true, true, true)
+                        + "  " + msg + "\n");
+}
+
 // == State ==
 void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
@@ -419,6 +585,16 @@ void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("presetIndex", presetManager.getCurrentIndex(), nullptr);
     auto xml = state.createXml();
     copyXmlToBinary (*xml, destData);
+
+    auto v = [&] (const char* id) -> juce::String {
+        if (auto* p = apvts.getParameter (id))
+            return juce::String (id) + "=" + juce::String (p->getValue(), 4);
+        return {};
+    };
+    tsukiLog ("SAVE  presetIdx=" + juce::String (presetManager.getCurrentIndex())
+              + "  " + v ("engine") + "  " + v ("chr_sub_engine")
+              + "  " + v ("chr_thickness") + "  " + v ("chr_size")
+              + "  " + v ("chr_pitch_glide") + "  " + v ("chr_strike_pos"));
 }
 
 void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -427,9 +603,21 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
     if (xml != nullptr && xml->hasTagName (apvts.state.getType()))
     {
         auto tree = juce::ValueTree::fromXml (*xml);
-        int idx = tree.getProperty ("presetIndex", 0);
+        int idx = tree.getProperty ("presetIndex", -1);
         apvts.replaceState (tree);
+        presetManager.reattachListener();
         presetManager.setCurrentIndex (idx);
+        skipNextProgramChange = true;
+
+        auto v = [&] (const char* id) -> juce::String {
+            if (auto* p = apvts.getParameter (id))
+                return juce::String (id) + "=" + juce::String (p->getValue(), 4);
+            return {};
+        };
+        tsukiLog ("RESTORE  presetIdx=" + juce::String (idx)
+                  + "  " + v ("engine") + "  " + v ("chr_sub_engine")
+                  + "  " + v ("chr_thickness") + "  " + v ("chr_size")
+                  + "  " + v ("chr_pitch_glide") + "  " + v ("chr_strike_pos"));
     }
 }
 
@@ -446,6 +634,14 @@ int TsukiSynthProcessor::getCurrentProgram()
 
 void TsukiSynthProcessor::setCurrentProgram (int index)
 {
+    if (skipNextProgramChange)
+    {
+        tsukiLog ("setCurrentProgram(" + juce::String (index) + ")  SKIPPED (post-restore)");
+        skipNextProgramChange = false;
+        return;
+    }
+
+    tsukiLog ("setCurrentProgram(" + juce::String (index) + ")  LOADING");
     presetManager.loadPreset (index);
 }
 

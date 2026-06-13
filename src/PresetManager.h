@@ -8,13 +8,14 @@ public:
     PresetManager (juce::AudioProcessorValueTreeState& vts)
         : apvts (vts), defaultState (vts.copyState())
     {
-        apvts.state.addListener (this);
+        reattachListener();
         scanUserPresets();
     }
 
     ~PresetManager() override
     {
-        apvts.state.removeListener (this);
+        if (listenedState.isValid())
+            listenedState.removeListener (this);
     }
 
     // ── Counts ──────────────────────────────────────────────────
@@ -53,17 +54,21 @@ public:
     void loadPreset (int index)
     {
         int nFactory = getNumFactoryPresets();
+        bool loaded = false;
 
         if (index >= 0 && index < nFactory)
         {
-            loadFactoryPreset (index);
+            loaded = loadFactoryPreset (index);
         }
         else
         {
             int ui = index - nFactory;
             if (ui >= 0 && ui < userPresets.size())
-                loadUserFile (userPresets[ui].file);
+                loaded = loadUserFile (userPresets[ui].file);
         }
+
+        if (! loaded)
+            return;
 
         currentIndex = index;
         dirty = false;
@@ -75,9 +80,21 @@ public:
     {
         loading = true;
         apvts.replaceState (defaultState.createCopy());
+        reattachListener();
         loading = false;
         currentIndex = -1;
         dirty = false;
+    }
+
+    /** Re-subscribe to the (potentially new) ValueTree after replaceState(). */
+    void reattachListener()
+    {
+        if (listenedState.isValid())
+            listenedState.removeListener (this);
+
+        listenedState = apvts.state;
+        if (listenedState.isValid())
+            listenedState.addListener (this);
     }
 
     // ── Save user preset ────────────────────────────────────────
@@ -88,7 +105,11 @@ public:
         if (! dir.isDirectory())
             return false;
 
-        auto file = dir.getChildFile (toSafeFilename (name) + ".tsukipreset");
+        auto safeName = toSafeFilename (name);
+        if (safeName.isEmpty())
+            return false;
+
+        auto file = dir.getChildFile (safeName + ".tsukipreset");
 
         auto state = apvts.copyState();
         auto stateXml = state.createXml();
@@ -189,6 +210,7 @@ private:
 
     juce::AudioProcessorValueTreeState& apvts;
     juce::ValueTree defaultState;
+    juce::ValueTree listenedState;
     juce::Array<UserPreset> userPresets;
     int  currentIndex = 0;
     std::atomic<bool> dirty   { false };
@@ -209,14 +231,17 @@ private:
 
     // ── Factory preset loader ───────────────────────────────────
 
-    void loadFactoryPreset (int index)
+    bool loadFactoryPreset (int index)
     {
         int count = 0;
         auto* presets = getFactoryPresetList (count);
         if (index < 0 || index >= count)
-            return;
+            return false;
 
         loading = true;
+        apvts.replaceState (defaultState.createCopy());
+        reattachListener();
+
         const auto& preset = presets[index];
         for (int i = 0; i < preset.numParams; ++i)
         {
@@ -228,23 +253,26 @@ private:
             }
         }
         loading = false;
+        return true;
     }
 
     // ── User preset file loader ─────────────────────────────────
 
-    void loadUserFile (const juce::File& file)
+    bool loadUserFile (const juce::File& file)
     {
         auto xml = juce::XmlDocument::parse (file);
         if (xml == nullptr)
-            return;
+            return false;
 
         auto* paramsXml = xml->getChildByName (apvts.state.getType());
         if (paramsXml == nullptr)
-            return;
+            return false;
 
         loading = true;
         apvts.replaceState (juce::ValueTree::fromXml (*paramsXml));
+        reattachListener();
         loading = false;
+        return true;
     }
 
     // ── Helpers ─────────────────────────────────────────────────

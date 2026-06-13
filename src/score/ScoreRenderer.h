@@ -7,6 +7,7 @@
 #include "../engines/FMPianoEngine.h"
 #include "../physics/MaterialDB.h"
 #include "../dsp/EffectsChain.h"
+#include <algorithm>
 
 class ScoreRenderer
 {
@@ -22,12 +23,19 @@ public:
             return false;
 
         double sr = score.global.sampleRate;
+        if (! isValidSampleRate (sr))
+            return false;
+
         double totalDuration = 0.0;
         for (const auto& ev : score.events)
-            totalDuration = std::max (totalDuration, ev.time + ev.duration);
+            totalDuration = std::max (totalDuration,
+                                      std::max (0.0, ev.time)
+                                    + std::max (0.0, ev.duration));
 
         totalDuration += score.exportSettings.tailSilenceMs / 1000.0;
         int totalSamples = static_cast<int> (totalDuration * sr) + 1;
+        if (totalSamples <= 0)
+            return false;
 
         juce::AudioBuffer<float> buffer (2, totalSamples);
         buffer.clear();
@@ -94,6 +102,9 @@ public:
             return false;
 
         double sr = score.global.sampleRate;
+        if (! isValidSampleRate (sr))
+            return false;
+
         int crossfadeSamples = static_cast<int> (score.crossfadeMs / 1000.0 * sr);
 
         struct RenderedLayer
@@ -117,19 +128,27 @@ public:
 
             double subDuration = 0.0;
             for (const auto& ev : subScore.events)
-                subDuration = std::max (subDuration, ev.time + ev.duration);
+                subDuration = std::max (subDuration,
+                                        std::max (0.0, ev.time)
+                                      + std::max (0.0, ev.duration));
             subDuration += subScore.exportSettings.tailSilenceMs / 1000.0;
 
             int subTotalSamples = static_cast<int> (subDuration * sr) + 1;
+            if (subTotalSamples <= 0)
+                return false;
+
             juce::AudioBuffer<float> subBuffer (2, subTotalSamples);
             subBuffer.clear();
 
             for (const auto& ev : subScore.events)
                 renderEvent (ev, subBuffer, sr);
 
-            int regionStart = static_cast<int> (layer.regionStart * subTotalSamples);
-            int regionEnd   = static_cast<int> (layer.regionEnd * subTotalSamples);
-            int regionLen   = std::max (1, regionEnd - regionStart);
+            double rs = std::clamp (layer.regionStart, 0.0, 1.0);
+            double re = std::clamp (layer.regionEnd, 0.0, 1.0);
+            if (re < rs) std::swap (rs, re);
+            int regionStart = std::clamp (static_cast<int> (rs * subTotalSamples), 0, subTotalSamples - 1);
+            int regionEnd   = std::clamp (static_cast<int> (re * subTotalSamples), regionStart + 1, subTotalSamples);
+            int regionLen   = regionEnd - regionStart;
 
             RenderedLayer rl;
             rl.buffer.setSize (2, regionLen);
@@ -139,6 +158,13 @@ public:
             rl.numSamples = regionLen;
             renderedLayers.push_back (std::move (rl));
         }
+
+        // Clamp crossfade to shortest layer to prevent negative offsets
+        int minLayerLen = renderedLayers[0].numSamples;
+        for (const auto& rl : renderedLayers)
+            minLayerLen = std::min (minLayerLen, rl.numSamples);
+        crossfadeSamples = std::min (crossfadeSamples, minLayerLen - 1);
+        crossfadeSamples = std::max (crossfadeSamples, 0);
 
         int totalOut = 0;
         for (size_t i = 0; i < renderedLayers.size(); ++i)
@@ -193,6 +219,49 @@ public:
                 writePos += rl.numSamples - crossfadeSamples;
         }
 
+        // Apply effects + master volume (same as render())
+        EffectsChain fx;
+        fx.prepare (sr);
+        EffectsParams fxp;
+        fxp.reverbEnabled = score.global.effects.reverbWet > 0.001;
+        fxp.reverbWet = static_cast<float> (score.global.effects.reverbWet);
+        fxp.reverbRoomSize = static_cast<float> (std::min (score.global.effects.reverbDecay / 10.0, 1.0));
+        fxp.delayEnabled = score.global.effects.delayWet > 0.001;
+        fxp.delayWet = static_cast<float> (score.global.effects.delayWet);
+        fxp.delayTime = score.global.effects.delayTimeMs / 1000.0;
+        fxp.delayFeedback = static_cast<float> (score.global.effects.delayFeedback);
+        fxp.distortionEnabled = score.global.effects.distortionWet > 0.001;
+        fxp.distortionDrive = static_cast<float> (score.global.effects.distortionDrive);
+        fxp.distortionInstability = static_cast<float> (score.global.effects.distortionInstability);
+        fxp.distortionWet = static_cast<float> (score.global.effects.distortionWet);
+        if (score.global.effects.distortionType == "bitcrush")
+            fxp.distortionType = DistortionType::Bitcrush;
+        else if (score.global.effects.distortionType == "wavefold")
+            fxp.distortionType = DistortionType::Wavefold;
+        else
+            fxp.distortionType = DistortionType::Overdrive;
+        fxp.masterVolume = static_cast<float> (score.global.masterVolume);
+        fx.setParameters (fxp);
+
+        float* left  = output.getWritePointer (0);
+        float* right = output.getWritePointer (1);
+        for (int i = 0; i < totalOut; ++i)
+            fx.processStereo (left[i], right[i]);
+
+        // Append tail silence
+        int tailSamples = static_cast<int> (score.exportSettings.tailSilenceMs / 1000.0 * sr);
+        if (tailSamples > 0)
+        {
+            output.setSize (2, totalOut + tailSamples, true);
+            for (int i = totalOut; i < totalOut + tailSamples; ++i)
+            {
+                float tl = 0.0f, tr = 0.0f;
+                fx.processStereo (tl, tr);
+                output.setSample (0, i, tl);
+                output.setSample (1, i, tr);
+            }
+        }
+
         return WavWriter::write (outputFile, output, sr,
                                  score.exportSettings.bitDepth,
                                  score.exportSettings.normalize);
@@ -201,12 +270,17 @@ public:
 private:
     void renderEvent (const ScoreEvent& ev, juce::AudioBuffer<float>& buffer, double sr)
     {
-        int startSample = static_cast<int> (ev.time * sr);
-        int durationSamples = static_cast<int> (ev.duration * sr);
-        int endSample = std::min (startSample + durationSamples, buffer.getNumSamples());
+        int startSample = juce::jlimit (0, buffer.getNumSamples(),
+                                        static_cast<int> (std::max (0.0, ev.time) * sr));
+        // Let voice ring into tail region — isActive() stops the loop naturally
+        int endSample = buffer.getNumSamples();
+        if (startSample >= endSample)
+            return;
 
         int midiNote = noteNameToMidi (ev.note);
-        const Material* mat = materialDB->getMaterial (ev.material);
+        const Material* mat = materialDB->getMaterial (juce::String (ev.material));
+        if (mat == nullptr)
+            mat = materialDB->getMaterial ("steel");
 
         if (ev.engine == "string" || ev.engine == "cimbalom")
         {
@@ -219,10 +293,8 @@ private:
         }
         else if (ev.engine == "plate" || ev.engine == "water_gong")
         {
-            auto sub = (ev.engine == "water_gong") ? ChromaticSubEngine::WaterGong
-                                                   : ChromaticSubEngine::TongueDrum;
-            if (ev.engine == "plate") sub = ChromaticSubEngine::TongueDrum;
-            renderChromatic (ev, mat, midiNote, sub, startSample, endSample, buffer, sr);
+            renderChromatic (ev, mat, midiNote, ChromaticSubEngine::WaterGong,
+                             startSample, endSample, buffer, sr);
         }
         else if (ev.engine == "fm")
         {
@@ -231,6 +303,11 @@ private:
         else if (ev.engine == "custom")
         {
             renderChromatic (ev, mat, midiNote, ChromaticSubEngine::CustomHarmonics,
+                             startSample, endSample, buffer, sr);
+        }
+        else if (ev.engine == "membrane")
+        {
+            renderChromatic (ev, mat, midiNote, ChromaticSubEngine::WaterGong,
                              startSample, endSample, buffer, sr);
         }
     }
@@ -243,17 +320,24 @@ private:
         CimbalomParams cp;
         cp.materialKey = ev.material;
         cp.strikePosition = ev.strikePosition;
+        cp.diameterMm = ev.diameterMm;
+        cp.tensionOverride = ev.tensionN;
+        cp.dampingOverride = ev.dampingOverride;
 
-        if (ev.exciter == "cotton") cp.exciter = ExciterType::Cotton;
-        else if (ev.exciter == "felt") cp.exciter = ExciterType::Felt;
-        else if (ev.exciter == "metal" || ev.exciter == "metal_mallet") cp.exciter = ExciterType::Metal;
+        if (ev.exciter == "cotton" || ev.exciter == "cotton_mallet") cp.exciter = ExciterType::Cotton;
+        else if (ev.exciter == "felt" || ev.exciter == "felt_mallet") cp.exciter = ExciterType::Felt;
+        else if (ev.exciter == "metal" || ev.exciter == "metal_mallet"
+                 || ev.exciter == "metal_hammer") cp.exciter = ExciterType::Metal;
+        else if (ev.exciter == "hard_plastic" || ev.exciter == "wood"
+                 || ev.exciter == "wood_mallet") cp.exciter = ExciterType::Wood;
         else cp.exciter = ExciterType::Wood;
 
         CimbalomVoice voice;
         voice.prepare (sr);
         voice.noteOn (midiNote, ev.velocity, *mat, cp);
 
-        int noteOffSample = start + static_cast<int> (ev.duration * sr * 0.9);
+        int noteOffSample = juce::jlimit (start, end,
+            start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
 
         int glideSamples = 0;
         double glideStartRatio = 1.0;
@@ -311,7 +395,8 @@ private:
         voice.prepare (sr);
         voice.noteOn (midiNote, ev.velocity, *mat, cp);
 
-        int noteOffSample = start + static_cast<int> (ev.duration * sr * 0.9);
+        int noteOffSample = juce::jlimit (start, end,
+            start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
 
         int glideSamples = 0;
         double glideStartRatio = 1.0;
@@ -356,11 +441,20 @@ private:
         FMParams fp;
         fp.preset = static_cast<FMPreset> (ev.fmPreset);
 
+        // Forward detailed FM params if specified in JSON (>=0 means explicitly set)
+        if (ev.fmRatio      >= 0.0f) fp.ratio      = ev.fmRatio;
+        if (ev.fmIndex      >= 0.0f) fp.index       = ev.fmIndex;
+        if (ev.fmBrightness >= 0.0f) fp.brightness  = ev.fmBrightness;
+        if (ev.fmFeedback   >= 0.0f) fp.feedback    = ev.fmFeedback;
+        if (ev.fmAttackMs   >= 0.0f) fp.attackMs    = ev.fmAttackMs;
+        if (ev.fmReleaseMs  >= 0.0f) fp.releaseMs   = ev.fmReleaseMs;
+
         FMVoice voice;
         voice.prepare (sr);
         voice.noteOn (midiNote, ev.velocity, fp);
 
-        int noteOffSample = start + static_cast<int> (ev.duration * sr * 0.9);
+        int noteOffSample = juce::jlimit (start, end,
+            start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
 
         int glideSamples = 0;
         double glideStartRatio = 1.0;
@@ -400,4 +494,9 @@ private:
 
     MaterialDB* materialDB = nullptr;
     juce::File  baseDir;
+
+    static bool isValidSampleRate (double sr)
+    {
+        return sr == 44100.0 || sr == 48000.0 || sr == 88200.0 || sr == 96000.0;
+    }
 };

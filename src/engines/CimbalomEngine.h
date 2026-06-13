@@ -3,6 +3,7 @@
 #include "../dsp/ModalResonator.h"
 #include "../dsp/NoiseGen.h"
 #include "../dsp/BiquadFilter.h"
+#include "../dsp/BodyResonance.h"
 #include "../dsp/Envelope.h"
 #include "../physics/StringModel.h"
 #include "../physics/MaterialDB.h"
@@ -30,6 +31,8 @@ struct CimbalomParams
     double diameterMm       = 0.8;
     int    numStrings       = 3;
     float  detuningCents    = 5.0f;
+    double tensionOverride  = 0.0;   // >0 = use this tension (N), 0 = auto-calculate
+    double dampingOverride  = -1.0;  // >=0 = override material damping alpha
 };
 
 // ─── Sound ───
@@ -100,8 +103,12 @@ public:
         strikePos *= (0.5f + mStrike);
         strikePos = juce::jlimit (0.05f, 0.95f, strikePos);
 
-        // Macro: Body → detuning spread
+        // Macro: Body → detuning spread + body resonance layer
         detCents *= (0.4f + mBody * 1.2f);
+
+        bodyRes.prepare (getSampleRate());
+        bodyRes.setAmount (mBody);
+        bodyRes.reset();
 
         // ── 弦參數 ──
         StringModel::Params sp;
@@ -219,13 +226,23 @@ public:
 
         StringModel::Params sp;
         sp.length         = StringModel::lengthFromMidiNote (midiNote);
-        sp.tension        = StringModel::tensionForNote (midiNote,
-                                sp.length, diameter, mat.density);
+        sp.tension        = (params.tensionOverride > 0.0)
+                                ? static_cast<float> (params.tensionOverride)
+                                : StringModel::tensionForNote (midiNote,
+                                      sp.length, diameter, mat.density);
         sp.diameter       = diameter;
         sp.strikePosition = strikePos;
         sp.numModes       = 40;
 
         auto baseModes = StringModel::calculateModes (sp, mat);
+
+        // Apply damping override if specified
+        if (params.dampingOverride >= 0.0)
+        {
+            float alpha = static_cast<float> (params.dampingOverride);
+            for (auto& m : baseModes)
+                m.decayTime = (alpha > 0.0f) ? (1.0f / alpha) : 5.0f;
+        }
 
         float logE = std::log10 (mat.youngsModulus);
         float spectralTilt = juce::jlimit (0.1f, 1.0f, (logE - 7.5f) / 4.0f);
@@ -272,6 +289,10 @@ public:
         float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
         setupExciter (static_cast<float> (hammerIdx), velocity,
                       0.5f, 0.0f, materialBright, sr);
+
+        bodyRes.prepare (sr);
+        bodyRes.setAmount (0.5f);
+        bodyRes.reset();
         damped = false;
     }
 
@@ -297,6 +318,8 @@ public:
             noise = exciterFilter.processSample (noise);
             sample += noise * exciterEnv.process();
         }
+
+        sample += bodyRes.processSample (sample);
         return sample;
     }
 
@@ -333,6 +356,9 @@ public:
                 sample += noise * exciterEnv.process();
                 anyActive = true;
             }
+
+            // Body resonance layer
+            sample += bodyRes.processSample (sample);
 
             // 輸出（master gain 防 clipping）
             sample *= 0.15f;
@@ -392,4 +418,5 @@ private:
     NoiseGen           noiseGen;
     BiquadFilter       exciterFilter;
     Envelope::ExpDecay exciterEnv;
+    BodyResonance      bodyRes;
 };

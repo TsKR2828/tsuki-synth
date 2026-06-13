@@ -1,6 +1,6 @@
 # TsukiSynth — Development Roadmap
 
-> Last updated: 2026-05-13
+> Last updated: 2026-05-31
 >
 > This document tracks the real project status based on actual repo state,
 > not planned/estimated phases.
@@ -19,7 +19,13 @@
 | — | Cimbalom playability pass (hammer + material DSP) | **Done** |
 | Phase 4 | UI Enhancements (Spectrum / Preset Browser / Harmonic Editor / Responsive) | **Done** |
 | — | CLI build fix (standalone voice API + juce_dsp link) | **Done** |
-| — | DAW validation (host scan / automation / state) | Pending (no DAW on current machine) |
+| — | DAW validation (host scan / automation / state) | Pending |
+| v0.2 | Codex audit fixes + i18n + recorder + range indicator | **Done** |
+| — | FM Piano P0-P2 (defaults / velocity / 3-stack E.Piano) | **Done** (unstaged) |
+| — | Body Resonance Layer + Raw/Body preset split | **Done** (unstaged) |
+| — | Engine-filtered preset list | **Done** (unstaged) |
+| — | Tuner View (NSDF pitch detection) | **Done** (unstaged) |
+| — | Tuner structural fix (zero-lag skip, dry FIFO, SR sync, low-freq) | **Done** (unstaged) |
 
 ---
 
@@ -235,6 +241,39 @@ The code was previously built and verified on a different machine:
 
 ---
 
+## v0.2 Polish Pass (2026-05-15 — 2026-05-31)
+
+### Codex Audit + i18n + Recorder (2026-05-15, commit `0769e5a`)
+- 8/8 audit findings fixed (4 P1 critical + 4 P2 robustness)
+- Bilingual UI: English / Traditional Chinese (`UiLocale.h`)
+- Language toggle button, all labels/combos/preset names/dialogs translated
+- MIDI keyboard range indicator per engine
+- Standalone WAV recorder (REC/STOP, saves to Documents/TsukiSynth/Recordings)
+- 18 → 21 factory presets
+
+### FM Piano P0-P2 (2026-05-30, unstaged)
+- P0: unified APVTS/FMParams defaults, Vibraphone/Brass presets, `fm_brightness` → "TONE DECAY"
+- P1: velocity-to-index curve, attack/body index split, per-type body resonance
+- P2: E.Piano 3-stack mode (Body 1:1 + Tine 14:1 + Shimmer 3:1), "Layered E.Piano" preset
+- 21 → 25 factory presets (8 FM total)
+
+### Body Resonance + Preset Split (2026-05-30, unstaged)
+- `BodyResonance.h`: procedural low-freq body (2 bandpass + LP + envelope), driven by `macro_body`
+- All existing Cimbalom/Chromatic presets marked Raw (`macro_body=0`)
+- 4 new Body-enhanced presets (macro_body 0.70–0.85)
+- Engine-filtered preset list: ComboBox only shows presets matching current engine tab
+- 25 factory presets total
+
+### Tuner View (2026-05-30 — 2026-05-31, unstaged)
+- `TunerView.h`: McLeod NSDF pitch detection with parabolic interpolation
+- AnalyzerPanel: SCOPE / SPECTRUM / TUNER three-tab switching
+- Structural fix: zero-lag lobe skip, removed faulty octave-down correction
+- Dry signal routing: `analyzerDryFifo` feeds tuner pre-FX mono signal
+- Sample rate sync: editor timer continuously updates analyzer SR from host
+- Low-frequency range extended to ~20 Hz (was ~50 Hz), covers C1 (32.7 Hz)
+
+---
+
 ## Anti-Click/Pop DSP Fixes (2026-05-15)
 
 **Critical bug fixed**: Water Gong pitch glide was calling `setModes()` (which resets phase/amplitude) every render block. Added `ModalResonator::updateFrequencies()` for phase-preserving frequency updates.
@@ -244,6 +283,19 @@ The code was previously built and verified on a different machine:
 **Engine switch**: Changed `allNotesOff(0, false)` → `allNotesOff(0, true)` for graceful tail-off.
 
 **FM retrigger**: `Envelope::noteOn()` no longer resets `currentLevel` to 0, avoiding click on retrigger.
+
+---
+
+## Code Audit — 8 Findings Fixed (2026-05-15)
+
+**4× P1 (Critical):**
+- Score pipeline: plate→WaterGong mapping, exciter string aliases, tension/damping override wiring
+- Engine switch: `tailOffEngine` dual-render so old engine voices actually decay instead of being silently discarded
+
+**4× P2 (Robustness):**
+- WavWriter: atomic temp→rename write pattern + bitDepth validation
+- ScoreParser: `hasProperty` guards for export defaults
+- PluginEditor: harmonic editor layout fix + `SafePointer` for async callbacks
 
 ---
 
@@ -285,7 +337,9 @@ The code was previously built and verified on a different machine:
 
 ### World-Themed Preset Library
 - 6 worlds x 6 presets = 36 factory presets (expanding from current 12)
-- Worlds: Akasha (空) / Moon (月) / Rabbit (兎) / Gear (歯車) / Water (水) / Ritual (祭)
+- Official world taxonomy source of truth: `sound_library/tags.json`
+- Worlds: `akashic` / `rabbit` / `restraint` / `forest` / `ocean` / `clockwork`
+- Legacy taxonomy terms to avoid in new docs: Akasha / Moon / Gear / Water / Ritual
 - Each world uses distinct material/engine combinations for cohesive sonic identity
 - Aligned with score examples in `scores/examples/`
 

@@ -35,14 +35,29 @@ public:
     const juce::String getProgramName (int index) override;
     void changeProgramName (int, const juce::String&) override {}
 
+    bool startRecording();
+    void stopRecording();
+    bool isRecording() const { return recordingActive.load(); }
+    juce::String getRecordingStatus() const;
+    juce::File getLastRecordingFile() const;
+
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presetManager { apvts };
     AudioFIFO analyzerFifo { 4096 };
+    AudioFIFO analyzerDryFifo { 8192 };
     juce::MidiKeyboardState keyboardState;
     MaterialDB materialDB;
+
+    /** Most recent noteOn MIDI number across any source (-1 = none).
+     *  Used by TunerView for synth-aware display on the Chromatic engine,
+     *  where inharmonic modal stacks make NSDF detection unreliable. */
+    std::atomic<int> lastNoteOnMidi { -1 };
+
+    /** Direct access to the engine choice param so analyzer/tuner can branch. */
+    std::atomic<float>* getEngineParam() noexcept { return pEngine; }
 
 private:
     juce::Synthesiser cimbalomSynth;
@@ -55,6 +70,16 @@ private:
     std::atomic<float>* pMacroOutput = nullptr;
     juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
+    int tailOffEngine = -1;  // engine index still rendering tail-off after switch
+    bool skipNextProgramChange = false;  // suppress first setCurrentProgram after state restore
+    double currentSampleRate = 44100.0;
+
+    juce::TimeSliceThread recordingThread { "TsukiSynth Recorder" };
+    mutable juce::CriticalSection recordingLock;
+    std::unique_ptr<juce::AudioFormatWriter::ThreadedWriter> recordingWriter;
+    std::atomic<bool> recordingActive { false };
+    juce::File lastRecordingFile;
+    juce::String recordingStatus;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout
         createParameterLayout();

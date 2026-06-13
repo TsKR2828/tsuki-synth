@@ -14,20 +14,24 @@
 | Effect Chain (Reverb / Delay / Compressor / Distortion) | Done |
 | Oscilloscope (lock-free FIFO) | Done |
 | 8 Macro Parameters (DAW automation) | Done |
-| Preset Manager (12 factory + user save/load) | Done |
+| Preset Manager (18 factory + user save/load) | Done |
 | Preset Browser (visual popup + category filter) | Done |
 | Spectrum Analyzer (FFT, log-freq, toggle) | Done |
 | Harmonic Editor (Custom sub-engine, 8 partials) | Done |
 | Responsive UI (resizable 420x700 ~ 900x1200) | Done |
 | Custom LookAndFeel (dark theme, arc knobs) | Done |
 | MIDI Keyboard (on-screen) | Done |
-| CLI Score Renderer (JSON -> WAV) | Done (batch render verified, 4/4 scores) |
+| CLI Score Renderer (JSON -> WAV) | Done (batch render verified, 51/51 scores) |
 | **VST3 build** | **Passed** (6.7 MB, zero warnings) |
 | **Standalone build** | **Passed** (6.5 MB, zero warnings) |
 | **Standalone launch** | **Passed** (smoke test OK) |
-| **DAW plugin host validation** | Pending (no DAW on current machine) |
+| **DAW plugin host validation** | **Passed** (Cubase AI 12, MIDI OK, 56 APVTS params verified) |
+| State save/load | Done (skipNextProgramChange + reattachListener fix) |
+| Version display | Done (v0.2.0 in title bar) |
+| EN/中文 localization | Done |
+| Standalone REC recording | Done |
 
-**Tag**: `playable-vst3-clean-build-v0` — VST3 + Standalone clean build, zero warnings, zero errors.
+**Version**: `v0.2.0` — 21 factory presets, DAW validated, Codex audit 8/8 bugs fixed.
 
 ## Overview
 
@@ -74,8 +78,10 @@ TsukiSynth is positioned as a **Physical Modeling synthesizer** with semantic pa
 ### Engine 3: FM Piano — Frequency Modulation
 - 2-operator FM synthesis with self-feedback
 - 8 sound type presets: Piano, E.Piano, Vibraphone, Bell, Organ, Pad, Bass, Brass
+- **E.Piano 3-stack mode**: parallel body (1:1) + tine/bell (14:1) + shimmer (3:1, +4 cents) for DX7-inspired timbre
 - Velocity-sensitive modulation index + note-dependent brightness decay
-- Parameters: sound type, FM ratio, mod index, brightness, feedback, attack, release
+- Two-stage modulation envelope: fast attack transient + slow body decay
+- Parameters: sound type, FM ratio, mod index, tone decay, feedback, attack, release
 
 ## Macro Parameters
 
@@ -112,7 +118,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 
 ## Preset System
 
-- 12 factory presets (4 per engine) compiled as static arrays
+- 21 factory presets (6 Cim + 6 Chr + 9 FM) compiled as static arrays
 - User preset save/load (`.tsukipreset` XML files in AppData)
 - **Visual preset browser** with category filters (All / Cimbalom / Chromatic / FM / User)
 - DAW program change compatible (VST3 `getNumPrograms` / `setCurrentProgram`)
@@ -213,10 +219,10 @@ Physical modeling parameters are semantic (material, size, strike position). AI 
 
 ```bash
 # AI generates score.json -> TsukiSynth renders to WAV
-tsukisynth-cli render scores/examples/akashic_bell.score.json
+tsukisynth-cli scores/examples/akashic_bell.score.json
 
-# Batch render
-tsukisynth-cli --batch scores/examples/*.score.json --output exports/wav/
+# Batch render (pass a directory, not a wildcard)
+tsukisynth-cli --batch scores/examples/ --output exports/wav/
 ```
 
 Use cases: VTuber sound effects, character UI sounds, short BGM motifs, worldview sound libraries.

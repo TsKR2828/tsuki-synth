@@ -2,6 +2,110 @@
 
 ---
 
+## 2026-05-31 — Tuner 結構修正
+
+**NSDF Peak Selection 修正** (`src/analyzer/TunerView.h`)：
+- NSDF 改為從 lag 2 開始計算，偵測 zero-lag lobe 邊界
+- 找到 NSDF 首次 ≤ 0 的交叉點 → searchStart = max(minLag, zeroLagEnd)
+- peak 搜尋完全跳過 zero-lag positive lobe，消除假基頻選取
+- 移除 octave-down correction：乾淨週期訊號在 2x lag 有幾乎同強 peak，會無條件把頻率砍半
+
+**低頻範圍擴展**：
+- `maxLag` 從 `sampleRate/50`（~50 Hz 下限）改為 `sampleRate/20`（~20 Hz）
+- 分析量從 `analysisSize/2` 改為 `numSamples * 3/4`
+- pullBuffer 4096 → 8192（應對 96k sample rate 每 tick ~4800 samples）
+- 44.1k 可測到 ~27 Hz、96k 可測到 ~31 Hz，涵蓋 C1 (32.7 Hz)
+
+**Dry Signal 路由** (`PluginProcessor.h/cpp`, `AnalyzerPanel.h`)：
+- 新增 `AudioFIFO analyzerDryFifo { 8192 }` — effectChain 之前推入 mono mix
+- AnalyzerPanel 改雙 FIFO 建構：scope/spectrum 用 post-FX，tuner 用 dry
+- Tuner 不受 delay/reverb 尾音和 output gain 影響
+
+**Sample Rate 同步** (`PluginEditor.cpp`)：
+- Editor timerCallback 每 tick 呼叫 `analyzerPanel.setSampleRate(proc.getSampleRate())`
+- Host 切換 44.1k → 48k → 96k 時 tuner/spectrum 自動追蹤
+
+---
+
+## 2026-05-30 — Body Resonance + Preset 分層 + Engine-filtered Preset
+
+**Body Resonance Layer** (`src/dsp/BodyResonance.h` — 新檔)：
+- 程序式低頻共鳴：2 個 resonant bandpass (~120 Hz Q=1.8, ~280 Hz Q=1.4)
+- LP smoother 500 Hz 壓制 harshness + envelope follower (~5ms attack, ~80ms release)
+- `setAmount(float)` 控制混合量（0=off, 1=max），由 `macro_body` APVTS 驅動
+- Cimbalom / Chromatic 引擎在 startNote 中初始化，renderNextBlock 中加算
+
+**Raw / Body Preset 分層** (`src/Presets.h`)：
+- 既有 12 個 Cimbalom/Chromatic preset 全部加上 `macro_body = 0.0f`（Raw）
+- 新增 4 個 Body-enhanced preset：
+  - Steel Dulcimer Body (0.75)、Copper Warm Body (0.80)
+  - Crystal Tongue Body (0.70)、Bronze Gong Body (0.85)
+- 合計 25 個 factory preset（原 21 + 4 Body）
+
+**Engine-filtered Preset List** (`PluginEditor.cpp`)：
+- `getPresetEngine()` helper 依 preset params 查 engine 值
+- `rebuildPresetCombo()` 只顯示目前引擎 tab 對應的 factory preset
+- `presetIdToIndex` vector 做 combo ID → 真實 preset index 對照
+- User preset 在所有引擎 view 都顯示（分隔線後方）
+- 切換引擎 tab 自動重建 preset list
+
+---
+
+## 2026-05-30 — Tuner View 實作 + 修正
+
+**TunerView 實作** (`src/analyzer/TunerView.h` — 新檔)：
+- McLeod NSDF 音高偵測 + parabolic interpolation
+- 顯示：音名（大字）+ 頻率 Hz + cent offset（±50¢ 刻度尺）
+- AnalyzerPanel 加入 TUNER tab（SCOPE / SPECTRUM / TUNER 三切換）
+- 中英文 UI 標籤（「調音器」/「TUNER」）
+
+**初版修正**：
+- 八度高 bug（C4→C5）：threshold 0.7→0.93、globalMax 0.3→0.5、RMS 0.005→0.02
+- 結尾 B7 bug：RMS 門檻提高至 0.02，低能量訊號直接判定 No signal
+
+---
+
+## 2026-05-30 — FM Piano P0-P2 完成
+
+**P0：最優先修正** (commit `7769f95`)：
+- 統一 APVTS default 與 FMParams default
+- 補 `score.schema.json` FM 參數
+- 補 Vibraphone / Brass factory preset（20 個 → 6 Cim + 6 Chr + 8 FM）
+- `fm_brightness` UI 語意改名 "TONE DECAY" / "音色衰減"
+
+**P1：讓 FM Piano 像樂器** (commit `5b024a3`)：
+- velocity-to-index 曲線（velIndexScale 0.45~1.25）
+- 分開 attackIndex / bodyIndex（per-type atkScales[] + bdyScales[]）
+- 依 sound type 切換 body resonance（per-type bodyF1/F2 + bodyD1/D2）
+
+**P2：E.Piano 3-stack 補強** (unstaged)：
+- 3 並行 FM 運算子：Body (1:1) + Tine/Bell (14:1) + Shimmer (3:1, +4 cents)
+- 輸出 = 60% stacks + 40% original
+- 新 "Layered E.Piano" preset + 中文翻譯「層疊電鋼琴」
+
+---
+
+## 2026-05-15 — v0.2.0：Codex Audit + DAW 驗證 + i18n
+
+**Codex 代碼審查 8/8 修正** (commit `0769e5a`)：
+- 4× P1（Critical）：score pipeline 修正、engine switch tail-off 修正
+- 4× P2（Robustness）：WavWriter atomic write、ScoreParser guard、SafePointer
+
+**DAW 驗證**：VST3 在 Cubase 載入測試通過
+
+**國際化** (`src/UiLocale.h`)：
+- 英文 / 繁體中文雙語 UI（標籤、ComboBox items、preset 名稱、按鈕、對話框）
+- LanguageToggle 按鈕即時切換
+- APVTS parameter ID 完全不受語系影響
+
+**MIDI 鍵盤 Range Indicator**：
+- 各引擎 sweet spot 色帶（Cim C2-C7 / Chr C3-C6 / FM C1-C7）
+
+**Standalone 錄音**：
+- WAV 錄音功能（REC / STOP 按鈕，存到 Documents/TsukiSynth/Recordings）
+
+---
+
 ## 2026-05-08 — Phase 8 完成：出廠預設 + 收尾
 
 **Factory Presets（12 組出廠音色）：**

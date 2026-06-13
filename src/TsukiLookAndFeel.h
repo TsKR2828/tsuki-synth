@@ -59,6 +59,13 @@ class TsukiLookAndFeel : public juce::LookAndFeel_V4
 public:
     juce::Colour accent { Clr::gold };
 
+    static constexpr float fontScale = 1.2f;
+
+    static juce::Font scaledFont (float baseSize)
+    {
+        return juce::FontOptions (baseSize * fontScale);
+    }
+
     TsukiLookAndFeel()
     {
         // CJK-capable font — required for Traditional Chinese UI labels.
@@ -195,13 +202,13 @@ public:
         }
 
         g.setColour (isTicked ? accent : (isHighlighted ? Clr::goldLight : Clr::comboText));
-        g.setFont (juce::FontOptions (11.0f));
+        g.setFont (scaledFont (11.0f));
         g.drawText (text, area.reduced (14, 0), juce::Justification::centredLeft);
     }
 
     int getPopupMenuBorderSize() override { return 3; }
-    juce::Font getPopupMenuFont() override { return juce::FontOptions (11.0f); }
-    juce::Font getComboBoxFont (juce::ComboBox&) override { return juce::FontOptions (11.0f); }
+    juce::Font getPopupMenuFont() override { return scaledFont (11.0f); }
+    juce::Font getComboBoxFont (juce::ComboBox&) override { return scaledFont (11.0f); }
 
     // ── Label ──────────────────────────────────────────────────────
     void drawLabel (juce::Graphics& g, juce::Label& lbl) override
@@ -220,6 +227,7 @@ public:
         l->setColour (juce::Label::backgroundColourId, juce::Colours::transparentBlack);
         l->setColour (juce::Label::outlineColourId, juce::Colours::transparentBlack);
         l->setJustificationType (juce::Justification::centred);
+        l->setFont (scaledFont (10.5f));
         return l;
     }
 
@@ -262,7 +270,7 @@ public:
 
         if (id == "tab")
         {
-            g.setFont (juce::FontOptions (11.0f));
+            g.setFont (scaledFont (11.0f));
             g.setColour (btn.getToggleState() ? accent
                                               : (isOver ? juce::Colour (0xffaaaacc) : Clr::tabInactive));
             g.drawText (btn.getButtonText(), btn.getLocalBounds(),
@@ -270,14 +278,14 @@ public:
         }
         else if (id == "step")
         {
-            g.setFont (juce::FontOptions (13.0f));
+            g.setFont (scaledFont (13.0f));
             g.setColour (isOver ? accent : Clr::textMid);
             g.drawText (btn.getButtonText(), btn.getLocalBounds(),
                         juce::Justification::centred);
         }
         else
         {
-            g.setFont (juce::FontOptions (11.0f));
+            g.setFont (scaledFont (11.0f));
             g.setColour (btn.findColour (juce::TextButton::textColourOffId));
             g.drawText (btn.getButtonText(), btn.getLocalBounds(),
                         juce::Justification::centred);
