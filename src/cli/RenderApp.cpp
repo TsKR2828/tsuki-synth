@@ -42,11 +42,18 @@ static bool renderScore (const juce::File& scoreFile, const juce::File& outputDi
 
     outputDir.createDirectory();
 
-    juce::String outName = score.exportSettings.filename.empty()
-        ? scoreFile.getFileNameWithoutExtension()
-        : juce::String (score.exportSettings.filename);
+    juce::String outName;
+    if (! score.exportSettings.exportFilename.empty())
+        outName = juce::String (score.exportSettings.exportFilename);
+    else if (! score.exportSettings.filename.empty())
+        outName = juce::String (score.exportSettings.filename);
+    else
+        outName = scoreFile.getFileNameWithoutExtension();
 
-    juce::File outFile = outputDir.getChildFile (outName + ".wav");
+    const juce::String extension = score.exportSettings.format == "flac"
+        ? ".flac"
+        : ".wav";
+    juce::File outFile = outputDir.getChildFile (outName + extension);
 
     ScoreRenderer renderer;
     renderer.setMaterialDB (&globalMaterialDB);

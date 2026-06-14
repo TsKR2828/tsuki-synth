@@ -29,7 +29,14 @@ public:
     void noteOff()
     {
         if (state != State::Idle)
+        {
+            releaseSamplesRemaining = std::max (
+                1, static_cast<int> (
+                    std::lround (releaseTime * sampleRate)));
+            releaseRate = currentLevel
+                / static_cast<float> (releaseSamplesRemaining);
             state = State::Release;
+        }
     }
 
     bool isActive() const { return state != State::Idle; }
@@ -68,9 +75,9 @@ public:
                 break;
 
             case State::Release:
-                rate = currentLevel / (releaseTime * (float) sampleRate);
-                currentLevel -= rate;
-                if (currentLevel <= 0.001f)
+                currentLevel -= releaseRate;
+                --releaseSamplesRemaining;
+                if (releaseSamplesRemaining <= 0 || currentLevel <= 0.0f)
                 {
                     currentLevel = 0.0f;
                     state = State::Idle;
@@ -114,6 +121,8 @@ private:
     float decayTime     = 0.1f;
     float sustainLevel  = 0.7f;
     float releaseTime   = 0.3f;
+    float releaseRate   = 0.0f;
+    int releaseSamplesRemaining = 0;
     float currentLevel  = 0.0f;
     State state         = State::Idle;
 };

@@ -463,10 +463,10 @@ private:
 
                 st.carrierPhase   += st.carrierInc;
                 st.modulatorPhase += st.modulatorInc;
-                if (st.carrierPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-                    st.carrierPhase -= juce::MathConstants<double>::twoPi * 65536.0;
-                if (st.modulatorPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-                    st.modulatorPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+                while (st.carrierPhase >= juce::MathConstants<double>::twoPi)
+                    st.carrierPhase -= juce::MathConstants<double>::twoPi;
+                while (st.modulatorPhase >= juce::MathConstants<double>::twoPi)
+                    st.modulatorPhase -= juce::MathConstants<double>::twoPi;
             }
 
             // Also add the main single-stack FM (preserves existing E.Piano character
@@ -518,6 +518,10 @@ private:
             bodyResAmp2 *= bodyResDecay2;
             bodyResPhase1 += bodyResInc1;
             bodyResPhase2 += bodyResInc2;
+            if (bodyResPhase1 >= juce::MathConstants<double>::twoPi)
+                bodyResPhase1 -= juce::MathConstants<double>::twoPi;
+            if (bodyResPhase2 >= juce::MathConstants<double>::twoPi)
+                bodyResPhase2 -= juce::MathConstants<double>::twoPi;
         }
 
         // ── Macro noise injection ──
@@ -528,10 +532,10 @@ private:
         carrierPhase   += carrierInc;
         modulatorPhase += modulatorInc;
 
-        if (carrierPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-            carrierPhase -= juce::MathConstants<double>::twoPi * 65536.0;
-        if (modulatorPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-            modulatorPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+        while (carrierPhase >= juce::MathConstants<double>::twoPi)
+            carrierPhase -= juce::MathConstants<double>::twoPi;
+        while (modulatorPhase >= juce::MathConstants<double>::twoPi)
+            modulatorPhase -= juce::MathConstants<double>::twoPi;
 
         return sample;
     }

@@ -5,6 +5,8 @@
 #include "engines/FMPianoEngine.h"
 #include "Presets.h"
 #include "BinaryData.h"
+#include <algorithm>
+#include <cmath>
 
 // == Parameter Layout (grouped for DAW automation lanes) ==
 juce::AudioProcessorValueTreeState::ParameterLayout
@@ -267,6 +269,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         auto* pFeedback   = apvts.getRawParameterValue ("fm_feedback");
         auto* pAttack     = apvts.getRawParameterValue ("fm_attack");
         auto* pRelease    = apvts.getRawParameterValue ("fm_release");
+        pFMRelease = pRelease;
 
         fmPianoSynth.addSound (new FMPianoSound());
 
@@ -293,6 +296,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         auto* pMB = apvts.getRawParameterValue ("macro_brightness");
         auto* pMY = apvts.getRawParameterValue ("macro_body");
         auto* pMN = apvts.getRawParameterValue ("macro_noise");
+        pMacroDamping = pMD;
         pMacroOutput = apvts.getRawParameterValue ("macro_output");
 
         auto wireMacros = [=] (auto* voice)
@@ -359,6 +363,47 @@ void TsukiSynthProcessor::releaseResources()
     stopRecording();
 }
 
+double TsukiSynthProcessor::getTailLengthSeconds() const
+{
+    double fmRelease = pFMRelease != nullptr
+        ? (double) pFMRelease->load() * 0.001
+        : 5.0;
+    if (pMacroDamping != nullptr)
+    {
+        const double damping = pMacroDamping->load();
+        fmRelease *= 1.0 + (0.5 - damping) * 1.4;
+    }
+    double tailSeconds = std::max (2.0, fmRelease);
+
+    if (effectChain.pDelayMix != nullptr
+        && effectChain.pDelayMix->load() > 0.001f
+        && effectChain.pDelayTime != nullptr)
+    {
+        const double delaySeconds = effectChain.pDelayTime->load() * 0.001;
+        const double feedback = effectChain.pDelayFeedback != nullptr
+            ? effectChain.pDelayFeedback->load()
+            : 0.0;
+        const double repeats = feedback > 0.0
+            ? std::log (0.001) / std::log (feedback)
+            : 1.0;
+        tailSeconds += delaySeconds * 1.12 * repeats;
+    }
+
+    if (effectChain.pReverbMix != nullptr
+        && effectChain.pReverbMix->load() > 0.001f)
+    {
+        const double roomSize = effectChain.pReverbSize != nullptr
+            ? effectChain.pReverbSize->load()
+            : 0.5;
+        const double feedback = roomSize * 0.28 + 0.7;
+        const double longestCombSeconds = 1617.0 / 44100.0;
+        const double repeats = std::log (0.001) / std::log (feedback);
+        tailSeconds += longestCombSeconds * repeats;
+    }
+
+    return std::clamp (tailSeconds, 0.0, 300.0);
+}
+
 void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                         juce::MidiBuffer& midiMessages)
 {
@@ -379,58 +424,28 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     int currentEngine = (int) pEngine->load();
 
-    // Handle engine switch: graceful tail-off on the old engine
+    // On engine switch, release held notes on the engine we left so they tail
+    // off (instead of sustaining forever) while the new engine plays.
     if (currentEngine != lastEngine)
     {
-        if (lastEngine >= 0)
-        {
-            if (lastEngine == 0)
-                cimbalomSynth.allNotesOff (0, true);
-            else if (lastEngine == 1)
-                chromaticSynth.allNotesOff (0, true);
-            else if (lastEngine == 2)
-                fmPianoSynth.allNotesOff (0, true);
-            tailOffEngine = lastEngine;
-        }
+        if (lastEngine == 0)      cimbalomSynth.allNotesOff (0, true);
+        else if (lastEngine == 1) chromaticSynth.allNotesOff (0, true);
+        else if (lastEngine == 2) fmPianoSynth.allNotesOff (0, true);
         // Drop stale noteOn so the new engine's tuner starts on "Awaiting note"
         lastNoteOnMidi.store (-1, std::memory_order_release);
         lastEngine = currentEngine;
     }
 
-    // Render current engine
+    // Render every engine each block so tails from ANY previously-played engine
+    // ring out naturally (idle synths early-return). Only the current engine
+    // receives MIDI; the others get an empty buffer.
     juce::MidiBuffer empty;
-    if (currentEngine == 0)
-        cimbalomSynth.renderNextBlock (buffer, midiMessages,
-                                       0, buffer.getNumSamples());
-    else if (currentEngine == 1)
-        chromaticSynth.renderNextBlock (buffer, midiMessages,
-                                        0, buffer.getNumSamples());
-    else
-        fmPianoSynth.renderNextBlock (buffer, midiMessages,
-                                      0, buffer.getNumSamples());
-
-    // Continue rendering old engine's tail-off (no new MIDI, additive)
-    if (tailOffEngine >= 0 && tailOffEngine != currentEngine)
-    {
-        if (tailOffEngine == 0)
-            cimbalomSynth.renderNextBlock (buffer, empty, 0, buffer.getNumSamples());
-        else if (tailOffEngine == 1)
-            chromaticSynth.renderNextBlock (buffer, empty, 0, buffer.getNumSamples());
-        else if (tailOffEngine == 2)
-            fmPianoSynth.renderNextBlock (buffer, empty, 0, buffer.getNumSamples());
-
-        // Check if tail-off engine still has active voices
-        auto& tailSynth = (tailOffEngine == 0) ? cimbalomSynth
-                        : (tailOffEngine == 1) ? chromaticSynth
-                        :                        fmPianoSynth;
-        bool anyActive = false;
-        for (int v = 0; v < tailSynth.getNumVoices(); ++v)
-            if (auto* voice = tailSynth.getVoice (v))
-                if (voice->isVoiceActive())
-                    anyActive = true;
-        if (! anyActive)
-            tailOffEngine = -1;
-    }
+    cimbalomSynth.renderNextBlock  (buffer, currentEngine == 0 ? midiMessages : empty,
+                                    0, buffer.getNumSamples());
+    chromaticSynth.renderNextBlock (buffer, currentEngine == 1 ? midiMessages : empty,
+                                    0, buffer.getNumSamples());
+    fmPianoSynth.renderNextBlock   (buffer, currentEngine == 2 ? midiMessages : empty,
+                                    0, buffer.getNumSamples());
 
     // Push dry (pre-FX) mono signal for tuner pitch detection
     {
@@ -512,29 +527,28 @@ bool TsukiSynthProcessor::startRecording()
         file = dir.getChildFile ("TsukiSynth_" + stamp + "_" + juce::String (suffix++) + ".wav");
 
     juce::WavAudioFormat wavFormat;
-    std::unique_ptr<juce::FileOutputStream> stream (file.createOutputStream());
+    auto fileStream = file.createOutputStream();
 
-    if (stream == nullptr || ! stream->openedOk())
+    if (fileStream == nullptr || ! fileStream->openedOk())
     {
         recordingStatus = "Could not create recording file";
         return false;
     }
 
-    auto* writer = wavFormat.createWriterFor (stream.get(),
-                                              currentSampleRate,
-                                              (unsigned int) juce::jmax (1, getTotalNumOutputChannels()),
-                                              24,
-                                              {},
-                                              0);
+    std::unique_ptr<juce::OutputStream> stream (std::move (fileStream));
+    const auto options = juce::AudioFormatWriterOptions()
+        .withSampleRate (currentSampleRate)
+        .withNumChannels (juce::jmax (1, getTotalNumOutputChannels()))
+        .withBitsPerSample (24);
+    auto writer = wavFormat.createWriterFor (stream, options);
     if (writer == nullptr)
     {
         recordingStatus = "Could not create WAV writer";
         return false;
     }
 
-    stream.release();
     recordingWriter = std::make_unique<juce::AudioFormatWriter::ThreadedWriter> (
-        writer, recordingThread, 32768);
+        writer.release(), recordingThread, 32768);
 
     lastRecordingFile = file;
     recordingStatus = "Recording: " + file.getFullPathName();
@@ -607,7 +621,7 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         apvts.replaceState (tree);
         presetManager.reattachListener();
         presetManager.setCurrentIndex (idx);
-        skipNextProgramChange = true;
+        restoredProgramToIgnore.store (idx, std::memory_order_release);
 
         auto v = [&] (const char* id) -> juce::String {
             if (auto* p = apvts.getParameter (id))
@@ -634,10 +648,14 @@ int TsukiSynthProcessor::getCurrentProgram()
 
 void TsukiSynthProcessor::setCurrentProgram (int index)
 {
-    if (skipNextProgramChange)
+    const int restoredIndex = restoredProgramToIgnore.exchange (
+        -1, std::memory_order_acq_rel);
+    if (restoredIndex >= 0
+        && index == restoredIndex
+        && presetManager.getCurrentIndex() == restoredIndex)
     {
-        tsukiLog ("setCurrentProgram(" + juce::String (index) + ")  SKIPPED (post-restore)");
-        skipNextProgramChange = false;
+        tsukiLog ("setCurrentProgram(" + juce::String (index)
+                  + ")  SKIPPED (duplicate post-restore)");
         return;
     }
 

@@ -1,0 +1,52 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Test: Per-Engine Output Levels",
+    "id": "test_engine_levels",
+    "author": "code-audit",
+    "description": "審查 #2 用：同音(C4)同力度(0.8)依序觸發 Cimbalom / Tongue Drum / FM，所有效果關閉、master=1.0、normalize=false，保留絕對電平。用法：用 CLI 渲染此檔得到三段波形(皆走 getNextSample()*0.15)，再在 plugin 內彈同樣三音；plugin 的 FM 段會比此 WAV 對應段約 +16.5 dB、Chromatic 約 +2.5 dB、Cimbalom 一致(+0 dB)，即為 plugin/CLI 增益不一致的可聽證據。"
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 1.0,
+    "effects": {
+      "reverb": { "decay": 2.0, "wet": 0.0 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 },
+      "distortion": { "type": "overdrive", "drive": 0, "instability": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 1.5,
+      "engine": "cimbalom",
+      "note": "C4",
+      "velocity": 0.8,
+      "params": { "material": "steel", "strike_position": 0.3, "diameter_mm": 0.8 }
+    },
+    {
+      "time": 2.0,
+      "duration": 1.5,
+      "engine": "tongue_drum",
+      "note": "C4",
+      "velocity": 0.8,
+      "params": { "material": "aluminum", "strike_position": 0.4, "thickness_mm": 3.0, "width_mm": 25.0 }
+    },
+    {
+      "time": 4.0,
+      "duration": 1.5,
+      "engine": "fm",
+      "note": "C4",
+      "velocity": 0.8,
+      "params": { "fm_preset": 0 }
+    }
+  ],
+  "export": {
+    "filename": "test_engine_levels",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": false,
+    "tail_silence_ms": 500
+  }
+}

@@ -98,3 +98,23 @@ target_link_libraries(TsukiSynthCLI
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
 )
+
+# --- Regression tests ---
+option(TSUKI_BUILD_TESTS "Build regression tests" ON)
+if(TSUKI_BUILD_TESTS)
+    enable_testing()
+    add_executable(TsukiSynthAuditTest tests/audit_repro.cpp)
+    target_include_directories(TsukiSynthAuditTest PRIVATE src)
+    target_compile_definitions(TsukiSynthAuditTest PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+    )
+    target_link_libraries(TsukiSynthAuditTest
+        PRIVATE
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+        PUBLIC
+            juce::juce_recommended_config_flags
+    )
+    add_test(NAME audit_repro COMMAND TsukiSynthAuditTest)
+endif()

@@ -93,9 +93,6 @@ public:
             // 模態頻率
             float freq = freqBase * jmn * jmn;
 
-            if (freq > 20000.0f)
-                break;
-
             // 衰減
             float decayDenom = alpha + beta * freq * freq + gamma * freq;
             float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 8.0f;

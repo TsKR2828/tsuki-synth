@@ -320,7 +320,7 @@ public:
         }
 
         sample += bodyRes.processSample (sample);
-        return sample;
+        return sample * 0.15f;   // match renderNextBlock() output gain (plugin/CLI parity)
     }
 
     void scaleFrequencies (double factor)

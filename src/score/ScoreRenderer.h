@@ -8,6 +8,7 @@
 #include "../physics/MaterialDB.h"
 #include "../dsp/EffectsChain.h"
 #include <algorithm>
+#include <cmath>
 
 class ScoreRenderer
 {
@@ -28,10 +29,9 @@ public:
 
         double totalDuration = 0.0;
         for (const auto& ev : score.events)
-            totalDuration = std::max (totalDuration,
-                                      std::max (0.0, ev.time)
-                                    + std::max (0.0, ev.duration));
+            totalDuration = std::max (totalDuration, eventEndTime (ev));
 
+        totalDuration += wallDelaySeconds (score.global.effects);
         totalDuration += score.exportSettings.tailSilenceMs / 1000.0;
         int totalSamples = static_cast<int> (totalDuration * sr) + 1;
         if (totalSamples <= 0)
@@ -43,53 +43,9 @@ public:
         for (const auto& ev : score.events)
             renderEvent (ev, buffer, sr);
 
-        EffectsChain fx;
-        fx.prepare (sr);
-        EffectsParams fxp;
-        fxp.reverbEnabled = score.global.effects.reverbWet > 0.001;
-        fxp.reverbWet = static_cast<float> (score.global.effects.reverbWet);
-        fxp.reverbRoomSize = static_cast<float> (std::min (score.global.effects.reverbDecay / 10.0, 1.0));
-        fxp.delayEnabled = score.global.effects.delayWet > 0.001;
-        fxp.delayWet = static_cast<float> (score.global.effects.delayWet);
-        fxp.delayTime = score.global.effects.delayTimeMs / 1000.0;
-        fxp.delayFeedback = static_cast<float> (score.global.effects.delayFeedback);
-
-        fxp.distortionEnabled = score.global.effects.distortionWet > 0.001;
-        fxp.distortionDrive = static_cast<float> (score.global.effects.distortionDrive);
-        fxp.distortionInstability = static_cast<float> (score.global.effects.distortionInstability);
-        fxp.distortionWet = static_cast<float> (score.global.effects.distortionWet);
-        if (score.global.effects.distortionType == "bitcrush")
-            fxp.distortionType = DistortionType::Bitcrush;
-        else if (score.global.effects.distortionType == "wavefold")
-            fxp.distortionType = DistortionType::Wavefold;
-        else
-            fxp.distortionType = DistortionType::Overdrive;
-
-        fxp.masterVolume = static_cast<float> (score.global.masterVolume);
-        fx.setParameters (fxp);
-
-        float* left  = buffer.getWritePointer (0);
-        float* right = buffer.getWritePointer (1);
-        for (int i = 0; i < totalSamples; ++i)
-            fx.processStereo (left[i], right[i]);
-
-        double sp = std::clamp (score.exportSettings.startPosition, 0.0, 1.0);
-        double ep = std::clamp (score.exportSettings.endPosition, sp, 1.0);
-        if (sp > 0.0 || ep < 1.0)
-        {
-            int trimStart = static_cast<int> (sp * totalSamples);
-            int trimEnd   = static_cast<int> (ep * totalSamples);
-            int trimLen   = trimEnd - trimStart;
-            if (trimLen > 0 && trimLen < totalSamples)
-            {
-                juce::AudioBuffer<float> trimmed (2, trimLen);
-                trimmed.copyFrom (0, 0, buffer, 0, trimStart, trimLen);
-                trimmed.copyFrom (1, 0, buffer, 1, trimStart, trimLen);
-                return WavWriter::write (outputFile, trimmed, sr,
-                                         score.exportSettings.bitDepth,
-                                         score.exportSettings.normalize);
-            }
-        }
+        applyEffects (buffer, score.global, sr);
+        if (! trimBuffer (buffer, score.exportSettings))
+            return false;
 
         return WavWriter::write (outputFile, buffer, sr,
                                  score.exportSettings.bitDepth,
@@ -125,12 +81,14 @@ public:
             Score subScore;
             if (! ScoreParser::parse (sourceFile, subScore))
                 return false;
+            if (subScore.hasLayers()
+                || subScore.global.sampleRate != score.global.sampleRate)
+                return false;
 
             double subDuration = 0.0;
             for (const auto& ev : subScore.events)
-                subDuration = std::max (subDuration,
-                                        std::max (0.0, ev.time)
-                                      + std::max (0.0, ev.duration));
+                subDuration = std::max (subDuration, eventEndTime (ev));
+            subDuration += wallDelaySeconds (subScore.global.effects);
             subDuration += subScore.exportSettings.tailSilenceMs / 1000.0;
 
             int subTotalSamples = static_cast<int> (subDuration * sr) + 1;
@@ -142,6 +100,11 @@ public:
 
             for (const auto& ev : subScore.events)
                 renderEvent (ev, subBuffer, sr);
+
+            applyEffects (subBuffer, subScore.global, sr);
+            if (! trimBuffer (subBuffer, subScore.exportSettings))
+                return false;
+            subTotalSamples = subBuffer.getNumSamples();
 
             double rs = std::clamp (layer.regionStart, 0.0, 1.0);
             double re = std::clamp (layer.regionEnd, 0.0, 1.0);
@@ -219,48 +182,14 @@ public:
                 writePos += rl.numSamples - crossfadeSamples;
         }
 
-        // Apply effects + master volume (same as render())
-        EffectsChain fx;
-        fx.prepare (sr);
-        EffectsParams fxp;
-        fxp.reverbEnabled = score.global.effects.reverbWet > 0.001;
-        fxp.reverbWet = static_cast<float> (score.global.effects.reverbWet);
-        fxp.reverbRoomSize = static_cast<float> (std::min (score.global.effects.reverbDecay / 10.0, 1.0));
-        fxp.delayEnabled = score.global.effects.delayWet > 0.001;
-        fxp.delayWet = static_cast<float> (score.global.effects.delayWet);
-        fxp.delayTime = score.global.effects.delayTimeMs / 1000.0;
-        fxp.delayFeedback = static_cast<float> (score.global.effects.delayFeedback);
-        fxp.distortionEnabled = score.global.effects.distortionWet > 0.001;
-        fxp.distortionDrive = static_cast<float> (score.global.effects.distortionDrive);
-        fxp.distortionInstability = static_cast<float> (score.global.effects.distortionInstability);
-        fxp.distortionWet = static_cast<float> (score.global.effects.distortionWet);
-        if (score.global.effects.distortionType == "bitcrush")
-            fxp.distortionType = DistortionType::Bitcrush;
-        else if (score.global.effects.distortionType == "wavefold")
-            fxp.distortionType = DistortionType::Wavefold;
-        else
-            fxp.distortionType = DistortionType::Overdrive;
-        fxp.masterVolume = static_cast<float> (score.global.masterVolume);
-        fx.setParameters (fxp);
-
-        float* left  = output.getWritePointer (0);
-        float* right = output.getWritePointer (1);
-        for (int i = 0; i < totalOut; ++i)
-            fx.processStereo (left[i], right[i]);
-
-        // Append tail silence
+        const int wallSamples = static_cast<int> (
+            wallDelaySeconds (score.global.effects) * sr);
         int tailSamples = static_cast<int> (score.exportSettings.tailSilenceMs / 1000.0 * sr);
-        if (tailSamples > 0)
-        {
-            output.setSize (2, totalOut + tailSamples, true);
-            for (int i = totalOut; i < totalOut + tailSamples; ++i)
-            {
-                float tl = 0.0f, tr = 0.0f;
-                fx.processStereo (tl, tr);
-                output.setSample (0, i, tl);
-                output.setSample (1, i, tr);
-            }
-        }
+        output.setSize (2, totalOut + wallSamples + tailSamples, true, true, true);
+        applyEffects (output, score.global, sr);
+
+        if (! trimBuffer (output, score.exportSettings))
+            return false;
 
         return WavWriter::write (outputFile, output, sr,
                                  score.exportSettings.bitDepth,
@@ -369,7 +298,7 @@ private:
                 voice.scaleFrequencies (1.0);
             }
 
-            float v = voice.getNextSample() * 0.15f;
+            float v = voice.getNextSample();   // engine getNextSample() now applies its own output gain
             buf.addSample (0, i, v);
             buf.addSample (1, i, v);
         }
@@ -390,6 +319,7 @@ private:
         cp.tongueLength = ev.lengthMm / 1000.0;
         cp.tongueWidth = ev.widthMm / 1000.0;
         cp.tongueThickness = ev.thicknessMm / 1000.0;
+        cp.exciterHardness = chromaticExciterHardness (ev.exciter);
 
         ChromaticVoice voice;
         voice.prepare (sr);
@@ -428,7 +358,7 @@ private:
                 voice.scaleFrequencies (1.0);
             }
 
-            float v = voice.getNextSample() * 0.15f;
+            float v = voice.getNextSample();   // engine getNextSample() now applies its own output gain
             buf.addSample (0, i, v);
             buf.addSample (1, i, v);
         }
@@ -486,7 +416,7 @@ private:
                 voice.scaleFrequency (1.0);
             }
 
-            float v = voice.getNextSample() * 0.15f;
+            float v = voice.getNextSample();   // engine getNextSample() now applies its own output gain
             buf.addSample (0, i, v);
             buf.addSample (1, i, v);
         }
@@ -494,6 +424,146 @@ private:
 
     MaterialDB* materialDB = nullptr;
     juce::File  baseDir;
+
+    static float chromaticExciterHardness (const std::string& exciter)
+    {
+        if (exciter == "cotton" || exciter == "cotton_mallet"
+            || exciter == "finger" || exciter == "finger_tap"
+            || exciter == "bow")
+            return 0.0f;
+        if (exciter == "felt" || exciter == "felt_mallet"
+            || exciter == "medium")
+            return 1.0f;
+        if (exciter == "metal" || exciter == "metal_mallet"
+            || exciter == "metal_hammer" || exciter == "metal_tip"
+            || exciter == "sharp")
+            return 3.0f;
+        return 2.0f;
+    }
+
+    static double eventEndTime (const ScoreEvent& ev)
+    {
+        const double start = std::max (0.0, ev.time);
+        const double duration = std::max (0.0, ev.duration);
+        double end = start + duration;
+
+        if (ev.engine == "fm")
+        {
+            const double releaseMs = ev.fmReleaseMs >= 0.0f
+                ? ev.fmReleaseMs
+                : FMParams().releaseMs;
+            const double noteOff = start + duration * 0.9;
+            end = std::max (end, noteOff + releaseMs * 0.001);
+        }
+
+        return end;
+    }
+
+    static double wallDelaySeconds (const ScoreEffects& effects)
+    {
+        return effects.wallDistanceM > 0.0
+            ? (2.0 * effects.wallDistanceM / 343.0)
+            : 0.0;
+    }
+
+    static float wallReflectionGain (const std::string& material)
+    {
+        if (material == "stone" || material == "concrete")
+            return 0.65f;
+        if (material == "glass" || material == "metal")
+            return 0.55f;
+        if (material == "wood")
+            return 0.35f;
+        if (material == "fabric" || material == "curtain")
+            return 0.15f;
+        return 0.4f;
+    }
+
+    static void applyWallReflection (
+        juce::AudioBuffer<float>& buffer, const ScoreEffects& effects, double sr)
+    {
+        const int delaySamples = static_cast<int> (
+            std::round (wallDelaySeconds (effects) * sr));
+        if (delaySamples <= 0 || delaySamples >= buffer.getNumSamples())
+            return;
+
+        const float gain = wallReflectionGain (effects.wallMaterial);
+        for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+        {
+            float* samples = buffer.getWritePointer (channel);
+            for (int i = buffer.getNumSamples() - 1; i >= delaySamples; --i)
+                samples[i] += samples[i - delaySamples] * gain;
+        }
+    }
+
+    static void configureEffects (
+        EffectsChain& fx, const ScoreGlobal& global, double sr)
+    {
+        fx.prepare (sr);
+        EffectsParams fxp;
+        fxp.reverbEnabled = global.effects.reverbWet > 0.001;
+        fxp.reverbWet = static_cast<float> (global.effects.reverbWet);
+        fxp.reverbRoomSize = static_cast<float> (
+            std::min (global.effects.reverbDecay / 10.0, 1.0));
+        fxp.delayEnabled = global.effects.delayWet > 0.001;
+        fxp.delayWet = static_cast<float> (global.effects.delayWet);
+        fxp.delayTime = global.effects.delayTimeMs / 1000.0;
+        fxp.delayFeedback = static_cast<float> (global.effects.delayFeedback);
+        fxp.distortionEnabled = global.effects.distortionWet > 0.001;
+        fxp.distortionDrive = static_cast<float> (global.effects.distortionDrive);
+        fxp.distortionInstability = static_cast<float> (
+            global.effects.distortionInstability);
+        fxp.distortionWet = static_cast<float> (global.effects.distortionWet);
+        if (global.effects.distortionType == "bitcrush")
+            fxp.distortionType = DistortionType::Bitcrush;
+        else if (global.effects.distortionType == "wavefold")
+            fxp.distortionType = DistortionType::Wavefold;
+        else
+            fxp.distortionType = DistortionType::Overdrive;
+        fxp.masterVolume = static_cast<float> (global.masterVolume);
+        fx.setParameters (fxp);
+    }
+
+    static void processEffects (
+        juce::AudioBuffer<float>& buffer, EffectsChain& fx)
+    {
+        float* left = buffer.getWritePointer (0);
+        float* right = buffer.getWritePointer (1);
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+            fx.processStereo (left[i], right[i]);
+    }
+
+    static void applyEffects (
+        juce::AudioBuffer<float>& buffer, const ScoreGlobal& global, double sr)
+    {
+        applyWallReflection (buffer, global.effects, sr);
+        EffectsChain fx;
+        configureEffects (fx, global, sr);
+        processEffects (buffer, fx);
+    }
+
+    static bool trimBuffer (
+        juce::AudioBuffer<float>& buffer, const ScoreExport& settings)
+    {
+        const int totalSamples = buffer.getNumSamples();
+        const double start = std::clamp (settings.startPosition, 0.0, 1.0);
+        const double end = std::clamp (settings.endPosition, start, 1.0);
+        const int trimStart = static_cast<int> (start * totalSamples);
+        const int trimEnd = static_cast<int> (end * totalSamples);
+        const int trimLength = trimEnd - trimStart;
+
+        if (trimLength <= 0)
+            return false;
+        if (trimLength >= totalSamples && trimStart == 0)
+            return true;
+
+        juce::AudioBuffer<float> trimmed (buffer.getNumChannels(), trimLength);
+        for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+            trimmed.copyFrom (
+                channel, 0, buffer, channel, trimStart, trimLength);
+        buffer = std::move (trimmed);
+        return true;
+    }
 
     static bool isValidSampleRate (double sr)
     {

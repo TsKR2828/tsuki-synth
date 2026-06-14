@@ -21,6 +21,8 @@ struct ScoreEffects
     double delayTimeMs = 0.0;
     double delayFeedback = 0.0;
     double delayWet    = 0.0;
+    double wallDistanceM = 0.0;
+    std::string wallMaterial;
 
     std::string distortionType = "overdrive";
     double distortionDrive       = 0.0;
@@ -70,6 +72,7 @@ struct ScoreEvent
 struct ScoreExport
 {
     std::string filename;
+    std::string exportFilename;
     std::string format = "wav";
     int    bitDepth       = 24;
     bool   normalize      = true;
@@ -105,7 +108,7 @@ inline int noteNameToMidi (const std::string& name)
     // Pure numeric → MIDI number
     if (name[0] >= '0' && name[0] <= '9')
     {
-        try { return std::stoi (name); }
+        try { return std::clamp (std::stoi (name), 0, 127); }
         catch (...) { return 60; }
     }
 
@@ -133,7 +136,7 @@ inline int noteNameToMidi (const std::string& name)
             octave = c - '0';
     }
 
-    return (octave + 1) * 12 + base;
+    return std::clamp ((octave + 1) * 12 + base, 0, 127);
 }
 
 class ScoreParser
@@ -185,6 +188,11 @@ public:
                     readNumber (*del, "time_ms", score.global.effects.delayTimeMs, 0.0, 5000.0);
                     readNumber (*del, "feedback", score.global.effects.delayFeedback, 0.0, 0.95);
                     readNumber (*del, "wet", score.global.effects.delayWet, 0.0, 1.0);
+                }
+                if (auto* wall = fx->getProperty ("wall").getDynamicObject())
+                {
+                    readNumber (*wall, "distance_m", score.global.effects.wallDistanceM, 0.0, 100.0);
+                    readString (*wall, "material", score.global.effects.wallMaterial, true);
                 }
                 if (auto* dist = fx->getProperty ("distortion").getDynamicObject())
                 {
@@ -278,6 +286,7 @@ public:
         if (auto* exp = obj->getProperty ("export").getDynamicObject())
         {
             readString (*exp, "filename", score.exportSettings.filename, true);
+            readString (*exp, "export_filename", score.exportSettings.exportFilename, true);
             readString (*exp, "format", score.exportSettings.format);
 
             int bitDepth = score.exportSettings.bitDepth;

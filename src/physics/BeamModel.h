@@ -72,9 +72,6 @@ public:
             // 模態頻率
             float freq = (bn * bn / twoPiL2) * stiffness;
 
-            if (freq > 20000.0f)
-                break;
-
             // 衰減（梁比弦衰減快，damping 加權）
             float decayDenom = alpha * 2.0f + beta * freq * freq + gamma * freq;
             float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 5.0f;

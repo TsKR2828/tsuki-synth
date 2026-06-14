@@ -7,7 +7,8 @@
 // Lock-free SPSC ring buffer for audio thread → GUI data transfer.
 // Capacity must be a power of two.
 // Producer (processBlock) calls push(). Consumer (GUI timer) calls pull().
-// If producer laps the consumer, oldest unread data is silently dropped.
+// If the FIFO is full, incoming samples are dropped. The producer never
+// overwrites storage that the consumer may be reading.
 class AudioFIFO
 {
 public:
@@ -20,9 +21,15 @@ public:
     void push (const float* data, int numSamples)
     {
         auto w = writePos.load (std::memory_order_relaxed);
-        for (int i = 0; i < numSamples; ++i)
+        const auto r = readPos.load (std::memory_order_acquire);
+        const auto cap = static_cast<uint64_t> (capacity());
+        const auto used = std::min (w - r, cap);
+        const int writable = static_cast<int> (cap - used);
+        const int n = std::min (numSamples, writable);
+
+        for (int i = 0; i < n; ++i)
             buffer[static_cast<size_t> ((w + (uint64_t) i) & (uint64_t) mask)] = data[i];
-        writePos.store (w + (uint64_t) numSamples, std::memory_order_release);
+        writePos.store (w + (uint64_t) n, std::memory_order_release);
     }
 
     int pull (float* dest, int maxSamples)
@@ -30,14 +37,6 @@ public:
         auto w = writePos.load (std::memory_order_acquire);
         auto r = readPos.load (std::memory_order_relaxed);
         uint64_t available = w - r;
-        const auto cap = static_cast<uint64_t> (capacity());
-
-        if (available > cap)
-        {
-            r = w - cap;
-            available = cap;
-        }
-
         int n = std::min ((int) available, maxSamples);
         for (int i = 0; i < n; ++i)
             dest[i] = buffer[static_cast<size_t> ((r + (uint64_t) i) & (uint64_t) mask)];
