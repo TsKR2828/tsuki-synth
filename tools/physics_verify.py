@@ -40,8 +40,9 @@ import numpy as np
 # ── physics constants (mirror the C++ models) ───────────────────────────────
 # Free-free Euler-Bernoulli beam eigenvalues betaL  (BeamModel.h)
 BEAM_BETAL = [4.730041, 7.853205, 10.995608, 14.137165, 17.278760]
-# Bessel-zero set used by PlateModel.h (Kirchhoff circular plate)
-PLATE_J = [2.405, 3.832, 5.136, 5.520, 6.380, 7.016, 7.588, 8.417]
+# True clamped circular Kirchhoff-plate frequency parameters Omega=lambda^2
+# (Leissa) used by PlateModel.h. f is proportional to Omega (linear).
+PLATE_OMEGA = [10.2158, 21.260, 34.877, 39.771, 51.030, 60.829, 69.666, 84.583]
 
 
 def beam_ratios(n):
@@ -50,8 +51,8 @@ def beam_ratios(n):
 
 
 def plate_ratios(n):
-    j1 = PLATE_J[0]
-    return [(j / j1) ** 2 for j in PLATE_J][:n]
+    o1 = PLATE_OMEGA[0]
+    return [o / o1 for o in PLATE_OMEGA][:n]   # f proportional to Omega
 
 
 def harmonic_ratios(n):

@@ -6,22 +6,19 @@
 #include <juce_core/juce_core.h>
 
 /**
- * 圓板/膜近似振動模型 — 水鑼 (Water Gong) 引擎
+ * Kirchhoff 圓板振動模型（真 clamped 邊界）— 水鑼 (Water Gong) 引擎
  *
- * 模態頻率：f(m,n) ∝ (j(m,n)^2 / R^2) * sqrt(D / (rho*h))
- *   D = E*h^3 / (12*(1-nu^2))  板剛度
- *   j(m,n) = Bessel 函數 J_m 的零點
+ * 模態頻率：f ∝ (Omega / R^2) * sqrt(D / (rho*h))
+ *   D = E*h^3 / (12*(1-nu^2))                          板剛度 (flexural rigidity)
+ *   Omega = lambda^2 = omega * a^2 * sqrt(rho h / D)   板特徵值參數 (Leissa)
  *
- * 物理標示更正 (2026-06)：這裡的 j_mn 是 Bessel 函數 J_m=0 的零點，亦即
- * 「圓膜 (drumhead)」的特徵值，並非真正 clamped Kirchhoff 板的特徵值
- * (後者需解含 J 與修正 Bessel I 的特徵方程，數值不同)。本模型以膜特徵值搭配
- * 板剛度 D 作為鑼/鐘非諧泛音的「近似」，輸出與此定義自洽 (physics_verify 量
- * 得 0.00% 吻合)。若要真 clamped/free 板音色需替換特徵值 — 屬樂器設計決策。
+ * 2026-06 升級：原本用 Bessel J_m=0 零點(圓膜/鼓皮特徵值)做近似；現改為「真
+ * clamped Kirchhoff 板」特徵值 Omega = lambda^2，並用 f ∝ Omega(線性，非平方)。
+ * 泛音比例變成板而非膜：1 : 2.08 : 3.41 : 3.89 : 5.00 : 5.95 ...（材質/尺寸
+ * 無關，tuneChromaticModesToMidi 會把基頻釘到 MIDI）。
+ * 若要 free-edge 真鑼(吊掛自由邊)音色，把下方 Omega 表換成 free-plate 那組即可。
  *
- *   j(0,1)=2.405  j(1,1)=3.832  j(2,1)=5.136  j(0,2)=5.520
- *   j(3,1)=6.380  j(1,2)=7.016  j(4,1)=7.588  j(2,2)=8.417
- *
- * 特徵：2D 模態分佈，產生金屬鑼/鐘的複雜泛音結構
+ * 特徵：2D 板模態，金屬鑼/鐘的複雜非諧泛音結構
  */
 class PlateModel
 {
@@ -53,30 +50,25 @@ public:
         // sqrt(D / (rho * h))
         const float stiffness = std::sqrt (D / (rho * h));
 
-        // Bessel function zeros for clamped circular plate
-        // 格式: {j_mn, m, n} — m=圓周方向節點數, n=徑向節點數
-        struct BesselZero { float value; int m; int n; };
-        static constexpr BesselZero zeros[] = {
-            { 2.405f,  0, 1 },
-            { 3.832f,  1, 1 },
-            { 5.136f,  2, 1 },
-            { 5.520f,  0, 2 },
-            { 6.380f,  3, 1 },
-            { 7.016f,  1, 2 },
-            { 7.588f,  4, 1 },
-            { 8.417f,  2, 2 },
-            { 8.654f,  5, 1 },
-            { 8.772f,  0, 3 },
-            { 9.761f,  6, 1 },
-            { 10.173f, 3, 2 },
-            { 10.520f, 1, 3 },
-            { 10.873f, 7, 1 },
-            { 11.620f, 4, 2 },
-            { 11.791f, 2, 3 },
-            { 11.986f, 8, 1 },
-            { 13.015f, 0, 4 },
-            { 13.170f, 5, 2 },
-            { 13.324f, 3, 3 },
+        // True clamped circular Kirchhoff-plate frequency parameters
+        //   Omega = lambda^2 = omega * a^2 * sqrt(rho h / D)   (Leissa, Vibration
+        //   of Plates), ordered by frequency. m = nodal diameters, n = nodal circles.
+        // Replaces the old circular-MEMBRANE Bessel-zero approximation. Ratios are
+        // material/size-independent. (For a free-edge gong, swap this Omega table.)
+        struct PlateMode { float value; int m; int n; };
+        static constexpr PlateMode zeros[] = {
+            { 10.2158f, 0, 0 },
+            { 21.260f,  1, 0 },
+            { 34.877f,  2, 0 },
+            { 39.771f,  0, 1 },
+            { 51.030f,  3, 0 },
+            { 60.829f,  1, 1 },
+            { 69.666f,  4, 0 },
+            { 84.583f,  2, 1 },
+            { 89.104f,  0, 2 },
+            { 90.739f,  5, 0 },
+            { 111.02f,  3, 1 },
+            { 120.08f,  1, 2 },
         };
 
         const int maxZeros = (int) (sizeof (zeros) / sizeof (zeros[0]));
@@ -91,11 +83,11 @@ public:
 
         for (int i = 0; i < numToUse; ++i)
         {
-            float jmn = zeros[i].value;
-            int   m   = zeros[i].m;
+            float omega = zeros[i].value;
+            int   m     = zeros[i].m;
 
-            // 模態頻率
-            float freq = freqBase * jmn * jmn;
+            // 模態頻率 f ∝ lambda^2 = Omega (true Kirchhoff plate dispersion)
+            float freq = freqBase * omega;
 
             // 衰減
             float decayDenom = alpha + beta * freq * freq + gamma * freq;
