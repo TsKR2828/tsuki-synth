@@ -410,7 +410,7 @@ private:
             || engine == "beam" || engine == "tongue_drum"
             || engine == "plate" || engine == "water_gong"
             || engine == "membrane" || engine == "custom"
-            || engine == "fm";
+            || engine == "fm" || engine == "piano";
     }
 
     static bool isSupportedSampleRate (int sr)

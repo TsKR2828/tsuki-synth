@@ -1,0 +1,32 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Physical Piano Test",
+    "id": "physical_piano",
+    "author": "physical-modeling",
+    "description": "Physically-modelled piano: struck stiff steel string (StringModel) with felt hammer and ~1/8 strike. Stiff-string inharmonicity gives the authentic piano stretched tuning. Verify: tools/physics_verify.py --engines piano"
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.9,
+    "effects": {
+      "reverb": { "decay": 2.0, "wet": 0.15 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 },
+      "distortion": { "type": "overdrive", "drive": 0, "instability": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    { "time": 0.0, "duration": 1.0, "engine": "piano", "note": "C4", "velocity": 0.8, "params": { "material": "steel" } },
+    { "time": 1.0, "duration": 1.0, "engine": "piano", "note": "E4", "velocity": 0.8, "params": { "material": "steel" } },
+    { "time": 2.0, "duration": 1.0, "engine": "piano", "note": "G4", "velocity": 0.8, "params": { "material": "steel" } },
+    { "time": 3.0, "duration": 2.0, "engine": "piano", "note": "C5", "velocity": 0.85, "params": { "material": "steel" } }
+  ],
+  "export": {
+    "filename": "physical_piano",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 500
+  }
+}

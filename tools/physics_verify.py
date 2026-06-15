@@ -89,6 +89,11 @@ ENGINES = {
         inharmonic=False,
         params={"fm_preset": 0},
     ),
+    "piano": dict(
+        engine="piano", ratios=harmonic_ratios, npart=6, tol_pct=3.0,
+        inharmonic=True,
+        params={"material": "steel"},
+    ),
 }
 
 F0_TOL_CENTS = 12.0  # fundamental pitch tolerance

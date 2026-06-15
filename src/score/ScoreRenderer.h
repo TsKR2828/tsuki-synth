@@ -39,7 +39,7 @@ public:
             int midiNote = noteNameToMidi (ev.note);
             std::vector<ModalResonator::Mode> modes;
 
-            if (ev.engine == "string" || ev.engine == "cimbalom")
+            if (ev.engine == "string" || ev.engine == "cimbalom" || ev.engine == "piano")
             {
                 const Material* mat = materialDB->getMaterial (juce::String (ev.material));
                 if (mat == nullptr) mat = materialDB->getMaterial ("steel");
@@ -322,6 +322,16 @@ private:
         {
             renderChromatic (ev, mat, midiNote, ChromaticSubEngine::WaterGong,
                              startSample, endSample, buffer, sr);
+        }
+        else if (ev.engine == "piano")
+        {
+            // Physical piano = struck stiff steel string (StringModel), calibrated:
+            // felt hammer + strike near 1/8 of the string. Only override the
+            // ScoreEvent defaults so explicit scores still win.
+            ScoreEvent pev = ev;
+            if (pev.exciter == "wood_mallet") pev.exciter = "felt";
+            if (pev.strikePosition == 0.3)    pev.strikePosition = 0.125;
+            renderCimbalom (pev, mat, midiNote, startSample, endSample, buffer, sr);
         }
     }
 
