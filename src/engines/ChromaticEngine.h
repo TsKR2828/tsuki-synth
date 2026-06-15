@@ -30,6 +30,7 @@ struct ChromaticParams
     double tongueWidth      = 0.025;
     double tongueThickness  = 0.003;
     float  exciterHardness  = 1.0f;
+    bool   plateFreeEdge    = false;  // false = clamped (default); true = free-edge A/B
 };
 
 inline void tuneChromaticModesToMidi (
@@ -252,6 +253,7 @@ public:
             pp.thickness = thickness;
             pp.strikePosition = strikePos;
             pp.numModes  = 20;
+            pp.freeEdge  = params.plateFreeEdge;
             modes = PlateModel::calculateModes (pp, mat);
             tuneChromaticModesToMidi (modes, midiNote);
         }

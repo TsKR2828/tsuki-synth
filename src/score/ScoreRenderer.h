@@ -74,6 +74,7 @@ public:
                 cp.tongueLength = ev.lengthMm / 1000.0;
                 cp.tongueWidth = ev.widthMm / 1000.0;
                 cp.tongueThickness = ev.thicknessMm / 1000.0;
+                cp.plateFreeEdge = ev.plateFreeEdge;
                 ChromaticVoice voice;
                 voice.prepare (score.global.sampleRate);
                 voice.noteOn (midiNote, ev.velocity, *mat, cp);
@@ -413,6 +414,7 @@ private:
         cp.tongueLength = ev.lengthMm / 1000.0;
         cp.tongueWidth = ev.widthMm / 1000.0;
         cp.tongueThickness = ev.thicknessMm / 1000.0;
+        cp.plateFreeEdge = ev.plateFreeEdge;
         cp.exciterHardness = chromaticExciterHardness (ev.exciter);
 
         ChromaticVoice voice;

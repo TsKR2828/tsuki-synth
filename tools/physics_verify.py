@@ -55,6 +55,14 @@ def plate_ratios(n):
     return [o / o1 for o in PLATE_OMEGA][:n]   # f proportional to Omega
 
 
+# Approximate free-edge circular plate Omega=lambda^2 (Leissa, nu~0.33) — for A/B.
+PLATE_FREE_OMEGA = [5.253, 9.084, 12.23, 20.52, 21.83, 35.25, 38.55]
+
+def plate_free_ratios(n):
+    o1 = PLATE_FREE_OMEGA[0]
+    return [o / o1 for o in PLATE_FREE_OMEGA][:n]
+
+
 def harmonic_ratios(n):
     return [float(k) for k in range(1, n + 1)]
 
@@ -83,6 +91,14 @@ ENGINES = {
         inharmonic=False,
         params={"material": "bronze", "strike_position": 0.30,
                 "thickness_mm": 4.0},
+    ),
+    "water_gong_free": dict(
+        # npart=4: free plate has two close modes (~3.91 & 4.16, ~6% apart) that
+        # the +/-6% measurement window cannot resolve; first 4 are well-separated.
+        engine="water_gong", ratios=plate_free_ratios, npart=4, tol_pct=4.0,
+        inharmonic=False,
+        params={"material": "bronze", "strike_position": 0.30,
+                "thickness_mm": 4.0, "plate_free_edge": True},
     ),
     "fm": dict(
         engine="fm", ratios=harmonic_ratios, npart=6, tol_pct=2.0,

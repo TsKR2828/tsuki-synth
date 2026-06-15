@@ -29,6 +29,7 @@ public:
         float thickness   = 0.003f;   // 板厚 (m)
         float strikePosition = 0.35f; // 擊打位置 (0=中心, 1=邊緣)
         int   numModes    = 20;
+        bool  freeEdge    = false;    // false = clamped (default); true = free-edge A/B
     };
 
     static std::vector<ModalResonator::Mode> calculateModes (
@@ -71,8 +72,18 @@ public:
             { 120.08f,  1, 2 },
         };
 
-        const int maxZeros = (int) (sizeof (zeros) / sizeof (zeros[0]));
-        const int numToUse = std::min (params.numModes, maxZeros);
+        // Approximate FREE-edge circular Kirchhoff plate (Leissa, nu ~ 0.33),
+        // lowest flexible mode is (2,0). APPROXIMATE values — verify vs a reference
+        // before treating as precise; provided for clamped-vs-free A/B.
+        static constexpr PlateMode freeModes[] = {
+            { 5.253f, 2, 0 }, { 9.084f, 0, 1 }, { 12.23f, 3, 0 },
+            { 20.52f, 1, 1 }, { 21.83f, 4, 0 }, { 35.25f, 2, 1 }, { 38.55f, 0, 2 },
+        };
+        const PlateMode* table = params.freeEdge ? freeModes : zeros;
+        const int maxModes = params.freeEdge
+            ? (int) (sizeof (freeModes) / sizeof (freeModes[0]))
+            : (int) (sizeof (zeros)     / sizeof (zeros[0]));
+        const int numToUse = std::min (params.numModes, maxModes);
 
         const float alpha = material.damping.alpha;
         const float beta  = material.damping.beta_air;
@@ -83,8 +94,8 @@ public:
 
         for (int i = 0; i < numToUse; ++i)
         {
-            float omega = zeros[i].value;
-            int   m     = zeros[i].m;
+            float omega = table[i].value;
+            int   m     = table[i].m;
 
             // 模態頻率 f ∝ lambda^2 = Omega (true Kirchhoff plate dispersion)
             float freq = freqBase * omega;

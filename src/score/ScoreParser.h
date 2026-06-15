@@ -63,6 +63,8 @@ struct ScoreEvent
     float       fmAttackMs     = -1.0f;
     float       fmReleaseMs    = -1.0f;
 
+    bool        plateFreeEdge  = false;  // water_gong only; false = clamped (default)
+
     bool        hasGlide       = false;
     std::string glideFromNote;
     double      glideDurationMs = 0.0;
@@ -261,6 +263,8 @@ public:
                             se.fmAttackMs = static_cast<float> (value);
                         if (readNumber (*p, "fm_release", value, 10.0, 10000.0))
                             se.fmReleaseMs = static_cast<float> (value);
+
+                        readBool (*p, "plate_free_edge", se.plateFreeEdge);
                     }
 
                     if (auto* gl = e->getProperty ("glide").getDynamicObject())
