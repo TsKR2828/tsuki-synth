@@ -169,9 +169,9 @@ def measure_f0(x, sr, f0_pred):
 
 
 # ── probe render via CLI ────────────────────────────────────────────────────
-def render_probe(cli, eng, midi, outdir, sr=48000, vel=0.85):
+def render_probe(cli, eng, midi, outdir, sr=48000, vel=0.85, dur=2.0):
     spec = ENGINES[eng]
-    fn = f"probe_{eng}_{midi}_{int(round(vel * 100))}"
+    fn = f"probe_{eng}_{midi}_{int(round(vel * 100))}_{int(round(dur * 10))}"
     score = {
         "meta": {"title": fn, "id": fn},
         "global": {"bpm": 120, "sample_rate": sr, "master_volume": 1.0,
@@ -179,7 +179,7 @@ def render_probe(cli, eng, midi, outdir, sr=48000, vel=0.85):
                                "delay": {"time_ms": 0, "feedback": 0, "wet": 0},
                                "distortion": {"type": "overdrive", "drive": 0,
                                               "instability": 0, "wet": 0}}},
-        "events": [{"time": 0.0, "duration": 2.0, "engine": spec["engine"],
+        "events": [{"time": 0.0, "duration": dur, "engine": spec["engine"],
                     "note": str(midi), "velocity": vel,
                     "params": spec["params"]}],
         "export": {"filename": fn, "format": "wav", "bit_depth": 16,
@@ -289,6 +289,72 @@ def report_levels(cli, engines, notes, outdir):
     return True
 
 
+def load_materials():
+    p = Path(__file__).resolve().parent.parent / "data" / "materials.json"
+    try:
+        return json.loads(p.read_text(encoding="utf-8")).get("materials", {})
+    except Exception:
+        return {}
+
+
+def predict_t60(engine, damping, f0):
+    a = damping.get("alpha", 0.0)
+    b = damping.get("beta_air", 0.0)
+    g = damping.get("gamma_radiation", 0.0)
+    c = 2.0 if engine == "tongue_drum" else 1.0   # BeamModel weights alpha x2
+    denom = c * a + b * f0 * f0 + g * f0
+    return (1.0 / denom) if denom > 0 else None
+
+
+def measure_t60(sr, x, f0):
+    # Hilbert envelope of the fundamental band, log-slope fit extrapolated to -60 dB.
+    try:
+        from scipy.signal import butter, sosfiltfilt, hilbert
+    except Exception:
+        return None
+    nyq = sr / 2.0
+    lo, hi = max(20.0, f0 * 0.8) / nyq, min(nyq * 0.99, f0 * 1.2) / nyq
+    if not (0.0 < lo < hi < 1.0):
+        return None
+    band = sosfiltfilt(butter(4, [lo, hi], btype="band", output="sos"), x)
+    env = np.abs(hilbert(band))
+    seg = env[int(np.argmax(env)):]
+    if len(seg) < int(0.15 * sr):
+        return None
+    logenv = 20.0 * np.log10(np.maximum(seg, 1e-9) / max(seg[0], 1e-9))
+    t = np.arange(len(seg)) / sr
+    # clean decay region, before any note-off accelerated damping (~1.5 s)
+    mask = (logenv <= -3.0) & (logenv >= -28.0) & (t < 1.5)
+    if mask.sum() < 20:
+        return None
+    slope = np.polyfit(t[mask], logenv[mask], 1)[0]   # dB/s (negative)
+    return (-60.0 / slope) if slope < -1e-3 else None
+
+
+def report_t60(cli, engines, notes, outdir):
+    mats = load_materials()
+    print("Modal decay T60 — measured vs material-damping model "
+          "tau = 1/(c*alpha + beta*f^2 + gamma*f):")
+    print(f"   {'engine':11} {'MIDI':>4} {'material':>9} {'pred':>8} {'meas':>8} {'ratio':>6}")
+    for eng in engines:
+        if eng == "fm":
+            continue   # FM decay is ADSR, not modal damping
+        spec = ENGINES[eng]
+        matkey = spec["params"].get("material", "steel")
+        damping = mats.get(matkey, {}).get("damping", {})
+        for midi in notes:
+            f0 = midi_to_hz(midi)
+            sr, x = read_wav_mono(render_probe(cli, eng, midi, outdir, dur=3.0))
+            pred, meas = predict_t60(spec["engine"], damping, f0), measure_t60(sr, x, f0)
+            ps = f"{pred:7.2f}s" if pred else "   --  "
+            ms = f"{meas:7.2f}s" if meas else "   --  "
+            rs = f"{meas / pred:5.2f}" if (pred and meas) else "  --  "
+            print(f"   {eng:11} {midi:>4} {matkey:>9} {ps:>8} {ms:>8} {rs:>6}")
+    print("\n(ratio ~1.0 = rendered decay matches the material-damping model;")
+    print(" measured via Hilbert-envelope log-slope of the fundamental band.)")
+    return True
+
+
 def main():
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -303,6 +369,8 @@ def main():
     ap.add_argument("--keep", action="store_true", help="keep temp renders")
     ap.add_argument("--levels", action="store_true",
                     help="report per-engine output levels instead of partials")
+    ap.add_argument("--t60", action="store_true",
+                    help="report modal decay times vs the damping model")
     args = ap.parse_args()
 
     cli = Path(args.cli) if args.cli else find_cli()
@@ -320,6 +388,8 @@ def main():
     def do(od):
         if args.levels:
             return report_levels(cli, args.engines, args.notes, od)
+        if args.t60:
+            return report_t60(cli, args.engines, args.notes, od)
         return run(cli, args.engines, args.notes, od)
 
     if args.keep:
