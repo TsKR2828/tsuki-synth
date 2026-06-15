@@ -192,7 +192,7 @@ def render_probe(cli, eng, midi, outdir, sr=48000, vel=0.85, dur=2.0):
     wav = outdir / (fn + ".wav")
     if r.returncode != 0 or not wav.exists():
         raise RuntimeError(f"render failed for {fn}: {r.stdout}\n{r.stderr}")
-    return wav
+    return wav, sf
 
 
 def find_cli():
@@ -219,7 +219,7 @@ def run(cli, engines, notes, outdir):
             f0 = midi_to_hz(midi)
             ratios = spec["ratios"](spec["npart"])
             pred = [f0 * r for r in ratios]
-            wav = render_probe(cli, eng, midi, outdir)
+            wav, _ = render_probe(cli, eng, midi, outdir)
             sr, x = read_wav_mono(wav)
             meas = measure_partials(sr, x, pred)
 
@@ -278,8 +278,8 @@ def report_levels(cli, engines, notes, outdir):
           f"{'velx2->dB':>10}")
     for eng in engines:
         for midi in notes:
-            lo = render_probe(cli, eng, midi, outdir, vel=0.425)
-            hi = render_probe(cli, eng, midi, outdir, vel=0.85)
+            lo, _ = render_probe(cli, eng, midi, outdir, vel=0.425)
+            hi, _ = render_probe(cli, eng, midi, outdir, vel=0.85)
             _, rlo = measure_levels(*read_wav_mono(lo))
             phi, rhi = measure_levels(*read_wav_mono(hi))
             print(f"   {eng:11} {midi:>4} {phi:>10.1f} {rhi:>9.1f} "
@@ -289,21 +289,18 @@ def report_levels(cli, engines, notes, outdir):
     return True
 
 
-def load_materials():
-    p = Path(__file__).resolve().parent.parent / "data" / "materials.json"
+def model_fundamental_decay(cli, score_path):
+    # Ground-truth decay from the C++ model itself (--dump-modes), avoiding any
+    # Python re-derivation drift (the model's decayTime uses the natural,
+    # pre-MIDI-tuning frequency, which a formula on the tuned f0 would get wrong).
+    r = subprocess.run([str(cli), "--dump-modes", str(score_path)],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return None
     try:
-        return json.loads(p.read_text(encoding="utf-8")).get("materials", {})
+        return json.loads(r.stdout)["events"][0]["partials"][0]["decay"]
     except Exception:
-        return {}
-
-
-def predict_t60(engine, damping, f0):
-    a = damping.get("alpha", 0.0)
-    b = damping.get("beta_air", 0.0)
-    g = damping.get("gamma_radiation", 0.0)
-    c = 2.0 if engine == "tongue_drum" else 1.0   # BeamModel weights alpha x2
-    denom = c * a + b * f0 * f0 + g * f0
-    return (1.0 / denom) if denom > 0 else None
+        return None
 
 
 def measure_t60(sr, x, f0):
@@ -332,26 +329,22 @@ def measure_t60(sr, x, f0):
 
 
 def report_t60(cli, engines, notes, outdir):
-    mats = load_materials()
-    print("Modal decay T60 — measured vs material-damping model "
-          "tau = 1/(c*alpha + beta*f^2 + gamma*f):")
-    print(f"   {'engine':11} {'MIDI':>4} {'material':>9} {'pred':>8} {'meas':>8} {'ratio':>6}")
+    print("Modal decay T60 - measured (audio) vs model ground truth (--dump-modes):")
+    print(f"   {'engine':11} {'MIDI':>4} {'model':>8} {'meas':>8} {'ratio':>6}")
     for eng in engines:
         if eng == "fm":
             continue   # FM decay is ADSR, not modal damping
-        spec = ENGINES[eng]
-        matkey = spec["params"].get("material", "steel")
-        damping = mats.get(matkey, {}).get("damping", {})
         for midi in notes:
             f0 = midi_to_hz(midi)
-            sr, x = read_wav_mono(render_probe(cli, eng, midi, outdir, dur=3.0))
-            pred, meas = predict_t60(spec["engine"], damping, f0), measure_t60(sr, x, f0)
+            wav, sf = render_probe(cli, eng, midi, outdir, dur=3.0)
+            sr, x = read_wav_mono(wav)
+            pred, meas = model_fundamental_decay(cli, sf), measure_t60(sr, x, f0)
             ps = f"{pred:7.2f}s" if pred else "   --  "
             ms = f"{meas:7.2f}s" if meas else "   --  "
             rs = f"{meas / pred:5.2f}" if (pred and meas) else "  --  "
-            print(f"   {eng:11} {midi:>4} {matkey:>9} {ps:>8} {ms:>8} {rs:>6}")
-    print("\n(ratio ~1.0 = rendered decay matches the material-damping model;")
-    print(" measured via Hilbert-envelope log-slope of the fundamental band.)")
+            print(f"   {eng:11} {midi:>4} {ps:>8} {ms:>8} {rs:>6}")
+    print("\n(model = fundamental decayTime straight from the C++ model;")
+    print(" measured = Hilbert-envelope log-slope of the fundamental band.)")
     return True
 
 
