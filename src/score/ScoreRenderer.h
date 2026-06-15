@@ -27,6 +27,81 @@ public:
     void setMaterialDB (MaterialDB* db) { materialDB = db; }
     void setBaseDir (const juce::File& dir) { baseDir = dir; }
 
+    /// Dump each modal event's model-predicted partials as JSON (single source
+    /// of truth for verification). Non-modal (fm) events are skipped.
+    juce::String dumpModes (const Score& score)
+    {
+        juce::String out;
+        out << "{\n  \"events\": [\n";
+        bool first = true;
+        for (const auto& ev : score.events)
+        {
+            int midiNote = noteNameToMidi (ev.note);
+            std::vector<ModalResonator::Mode> modes;
+
+            if (ev.engine == "string" || ev.engine == "cimbalom")
+            {
+                const Material* mat = materialDB->getMaterial (juce::String (ev.material));
+                if (mat == nullptr) mat = materialDB->getMaterial ("steel");
+                if (mat == nullptr) continue;
+                CimbalomParams cp;
+                cp.materialKey = ev.material;
+                cp.strikePosition = ev.strikePosition;
+                cp.diameterMm = ev.diameterMm;
+                cp.tensionOverride = ev.tensionN;
+                cp.dampingOverride = ev.dampingOverride;
+                CimbalomVoice voice;
+                voice.prepare (score.global.sampleRate);
+                voice.noteOn (midiNote, ev.velocity, *mat, cp);
+                modes = voice.getModes();
+            }
+            else if (ev.engine == "beam" || ev.engine == "tongue_drum"
+                  || ev.engine == "plate" || ev.engine == "water_gong"
+                  || ev.engine == "membrane" || ev.engine == "custom")
+            {
+                const Material* mat = materialDB->getMaterial (juce::String (ev.material));
+                if (mat == nullptr) mat = materialDB->getMaterial ("steel");
+                if (mat == nullptr) continue;
+                ChromaticParams cp;
+                cp.materialKey = ev.material;
+                cp.subEngine = (ev.engine == "beam" || ev.engine == "tongue_drum")
+                    ? ChromaticSubEngine::TongueDrum
+                    : (ev.engine == "custom") ? ChromaticSubEngine::CustomHarmonics
+                                              : ChromaticSubEngine::WaterGong;
+                cp.strikePosition = ev.strikePosition;
+                cp.plateRadius = ev.radiusMm / 1000.0;
+                cp.plateThickness = ev.thicknessMm / 1000.0;
+                cp.tongueLength = ev.lengthMm / 1000.0;
+                cp.tongueWidth = ev.widthMm / 1000.0;
+                cp.tongueThickness = ev.thicknessMm / 1000.0;
+                ChromaticVoice voice;
+                voice.prepare (score.global.sampleRate);
+                voice.noteOn (midiNote, ev.velocity, *mat, cp);
+                modes = voice.getModes();
+            }
+            else
+            {
+                continue;   // fm = non-modal synthesis
+            }
+
+            if (! first) out << ",\n";
+            first = false;
+            out << "    { \"engine\": \"" << juce::String (ev.engine)
+                << "\", \"note\": \"" << juce::String (ev.note)
+                << "\", \"midi\": " << midiNote << ", \"partials\": [";
+            for (size_t i = 0; i < modes.size(); ++i)
+            {
+                if (i) out << ", ";
+                out << "{\"freq\": " << juce::String (modes[i].frequency, 3)
+                    << ", \"amp\": " << juce::String (modes[i].amplitude, 5)
+                    << ", \"decay\": " << juce::String (modes[i].decayTime, 4) << "}";
+            }
+            out << "] }";
+        }
+        out << "\n  ]\n}\n";
+        return out;
+    }
+
     bool render (const Score& score, const juce::File& outputFile)
     {
         if (materialDB == nullptr || score.events.empty())

@@ -355,6 +355,13 @@ public:
             strings[s].scaleFrequencies (factor);
     }
 
+    /// Predicted modes of the course (representative string 0) — CLI --dump-modes.
+    std::vector<ModalResonator::Mode> getModes() const
+    {
+        return numActiveStrings > 0 ? strings[0].getModes()
+                                    : std::vector<ModalResonator::Mode>{};
+    }
+
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
                           int startSample, int numSamples) override
     {

@@ -104,6 +104,27 @@ int main (int argc, char* argv[])
 
     juce::String firstArg (argv[1]);
 
+    if (firstArg == "--dump-modes")
+    {
+        if (argc < 3)
+        {
+            std::cout << "Usage: tsukisynth-cli --dump-modes <score.json>" << std::endl;
+            return 1;
+        }
+        juce::File scoreFile { juce::String (argv[2]) };
+        Score score;
+        if (! ScoreParser::parse (scoreFile, score))
+        {
+            std::cout << "FAILED to parse: " << scoreFile.getFileName() << std::endl;
+            return 1;
+        }
+        ScoreRenderer renderer;
+        renderer.setMaterialDB (&globalMaterialDB);
+        renderer.setBaseDir (scoreFile.getParentDirectory());
+        std::cout << renderer.dumpModes (score).toStdString();
+        return 0;
+    }
+
     if (firstArg == "--batch" || firstArg == "-b")
     {
         if (argc < 3)

@@ -310,6 +310,9 @@ public:
         resonator.scaleFrequencies (factor);
     }
 
+    /// Predicted modes (MIDI-tuned) — CLI --dump-modes.
+    std::vector<ModalResonator::Mode> getModes() const { return resonator.getModes(); }
+
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
                           int startSample, int numSamples) override
     {
