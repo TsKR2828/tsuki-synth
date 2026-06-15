@@ -8,14 +8,14 @@
  * Values are RAW parameter values (not normalized 0~1).
  * Applied via param->convertTo0to1(raw) then setValueNotifyingHost().
  *
- * Current factory preset count: 25.
+ * Current factory preset count: 27.
  *
  * Presets grouped by engine:
- *   0-7:   Cimbalom (physical modeling string)
- *          0-5 raw variants, 6-7 Body variants
- *   8-15:  Chromatic (beam / plate / custom)
- *          8-13 raw variants, 14-15 Body variants
- *   16-24: FM Piano (frequency modulation)
+ *   0-9:   Cimbalom (physical modeling string)
+ *          0-5 raw variants, 6-7 Body variants, 8-9 Piano (Physical)
+ *   10-17: Chromatic (beam / plate / custom)
+ *          10-15 raw variants, 16-17 Body variants
+ *   18-26: FM Piano (frequency modulation)
  *          8 sound-type presets plus Layered E.Piano
  */
 struct PresetEntry
@@ -166,6 +166,38 @@ PRESET_BEGIN (preset_rubber_pluck)
     { "fx_delay_mix",     0.00f },
     { "fx_comp_threshold", -18.0f },
     { "fx_comp_ratio",    6.0f },
+PRESET_END
+
+// ========== Piano (Physical) presets ==========
+
+PRESET_BEGIN (preset_grand_piano_physical)
+    { "engine",           0 },
+    { "cim_material",     0 },       // Steel
+    { "cim_strike_pos",   0.13f },   // felt hammer ~1/8 of string
+    { "cim_diameter",     1.0f },
+    { "cim_hammer",       1 },       // Felt
+    { "cim_num_strings",  3 },
+    { "cim_detuning",     2.0f },    // cents
+    { "macro_body",       0.45f },
+    { "macro_damping",    0.40f },
+    { "fx_reverb_mix",    0.18f },
+    { "fx_reverb_size",   0.50f },
+    { "fx_comp_threshold", -14.0f },
+    { "fx_comp_ratio",    3.0f },
+PRESET_END
+
+PRESET_BEGIN (preset_bright_upright_physical)
+    { "engine",           0 },
+    { "cim_material",     0 },       // Steel
+    { "cim_strike_pos",   0.10f },   // slightly closer to nut — brighter attack
+    { "cim_diameter",     0.90f },
+    { "cim_hammer",       2 },       // Wood
+    { "cim_num_strings",  3 },
+    { "cim_detuning",     3.0f },    // cents
+    { "macro_body",       0.35f },
+    { "macro_damping",    0.35f },
+    { "fx_reverb_mix",    0.14f },
+    { "fx_reverb_size",   0.42f },
 PRESET_END
 
 // ========== Chromatic presets ==========
@@ -450,7 +482,7 @@ inline const FactoryPreset* getFactoryPresetList (int& count)
 {
     static const FactoryPreset presets[] =
     {
-        // Cimbalom (0-7)
+        // Cimbalom (0-9)
         // Raw variants (0-5)
         { "Steel Hammered Dulcimer",  preset_steel_dulcimer,      (int)(sizeof(preset_steel_dulcimer)/sizeof(preset_steel_dulcimer[0]))          },
         { "Copper Warm Strings",      preset_copper_warm,         (int)(sizeof(preset_copper_warm)/sizeof(preset_copper_warm[0]))                },
@@ -461,20 +493,23 @@ inline const FactoryPreset* getFactoryPresetList (int& count)
         // Body variants (6-7)
         { "Steel Hammered Dulcimer (Body)", preset_steel_dulcimer_body, (int)(sizeof(preset_steel_dulcimer_body)/sizeof(preset_steel_dulcimer_body[0]))},
         { "Copper Warm Strings (Body)",     preset_copper_warm_body,    (int)(sizeof(preset_copper_warm_body)/sizeof(preset_copper_warm_body[0]))      },
+        // Piano (Physical) variants (8-9)
+        { "Grand Piano (Physical)",         preset_grand_piano_physical,    (int)(sizeof(preset_grand_piano_physical)/sizeof(preset_grand_piano_physical[0]))       },
+        { "Bright Upright (Physical)",      preset_bright_upright_physical, (int)(sizeof(preset_bright_upright_physical)/sizeof(preset_bright_upright_physical[0])) },
 
-        // Chromatic (8-15)
-        // Raw variants (8-13)
+        // Chromatic (10-17)
+        // Raw variants (10-15)
         { "Crystal Tongue Drum",      preset_crystal_tongue,      (int)(sizeof(preset_crystal_tongue)/sizeof(preset_crystal_tongue[0]))          },
         { "Bronze Water Gong",        preset_bronze_gong,         (int)(sizeof(preset_bronze_gong)/sizeof(preset_bronze_gong[0]))                },
         { "Wooden Kalimba",           preset_wooden_kalimba,      (int)(sizeof(preset_wooden_kalimba)/sizeof(preset_wooden_kalimba[0]))          },
         { "Ethereal Steel Bells",     preset_ethereal_bells,      (int)(sizeof(preset_ethereal_bells)/sizeof(preset_ethereal_bells[0]))          },
         { "Glass Singing Bowl",       preset_glass_singing_bowl,  (int)(sizeof(preset_glass_singing_bowl)/sizeof(preset_glass_singing_bowl[0]))  },
         { "Rubber Tongue Pad",        preset_rubber_tongue_pad,   (int)(sizeof(preset_rubber_tongue_pad)/sizeof(preset_rubber_tongue_pad[0]))    },
-        // Body variants (14-15)
+        // Body variants (16-17)
         { "Crystal Tongue Drum (Body)", preset_crystal_tongue_body, (int)(sizeof(preset_crystal_tongue_body)/sizeof(preset_crystal_tongue_body[0]))},
         { "Bronze Water Gong (Body)",   preset_bronze_gong_body,    (int)(sizeof(preset_bronze_gong_body)/sizeof(preset_bronze_gong_body[0]))      },
 
-        // FM Piano (16-24)
+        // FM Piano (18-26)
         // One preset per sound type plus Layered E.Piano.
         { "Acoustic Piano",           preset_acoustic_piano,      (int)(sizeof(preset_acoustic_piano)/sizeof(preset_acoustic_piano[0]))          },
         { "Electric Rhodes",          preset_electric_rhodes,     (int)(sizeof(preset_electric_rhodes)/sizeof(preset_electric_rhodes[0]))         },
