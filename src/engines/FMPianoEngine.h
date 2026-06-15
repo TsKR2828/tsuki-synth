@@ -290,7 +290,7 @@ private:
 
         feedbackAmount = juce::jlimit (0.0f, 0.7f, feedback * 0.7f);
         lastModOutput  = 0.0f;
-        gain = 0.2f * velocity;
+        gain = 0.100f * velocity;   // equal-RMS calibrated (2026-06)
 
         // ── Two-stage modulation index ──
         // Split peakIndex into fast-attack + slow-body with separate scale factors:
@@ -384,6 +384,7 @@ private:
 
         noiseGen.setType (NoiseGen::Type::White);
         noiseGen.reset();
+        noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
 
         // ── P2: E.Piano 3-stack mode ──
         // Only E.Piano (type 1) uses parallel stacks; all others single-stack.

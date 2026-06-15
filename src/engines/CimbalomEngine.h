@@ -147,9 +147,21 @@ public:
         float matScale = 0.5f + mMaterial;
         float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
 
+        // Tune fundamental to the exact MIDI pitch. A stiff string's actual f1 is
+        // target·√(1+B) (inharmonic sharpening), so divide it out. Modal ratios and
+        // the multi-string detuning (applied per string below) are preserved.
+        float tuneScale = 1.0f;
+        if (! baseModes.empty() && std::isfinite (baseModes[0].frequency)
+            && baseModes[0].frequency > 0.0f)
+        {
+            const float target = 440.0f
+                * std::pow (2.0f, (float) (midiNoteNumber - 69) / 12.0f);
+            tuneScale = target / baseModes[0].frequency;
+        }
+
         for (auto& m : baseModes)
         {
-            m.frequency *= tScale;
+            m.frequency *= tScale * tuneScale;
             m.decayTime *= matScale * dmpScale;
         }
 
@@ -181,6 +193,7 @@ public:
         // ── Exciter（槌頭噪音脈衝）──
         float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
         setupExciter (hammer, velocity, mBrightness, mNoise, materialBright, getSampleRate());
+        noiseGen.setSeed ((uint32_t) (midiNoteNumber * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
         damped = false;
     }
 
@@ -262,6 +275,18 @@ public:
             }
         }
 
+        // Tune fundamental to the exact MIDI pitch (compensate stiff-string
+        // inharmonic sharpening: actual f1 = target·√(1+B)). Ratios + detuning kept.
+        if (! baseModes.empty() && std::isfinite (baseModes[0].frequency)
+            && baseModes[0].frequency > 0.0f)
+        {
+            const float target = 440.0f
+                * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
+            const float tuneScale = target / baseModes[0].frequency;
+            for (auto& m : baseModes)
+                m.frequency *= tuneScale;
+        }
+
         numActiveStrings = nStrings;
         float gain = 1.0f / std::sqrt ((float) numActiveStrings);
 
@@ -289,6 +314,7 @@ public:
         float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
         setupExciter (static_cast<float> (hammerIdx), velocity,
                       0.5f, 0.0f, materialBright, sr);
+        noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
 
         bodyRes.prepare (sr);
         bodyRes.setAmount (0.5f);
@@ -320,7 +346,7 @@ public:
         }
 
         sample += bodyRes.processSample (sample);
-        return sample * 0.15f;   // match renderNextBlock() output gain (plugin/CLI parity)
+        return sample * 0.070f;   // equal-RMS calibrated (2026-06)
     }
 
     void scaleFrequencies (double factor)
@@ -361,7 +387,7 @@ public:
             sample += bodyRes.processSample (sample);
 
             // 輸出（master gain 防 clipping）
-            sample *= 0.15f;
+            sample *= 0.070f;   // equal-RMS calibrated (2026-06)
 
             for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
                 outputBuffer.addSample (ch, startSample, sample);

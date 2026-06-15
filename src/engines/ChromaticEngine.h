@@ -106,6 +106,7 @@ public:
         if (mat == nullptr) return;
 
         int subEngine = (int) pSubEngine->load();
+        outputGain = subEngineOutputGain (subEngine);
         float strikePos = pStrikePos->load();
         float thickness = pThickness->load() * 0.001f;  // mm -> m
         float size      = pSize->load() * 0.001f;       // mm -> m
@@ -182,6 +183,7 @@ public:
         resonator.excite (velocity);
 
         setupExciter (exciter, velocity, mBrightness, mNoise, getSampleRate());
+        noiseGen.setSeed ((uint32_t) (midiNoteNumber * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
         damped = false;
     }
 
@@ -222,6 +224,7 @@ public:
         double sr = standaloneSR;
 
         int subEng = static_cast<int> (params.subEngine);
+        outputGain = subEngineOutputGain (subEng);
         float strikePos = juce::jlimit (0.0f, 1.0f,
                                         static_cast<float> (params.strikePosition));
         float thickness = static_cast<float> (params.plateThickness > 0.0001
@@ -265,6 +268,7 @@ public:
         resonator.excite (velocity);
 
         setupExciter (params.exciterHardness, velocity, 0.5f, 0.0f, sr);
+        noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
 
         bodyRes.prepare (sr);
         bodyRes.setAmount (0.5f);
@@ -298,7 +302,7 @@ public:
             sample += noise * exciterEnv.process();
         }
         sample += bodyRes.processSample (sample);
-        return sample * 0.2f;   // match renderNextBlock() output gain (plugin/CLI parity)
+        return sample * outputGain;   // per-sub-engine, equal-RMS calibrated
     }
 
     void scaleFrequencies (double factor)
@@ -348,7 +352,7 @@ public:
             }
 
             sample += bodyRes.processSample (sample);
-            sample *= 0.2f;
+            sample *= outputGain;   // per-sub-engine, equal-RMS calibrated
 
             for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
                 outputBuffer.addSample (ch, startSample, sample);
@@ -361,6 +365,18 @@ public:
     }
 
 private:
+    /// Per-sub-engine output gain — equal-RMS calibration (2026-06) so every
+    /// engine has matched RMS at the same velocity (replaces the lone 0.2 magic).
+    static float subEngineOutputGain (int subEngine)
+    {
+        switch (subEngine)
+        {
+            case 0:  return 0.255f;   // Tongue Drum (free-free beam)
+            case 1:  return 0.163f;   // Water Gong (Kirchhoff plate)
+            default: return 0.180f;   // Custom harmonics
+        }
+    }
+
     /// Custom harmonics mode: user-defined ratio/amplitude
     std::vector<ModalResonator::Mode> buildCustomModes (
         int midiNote, const MaterialDB::Material& mat)
@@ -427,5 +443,6 @@ private:
     // Pitch glide state (water gong)
     std::vector<ModalResonator::Mode> baseModes;
     float glideAmount = 0.0f;
+    float outputGain  = 0.2f;   // per-sub-engine output level (equal-RMS calibrated)
     float glidePhase  = 0.0f;
 };
