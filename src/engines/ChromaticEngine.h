@@ -13,7 +13,7 @@
 /**
  * Chromatic Synth 引擎 — 三合一
  *   0 = Tongue Drum（Euler-Bernoulli 梁）
- *   1 = Water Gong （Kirchhoff 圓板）
+ *   1 = Water Gong （Bessel 圓板/膜近似，非真 clamped 板，見 PlateModel.h）
  *   2 = Custom     （使用者自填 ratio/amplitude）
  */
 

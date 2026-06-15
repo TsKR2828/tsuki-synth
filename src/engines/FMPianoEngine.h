@@ -7,6 +7,12 @@
 /**
  * FM Piano Engine — 2-operator FM with hammer transient + body resonance
  *
+ * NOTE: this is FM SYNTHESIS, not physical modelling. Unlike the Cimbalom /
+ * Chromatic engines (string / beam / plate physics), FM Piano is a "sounds-like"
+ * engine — its spectrum is exact and verifiable (a harmonic series for integer
+ * ratios) but it is NOT derived from an instrument's physics. For the
+ * physics-accurate goal, treat it as a synth voice, not a physical model.
+ *
  * Signal chain (per sample):
  *   1. FM core:  sin(2π·fc·t + I(t) · sin(2π·fm·t + fb·lastMod))
  *   2. Hammer noise: bandpass (1.5–6 kHz) noise burst, 15–45 ms

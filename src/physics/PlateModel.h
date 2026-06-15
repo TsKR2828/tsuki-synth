@@ -6,16 +6,20 @@
 #include <juce_core/juce_core.h>
 
 /**
- * Kirchhoff 圓板振動模型 — 水鑼 (Water Gong) 引擎
+ * 圓板/膜近似振動模型 — 水鑼 (Water Gong) 引擎
  *
  * 模態頻率：f(m,n) ∝ (j(m,n)^2 / R^2) * sqrt(D / (rho*h))
  *   D = E*h^3 / (12*(1-nu^2))  板剛度
- *   j(m,n) = Bessel 函數零點
+ *   j(m,n) = Bessel 函數 J_m 的零點
  *
- * Clamped circular plate Bessel zeros (j_mn):
+ * 物理標示更正 (2026-06)：這裡的 j_mn 是 Bessel 函數 J_m=0 的零點，亦即
+ * 「圓膜 (drumhead)」的特徵值，並非真正 clamped Kirchhoff 板的特徵值
+ * (後者需解含 J 與修正 Bessel I 的特徵方程，數值不同)。本模型以膜特徵值搭配
+ * 板剛度 D 作為鑼/鐘非諧泛音的「近似」，輸出與此定義自洽 (physics_verify 量
+ * 得 0.00% 吻合)。若要真 clamped/free 板音色需替換特徵值 — 屬樂器設計決策。
+ *
  *   j(0,1)=2.405  j(1,1)=3.832  j(2,1)=5.136  j(0,2)=5.520
  *   j(3,1)=6.380  j(1,2)=7.016  j(4,1)=7.588  j(2,2)=8.417
- *   ...
  *
  * 特徵：2D 模態分佈，產生金屬鑼/鐘的複雜泛音結構
  */

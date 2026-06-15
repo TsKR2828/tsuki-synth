@@ -10,6 +10,15 @@
 #include <algorithm>
 #include <cmath>
 
+/**
+ * Offline score -> WAV renderer (the CLI / deaf + AI path).
+ *
+ * NOTE: this path drives the engine voices with EXPLICIT physical parameters
+ * from the score JSON and does NOT apply the plugin's Macro "feel" layer
+ * (Material/Tension/Damping... 0-1 knobs that the plugin's startNote() reads).
+ * So CLI output is the pure physical model -- which is exactly what the
+ * physics-verification harness (tools/physics_verify.py) checks.
+ */
 class ScoreRenderer
 {
     using Material = MaterialDB::Material;
