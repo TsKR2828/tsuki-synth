@@ -1,6 +1,6 @@
 # TsukiSynth — Development Roadmap
 
-> Last updated: 2026-05-31
+> Last updated: 2026-06-16
 >
 > This document tracks the real project status based on actual repo state,
 > not planned/estimated phases.
@@ -26,6 +26,41 @@
 | — | Engine-filtered preset list | **Done** (unstaged) |
 | — | Tuner View (NSDF pitch detection) | **Done** (unstaged) |
 | — | Tuner structural fix (zero-lag skip, dry FIFO, SR sync, low-freq) | **Done** (unstaged) |
+| v0.3 | Code audit (8 bugs) + Codex fixes | **Done** (`Codex-fix-bug`) |
+| v0.3 | Physics goal: determinism + verification harness (`physics_verify.py`) | **Done** |
+| v0.3 | Cimbalom MIDI-pitch tuning + equal-RMS calibration | **Done** |
+| v0.3 | Water gong → true clamped Kirchhoff plate | **Done** |
+| v0.3 | Physical piano engine (struck stiff string) + presets | **Done** |
+| v0.3 | Optional free-edge gong (`plate_free_edge`) for A/B | **Done** |
+| — | Plugin 4th "Piano" engine tab | Pending (APVTS state-compat check) |
+| — | DAW validation (host scan / automation / state) | Pending |
+
+---
+
+## 2026-06 — Physics-accuracy pass + verification
+
+Goal restated by 月月: **deaf people + AI verify / simulate sound by physical
+theory, not by ear.** Three pillars — reproducibility, physical verifiability,
+instrument-physics correctness. Branch `Codex-fix-bug`.
+
+- **Code audit (8 bugs)** found + fixed (Codex `b5a370d` / PR #4 + this session);
+  `tests/audit_repro.cpp` documents them.
+- **Determinism** — NoiseGen deterministic seeding → same score renders
+  byte-identical (prerequisite for ear-free verification).
+- **Verification harness** `tools/physics_verify.py` — render → FFT → compare to
+  physics-model predictions (beam βL / plate Ω / harmonic), report f0 cents +
+  partial %. Modes: default partials, `--levels` (RMS/peak), `--t60` (decay).
+  CLI `--dump-modes` emits the model's exact partials (single source of truth).
+- **Tuning / level** — cimbalom pinned to MIDI pitch (stiff-string √(1+B) comp);
+  equal-RMS engine calibration (cross-engine 8 dB → 0.2 dB).
+- **Instrument physics** — water gong → true clamped Kirchhoff-plate eigenvalues
+  (was a membrane approximation); new physical **piano** engine (struck stiff
+  steel string via StringModel: CLI `"piano"` + plugin Cimbalom presets);
+  optional free-edge gong (`plate_free_edge`) for A/B.
+- **Verified** — all 6 engines (cimbalom / tongue_drum / water_gong /
+  water_gong_free / fm / piano) pass the harness; CLI + Standalone build clean.
+- **Pending** — plugin 4th "Piano" engine tab (APVTS state-compat check), DAW
+  validation, water-gong clamped-vs-free character decision.
 
 ---
 
