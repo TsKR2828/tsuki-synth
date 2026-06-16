@@ -63,7 +63,7 @@ struct ScoreEvent
     float       fmAttackMs     = -1.0f;
     float       fmReleaseMs    = -1.0f;
 
-    bool        plateFreeEdge  = false;  // water_gong only; false = clamped (default)
+    bool        plateFreeEdge  = true;   // water_gong: hung plate, edges free (physical default)
 
     bool        hasGlide       = false;
     std::string glideFromNote;

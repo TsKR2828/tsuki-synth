@@ -17,8 +17,8 @@
     }
   },
   "events": [
-    { "time": 0.0, "duration": 3.0, "engine": "water_gong", "note": "C4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3 } },
-    { "time": 3.0, "duration": 3.0, "engine": "water_gong", "note": "G4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3 } }
+    { "time": 0.0, "duration": 3.0, "engine": "water_gong", "note": "C4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3, "plate_free_edge": false } },
+    { "time": 3.0, "duration": 3.0, "engine": "water_gong", "note": "G4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3, "plate_free_edge": false } }
   ],
   "export": {
     "filename": "water_gong_clamped",

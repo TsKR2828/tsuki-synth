@@ -90,7 +90,7 @@ ENGINES = {
         engine="water_gong", ratios=plate_ratios, npart=6, tol_pct=4.0,
         inharmonic=False,
         params={"material": "bronze", "strike_position": 0.30,
-                "thickness_mm": 4.0},
+                "thickness_mm": 4.0, "plate_free_edge": False},
     ),
     "water_gong_free": dict(
         # npart=4: free plate has two close modes (~3.91 & 4.16, ~6% apart) that

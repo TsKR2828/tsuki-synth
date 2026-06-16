@@ -30,7 +30,7 @@ struct ChromaticParams
     double tongueWidth      = 0.025;
     double tongueThickness  = 0.003;
     float  exciterHardness  = 1.0f;
-    bool   plateFreeEdge    = false;  // false = clamped (default); true = free-edge A/B
+    bool   plateFreeEdge    = true;   // true = free-edge (physical water gong: hung, edges free)
 };
 
 inline void tuneChromaticModesToMidi (
