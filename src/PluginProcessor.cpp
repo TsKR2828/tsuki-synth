@@ -22,7 +22,7 @@ TsukiSynthProcessor::createParameterLayout()
     auto global = std::make_unique<Group> ("global", "Global", "|");
     global->addChild (std::make_unique<ChoiceParam> (
         PID { "engine", 1 }, "Engine",
-        juce::StringArray { "Cimbalom", "Chromatic", "FM Piano" }, 0));
+        juce::StringArray { "Cimbalom", "Chromatic", "FM Piano", "Piano" }, 0));
 
     auto macro = std::make_unique<Group> ("macro", "Macro", "|");
     macro->addChild (std::make_unique<FloatParam> (
@@ -428,7 +428,7 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // off (instead of sustaining forever) while the new engine plays.
     if (currentEngine != lastEngine)
     {
-        if (lastEngine == 0)      cimbalomSynth.allNotesOff (0, true);
+        if (lastEngine == 0 || lastEngine == 3) cimbalomSynth.allNotesOff (0, true);
         else if (lastEngine == 1) chromaticSynth.allNotesOff (0, true);
         else if (lastEngine == 2) fmPianoSynth.allNotesOff (0, true);
         // Drop stale noteOn so the new engine's tuner starts on "Awaiting note"
@@ -440,7 +440,7 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // ring out naturally (idle synths early-return). Only the current engine
     // receives MIDI; the others get an empty buffer.
     juce::MidiBuffer empty;
-    cimbalomSynth.renderNextBlock  (buffer, currentEngine == 0 ? midiMessages : empty,
+    cimbalomSynth.renderNextBlock  (buffer, (currentEngine == 0 || currentEngine == 3) ? midiMessages : empty,
                                     0, buffer.getNumSamples());
     chromaticSynth.renderNextBlock (buffer, currentEngine == 1 ? midiMessages : empty,
                                     0, buffer.getNumSamples());
@@ -597,6 +597,12 @@ void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     state.setProperty ("presetIndex", presetManager.getCurrentIndex(), nullptr);
+
+    if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (apvts.getParameter ("engine")))
+        state.setProperty ("engine_index", p->getIndex(), nullptr);
+    if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (apvts.getParameter ("chr_sub_engine")))
+        state.setProperty ("chr_sub_engine_index", p->getIndex(), nullptr);
+
     auto xml = state.createXml();
     copyXmlToBinary (*xml, destData);
 
@@ -617,18 +623,38 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
     if (xml != nullptr && xml->hasTagName (apvts.state.getType()))
     {
         auto tree = juce::ValueTree::fromXml (*xml);
-        int idx = tree.getProperty ("presetIndex", -1);
+        int presetIdx  = tree.getProperty ("presetIndex", -1);
+        int engineIdx  = tree.hasProperty ("engine_index")
+                             ? (int) tree.getProperty ("engine_index") : -1;
+        int subEngIdx  = tree.hasProperty ("chr_sub_engine_index")
+                             ? (int) tree.getProperty ("chr_sub_engine_index") : -1;
+
         apvts.replaceState (tree);
+
+        auto restoreChoice = [] (juce::AudioProcessorValueTreeState& vts,
+                                 const char* paramID, int savedIdx)
+        {
+            if (savedIdx < 0) return;
+            if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (vts.getParameter (paramID)))
+            {
+                int clamped = juce::jlimit (0, p->choices.size() - 1, savedIdx);
+                if (p->getIndex() != clamped)
+                    *p = clamped;
+            }
+        };
+        restoreChoice (apvts, "engine",         engineIdx);
+        restoreChoice (apvts, "chr_sub_engine", subEngIdx);
+
         presetManager.reattachListener();
-        presetManager.setCurrentIndex (idx);
-        restoredProgramToIgnore.store (idx, std::memory_order_release);
+        presetManager.setCurrentIndex (presetIdx);
+        restoredProgramToIgnore.store (presetIdx, std::memory_order_release);
 
         auto v = [&] (const char* id) -> juce::String {
             if (auto* p = apvts.getParameter (id))
                 return juce::String (id) + "=" + juce::String (p->getValue(), 4);
             return {};
         };
-        tsukiLog ("RESTORE  presetIdx=" + juce::String (idx)
+        tsukiLog ("RESTORE  presetIdx=" + juce::String (presetIdx)
                   + "  " + v ("engine") + "  " + v ("chr_sub_engine")
                   + "  " + v ("chr_thickness") + "  " + v ("chr_size")
                   + "  " + v ("chr_pitch_glide") + "  " + v ("chr_strike_pos"));

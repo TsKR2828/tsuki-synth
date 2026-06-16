@@ -40,6 +40,7 @@ namespace Clr
     inline const juce::Colour cimbalom       (0xffc49a6c);
     inline const juce::Colour chromatic      (0xff8bb8a8);
     inline const juce::Colour fm             (0xffa88bc4);
+    inline const juce::Colour piano          (0xff8ba0c4);
 
     inline const juce::Colour knobTrack      (0xff10101c);
     inline const juce::Colour knobFaceA      (0xff2a2a44);

@@ -81,9 +81,10 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
         };
         addAndMakeVisible (btn);
     };
-    initTab (tabCim, 0);
-    initTab (tabChr, 1);
-    initTab (tabFM,  2);
+    initTab (tabCim,   0);
+    initTab (tabChr,   1);
+    initTab (tabFM,    2);
+    initTab (tabPiano, 3);
 
     // -- Language toggle -------------------------------------------------
     langToggle.setComponentID ("step");
@@ -316,6 +317,7 @@ juce::Colour TsukiSynthEditor::accentForEngine (int eng) const
         case 0:  return Clr::cimbalom;
         case 1:  return Clr::chromatic;
         case 2:  return Clr::fm;
+        case 3:  return Clr::piano;
         default: return Clr::gold;
     }
 }
@@ -325,15 +327,16 @@ void TsukiSynthEditor::updateEngine()
     int eng = currentEngine();
     lnf.accent = accentForEngine (eng);
 
-    tabCim.setToggleState (eng == 0, juce::dontSendNotification);
-    tabChr.setToggleState (eng == 1, juce::dontSendNotification);
-    tabFM.setToggleState  (eng == 2, juce::dontSendNotification);
+    tabCim.setToggleState   (eng == 0, juce::dontSendNotification);
+    tabChr.setToggleState   (eng == 1, juce::dontSendNotification);
+    tabFM.setToggleState    (eng == 2, juce::dontSendNotification);
+    tabPiano.setToggleState (eng == 3, juce::dontSendNotification);
 
-    bool isCim = (eng == 0), isChr = (eng == 1), isFM = (eng == 2);
+    bool isCim = (eng == 0), isChr = (eng == 1), isFM = (eng == 2), isPno = (eng == 3);
 
-    setVisible (cimMaterial, isCim);  setVisible (cimHammer,   isCim);
-    setVisible (cimStrike,   isCim);  setVisible (cimDiameter, isCim);
-    setVisible (cimStrings,  isCim);  setVisible (cimDetune,   isCim);
+    setVisible (cimMaterial, isCim || isPno);  setVisible (cimHammer,   isCim || isPno);
+    setVisible (cimStrike,   isCim || isPno);  setVisible (cimDiameter, isCim || isPno);
+    setVisible (cimStrings,  isCim || isPno);  setVisible (cimDetune,   isCim || isPno);
 
     setVisible (chrSubEngine, isChr); setVisible (chrMaterial,  isChr);
     setVisible (chrExciter,   isChr); setVisible (chrStrike,    isChr);
@@ -355,6 +358,7 @@ void TsukiSynthEditor::updateEngine()
         case 0:  keyboard.setRangeIndicator (36, 96, Clr::cimbalom);  break;  // C2–C7
         case 1:  keyboard.setRangeIndicator (48, 84, Clr::chromatic); break;  // C3–C6
         case 2:  keyboard.setRangeIndicator (24, 96, Clr::fm);       break;  // C1–C7
+        case 3:  keyboard.setRangeIndicator (21, 108, Clr::piano);   break;  // A0–C8
         default: break;
     }
 
@@ -530,9 +534,10 @@ void TsukiSynthEditor::refreshLocalizedText()
     refreshKnobLabel  (distMix);
 
     // -- Tabs / buttons / presets --
-    tabCim.setButtonText (UiLocale::label ("ui_tab_cimbalom"));
-    tabChr.setButtonText (UiLocale::label ("ui_tab_chromatic"));
-    tabFM .setButtonText (UiLocale::label ("ui_tab_fm"));
+    tabCim  .setButtonText (UiLocale::label ("ui_tab_cimbalom"));
+    tabChr  .setButtonText (UiLocale::label ("ui_tab_chromatic"));
+    tabFM   .setButtonText (UiLocale::label ("ui_tab_fm"));
+    tabPiano.setButtonText (UiLocale::label ("ui_tab_piano"));
     presetSave.setButtonText (UiLocale::label ("ui_btn_save"));
     presetInit.setButtonText (UiLocale::label ("ui_btn_init"));
     langToggle.setButtonText (UiLocale::toggleLabel());
@@ -917,10 +922,11 @@ void TsukiSynthEditor::resized()
     {
         auto row   = area.removeFromTop (kTabH);
         auto inner = row.reduced (kSidePad, 0).withTrimmedTop (4);
-        int tw = inner.getWidth() / 3;
-        tabCim.setBounds (inner.removeFromLeft (tw));
-        tabChr.setBounds (inner.removeFromLeft (tw));
-        tabFM.setBounds  (inner);
+        int tw = inner.getWidth() / 4;
+        tabCim.setBounds   (inner.removeFromLeft (tw));
+        tabChr.setBounds   (inner.removeFromLeft (tw));
+        tabFM.setBounds    (inner.removeFromLeft (tw));
+        tabPiano.setBounds (inner);
     }
 
     // -- macro row -------------------------------------------------------
@@ -1071,7 +1077,7 @@ void TsukiSynthEditor::resized()
             layoutKnobCell (l2, chrStrike);
             layoutComboCell (r2, chrExciter);
         }
-        else
+        else if (eng == 2)
         {
             layoutComboCell (takeRow(), fmType);
 
@@ -1084,6 +1090,20 @@ void TsukiSynthEditor::resized()
             layoutKnobCell (c3, fmFeedback);
             layoutKnobCell (c4, fmAttack);
             layoutKnobCell (c5, fmRelease);
+        }
+        else if (eng == 3)
+        {
+            auto [l0, r0] = splitTwo (takeRow());
+            layoutComboCell (l0, cimMaterial);
+            layoutComboCell (r0, cimHammer);
+
+            auto [l1, r1] = splitTwo (takeRow());
+            layoutKnobCell (l1, cimStrike);
+            layoutKnobCell (r1, cimDiameter);
+
+            auto [l2, r2] = splitTwo (takeRow());
+            layoutKnobCell (l2, cimStrings);
+            layoutKnobCell (r2, cimDetune);
         }
     }
 }

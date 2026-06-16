@@ -171,7 +171,7 @@ PRESET_END
 // ========== Piano (Physical) presets ==========
 
 PRESET_BEGIN (preset_grand_piano_physical)
-    { "engine",           0 },
+    { "engine",           3 },
     { "cim_material",     0 },       // Steel
     { "cim_strike_pos",   0.13f },   // felt hammer ~1/8 of string
     { "cim_diameter",     1.0f },
@@ -187,7 +187,7 @@ PRESET_BEGIN (preset_grand_piano_physical)
 PRESET_END
 
 PRESET_BEGIN (preset_bright_upright_physical)
-    { "engine",           0 },
+    { "engine",           3 },
     { "cim_material",     0 },       // Steel
     { "cim_strike_pos",   0.10f },   // slightly closer to nut — brighter attack
     { "cim_diameter",     0.90f },
@@ -493,11 +493,8 @@ inline const FactoryPreset* getFactoryPresetList (int& count)
         // Body variants (6-7)
         { "Steel Hammered Dulcimer (Body)", preset_steel_dulcimer_body, (int)(sizeof(preset_steel_dulcimer_body)/sizeof(preset_steel_dulcimer_body[0]))},
         { "Copper Warm Strings (Body)",     preset_copper_warm_body,    (int)(sizeof(preset_copper_warm_body)/sizeof(preset_copper_warm_body[0]))      },
-        // Piano (Physical) variants (8-9)
-        { "Grand Piano (Physical)",         preset_grand_piano_physical,    (int)(sizeof(preset_grand_piano_physical)/sizeof(preset_grand_piano_physical[0]))       },
-        { "Bright Upright (Physical)",      preset_bright_upright_physical, (int)(sizeof(preset_bright_upright_physical)/sizeof(preset_bright_upright_physical[0])) },
 
-        // Chromatic (10-17)
+        // Chromatic (8-15)
         // Raw variants (10-15)
         { "Crystal Tongue Drum",      preset_crystal_tongue,      (int)(sizeof(preset_crystal_tongue)/sizeof(preset_crystal_tongue[0]))          },
         { "Bronze Water Gong",        preset_bronze_gong,         (int)(sizeof(preset_bronze_gong)/sizeof(preset_bronze_gong[0]))                },
@@ -509,7 +506,7 @@ inline const FactoryPreset* getFactoryPresetList (int& count)
         { "Crystal Tongue Drum (Body)", preset_crystal_tongue_body, (int)(sizeof(preset_crystal_tongue_body)/sizeof(preset_crystal_tongue_body[0]))},
         { "Bronze Water Gong (Body)",   preset_bronze_gong_body,    (int)(sizeof(preset_bronze_gong_body)/sizeof(preset_bronze_gong_body[0]))      },
 
-        // FM Piano (18-26)
+        // FM Piano (16-24)
         // One preset per sound type plus Layered E.Piano.
         { "Acoustic Piano",           preset_acoustic_piano,      (int)(sizeof(preset_acoustic_piano)/sizeof(preset_acoustic_piano[0]))          },
         { "Electric Rhodes",          preset_electric_rhodes,     (int)(sizeof(preset_electric_rhodes)/sizeof(preset_electric_rhodes[0]))         },
@@ -520,6 +517,10 @@ inline const FactoryPreset* getFactoryPresetList (int& count)
         { "Ambient Pad",              preset_ambient_pad,         (int)(sizeof(preset_ambient_pad)/sizeof(preset_ambient_pad[0]))                 },
         { "FM Bass",                  preset_fm_bass,             (int)(sizeof(preset_fm_bass)/sizeof(preset_fm_bass[0]))                         },
         { "FM Brass",                 preset_fm_brass,            (int)(sizeof(preset_fm_brass)/sizeof(preset_fm_brass[0]))                       },
+
+        // Piano (Physical) (25-26)
+        { "Grand Piano (Physical)",         preset_grand_piano_physical,    (int)(sizeof(preset_grand_piano_physical)/sizeof(preset_grand_piano_physical[0]))       },
+        { "Bright Upright (Physical)",      preset_bright_upright_physical, (int)(sizeof(preset_bright_upright_physical)/sizeof(preset_bright_upright_physical[0])) },
     };
 
     count = (int) (sizeof (presets) / sizeof (presets[0]));

@@ -126,9 +126,10 @@ private:
     LocalizedMidiKeyboard keyboard;
 
     // Engine tabs
-    juce::TextButton tabCim { "Cimbalom" };
-    juce::TextButton tabChr { "Chromatic" };
-    juce::TextButton tabFM  { "FM Piano" };
+    juce::TextButton tabCim   { "Cimbalom" };
+    juce::TextButton tabChr   { "Chromatic" };
+    juce::TextButton tabFM    { "FM Piano" };
+    juce::TextButton tabPiano { "Piano" };
 
     // Language toggle
     juce::TextButton langToggle;

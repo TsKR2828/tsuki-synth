@@ -221,6 +221,7 @@ private:
             { "ui_tab_cimbalom",     "Cimbalom",   "揚琴"       },
             { "ui_tab_chromatic",    "Chromatic",  "半音音源"   },
             { "ui_tab_fm",           "FM Piano",   "頻率鋼琴"   },
+            { "ui_tab_piano",        "Piano",      "鋼琴"       },
 
             // -- Buttons --
             { "ui_btn_save",         "Save",       "儲存"       },
