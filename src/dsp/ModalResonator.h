@@ -150,6 +150,17 @@ public:
         return count;
     }
 
+    /// Snapshot current modes (frequency / amplitude / decay) for the CLI
+    /// --dump-modes single-source-of-truth verification path.
+    std::vector<Mode> getModes() const
+    {
+        std::vector<Mode> out;
+        out.reserve (modes.size());
+        for (const auto& m : modes)
+            out.push_back ({ m.freq, m.baseAmp, m.decayTime });
+        return out;
+    }
+
 private:
     struct ModeState
     {

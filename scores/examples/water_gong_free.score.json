@@ -1,0 +1,30 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Water Gong - Free Edge (A/B)",
+    "id": "water_gong_free",
+    "author": "physical-modeling",
+    "description": "Same as water_gong_clamped but with the FREE-edge plate boundary (params.plate_free_edge=true) — the physically-appropriate boundary for a hung gong. Approximate eigenvalues (Leissa nu~0.33), ratios 1 : 1.73 : 2.33 : 3.91. A/B against water_gong_clamped.score.json."
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.9,
+    "effects": {
+      "reverb": { "decay": 3.0, "wet": 0.35 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 },
+      "distortion": { "type": "overdrive", "drive": 0, "instability": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    { "time": 0.0, "duration": 3.0, "engine": "water_gong", "note": "C4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3, "plate_free_edge": true } },
+    { "time": 3.0, "duration": 3.0, "engine": "water_gong", "note": "G4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3, "plate_free_edge": true } }
+  ],
+  "export": {
+    "filename": "water_gong_free",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 1000
+  }
+}

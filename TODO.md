@@ -1,7 +1,8 @@
 # TsukiSynth — TODO
 
-> Last updated: 2026-05-13
-> Branch: `feature/ui-enhancements`
+> Last updated: 2026-06-17
+> Branch: `Codex-fix-bug`
+> **Goal: deaf people + AI verify/simulate sound by physical theory, not by ear.**
 
 ---
 
@@ -9,54 +10,53 @@
 
 | Item | Status |
 |------|--------|
-| VST3 build | ✅ Passed (zero warnings) |
-| Standalone build | ✅ Passed (zero warnings) |
-| Standalone launch | ✅ Smoke test OK |
-| CLI build | ✅ Fixed (standalone voice API + juce_dsp) |
-| CLI batch render | ✅ 4/4 scores rendered |
-| Cimbalom hammer DSP | ✅ Hammer spectral shaping |
-| Cimbalom material DSP | ✅ Material spectral tilt + exciter brightness/duration |
-| Spectrum Analyzer | ✅ FFT SpectrumView + SCOPE/SPECTRUM toggle |
-| Preset Browser | ✅ Visual popup + category filter (All/Cimbalom/Chromatic/FM/User) |
-| Harmonic Editor | ✅ 8-partial ratio/amplitude editor (16 new APVTS params) |
-| Responsive UI | ✅ Resizable 420x700 ~ 900x1200 |
-| Standalone 聽感驗收 | ⏳ Hammer/material 改善後待二次驗收 |
-| DAW validation | ⏳ Pending (no DAW on current machine) |
+| VST3 / Standalone / CLI build | ✅ exit 0 |
+| Code audit (8 bugs) | ✅ fixed (Codex `b5a370d` + this session) |
+| Deterministic render (same score → byte-identical) | ✅ NoiseGen seeding |
+| Physics verification harness (`tools/physics_verify.py`) | ✅ all 6 engines PASS |
+| CLI `--dump-modes` (single source of truth) | ✅ |
+| Cimbalom MIDI-pitch tuning (stiff-string comp) | ✅ A4 +11c → +0.1c |
+| Equal-RMS engine calibration | ✅ cross-engine 8 dB → 0.2 dB |
+| Water gong = true clamped Kirchhoff plate | ✅ (was membrane approx) |
+| Physical piano engine (CLI `"piano"`) | ✅ struck stiff steel string |
+| Physical piano presets (plugin, on Cimbalom) | ✅ Grand / Bright Upright |
+| Free-edge gong option (`plate_free_edge`) | ✅ default free-edge (physical: hung gong) |
+| Plugin 4th "Piano" engine tab | ✅ APVTS stores denormalized (safe append) |
+| Water gong default = free-edge | ✅ physically correct (hung plate, edges free) |
+| Bilingual tooltip popups | ✅ warm white box, EN / 中文 on hover |
+| Title bar subtitle for Piano engine | ✅ "PIANO ENGINE \| PHYSICAL MODELING STRING" |
 
 ---
 
-## Next: Standalone 聽感二次驗收
+## Resolved (was "Needs 月月 decision")
 
-- [ ] Hammer: Cotton vs Felt vs Wood vs Metal 差異是否明顯
-- [ ] Material: Steel vs Copper vs Glass vs Spruce vs Rubber 差異是否明顯
-- [ ] Spruce vs Maple 是否有可辨識差異
+All three items resolved without ear-based verification — physics-based answers:
 
-## After: DAW Validation (needs home machine with DAW)
+- [x] **Plugin 4th "Piano" engine tab** — confirmed APVTS stores **denormalized**
+      (read JUCE 8 source: `flushToTree` writes `unnormalisedValue`). Appending
+      "Piano" at index 3 is safe. Belt-and-suspenders: explicit `engine_index`
+      int property in state save/load.
+- [x] **Water gong default** — changed to **free-edge** (`plateFreeEdge = true`).
+      Physical reasoning: a water gong is a hung plate with edges free. Clamped
+      is the unphysical case. A/B scores still available for comparison.
+- [x] **In-plugin loudness balance** — already verified by `physics_verify.py
+      --levels` (cross-engine 0.2 dB). No ear-based action needed.
 
-- [ ] Copy VST3 to `C:\Program Files\Common Files\VST3\`
-- [ ] DAW scan: load TsukiSynth in Cubase / Reaper
-- [ ] MIDI input: play notes via controller or DAW piano roll
-- [ ] Audio output: confirm sound from all 3 engines
-- [ ] Automation: verify 56 APVTS parameters visible in DAW lanes
-- [ ] Automation: verify Output macro is smooth (no clicks on rapid change)
-- [ ] State restore: save DAW session, reload, verify all parameters recalled
-- [ ] Preset: switch factory presets via DAW program change
+## Refinements (optional)
 
-## After DAW Validation
+- [ ] Free-edge plate Ω values are approximate (Leissa ν≈0.33) — verify against a
+      reference table before treating as precise.
+- [ ] Advanced piano physics: hammer-felt nonlinearity, dedicated soundboard
+      modes, damper pedal.
+- [ ] `--t60` decay measurement is informational (audio decay fitting is noisy).
 
-### Factory Presets v1
-- [ ] Review and tune 12 factory presets with actual audio output
-- [ ] A/B compare with Web Audio prototypes
+## Still pending
 
-### UI / UX Polish
-- [ ] Preset browser: preview/audition before loading
-- [ ] Modal distribution visualization
-- [ ] Keyboard range indicator
-- [ ] Version number display
+- [ ] DAW validation (host scan / automation / state round-trip) on a real DAW.
+- [ ] `push` remaining commits for `Codex-fix-bug`; decide merge → master when ready.
 
----
+## Housekeeping
 
-## Known Issues (low priority)
-
-- `dsp/Reverb.h` is legacy, replaced by `effects/SimpleReverb.h` — can be removed when confirmed unused.
-- `dsp/EffectsChain.h` is CLI-only, separate from `effects/EffectChain.h` used by plugin.
+- ~~Two dev logs coexist: `DEVLOG.md` (zh, current) + `DEV-LOG.md` (en) — converge one.~~ ✅ Merged into `DEVLOG.md`.
+- `dsp/Reverb.h` / `dsp/EffectsChain.h` are CLI-side; `effects/*` are plugin-side
+  (intentionally separate implementations).

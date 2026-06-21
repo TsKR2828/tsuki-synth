@@ -8,11 +8,12 @@
 #include "../physics/BeamModel.h"
 #include "../physics/PlateModel.h"
 #include "../physics/MaterialDB.h"
+#include <algorithm>
 
 /**
  * Chromatic Synth 引擎 — 三合一
  *   0 = Tongue Drum（Euler-Bernoulli 梁）
- *   1 = Water Gong （Kirchhoff 圓板）
+ *   1 = Water Gong （Bessel 圓板/膜近似，非真 clamped 板，見 PlateModel.h）
  *   2 = Custom     （使用者自填 ratio/amplitude）
  */
 
@@ -28,7 +29,33 @@ struct ChromaticParams
     double tongueLength     = 0.1;
     double tongueWidth      = 0.025;
     double tongueThickness  = 0.003;
+    float  exciterHardness  = 1.0f;
+    bool   plateFreeEdge    = true;   // true = free-edge (physical water gong: hung, edges free)
 };
+
+inline void tuneChromaticModesToMidi (
+    std::vector<ModalResonator::Mode>& modes, int midiNote)
+{
+    if (modes.empty()
+        || ! std::isfinite (modes.front().frequency)
+        || modes.front().frequency <= 0.0f)
+        return;
+
+    const float target = 440.0f
+        * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
+    const float scale = target / modes.front().frequency;
+    for (auto& mode : modes)
+        mode.frequency *= scale;
+
+    modes.erase (
+        std::remove_if (modes.begin(), modes.end(), [] (const auto& mode)
+        {
+            return ! std::isfinite (mode.frequency)
+                || mode.frequency <= 0.0f
+                || mode.frequency > 20000.0f;
+        }),
+        modes.end());
+}
 
 class ChromaticSound : public juce::SynthesiserSound
 {
@@ -47,7 +74,7 @@ public:
     std::atomic<float>* pMaterial      = nullptr;
     std::atomic<float>* pStrikePos     = nullptr;
     std::atomic<float>* pThickness     = nullptr;  // mm
-    std::atomic<float>* pSize          = nullptr;   // mm (beam=length, plate=radius)
+    std::atomic<float>* pSize          = nullptr;   // geometry scale: Tongue length / Water Gong radius
     std::atomic<float>* pExciter       = nullptr;   // 0~3
     std::atomic<float>* pPitchGlide    = nullptr;   // water gong 水位效果 (0~1)
 
@@ -80,6 +107,7 @@ public:
         if (mat == nullptr) return;
 
         int subEngine = (int) pSubEngine->load();
+        outputGain = subEngineOutputGain (subEngine);
         float strikePos = pStrikePos->load();
         float thickness = pThickness->load() * 0.001f;  // mm -> m
         float size      = pSize->load() * 0.001f;       // mm -> m
@@ -99,7 +127,7 @@ public:
         strikePos *= (0.5f + mStrike);
         strikePos = juce::jlimit (0.0f, 1.0f, strikePos);
 
-        // Macro: Body → resonator size modifier + body resonance layer
+        // Macro: Body -> resonator geometry modifier + body resonance layer
         size *= (0.5f + mBody);
 
         bodyRes.prepare (getSampleRate());
@@ -111,21 +139,26 @@ public:
         if (subEngine == 0)  // Tongue Drum (beam)
         {
             BeamModel::Params bp;
-            bp.length    = BeamModel::lengthFromMidiNote (midiNoteNumber);
-            bp.width     = size > 0.001f ? size : 0.02f;
+            const float sizeScale = juce::jlimit (0.5f, 5.0f, size / 0.02f);
+            bp.length    = BeamModel::lengthFromMidiNote (midiNoteNumber) * sizeScale;
+            bp.width     = 0.02f;
             bp.thickness = thickness > 0.0001f ? thickness : 0.003f;
             bp.strikePosition = strikePos;
             bp.numModes  = 12;
             modes = BeamModel::calculateModes (bp, *mat);
+            tuneChromaticModesToMidi (modes, midiNoteNumber);
         }
         else if (subEngine == 1)  // Water Gong (plate)
         {
             PlateModel::Params pp;
-            pp.radius    = PlateModel::radiusFromMidiNote (midiNoteNumber);
+            const float sizeScale = juce::jlimit (0.5f, 5.0f, size / 0.02f);
+            pp.radius    = PlateModel::radiusFromMidiNote (midiNoteNumber) * sizeScale;
             pp.thickness = thickness > 0.0001f ? thickness : 0.003f;
             pp.strikePosition = strikePos;
             pp.numModes  = 20;
+            pp.freeEdge  = true;
             modes = PlateModel::calculateModes (pp, *mat);
+            tuneChromaticModesToMidi (modes, midiNoteNumber);
         }
         else  // Custom harmonics
         {
@@ -152,6 +185,7 @@ public:
         resonator.excite (velocity);
 
         setupExciter (exciter, velocity, mBrightness, mNoise, getSampleRate());
+        noiseGen.setSeed ((uint32_t) (midiNoteNumber * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
         damped = false;
     }
 
@@ -192,6 +226,7 @@ public:
         double sr = standaloneSR;
 
         int subEng = static_cast<int> (params.subEngine);
+        outputGain = subEngineOutputGain (subEng);
         float strikePos = juce::jlimit (0.0f, 1.0f,
                                         static_cast<float> (params.strikePosition));
         float thickness = static_cast<float> (params.plateThickness > 0.0001
@@ -204,21 +239,24 @@ public:
         if (subEng == 0)
         {
             BeamModel::Params bp;
-            bp.length    = BeamModel::lengthFromMidiNote (midiNote);
+            bp.length    = static_cast<float> (params.tongueLength);
             bp.width     = static_cast<float> (params.tongueWidth);
             bp.thickness = static_cast<float> (params.tongueThickness);
             bp.strikePosition = strikePos;
             bp.numModes  = 12;
             modes = BeamModel::calculateModes (bp, mat);
+            tuneChromaticModesToMidi (modes, midiNote);
         }
         else if (subEng == 1)
         {
             PlateModel::Params pp;
-            pp.radius    = PlateModel::radiusFromMidiNote (midiNote);
+            pp.radius    = static_cast<float> (params.plateRadius);
             pp.thickness = thickness;
             pp.strikePosition = strikePos;
             pp.numModes  = 20;
+            pp.freeEdge  = params.plateFreeEdge;
             modes = PlateModel::calculateModes (pp, mat);
+            tuneChromaticModesToMidi (modes, midiNote);
         }
         else
         {
@@ -232,7 +270,8 @@ public:
         resonator.setModes (modes);
         resonator.excite (velocity);
 
-        setupExciter (0.0f, velocity, 0.5f, 0.0f, sr);
+        setupExciter (params.exciterHardness, velocity, 0.5f, 0.0f, sr);
+        noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
 
         bodyRes.prepare (sr);
         bodyRes.setAmount (0.5f);
@@ -266,7 +305,7 @@ public:
             sample += noise * exciterEnv.process();
         }
         sample += bodyRes.processSample (sample);
-        return sample;
+        return sample * outputGain;   // per-sub-engine, equal-RMS calibrated
     }
 
     void scaleFrequencies (double factor)
@@ -274,15 +313,22 @@ public:
         resonator.scaleFrequencies (factor);
     }
 
+    /// Predicted modes (MIDI-tuned) — CLI --dump-modes.
+    std::vector<ModalResonator::Mode> getModes() const { return resonator.getModes(); }
+
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
                           int startSample, int numSamples) override
     {
         bool anyActive = false;
 
         // Water gong pitch glide（持續降低模態頻率模擬浸水效果）
+        // Advance scaled by block length → glide rate is independent of host buffer
+        // size; 0.15/sec ⇒ glidePhase reaches the 0.5 cap (~15% drop) in ~3.3s.
         if (glideAmount > 0.01f && ! baseModes.empty())
         {
-            glidePhase += glideAmount * 0.00002f;  // slow glide
+            double glideSr = getSampleRate();
+            if (glideSr > 0.0)
+                glidePhase += glideAmount * 0.15f * (float) ((double) numSamples / glideSr);
             if (glidePhase < 0.5f)
             {
                 float glideMul = 1.0f - glidePhase * 0.3f;  // max 15% pitch drop
@@ -312,7 +358,7 @@ public:
             }
 
             sample += bodyRes.processSample (sample);
-            sample *= 0.2f;
+            sample *= outputGain;   // per-sub-engine, equal-RMS calibrated
 
             for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
                 outputBuffer.addSample (ch, startSample, sample);
@@ -325,6 +371,18 @@ public:
     }
 
 private:
+    /// Per-sub-engine output gain — equal-RMS calibration (2026-06) so every
+    /// engine has matched RMS at the same velocity (replaces the lone 0.2 magic).
+    static float subEngineOutputGain (int subEngine)
+    {
+        switch (subEngine)
+        {
+            case 0:  return 0.255f;   // Tongue Drum (free-free beam)
+            case 1:  return 0.163f;   // Water Gong (Kirchhoff plate)
+            default: return 0.180f;   // Custom harmonics
+        }
+    }
+
     /// Custom harmonics mode: user-defined ratio/amplitude
     std::vector<ModalResonator::Mode> buildCustomModes (
         int midiNote, const MaterialDB::Material& mat)
@@ -348,7 +406,7 @@ private:
             if (amp < 0.01f) continue;
 
             float freq = fundamental * ratio;
-            if (freq > 20000.0f) break;
+            if (freq > 20000.0f) continue;
 
             float decayDenom = alpha + beta * freq * freq + gamma * freq;
             float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 5.0f;
@@ -391,5 +449,6 @@ private:
     // Pitch glide state (water gong)
     std::vector<ModalResonator::Mode> baseModes;
     float glideAmount = 0.0f;
+    float outputGain  = 0.2f;   // per-sub-engine output level (equal-RMS calibrated)
     float glidePhase  = 0.0f;
 };

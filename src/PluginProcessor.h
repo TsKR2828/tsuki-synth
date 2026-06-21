@@ -23,7 +23,7 @@ public:
     bool acceptsMidi() const override  { return true; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
-    double getTailLengthSeconds() const override { return 2.0; }
+    double getTailLengthSeconds() const override;
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override
     {
         return layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
@@ -68,16 +68,19 @@ private:
 
     std::atomic<float>* pEngine = nullptr;
     std::atomic<float>* pMacroOutput = nullptr;
+    std::atomic<float>* pMacroDamping = nullptr;
+    std::atomic<float>* pFMRelease = nullptr;
     juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
-    int tailOffEngine = -1;  // engine index still rendering tail-off after switch
-    bool skipNextProgramChange = false;  // suppress first setCurrentProgram after state restore
+    std::atomic<int> restoredProgramToIgnore { -1 };
     double currentSampleRate = 44100.0;
 
     juce::TimeSliceThread recordingThread { "TsukiSynth Recorder" };
     mutable juce::CriticalSection recordingLock;
+    mutable juce::CriticalSection statusLock;
     std::unique_ptr<juce::AudioFormatWriter::ThreadedWriter> recordingWriter;
     std::atomic<bool> recordingActive { false };
+    std::atomic<int> recordingDroppedBlocks { 0 };
     juce::File lastRecordingFile;
     juce::String recordingStatus;
 

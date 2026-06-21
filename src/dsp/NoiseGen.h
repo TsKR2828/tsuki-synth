@@ -1,6 +1,7 @@
 #pragma once
 #include <random>
 #include <cmath>
+#include <cstdint>
 
 /**
  * 噪音產生器 — White / Pink
@@ -12,6 +13,10 @@ public:
     enum class Type { White, Pink };
 
     void setType (Type t) { type = t; }
+
+    /** Reseed the white-noise RNG for deterministic, reproducible output.
+     *  Call per note (e.g. from MIDI note + velocity) so renders are repeatable. */
+    void setSeed (uint32_t s) { rng.seed (s); }
 
     float processSample()
     {
@@ -40,7 +45,7 @@ public:
 
 private:
     Type type = Type::White;
-    std::mt19937 rng { std::random_device{}() };
+    std::mt19937 rng { 0x9E3779B9u };   // deterministic default; reseed per-note via setSeed()
     std::uniform_real_distribution<float> dist { -1.0f, 1.0f };
 
     // Pink noise filter state

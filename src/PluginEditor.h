@@ -121,14 +121,16 @@ private:
 
     TsukiSynthProcessor& proc;
     TsukiLookAndFeel lnf;
+    juce::TooltipWindow tooltipWindow { this, 350 };
 
     // Keyboard (state lives in processor for MIDI injection)
     LocalizedMidiKeyboard keyboard;
 
     // Engine tabs
-    juce::TextButton tabCim { "Cimbalom" };
-    juce::TextButton tabChr { "Chromatic" };
-    juce::TextButton tabFM  { "FM Piano" };
+    juce::TextButton tabCim   { "Cimbalom" };
+    juce::TextButton tabChr   { "Chromatic" };
+    juce::TextButton tabFM    { "FM Piano" };
+    juce::TextButton tabPiano { "Piano" };
 
     // Language toggle
     juce::TextButton langToggle;
@@ -154,6 +156,7 @@ private:
     // Chromatic
     ComboParam  chrSubEngine, chrMaterial, chrExciter;
     KnobParam   chrStrike, chrThickness, chrSize, chrGlide;
+    KnobParam   chrRatios[8], chrAmps[8];
 
     // FM Piano
     ComboParam  fmType;

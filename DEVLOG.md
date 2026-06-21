@@ -2,6 +2,74 @@
 
 ---
 
+## 2026-06-17 — Plugin UI 完善：Piano 分頁 + 雙語 Tooltip + 修正
+
+本輪完成三項 TODO 待開發事項 + 兩項 bug 修正，分支 `Codex-fix-bug`。
+
+### Piano 第 4 引擎分頁
+- 確認 JUCE 8 APVTS 存 **denormalized** 值（讀 `juce_AudioProcessorValueTreeState.cpp` 源碼：`flushToTree` 寫 `unnormalisedValue`）→ 安全追加 "Piano" 在 index 3。
+- `PluginProcessor.cpp`：engine 選項 3→4；processBlock/allNotesOff 路由 eng==3 到 cimbalomSynth；state save/load 加 `engine_index` / `chr_sub_engine_index` 明確 int 備援。
+- `PluginEditor.h/cpp`：`tabPiano` 按鈕、`updateEngine` eng==3、`resized()` 四等分 tab、Piano 共用 Cimbalom 控件。
+- `Presets.h`：兩個物理鋼琴 preset 移到 engine=3。
+- `TsukiLookAndFeel.h`：`Clr::piano (0xff8ba0c4)` 鋼藍色。
+
+### 水鑼預設改為 free-edge（物理正確）
+- 水鑼是吊掛的板→自由邊。`ChromaticEngine.h` + `ScoreParser.h` `plateFreeEdge` 預設 `true`。
+- `water_gong_clamped.score.json` 加明確 `"plate_free_edge": false`。
+- `physics_verify.py` water_gong 測試加明確 `"plate_free_edge": False`。
+
+### 雙語 Tooltip（小白框）
+- `UiLocale::tooltip()` → 回傳 `"ENGLISH  /  中文"` 格式。
+- `TsukiLookAndFeel.h`：`drawTooltip` 覆寫（暖白圓角框 `#f5f0e8`、深色文字 `#1a1a2e`、CJK 字型 14.4pt）+ `getTooltipBounds`（自動定位、最寬 400px）。
+- `PluginEditor.h`：`juce::TooltipWindow tooltipWindow { this, 350 }`（350ms 延遲）。
+- `PluginEditor.cpp`：`setupKnob` / `setupCombo` 加 `setTooltip`；tab 按鈕 + preset 按鈕加 `setTooltip`；`refreshLocalizedText` 切語言時更新所有 tooltip。
+
+### Bug 修正
+- **標題列 Piano 字幕**：eng==3 掉入 "FM PIANO" → 修正為 "PIANO ENGINE | PHYSICAL MODELING STRING"。
+- **參數計數**：eng==3 顯示 7 → 修正為 6（Piano 共用 Cimbalom 6 控件）。
+
+### 文件衛生
+- `DEV-LOG.md`（英文舊日誌）內容併入本檔 `DEVLOG.md`，刪除舊檔。
+- TODO.md / ROADMAP.md / CONTEXT.md 全部更新至 2026-06-17 狀態。
+
+---
+
+## 2026-06-16 — 物理精確化大改 + 驗證閉環（企劃目標轉向）
+
+**企劃目標確立：聾人 + AI 不靠聽感、靠物理理論精確模擬聲音。** 整段工作圍繞此目標三支柱：**可重現性、物理可驗證性、樂器物理正確性**。分支 `Codex-fix-bug`，本輪疊在 Codex `b5a370d` 上的 commit（已 push）：
+
+### 起點：通盤審查 + Codex 平行修復
+- 全 `src/` 審查找出 8 bug（增益不一致 / glide block-size 依賴 / FM 相位精度 / buildCustomModes break / 尾音 strand / MIDI 未夾範圍…），交付 `tests/audit_repro.cpp`（零依賴自我驗證，23 checks）。
+- 月月把審查交給 Codex 平行實作 → `b5a370d` + PR #4（我的 audit 修復 + dynamic tail length + 線性 release + 牆面反射物理 + FLAC + API deprecation 修正）。本輪逐行覆核：高品質無 regression。
+
+### `13a98cb` 決定性化（落差 A）+ cimbalom 釘音 + 等 RMS
+- **Determinism**：`NoiseGen` 原用 `random_device` → 同 score 每次不同。改決定性種子 + `setSeed()`，各引擎 `midiNote^velocity` 每音重設。**同 score 兩次渲染 SHA256：DIFFERENT → IDENTICAL**。
+- **Cimbalom 釘音**：弦剛性 actual f1=target·√(1+B)（A4 +11c）→ 除掉，f0 釘 MIDI（保比例+多弦失諧）。A4 +11.2c→+0.1c。
+- **等 RMS 校準**：魔術增益 0.15/0.2/1.0 → 等 RMS（Cim 0.070 / FM 0.100 / Chromatic 每-sub-engine outputGain）。跨引擎 RMS 差 8dB→0.2dB。
+
+### 物理驗證閉環（落差 D）`cdb244a`/`e04f24f`/`3cfcb7c`/`1cd2352`
+- `tools/physics_verify.py`：render→FFT→比對物理預測→報 f0 cents + 泛音 %。三模式：預設 partials（功率質心測 f0，對多弦 beating 穩健）、`--levels`（電平）、`--t60`（衰減，用 --dump-modes ground truth）。
+- CLI `--dump-modes <score.json>`：印每事件 voiced/MIDI-tuned 模態 JSON（單一真相源）。
+
+### 樂器物理升級 `a733419`/`26e8d74`/`9541d9c`/`b22e394`
+- **Q1 水鑼→真 clamped Kirchhoff 板**：膜 Bessel 零點近似 → 真板特徵值 Ω=λ²(Leissa)，f∝Ω。泛音 1:2.54:4.56(膜)→1:2.08:3.41:3.89:5.00(板)。**水鑼音色會變**。
+- **Q2 物理 piano 引擎**：score/CLI `"piano"` = StringModel 敲剛性鋼弦 + 鋼琴校準(felt/strike 1/8)；stiff-string stretch=鋼琴拉伸調音。FM Piano 保留為標註非物理合成。
+- **plugin 物理鋼琴 presets**：Cimbalom 的 "Grand Piano / Bright Upright (Physical)"（零結構風險，保舊存檔相容）。
+- **free-edge 鑼選項**：`plate_free_edge:true` 切自由邊(吊掛真鑼)，預設仍 clamped；A/B 範例 score 已附。
+- **docs**（`ece1f9a`）：校正物理標示（水鑼=Bessel/膜近似→現真板、FM=合成非物理、CLI 不套 macro）。
+
+### 驗收
+- 全 6 引擎 harness（cimbalom/tongue_drum/water_gong/water_gong_free/fm/piano）**ALL WITHIN TOLERANCE**；CLI + Standalone build exit 0。
+
+### 延後（需月月決策）
+- **plugin 第 4 引擎 Piano 分頁**：改 APVTS engine 3→4 有舊 DAW 存檔向後相容風險（正規化值映射）→ 需先確認 APVTS 存 denormalized 才安全 append。物理鋼琴已用 preset + CLI 雙路徑交付。
+- free-edge Ω 精確值複查、進階 piano（槌非線性/音板/damper）、plugin 內 FM↔modal 響度由耳朵再平衡。
+
+### 文件衛生
+- DEVLOG.md（本檔，中文）與 DEV-LOG.md（英文）並存 → 建議擇一收斂。
+
+---
+
 ## 2026-05-31 — Tuner 結構修正
 
 **NSDF Peak Selection 修正** (`src/analyzer/TunerView.h`)：

@@ -2,124 +2,103 @@
 
 > Copy this into a new conversation to continue seamlessly.
 >
-> **⚠️ This is TsukiSynth (月亮旋律), NOT haguruma-engine (齒輪引擎). These are completely independent projects.**
+> **⚠️ This is TsukiSynth (月亮旋律), NOT haguruma-engine (齒輪引擎). Independent projects.**
 
 ---
 
 ## One-liner
 
-Physical Modeling (Modal Synthesis) multi-engine VST3/AU synthesizer plugin + AI JSON sound generator.
+Physical-modeling (modal synthesis) multi-engine VST3/Standalone synth + AI JSON
+sound generator (CLI score → WAV).
 
-## GitHub
+## 🎯 Project goal (月月, 2026-06)
 
-https://github.com/TsKR2828/tsuki-synth
+**Deaf people + AI verify and simulate sound by PHYSICAL THEORY, not by ear.**
+Three pillars: **reproducibility, physical verifiability, instrument-physics
+correctness.** The CLI/score path (no listening) is the primary interface; the
+verification harness (`tools/physics_verify.py`) is the "ruler".
 
-## Local Path
+## GitHub / branch / local
 
-```
-C:\Users\User.DESKTOP-HA8VHD7\Documents\Claude\tsuki-synth\
-```
+- Repo: https://github.com/TsKR2828/tsuki-synth
+- **Active branch: `Codex-fix-bug`** (pushed). Built on Codex `b5a370d` (PR #4).
+- Local path: `C:\Users\admin\Desktop\Claude\tsuki-synth`
 
-## Current Progress
+## Current state (2026-06-17)
 
-**Phase 0–4 complete.** Branch: `feature/ui-enhancements`.
+All audit bugs fixed; physics-accuracy pass done. **All 6 engines pass the
+verification harness; CLI + Standalone + VST3 build clean.**
 
-**Phase 4 (2026-05-13):**
-- CLI build fixed (standalone DSP API, juce_dsp linked, batch render 4/4 verified)
-- Spectrum Analyzer (FFT SpectrumView + SCOPE/SPECTRUM toggle)
-- Preset Browser (visual popup + category filter replacing ComboBox)
-- Harmonic Editor (8-partial ratio/amplitude, 16 new APVTS params)
-- Responsive UI (resizable 420x700 ~ 900x1200)
-
-**Cimbalom playability pass done** (2026-05-08):
-- Hammer spectral shaping: Cotton/Felt/Wood/Metal shape modal spectrum
-- Material spectral tilt: overtone brightness scales with log₁₀(Young's modulus)
-
-**Pending**:
-- Standalone 聽感二次驗收（Hammer/Material 改善後）
-- DAW validation（需回家用 Cubase/Reaper）
-
-## Build Environment
-
-| Item | Version |
-|------|---------|
-| JUCE | 8.0.12 (git submodule at `libs/JUCE`) |
-| CMake | 4.3.2 |
-| VS Build Tools | 17.14.31, MSVC 19.44 |
-| Windows SDK | 10.0.26100.0 |
-
-## Build Commands
-
-```bash
-git submodule update --init --recursive
-cmake -B build -G "Visual Studio 17 2022"
-cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynth_Standalone
-```
-
-## Key Files
-
-| File | Content |
-|------|---------|
-| `README.md` | Project overview, engine specs, directory structure |
-| `ROADMAP.md` | Phase 0-3 done, playability pass done, DAW validation pending |
-| `DEV-LOG.md` | Per-session progress log |
-| `TODO.md` | Prioritized task list |
-| `CMakeLists.txt` | JUCE submodule, VST3 + Standalone + CLI targets |
-| `src/PluginProcessor.h/.cpp` | Main processor (APVTS, 3 synths, effect chain, 56 params) |
-| `src/PluginEditor.h/.cpp` | GUI editor (resizable, tabs, preset browser, MIDI keyboard) |
-| `src/engines/CimbalomEngine.h` | Cimbalom: modal string + hammer spectral shaping + material tilt |
-| `src/engines/ChromaticEngine.h` | Chromatic: tongue drum / water gong / custom (APVTS harmonics) |
-| `src/engines/FMPianoEngine.h` | FM Piano: 2-op FM, 8 sound types |
-| `src/effects/EffectChain.h` | Distortion -> Compressor -> Delay -> Reverb |
-| `src/PresetManager.h` | 12 factory + user presets, dirty tracking |
-| `src/PresetBrowser.h` | Visual preset browser popup + category filter |
-| `src/HarmonicEditor.h` | 8-partial ratio/amplitude editor |
-| `src/analyzer/SpectrumView.h` | FFT spectrum (2048-sample, log-freq, smoothed dB) |
-| `data/materials.json` | 14 material physical parameters (9 exposed in UI) |
+| Area | State |
+|------|-------|
+| Determinism | ✅ NoiseGen seeded; same score → byte-identical render |
+| Verification | ✅ `tools/physics_verify.py` (partials / `--levels` / `--t60`) |
+| CLI introspection | ✅ `--dump-modes <score.json>` (model's exact partials, JSON) |
+| Cimbalom tuning | ✅ pinned to MIDI pitch (stiff-string √(1+B) comp) |
+| Engine levels | ✅ equal-RMS calibrated (cross-engine 8 dB → 0.2 dB) |
+| Water gong | ✅ true Kirchhoff plate; **default free-edge** (hung plate, edges free); clamped optional via `plate_free_edge: false` |
+| Physical piano | ✅ CLI engine `"piano"` + **dedicated plugin Piano tab** (engine index 3, shares CimbalomEngine) |
+| FM Piano | kept as labelled **non-physical** FM synth voice |
+| Plugin UI | ✅ **4 engine tabs** (Cimbalom / Chromatic / FM Piano / Piano); bilingual tooltip popups on all controls |
 
 ## Engines
 
-| # | Engine | Synthesis | Physical Model |
-|---|--------|-----------|----------------|
-| 1 | Cimbalom | Modal Synthesis | 1D string + inharmonicity + multi-string beating |
-| 2 | Chromatic: Tongue Drum | Modal Synthesis | Euler-Bernoulli beam |
-| 3 | Chromatic: Water Gong | Modal Synthesis | Kirchhoff circular plate (Bessel zeros) |
-| 4 | Chromatic: Custom | Additive | User-defined ratio/amplitude |
-| 5 | FM Piano | FM Synthesis | 2-operator with self-feedback, 8 presets |
+| # | Engine | Physics |
+|---|--------|---------|
+| Cimbalom (tab 0) | modal | stiff string + inharmonicity + multi-string beating |
+| Chromatic (tab 1): Tongue Drum | modal | free-free Euler-Bernoulli beam |
+| Chromatic (tab 1): Water Gong | modal | Kirchhoff plate (Ω=λ², Leissa); **default free-edge** (hung); clamped optional |
+| Chromatic (tab 1): Custom | additive | user ratio/amplitude |
+| FM Piano (tab 2) | FM | 2-op (non-physical; labelled) |
+| Piano (tab 3) / CLI `"piano"` | modal | struck stiff steel string (StringModel, shares CimbalomEngine) |
 
-## APVTS Parameters (56 total)
+## Build environment
 
-Global(1) + Macro(8) + Cimbalom(6) + Chromatic(7) + Chromatic Harmonics(16) + FM(7) + Reverb(2) + Delay(3) + Compressor(2) + Distortion(4)
+- JUCE 8.0.12 (submodule `libs/JUCE`); CMake; MSVC. Build dir `build/`,
+  generator **Visual Studio 18 2026**.
+- This machine: load `D:\Visual_Studio\VC\Auxiliary\Build\vcvars64.bat` before `cl`/cmake.
+- Python 3.13 with numpy + scipy (for the harness).
 
-## Signal Chain
+## Build & verify commands
 
+```powershell
+# build (after vcvars64)
+cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_Standalone
+
+# physics verification (ear-free)
+python tools/physics_verify.py                 # all engines: f0 cents + partials
+python tools/physics_verify.py --levels        # per-engine RMS/peak
+python tools/physics_verify.py --t60           # modal decay vs model
+python tools/physics_verify.py --engines water_gong water_gong_free   # A/B
+
+# inspect a score's predicted physics
+build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes <score.json>
 ```
-Engine -> Distortion -> Compressor -> Delay -> Reverb -> Output (SmoothedValue 20ms) -> Analyzer FIFO
-```
 
-## Cimbalom DSP Details (recent changes)
+## Key files
 
-Hammer shapes modal excitation spectrum via 2nd-order LP: `1/(1+(n/cutoff)²)`
-- Cotton: cutoff = 3rd partial (warm, only fundamental)
-- Felt: cutoff = 8th partial
-- Wood: cutoff = 20th partial
-- Metal: cutoff = 60th partial (full spectrum)
+| File | Content |
+|------|---------|
+| `tools/physics_verify.py` | render → FFT → compare-to-theory harness (the "ruler") |
+| `tests/audit_repro.cpp` | the 2026-06 audit bugs as executable checks |
+| `src/physics/{String,Beam,Plate}Model.h` | the physics (string / beam / clamped+free plate) |
+| `src/engines/CimbalomEngine.h` | struck stiff string (also backs the physical piano) |
+| `src/engines/ChromaticEngine.h` | tongue drum / water gong / custom; `tuneChromaticModesToMidi` |
+| `src/score/ScoreRenderer.h` | CLI render + `dumpModes`; **no Macro feel-layer (pure physics)** |
+| `src/PluginProcessor.cpp` | 4 plugin engine tabs (3 synths), FX chain, dynamic tail length |
+| `data/materials.json` | 14 materials (density / Young's / Poisson / damping) |
 
-Material spectral tilt: `pow(spectralTilt, (partialN-1)*0.2)`
-- spectralTilt = jlimit(0.1, 1.0, (log₁₀(E) - 7.5) / 4.0)
-- Steel=0.95, Glass=0.84, Spruce=0.645, Rubber=0.10
+## Pending
 
-Exciter noise: cutoff × materialBright, amplitude × noiseAmps[hammer], duration × durScale
-
-## Known Issues
-
-- DAW validation not yet done (no DAW on current machine).
-- Spruce vs Maple 頻譜傾斜接近 (0.645 vs 0.649)，可能需要進一步調整
+- DAW validation (host scan / automation / state round-trip) on a real DAW.
+- Push remaining commits + decide merge → master.
 
 ## Rules for Claude
 
-1. **這是 TsukiSynth，不是 haguruma-engine。兩個專案完全獨立。**
-2. Leave files unstaged by default, don't auto commit/push
-3. Only do the current batch task, don't expand scope
-4. Don't delete legacy prototypes
-5. Work on branch, not directly on main
+1. This is TsukiSynth, not haguruma-engine.
+2. Default: leave files unstaged, don't commit/push unless asked (this session
+   was an explicit exception — `Codex-fix-bug` is pushed).
+3. Work on a branch, not main.
+4. Don't delete legacy prototypes.
+5. For physics changes, **verify with `physics_verify.py`** before claiming done;
+   don't hardcode physical constants you can't confirm against a reference.

@@ -38,6 +38,20 @@ public:
         return key;
     }
 
+    static juce::String tooltip (const juce::String& key)
+    {
+        for (const auto& e : labelTable())
+        {
+            if (key == e.key)
+            {
+                if (e.zh[0] != '\0')
+                    return juce::String (e.en) + juce::String ("  /  ") + T (e.zh);
+                return juce::String (e.en);
+            }
+        }
+        return key;
+    }
+
     // ------------------------------------------------------------------
     //  comboItems()  -- get localized ComboBox display items
     //  Returns localized items for paramIDs that have translations.
@@ -221,6 +235,7 @@ private:
             { "ui_tab_cimbalom",     "Cimbalom",   "揚琴"       },
             { "ui_tab_chromatic",    "Chromatic",  "半音音源"   },
             { "ui_tab_fm",           "FM Piano",   "頻率鋼琴"   },
+            { "ui_tab_piano",        "Piano",      "鋼琴"       },
 
             // -- Buttons --
             { "ui_btn_save",         "Save",       "儲存"       },

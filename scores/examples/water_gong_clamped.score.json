@@ -1,0 +1,30 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Water Gong - Clamped Plate",
+    "id": "water_gong_clamped",
+    "author": "physical-modeling",
+    "description": "Water gong using the true clamped Kirchhoff-plate eigenvalues (default). Inharmonic ratios 1 : 2.08 : 3.41 : 3.89 : 5.00. A/B this against water_gong_free.score.json (same notes, free edge)."
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.9,
+    "effects": {
+      "reverb": { "decay": 3.0, "wet": 0.35 },
+      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 },
+      "distortion": { "type": "overdrive", "drive": 0, "instability": 0, "wet": 0 }
+    }
+  },
+  "events": [
+    { "time": 0.0, "duration": 3.0, "engine": "water_gong", "note": "C4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3, "plate_free_edge": false } },
+    { "time": 3.0, "duration": 3.0, "engine": "water_gong", "note": "G4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3, "plate_free_edge": false } }
+  ],
+  "export": {
+    "filename": "water_gong_clamped",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 1000
+  }
+}

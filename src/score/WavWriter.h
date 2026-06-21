@@ -28,18 +28,29 @@ public:
             }
         }
 
-        int safeBitDepth = (bitDepth == 16 || bitDepth == 24 || bitDepth == 32)
-                               ? bitDepth : 24;
+        const bool writeFlac = file.hasFileExtension ("flac");
+        int safeBitDepth = writeFlac
+            ? ((bitDepth == 16 || bitDepth == 24) ? bitDepth : 24)
+            : ((bitDepth == 16 || bitDepth == 24 || bitDepth == 32)
+                ? bitDepth : 24);
 
         juce::TemporaryFile tempFile (file);
-        auto stream = tempFile.getFile().createOutputStream();
+        std::unique_ptr<juce::OutputStream> stream (
+            tempFile.getFile().createOutputStream());
         if (stream == nullptr) return false;
 
-        juce::WavAudioFormat wav;
-        std::unique_ptr<juce::AudioFormatWriter> writer (
-            wav.createWriterFor (stream.release(), sampleRate,
-                                 static_cast<unsigned int> (outBuf.getNumChannels()),
-                                 safeBitDepth, {}, 0));
+        std::unique_ptr<juce::AudioFormat> format;
+        if (writeFlac)
+            format = std::make_unique<juce::FlacAudioFormat>();
+        else
+            format = std::make_unique<juce::WavAudioFormat>();
+
+        const auto options = juce::AudioFormatWriterOptions()
+            .withSampleRate (sampleRate)
+            .withNumChannels (outBuf.getNumChannels())
+            .withBitsPerSample (safeBitDepth)
+            .withQualityOptionIndex (writeFlac ? 5 : 0);
+        auto writer = format->createWriterFor (stream, options);
 
         if (writer == nullptr)
         {

@@ -7,6 +7,12 @@
 /**
  * FM Piano Engine — 2-operator FM with hammer transient + body resonance
  *
+ * NOTE: this is FM SYNTHESIS, not physical modelling. Unlike the Cimbalom /
+ * Chromatic engines (string / beam / plate physics), FM Piano is a "sounds-like"
+ * engine — its spectrum is exact and verifiable (a harmonic series for integer
+ * ratios) but it is NOT derived from an instrument's physics. For the
+ * physics-accurate goal, treat it as a synth voice, not a physical model.
+ *
  * Signal chain (per sample):
  *   1. FM core:  sin(2π·fc·t + I(t) · sin(2π·fm·t + fb·lastMod))
  *   2. Hammer noise: bandpass (1.5–6 kHz) noise burst, 15–45 ms
@@ -290,7 +296,7 @@ private:
 
         feedbackAmount = juce::jlimit (0.0f, 0.7f, feedback * 0.7f);
         lastModOutput  = 0.0f;
-        gain = 0.2f * velocity;
+        gain = 0.100f * velocity;   // equal-RMS calibrated (2026-06)
 
         // ── Two-stage modulation index ──
         // Split peakIndex into fast-attack + slow-body with separate scale factors:
@@ -384,6 +390,7 @@ private:
 
         noiseGen.setType (NoiseGen::Type::White);
         noiseGen.reset();
+        noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
 
         // ── P2: E.Piano 3-stack mode ──
         // Only E.Piano (type 1) uses parallel stacks; all others single-stack.
@@ -463,10 +470,10 @@ private:
 
                 st.carrierPhase   += st.carrierInc;
                 st.modulatorPhase += st.modulatorInc;
-                if (st.carrierPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-                    st.carrierPhase -= juce::MathConstants<double>::twoPi * 65536.0;
-                if (st.modulatorPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-                    st.modulatorPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+                while (st.carrierPhase >= juce::MathConstants<double>::twoPi)
+                    st.carrierPhase -= juce::MathConstants<double>::twoPi;
+                while (st.modulatorPhase >= juce::MathConstants<double>::twoPi)
+                    st.modulatorPhase -= juce::MathConstants<double>::twoPi;
             }
 
             // Also add the main single-stack FM (preserves existing E.Piano character
@@ -518,6 +525,10 @@ private:
             bodyResAmp2 *= bodyResDecay2;
             bodyResPhase1 += bodyResInc1;
             bodyResPhase2 += bodyResInc2;
+            if (bodyResPhase1 >= juce::MathConstants<double>::twoPi)
+                bodyResPhase1 -= juce::MathConstants<double>::twoPi;
+            if (bodyResPhase2 >= juce::MathConstants<double>::twoPi)
+                bodyResPhase2 -= juce::MathConstants<double>::twoPi;
         }
 
         // ── Macro noise injection ──
@@ -528,10 +539,10 @@ private:
         carrierPhase   += carrierInc;
         modulatorPhase += modulatorInc;
 
-        if (carrierPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-            carrierPhase -= juce::MathConstants<double>::twoPi * 65536.0;
-        if (modulatorPhase >= juce::MathConstants<double>::twoPi * 65536.0)
-            modulatorPhase -= juce::MathConstants<double>::twoPi * 65536.0;
+        while (carrierPhase >= juce::MathConstants<double>::twoPi)
+            carrierPhase -= juce::MathConstants<double>::twoPi;
+        while (modulatorPhase >= juce::MathConstants<double>::twoPi)
+            modulatorPhase -= juce::MathConstants<double>::twoPi;
 
         return sample;
     }

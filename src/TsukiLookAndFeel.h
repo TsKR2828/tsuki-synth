@@ -40,6 +40,7 @@ namespace Clr
     inline const juce::Colour cimbalom       (0xffc49a6c);
     inline const juce::Colour chromatic      (0xff8bb8a8);
     inline const juce::Colour fm             (0xffa88bc4);
+    inline const juce::Colour piano          (0xff8ba0c4);
 
     inline const juce::Colour knobTrack      (0xff10101c);
     inline const juce::Colour knobFaceA      (0xff2a2a44);
@@ -290,5 +291,42 @@ public:
             g.drawText (btn.getButtonText(), btn.getLocalBounds(),
                         juce::Justification::centred);
         }
+    }
+
+    // ── Tooltip (白框 bilingual popup) ────────────────────────────
+    juce::Rectangle<int> getTooltipBounds (const juce::String& tipText,
+                                            juce::Point<int> screenPos,
+                                            juce::Rectangle<int> parentArea) override
+    {
+        auto font = scaledFont (12.0f);
+        int textW = (int) juce::GlyphArrangement::getStringWidth (font, tipText) + 1;
+        int w = juce::jmin (400, juce::jmax (80, textW + 28));
+        int h = 34;
+
+        int x = screenPos.x > parentArea.getCentreX()
+                    ? screenPos.x - w - 8
+                    : screenPos.x + 12;
+        int y = screenPos.y > parentArea.getCentreY()
+                    ? screenPos.y - h - 8
+                    : screenPos.y + 20;
+
+        return juce::Rectangle<int> (x, y, w, h).constrainedWithin (parentArea);
+    }
+
+    void drawTooltip (juce::Graphics& g, const juce::String& text,
+                      int width, int height) override
+    {
+        auto bounds = juce::Rectangle<float> (0.0f, 0.0f, (float) width, (float) height);
+
+        g.setColour (juce::Colour (0xfff5f0e8));
+        g.fillRoundedRectangle (bounds, 5.0f);
+
+        g.setColour (juce::Colour (0x30000000));
+        g.drawRoundedRectangle (bounds.reduced (0.5f), 5.0f, 1.0f);
+
+        g.setColour (juce::Colour (0xff1a1a2e));
+        g.setFont (scaledFont (12.0f));
+        g.drawText (text, bounds.toNearestInt().reduced (12, 0),
+                    juce::Justification::centred, true);
     }
 };

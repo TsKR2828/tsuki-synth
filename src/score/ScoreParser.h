@@ -21,6 +21,8 @@ struct ScoreEffects
     double delayTimeMs = 0.0;
     double delayFeedback = 0.0;
     double delayWet    = 0.0;
+    double wallDistanceM = 0.0;
+    std::string wallMaterial;
 
     std::string distortionType = "overdrive";
     double distortionDrive       = 0.0;
@@ -61,6 +63,8 @@ struct ScoreEvent
     float       fmAttackMs     = -1.0f;
     float       fmReleaseMs    = -1.0f;
 
+    bool        plateFreeEdge  = true;   // water_gong: hung plate, edges free (physical default)
+
     bool        hasGlide       = false;
     std::string glideFromNote;
     double      glideDurationMs = 0.0;
@@ -70,6 +74,7 @@ struct ScoreEvent
 struct ScoreExport
 {
     std::string filename;
+    std::string exportFilename;
     std::string format = "wav";
     int    bitDepth       = 24;
     bool   normalize      = true;
@@ -96,6 +101,7 @@ struct Score
     int crossfadeMs = 0;
 
     bool hasLayers() const { return ! layers.empty(); }
+    std::vector<std::string> warnings;
 };
 
 inline int noteNameToMidi (const std::string& name)
@@ -105,7 +111,7 @@ inline int noteNameToMidi (const std::string& name)
     // Pure numeric → MIDI number
     if (name[0] >= '0' && name[0] <= '9')
     {
-        try { return std::stoi (name); }
+        try { return std::clamp (std::stoi (name), 0, 127); }
         catch (...) { return 60; }
     }
 
@@ -128,12 +134,11 @@ inline int noteNameToMidi (const std::string& name)
     int octave = 4;
     if (pos < static_cast<int> (name.size()))
     {
-        char c = name[static_cast<size_t> (pos)];
-        if (c >= '0' && c <= '9')
-            octave = c - '0';
+        try { octave = std::stoi (name.substr (pos)); }
+        catch (...) {}
     }
 
-    return (octave + 1) * 12 + base;
+    return std::clamp ((octave + 1) * 12 + base, 0, 127);
 }
 
 class ScoreParser
@@ -186,6 +191,11 @@ public:
                     readNumber (*del, "feedback", score.global.effects.delayFeedback, 0.0, 0.95);
                     readNumber (*del, "wet", score.global.effects.delayWet, 0.0, 1.0);
                 }
+                if (auto* wall = fx->getProperty ("wall").getDynamicObject())
+                {
+                    readNumber (*wall, "distance_m", score.global.effects.wallDistanceM, 0.0, 100.0);
+                    readString (*wall, "material", score.global.effects.wallMaterial, true);
+                }
                 if (auto* dist = fx->getProperty ("distortion").getDynamicObject())
                 {
                     readString (*dist, "type", score.global.effects.distortionType);
@@ -212,6 +222,8 @@ public:
                         || ! readNumber (*e, "velocity", velocity, 0.0, 1.0)
                         || ! isKnownEngine (se.engine))
                     {
+                        score.warnings.push_back ("Event " + std::to_string (score.events.size())
+                            + ": skipped (missing required field)");
                         continue;
                     }
 
@@ -253,6 +265,8 @@ public:
                             se.fmAttackMs = static_cast<float> (value);
                         if (readNumber (*p, "fm_release", value, 10.0, 10000.0))
                             se.fmReleaseMs = static_cast<float> (value);
+
+                        readBool (*p, "plate_free_edge", se.plateFreeEdge);
                     }
 
                     if (auto* gl = e->getProperty ("glide").getDynamicObject())
@@ -278,6 +292,7 @@ public:
         if (auto* exp = obj->getProperty ("export").getDynamicObject())
         {
             readString (*exp, "filename", score.exportSettings.filename, true);
+            readString (*exp, "export_filename", score.exportSettings.exportFilename, true);
             readString (*exp, "format", score.exportSettings.format);
 
             int bitDepth = score.exportSettings.bitDepth;
@@ -289,6 +304,9 @@ public:
             readNumber (*exp, "tail_silence_ms", score.exportSettings.tailSilenceMs, 0.0, 60000.0);
             readNumber (*exp, "start_position", score.exportSettings.startPosition, 0.0, 1.0);
             readNumber (*exp, "end_position", score.exportSettings.endPosition, 0.0, 1.0);
+
+            if (score.exportSettings.startPosition >= score.exportSettings.endPosition)
+                return false;
         }
 
         if (auto* layersArr = obj->getProperty ("layers").getArray())
@@ -401,7 +419,7 @@ private:
             || engine == "beam" || engine == "tongue_drum"
             || engine == "plate" || engine == "water_gong"
             || engine == "membrane" || engine == "custom"
-            || engine == "fm";
+            || engine == "fm" || engine == "piano";
     }
 
     static bool isSupportedSampleRate (int sr)
