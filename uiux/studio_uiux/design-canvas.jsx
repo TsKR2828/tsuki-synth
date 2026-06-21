@@ -132,13 +132,14 @@ function DesignCanvas({ children, minScale, maxScale, style }) {
   const [ready, setReady] = React.useState(false);
   const didRead = React.useRef(false);
   const skipNextWrite = React.useRef(false);
+  const userEdited = React.useRef(false);
 
   React.useEffect(() => {
     let off = false;
     fetch('./' + DC_STATE_FILE)
       .then((r) => (r.ok ? r.json() : null))
       .then((saved) => {
-        if (off || !saved || !saved.sections) return;
+        if (off || !saved || !saved.sections || userEdited.current) return;
         skipNextWrite.current = true;
         setState((s) => ({ ...s, sections: saved.sections }));
       })
@@ -196,10 +197,10 @@ function DesignCanvas({ children, minScale, maxScale, style }) {
   const api = React.useMemo(() => ({
     state,
     section: (id) => state.sections[id] || {},
-    patchSection: (id, p) => setState((s) => ({
+    patchSection: (id, p) => { userEdited.current = true; setState((s) => ({
       ...s,
       sections: { ...s.sections, [id]: { ...s.sections[id], ...(typeof p === 'function' ? p(s.sections[id] || {}) : p) } },
-    })),
+    })); },
     setFocus: (slotId) => setState((s) => ({ ...s, focus: slotId })),
   }), [state]);
 

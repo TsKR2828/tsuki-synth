@@ -77,8 +77,10 @@ private:
 
     juce::TimeSliceThread recordingThread { "TsukiSynth Recorder" };
     mutable juce::CriticalSection recordingLock;
+    mutable juce::CriticalSection statusLock;
     std::unique_ptr<juce::AudioFormatWriter::ThreadedWriter> recordingWriter;
     std::atomic<bool> recordingActive { false };
+    std::atomic<int> recordingDroppedBlocks { 0 };
     juce::File lastRecordingFile;
     juce::String recordingStatus;
 

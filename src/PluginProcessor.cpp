@@ -420,6 +420,9 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         const auto msg = meta.getMessage();
         if (msg.isNoteOn())
             lastNoteOnMidi.store (msg.getNoteNumber(), std::memory_order_release);
+        else if (msg.isNoteOff()
+                 && msg.getNoteNumber() == lastNoteOnMidi.load (std::memory_order_acquire))
+            lastNoteOnMidi.store (-1, std::memory_order_release);
     }
 
     int currentEngine = (int) pEngine->load();
@@ -451,13 +454,20 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     {
         constexpr int kMaxBlock = 2048;
         float mono[kMaxBlock];
-        int n = juce::jmin (buffer.getNumSamples(), kMaxBlock);
         const float* L = buffer.getReadPointer (0);
         const float* R = buffer.getNumChannels() > 1
                              ? buffer.getReadPointer (1) : L;
-        for (int i = 0; i < n; ++i)
-            mono[i] = (L[i] + R[i]) * 0.5f;
-        analyzerDryFifo.push (mono, n);
+        int remaining = buffer.getNumSamples();
+        int offset = 0;
+        while (remaining > 0)
+        {
+            int n = juce::jmin (remaining, kMaxBlock);
+            for (int i = 0; i < n; ++i)
+                mono[i] = (L[offset + i] + R[offset + i]) * 0.5f;
+            analyzerDryFifo.push (mono, n);
+            offset += n;
+            remaining -= n;
+        }
     }
 
     // Global effect chain: Compressor → Delay → Reverb
@@ -485,19 +495,30 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                 recordingWriter->write (buffer.getArrayOfReadPointers(), buffer.getNumSamples());
             recordingLock.exit();
         }
+        else
+        {
+            recordingDroppedBlocks.fetch_add (1, std::memory_order_relaxed);
+        }
     }
 
     // Mix to mono and push to analyzer FIFO (no lock, no alloc)
     {
         constexpr int kMaxBlock = 2048;
         float mono[kMaxBlock];
-        int n = juce::jmin (buffer.getNumSamples(), kMaxBlock);
         const float* L = buffer.getReadPointer (0);
         const float* R = buffer.getNumChannels() > 1
                              ? buffer.getReadPointer (1) : L;
-        for (int i = 0; i < n; ++i)
-            mono[i] = (L[i] + R[i]) * 0.5f;
-        analyzerFifo.push (mono, n);
+        int remaining = buffer.getNumSamples();
+        int offset = 0;
+        while (remaining > 0)
+        {
+            int n = juce::jmin (remaining, kMaxBlock);
+            for (int i = 0; i < n; ++i)
+                mono[i] = (L[offset + i] + R[offset + i]) * 0.5f;
+            analyzerFifo.push (mono, n);
+            offset += n;
+            remaining -= n;
+        }
     }
 }
 
@@ -516,7 +537,7 @@ bool TsukiSynthProcessor::startRecording()
 
     if (! dir.isDirectory())
     {
-        recordingStatus = "Recording folder unavailable";
+        { const juce::ScopedLock sl2 (statusLock); recordingStatus = "Recording folder unavailable"; }
         return false;
     }
 
@@ -531,7 +552,7 @@ bool TsukiSynthProcessor::startRecording()
 
     if (fileStream == nullptr || ! fileStream->openedOk())
     {
-        recordingStatus = "Could not create recording file";
+        { const juce::ScopedLock sl2 (statusLock); recordingStatus = "Could not create recording file"; }
         return false;
     }
 
@@ -543,15 +564,19 @@ bool TsukiSynthProcessor::startRecording()
     auto writer = wavFormat.createWriterFor (stream, options);
     if (writer == nullptr)
     {
-        recordingStatus = "Could not create WAV writer";
+        { const juce::ScopedLock sl2 (statusLock); recordingStatus = "Could not create WAV writer"; }
         return false;
     }
 
     recordingWriter = std::make_unique<juce::AudioFormatWriter::ThreadedWriter> (
         writer.release(), recordingThread, 32768);
 
-    lastRecordingFile = file;
-    recordingStatus = "Recording: " + file.getFullPathName();
+    {
+        const juce::ScopedLock sl2 (statusLock);
+        lastRecordingFile = file;
+        recordingStatus = "Recording: " + file.getFullPathName();
+    }
+    recordingDroppedBlocks.store (0);
     recordingActive.store (true);
     return true;
 }
@@ -564,19 +589,20 @@ void TsukiSynthProcessor::stopRecording()
     if (recordingWriter != nullptr)
     {
         recordingWriter.reset();
+        const juce::ScopedLock sl2 (statusLock);
         recordingStatus = "Saved: " + lastRecordingFile.getFullPathName();
     }
 }
 
 juce::String TsukiSynthProcessor::getRecordingStatus() const
 {
-    const juce::ScopedLock sl (recordingLock);
+    const juce::ScopedLock sl (statusLock);
     return recordingStatus;
 }
 
 juce::File TsukiSynthProcessor::getLastRecordingFile() const
 {
-    const juce::ScopedLock sl (recordingLock);
+    const juce::ScopedLock sl (statusLock);
     return lastRecordingFile;
 }
 

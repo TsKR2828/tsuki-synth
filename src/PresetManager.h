@@ -99,7 +99,14 @@ public:
 
     // ── Save user preset ────────────────────────────────────────
 
-    bool saveUserPreset (const juce::String& name)
+    bool userPresetExists (const juce::String& name) const
+    {
+        auto safeName = toSafeFilename (name);
+        if (safeName.isEmpty()) return false;
+        return getPresetDirectory().getChildFile (safeName + ".tsukipreset").existsAsFile();
+    }
+
+    bool saveUserPreset (const juce::String& name, bool allowOverwrite = false)
     {
         auto dir = getPresetDirectory();
         if (! dir.isDirectory())
@@ -110,6 +117,8 @@ public:
             return false;
 
         auto file = dir.getChildFile (safeName + ".tsukipreset");
+        if (file.existsAsFile() && ! allowOverwrite)
+            return false;
 
         auto state = apvts.copyState();
         auto stateXml = state.createXml();
@@ -212,7 +221,7 @@ private:
     juce::ValueTree defaultState;
     juce::ValueTree listenedState;
     juce::Array<UserPreset> userPresets;
-    int  currentIndex = 0;
+    int  currentIndex = -1;
     std::atomic<bool> dirty   { false };
     std::atomic<bool> loading { false };
 

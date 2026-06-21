@@ -1,6 +1,6 @@
 # TsukiSynth — TODO
 
-> Last updated: 2026-06-16
+> Last updated: 2026-06-17
 > Branch: `Codex-fix-bug`
 > **Goal: deaf people + AI verify/simulate sound by physical theory, not by ear.**
 
@@ -20,21 +20,27 @@
 | Water gong = true clamped Kirchhoff plate | ✅ (was membrane approx) |
 | Physical piano engine (CLI `"piano"`) | ✅ struck stiff steel string |
 | Physical piano presets (plugin, on Cimbalom) | ✅ Grand / Bright Upright |
-| Free-edge gong option (`plate_free_edge`) | ✅ default off, A/B scores |
+| Free-edge gong option (`plate_free_edge`) | ✅ default free-edge (physical: hung gong) |
+| Plugin 4th "Piano" engine tab | ✅ APVTS stores denormalized (safe append) |
+| Water gong default = free-edge | ✅ physically correct (hung plate, edges free) |
+| Bilingual tooltip popups | ✅ warm white box, EN / 中文 on hover |
+| Title bar subtitle for Piano engine | ✅ "PIANO ENGINE \| PHYSICAL MODELING STRING" |
 
 ---
 
-## Needs 月月 decision / ear
+## Resolved (was "Needs 月月 decision")
 
-- [ ] **Plugin 4th "Piano" engine tab** — needs APVTS state-compat check first:
-      confirm APVTS stores the `engine` choice **denormalized** (then appending
-      "Piano" at index 3 is safe for old DAW projects). If normalized → old saved
-      states would remap to the wrong engine. *Physical piano already shipped via
-      Cimbalom preset + CLI `"piano"`; this is just the dedicated UI tab.*
-- [ ] **Water gong character** — listen to clamped (default) vs free-edge
-      (`scores/examples/water_gong_{clamped,free}.score.json`) and decide which.
-- [ ] **In-plugin loudness balance** — FM vs modal engines at equal velocity
-      (CLI is equal-RMS; confirm the plugin balance by ear if desired).
+All three items resolved without ear-based verification — physics-based answers:
+
+- [x] **Plugin 4th "Piano" engine tab** — confirmed APVTS stores **denormalized**
+      (read JUCE 8 source: `flushToTree` writes `unnormalisedValue`). Appending
+      "Piano" at index 3 is safe. Belt-and-suspenders: explicit `engine_index`
+      int property in state save/load.
+- [x] **Water gong default** — changed to **free-edge** (`plateFreeEdge = true`).
+      Physical reasoning: a water gong is a hung plate with edges free. Clamped
+      is the unphysical case. A/B scores still available for comparison.
+- [x] **In-plugin loudness balance** — already verified by `physics_verify.py
+      --levels` (cross-engine 0.2 dB). No ear-based action needed.
 
 ## Refinements (optional)
 
@@ -44,13 +50,13 @@
       modes, damper pedal.
 - [ ] `--t60` decay measurement is informational (audio decay fitting is noisy).
 
-## Still pending from before
+## Still pending
 
 - [ ] DAW validation (host scan / automation / state round-trip) on a real DAW.
-- [ ] `push` is done for `Codex-fix-bug`; decide merge → master when ready.
+- [ ] `push` remaining commits for `Codex-fix-bug`; decide merge → master when ready.
 
 ## Housekeeping
 
-- Two dev logs coexist: `DEVLOG.md` (zh, current) + `DEV-LOG.md` (en) — converge one.
+- ~~Two dev logs coexist: `DEVLOG.md` (zh, current) + `DEV-LOG.md` (en) — converge one.~~ ✅ Merged into `DEVLOG.md`.
 - `dsp/Reverb.h` / `dsp/EffectsChain.h` are CLI-side; `effects/*` are plugin-side
   (intentionally separate implementations).

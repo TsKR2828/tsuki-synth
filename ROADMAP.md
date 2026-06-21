@@ -1,6 +1,6 @@
 # TsukiSynth — Development Roadmap
 
-> Last updated: 2026-06-16
+> Last updated: 2026-06-17
 >
 > This document tracks the real project status based on actual repo state,
 > not planned/estimated phases.
@@ -32,7 +32,10 @@
 | v0.3 | Water gong → true clamped Kirchhoff plate | **Done** |
 | v0.3 | Physical piano engine (struck stiff string) + presets | **Done** |
 | v0.3 | Optional free-edge gong (`plate_free_edge`) for A/B | **Done** |
-| — | Plugin 4th "Piano" engine tab | Pending (APVTS state-compat check) |
+| v0.3 | Plugin 4th "Piano" engine tab | **Done** (APVTS stores denormalized) |
+| v0.3 | Bilingual tooltip popups (EN / 中文) | **Done** |
+| v0.3 | Water gong default → free-edge (physical) | **Done** |
+| v0.3 | Title bar subtitle for Piano engine | **Done** |
 | — | DAW validation (host scan / automation / state) | Pending |
 
 ---
@@ -59,8 +62,9 @@ instrument-physics correctness. Branch `Codex-fix-bug`.
   optional free-edge gong (`plate_free_edge`) for A/B.
 - **Verified** — all 6 engines (cimbalom / tongue_drum / water_gong /
   water_gong_free / fm / piano) pass the harness; CLI + Standalone build clean.
-- **Pending** — plugin 4th "Piano" engine tab (APVTS state-compat check), DAW
-  validation, water-gong clamped-vs-free character decision.
+- **2026-06-17** — plugin 4th "Piano" engine tab (APVTS confirmed denormalized),
+  water gong default→free-edge, bilingual tooltip popups, title bar Piano subtitle.
+- **Pending** — DAW validation, push + merge decision.
 
 ---
 

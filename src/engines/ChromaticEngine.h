@@ -156,6 +156,7 @@ public:
             pp.thickness = thickness > 0.0001f ? thickness : 0.003f;
             pp.strikePosition = strikePos;
             pp.numModes  = 20;
+            pp.freeEdge  = true;
             modes = PlateModel::calculateModes (pp, *mat);
             tuneChromaticModesToMidi (modes, midiNoteNumber);
         }

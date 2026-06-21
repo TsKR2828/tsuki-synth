@@ -118,9 +118,10 @@ public:
 
         totalDuration += wallDelaySeconds (score.global.effects);
         totalDuration += score.exportSettings.tailSilenceMs / 1000.0;
-        int totalSamples = static_cast<int> (totalDuration * sr) + 1;
-        if (totalSamples <= 0)
+        int64_t totalSamples64 = static_cast<int64_t> (totalDuration * sr) + 1;
+        if (totalSamples64 <= 0 || totalSamples64 > 345600000)
             return false;
+        int totalSamples = static_cast<int> (totalSamples64);
 
         juce::AudioBuffer<float> buffer (2, totalSamples);
         buffer.clear();
@@ -176,9 +177,10 @@ public:
             subDuration += wallDelaySeconds (subScore.global.effects);
             subDuration += subScore.exportSettings.tailSilenceMs / 1000.0;
 
-            int subTotalSamples = static_cast<int> (subDuration * sr) + 1;
-            if (subTotalSamples <= 0)
+            int64_t subTotalSamples64 = static_cast<int64_t> (subDuration * sr) + 1;
+            if (subTotalSamples64 <= 0 || subTotalSamples64 > 345600000)
                 return false;
+            int subTotalSamples = static_cast<int> (subTotalSamples64);
 
             juce::AudioBuffer<float> subBuffer (2, subTotalSamples);
             subBuffer.clear();
@@ -352,6 +354,8 @@ private:
         else if (ev.exciter == "felt" || ev.exciter == "felt_mallet") cp.exciter = ExciterType::Felt;
         else if (ev.exciter == "metal" || ev.exciter == "metal_mallet"
                  || ev.exciter == "metal_hammer") cp.exciter = ExciterType::Metal;
+        else if (ev.exciter == "finger" || ev.exciter == "finger_tap") cp.exciter = ExciterType::Felt;
+        else if (ev.exciter == "bow") cp.exciter = ExciterType::Cotton;
         else if (ev.exciter == "hard_plastic" || ev.exciter == "wood"
                  || ev.exciter == "wood_mallet") cp.exciter = ExciterType::Wood;
         else cp.exciter = ExciterType::Wood;

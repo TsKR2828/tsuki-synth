@@ -38,6 +38,20 @@ public:
         return key;
     }
 
+    static juce::String tooltip (const juce::String& key)
+    {
+        for (const auto& e : labelTable())
+        {
+            if (key == e.key)
+            {
+                if (e.zh[0] != '\0')
+                    return juce::String (e.en) + juce::String ("  /  ") + T (e.zh);
+                return juce::String (e.en);
+            }
+        }
+        return key;
+    }
+
     // ------------------------------------------------------------------
     //  comboItems()  -- get localized ComboBox display items
     //  Returns localized items for paramIDs that have translations.

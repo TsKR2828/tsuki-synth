@@ -101,6 +101,7 @@ struct Score
     int crossfadeMs = 0;
 
     bool hasLayers() const { return ! layers.empty(); }
+    std::vector<std::string> warnings;
 };
 
 inline int noteNameToMidi (const std::string& name)
@@ -133,9 +134,8 @@ inline int noteNameToMidi (const std::string& name)
     int octave = 4;
     if (pos < static_cast<int> (name.size()))
     {
-        char c = name[static_cast<size_t> (pos)];
-        if (c >= '0' && c <= '9')
-            octave = c - '0';
+        try { octave = std::stoi (name.substr (pos)); }
+        catch (...) {}
     }
 
     return std::clamp ((octave + 1) * 12 + base, 0, 127);
@@ -222,6 +222,8 @@ public:
                         || ! readNumber (*e, "velocity", velocity, 0.0, 1.0)
                         || ! isKnownEngine (se.engine))
                     {
+                        score.warnings.push_back ("Event " + std::to_string (score.events.size())
+                            + ": skipped (missing required field)");
                         continue;
                     }
 
@@ -302,6 +304,9 @@ public:
             readNumber (*exp, "tail_silence_ms", score.exportSettings.tailSilenceMs, 0.0, 60000.0);
             readNumber (*exp, "start_position", score.exportSettings.startPosition, 0.0, 1.0);
             readNumber (*exp, "end_position", score.exportSettings.endPosition, 0.0, 1.0);
+
+            if (score.exportSettings.startPosition >= score.exportSettings.endPosition)
+                return false;
         }
 
         if (auto* layersArr = obj->getProperty ("layers").getArray())

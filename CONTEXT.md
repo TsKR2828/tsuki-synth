@@ -24,10 +24,10 @@ verification harness (`tools/physics_verify.py`) is the "ruler".
 - **Active branch: `Codex-fix-bug`** (pushed). Built on Codex `b5a370d` (PR #4).
 - Local path: `C:\Users\admin\Desktop\Claude\tsuki-synth`
 
-## Current state (2026-06-16)
+## Current state (2026-06-17)
 
 All audit bugs fixed; physics-accuracy pass done. **All 6 engines pass the
-verification harness; CLI + Standalone build clean.**
+verification harness; CLI + Standalone + VST3 build clean.**
 
 | Area | State |
 |------|-------|
@@ -36,20 +36,21 @@ verification harness; CLI + Standalone build clean.**
 | CLI introspection | ✅ `--dump-modes <score.json>` (model's exact partials, JSON) |
 | Cimbalom tuning | ✅ pinned to MIDI pitch (stiff-string √(1+B) comp) |
 | Engine levels | ✅ equal-RMS calibrated (cross-engine 8 dB → 0.2 dB) |
-| Water gong | ✅ true **clamped Kirchhoff plate** (was membrane approx); optional free-edge via `plate_free_edge` |
-| Physical piano | ✅ CLI engine `"piano"` (struck stiff steel string) + plugin Cimbalom presets |
+| Water gong | ✅ true Kirchhoff plate; **default free-edge** (hung plate, edges free); clamped optional via `plate_free_edge: false` |
+| Physical piano | ✅ CLI engine `"piano"` + **dedicated plugin Piano tab** (engine index 3, shares CimbalomEngine) |
 | FM Piano | kept as labelled **non-physical** FM synth voice |
+| Plugin UI | ✅ **4 engine tabs** (Cimbalom / Chromatic / FM Piano / Piano); bilingual tooltip popups on all controls |
 
 ## Engines
 
 | # | Engine | Physics |
 |---|--------|---------|
-| Cimbalom | modal | stiff string + inharmonicity + multi-string beating |
-| Chromatic: Tongue Drum | modal | free-free Euler-Bernoulli beam |
-| Chromatic: Water Gong | modal | clamped Kirchhoff plate (Ω=λ², Leissa); free-edge optional |
-| Chromatic: Custom | additive | user ratio/amplitude |
-| FM Piano | FM | 2-op (non-physical; labelled) |
-| **piano** (CLI/score) | modal | struck stiff steel string (StringModel) |
+| Cimbalom (tab 0) | modal | stiff string + inharmonicity + multi-string beating |
+| Chromatic (tab 1): Tongue Drum | modal | free-free Euler-Bernoulli beam |
+| Chromatic (tab 1): Water Gong | modal | Kirchhoff plate (Ω=λ², Leissa); **default free-edge** (hung); clamped optional |
+| Chromatic (tab 1): Custom | additive | user ratio/amplitude |
+| FM Piano (tab 2) | FM | 2-op (non-physical; labelled) |
+| Piano (tab 3) / CLI `"piano"` | modal | struck stiff steel string (StringModel, shares CimbalomEngine) |
 
 ## Build environment
 
@@ -84,18 +85,13 @@ build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes <score.json
 | `src/engines/CimbalomEngine.h` | struck stiff string (also backs the physical piano) |
 | `src/engines/ChromaticEngine.h` | tongue drum / water gong / custom; `tuneChromaticModesToMidi` |
 | `src/score/ScoreRenderer.h` | CLI render + `dumpModes`; **no Macro feel-layer (pure physics)** |
-| `src/PluginProcessor.cpp` | 3 plugin engines, FX chain, dynamic tail length |
+| `src/PluginProcessor.cpp` | 4 plugin engine tabs (3 synths), FX chain, dynamic tail length |
 | `data/materials.json` | 14 materials (density / Young's / Poisson / damping) |
 
-## Pending — needs 月月 decision
+## Pending
 
-1. **Plugin 4th "Piano" engine tab** — requires APVTS state-compat check:
-   confirm the `engine` choice is stored **denormalized** (then appending "Piano"
-   at index 3 is safe for old DAW projects; if normalized, old states remap to
-   the wrong engine). Physical piano already ships via Cimbalom preset + CLI.
-2. **Water gong character** — A/B clamped (default) vs free-edge
-   (`scores/examples/water_gong_{clamped,free}.score.json`).
-3. **In-plugin loudness balance** (FM vs modal) — CLI is equal-RMS; confirm by ear.
+- DAW validation (host scan / automation / state round-trip) on a real DAW.
+- Push remaining commits + decide merge → master.
 
 ## Rules for Claude
 

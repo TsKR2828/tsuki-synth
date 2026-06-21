@@ -31,6 +31,15 @@ static juce::File getOutputDir (int argc, char* argv[])
                .getChildFile ("exports").getChildFile ("wav");
 }
 
+static bool isSafeOutputName (const juce::String& name)
+{
+    if (name.isEmpty()) return false;
+    if (name.containsChar ('/') || name.containsChar ('\\')) return false;
+    if (name.contains ("..")) return false;
+    if (juce::File::isAbsolutePath (name)) return false;
+    return true;
+}
+
 static bool renderScore (const juce::File& scoreFile, const juce::File& outputDir)
 {
     Score score;
@@ -39,6 +48,9 @@ static bool renderScore (const juce::File& scoreFile, const juce::File& outputDi
         std::cout << "  FAILED to parse: " << scoreFile.getFileName() << std::endl;
         return false;
     }
+
+    for (const auto& w : score.warnings)
+        std::cout << "  WARNING: " << w << std::endl;
 
     outputDir.createDirectory();
 
@@ -54,6 +66,18 @@ static bool renderScore (const juce::File& scoreFile, const juce::File& outputDi
         ? ".flac"
         : ".wav";
     juce::File outFile = outputDir.getChildFile (outName + extension);
+
+    if (! isSafeOutputName (outName))
+    {
+        std::cout << "  REJECTED unsafe filename: " << outName << std::endl;
+        return false;
+    }
+
+    if (outFile.existsAsFile())
+    {
+        std::cout << "  SKIPPED (already exists): " << outFile.getFullPathName() << std::endl;
+        return false;
+    }
 
     ScoreRenderer renderer;
     renderer.setMaterialDB (&globalMaterialDB);

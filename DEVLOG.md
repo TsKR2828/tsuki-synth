@@ -2,6 +2,38 @@
 
 ---
 
+## 2026-06-17 — Plugin UI 完善：Piano 分頁 + 雙語 Tooltip + 修正
+
+本輪完成三項 TODO 待開發事項 + 兩項 bug 修正，分支 `Codex-fix-bug`。
+
+### Piano 第 4 引擎分頁
+- 確認 JUCE 8 APVTS 存 **denormalized** 值（讀 `juce_AudioProcessorValueTreeState.cpp` 源碼：`flushToTree` 寫 `unnormalisedValue`）→ 安全追加 "Piano" 在 index 3。
+- `PluginProcessor.cpp`：engine 選項 3→4；processBlock/allNotesOff 路由 eng==3 到 cimbalomSynth；state save/load 加 `engine_index` / `chr_sub_engine_index` 明確 int 備援。
+- `PluginEditor.h/cpp`：`tabPiano` 按鈕、`updateEngine` eng==3、`resized()` 四等分 tab、Piano 共用 Cimbalom 控件。
+- `Presets.h`：兩個物理鋼琴 preset 移到 engine=3。
+- `TsukiLookAndFeel.h`：`Clr::piano (0xff8ba0c4)` 鋼藍色。
+
+### 水鑼預設改為 free-edge（物理正確）
+- 水鑼是吊掛的板→自由邊。`ChromaticEngine.h` + `ScoreParser.h` `plateFreeEdge` 預設 `true`。
+- `water_gong_clamped.score.json` 加明確 `"plate_free_edge": false`。
+- `physics_verify.py` water_gong 測試加明確 `"plate_free_edge": False`。
+
+### 雙語 Tooltip（小白框）
+- `UiLocale::tooltip()` → 回傳 `"ENGLISH  /  中文"` 格式。
+- `TsukiLookAndFeel.h`：`drawTooltip` 覆寫（暖白圓角框 `#f5f0e8`、深色文字 `#1a1a2e`、CJK 字型 14.4pt）+ `getTooltipBounds`（自動定位、最寬 400px）。
+- `PluginEditor.h`：`juce::TooltipWindow tooltipWindow { this, 350 }`（350ms 延遲）。
+- `PluginEditor.cpp`：`setupKnob` / `setupCombo` 加 `setTooltip`；tab 按鈕 + preset 按鈕加 `setTooltip`；`refreshLocalizedText` 切語言時更新所有 tooltip。
+
+### Bug 修正
+- **標題列 Piano 字幕**：eng==3 掉入 "FM PIANO" → 修正為 "PIANO ENGINE | PHYSICAL MODELING STRING"。
+- **參數計數**：eng==3 顯示 7 → 修正為 6（Piano 共用 Cimbalom 6 控件）。
+
+### 文件衛生
+- `DEV-LOG.md`（英文舊日誌）內容併入本檔 `DEVLOG.md`，刪除舊檔。
+- TODO.md / ROADMAP.md / CONTEXT.md 全部更新至 2026-06-17 狀態。
+
+---
+
 ## 2026-06-16 — 物理精確化大改 + 驗證閉環（企劃目標轉向）
 
 **企劃目標確立：聾人 + AI 不靠聽感、靠物理理論精確模擬聲音。** 整段工作圍繞此目標三支柱：**可重現性、物理可驗證性、樂器物理正確性**。分支 `Codex-fix-bug`，本輪疊在 Codex `b5a370d` 上的 commit（已 push）：
