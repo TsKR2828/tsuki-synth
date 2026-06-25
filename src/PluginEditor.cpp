@@ -681,9 +681,17 @@ void TsukiSynthEditor::promptSavePreset()
                         {
                             if (safeThis != nullptr && r == 1)
                             {
-                                safeThis->proc.presetManager.saveUserPreset (name, true);
-                                safeThis->rebuildPresetCombo();
-                                safeThis->updateDirtyIndicator();
+                                if (safeThis->proc.presetManager.saveUserPreset (name, true))
+                                {
+                                    safeThis->rebuildPresetCombo();
+                                    safeThis->updateDirtyIndicator();
+                                }
+                                else
+                                {
+                                    auto* err = new juce::AlertWindow ("Error", "Failed to save preset.", juce::AlertWindow::WarningIcon);
+                                    err->addButton ("OK", 0);
+                                    err->enterModalState (true, juce::ModalCallbackFunction::create ([err] (int) { delete err; }));
+                                }
                             }
                             delete confirm;
                         }));
@@ -691,9 +699,17 @@ void TsukiSynthEditor::promptSavePreset()
                 }
                 else if (name.isNotEmpty())
                 {
-                    safeThis->proc.presetManager.saveUserPreset (name);
-                    safeThis->rebuildPresetCombo();
-                    safeThis->updateDirtyIndicator();
+                    if (safeThis->proc.presetManager.saveUserPreset (name))
+                    {
+                        safeThis->rebuildPresetCombo();
+                        safeThis->updateDirtyIndicator();
+                    }
+                    else
+                    {
+                        auto* err = new juce::AlertWindow ("Error", "Failed to save preset.", juce::AlertWindow::WarningIcon);
+                        err->addButton ("OK", 0);
+                        err->enterModalState (true, juce::ModalCallbackFunction::create ([err] (int) { delete err; }));
+                    }
                 }
             }
             delete aw;

@@ -171,11 +171,17 @@ public:
 
     int  getCurrentIndex() const { return currentIndex; }
     bool isDirty()         const { return dirty; }
+    void setDirty()              { dirty = true; }
 
     void setCurrentIndex (int i)
     {
         currentIndex = juce::jlimit (-1, getNumPresets() - 1, i);
         dirty = false;
+    }
+
+    void restoreIndex (int i)
+    {
+        currentIndex = juce::jlimit (-1, getNumPresets() - 1, i);
     }
 
     // ── Scan disk ───────────────────────────────────────────────

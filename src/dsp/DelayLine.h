@@ -37,6 +37,9 @@ public:
 
     float processSample (float input)
     {
+        if (delaySamples < 1.0f)
+            return input;
+
         float delayed = readSample();
         float toWrite = input + delayed * feedback;
 

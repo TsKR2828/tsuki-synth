@@ -17,6 +17,13 @@
         "title":        { "type": "string", "description": "Human-readable name" },
         "id":           { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "Unique ID (snake_case), e.g. akashic_bell_001" },
         "author":       { "type": "string" },
+        "composer":     { "type": "string", "description": "Original composer for a transcription or arrangement" },
+        "work":         { "type": "string", "description": "Parent work or collection title" },
+        "catalogue":    { "type": "string", "description": "Catalogue identifier, e.g. RV 269" },
+        "opus_number":  { "type": "string" },
+        "movement_number": { "type": "integer", "minimum": 1 },
+        "movement_name": { "type": "string" },
+        "key":          { "type": "string", "description": "Human-readable tonal center, e.g. E major" },
         "description":  { "type": "string" },
         "created":      { "type": "string", "format": "date" },
         "tags":         { "type": "array", "items": { "type": "string" } },
@@ -80,14 +87,13 @@
     },
     "events": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["time", "duration", "engine", "note", "velocity", "params"],
+        "required": ["time", "duration", "engine", "note", "velocity"],
         "properties": {
           "time":     { "type": "number", "minimum": 0, "description": "Start time in seconds" },
           "duration": { "type": "number", "minimum": 0, "description": "Duration in seconds" },
-          "engine":   { "type": "string", "enum": ["string", "cimbalom", "beam", "tongue_drum", "plate", "water_gong", "membrane", "custom", "fm"], "description": "Physical model type" },
+          "engine":   { "type": "string", "enum": ["string", "cimbalom", "beam", "tongue_drum", "plate", "water_gong", "membrane", "custom", "fm", "piano"], "description": "Physical model type" },
           "note":     { "description": "Pitch as note name (C5) or MIDI number (72)" },
           "velocity": { "type": "number", "minimum": 0, "maximum": 1 },
           "params": {
@@ -102,8 +108,9 @@
               "diameter_mm":      { "type": "number", "minimum": 0.1 },
               "tension_n":        { "type": "number", "minimum": 1 },
               "strike_position":  { "type": "number", "minimum": 0, "maximum": 1, "description": "0=edge, 0.5=center, 1=opposite edge" },
-              "exciter":          { "type": "string", "enum": ["cotton_mallet", "felt_mallet", "wood_mallet", "metal_mallet", "metal_hammer", "hard_plastic", "finger", "bow"], "description": "Excitation method" },
+              "exciter":          { "type": "string", "enum": ["cotton", "cotton_mallet", "felt", "felt_mallet", "wood", "wood_mallet", "metal", "metal_mallet", "metal_hammer", "metal_tip", "hard_plastic", "hard_strike", "finger", "finger_tap", "bow", "bow_slow", "brush", "rubber_mallet", "metal_scrape", "pluck", "medium", "sharp"], "description": "Semantic excitation method; renderer maps aliases to physical hardness classes" },
               "damping_override": { "type": ["number", "null"], "description": "Override material damping alpha, null = use material default" },
+              "plate_free_edge":  { "type": "boolean", "default": true, "description": "true = hung plate with free edges (water gong default), false = clamped edges" },
               "fm_preset":    { "type": "integer", "minimum": 0, "maximum": 7, "description": "FM sound type: 0=Piano, 1=E.Piano, 2=Vibraphone, 3=Bell, 4=Organ, 5=Pad, 6=Bass, 7=Brass" },
               "fm_ratio":     { "type": "number", "minimum": 0.25, "maximum": 16.0, "description": "Modulator/carrier frequency ratio" },
               "fm_index":     { "type": "number", "minimum": 0.0, "maximum": 25.0, "description": "Peak modulation index (FM depth)" },
@@ -122,7 +129,107 @@
               "curve":        { "type": "string", "enum": ["linear", "exponential"], "default": "linear" }
             }
           },
+          "performance": {
+            "type": "object",
+            "description": "Non-audio accessibility and timing annotations. The renderer may ignore these fields.",
+            "properties": {
+              "track":                  { "type": "string" },
+              "role":                   { "type": "string" },
+              "midi_note":              { "type": "integer", "minimum": 0, "maximum": 127 },
+              "frequency_hz":           { "type": "number", "exclusiveMinimum": 0 },
+              "source_duration_sec":    { "type": "number", "minimum": 0 },
+              "intended_release_time":  { "type": "number", "minimum": 0 },
+              "articulation":           { "type": "string" },
+              "articulation_gap_ms":    { "type": "number", "minimum": 0 },
+              "phrase_end":             { "type": "boolean" },
+              "breath_after_ms":        { "type": "number", "minimum": 0 }
+            }
+          },
           "comment": { "type": "string", "description": "Optional note for humans/AI explaining intent" }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "description": "Source, attribution, licence, and editorial provenance for a transcription",
+      "properties": {
+        "score_source":     { "type": "string" },
+        "source_url":       { "type": "string", "format": "uri" },
+        "source_midi_file": { "type": "string" },
+        "source_format":    { "type": "string" },
+        "license":          { "type": "string" },
+        "license_url":      { "type": "string", "format": "uri" },
+        "attribution":      { "type": "string" },
+        "editorial_note":   { "type": "string" }
+      }
+    },
+    "tempo_map": {
+      "type": "array",
+      "description": "Explicit tempo timeline for AI and non-auditory score inspection",
+      "items": {
+        "type": "object",
+        "required": ["time", "quarter_bpm"],
+        "properties": {
+          "time":                     { "type": "number", "minimum": 0 },
+          "tick":                     { "type": "integer", "minimum": 0 },
+          "quarter_bpm":              { "type": "number", "exclusiveMinimum": 0 },
+          "microseconds_per_quarter": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "time_signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["time", "numerator", "denominator"],
+        "properties": {
+          "time":        { "type": "number", "minimum": 0 },
+          "tick":        { "type": "integer", "minimum": 0 },
+          "numerator":   { "type": "integer", "minimum": 1 },
+          "denominator": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "track_profiles": {
+      "type": "object",
+      "description": "Semantic orchestration and physical-model defaults by source track"
+    },
+    "timing_policy": {
+      "type": "object",
+      "description": "Human-readable explanation of note-off, articulation, and silence calculations"
+    },
+    "rests": {
+      "type": "array",
+      "description": "Explicit silence map. Rests are annotations, not fake pitched events.",
+      "items": {
+        "type": "object",
+        "required": ["track", "time", "duration", "kind"],
+        "properties": {
+          "track":                { "type": "string" },
+          "role":                 { "type": "string" },
+          "time":                 { "type": "number", "minimum": 0 },
+          "duration":             { "type": "number", "minimum": 0 },
+          "approx_quarter_beats": { "type": "number", "minimum": 0 },
+          "kind": {
+            "type": "string",
+            "enum": ["entrance_rest", "breath", "rest", "long_rest"]
+          }
+        }
+      }
+    },
+    "phrases": {
+      "type": "array",
+      "description": "Per-track phrase regions separated by audible rests",
+      "items": {
+        "type": "object",
+        "required": ["track", "number", "start", "end"],
+        "properties": {
+          "track":           { "type": "string" },
+          "role":            { "type": "string" },
+          "number":          { "type": "integer", "minimum": 1 },
+          "start":           { "type": "number", "minimum": 0 },
+          "end":             { "type": "number", "minimum": 0 },
+          "breath_after_ms": { "type": "number", "minimum": 0 }
         }
       }
     },

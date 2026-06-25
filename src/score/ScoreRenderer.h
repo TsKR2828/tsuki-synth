@@ -87,8 +87,9 @@ public:
 
             if (! first) out << ",\n";
             first = false;
-            out << "    { \"engine\": \"" << juce::String (ev.engine)
-                << "\", \"note\": \"" << juce::String (ev.note)
+            auto jsonEsc = [] (const juce::String& s) { return s.replace ("\\", "\\\\").replace ("\"", "\\\""); };
+            out << "    { \"engine\": \"" << jsonEsc (juce::String (ev.engine))
+                << "\", \"note\": \"" << jsonEsc (juce::String (ev.note))
                 << "\", \"midi\": " << midiNote << ", \"partials\": [";
             for (size_t i = 0; i < modes.size(); ++i)
             {
@@ -117,6 +118,7 @@ public:
             totalDuration = std::max (totalDuration, eventEndTime (ev));
 
         totalDuration += wallDelaySeconds (score.global.effects);
+        totalDuration += effectTailSeconds (score.global.effects);
         totalDuration += score.exportSettings.tailSilenceMs / 1000.0;
         int64_t totalSamples64 = static_cast<int64_t> (totalDuration * sr) + 1;
         if (totalSamples64 <= 0 || totalSamples64 > 345600000)
@@ -175,6 +177,7 @@ public:
             for (const auto& ev : subScore.events)
                 subDuration = std::max (subDuration, eventEndTime (ev));
             subDuration += wallDelaySeconds (subScore.global.effects);
+            subDuration += effectTailSeconds (subScore.global.effects);
             subDuration += subScore.exportSettings.tailSilenceMs / 1000.0;
 
             int64_t subTotalSamples64 = static_cast<int64_t> (subDuration * sr) + 1;
@@ -357,7 +360,10 @@ private:
         else if (ev.exciter == "finger" || ev.exciter == "finger_tap") cp.exciter = ExciterType::Felt;
         else if (ev.exciter == "bow") cp.exciter = ExciterType::Cotton;
         else if (ev.exciter == "hard_plastic" || ev.exciter == "wood"
-                 || ev.exciter == "wood_mallet") cp.exciter = ExciterType::Wood;
+                 || ev.exciter == "wood_mallet" || ev.exciter == "pluck") cp.exciter = ExciterType::Wood;
+        else if (ev.exciter == "rubber_mallet") cp.exciter = ExciterType::Felt;
+        else if (ev.exciter == "metal_scrape") cp.exciter = ExciterType::Metal;
+        else if (ev.exciter == "bow_slow" || ev.exciter == "brush") cp.exciter = ExciterType::Cotton;
         else cp.exciter = ExciterType::Wood;
 
         CimbalomVoice voice;
@@ -529,14 +535,14 @@ private:
     {
         if (exciter == "cotton" || exciter == "cotton_mallet"
             || exciter == "finger" || exciter == "finger_tap"
-            || exciter == "bow")
+            || exciter == "bow" || exciter == "bow_slow" || exciter == "brush")
             return 0.0f;
         if (exciter == "felt" || exciter == "felt_mallet"
-            || exciter == "medium")
+            || exciter == "medium" || exciter == "rubber_mallet")
             return 1.0f;
         if (exciter == "metal" || exciter == "metal_mallet"
             || exciter == "metal_hammer" || exciter == "metal_tip"
-            || exciter == "sharp")
+            || exciter == "sharp" || exciter == "metal_scrape")
             return 3.0f;
         return 2.0f;
     }
@@ -564,6 +570,19 @@ private:
         return effects.wallDistanceM > 0.0
             ? (2.0 * effects.wallDistanceM / 343.0)
             : 0.0;
+    }
+
+    static double effectTailSeconds (const ScoreEffects& fx)
+    {
+        double tail = 0.0;
+        if (fx.reverbWet > 0.001)
+            tail += fx.reverbDecay;
+        if (fx.delayWet > 0.001 && fx.delayTimeMs > 0.0 && fx.delayFeedback > 0.01)
+        {
+            double repeats = std::ceil (std::log (0.001) / std::log (fx.delayFeedback));
+            tail += std::min (repeats * fx.delayTimeMs / 1000.0, 30.0);
+        }
+        return tail;
     }
 
     static float wallReflectionGain (const std::string& material)

@@ -208,6 +208,7 @@ public:
 
         if (auto* evts = obj->getProperty ("events").getArray())
         {
+            int srcIndex = 0;
             for (const auto& ev : *evts)
             {
                 if (auto* e = ev.getDynamicObject())
@@ -222,7 +223,7 @@ public:
                         || ! readNumber (*e, "velocity", velocity, 0.0, 1.0)
                         || ! isKnownEngine (se.engine))
                     {
-                        score.warnings.push_back ("Event " + std::to_string (score.events.size())
+                        score.warnings.push_back ("Event " + std::to_string (srcIndex)
                             + ": skipped (missing required field)");
                         continue;
                     }
@@ -286,6 +287,7 @@ public:
 
                     score.events.push_back (se);
                 }
+                ++srcIndex;
             }
         }
 
@@ -307,6 +309,9 @@ public:
 
             if (score.exportSettings.startPosition >= score.exportSettings.endPosition)
                 return false;
+
+            if (score.exportSettings.format == "flac" && score.exportSettings.bitDepth == 32)
+                score.warnings.push_back ("FLAC does not support 32-bit; output will be 24-bit");
         }
 
         if (auto* layersArr = obj->getProperty ("layers").getArray())

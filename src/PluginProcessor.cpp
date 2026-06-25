@@ -413,18 +413,6 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     keyboardState.processNextMidiBuffer (midiMessages, 0,
                                          buffer.getNumSamples(), true);
 
-    // Track most recent noteOn (any source) for synth-aware tuner display.
-    // Scan after keyboardState injection so on-screen keyboard hits are captured.
-    for (const auto meta : midiMessages)
-    {
-        const auto msg = meta.getMessage();
-        if (msg.isNoteOn())
-            lastNoteOnMidi.store (msg.getNoteNumber(), std::memory_order_release);
-        else if (msg.isNoteOff()
-                 && msg.getNoteNumber() == lastNoteOnMidi.load (std::memory_order_acquire))
-            lastNoteOnMidi.store (-1, std::memory_order_release);
-    }
-
     int currentEngine = (int) pEngine->load();
 
     // On engine switch, release held notes on the engine we left so they tail
@@ -437,6 +425,20 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         // Drop stale noteOn so the new engine's tuner starts on "Awaiting note"
         lastNoteOnMidi.store (-1, std::memory_order_release);
         lastEngine = currentEngine;
+    }
+
+    // Track most recent noteOn (any source) for synth-aware tuner display.
+    // Scan after engine switch so a noteOn in the same block as a switch survives.
+    for (const auto meta : midiMessages)
+    {
+        const auto msg = meta.getMessage();
+        if (msg.isNoteOn())
+            lastNoteOnMidi.store (msg.getNoteNumber(), std::memory_order_release);
+        else if (msg.isNoteOff()
+                 && msg.getNoteNumber() == lastNoteOnMidi.load (std::memory_order_acquire))
+            lastNoteOnMidi.store (-1, std::memory_order_release);
+        else if (msg.isAllNotesOff())
+            lastNoteOnMidi.store (-1, std::memory_order_release);
     }
 
     // Render every engine each block so tails from ANY previously-played engine
@@ -492,7 +494,10 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         if (recordingLock.tryEnter())
         {
             if (recordingWriter != nullptr)
-                recordingWriter->write (buffer.getArrayOfReadPointers(), buffer.getNumSamples());
+            {
+                if (! recordingWriter->write (buffer.getArrayOfReadPointers(), buffer.getNumSamples()))
+                    recordingDroppedBlocks.fetch_add (1, std::memory_order_relaxed);
+            }
             recordingLock.exit();
         }
         else
@@ -589,8 +594,13 @@ void TsukiSynthProcessor::stopRecording()
     if (recordingWriter != nullptr)
     {
         recordingWriter.reset();
+        int dropped = recordingDroppedBlocks.load (std::memory_order_relaxed);
         const juce::ScopedLock sl2 (statusLock);
-        recordingStatus = "Saved: " + lastRecordingFile.getFullPathName();
+        if (dropped > 0)
+            recordingStatus = "Saved (WARNING: " + juce::String (dropped)
+                            + " audio blocks dropped): " + lastRecordingFile.getFullPathName();
+        else
+            recordingStatus = "Saved: " + lastRecordingFile.getFullPathName();
     }
 }
 
@@ -623,6 +633,7 @@ void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     state.setProperty ("presetIndex", presetManager.getCurrentIndex(), nullptr);
+    state.setProperty ("presetDirty", presetManager.isDirty() ? 1 : 0, nullptr);
 
     if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (apvts.getParameter ("engine")))
         state.setProperty ("engine_index", p->getIndex(), nullptr);
@@ -672,7 +683,9 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         restoreChoice (apvts, "chr_sub_engine", subEngIdx);
 
         presetManager.reattachListener();
-        presetManager.setCurrentIndex (presetIdx);
+        presetManager.restoreIndex (presetIdx);
+        if ((int) tree.getProperty ("presetDirty", 0) != 0)
+            presetManager.setDirty();
         restoredProgramToIgnore.store (presetIdx, std::memory_order_release);
 
         auto v = [&] (const char* id) -> juce::String {

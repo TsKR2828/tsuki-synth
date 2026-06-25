@@ -41,8 +41,8 @@ public:
         distortionR.prepare (sampleRate);
         reverbL.prepare (sampleRate);
         reverbR.prepare (sampleRate);
-        delayL.prepare (sampleRate, 2.0);
-        delayR.prepare (sampleRate, 2.0);
+        delayL.prepare (sampleRate, 6.0);
+        delayR.prepare (sampleRate, 6.0);
         compL.prepare (sampleRate);
         compR.prepare (sampleRate);
         hiCut.setSampleRate (sampleRate);
