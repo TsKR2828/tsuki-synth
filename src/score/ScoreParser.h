@@ -53,6 +53,8 @@ struct ScoreEvent
     double      widthMm        = 25.0;
     std::string exciter = "wood_mallet";
     double      diameterMm     = 0.8;
+    int         numStrings     = 3;
+    float       detuningCents  = 5.0f;
     double      tensionN       = 0.0;
     double      dampingOverride = -1.0;  // <0 = use material default
     int         fmPreset       = 0;
@@ -64,6 +66,9 @@ struct ScoreEvent
     float       fmReleaseMs    = -1.0f;
 
     bool        plateFreeEdge  = true;   // water_gong: hung plate, edges free (physical default)
+
+    float       customRatios[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+    float       customAmps[8]   = { -1, -1, -1, -1, -1, -1, -1, -1 };
 
     bool        hasGlide       = false;
     std::string glideFromNote;
@@ -103,6 +108,15 @@ struct Score
     bool hasLayers() const { return ! layers.empty(); }
     std::vector<std::string> warnings;
 };
+
+inline bool isValidNoteName (const std::string& name)
+{
+    if (name.empty()) return false;
+    if (name[0] >= '0' && name[0] <= '9') return true;
+    char letter = name[0];
+    if (letter >= 'a' && letter <= 'g') return true;
+    return (letter >= 'A' && letter <= 'G');
+}
 
 inline int noteNameToMidi (const std::string& name)
 {
@@ -228,6 +242,13 @@ public:
                         continue;
                     }
 
+                    if (! isValidNoteName (se.note))
+                    {
+                        score.warnings.push_back ("Event " + std::to_string (srcIndex)
+                            + ": invalid note \"" + se.note + "\", skipped");
+                        continue;
+                    }
+
                     se.velocity = static_cast<float> (velocity);
 
                     if (auto* p = e->getProperty ("params").getDynamicObject())
@@ -240,6 +261,14 @@ public:
                         readNumber (*p, "width_mm", se.widthMm, 1.0, 10000.0);
                         readString (*p, "exciter", se.exciter);
                         readNumber (*p, "diameter_mm", se.diameterMm, 0.1, 50.0);
+                        {
+                            int ns = se.numStrings;
+                            if (readInt (*p, "num_strings", ns, 1, 5))
+                                se.numStrings = ns;
+                            double dc = se.detuningCents;
+                            if (readNumber (*p, "detuning_cents", dc, 0.0, 50.0))
+                                se.detuningCents = static_cast<float> (dc);
+                        }
                         readNumber (*p, "tension_n", se.tensionN, 0.0, 100000.0);
                         if (p->hasProperty ("damping_override"))
                         {
@@ -268,6 +297,17 @@ public:
                             se.fmReleaseMs = static_cast<float> (value);
 
                         readBool (*p, "plate_free_edge", se.plateFreeEdge);
+
+                        for (int ci = 0; ci < 8; ++ci)
+                        {
+                            std::string rk = "ratio_" + std::to_string (ci);
+                            std::string ak = "amp_" + std::to_string (ci);
+                            double rv = -1.0, av = -1.0;
+                            if (readNumber (*p, rk.c_str(), rv, 0.1, 100.0))
+                                se.customRatios[ci] = static_cast<float> (rv);
+                            if (readNumber (*p, ak.c_str(), av, 0.0, 1.0))
+                                se.customAmps[ci] = static_cast<float> (av);
+                        }
                     }
 
                     if (auto* gl = e->getProperty ("glide").getDynamicObject())

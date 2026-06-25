@@ -90,6 +90,8 @@ static bool renderScore (const juce::File& scoreFile, const juce::File& outputDi
 
         if (renderer.renderLayered (score, outFile))
         {
+            for (const auto& w : renderer.getWarnings())
+                std::cout << "  WARNING: " << w << std::endl;
             std::cout << "  -> " << outFile.getFullPathName() << std::endl;
             return true;
         }
@@ -101,6 +103,8 @@ static bool renderScore (const juce::File& scoreFile, const juce::File& outputDi
 
         if (renderer.render (score, outFile))
         {
+            for (const auto& w : renderer.getWarnings())
+                std::cout << "  WARNING: " << w << std::endl;
             std::cout << "  -> " << outFile.getFullPathName() << std::endl;
             return true;
         }

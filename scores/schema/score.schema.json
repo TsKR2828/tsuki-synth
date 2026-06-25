@@ -106,6 +106,8 @@
               "length_mm":        { "type": "number", "minimum": 1 },
               "width_mm":         { "type": "number", "minimum": 1 },
               "diameter_mm":      { "type": "number", "minimum": 0.1 },
+              "num_strings":      { "type": "integer", "minimum": 1, "maximum": 5, "default": 3, "description": "Number of strings per course (cimbalom beating effect)" },
+              "detuning_cents":   { "type": "number", "minimum": 0, "maximum": 50, "default": 5, "description": "Detuning spread in cents between multi-string courses" },
               "tension_n":        { "type": "number", "minimum": 1 },
               "strike_position":  { "type": "number", "minimum": 0, "maximum": 1, "description": "0=edge, 0.5=center, 1=opposite edge" },
               "exciter":          { "type": "string", "enum": ["cotton", "cotton_mallet", "felt", "felt_mallet", "wood", "wood_mallet", "metal", "metal_mallet", "metal_hammer", "metal_tip", "hard_plastic", "hard_strike", "finger", "finger_tap", "bow", "bow_slow", "brush", "rubber_mallet", "metal_scrape", "pluck", "medium", "sharp"], "description": "Semantic excitation method; renderer maps aliases to physical hardness classes" },
@@ -117,7 +119,23 @@
               "fm_brightness": { "type": "number", "minimum": 0.0, "maximum": 1.0, "description": "Body modulation decay speed (higher = faster decay)" },
               "fm_feedback":  { "type": "number", "minimum": 0.0, "maximum": 1.0, "description": "Modulator self-feedback amount" },
               "fm_attack":    { "type": "number", "minimum": 1, "maximum": 5000, "description": "Attack time in milliseconds" },
-              "fm_release":   { "type": "number", "minimum": 10, "maximum": 10000, "description": "Release time in milliseconds" }
+              "fm_release":   { "type": "number", "minimum": 10, "maximum": 10000, "description": "Release time in milliseconds" },
+              "ratio_0": { "type": "number", "minimum": 0.1, "maximum": 100, "description": "Custom harmonic 0 frequency ratio" },
+              "ratio_1": { "type": "number", "minimum": 0.1, "maximum": 100 },
+              "ratio_2": { "type": "number", "minimum": 0.1, "maximum": 100 },
+              "ratio_3": { "type": "number", "minimum": 0.1, "maximum": 100 },
+              "ratio_4": { "type": "number", "minimum": 0.1, "maximum": 100 },
+              "ratio_5": { "type": "number", "minimum": 0.1, "maximum": 100 },
+              "ratio_6": { "type": "number", "minimum": 0.1, "maximum": 100 },
+              "ratio_7": { "type": "number", "minimum": 0.1, "maximum": 100 },
+              "amp_0":   { "type": "number", "minimum": 0, "maximum": 1, "description": "Custom harmonic 0 amplitude" },
+              "amp_1":   { "type": "number", "minimum": 0, "maximum": 1 },
+              "amp_2":   { "type": "number", "minimum": 0, "maximum": 1 },
+              "amp_3":   { "type": "number", "minimum": 0, "maximum": 1 },
+              "amp_4":   { "type": "number", "minimum": 0, "maximum": 1 },
+              "amp_5":   { "type": "number", "minimum": 0, "maximum": 1 },
+              "amp_6":   { "type": "number", "minimum": 0, "maximum": 1 },
+              "amp_7":   { "type": "number", "minimum": 0, "maximum": 1 }
             }
           },
           "glide": {

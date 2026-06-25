@@ -26,6 +26,7 @@ class ScoreRenderer
 public:
     void setMaterialDB (MaterialDB* db) { materialDB = db; }
     void setBaseDir (const juce::File& dir) { baseDir = dir; }
+    const std::vector<std::string>& getWarnings() const { return renderWarnings; }
 
     /// Dump each modal event's model-predicted partials as JSON (single source
     /// of truth for verification). Non-modal (fm) events are skipped.
@@ -301,7 +302,16 @@ private:
         int midiNote = noteNameToMidi (ev.note);
         const Material* mat = materialDB->getMaterial (juce::String (ev.material));
         if (mat == nullptr)
+        {
+            renderWarnings.push_back ("Event at t=" + std::to_string (ev.time)
+                + ": unknown material \"" + ev.material + "\", using steel");
             mat = materialDB->getMaterial ("steel");
+        }
+        if (ev.engine != "fm" && ! isKnownExciter (ev.exciter))
+        {
+            renderWarnings.push_back ("Event at t=" + std::to_string (ev.time)
+                + ": unknown exciter \"" + ev.exciter + "\", using default");
+        }
 
         if (ev.engine == "string" || ev.engine == "cimbalom")
         {
@@ -352,6 +362,8 @@ private:
         cp.materialKey = ev.material;
         cp.strikePosition = ev.strikePosition;
         cp.diameterMm = ev.diameterMm;
+        cp.numStrings = ev.numStrings;
+        cp.detuningCents = ev.detuningCents;
         cp.tensionOverride = ev.tensionN;
         cp.dampingOverride = ev.dampingOverride;
 
@@ -431,6 +443,26 @@ private:
 
         ChromaticVoice voice;
         voice.prepare (sr);
+
+        std::atomic<float> ratioAtoms[8];
+        std::atomic<float> ampAtoms[8];
+        if (sub == ChromaticSubEngine::CustomHarmonics)
+        {
+            for (int ci = 0; ci < 8; ++ci)
+            {
+                if (ev.customRatios[ci] >= 0.0f)
+                {
+                    ratioAtoms[ci].store (ev.customRatios[ci]);
+                    voice.pRatio[ci] = &ratioAtoms[ci];
+                }
+                if (ev.customAmps[ci] >= 0.0f)
+                {
+                    ampAtoms[ci].store (ev.customAmps[ci]);
+                    voice.pAmp[ci] = &ampAtoms[ci];
+                }
+            }
+        }
+
         voice.noteOn (midiNote, ev.velocity, *mat, cp);
 
         int noteOffSample = juce::jlimit (start, end,
@@ -532,6 +564,21 @@ private:
 
     MaterialDB* materialDB = nullptr;
     juce::File  baseDir;
+    std::vector<std::string> renderWarnings;
+
+    static bool isKnownExciter (const std::string& exciter)
+    {
+        return exciter == "cotton" || exciter == "cotton_mallet"
+            || exciter == "felt" || exciter == "felt_mallet"
+            || exciter == "wood" || exciter == "wood_mallet"
+            || exciter == "metal" || exciter == "metal_mallet"
+            || exciter == "metal_hammer" || exciter == "metal_tip"
+            || exciter == "hard_plastic" || exciter == "hard_strike"
+            || exciter == "finger" || exciter == "finger_tap"
+            || exciter == "bow" || exciter == "bow_slow" || exciter == "brush"
+            || exciter == "rubber_mallet" || exciter == "metal_scrape"
+            || exciter == "pluck" || exciter == "medium" || exciter == "sharp";
+    }
 
     static float chromaticExciterHardness (const std::string& exciter)
     {
