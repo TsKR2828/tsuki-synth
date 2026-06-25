@@ -296,6 +296,14 @@ public:
             readString (*exp, "filename", score.exportSettings.filename, true);
             readString (*exp, "export_filename", score.exportSettings.exportFilename, true);
             readString (*exp, "format", score.exportSettings.format);
+            if (! score.exportSettings.format.empty()
+                && score.exportSettings.format != "wav"
+                && score.exportSettings.format != "flac")
+            {
+                score.warnings.push_back ("Unsupported format \""
+                    + score.exportSettings.format + "\"; falling back to wav");
+                score.exportSettings.format = "wav";
+            }
 
             int bitDepth = score.exportSettings.bitDepth;
             if (readInt (*exp, "bit_depth", bitDepth, 1, 64)

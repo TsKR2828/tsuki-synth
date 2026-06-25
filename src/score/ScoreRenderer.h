@@ -274,8 +274,10 @@ public:
 
         const int wallSamples = static_cast<int> (
             wallDelaySeconds (score.global.effects) * sr);
+        const int effectSamples = static_cast<int> (
+            effectTailSeconds (score.global.effects) * sr);
         int tailSamples = static_cast<int> (score.exportSettings.tailSilenceMs / 1000.0 * sr);
-        output.setSize (2, totalOut + wallSamples + tailSamples, true, true, true);
+        output.setSize (2, totalOut + wallSamples + effectSamples + tailSamples, true, true, true);
         applyEffects (output, score.global, sr);
 
         if (! trimBuffer (output, score.exportSettings))
@@ -560,6 +562,14 @@ private:
                 : FMParams().releaseMs;
             const double noteOff = start + duration * 0.9;
             end = std::max (end, noteOff + releaseMs * 0.001);
+        }
+        else if (ev.engine == "string" || ev.engine == "cimbalom"
+                 || ev.engine == "beam" || ev.engine == "tongue_drum"
+                 || ev.engine == "plate" || ev.engine == "water_gong"
+                 || ev.engine == "custom" || ev.engine == "membrane"
+                 || ev.engine == "piano")
+        {
+            end += 5.0;
         }
 
         return end;

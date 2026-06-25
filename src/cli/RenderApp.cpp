@@ -128,6 +128,16 @@ int main (int argc, char* argv[])
 
     juce::String firstArg (argv[1]);
 
+    if (firstArg == "--help" || firstArg == "-h")
+    {
+        std::cout << "TsukiSynth CLI Renderer" << std::endl;
+        std::cout << "Usage:" << std::endl;
+        std::cout << "  tsukisynth-cli <score.json> [--output <dir>]" << std::endl;
+        std::cout << "  tsukisynth-cli --batch <dir> [--output <dir>]" << std::endl;
+        std::cout << "  tsukisynth-cli --dump-modes <score.json>" << std::endl;
+        return 0;
+    }
+
     if (firstArg == "--dump-modes")
     {
         if (argc < 3)
