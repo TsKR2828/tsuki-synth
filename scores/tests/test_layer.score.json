@@ -16,6 +16,11 @@
     "family_id": "test",
     "character": ["metallic", "airy"]
   },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.8
+  },
   "layers": [
     {
       "source": "../library/akashic/akashic_notify_001.score.json",

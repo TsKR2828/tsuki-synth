@@ -27,7 +27,7 @@
         "description":  { "type": "string" },
         "created":      { "type": "string", "format": "date" },
         "tags":         { "type": "array", "items": { "type": "string" } },
-        "mood":         { "type": "string", "enum": ["sacred", "mystical", "tense", "ominous", "playful", "calm", "epic", "melancholic"] },
+        "mood":         { "type": "string", "enum": ["sacred", "mystical", "tense", "ominous", "playful", "calm", "epic", "melancholic", "neutral", "aggressive", "oppressive"] },
         "use_case":     { "type": "string" },
         "category":     { "type": "string", "description": "e.g. transition_sfx, character_ui, worldview_sfx, bell, mechanical" },
         "worldview":    { "type": "string", "description": "World/universe this sound belongs to, e.g. Akashic Library, Rabbit, Restraint" },
