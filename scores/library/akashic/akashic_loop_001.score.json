@@ -6,7 +6,13 @@
     "author": "TsukiSynth",
     "description": "冥想循環 — 4小節緩慢銅鐘節奏，可無縫循環",
     "created": "2026-05-07",
-    "tags": ["loop", "bell", "meditation", "sacred", "slow"],
+    "tags": [
+      "loop",
+      "bell",
+      "meditation",
+      "sacred",
+      "slow"
+    ],
     "mood": "sacred",
     "use_case": "BGM motif / loop element",
     "category": "worldview_sfx",
@@ -15,7 +21,10 @@
     "primary_type": "ambience",
     "sound_type": "loop",
     "family_id": "akashic_ambient",
-    "character": ["airy", "metallic"],
+    "character": [
+      "airy",
+      "metallic"
+    ],
     "loop_bpm": 60,
     "loop_bars": 4
   },
@@ -24,8 +33,15 @@
     "sample_rate": 48000,
     "master_volume": 0.6,
     "effects": {
-      "reverb": { "decay": 6.0, "wet": 0.55 },
-      "delay": { "time_ms": 500, "feedback": 0.2, "wet": 0.08 }
+      "reverb": {
+        "decay": 6.0,
+        "wet": 0.55
+      },
+      "delay": {
+        "time_ms": 500,
+        "feedback": 0.2,
+        "wet": 0.08
+      }
     }
   },
   "events": [
@@ -42,7 +58,8 @@
         "height_mm": 150,
         "strike_position_x": 0.4,
         "strike_position_y": 0.4,
-        "exciter": "cotton_mallet"
+        "exciter": "cotton_mallet",
+        "radius_mm": 150
       }
     },
     {
@@ -58,7 +75,8 @@
         "height_mm": 120,
         "strike_position_x": 0.5,
         "strike_position_y": 0.5,
-        "exciter": "cotton_mallet"
+        "exciter": "cotton_mallet",
+        "radius_mm": 150
       }
     },
     {
@@ -74,7 +92,8 @@
         "height_mm": 130,
         "strike_position_x": 0.45,
         "strike_position_y": 0.55,
-        "exciter": "cotton_mallet"
+        "exciter": "cotton_mallet",
+        "radius_mm": 150
       }
     },
     {
@@ -90,7 +109,8 @@
         "height_mm": 140,
         "strike_position_x": 0.5,
         "strike_position_y": 0.4,
-        "exciter": "cotton_mallet"
+        "exciter": "cotton_mallet",
+        "radius_mm": 150
       }
     }
   ],

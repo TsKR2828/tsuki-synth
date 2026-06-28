@@ -93,7 +93,7 @@
         "properties": {
           "time":     { "type": "number", "minimum": 0, "description": "Start time in seconds" },
           "duration": { "type": "number", "minimum": 0, "description": "Duration in seconds" },
-          "engine":   { "type": "string", "enum": ["string", "cimbalom", "beam", "tongue_drum", "plate", "water_gong", "membrane", "custom", "fm", "piano"], "description": "Physical model type" },
+          "engine":   { "type": "string", "enum": ["string", "cimbalom", "beam", "tongue_drum", "plate", "water_gong", "membrane", "custom", "fm", "piano"], "description": "Synthesis engine; modal engines (string..membrane, piano) produce physical spectra, fm/custom use non-physical synthesis" },
           "note":     { "description": "Pitch as note name (C5) or MIDI number (72)" },
           "velocity": { "type": "number", "minimum": 0, "maximum": 1 },
           "params": {
@@ -135,7 +135,10 @@
               "amp_4":   { "type": "number", "minimum": 0, "maximum": 1 },
               "amp_5":   { "type": "number", "minimum": 0, "maximum": 1 },
               "amp_6":   { "type": "number", "minimum": 0, "maximum": 1 },
-              "amp_7":   { "type": "number", "minimum": 0, "maximum": 1 }
+              "amp_7":   { "type": "number", "minimum": 0, "maximum": 1 },
+              "height_mm":          { "type": "number", "minimum": 0.1, "description": "Height dimension for 3D resonators (plates, bells)" },
+              "strike_position_x":  { "type": "number", "minimum": 0, "maximum": 1, "description": "X coordinate of strike point on 2D surface" },
+              "strike_position_y":  { "type": "number", "minimum": 0, "maximum": 1, "description": "Y coordinate of strike point on 2D surface" }
             }
           },
           "glide": {
@@ -291,4 +294,9 @@
       "description": "Crossfade duration between consecutive layers in milliseconds"
     }
   }
+  ,
+  "anyOf": [
+    { "required": ["events"] },
+    { "required": ["layers"] }
+  ]
 }

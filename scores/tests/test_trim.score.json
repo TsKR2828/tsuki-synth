@@ -6,7 +6,10 @@
     "author": "TsukiSynth",
     "description": "驗證 C — start_position 0.25, end_position 0.75，輸出約原時長 50%",
     "created": "2026-05-07",
-    "tags": ["test", "trim"],
+    "tags": [
+      "test",
+      "trim"
+    ],
     "mood": "calm",
     "use_case": "ambient background",
     "category": "worldview_sfx",
@@ -14,15 +17,25 @@
     "primary_type": "ambience",
     "sound_type": "oneshot",
     "family_id": "test",
-    "character": ["airy", "soft"]
+    "character": [
+      "airy",
+      "soft"
+    ]
   },
   "global": {
     "bpm": 80,
     "sample_rate": 48000,
     "master_volume": 0.7,
     "effects": {
-      "reverb": { "decay": 3.0, "wet": 0.4 },
-      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+      "reverb": {
+        "decay": 3.0,
+        "wet": 0.4
+      },
+      "delay": {
+        "time_ms": 0,
+        "feedback": 0,
+        "wet": 0
+      }
     }
   },
   "events": [
@@ -39,7 +52,8 @@
         "height_mm": 120,
         "strike_position_x": 0.5,
         "strike_position_y": 0.5,
-        "exciter": "cotton_mallet"
+        "exciter": "cotton_mallet",
+        "radius_mm": 150
       }
     }
   ],

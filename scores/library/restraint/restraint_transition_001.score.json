@@ -6,7 +6,13 @@
     "author": "TsukiSynth",
     "description": "鎖鏈拖行 — 金屬碰撞+弦摩擦，黑暗轉場",
     "created": "2026-05-07",
-    "tags": ["chain", "metal", "transition", "dark", "industrial"],
+    "tags": [
+      "chain",
+      "metal",
+      "transition",
+      "dark",
+      "industrial"
+    ],
     "mood": "ominous",
     "use_case": "VTuber scene transition",
     "category": "transition_sfx",
@@ -15,15 +21,25 @@
     "primary_type": "whoosh",
     "sound_type": "oneshot",
     "family_id": "restraint_transition",
-    "character": ["dark", "metallic"]
+    "character": [
+      "dark",
+      "metallic"
+    ]
   },
   "global": {
     "bpm": 90,
     "sample_rate": 48000,
     "master_volume": 0.8,
     "effects": {
-      "reverb": { "decay": 2.5, "wet": 0.35 },
-      "delay": { "time_ms": 180, "feedback": 0.15, "wet": 0.08 }
+      "reverb": {
+        "decay": 2.5,
+        "wet": 0.35
+      },
+      "delay": {
+        "time_ms": 180,
+        "feedback": 0.15,
+        "wet": 0.08
+      }
     }
   },
   "events": [
@@ -57,7 +73,8 @@
         "height_mm": 80,
         "strike_position_x": 0.2,
         "strike_position_y": 0.3,
-        "exciter": "metal_hammer"
+        "exciter": "metal_hammer",
+        "radius_mm": 150
       },
       "comment": "鐵板碰撞，不和諧"
     },

@@ -17,7 +17,7 @@ struct ScoreMeta
 struct ScoreEffects
 {
     double reverbDecay = 2.0;
-    double reverbWet   = 0.3;
+    double reverbWet   = 0.0;
     double delayTimeMs = 0.0;
     double delayFeedback = 0.0;
     double delayWet    = 0.0;

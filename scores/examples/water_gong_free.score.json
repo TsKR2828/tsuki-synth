@@ -11,14 +11,52 @@
     "sample_rate": 48000,
     "master_volume": 0.9,
     "effects": {
-      "reverb": { "decay": 3.0, "wet": 0.35 },
-      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 },
-      "distortion": { "type": "overdrive", "drive": 0, "instability": 0, "wet": 0 }
+      "reverb": {
+        "decay": 3.0,
+        "wet": 0.35
+      },
+      "delay": {
+        "time_ms": 0,
+        "feedback": 0,
+        "wet": 0
+      },
+      "distortion": {
+        "type": "overdrive",
+        "drive": 0,
+        "instability": 0,
+        "wet": 0
+      }
     }
   },
   "events": [
-    { "time": 0.0, "duration": 3.0, "engine": "water_gong", "note": "C4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3, "plate_free_edge": true } },
-    { "time": 3.0, "duration": 3.0, "engine": "water_gong", "note": "G4", "velocity": 0.8, "params": { "material": "bronze", "thickness_mm": 4.0, "strike_position": 0.3, "plate_free_edge": true } }
+    {
+      "time": 0.0,
+      "duration": 3.0,
+      "engine": "water_gong",
+      "note": "C4",
+      "velocity": 0.8,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 4.0,
+        "strike_position": 0.3,
+        "plate_free_edge": true,
+        "radius_mm": 150
+      }
+    },
+    {
+      "time": 3.0,
+      "duration": 3.0,
+      "engine": "water_gong",
+      "note": "G4",
+      "velocity": 0.8,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 4.0,
+        "strike_position": 0.3,
+        "plate_free_edge": true,
+        "radius_mm": 150
+      }
+    }
   ],
   "export": {
     "filename": "water_gong_free",

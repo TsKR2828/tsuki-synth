@@ -6,7 +6,13 @@
     "author": "TsukiSynth",
     "description": "深淵低鳴 — 多層弦弓奏+薄板共鳴，水底環境",
     "created": "2026-05-07",
-    "tags": ["drone", "ambient", "deep", "underwater", "mysterious"],
+    "tags": [
+      "drone",
+      "ambient",
+      "deep",
+      "underwater",
+      "mysterious"
+    ],
     "mood": "mystical",
     "use_case": "ambient background",
     "category": "worldview_sfx",
@@ -15,15 +21,25 @@
     "primary_type": "ambience",
     "sound_type": "oneshot",
     "family_id": "ocean_ambient",
-    "character": ["dark", "airy"]
+    "character": [
+      "dark",
+      "airy"
+    ]
   },
   "global": {
     "bpm": 50,
     "sample_rate": 48000,
     "master_volume": 0.55,
     "effects": {
-      "reverb": { "decay": 6.0, "wet": 0.55 },
-      "delay": { "time_ms": 500, "feedback": 0.3, "wet": 0.15 }
+      "reverb": {
+        "decay": 6.0,
+        "wet": 0.55
+      },
+      "delay": {
+        "time_ms": 500,
+        "feedback": 0.3,
+        "wet": 0.15
+      }
     }
   },
   "events": [
@@ -56,7 +72,8 @@
         "height_mm": 250,
         "strike_position_x": 0.4,
         "strike_position_y": 0.6,
-        "exciter": "bow_slow"
+        "exciter": "bow_slow",
+        "radius_mm": 150
       },
       "comment": "薄銅板弓奏，空間迴響"
     },

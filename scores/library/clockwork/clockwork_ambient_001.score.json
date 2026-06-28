@@ -6,7 +6,13 @@
     "author": "TsukiSynth",
     "description": "鐘錶房 — 多層節拍黃銅觸碰，精密環境音",
     "created": "2026-05-07",
-    "tags": ["tick", "ambient", "mechanical", "rhythm", "precise"],
+    "tags": [
+      "tick",
+      "ambient",
+      "mechanical",
+      "rhythm",
+      "precise"
+    ],
     "mood": "neutral",
     "use_case": "ambient background",
     "category": "worldview_sfx",
@@ -15,15 +21,25 @@
     "primary_type": "ambience",
     "sound_type": "oneshot",
     "family_id": "clockwork_ambient",
-    "character": ["pulse", "metallic"]
+    "character": [
+      "pulse",
+      "metallic"
+    ]
   },
   "global": {
     "bpm": 120,
     "sample_rate": 48000,
     "master_volume": 0.5,
     "effects": {
-      "reverb": { "decay": 2.0, "wet": 0.3 },
-      "delay": { "time_ms": 250, "feedback": 0.15, "wet": 0.06 }
+      "reverb": {
+        "decay": 2.0,
+        "wet": 0.3
+      },
+      "delay": {
+        "time_ms": 250,
+        "feedback": 0.15,
+        "wet": 0.06
+      }
     }
   },
   "events": [
@@ -131,7 +147,8 @@
         "height_mm": 100,
         "strike_position_x": 0.5,
         "strike_position_y": 0.5,
-        "exciter": "bow_slow"
+        "exciter": "bow_slow",
+        "radius_mm": 150
       },
       "comment": "底層溫暖黃銅共鳴"
     }

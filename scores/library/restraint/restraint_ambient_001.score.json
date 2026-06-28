@@ -6,7 +6,13 @@
     "author": "TsukiSynth",
     "description": "鐵牢低鳴 — 長衰減弦共鳴，壓迫感環境音",
     "created": "2026-05-07",
-    "tags": ["drone", "ambient", "dark", "low", "industrial"],
+    "tags": [
+      "drone",
+      "ambient",
+      "dark",
+      "low",
+      "industrial"
+    ],
     "mood": "oppressive",
     "use_case": "ambient background",
     "category": "worldview_sfx",
@@ -15,15 +21,25 @@
     "primary_type": "ambience",
     "sound_type": "oneshot",
     "family_id": "restraint_ambient",
-    "character": ["dark", "metallic"]
+    "character": [
+      "dark",
+      "metallic"
+    ]
   },
   "global": {
     "bpm": 60,
     "sample_rate": 48000,
     "master_volume": 0.6,
     "effects": {
-      "reverb": { "decay": 5.0, "wet": 0.5 },
-      "delay": { "time_ms": 400, "feedback": 0.3, "wet": 0.12 }
+      "reverb": {
+        "decay": 5.0,
+        "wet": 0.5
+      },
+      "delay": {
+        "time_ms": 400,
+        "feedback": 0.3,
+        "wet": 0.12
+      }
     }
   },
   "events": [
@@ -57,7 +73,8 @@
         "height_mm": 200,
         "strike_position_x": 0.3,
         "strike_position_y": 0.7,
-        "exciter": "bow_slow"
+        "exciter": "bow_slow",
+        "radius_mm": 150
       },
       "comment": "鐵板弓奏，增加空間壓迫"
     },

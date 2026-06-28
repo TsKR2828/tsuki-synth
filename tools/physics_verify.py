@@ -25,6 +25,8 @@ Why the predictions are exact & clean:
                                      f_n = n*f1*sqrt(1+B n^2) (reported, not failed)
         fm piano (ratio 1):          harmonic, r_n = n
 
+T60_RATIO_TOLERANCE = (0.2, 5.0)   # measured/model ratio must be within this range
+
 Usage:
     python tools/physics_verify.py                 # default probe set
     python tools/physics_verify.py --notes 60 69   # MIDI notes to test
@@ -353,6 +355,7 @@ def measure_t60(sr, x, f0):
 def report_t60(cli, engines, notes, outdir):
     print("Modal decay T60 - measured (audio) vs model ground truth (--dump-modes):")
     print(f"   {'engine':11} {'MIDI':>4} {'model':>8} {'meas':>8} {'ratio':>6}")
+    all_ok = True
     for eng in engines:
         if eng == "fm":
             continue   # FM decay is ADSR, not modal damping
@@ -363,11 +366,19 @@ def report_t60(cli, engines, notes, outdir):
             pred, meas = model_fundamental_decay(cli, sf), measure_t60(sr, x, f0)
             ps = f"{pred:7.2f}s" if pred else "   --  "
             ms = f"{meas:7.2f}s" if meas else "   --  "
-            rs = f"{meas / pred:5.2f}" if (pred and meas) else "  --  "
+            if pred and meas:
+                ratio = meas / pred
+                rs = f"{ratio:5.2f}"
+                lo, hi = T60_RATIO_TOLERANCE
+                if ratio < lo or ratio > hi:
+                    rs += " << FAIL"
+                    all_ok = False
+            else:
+                rs = "  --  "
             print(f"   {eng:11} {midi:>4} {ps:>8} {ms:>8} {rs:>6}")
     print("\n(model = fundamental decayTime straight from the C++ model;")
     print(" measured = Hilbert-envelope log-slope of the fundamental band.)")
-    return True
+    return all_ok
 
 
 def main():

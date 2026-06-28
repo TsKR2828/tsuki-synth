@@ -6,7 +6,13 @@
     "author": "TsukiSynth",
     "description": "枷鎖重擊 — 鐵板+低弦同時衝擊，暴力感",
     "created": "2026-05-07",
-    "tags": ["impact", "slam", "heavy", "metal", "dark"],
+    "tags": [
+      "impact",
+      "slam",
+      "heavy",
+      "metal",
+      "dark"
+    ],
     "mood": "aggressive",
     "use_case": "VTuber reaction / emote",
     "category": "character_ui",
@@ -15,15 +21,25 @@
     "primary_type": "impact",
     "sound_type": "oneshot",
     "family_id": "restraint_action",
-    "character": ["stomp", "dark"]
+    "character": [
+      "stomp",
+      "dark"
+    ]
   },
   "global": {
     "bpm": 100,
     "sample_rate": 48000,
     "master_volume": 0.88,
     "effects": {
-      "reverb": { "decay": 1.8, "wet": 0.2 },
-      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+      "reverb": {
+        "decay": 1.8,
+        "wet": 0.2
+      },
+      "delay": {
+        "time_ms": 0,
+        "feedback": 0,
+        "wet": 0
+      }
     }
   },
   "events": [
@@ -40,7 +56,8 @@
         "height_mm": 120,
         "strike_position_x": 0.5,
         "strike_position_y": 0.5,
-        "exciter": "metal_hammer"
+        "exciter": "metal_hammer",
+        "radius_mm": 150
       },
       "comment": "厚鐵板中心重擊"
     },

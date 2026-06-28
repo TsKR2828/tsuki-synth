@@ -6,7 +6,13 @@
     "author": "TsukiSynth",
     "description": "工業脈衝 — 2小節鋼板重擊節奏，壓迫感循環",
     "created": "2026-05-07",
-    "tags": ["loop", "industrial", "pulse", "heavy", "dark"],
+    "tags": [
+      "loop",
+      "industrial",
+      "pulse",
+      "heavy",
+      "dark"
+    ],
     "mood": "oppressive",
     "use_case": "BGM motif / loop element",
     "category": "worldview_sfx",
@@ -15,7 +21,10 @@
     "primary_type": "mechanical",
     "sound_type": "loop",
     "family_id": "restraint_ambient",
-    "character": ["pulse", "dark"],
+    "character": [
+      "pulse",
+      "dark"
+    ],
     "loop_bpm": 100,
     "loop_bars": 2
   },
@@ -24,8 +33,15 @@
     "sample_rate": 48000,
     "master_volume": 0.75,
     "effects": {
-      "reverb": { "decay": 2.0, "wet": 0.25 },
-      "delay": { "time_ms": 300, "feedback": 0.1, "wet": 0.05 },
+      "reverb": {
+        "decay": 2.0,
+        "wet": 0.25
+      },
+      "delay": {
+        "time_ms": 300,
+        "feedback": 0.1,
+        "wet": 0.05
+      },
       "distortion": {
         "type": "overdrive",
         "drive": 0.3,
@@ -48,7 +64,8 @@
         "height_mm": 100,
         "strike_position_x": 0.5,
         "strike_position_y": 0.5,
-        "exciter": "metal_hammer"
+        "exciter": "metal_hammer",
+        "radius_mm": 150
       }
     },
     {
@@ -79,7 +96,8 @@
         "height_mm": 100,
         "strike_position_x": 0.4,
         "strike_position_y": 0.6,
-        "exciter": "metal_hammer"
+        "exciter": "metal_hammer",
+        "radius_mm": 150
       }
     },
     {
@@ -110,7 +128,8 @@
         "height_mm": 100,
         "strike_position_x": 0.5,
         "strike_position_y": 0.5,
-        "exciter": "metal_hammer"
+        "exciter": "metal_hammer",
+        "radius_mm": 150
       }
     },
     {
@@ -141,7 +160,8 @@
         "height_mm": 100,
         "strike_position_x": 0.6,
         "strike_position_y": 0.4,
-        "exciter": "metal_hammer"
+        "exciter": "metal_hammer",
+        "radius_mm": 150
       }
     },
     {

@@ -6,7 +6,13 @@
     "author": "TsukiSynth",
     "description": "深海壓擊 — 低頻板+弦同步，水壓衝擊感",
     "created": "2026-05-07",
-    "tags": ["impact", "deep", "heavy", "slam", "underwater"],
+    "tags": [
+      "impact",
+      "deep",
+      "heavy",
+      "slam",
+      "underwater"
+    ],
     "mood": "tense",
     "use_case": "VTuber reaction / emote",
     "category": "character_ui",
@@ -15,15 +21,25 @@
     "primary_type": "impact",
     "sound_type": "oneshot",
     "family_id": "ocean_action",
-    "character": ["stomp", "dark"]
+    "character": [
+      "stomp",
+      "dark"
+    ]
   },
   "global": {
     "bpm": 80,
     "sample_rate": 48000,
     "master_volume": 0.85,
     "effects": {
-      "reverb": { "decay": 2.5, "wet": 0.35 },
-      "delay": { "time_ms": 0, "feedback": 0, "wet": 0 }
+      "reverb": {
+        "decay": 2.5,
+        "wet": 0.35
+      },
+      "delay": {
+        "time_ms": 0,
+        "feedback": 0,
+        "wet": 0
+      }
     }
   },
   "events": [
@@ -40,7 +56,8 @@
         "height_mm": 180,
         "strike_position_x": 0.5,
         "strike_position_y": 0.5,
-        "exciter": "rubber_mallet"
+        "exciter": "rubber_mallet",
+        "radius_mm": 150
       },
       "comment": "厚銅板深水衝擊"
     },
