@@ -1,0 +1,156 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "開館鈴 — Library Opening Bell",
+    "id": "akashic_opening_bell_001",
+    "author": "Claude Fable 5 (composed) / 月上零韻 (ears)",
+    "description": "Tongue drum question phrase rising to moonlight E5, answered by a water gong sinking E3→D3. The library opens.",
+    "created": "2026-07-03",
+    "tags": ["opening", "bell", "tongue_drum", "water_gong", "moon"],
+    "mood": "calm",
+    "use_case": "stream opening / library door chime",
+    "category": "worldview_sfx",
+    "worldview": "Akashic Library",
+    "variation_of": null,
+    "primary_type": "ui",
+    "sound_type": "oneshot",
+    "family_id": "akashic_opening_bell",
+    "character": ["metallic", "soft", "airy"]
+  },
+  "global": {
+    "bpm": 60,
+    "sample_rate": 48000,
+    "master_volume": 0.8,
+    "effects": {
+      "reverb": { "decay": 6.0, "wet": 0.35 },
+      "wall": { "distance_m": 8, "material": "wood" }
+    }
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 4.0,
+      "engine": "tongue_drum",
+      "note": "D4",
+      "velocity": 0.7,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.5,
+        "strike_position": 0.5,
+        "exciter": "felt_mallet"
+      },
+      "comment": "The door. Center strike, pure fundamental — the first thing you hear entering."
+    },
+    {
+      "time": 1.5,
+      "duration": 3.5,
+      "engine": "tongue_drum",
+      "note": "F4",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.5,
+        "strike_position": 0.45,
+        "exciter": "finger"
+      },
+      "comment": "Question phrase begins. Finger, quieter — footsteps between shelves."
+    },
+    {
+      "time": 3.0,
+      "duration": 3.5,
+      "engine": "tongue_drum",
+      "note": "A4",
+      "velocity": 0.55,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.5,
+        "strike_position": 0.4,
+        "exciter": "finger"
+      },
+      "comment": "Strike position drifting off-center — overtones rising like dust in lamplight."
+    },
+    {
+      "time": 4.5,
+      "duration": 3.5,
+      "engine": "tongue_drum",
+      "note": "C5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.5,
+        "strike_position": 0.3,
+        "exciter": "finger"
+      },
+      "comment": "Edge-ward strike, most overtones — a page turning."
+    },
+    {
+      "time": 6.5,
+      "duration": 4.5,
+      "engine": "tongue_drum",
+      "note": "E5",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.0,
+        "strike_position": 0.5,
+        "exciter": "finger"
+      },
+      "comment": "The moonlight note. Softest velocity, thinnest plate, back to pure center — highest point of the phrase, barely touched."
+    },
+    {
+      "time": 8.0,
+      "duration": 4.0,
+      "engine": "tongue_drum",
+      "note": "A4",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.5,
+        "strike_position": 0.45,
+        "exciter": "finger"
+      },
+      "comment": "Descent begins."
+    },
+    {
+      "time": 10.0,
+      "duration": 5.0,
+      "engine": "tongue_drum",
+      "note": "D4",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.5,
+        "strike_position": 0.5,
+        "exciter": "felt_mallet"
+      },
+      "comment": "Return home. Same note, same mallet as the opening — the door heard from inside now."
+    },
+    {
+      "time": 12.0,
+      "duration": 8.0,
+      "engine": "water_gong",
+      "note": "D3",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "radius_mm": 250,
+        "thickness_mm": 1.5,
+        "strike_position": 0.5,
+        "exciter": "cotton_mallet"
+      },
+      "glide": {
+        "from_note": "E3",
+        "duration_ms": 1200,
+        "curve": "exponential"
+      },
+      "comment": "The moon sinks into water. E3 sliding down to D3, exponential — the library is open."
+    }
+  ],
+  "export": {
+    "filename": "akashic_opening_bell_001",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 2000
+  }
+}
