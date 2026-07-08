@@ -2,6 +2,112 @@
 
 ---
 
+## 2026-07-08 — Phase D 收尾：dumpModes O(n²) 真根因修復 + corpus 73/73 全數通過
+
+分支 `Codex-fix-bug`，未 commit/push，§6 容差未動。
+
+### Vivaldi 逾時的真根因：不是檔案太大，是字串拼接 O(n²)
+昨日（07-07 條目）記錄的「四季 12 樂章在 1800s timeout 下尚無結果」在重跑時複現：autumn_m1（3111 events）與 autumn_m3（**2582 events，Phase B 用 600s 都沒逾時過**）雙雙撞 1800s。m3 變得比以前更慢這一點戳破了「檔案太大」的假設——真兇是 `ScoreRenderer::dumpModes()` 用 `juce::String out; out << ...` 累加輸出：JUCE String 每次 append 都整段重新配置+複製，總成本 O(輸出大小²)。Phase B 時代 3000-event 檔的 dump 輸出約 7.5 MB，光字串複製就超過 600s（**Phase B 的 5 首逾時從頭到尾都是這個，模態數學本身只要毫秒級**）；Phase D 的 `body_mag`+`strings` 欄位把輸出再放大 ~4 倍 → 時間 ×16，連 2582 events 都活不過 1800s。
+
+修復：`juce::MemoryOutputStream out (1 << 20)` 攤銷 O(1) append，結尾 `out.toString()`。輸出位元組內容不變（同樣的文字操作序列），只換累加容器。實測：**summer_m3（5158 events，最大檔）dump-modes 從 >1800s 逾時 → 7.2 秒（輸出 55.3 MB）**。
+
+### Corpus 73/73 重驗完成：72 乾淨 PASS + 1 登記豁免、0 FAIL
+- examples 13/13（moonlight 走 `rests.rms` 登記豁免，`-> PASS (with 1 registered exemption(s))`）
+- classical 12/12（四季全過，含 Phase B 起連續逾時的 autumn_m1/spring_m1/summer_m1/summer_m3/winter_m1）
+- originals + library 48/48
+逐檔證據：`reports/gate_outputs/corpus_phase_d_{A_examples,D_originals_library,autumn,spring,summer,winter}.log`。嚴格單次 `--all` GATE 另行執行歸檔（`reports/gate_outputs/verify_all_corpus_phase_d.log`）。
+
+### 規則 6 重驗（動了 `src/score/`）
+三個 build target 全部重建 exit 0；`physics_verify.py --full` → 1b/1c/1d 全 PASS、僅 2d 振幅判定維持既有 FAIL（`reports/gate_outputs/phase_d_gate_full_v2.txt`）——dumpModes 效能修復零回歸。
+
+### 教訓
+Phase B 把 5 首 Vivaldi 逾時登記為「大檔案已知限制」並一度討論豁免——差點把一個可修的工具 bug 當成物理極限歸檔。**逾時類 FAIL 在歸類為「限制」前，必須先做效能歸因（profiling / 複雜度分析）。**
+
+### 新浮現的裁決連動（詳見 `TODO.md`）
+CI workflow 跑 `--full`，而 `--full` 現含 2d 判定：**只要 M2 `--amps` 殘差未解，push 後 CI 必紅**。M1「CI 綠燈一次」的 GATE 與 M2 殘差因此耦合，需月月拍板處理順序。
+
+---
+
+## 2026-07-07 — Phase D：`--amps` 根因攻堅 + 理論預測法修正 + 豁免機制 + corpus 部分重跑
+
+依 `ROADMAP_PHYSICS.md` §7/§8 規則同步文件。分支 `Codex-fix-bug`，本輪全程未 commit/push，改動留 unstaged；`ROADMAP_PHYSICS.md` §6 容差登記表未動任何數值。
+
+### 根因攻堅：`--amps` 為何全 5 引擎 partial≥2 低 10-40 dB
+唯讀調查（`reports/gate_outputs/amps_rootcause_analysis.md`）鎖定結構性 bug：`ScoreRenderer::dumpModes()` 讀 `ModalResonator::getModes()` 回傳的原始模態振幅（`baseAmp`）當理論值，但真實渲染是 `modal output + BodyResonance 濾波後的同一訊號疊加` —— `BodyResonance`（兩個共振帶通 120 Hz/280 Hz + 500 Hz 低通，`amount` 恆為 0.5）在 partial 2 附近（500–700 Hz）與 dry 訊號幾乎反相疊加造成 destructive interference 近零點，這是最大單一貢獻源。字串家族引擎（cimbalom/piano，共用 `CimbalomVoice`）另有多弦 beating（numStrings=3、5-cent detuning）也未被 `--dump-modes` 模擬。piano 額外查出一個真 bug：`dumpModes()` 的 piano 分支沒有套用 `renderEvent()` 已有的 `strikePosition 0.3→0.125` / `wood_mallet→felt` override，理論與實際渲染激發參數不同。
+
+### 修法：windowed-synthesis 理論預測（非循環論證）
+`BiquadFilter.h` 新增 `responseAt()`（直接讀 `processSample()` 實際使用的係數，非重新推導 RBJ 公式），`BodyResonance::totalResponse()` 用它算出穩態 `|dry+BodyResonance(dry)|` 傳遞函數量值，經 `CimbalomVoice`/`ChromaticVoice` 的 `getBodyMagnitudeAt()`（含 `getAllStringModes()` 回傳全部多弦模態）寫入 `--dump-modes` 新增的逐 partial `body_mag` 欄位與 `strings` 陣列。`tools/physics_verify.py` 新增 `synth_theory_signal()`：對每個模態疊加 `amp*body_mag*exp(-t/decay)*sin(2*pi*freq*t)` 衰減正弦波重建純理論訊號，送進與真實渲染完全相同的 `measure_partials()` windowed-FFT，得到 apples-to-apples 的 `pred_dB`。`dumpModes()` 的 piano 分支同步補上 strikePosition/exciter override 修復。詳細方法與涵蓋範圍見 `ROADMAP_PHYSICS.md` M2 GATE 段落的證據段落。
+
+附帶確認：`src/physics/HammerImpulse.h` 既有的 `w·τc=π` 可去奇點保護（`forceSpectrumMagnitude()`，L'Hôpital 極限 `π/4`，見檔案 119 行）在本次全頻域量測範圍內未觸發，排除為殘差來源之一。
+
+### GATE 結果：仍未過，但殘差大幅收斂
+`python tools/physics_verify.py --amps` / `--full`（證據 `reports/gate_outputs/phase_d_gate_amps.txt` / `phase_d_gate_full.txt`）：
+
+| 引擎 | p2 | p3 | p4 | p5 | 結論 |
+|---|---|---|---|---|---|
+| cimbalom | -0.82 PASS | -3.01 FAIL | -4.52 FAIL | -4.19 FAIL | FAIL |
+| tongue_drum | -12.60 FAIL | 過弱不判定 | 過弱不判定 | 過弱不判定 | FAIL |
+| water_gong | -1.42 PASS | -3.86 FAIL | -5.00 FAIL | -7.96 FAIL | FAIL |
+| water_gong_free | -0.31 PASS | -0.57 PASS | -1.53 PASS | -1.53 PASS | **PASS** |
+| piano | -0.82 PASS | -3.01 FAIL | -4.52 FAIL | -4.18 FAIL | FAIL |
+
+5 引擎中僅 water_gong_free 全通過 ±3.0 dB 容差（**容差全程未動**）。較修正前的 -15~-40 dB 已收斂到 -0.3~-8.0 dB，且此收斂幅度與唯讀調查用文件化公式手算的重建結果幾乎一致（例：cimbalom p2/p3/p4/p5 重建預測 -0.69/-2.95/-4.46/-4.14 dB vs 修正後實測 -0.82/-3.01/-4.52/-4.19 dB），確認修正正確實作了已歸因的機制。`--full` 的 M1 子 GATE（1b 音域掃描 / 1c 材質掃描 / 1d velocity 判定）不受影響仍全綠。tongue_drum partial 2 仍有約 -12.6 dB 未歸因的殘差，需要 C++ 層級 `--dump-signal-stage` 除錯旗標才能進一步定位（唯讀調查範圍之外）。M2 標記維持 **In progress**。
+
+### 豁免登記機制：`verify_score.py` + `scores/verify_exemptions.json`
+新增窄範圍豁免機制（`tools/verify_score.py`；`tools/physics_verify.py` 完全未動）：`scores/verify_exemptions.json` 登記單筆記錄——`moonlight_sonata_complete.score.json` 的 `rests.rms` check family（比對 `rests.rms_below_limit` 前綴），理由引用 FX-bypass 診斷（-120.0 dBFS dry vs -43.1 dBFS 帶 FX），2026-07-07 月月透過 Fable 批准。比對邏輯狹義（檔名 exact + check 名稱前綴），豁免只重分類不隱藏原始失敗訊息（`Check.exempt_reason` 保留 `ok=False` 與原始 message），報告印出 `[EXEMPT]` 行與 `-> PASS (with N registered exemption(s))`，不會悄悄併入單純 PASS。驗證：`water_gong_clamped.score.json`（無登記豁免的檔案）機制不生效、`moonlight_sonata_complete.score.json` 重跑 exit 0、`rests.rms_below_limit` 標 `[EXEMPT]`、其餘檢查項獨立正常 PASS。
+
+### Corpus 重跑：僅部分完成，不宣稱全綠
+Phase D 對 73 檔全曲庫分 4 個 chunk 重跑（examples 13 / classical 前半 6 / classical 後半 6 / originals+library 48）。**寫本文件時**：originals+library 48/48 完成、全 PASS；examples 完成 11/13（含 moonlight 豁免通過），2 檔大型曲目（yangqin 系列）仍在跑；**classical 兩個 chunk（四季 12 樂章，原本 5 首 600s 逾時 FAIL 的對象）尚未有任何一檔在新 1800s timeout 下產出 EXIT 結果**——分派的背景工作卡在「載入豁免清單」訊息之後，尚無單檔完成。因此 1800s timeout 是否真的解決 Vivaldi 逾時問題**尚未證實**，`m3_corpus_triage.md` 已補上 Phase D 段落誠實記錄此狀態，不覆蓋 Phase B 的 73/73 完整基準（67 PASS / 6 FAIL）。
+
+### 待月月裁決 / 待完成（本輪不擅自處理，見 `TODO.md`）
+1. M2 `--amps` 殘差是否接受現況（4/5 引擎 -3~-8 dB 未過），或繼續投入 C++ `--dump-signal-stage` 除錯定位 tongue_drum 剩餘 -12.6 dB。
+2. HammerImpulse 力脈衝模型音色改變是否保留——`reports/m2_before_after_report.md` 已存在，供正式決策。
+3. Vivaldi 12 樂章的 1800s timeout 重跑尚未完成，需要人力/時間繼續跑完才能確認是否解決原本 5 首逾時問題。
+4. CI GitHub 綠燈仍需 push（鐵則 7 擋住）。
+
+### 文件同步（本輪，Phase D）
+- `ROADMAP_PHYSICS.md`：§2 M2/M3 狀態改寫為 In progress（附精確失敗數字，不得樂觀措辭）；M2 GATE 段落附上 windowed-synthesis 證據段落；M3 3c 附 Phase D 更新註記。
+- `TODO.md`：移除已解決項目（moonlight 豁免、Vivaldi timeout 已提高、piano 1.4 dB 已接受），新增 Phase D 待裁決/待完成清單。
+- `reports/m3_corpus_triage.md`：附上 Phase D 段落，記錄部分重跑結果，不覆蓋 Phase B 基準。
+- `docs/AI_PHYSICAL_COMPOSITION_GUIDE.zh-TW.md`：§12.1 補上豁免登記機制存在的一句話說明。
+
+---
+
+## 2026-07-05 — Phase B：M1 GATE 重跑轉全綠 + M3 全曲庫首次跑完 + 文件同步
+
+依 `ROADMAP_PHYSICS.md` §7/§8 規則，M1/M3 兩個 Milestone 的 GATE 產出後，把 §2 狀態欄、任務勾選框、`DEVLOG.md`、`TODO.md`、AI 作曲指南同步更新。分支 `Codex-fix-bug`，本輪全程未 commit/push，改動留 unstaged；未動 §6 容差登記表任何數值。
+
+### M1：velocity 線性化 bug 修復 + GATE 重跑全綠
+- 根因：`src/dsp/BodyResonance.h` 的 `envLevel` envelope-follower 與已經正比於 velocity 的原始樣本相乘，疊加出 velocity² 項，混進 cimbalom / tongue_drum / water_gong / piano 的音量（`water_gong_free` 因模態較弱恰好壓在 ±1.0 dB 窗內躲過）。修法：拿掉 envelope-follower，只留線性 resonant bandpass（被動共鳴體在小訊號域本為線性系統，F=ma）；`CimbalomEngine.h` / `ChromaticEngine.h` 的固定增益常數依新的等 RMS 基準重新校準。
+- `python tools/physics_verify.py --full` 重跑：`reports/gate_outputs/full_FINAL_gate.txt` → **RESULT: ALL WITHIN TOLERANCE**。涵蓋 6 引擎 × 6 音（1b）+ 9 材質 × 3 modal 引擎（1c）+ 全引擎 velocity 判定（1d：cimbalom/tongue_drum/water_gong/water_gong_free/piano 皆 +6.0 dB PASS，fm +5.9 dB 標 EXEMPT）。
+- 前後對照報告 `reports/velocity_before_after.md`（規則 10 要求）：修復前 cimbalom/tongue_drum/water_gong/piano 的 velocity ×2 皆為 +7.7~+9.5 dB FAIL，修復後全數收斂到 +6.0 dB PASS；獨立第二組驗證點（vel 0.2→0.4 / 0.4→0.8 / 0.3→0.6）證實五個 modal 引擎全部穩定在 +6.02 dB（理論值 20·log10(2)=6.0206 dB），非單點巧合。誠實揭露：cimbalom 與 piano 共用同一個 `CimbalomVoice` 增益常數，因 peak 安全（`PEAK_LIMIT_DBFS -0.3`）優先於精確 RMS re-anchor，piano 的 RMS 因此偏離理想值約 1.4 dB——已在報告中寫明，非隱藏妥協。
+- 1f（CI GitHub 綠燈）：`.github/workflows/physics.yml` 已建立，但「push 觸發至少一次綠燈」被鐵則 7（不 commit/push）擋住，剩這一步待月月自行決定何時 push。M1 標 **In progress**。
+
+### M3：`verify_score.py` 對全曲庫首次跑完，73/73 零遺漏
+- 涵蓋 `scores/examples/` 全部、`scores/classical/vivaldi_four_seasons/`（四季 12 樂章）、`scores/originals/ai_radiance/`、`scores/library/`（遞迴），共 73 個 `.score.json`（`scores/tests/` 6 檔為工具自我測試用途不計入）。結果：**67 PASS / 6 FAIL**，log 存 `reports/gate_outputs/verify_all_corpus.log`，FAIL 分流分析見 `reports/m3_corpus_triage.md`。
+- 6 個 FAIL 只有兩類根因，皆非物理容差失敗：
+  1. `moonlight_sonata_complete.score.json` 的 `rests.rms_below_limit`：12/14 個休止區間量到 −43.1 dBFS（門檻 −50.0 dBFS）。FX-bypass 對照（同視窗關掉全部 FX 重渲染）量到 −120.0 dBFS，坐實乾聲道本身乾淨，超標完全是 reverb/delay 的 wet 尾巴造成。
+  2. 5 首大型 Vivaldi 樂章（autumn/spring/summer/winter 各自的 m1 + summer m3，event 數皆 ≥3111，最多 5158）的 `modes.dump_modes_ran`：`--dump-modes` 在 `verify_score.py::run_cli` 寫死的 600s 逾時內未跑完；同曲庫 event 數 ≤2696 的樂章全數通過，分界線與 600s 上限吻合，判定為工具逾時而非模型缺陷。這 5 首的其餘全部檢查項（schema、events 排序、MIDI range、frequency_hz 平均律、render、rest、peak、無連續削波、determinism SHA256）皆 PASS。用無限時手動重跑已確認可跑完、非 crash/hang。
+- 容差常數逐一稽核：`tools/verify_score.py` / `tools/physics_verify.py` 的 `F0_TOL_CENTS` / `MODE_F0_TOL_CENTS` / `REST_RMS_LIMIT_DBFS` / `REST_DECAY_ALLOWANCE_S` / `PEAK_LIMIT_DBFS` / `VELOCITY_DB_TARGET` / `VELOCITY_DB_TOL` / `T60_RATIO_TOLERANCE` 全部維持原值，未動。
+- M3 標 **In progress（豁免清單待批）**：3a–3d 全部完成，剩 6 個 FAIL 的處置方式（登記豁免 vs 修 score/調整工具設定）待月月裁決，見下方待裁決清單。
+
+### 三個 build target 重建 + C++ 回歸測試
+- `cmake --build build --config Release --target TsukiSynthCLI`（以及 Standalone / VST3）三者皆 exit 0，log 存 `reports/gate_outputs/rebuild_all_FINAL.txt`。
+- `tests/audit_repro.cpp` 回歸測試 20/20 PASS（見 `reports/gate_outputs/audit_cpp_FINAL.txt`），確認 velocity 修復未引入 regression。
+
+### 待月月裁決（本輪不擅自處理，見 `TODO.md`「月月待裁決」區塊）
+1. CI GitHub 綠燈需要 push，被鐵則 7 擋住——本地 GATE 已全綠，push 時機由月月決定。
+2. moonlight_sonata_complete 的休止超標：縮短 `global.effects` 的 reverb decay/wet 或 delay feedback，或登記為 FX 藝術意圖豁免 rest 檢查。
+3. 5 首 Vivaldi 大樂章 `--dump-modes` 600s 逾時：提高 `verify_score.py::run_cli` 的 timeout，或登記為大型曲目已知限制、改抽樣驗證。
+4. cimbalom/piano 共用增益常數導致 piano RMS 偏離理想值約 1.4 dB，是否接受此妥協。
+
+### 文件同步（本輪，Phase B）
+- `ROADMAP_PHYSICS.md`：§2 M1/M3 狀態改為 In progress（附原因）；§3 M1（1a–1e）、M3（3a–3d）任務勾選框打勾並附證據檔路徑。
+- `TODO.md`：CI 條目更新（`--full` blocker 已解除，只剩 push）；新增「月月待裁決」區塊。
+- `docs/AI_PHYSICAL_COMPOSITION_GUIDE.zh-TW.md`：§12 驗收清單加入「新作最後一步跑 `verify_score.py`，exit 0 才算完成」規則。
+
+---
+
 ## 2026-06-17 — Plugin UI 完善：Piano 分頁 + 雙語 Tooltip + 修正
 
 本輪完成三項 TODO 待開發事項 + 兩項 bug 修正，分支 `Codex-fix-bug`。

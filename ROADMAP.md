@@ -1,5 +1,8 @@
 # TsukiSynth — Development Roadmap
 
+> **⚠️ 2026-07-02 起，物理精確化開發的驗收唯一依據是 [`ROADMAP_PHYSICS.md`](ROADMAP_PHYSICS.md)。**
+> **AI 開發者開工前必讀該文件 §1 強制規則。本檔保留為歷史紀錄與產品向 backlog。**
+>
 > Last updated: 2026-06-17
 >
 > This document tracks the real project status based on actual repo state,

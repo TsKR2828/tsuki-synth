@@ -1,5 +1,7 @@
 # TsukiSynth — Multi-Engine VST3/AU Plugin
 
+[![Physics Verification](https://github.com/TsKR2828/tsuki-synth/actions/workflows/physics.yml/badge.svg)](https://github.com/TsKR2828/tsuki-synth/actions/workflows/physics.yml)
+
 > Physical Modeling / Modal Synthesis multi-engine software synthesizer — VST3 / AU plugin
 >
 > **This is an independent project. It has no relation to haguruma-engine or any other project.**
@@ -214,6 +216,14 @@ tsuki-synth/
 ## AI JSON Score Pipeline
 
 TsukiSynth supports **AI-driven sound generation** via JSON score files.
+
+Composition and accessibility reference:
+
+- `docs/AI_PHYSICAL_COMPOSITION_GUIDE.zh-TW.md` — AI／聾人物理作曲、音符斷點、休止與樂句呼吸規範
+- `scores/classical/vivaldi_four_seasons/` — Vivaldi《四季》4 首協奏曲、12 樂章物理字串轉譯
+- `scores/originals/ai_radiance/` — 原創四樂章多引擎組曲《光之驗算》
+- `tools/midi_to_tsukisynth.py` — MIDI tempo map／note-off／休止轉換工具
+- `tools/compose_ai_radiance.py` — 可重現的演算法作曲與物理配器生成器
 
 Physical modeling parameters are semantic (material, size, strike position). AI can directly generate JSON scores:
 

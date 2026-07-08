@@ -350,3 +350,28 @@ python tools/midi_to_tsukisynth.py four-seasons `
 - [ ] 來源、授權與編輯決策完整
 - [ ] 以 24-bit WAV 渲染並檢查峰值／靜默區間
 
+### 12.1 機器蓋章（M3 強制規則）
+
+以上清單是人工／AI 自我檢查用的提示，**不能取代機器驗證**。任何新作的最後一步，
+必須實際執行：
+
+```powershell
+python tools/verify_score.py <score.json>
+```
+
+只有 **exit code 0** 才算完成。這個工具會實際渲染音訊並機器比對：schema 合法性、
+events 排序、MIDI／頻率是否符合平均律、`--dump-modes` 全事件模態掃描（無空集、無
+NaN/Inf、頻率範圍、f0 偏差 cents）、休止區間的渲染 RMS 是否真的低於門檻（不是「看
+duration 覺得夠長」）、峰值與削波、以及決定性（兩次渲染 SHA256 一致）。這些是本清單
+前 12 條「用眼睛/邏輯檢查」無法取代的實測項——尤其是休止有沒有被共鳴吞掉，只有實際
+渲染後量測才知道。
+
+若 `verify_score.py` 回報 FAIL，禁止自行放寬工具內的容差常數去讓它變綠；要嘛修
+score，要嘛依 `ROADMAP_PHYSICS.md` §1 規則記錄豁免原因、交給月月裁決。
+
+「記錄豁免原因」現在有機器可讀的落地方式：`scores/verify_exemptions.json` 是一份
+月月批准過的豁免登記表（檔名 + check 名稱前綴 + 理由），`verify_score.py` 會自動
+套用並在報告中印出 `[EXEMPT]`（原始 FAIL 訊息不隱藏，只重分類），最終總結標成
+`-> PASS (with N registered exemption(s))` 而不是悄悄變成一般 PASS。新增豁免前仍需
+月月核准並附實測理由，不得自行加項。
+
