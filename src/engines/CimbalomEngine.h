@@ -7,6 +7,7 @@
 #include "../dsp/Envelope.h"
 #include "../physics/StringModel.h"
 #include "../physics/MaterialDB.h"
+#include "../physics/HammerImpulse.h"
 
 /**
  * Cimbalom 引擎 — 物理建模弦振動
@@ -125,11 +126,6 @@ public:
         float logE = std::log10 (mat->youngsModulus);
         float spectralTilt = juce::jlimit (0.1f, 1.0f, (logE - 7.5f) / 4.0f);
 
-        // Hammer force spectrum: soft hammers excite fewer high partials
-        int hammerIdx = juce::jlimit (0, 3, (int) hammer);
-        static constexpr float hammerCutoffPartial[] = { 3.0f, 8.0f, 20.0f, 60.0f };
-        float hCut = hammerCutoffPartial[hammerIdx];
-
         if (! baseModes.empty())
         {
             float f1ref = baseModes[0].frequency;
@@ -137,8 +133,6 @@ public:
             {
                 float partialN = m.frequency / f1ref;
                 m.amplitude *= std::pow (spectralTilt, (partialN - 1.0f) * 0.2f);
-                float r = partialN / hCut;
-                m.amplitude *= 1.0f / (1.0f + r * r);
             }
         }
 
@@ -163,6 +157,21 @@ public:
         {
             m.frequency *= tScale * tuneScale;
             m.decayTime *= matScale * dmpScale;
+        }
+
+        // Hammer force-impulse spectrum (M2 2a/2b, replaces the old LP
+        // partial-count heuristic hammerCutoffPartial[]={3,8,20,60}). Applied
+        // AFTER MIDI-tuning so f_n is the real sounding frequency the physical
+        // hammer excites — the LP heuristic worked on partial INDEX (n), which
+        // is not what a real hammer responds to; a real hammer's force spectrum
+        // is a function of actual frequency (Hz), not mode number. See
+        // HammerImpulse.h for the half-sine contact-pulse derivation, the
+        // DC-normalized |F(w)| formula, and tau_c literature sources.
+        float tauC = HammerImpulse::tauCForHardness (hammer);
+        for (auto& m : baseModes)
+        {
+            float omega = juce::MathConstants<float>::twoPi * m.frequency;
+            m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
         }
 
         // ── 多弦 beating ──
@@ -260,9 +269,6 @@ public:
         float logE = std::log10 (mat.youngsModulus);
         float spectralTilt = juce::jlimit (0.1f, 1.0f, (logE - 7.5f) / 4.0f);
 
-        static constexpr float hCutPartial[] = { 3.0f, 8.0f, 20.0f, 60.0f };
-        float hCut = hCutPartial[hammerIdx];
-
         if (! baseModes.empty())
         {
             float f1ref = baseModes[0].frequency;
@@ -270,8 +276,6 @@ public:
             {
                 float partialN = m.frequency / f1ref;
                 m.amplitude *= std::pow (spectralTilt, (partialN - 1.0f) * 0.2f);
-                float r = partialN / hCut;
-                m.amplitude *= 1.0f / (1.0f + r * r);
             }
         }
 
@@ -285,6 +289,22 @@ public:
             const float tuneScale = target / baseModes[0].frequency;
             for (auto& m : baseModes)
                 m.frequency *= tuneScale;
+        }
+
+        // Hammer force-impulse spectrum (M2 2a/2b, replaces the old LP
+        // partial-count heuristic hCutPartial[]={3,8,20,60}). Applied AFTER
+        // MIDI-tuning so f_n is the real sounding frequency — see
+        // HammerImpulse.h for the half-sine contact-pulse derivation, the
+        // DC-normalized |F(w)| formula, and tau_c literature sources. This is
+        // the single source of truth also read by --dump-modes (ModalResonator
+        // ::getModes() returns baseAmp verbatim, per ROADMAP_PHYSICS.md §2c).
+        {
+            float tauC = HammerImpulse::tauCForHardness ((float) hammerIdx);
+            for (auto& m : baseModes)
+            {
+                float omega = juce::MathConstants<float>::twoPi * m.frequency;
+                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
+            }
         }
 
         numActiveStrings = nStrings;
@@ -346,7 +366,16 @@ public:
         }
 
         sample += bodyRes.processSample (sample);
-        return sample * 0.070f;   // equal-RMS calibrated (2026-06)
+        return sample * 0.069f;   // equal-RMS re-calibrated (2026-07): the
+                                   // BodyResonance velocity-linearity fix removed
+                                   // a v^2 envelope term that was inflating body-
+                                   // resonance level. RMS-only re-anchoring to the
+                                   // pre-fix vel=0.85 reference would put peak at
+                                   // 0.0 dBFS (violates verify_score.py's
+                                   // PEAK_LIMIT_DBFS = -0.3), so this value instead
+                                   // restores the pre-fix peak headroom (-2.0 dBFS
+                                   // @ vel=0.85) — closest achievable equal-RMS
+                                   // anchor without breaching the peak ceiling.
     }
 
     void scaleFrequencies (double factor)
@@ -361,6 +390,27 @@ public:
         return numActiveStrings > 0 ? strings[0].getModes()
                                     : std::vector<ModalResonator::Mode>{};
     }
+
+    /// 2026-07 (--amps GATE fix): predicted modes of EVERY active string in
+    /// the course (already detuned + gain-scaled exactly as noteOn() set
+    /// them up, i.e. the real per-string frequency/amplitude the renderer
+    /// sums at getNextSample() time) -- not just string 0. Needed so
+    /// --dump-modes' theory can reconstruct the true multi-string beating
+    /// pattern (ROADMAP_PHYSICS.md M2-2d root-cause Experiment 4/5) instead
+    /// of reporting a single undetuned string as if it were the whole course.
+    std::vector<std::vector<ModalResonator::Mode>> getAllStringModes() const
+    {
+        std::vector<std::vector<ModalResonator::Mode>> out;
+        for (int s = 0; s < numActiveStrings; ++s)
+            out.push_back (strings[s].getModes());
+        return out;
+    }
+
+    /// |dry + BodyResonance(dry)| at freqHz for THIS voice's live body-filter
+    /// state (amount/frequencies as set in noteOn()) -- see BodyResonance::
+    /// magnitudeAt(). Single source of truth for --dump-modes' body-filter
+    /// column; not a re-derivation, reads the same bodyRes the renderer uses.
+    float getBodyMagnitudeAt (float freqHz) const { return bodyRes.magnitudeAt (freqHz); }
 
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
                           int startSample, int numSamples) override
@@ -394,7 +444,7 @@ public:
             sample += bodyRes.processSample (sample);
 
             // 輸出（master gain 防 clipping）
-            sample *= 0.070f;   // equal-RMS calibrated (2026-06)
+            sample *= 0.069f;   // equal-RMS re-calibrated (2026-07, see getNextSample())
 
             for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
                 outputBuffer.addSample (ch, startSample, sample);

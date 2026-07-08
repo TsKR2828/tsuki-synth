@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <complex>
 #include <juce_core/juce_core.h>
 
 /**
@@ -67,6 +68,26 @@ public:
     }
 
     void reset() { x1 = x2 = y1 = y2 = 0.0f; }
+
+    // 2026-07 (--amps GATE fix, ROADMAP_PHYSICS.md M2-2d): steady-state
+    // complex frequency response H(e^jw) of THIS filter's *current* stored
+    // coefficients (the exact same cb0/cb1/cb2/ca1/ca2 that processSample()
+    // uses), evaluated at z = e^{j*2*pi*freqHz/sampleRate}. This is not a
+    // re-derivation of the RBJ formulas -- it reads the coefficients that
+    // setParams() already computed, so it can never drift from what
+    // processSample() actually does to a signal at that frequency. Used by
+    // BodyResonance::totalResponse() to give --dump-modes a theory-only
+    // (no rendered-audio input) prediction of the body-resonance transfer
+    // magnitude at each modal partial frequency.
+    std::complex<float> responseAt (float freqHz) const
+    {
+        float w = juce::MathConstants<float>::twoPi * freqHz / (float) sampleRate;
+        std::complex<float> z1 (std::cos (w), -std::sin (w));         // z^-1
+        std::complex<float> z2 = z1 * z1;                              // z^-2
+        std::complex<float> num = cb0 + cb1 * z1 + cb2 * z2;
+        std::complex<float> den = 1.0f + ca1 * z1 + ca2 * z2;
+        return num / den;
+    }
 
     float processSample (float x0)
     {

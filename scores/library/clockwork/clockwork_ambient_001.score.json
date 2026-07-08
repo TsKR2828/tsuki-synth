@@ -89,6 +89,24 @@
       }
     },
     {
+      "time": 1.0,
+      "duration": 3.0,
+      "engine": "plate",
+      "note": "C3",
+      "velocity": 0.1,
+      "params": {
+        "material": "brass",
+        "thickness_mm": 1.5,
+        "width_mm": 100,
+        "height_mm": 100,
+        "strike_position_x": 0.5,
+        "strike_position_y": 0.5,
+        "exciter": "bow_slow",
+        "radius_mm": 150
+      },
+      "comment": "底層溫暖黃銅共鳴"
+    },
+    {
       "time": 1.5,
       "duration": 0.05,
       "engine": "beam",
@@ -133,24 +151,6 @@
         "exciter": "metal_tip"
       },
       "comment": "等間距 tick-tock 節奏"
-    },
-    {
-      "time": 1.0,
-      "duration": 3.0,
-      "engine": "plate",
-      "note": "C3",
-      "velocity": 0.1,
-      "params": {
-        "material": "brass",
-        "thickness_mm": 1.5,
-        "width_mm": 100,
-        "height_mm": 100,
-        "strike_position_x": 0.5,
-        "strike_position_y": 0.5,
-        "exciter": "bow_slow",
-        "radius_mm": 150
-      },
-      "comment": "底層溫暖黃銅共鳴"
     }
   ],
   "export": {

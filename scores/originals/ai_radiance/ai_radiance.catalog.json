@@ -1,0 +1,79 @@
+{
+  "$schema": "TsukiSynth Original Composition Catalog v1",
+  "title": "AI Radiance / 光之驗算",
+  "composer": "Codex",
+  "created": "2026-06-22",
+  "summary": {
+    "movements": 4,
+    "events": 308,
+    "rests": 248,
+    "phrases": 126,
+    "engines": {
+      "water_gong": 24,
+      "cimbalom": 136,
+      "tongue_drum": 64,
+      "custom": 36,
+      "fm": 48
+    },
+    "materials": {
+      "bronze": 15,
+      "steel": 144,
+      "glass": 70,
+      "aluminum": 9,
+      "copper": 6,
+      "bamboo": 16
+    },
+    "midi_range": [
+      31,
+      90
+    ],
+    "frequency_range_hz": [
+      48.999,
+      1479.978
+    ]
+  },
+  "movements": [
+    {
+      "number": 1,
+      "title": "露珠格點 / Dew Lattice",
+      "events": 64,
+      "rests": 58,
+      "phrases": 25,
+      "thesis": "相同十二平均律基頻交給弦、梁與圓板後，各自展開不同非諧波模態；和聲由物理體的衰減交疊形成。",
+      "score_file": "ai_radiance_m1.score.json",
+      "wav_file": "exports/wav/ai_radiance/Original_AI_Radiance_Movement1.wav"
+    },
+    {
+      "number": 2,
+      "title": "方程風暴 / Storm of Equations",
+      "events": 106,
+      "rests": 96,
+      "phrases": 34,
+      "thesis": "以滑頻圓板的模態收斂對抗高阻尼弦的脈衝；密度衝突取代傳統主旋律。",
+      "score_file": "ai_radiance_m2.score.json",
+      "wav_file": "exports/wav/ai_radiance/Original_AI_Radiance_Movement2.wav"
+    },
+    {
+      "number": 3,
+      "title": "記憶果園 / Memory Orchard",
+      "events": 68,
+      "rests": 46,
+      "phrases": 44,
+      "thesis": "可驗證的整數 FM 頻譜擔任穩定記憶；物理弦與竹梁則以非諧波衰減讓記憶逐步失真。",
+      "score_file": "ai_radiance_m3.score.json",
+      "wav_file": "exports/wav/ai_radiance/Original_AI_Radiance_Movement3.wav"
+    },
+    {
+      "number": 4,
+      "title": "零度星冠 / Crown at Absolute Zero",
+      "events": 70,
+      "rests": 48,
+      "phrases": 23,
+      "thesis": "用高阻尼弦製造離散時間，用低阻尼玻璃與圓板保存連續時間；終止式是衰減常數的統一，而非傳統主和弦。",
+      "score_file": "ai_radiance_m4.score.json",
+      "wav_file": "exports/wav/ai_radiance/Original_AI_Radiance_Movement4.wav"
+    }
+  ],
+  "complete_score": "ai_radiance_complete.score.json",
+  "complete_wav": "exports/wav/ai_radiance/Original_AI_Radiance_Complete.wav"
+}

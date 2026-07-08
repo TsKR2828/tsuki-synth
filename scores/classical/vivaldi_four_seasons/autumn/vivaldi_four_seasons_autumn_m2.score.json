@@ -1,0 +1,5142 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Vivaldi — The Four Seasons: Autumn / L'autunno, Movement 2 (Adagio molto)",
+    "id": "vivaldi_four_seasons_autumn_m2",
+    "author": "Antonio Vivaldi; physical-model transcription by Codex",
+    "composer": "Antonio Vivaldi",
+    "work": "Le quattro stagioni, Op. 8 Nos. 1–4",
+    "catalogue": "RV 293",
+    "opus_number": "Op. 8 No. 3",
+    "movement_number": 2,
+    "movement_name": "Adagio molto",
+    "key": "D minor",
+    "description": "醉後沉睡；延長共鳴並保留靜默空間。",
+    "created": "2026-06-21",
+    "tags": [
+      "classical",
+      "baroque",
+      "vivaldi",
+      "four-seasons",
+      "autumn",
+      "physical-string",
+      "explicit-rests",
+      "phrase-breaths"
+    ],
+    "mood": "calm",
+    "use_case": "AI physical-model composition / accessible score rendering",
+    "category": "classical_transcription",
+    "worldview": "Vivaldi Four Seasons",
+    "variation_of": null,
+    "primary_type": "ambience",
+    "sound_type": "oneshot",
+    "family_id": "vivaldi_four_seasons_autumn",
+    "character": [
+      "airy",
+      "pulse"
+    ]
+  },
+  "source": {
+    "score_source": "Mutopia Project performers' facsimile edition",
+    "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=350",
+    "source_midi_file": "autumn-score-1.mid",
+    "source_format": "LilyPond-generated Standard MIDI File",
+    "license": "Creative Commons Attribution-ShareAlike 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "attribution": "Mutopia Project score maintained by smailliw; source based on Performers' Facsimiles. Derived transcription shares alike.",
+    "editorial_note": "Pitch, onset, note-off, rests, repeats, track roles, tempo and meter come from the source MIDI. Dynamics and physical bow-gap treatment are TsukiSynth interpretation data."
+  },
+  "global": {
+    "bpm": 53.0,
+    "sample_rate": 48000,
+    "master_volume": 0.68,
+    "effects": {
+      "reverb": {
+        "decay": 2.8,
+        "wet": 0.28
+      },
+      "delay": {
+        "time_ms": 0,
+        "feedback": 0,
+        "wet": 0
+      },
+      "distortion": {
+        "type": "overdrive",
+        "drive": 0,
+        "instability": 0,
+        "wet": 0
+      }
+    }
+  },
+  "tempo_map": [
+    {
+      "time": 0.0,
+      "tick": 0,
+      "quarter_bpm": 53.0,
+      "microseconds_per_quarter": 1132075
+    }
+  ],
+  "time_signatures": [
+    {
+      "time": 0.0,
+      "tick": 0,
+      "numerator": 3,
+      "denominator": 4
+    }
+  ],
+  "track_profiles": {
+    "solo": {
+      "role": "solo_violin",
+      "label": "Violino principale",
+      "engine": "string",
+      "material": "steel",
+      "diameter_mm": 0.55,
+      "strike_position": 0.18,
+      "exciter": "bow",
+      "damping_override": 0.34,
+      "base_velocity": 0.72
+    },
+    "violinone": {
+      "role": "violin_1",
+      "label": "Violino primo",
+      "engine": "string",
+      "material": "steel",
+      "diameter_mm": 0.62,
+      "strike_position": 0.22,
+      "exciter": "bow",
+      "damping_override": 0.4,
+      "base_velocity": 0.5
+    },
+    "violintwo": {
+      "role": "violin_2",
+      "label": "Violino secondo",
+      "engine": "string",
+      "material": "steel",
+      "diameter_mm": 0.68,
+      "strike_position": 0.24,
+      "exciter": "bow",
+      "damping_override": 0.44,
+      "base_velocity": 0.45
+    },
+    "viola": {
+      "role": "viola",
+      "label": "Alto viola",
+      "engine": "string",
+      "material": "steel",
+      "diameter_mm": 0.9,
+      "strike_position": 0.28,
+      "exciter": "bow",
+      "damping_override": 0.48,
+      "base_velocity": 0.42
+    },
+    "cello": {
+      "role": "cello_continuo",
+      "label": "Violoncello / continuo",
+      "engine": "string",
+      "material": "steel",
+      "diameter_mm": 1.45,
+      "strike_position": 0.32,
+      "exciter": "bow",
+      "damping_override": 0.52,
+      "base_velocity": 0.47
+    }
+  },
+  "timing_policy": {
+    "time_unit": "seconds",
+    "source_timing": "MIDI note-on/note-off converted through tempo map",
+    "renderer_note_off_ratio": 0.9,
+    "duration_compensation": "event.duration = intended sounding duration / 0.9 so the C++ renderer damper begins at the intended release time",
+    "silence_representation": "No fake rest notes. Silence is absence of events; rests[] and performance.breath_after_ms expose it explicitly.",
+    "articulation_policy": "Notated rests are untouched. Contiguous notes receive a small bow-change gap; rapid repeated notes receive a larger detached gap."
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 15.05877778,
+      "engine": "string",
+      "note": "D3",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 50,
+        "frequency_hz": 146.832,
+        "source_duration_sec": 13.5849,
+        "intended_release_time": 13.5529,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 3.396225,
+      "duration": 15.05877778,
+      "engine": "string",
+      "note": "Bb3",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 58,
+        "frequency_hz": 233.082,
+        "source_duration_sec": 13.5849,
+        "intended_release_time": 16.949125,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 6.79245,
+      "duration": 11.28519444,
+      "engine": "string",
+      "note": "G4",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "source_duration_sec": 10.188675,
+        "intended_release_time": 16.949125,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 10.188675,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 16.949125,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 10.188675,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 16.949125,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 13.5849,
+      "duration": 11.28519444,
+      "engine": "string",
+      "note": "C#3",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 49,
+        "frequency_hz": 138.591,
+        "source_duration_sec": 10.188675,
+        "intended_release_time": 23.741575,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 16.981125,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "Bb5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 82,
+        "frequency_hz": 932.328,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 21.477425,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 16.981125,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "Bb5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 82,
+        "frequency_hz": 932.328,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 21.477425,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 16.981125,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 21.477425,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 16.981125,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "E4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 64,
+        "frequency_hz": 329.628,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 23.741575,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 21.509425,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 22.6095,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 21.509425,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 22.6095,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 21.509425,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 22.6095,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 22.6415,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 23.741575,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 22.6415,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 23.741575,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 22.6415,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 23.741575,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 23.773575,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 27.1378,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 23.773575,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 27.1378,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 23.773575,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F#5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 27.1378,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 23.773575,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "D4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 27.1378,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 23.773575,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "C3",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 48,
+        "frequency_hz": 130.813,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 27.1378,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 27.1698,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "Ab5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 30.534025,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 27.1698,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "Ab5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 30.534025,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 27.1698,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 30.534025,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 27.1698,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "B4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 30.534025,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 27.1698,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "D3",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 50,
+        "frequency_hz": 146.832,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 30.534025,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 30.566025,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 35.062325,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 30.566025,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 35.062325,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 30.566025,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "F#5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 35.062325,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 30.566025,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "C5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 37.326475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 30.566025,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "Eb3",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 51,
+        "frequency_hz": 155.563,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 37.326475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 35.094325,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 36.1944,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 35.094325,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 36.1944,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 35.094325,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 36.1944,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 36.2264,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F#5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 37.326475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 36.2264,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F#5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 37.326475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 36.2264,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "Eb5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 75,
+        "frequency_hz": 622.254,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 37.326475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 37.358475,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 41.854775,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 37.358475,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 41.854775,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 37.358475,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 41.854775,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 37.358475,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 44.118925,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 37.358475,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "Bb2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 46,
+        "frequency_hz": 116.541,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 44.118925,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 41.886775,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F#5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 42.98685,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 41.886775,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F#5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 42.98685,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 41.886775,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 42.98685,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 43.01885,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 44.118925,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 43.01885,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 44.118925,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 43.01885,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 44.118925,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 44.150925,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F#5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 47.51515,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 44.150925,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F#5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 47.51515,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 44.150925,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "Eb5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 75,
+        "frequency_hz": 622.254,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 47.51515,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 44.150925,
+      "duration": 15.05877778,
+      "engine": "string",
+      "note": "B4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "source_duration_sec": 13.5849,
+        "intended_release_time": 57.703825,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 44.150925,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "A2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 45,
+        "frequency_hz": 110.0,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 47.51515,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 47.54715,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 48.647225,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 47.54715,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 48.647225,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 47.54715,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 48.647225,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 47.54715,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "G2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 43,
+        "frequency_hz": 97.999,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 50.911375,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 48.679225,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 49.7793,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 48.679225,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 49.7793,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 48.679225,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F#5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 49.7793,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 49.8113,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "B5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 83,
+        "frequency_hz": 987.767,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 50.911375,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 49.8113,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "B5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 83,
+        "frequency_hz": 987.767,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 50.911375,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 49.8113,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 50.911375,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 50.943375,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 55.439675,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 50.943375,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 54.3076,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 50.943375,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 55.439675,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 50.943375,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "Ab2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 44,
+        "frequency_hz": 103.826,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 57.703825,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 54.3396,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 55.439675,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 55.471675,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 56.57175,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 55.471675,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 56.57175,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 55.471675,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "C5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 56.57175,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 56.60375,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 57.703825,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 56.60375,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 57.703825,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 56.60375,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "B4",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 57.703825,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 57.735825,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 61.10005,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 57.735825,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 61.10005,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 57.735825,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 61.10005,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 57.735825,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "A4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 69,
+        "frequency_hz": 440.0,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 64.496275,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 57.735825,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "G2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 43,
+        "frequency_hz": 97.999,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 61.10005,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 61.13205,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 62.232125,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 61.13205,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 62.232125,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 61.13205,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 62.232125,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 61.13205,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 41,
+        "frequency_hz": 87.307,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 64.496275,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 62.264125,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 63.3642,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 62.264125,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 63.3642,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 62.264125,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 63.3642,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 63.3962,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 64.496275,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 63.3962,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 64.496275,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 63.3962,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 64.496275,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 64.528275,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "Bb5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 82,
+        "frequency_hz": 932.328,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 69.024575,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 64.528275,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "Bb5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 82,
+        "frequency_hz": 932.328,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 69.024575,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 64.528275,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 69.024575,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 64.528275,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "C4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 71.288725,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 64.528275,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "E2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 40,
+        "frequency_hz": 82.407,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 71.288725,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 69.056575,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "Ab5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 70.15665,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 69.056575,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "Ab5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 70.15665,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 69.056575,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 70.15665,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 70.18865,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 71.288725,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 70.18865,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 71.288725,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 70.18865,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 71.288725,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 71.320725,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "Ab5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 75.817025,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 71.320725,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "Ab5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 75.817025,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 71.320725,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 75.817025,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 71.320725,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "D4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 78.081175,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 71.320725,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "B2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 47,
+        "frequency_hz": 123.471,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 78.081175,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 75.849025,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 76.9491,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 75.849025,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 76.9491,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 75.849025,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 76.9491,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 76.9811,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 78.081175,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 76.9811,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 78.081175,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 76.9811,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 78.081175,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 78.113175,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 84.873625,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 78.113175,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 84.873625,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 78.113175,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 81.4774,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 78.113175,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "C4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 84.873625,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 78.113175,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "Bb2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 46,
+        "frequency_hz": 116.541,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 81.4774,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 81.5094,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "Eb5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 75,
+        "frequency_hz": 622.254,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 84.873625,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 81.5094,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "Ab2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 44,
+        "frequency_hz": 103.826,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 88.26985,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 84.905625,
+      "duration": 8.76947222,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 7.924525,
+        "intended_release_time": 92.79815,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 84.905625,
+      "duration": 8.76947222,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 7.924525,
+        "intended_release_time": 92.79815,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 84.905625,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "C5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 88.26985,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 84.905625,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "Ab4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 68,
+        "frequency_hz": 415.305,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 88.26985,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 88.30185,
+      "duration": 4.99588889,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 4.5283,
+        "intended_release_time": 92.79815,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 88.30185,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "B3",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 59,
+        "frequency_hz": 246.942,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 95.0623,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 88.30185,
+      "duration": 11.28519444,
+      "engine": "string",
+      "note": "G2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 43,
+        "frequency_hz": 97.999,
+        "source_duration_sec": 10.188675,
+        "intended_release_time": 98.458525,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 92.83015,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 93.930225,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 92.83015,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 93.930225,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 92.83015,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "C5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 93.930225,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 93.962225,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 95.0623,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 93.962225,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 95.0623,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 93.962225,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "B4",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 95.0623,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 95.0943,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 98.458525,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 95.0943,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 98.458525,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 95.0943,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 98.458525,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 95.0943,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "A4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 69,
+        "frequency_hz": 440.0,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 98.458525,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 98.490525,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 101.85475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 98.490525,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 101.85475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 98.490525,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 101.85475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 98.490525,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "B4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 101.85475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 98.490525,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "Ab2",
+      "velocity": 0.47,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 44,
+        "frequency_hz": 103.826,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 101.85475,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 101.88675,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 102.986825,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 101.88675,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 102.986825,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 101.88675,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 102.986825,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 101.88675,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "A4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 69,
+        "frequency_hz": 440.0,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 108.6472,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 101.88675,
+      "duration": 56.54263889,
+      "engine": "string",
+      "note": "A2",
+      "velocity": 0.445,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 1.45,
+        "strike_position": 0.32,
+        "exciter": "bow",
+        "damping_override": 0.52
+      },
+      "performance": {
+        "track": "cello",
+        "role": "cello_continuo",
+        "midi_note": 45,
+        "frequency_hz": 110.0,
+        "source_duration_sec": 50.943375,
+        "intended_release_time": 152.775125,
+        "articulation": "final_release",
+        "articulation_gap_ms": 55.0,
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 103.018825,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 104.1189,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 103.018825,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 104.1189,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 103.018825,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 104.1189,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 104.1509,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 105.250975,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 104.1509,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 105.250975,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 104.1509,
+      "duration": 1.22230556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 1.132075,
+        "intended_release_time": 105.250975,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 105.282975,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 108.6472,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 105.282975,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "A5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 108.6472,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 105.282975,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 108.6472,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 108.6792,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 112.043425,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 108.6792,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 112.043425,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 108.6792,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 112.043425,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 108.6792,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 112.043425,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 112.075425,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 115.43965,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 112.075425,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 115.43965,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 112.075425,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 115.43965,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 112.075425,
+      "duration": 11.28519444,
+      "engine": "string",
+      "note": "A4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 69,
+        "frequency_hz": 440.0,
+        "source_duration_sec": 10.188675,
+        "intended_release_time": 122.2321,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 115.47165,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 118.835875,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 115.47165,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 118.835875,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 115.47165,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 118.835875,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 118.867875,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 122.2321,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 118.867875,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 122.2321,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 118.867875,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 122.2321,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 122.2641,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 125.628325,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 122.2641,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "G5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 79,
+        "frequency_hz": 783.991,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 125.628325,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 122.2641,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 125.628325,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 122.2641,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 125.628325,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 125.660325,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 129.02455,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 125.660325,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 129.02455,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 125.660325,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 129.02455,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 125.660325,
+      "duration": 11.28519444,
+      "engine": "string",
+      "note": "A4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 69,
+        "frequency_hz": 440.0,
+        "source_duration_sec": 10.188675,
+        "intended_release_time": 135.817,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 129.05655,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 132.420775,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 129.05655,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 132.420775,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 129.05655,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 132.420775,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 132.452775,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.72,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 135.817,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 132.452775,
+      "duration": 3.73802778,
+      "engine": "string",
+      "note": "F5",
+      "velocity": 0.5,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "source_duration_sec": 3.396225,
+        "intended_release_time": 135.817,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 132.452775,
+      "duration": 11.28519444,
+      "engine": "string",
+      "note": "D5",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "source_duration_sec": 10.188675,
+        "intended_release_time": 142.60945,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 135.849,
+      "duration": 18.80680556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.695,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.55,
+        "strike_position": 0.18,
+        "exciter": "bow",
+        "damping_override": 0.34
+      },
+      "performance": {
+        "track": "solo",
+        "role": "solo_violin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 16.981125,
+        "intended_release_time": 152.775125,
+        "articulation": "final_release",
+        "articulation_gap_ms": 55.0,
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 135.849,
+      "duration": 18.80680556,
+      "engine": "string",
+      "note": "E5",
+      "velocity": 0.475,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.62,
+        "strike_position": 0.22,
+        "exciter": "bow",
+        "damping_override": 0.4
+      },
+      "performance": {
+        "track": "violinone",
+        "role": "violin_1",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "source_duration_sec": 16.981125,
+        "intended_release_time": 152.775125,
+        "articulation": "final_release",
+        "articulation_gap_ms": 55.0,
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 135.849,
+      "duration": 7.51161111,
+      "engine": "string",
+      "note": "Ab4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 68,
+        "frequency_hz": 415.305,
+        "source_duration_sec": 6.79245,
+        "intended_release_time": 142.60945,
+        "articulation": "long_bow_change",
+        "articulation_gap_ms": 32.0,
+        "phrase_end": false,
+        "breath_after_ms": 32.0
+      }
+    },
+    {
+      "time": 142.64145,
+      "duration": 11.25963889,
+      "engine": "string",
+      "note": "C#5",
+      "velocity": 0.425,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.68,
+        "strike_position": 0.24,
+        "exciter": "bow",
+        "damping_override": 0.44
+      },
+      "performance": {
+        "track": "violintwo",
+        "role": "violin_2",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "source_duration_sec": 10.188675,
+        "intended_release_time": 152.775125,
+        "articulation": "final_release",
+        "articulation_gap_ms": 55.0,
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 142.64145,
+      "duration": 11.25963889,
+      "engine": "string",
+      "note": "A4",
+      "velocity": 0.395,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.9,
+        "strike_position": 0.28,
+        "exciter": "bow",
+        "damping_override": 0.48
+      },
+      "performance": {
+        "track": "viola",
+        "role": "viola",
+        "midi_note": 69,
+        "frequency_hz": 440.0,
+        "source_duration_sec": 10.188675,
+        "intended_release_time": 152.775125,
+        "articulation": "final_release",
+        "articulation_gap_ms": 55.0,
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    }
+  ],
+  "rests": [
+    {
+      "track": "cello",
+      "role": "cello_continuo",
+      "time": 152.775125,
+      "duration": 0.055,
+      "approx_quarter_beats": 0.049,
+      "kind": "breath"
+    },
+    {
+      "track": "solo",
+      "role": "solo_violin",
+      "time": 0.0,
+      "duration": 10.188675,
+      "approx_quarter_beats": 9.0,
+      "kind": "entrance_rest"
+    },
+    {
+      "track": "solo",
+      "role": "solo_violin",
+      "time": 152.775125,
+      "duration": 0.055,
+      "approx_quarter_beats": 0.049,
+      "kind": "breath"
+    },
+    {
+      "track": "viola",
+      "role": "viola",
+      "time": 0.0,
+      "duration": 3.396225,
+      "approx_quarter_beats": 3.0,
+      "kind": "entrance_rest"
+    },
+    {
+      "track": "viola",
+      "role": "viola",
+      "time": 152.775125,
+      "duration": 0.055,
+      "approx_quarter_beats": 0.049,
+      "kind": "breath"
+    },
+    {
+      "track": "violinone",
+      "role": "violin_1",
+      "time": 0.0,
+      "duration": 10.188675,
+      "approx_quarter_beats": 9.0,
+      "kind": "entrance_rest"
+    },
+    {
+      "track": "violinone",
+      "role": "violin_1",
+      "time": 152.775125,
+      "duration": 0.055,
+      "approx_quarter_beats": 0.049,
+      "kind": "breath"
+    },
+    {
+      "track": "violintwo",
+      "role": "violin_2",
+      "time": 0.0,
+      "duration": 6.79245,
+      "approx_quarter_beats": 6.0,
+      "kind": "entrance_rest"
+    },
+    {
+      "track": "violintwo",
+      "role": "violin_2",
+      "time": 152.775125,
+      "duration": 0.055,
+      "approx_quarter_beats": 0.049,
+      "kind": "breath"
+    }
+  ],
+  "phrases": [
+    {
+      "track": "cello",
+      "role": "cello_continuo",
+      "number": 1,
+      "start": 0.0,
+      "end": 152.775125,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "solo",
+      "role": "solo_violin",
+      "number": 1,
+      "start": 10.188675,
+      "end": 152.775125,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "viola",
+      "role": "viola",
+      "number": 1,
+      "start": 3.396225,
+      "end": 152.775125,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "violinone",
+      "role": "violin_1",
+      "number": 1,
+      "start": 10.188675,
+      "end": 152.775125,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "violintwo",
+      "role": "violin_2",
+      "number": 1,
+      "start": 6.79245,
+      "end": 152.775125,
+      "breath_after_ms": 0.0
+    }
+  ],
+  "export": {
+    "filename": "vivaldi_four_seasons_autumn_m2",
+    "export_filename": "Classical_Vivaldi_Autumn_Movement2",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 900,
+    "start_position": 0,
+    "end_position": 1
+  }
+}

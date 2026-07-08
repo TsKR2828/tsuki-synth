@@ -25,6 +25,7 @@ public:
         lfo.setRate (3.5);
         holdCounter = 0;
         holdSample  = 0.0f;
+        holdSampleInit = false;
     }
 
     void setParameters (const DistortionParams& p)
@@ -62,6 +63,7 @@ public:
         lfo.reset();
         holdCounter = 0;
         holdSample  = 0.0f;
+        holdSampleInit = false;
     }
 
 private:
@@ -73,6 +75,11 @@ private:
 
     float processBitcrush (float input, float drive)
     {
+        if (! holdSampleInit)
+        {
+            holdSample = input;
+            holdSampleInit = true;
+        }
         int reduction = static_cast<int> (1.0f + drive * 63.0f);
         holdCounter++;
         if (holdCounter >= reduction)
@@ -94,4 +101,5 @@ private:
     LFO lfo;
     int   holdCounter = 0;
     float holdSample  = 0.0f;
+    bool  holdSampleInit = false;
 };

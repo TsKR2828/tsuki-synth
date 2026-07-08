@@ -1,0 +1,8 @@
+[
+  {
+    "file": "moonlight_sonata_complete.score.json",
+    "check": "rests.rms",
+    "reason": "FX artistic intent: long reverb tail. FX-bypass diagnostic measured -120.0 dBFS on the dry path (vs -43.1 dBFS with FX), proving the overshoot is reverb tail, not model decay. See reports/m3_corpus_triage.md.",
+    "approved": "月月 2026-07-07 (delegated decision via Fable)"
+  }
+]

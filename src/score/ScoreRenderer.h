@@ -9,6 +9,8 @@
 #include "../dsp/EffectsChain.h"
 #include <algorithm>
 #include <cmath>
+#include <functional>
+#include <memory>
 
 /**
  * Offline score -> WAV renderer (the CLI / deaf + AI path).
@@ -32,29 +34,62 @@ public:
     /// of truth for verification). Non-modal (fm) events are skipped.
     juce::String dumpModes (const Score& score)
     {
-        juce::String out;
+        // MemoryOutputStream: amortised O(1) append. juce::String's operator<<
+        // reallocates + copies the whole accumulated buffer on every append,
+        // which is O(total²) over a multi-MB dump — a 3000-event score's dump
+        // took >600 s purely in string copies (the real cause of the Vivaldi
+        // --dump-modes timeouts, not the modal math, which is milliseconds).
+        juce::MemoryOutputStream out (1 << 20);
         out << "{\n  \"events\": [\n";
         bool first = true;
         for (const auto& ev : score.events)
         {
             int midiNote = noteNameToMidi (ev.note);
-            std::vector<ModalResonator::Mode> modes;
+            std::vector<std::vector<ModalResonator::Mode>> allStrings;
+            // per-partial body-filter magnitude lookup, filled below (same
+            // shape as allStrings) so each partial can carry its own
+            // |dry+BodyResonance(dry)| value -- see BodyResonance::
+            // magnitudeAt(). The function is identical for every partial of
+            // a given voice (it's driven by the *summed* course output, not
+            // per-string), but is looked up per-frequency so the JSON stays
+            // self-contained (Python never has to know the filter's shape).
+            std::function<float(float)> bodyMagFn = [] (float) { return 1.0f; };
 
             if (ev.engine == "string" || ev.engine == "cimbalom" || ev.engine == "piano")
             {
                 const Material* mat = materialDB->getMaterial (juce::String (ev.material));
                 if (mat == nullptr) mat = materialDB->getMaterial ("steel");
                 if (mat == nullptr) continue;
+                // 2026-07 (--amps GATE fix): mirror renderEvent()'s piano
+                // branch EXACTLY -- piano's actual render overrides
+                // strikePosition/exciter (wood_mallet+0.3 -> felt+0.125)
+                // before exciting the string, but this dumpModes() branch
+                // previously didn't, so the "theory" was computed for a
+                // wood-mallet strike at 0.3 while the render used a felt
+                // strike at 0.125 (root-cause report Experiment 4/5, "piano
+                // theory/render parameter-mismatch bug", closes a further
+                // -4..-26 dB of *diagnostic-only* apparent error once fixed).
+                std::string strikeExciter = ev.exciter;
+                double strikePos = ev.strikePosition;
+                if (ev.engine == "piano")
+                {
+                    if (strikeExciter == "wood_mallet") strikeExciter = "felt";
+                    if (strikePos == 0.3)               strikePos = 0.125;
+                }
                 CimbalomParams cp;
                 cp.materialKey = ev.material;
-                cp.strikePosition = ev.strikePosition;
+                cp.strikePosition = strikePos;
                 cp.diameterMm = ev.diameterMm;
+                cp.numStrings = ev.numStrings;
+                cp.detuningCents = ev.detuningCents;
                 cp.tensionOverride = ev.tensionN;
                 cp.dampingOverride = ev.dampingOverride;
-                CimbalomVoice voice;
-                voice.prepare (score.global.sampleRate);
-                voice.noteOn (midiNote, ev.velocity, *mat, cp);
-                modes = voice.getModes();
+                cp.exciter = cimbalomExciterFromString (strikeExciter);
+                auto voice = std::make_shared<CimbalomVoice>();
+                voice->prepare (score.global.sampleRate);
+                voice->noteOn (midiNote, ev.velocity, *mat, cp);
+                allStrings = voice->getAllStringModes();
+                bodyMagFn = [voice] (float f) { return voice->getBodyMagnitudeAt (f); };
             }
             else if (ev.engine == "beam" || ev.engine == "tongue_drum"
                   || ev.engine == "plate" || ev.engine == "water_gong"
@@ -76,10 +111,12 @@ public:
                 cp.tongueWidth = ev.widthMm / 1000.0;
                 cp.tongueThickness = ev.thicknessMm / 1000.0;
                 cp.plateFreeEdge = ev.plateFreeEdge;
-                ChromaticVoice voice;
-                voice.prepare (score.global.sampleRate);
-                voice.noteOn (midiNote, ev.velocity, *mat, cp);
-                modes = voice.getModes();
+                cp.exciterHardness = chromaticExciterHardness (ev.exciter);
+                auto voice = std::make_shared<ChromaticVoice>();
+                voice->prepare (score.global.sampleRate);
+                voice->noteOn (midiNote, ev.velocity, *mat, cp);
+                allStrings.push_back (voice->getModes());
+                bodyMagFn = [voice] (float f) { return voice->getBodyMagnitudeAt (f); };
             }
             else
             {
@@ -89,20 +126,64 @@ public:
             if (! first) out << ",\n";
             first = false;
             auto jsonEsc = [] (const juce::String& s) { return s.replace ("\\", "\\\\").replace ("\"", "\\\""); };
+            auto modeToJson = [&] (const ModalResonator::Mode& m)
+            {
+                juce::String s;
+                // decay uses scientific notation (not fixed 4dp): high-frequency
+                // beam/plate partials can have genuinely positive decayTime well
+                // under 1e-4 s (e.g. a small tongue_drum tine's upper partials,
+                // whose raw physical fundamental is far above the MIDI-tuned
+                // target -- see BeamModel.h -- so the damping law 1/(2a+b*f^2+g*f)
+                // evaluated at that high raw f yields a small-but-real decay).
+                // Fixed-point %.4f silently rounds anything below 5e-5 s to the
+                // string "0.0000", which is byte-identical to a true zero once
+                // re-parsed as JSON -- verify_score.py's "decay must be > 0"
+                // check (tools/verify_score.py bad_decay, d <= 0.0) then flags a
+                // physically-valid positive decay as a bug. This is a dump
+                // (diagnostic/verification) precision fix only: it does not touch
+                // BeamModel/PlateModel/ModalResonator or the render() audio path,
+                // so no rendered score's audio output changes (Sec.1 rule 10 does
+                // not apply here -- the underlying decayTime numeric value driving
+                // synthesis is unchanged, only how --dump-modes prints it).
+                //
+                // "body_mag" (2026-07, --amps GATE fix): |dry+BodyResonance(dry)|
+                // at this mode's frequency, read from the SAME BodyResonance
+                // object noteOn() configured for the real render (amount=0.5,
+                // 120/280/500 Hz filters) -- see BodyResonance::magnitudeAt().
+                // Theory-only: a function of the model's own linear filter
+                // state, never of rendered audio.
+                s << "{\"freq\": " << juce::String (m.frequency, 3)
+                  << ", \"amp\": " << juce::String (m.amplitude, 5)
+                  << ", \"decay\": " << juce::String (m.decayTime, 4, true)
+                  << ", \"body_mag\": " << juce::String (bodyMagFn (m.frequency), 5) << "}";
+                return s;
+            };
+
             out << "    { \"engine\": \"" << jsonEsc (juce::String (ev.engine))
                 << "\", \"note\": \"" << jsonEsc (juce::String (ev.note))
                 << "\", \"midi\": " << midiNote << ", \"partials\": [";
-            for (size_t i = 0; i < modes.size(); ++i)
+            if (! allStrings.empty())
+                for (size_t i = 0; i < allStrings[0].size(); ++i)
+                {
+                    if (i) out << ", ";
+                    out << modeToJson (allStrings[0][i]);
+                }
+            out << "], \"strings\": [";
+            for (size_t s = 0; s < allStrings.size(); ++s)
             {
-                if (i) out << ", ";
-                out << "{\"freq\": " << juce::String (modes[i].frequency, 3)
-                    << ", \"amp\": " << juce::String (modes[i].amplitude, 5)
-                    << ", \"decay\": " << juce::String (modes[i].decayTime, 4) << "}";
+                if (s) out << ", ";
+                out << "[";
+                for (size_t i = 0; i < allStrings[s].size(); ++i)
+                {
+                    if (i) out << ", ";
+                    out << modeToJson (allStrings[s][i]);
+                }
+                out << "]";
             }
             out << "] }";
         }
         out << "\n  ]\n}\n";
-        return out;
+        return out.toString();
     }
 
     bool render (const Score& score, const juce::File& outputFile)
@@ -164,6 +245,11 @@ public:
         for (const auto& layer : score.layers)
         {
             juce::File sourceFile = baseDir.getChildFile (juce::String (layer.source));
+            if (! sourceFile.isAChildOf (baseDir) && sourceFile != baseDir)
+            {
+                renderWarnings.push_back ("Layer source blocked (path traversal): " + layer.source);
+                return false;
+            }
             if (! sourceFile.existsAsFile())
                 return false;
 
@@ -366,19 +452,7 @@ private:
         cp.detuningCents = ev.detuningCents;
         cp.tensionOverride = ev.tensionN;
         cp.dampingOverride = ev.dampingOverride;
-
-        if (ev.exciter == "cotton" || ev.exciter == "cotton_mallet") cp.exciter = ExciterType::Cotton;
-        else if (ev.exciter == "felt" || ev.exciter == "felt_mallet") cp.exciter = ExciterType::Felt;
-        else if (ev.exciter == "metal" || ev.exciter == "metal_mallet"
-                 || ev.exciter == "metal_hammer") cp.exciter = ExciterType::Metal;
-        else if (ev.exciter == "finger" || ev.exciter == "finger_tap") cp.exciter = ExciterType::Felt;
-        else if (ev.exciter == "bow") cp.exciter = ExciterType::Cotton;
-        else if (ev.exciter == "hard_plastic" || ev.exciter == "wood"
-                 || ev.exciter == "wood_mallet" || ev.exciter == "pluck") cp.exciter = ExciterType::Wood;
-        else if (ev.exciter == "rubber_mallet") cp.exciter = ExciterType::Felt;
-        else if (ev.exciter == "metal_scrape") cp.exciter = ExciterType::Metal;
-        else if (ev.exciter == "bow_slow" || ev.exciter == "brush") cp.exciter = ExciterType::Cotton;
-        else cp.exciter = ExciterType::Wood;
+        cp.exciter = cimbalomExciterFromString (ev.exciter);
 
         CimbalomVoice voice;
         voice.prepare (sr);
@@ -578,6 +652,26 @@ private:
             || exciter == "bow" || exciter == "bow_slow" || exciter == "brush"
             || exciter == "rubber_mallet" || exciter == "metal_scrape"
             || exciter == "pluck" || exciter == "medium" || exciter == "sharp";
+    }
+
+    /// Exciter string -> CimbalomEngine::ExciterType, shared by renderCimbalom()
+    /// and dumpModes() so the diagnostic (--dump-modes) path and the render
+    /// path always agree on which hammer the score asked for (single source
+    /// of truth, ROADMAP_PHYSICS.md §2c).
+    static ExciterType cimbalomExciterFromString (const std::string& exciter)
+    {
+        if (exciter == "cotton" || exciter == "cotton_mallet") return ExciterType::Cotton;
+        if (exciter == "felt" || exciter == "felt_mallet") return ExciterType::Felt;
+        if (exciter == "metal" || exciter == "metal_mallet"
+            || exciter == "metal_hammer") return ExciterType::Metal;
+        if (exciter == "finger" || exciter == "finger_tap") return ExciterType::Felt;
+        if (exciter == "bow") return ExciterType::Cotton;
+        if (exciter == "hard_plastic" || exciter == "wood"
+            || exciter == "wood_mallet" || exciter == "pluck") return ExciterType::Wood;
+        if (exciter == "rubber_mallet") return ExciterType::Felt;
+        if (exciter == "metal_scrape") return ExciterType::Metal;
+        if (exciter == "bow_slow" || exciter == "brush") return ExciterType::Cotton;
+        return ExciterType::Wood;
     }
 
     static float chromaticExciterHardness (const std::string& exciter)

@@ -8,6 +8,7 @@
 #include "../physics/BeamModel.h"
 #include "../physics/PlateModel.h"
 #include "../physics/MaterialDB.h"
+#include "../physics/HammerImpulse.h"
 #include <algorithm>
 
 /**
@@ -176,6 +177,23 @@ public:
             m.decayTime *= matScale * dmpScale;
         }
 
+        // Hammer force-impulse spectrum (M2 2a/2b). Beam (tongue drum) and
+        // plate (water gong) are struck rigid bodies in the physics-verified
+        // domain (ROADMAP_PHYSICS.md §0); Custom Harmonics (subEngine==2) is
+        // user-authored additive synthesis, not a physical strike model, so it
+        // is intentionally left untouched — applying a hammer spectrum there
+        // would silently distort user-specified amplitudes. See HammerImpulse.h
+        // for the half-sine contact-pulse derivation and tau_c sources.
+        if (subEngine == 0 || subEngine == 1)
+        {
+            float tauC = HammerImpulse::tauCForHardness (exciter);
+            for (auto& m : modes)
+            {
+                float omega = juce::MathConstants<float>::twoPi * m.frequency;
+                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
+            }
+        }
+
         // 保存基礎模態用於 pitch glide
         baseModes = modes;
         glidePhase = 0.0f;
@@ -263,6 +281,22 @@ public:
             modes = buildCustomModes (midiNote, mat);
         }
 
+        // Hammer force-impulse spectrum (M2 2a/2b). Beam/plate only — see the
+        // matching comment in startNote() above; Custom Harmonics (subEng==2)
+        // is user-authored additive synthesis and is left untouched. This is
+        // the single source of truth also read by --dump-modes
+        // (ModalResonator::getModes() returns baseAmp verbatim, per
+        // ROADMAP_PHYSICS.md §2c). See HammerImpulse.h for derivation/sources.
+        if (subEng == 0 || subEng == 1)
+        {
+            float tauC = HammerImpulse::tauCForHardness (params.exciterHardness);
+            for (auto& m : modes)
+            {
+                float omega = juce::MathConstants<float>::twoPi * m.frequency;
+                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
+            }
+        }
+
         baseModes = modes;
         glidePhase = 0.0f;
 
@@ -315,6 +349,11 @@ public:
 
     /// Predicted modes (MIDI-tuned) — CLI --dump-modes.
     std::vector<ModalResonator::Mode> getModes() const { return resonator.getModes(); }
+
+    /// |dry + BodyResonance(dry)| at freqHz for THIS voice's live body-filter
+    /// state -- see CimbalomVoice::getBodyMagnitudeAt() / BodyResonance::
+    /// magnitudeAt() for the full rationale (2026-07 --amps GATE fix).
+    float getBodyMagnitudeAt (float freqHz) const { return bodyRes.magnitudeAt (freqHz); }
 
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
                           int startSample, int numSamples) override
@@ -371,15 +410,20 @@ public:
     }
 
 private:
-    /// Per-sub-engine output gain — equal-RMS calibration (2026-06) so every
-    /// engine has matched RMS at the same velocity (replaces the lone 0.2 magic).
+    /// Per-sub-engine output gain — equal-RMS calibration (2026-06, re-anchored
+    /// 2026-07 after the BodyResonance velocity-linearity fix removed a v^2
+    /// envelope term that was inflating body-resonance level; values restore
+    /// each sub-engine's pre-fix RMS at the vel=0.85 calibration reference
+    /// per ROADMAP_PHYSICS.md §6 "跨引擎等 RMS").
     static float subEngineOutputGain (int subEngine)
     {
         switch (subEngine)
         {
-            case 0:  return 0.255f;   // Tongue Drum (free-free beam)
-            case 1:  return 0.163f;   // Water Gong (Kirchhoff plate)
-            default: return 0.180f;   // Custom harmonics
+            case 0:  return 0.196f;   // Tongue Drum (free-free beam)
+            case 1:  return 0.151f;   // Water Gong (Kirchhoff plate; shared by
+                                       // clamped + free-edge, same code path)
+            default: return 0.180f;   // Custom harmonics (no BodyResonance probe
+                                       // exists for this path; left unchanged)
         }
     }
 

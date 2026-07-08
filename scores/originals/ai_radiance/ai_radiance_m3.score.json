@@ -1,0 +1,2451 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "AI Radiance / 光之驗算 — 3. 記憶果園 / Memory Orchard",
+    "id": "ai_radiance_m3",
+    "author": "Codex",
+    "composer": "Codex",
+    "work": "AI Radiance / 光之驗算",
+    "movement_number": 3,
+    "movement_name": "記憶果園 / Memory Orchard",
+    "key": "F major with Lydian extensions",
+    "description": "FM 電鋼琴提供精確諧波身體，柔槌揚琴說出旋律，竹空靈鼓只留下記憶的倒影。",
+    "created": "2026-06-22",
+    "tags": [
+      "ai-original",
+      "physical-model",
+      "cimbalom",
+      "tongue-drum",
+      "water-gong",
+      "multi-engine",
+      "accessible-score"
+    ],
+    "mood": "mystical",
+    "use_case": "AI original concert work / physical synthesis demonstration",
+    "category": "original_composition",
+    "worldview": "AI Radiance",
+    "variation_of": null,
+    "primary_type": "magic",
+    "sound_type": "oneshot",
+    "family_id": "ai_radiance",
+    "character": [
+      "airy",
+      "metallic",
+      "pulse"
+    ]
+  },
+  "composition_thesis": "可驗證的整數 FM 頻譜擔任穩定記憶；物理弦與竹梁則以非諧波衰減讓記憶逐步失真。",
+  "global": {
+    "bpm": 64,
+    "sample_rate": 48000,
+    "master_volume": 0.52,
+    "effects": {
+      "reverb": {
+        "decay": 4.6,
+        "wet": 0.38
+      },
+      "delay": {
+        "time_ms": 468.75,
+        "feedback": 0.2,
+        "wet": 0.11
+      },
+      "wall": {
+        "distance_m": 7.5,
+        "material": "wood"
+      },
+      "distortion": {
+        "type": "overdrive",
+        "drive": 0.0,
+        "instability": 0.0,
+        "wet": 0.0
+      }
+    }
+  },
+  "tempo_map": [
+    {
+      "time": 0.0,
+      "quarter_bpm": 64
+    }
+  ],
+  "time_signatures": [
+    {
+      "time": 0.0,
+      "numerator": 3,
+      "denominator": 4
+    }
+  ],
+  "timing_policy": {
+    "time_unit": "seconds",
+    "renderer_note_off_ratio": 0.9,
+    "duration_compensation": "event.duration = intended sounding duration / 0.9",
+    "silence_representation": "rests[] plus absence of events"
+  },
+  "events": [
+    {
+      "time": 0,
+      "duration": 5.55555556,
+      "engine": "water_gong",
+      "note": "F2",
+      "velocity": 0.14,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 6.0,
+        "radius_mm": 320,
+        "strike_position": 0.52,
+        "exciter": "cotton_mallet",
+        "plate_free_edge": true
+      },
+      "performance": {
+        "role": "distant_memory_plate",
+        "midi_note": 41,
+        "frequency_hz": 87.307,
+        "intended_release_time": 5.0,
+        "articulation": "resonant_strike",
+        "phrase_end": true,
+        "breath_after_ms": 625.0
+      }
+    },
+    {
+      "time": 0.0,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "F3",
+      "velocity": 0.23,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 53,
+        "frequency_hz": 174.614,
+        "intended_release_time": 2.484375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 0.018,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "A3",
+      "velocity": 0.255,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 57,
+        "frequency_hz": 220.0,
+        "intended_release_time": 2.502375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 0.036,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "C4",
+      "velocity": 0.28,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 2.520375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 0.054,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "E4",
+      "velocity": 0.305,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 64,
+        "frequency_hz": 329.628,
+        "intended_release_time": 2.538375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": true,
+        "breath_after_ms": 274.125
+      }
+    },
+    {
+      "time": 0.20625,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "A4",
+      "velocity": 0.46,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.27,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 69,
+        "frequency_hz": 440.0,
+        "intended_release_time": 1.06875,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 0.54375,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "F5",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 62,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "intended_release_time": 1.621875,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 1.6125,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "C5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.29500000000000004,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 2.475,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 1.95,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "C6",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 59,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 84,
+        "frequency_hz": 1046.502,
+        "intended_release_time": 3.028125,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 2.8125,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "G3",
+      "velocity": 0.23,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 5.296875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 2.8305,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "Bb3",
+      "velocity": 0.255,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 58,
+        "frequency_hz": 233.082,
+        "intended_release_time": 5.314875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 2.8485,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "D4",
+      "velocity": 0.28,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 5.332875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 2.8665,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "F4",
+      "velocity": 0.305,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 65,
+        "frequency_hz": 349.228,
+        "intended_release_time": 5.350875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": true,
+        "breath_after_ms": 274.125
+      }
+    },
+    {
+      "time": 3.01875,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "E5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.32,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "intended_release_time": 3.88125,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 3.35625,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "A5",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 56,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "intended_release_time": 4.434375,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 4.425,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "D5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.27,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "intended_release_time": 5.2875,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 4.7625,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "E6",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 53,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 88,
+        "frequency_hz": 1318.51,
+        "intended_release_time": 5.840625,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 5.625,
+      "duration": 5.55555556,
+      "engine": "water_gong",
+      "note": "C2",
+      "velocity": 0.14,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 6.0,
+        "radius_mm": 320,
+        "strike_position": 0.52,
+        "exciter": "cotton_mallet",
+        "plate_free_edge": true
+      },
+      "performance": {
+        "role": "distant_memory_plate",
+        "midi_note": 36,
+        "frequency_hz": 65.406,
+        "intended_release_time": 10.625,
+        "articulation": "resonant_strike",
+        "phrase_end": true,
+        "breath_after_ms": 625.0
+      }
+    },
+    {
+      "time": 5.625,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "A3",
+      "velocity": 0.23,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 3.4,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 57,
+        "frequency_hz": 220.0,
+        "intended_release_time": 8.109375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 5.643,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "C4",
+      "velocity": 0.255,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 3.4,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 8.127375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 5.661,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "E4",
+      "velocity": 0.28,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 3.4,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 64,
+        "frequency_hz": 329.628,
+        "intended_release_time": 8.145375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 5.679,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "G4",
+      "velocity": 0.305,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 3.4,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 8.163375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": true,
+        "breath_after_ms": 274.125
+      }
+    },
+    {
+      "time": 5.83125,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "C5",
+      "velocity": 0.46,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.29500000000000004,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 6.69375,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 6.16875,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "F5",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 62,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "intended_release_time": 7.246875,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 7.2375,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "A4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.32,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 69,
+        "frequency_hz": 440.0,
+        "intended_release_time": 8.1,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 7.575,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "C6",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 59,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 84,
+        "frequency_hz": 1046.502,
+        "intended_release_time": 8.653125,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 8.4375,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "C3",
+      "velocity": 0.23,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 48,
+        "frequency_hz": 130.813,
+        "intended_release_time": 10.921875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 8.4555,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "G3",
+      "velocity": 0.255,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 10.939875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 8.4735,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "Bb3",
+      "velocity": 0.28,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 58,
+        "frequency_hz": 233.082,
+        "intended_release_time": 10.957875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 8.4915,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "E4",
+      "velocity": 0.305,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 64,
+        "frequency_hz": 329.628,
+        "intended_release_time": 10.975875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": true,
+        "breath_after_ms": 274.125
+      }
+    },
+    {
+      "time": 8.64375,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "G4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.27,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 9.50625,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 8.98125,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "A5",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 56,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "intended_release_time": 10.059375,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 10.05,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "C5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.29500000000000004,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 10.9125,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 10.3875,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "E6",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 53,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 88,
+        "frequency_hz": 1318.51,
+        "intended_release_time": 11.465625,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 11.25,
+      "duration": 5.55555556,
+      "engine": "water_gong",
+      "note": "D2",
+      "velocity": 0.14,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 6.0,
+        "radius_mm": 320,
+        "strike_position": 0.52,
+        "exciter": "cotton_mallet",
+        "plate_free_edge": true
+      },
+      "performance": {
+        "role": "distant_memory_plate",
+        "midi_note": 38,
+        "frequency_hz": 73.416,
+        "intended_release_time": 16.25,
+        "articulation": "resonant_strike",
+        "phrase_end": true,
+        "breath_after_ms": 625.0
+      }
+    },
+    {
+      "time": 11.25,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "D3",
+      "velocity": 0.23,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 50,
+        "frequency_hz": 146.832,
+        "intended_release_time": 13.734375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 11.268,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "F3",
+      "velocity": 0.255,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 53,
+        "frequency_hz": 174.614,
+        "intended_release_time": 13.752375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 11.286,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "A3",
+      "velocity": 0.28,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 57,
+        "frequency_hz": 220.0,
+        "intended_release_time": 13.770375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 11.304,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "C4",
+      "velocity": 0.305,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 13.788375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": true,
+        "breath_after_ms": 274.125
+      }
+    },
+    {
+      "time": 11.45625,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "F5",
+      "velocity": 0.46,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.32,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "intended_release_time": 12.31875,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 11.79375,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "F5",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 62,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "intended_release_time": 12.871875,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 12.8625,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "E5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.27,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "intended_release_time": 13.725,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 13.2,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "C6",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 59,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 84,
+        "frequency_hz": 1046.502,
+        "intended_release_time": 14.278125,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 14.0625,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "Bb2",
+      "velocity": 0.23,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 3.4,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 46,
+        "frequency_hz": 116.541,
+        "intended_release_time": 16.546875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 14.0805,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "F3",
+      "velocity": 0.255,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 3.4,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 53,
+        "frequency_hz": 174.614,
+        "intended_release_time": 16.564875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 14.0985,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "A3",
+      "velocity": 0.28,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 3.4,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 57,
+        "frequency_hz": 220.0,
+        "intended_release_time": 16.582875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 14.1165,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "D4",
+      "velocity": 0.305,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 3.4,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 16.600875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": true,
+        "breath_after_ms": 274.125
+      }
+    },
+    {
+      "time": 14.26875,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "C5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.29500000000000004,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 15.13125,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 14.60625,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "A5",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 56,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "intended_release_time": 15.684375,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 15.675,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "A4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.32,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 69,
+        "frequency_hz": 440.0,
+        "intended_release_time": 16.5375,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 16.0125,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "E6",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 53,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 88,
+        "frequency_hz": 1318.51,
+        "intended_release_time": 17.090625,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 16.875,
+      "duration": 5.55555556,
+      "engine": "water_gong",
+      "note": "C2",
+      "velocity": 0.14,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 6.0,
+        "radius_mm": 320,
+        "strike_position": 0.52,
+        "exciter": "cotton_mallet",
+        "plate_free_edge": true
+      },
+      "performance": {
+        "role": "distant_memory_plate",
+        "midi_note": 36,
+        "frequency_hz": 65.406,
+        "intended_release_time": 21.875,
+        "articulation": "resonant_strike",
+        "phrase_end": true,
+        "breath_after_ms": 2125.0
+      }
+    },
+    {
+      "time": 16.875,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "G2",
+      "velocity": 0.23,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 43,
+        "frequency_hz": 97.999,
+        "intended_release_time": 19.359375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 16.893,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "D3",
+      "velocity": 0.255,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 50,
+        "frequency_hz": 146.832,
+        "intended_release_time": 19.377375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 16.911,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "F3",
+      "velocity": 0.28,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 53,
+        "frequency_hz": 174.614,
+        "intended_release_time": 19.395375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 16.929,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "C4",
+      "velocity": 0.305,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.5,
+        "fm_brightness": 0.32,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 19.413375,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": true,
+        "breath_after_ms": 274.125
+      }
+    },
+    {
+      "time": 17.08125,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "D5",
+      "velocity": 0.46,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.27,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 74,
+        "frequency_hz": 587.33,
+        "intended_release_time": 17.94375,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 17.41875,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "F5",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 62,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 77,
+        "frequency_hz": 698.456,
+        "intended_release_time": 18.496875,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 18.4875,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "C5",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.29500000000000004,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 19.35,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 18.825,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "C6",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 59,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 84,
+        "frequency_hz": 1046.502,
+        "intended_release_time": 19.903125,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 19.6875,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "C3",
+      "velocity": 0.23,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 48,
+        "frequency_hz": 130.813,
+        "intended_release_time": 22.171875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 19.7055,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "G3",
+      "velocity": 0.255,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 22.189875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 19.7235,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "C4",
+      "velocity": 0.28,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 22.207875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 19.7415,
+      "duration": 2.76041667,
+      "engine": "fm",
+      "note": "E4",
+      "velocity": 0.305,
+      "params": {
+        "fm_preset": 1,
+        "fm_ratio": 1.0,
+        "fm_index": 2.95,
+        "fm_brightness": 0.36,
+        "fm_feedback": 0.025,
+        "fm_attack": 18,
+        "fm_release": 1500
+      },
+      "performance": {
+        "role": "fm_memory_body",
+        "midi_note": 64,
+        "frequency_hz": 329.628,
+        "intended_release_time": 22.225875,
+        "articulation": "slow_epiano_chord",
+        "phrase_end": true,
+        "breath_after_ms": 1774.125
+      }
+    },
+    {
+      "time": 19.89375,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "G4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.32,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 20.75625,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 543.75
+      }
+    },
+    {
+      "time": 20.23125,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "A5",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 56,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 81,
+        "frequency_hz": 880.0,
+        "intended_release_time": 21.309375,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 328.125
+      }
+    },
+    {
+      "time": 21.3,
+      "duration": 0.95833333,
+      "engine": "cimbalom",
+      "note": "F4",
+      "velocity": 0.42,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.58,
+        "strike_position": 0.27,
+        "exciter": "felt_mallet",
+        "damping_override": 0.28,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "remembering_yangqin",
+        "midi_note": 65,
+        "frequency_hz": 349.228,
+        "intended_release_time": 22.1625,
+        "articulation": "soft_memory_strike",
+        "phrase_end": true,
+        "breath_after_ms": 1837.5
+      }
+    },
+    {
+      "time": 21.6375,
+      "duration": 1.19791667,
+      "engine": "tongue_drum",
+      "note": "E6",
+      "velocity": 0.18,
+      "params": {
+        "material": "bamboo",
+        "thickness_mm": 1.8,
+        "length_mm": 53,
+        "width_mm": 16,
+        "strike_position": 0.5,
+        "exciter": "finger_tap"
+      },
+      "performance": {
+        "role": "bamboo_afterimage",
+        "midi_note": 88,
+        "frequency_hz": 1318.51,
+        "intended_release_time": 22.715625,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 1284.375
+      }
+    }
+  ],
+  "rests": [
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 0.0,
+      "duration": 0.54375,
+      "kind": "entrance_rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 1.621875,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 3.028125,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 4.434375,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 5.840625,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 7.246875,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 8.653125,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 10.059375,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 11.465625,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 12.871875,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 14.278125,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 15.684375,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 17.090625,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 18.496875,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 19.903125,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 21.309375,
+      "duration": 0.328125,
+      "kind": "rest"
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "time": 22.715625,
+      "duration": 1.284375,
+      "kind": "rest"
+    },
+    {
+      "track": "distant_memory_plate",
+      "role": "distant_memory_plate",
+      "time": 5.0,
+      "duration": 0.625,
+      "kind": "rest"
+    },
+    {
+      "track": "distant_memory_plate",
+      "role": "distant_memory_plate",
+      "time": 10.625,
+      "duration": 0.625,
+      "kind": "rest"
+    },
+    {
+      "track": "distant_memory_plate",
+      "role": "distant_memory_plate",
+      "time": 16.25,
+      "duration": 0.625,
+      "kind": "rest"
+    },
+    {
+      "track": "distant_memory_plate",
+      "role": "distant_memory_plate",
+      "time": 21.875,
+      "duration": 2.125,
+      "kind": "long_rest"
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "time": 2.538375,
+      "duration": 0.274125,
+      "kind": "breath"
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "time": 5.350875,
+      "duration": 0.274125,
+      "kind": "breath"
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "time": 8.163375,
+      "duration": 0.274125,
+      "kind": "breath"
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "time": 10.975875,
+      "duration": 0.274125,
+      "kind": "breath"
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "time": 13.788375,
+      "duration": 0.274125,
+      "kind": "breath"
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "time": 16.600875,
+      "duration": 0.274125,
+      "kind": "breath"
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "time": 19.413375,
+      "duration": 0.274125,
+      "kind": "breath"
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "time": 22.225875,
+      "duration": 1.774125,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 0.0,
+      "duration": 0.20625,
+      "kind": "entrance_rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 1.06875,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 2.475,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 3.88125,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 5.2875,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 6.69375,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 8.1,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 9.50625,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 10.9125,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 12.31875,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 13.725,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 15.13125,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 16.5375,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 17.94375,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 19.35,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 20.75625,
+      "duration": 0.54375,
+      "kind": "rest"
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "time": 22.1625,
+      "duration": 1.8375,
+      "kind": "rest"
+    }
+  ],
+  "phrases": [
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 1,
+      "start": 0.54375,
+      "end": 1.621875,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 2,
+      "start": 1.95,
+      "end": 3.028125,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 3,
+      "start": 3.35625,
+      "end": 4.434375,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 4,
+      "start": 4.7625,
+      "end": 5.840625,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 5,
+      "start": 6.16875,
+      "end": 7.246875,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 6,
+      "start": 7.575,
+      "end": 8.653125,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 7,
+      "start": 8.98125,
+      "end": 10.059375,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 8,
+      "start": 10.3875,
+      "end": 11.465625,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 9,
+      "start": 11.79375,
+      "end": 12.871875,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 10,
+      "start": 13.2,
+      "end": 14.278125,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 11,
+      "start": 14.60625,
+      "end": 15.684375,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 12,
+      "start": 16.0125,
+      "end": 17.090625,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 13,
+      "start": 17.41875,
+      "end": 18.496875,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 14,
+      "start": 18.825,
+      "end": 19.903125,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 15,
+      "start": 20.23125,
+      "end": 21.309375,
+      "breath_after_ms": 328.125
+    },
+    {
+      "track": "bamboo_afterimage",
+      "role": "bamboo_afterimage",
+      "number": 16,
+      "start": 21.6375,
+      "end": 22.715625,
+      "breath_after_ms": 1284.375
+    },
+    {
+      "track": "distant_memory_plate",
+      "role": "distant_memory_plate",
+      "number": 1,
+      "start": 0,
+      "end": 5.0,
+      "breath_after_ms": 625.0
+    },
+    {
+      "track": "distant_memory_plate",
+      "role": "distant_memory_plate",
+      "number": 2,
+      "start": 5.625,
+      "end": 10.625,
+      "breath_after_ms": 625.0
+    },
+    {
+      "track": "distant_memory_plate",
+      "role": "distant_memory_plate",
+      "number": 3,
+      "start": 11.25,
+      "end": 16.25,
+      "breath_after_ms": 625.0
+    },
+    {
+      "track": "distant_memory_plate",
+      "role": "distant_memory_plate",
+      "number": 4,
+      "start": 16.875,
+      "end": 21.875,
+      "breath_after_ms": 2125.0
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "number": 1,
+      "start": 0.0,
+      "end": 2.538375,
+      "breath_after_ms": 274.125
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "number": 2,
+      "start": 2.8125,
+      "end": 5.350875,
+      "breath_after_ms": 274.125
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "number": 3,
+      "start": 5.625,
+      "end": 8.163375,
+      "breath_after_ms": 274.125
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "number": 4,
+      "start": 8.4375,
+      "end": 10.975875,
+      "breath_after_ms": 274.125
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "number": 5,
+      "start": 11.25,
+      "end": 13.788375,
+      "breath_after_ms": 274.125
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "number": 6,
+      "start": 14.0625,
+      "end": 16.600875,
+      "breath_after_ms": 274.125
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "number": 7,
+      "start": 16.875,
+      "end": 19.413375,
+      "breath_after_ms": 274.125
+    },
+    {
+      "track": "fm_memory_body",
+      "role": "fm_memory_body",
+      "number": 8,
+      "start": 19.6875,
+      "end": 22.225875,
+      "breath_after_ms": 1774.125
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 1,
+      "start": 0.20625,
+      "end": 1.06875,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 2,
+      "start": 1.6125,
+      "end": 2.475,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 3,
+      "start": 3.01875,
+      "end": 3.88125,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 4,
+      "start": 4.425,
+      "end": 5.2875,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 5,
+      "start": 5.83125,
+      "end": 6.69375,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 6,
+      "start": 7.2375,
+      "end": 8.1,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 7,
+      "start": 8.64375,
+      "end": 9.50625,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 8,
+      "start": 10.05,
+      "end": 10.9125,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 9,
+      "start": 11.45625,
+      "end": 12.31875,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 10,
+      "start": 12.8625,
+      "end": 13.725,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 11,
+      "start": 14.26875,
+      "end": 15.13125,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 12,
+      "start": 15.675,
+      "end": 16.5375,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 13,
+      "start": 17.08125,
+      "end": 17.94375,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 14,
+      "start": 18.4875,
+      "end": 19.35,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 15,
+      "start": 19.89375,
+      "end": 20.75625,
+      "breath_after_ms": 543.75
+    },
+    {
+      "track": "remembering_yangqin",
+      "role": "remembering_yangqin",
+      "number": 16,
+      "start": 21.3,
+      "end": 22.1625,
+      "breath_after_ms": 1837.5
+    }
+  ],
+  "export": {
+    "filename": "ai_radiance_m3",
+    "export_filename": "Original_AI_Radiance_Movement3",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 1200
+  }
+}

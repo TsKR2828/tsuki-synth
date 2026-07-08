@@ -1,0 +1,2239 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "AI Radiance / 光之驗算 — 1. 露珠格點 / Dew Lattice",
+    "id": "ai_radiance_m1",
+    "author": "Codex",
+    "composer": "Codex",
+    "work": "AI Radiance / 光之驗算",
+    "movement_number": 1,
+    "movement_name": "露珠格點 / Dew Lattice",
+    "key": "E Lydian / E major field",
+    "description": "揚琴的離散攻擊穿過空靈鼓長尾；每四拍由自由邊界青銅板重新定義空間。",
+    "created": "2026-06-22",
+    "tags": [
+      "ai-original",
+      "physical-model",
+      "cimbalom",
+      "tongue-drum",
+      "water-gong",
+      "multi-engine",
+      "accessible-score"
+    ],
+    "mood": "mystical",
+    "use_case": "AI original concert work / physical synthesis demonstration",
+    "category": "original_composition",
+    "worldview": "AI Radiance",
+    "variation_of": null,
+    "primary_type": "magic",
+    "sound_type": "oneshot",
+    "family_id": "ai_radiance",
+    "character": [
+      "airy",
+      "metallic",
+      "pulse"
+    ]
+  },
+  "composition_thesis": "相同十二平均律基頻交給弦、梁與圓板後，各自展開不同非諧波模態；和聲由物理體的衰減交疊形成。",
+  "global": {
+    "bpm": 72,
+    "sample_rate": 48000,
+    "master_volume": 0.52,
+    "effects": {
+      "reverb": {
+        "decay": 5.2,
+        "wet": 0.42
+      },
+      "delay": {
+        "time_ms": 416.667,
+        "feedback": 0.18,
+        "wet": 0.09
+      },
+      "wall": {
+        "distance_m": 9.0,
+        "material": "glass"
+      },
+      "distortion": {
+        "type": "overdrive",
+        "drive": 0.0,
+        "instability": 0.0,
+        "wet": 0.0
+      }
+    }
+  },
+  "tempo_map": [
+    {
+      "time": 0.0,
+      "quarter_bpm": 72
+    }
+  ],
+  "time_signatures": [
+    {
+      "time": 0.0,
+      "numerator": 4,
+      "denominator": 4
+    }
+  ],
+  "timing_policy": {
+    "time_unit": "seconds",
+    "renderer_note_off_ratio": 0.9,
+    "duration_compensation": "event.duration = intended sounding duration / 0.9",
+    "silence_representation": "rests[] plus absence of events"
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 6.44444444,
+      "engine": "water_gong",
+      "note": "E2",
+      "velocity": 0.22,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 5.2,
+        "radius_mm": 260,
+        "strike_position": 0.49,
+        "exciter": "cotton_mallet",
+        "plate_free_edge": true
+      },
+      "performance": {
+        "role": "bronze_horizon",
+        "midi_note": 40,
+        "frequency_hz": 82.407,
+        "intended_release_time": 5.8,
+        "articulation": "resonant_strike",
+        "phrase_end": true,
+        "breath_after_ms": 866.667
+      },
+      "comment": "自由邊界圓板作為低頻時間地平線。"
+    },
+    {
+      "time": 0.0,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "E4",
+      "velocity": 0.54,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.16,
+        "exciter": "metal_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 64,
+        "frequency_hz": 329.628,
+        "intended_release_time": 0.316667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 0.416667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "B4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.195,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "intended_release_time": 0.733333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 0.558333,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "F#5",
+      "velocity": 0.305,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.45,
+        "length_mm": 72,
+        "width_mm": 24,
+        "strike_position": 0.42,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 1.141667,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 0.833333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "F#5",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.23,
+        "exciter": "wood_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 1.15,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 1.25,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "G#4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.265,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 68,
+        "frequency_hz": 415.305,
+        "intended_release_time": 1.566667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 1.391667,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "G#5",
+      "velocity": 0.28,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.2,
+        "length_mm": 64,
+        "width_mm": 24,
+        "strike_position": 0.38,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 1.975,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 1.666667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "C#5",
+      "velocity": 0.54,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.16,
+        "exciter": "metal_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "intended_release_time": 1.983333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 2.083333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "B4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.195,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "intended_release_time": 2.4,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 2.225,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "F#5",
+      "velocity": 0.33,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.7,
+        "length_mm": 72,
+        "width_mm": 24,
+        "strike_position": 0.46,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 2.808333,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 2.5,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "E5",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.23,
+        "exciter": "wood_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "intended_release_time": 2.816667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 2.916667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "F#4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.265,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 66,
+        "frequency_hz": 369.994,
+        "intended_release_time": 3.233333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 3.058333,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "G#5",
+      "velocity": 0.305,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.45,
+        "length_mm": 64,
+        "width_mm": 24,
+        "strike_position": 0.42,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 3.641667,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 3.333333,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "E5",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "intended_release_time": 6.733333,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 3266.667
+      }
+    },
+    {
+      "time": 3.333333,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "G#5",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 6.733333,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 3266.667
+      }
+    },
+    {
+      "time": 3.333333,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "B5",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 83,
+        "frequency_hz": 987.767,
+        "intended_release_time": 6.733333,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 3266.667
+      }
+    },
+    {
+      "time": 3.333333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "E4",
+      "velocity": 0.54,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.16,
+        "exciter": "metal_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 64,
+        "frequency_hz": 329.628,
+        "intended_release_time": 3.65,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 3.75,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "B4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.195,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "intended_release_time": 4.066667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 3.891667,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "F#5",
+      "velocity": 0.28,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.2,
+        "length_mm": 72,
+        "width_mm": 24,
+        "strike_position": 0.38,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 4.475,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 4.166667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "F#5",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.23,
+        "exciter": "wood_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 4.483333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 4.583333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "G#4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.265,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 68,
+        "frequency_hz": 415.305,
+        "intended_release_time": 4.9,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 4.725,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "G#5",
+      "velocity": 0.33,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.7,
+        "length_mm": 64,
+        "width_mm": 24,
+        "strike_position": 0.46,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 5.308333,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 5.0,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "C#5",
+      "velocity": 0.54,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.16,
+        "exciter": "metal_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "intended_release_time": 5.316667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 5.416667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "B4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.195,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "intended_release_time": 5.733333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 5.558333,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "F#5",
+      "velocity": 0.305,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.45,
+        "length_mm": 72,
+        "width_mm": 24,
+        "strike_position": 0.42,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 6.141667,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 5.833333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "E5",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.23,
+        "exciter": "wood_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "intended_release_time": 6.15,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 6.25,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "F#4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.265,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 66,
+        "frequency_hz": 369.994,
+        "intended_release_time": 6.566667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 6.391667,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "G#5",
+      "velocity": 0.28,
+      "params": {
+        "material": "steel",
+        "thickness_mm": 2.2,
+        "length_mm": 64,
+        "width_mm": 24,
+        "strike_position": 0.38,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 6.975,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 6.666667,
+      "duration": 6.44444444,
+      "engine": "water_gong",
+      "note": "B1",
+      "velocity": 0.22,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 5.2,
+        "radius_mm": 315,
+        "strike_position": 0.49,
+        "exciter": "cotton_mallet",
+        "plate_free_edge": true
+      },
+      "performance": {
+        "role": "bronze_horizon",
+        "midi_note": 35,
+        "frequency_hz": 61.735,
+        "intended_release_time": 12.466667,
+        "articulation": "resonant_strike",
+        "phrase_end": true,
+        "breath_after_ms": 866.666
+      },
+      "comment": "自由邊界圓板作為低頻時間地平線。"
+    },
+    {
+      "time": 6.666667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "E4",
+      "velocity": 0.54,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.16,
+        "exciter": "metal_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 64,
+        "frequency_hz": 329.628,
+        "intended_release_time": 6.983333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 7.083333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "B4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.195,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "intended_release_time": 7.4,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 7.225,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "F#5",
+      "velocity": 0.33,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 2.7,
+        "length_mm": 72,
+        "width_mm": 24,
+        "strike_position": 0.46,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 7.808333,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 7.5,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "F#5",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.23,
+        "exciter": "wood_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 7.816667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 7.916667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "G#4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.265,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 68,
+        "frequency_hz": 415.305,
+        "intended_release_time": 8.233333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 8.058333,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "G#5",
+      "velocity": 0.305,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 2.45,
+        "length_mm": 64,
+        "width_mm": 24,
+        "strike_position": 0.42,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 8.641667,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 8.333333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "C#5",
+      "velocity": 0.54,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.16,
+        "exciter": "metal_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "intended_release_time": 8.65,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 8.75,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "B4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.195,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "intended_release_time": 9.066667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 8.891667,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "F#5",
+      "velocity": 0.28,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 2.2,
+        "length_mm": 72,
+        "width_mm": 24,
+        "strike_position": 0.38,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 9.475,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 9.166667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "E5",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.23,
+        "exciter": "wood_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "intended_release_time": 9.483333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 9.583333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "F#4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.265,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 66,
+        "frequency_hz": 369.994,
+        "intended_release_time": 9.9,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 9.725,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "G#5",
+      "velocity": 0.33,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 2.7,
+        "length_mm": 64,
+        "width_mm": 24,
+        "strike_position": 0.46,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 10.308333,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 10.0,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "F#5",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 13.4,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 3266.667
+      }
+    },
+    {
+      "time": 10.0,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "B5",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 83,
+        "frequency_hz": 987.767,
+        "intended_release_time": 13.4,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 3266.667
+      }
+    },
+    {
+      "time": 10.0,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "C#6",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 85,
+        "frequency_hz": 1108.731,
+        "intended_release_time": 13.4,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 3266.667
+      }
+    },
+    {
+      "time": 10.0,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "E4",
+      "velocity": 0.54,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.16,
+        "exciter": "metal_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 64,
+        "frequency_hz": 329.628,
+        "intended_release_time": 10.316667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 10.416667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "B4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.195,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "intended_release_time": 10.733333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 10.558333,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "F#5",
+      "velocity": 0.305,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 2.45,
+        "length_mm": 72,
+        "width_mm": 24,
+        "strike_position": 0.42,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 11.141667,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 10.833333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "F#5",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.23,
+        "exciter": "wood_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 11.15,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 11.25,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "G#4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.265,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 68,
+        "frequency_hz": 415.305,
+        "intended_release_time": 11.566667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 11.391667,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "G#5",
+      "velocity": 0.28,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 2.2,
+        "length_mm": 64,
+        "width_mm": 24,
+        "strike_position": 0.38,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 11.975,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 11.666667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "C#5",
+      "velocity": 0.54,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.16,
+        "exciter": "metal_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 73,
+        "frequency_hz": 554.365,
+        "intended_release_time": 11.983333,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 12.083333,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "B4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.6,
+        "strike_position": 0.195,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 71,
+        "frequency_hz": 493.883,
+        "intended_release_time": 12.4,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 12.225,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "F#5",
+      "velocity": 0.33,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 2.7,
+        "length_mm": 72,
+        "width_mm": 24,
+        "strike_position": 0.46,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 78,
+        "frequency_hz": 739.989,
+        "intended_release_time": 12.808333,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 250.0
+      }
+    },
+    {
+      "time": 12.5,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "E5",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.52,
+        "strike_position": 0.23,
+        "exciter": "wood_mallet",
+        "damping_override": 0.46,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "intended_release_time": 12.816667,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 100.0
+      }
+    },
+    {
+      "time": 12.916667,
+      "duration": 0.35185185,
+      "engine": "cimbalom",
+      "note": "F#4",
+      "velocity": 0.48,
+      "params": {
+        "material": "steel",
+        "diameter_mm": 0.56,
+        "strike_position": 0.265,
+        "exciter": "wood_mallet",
+        "damping_override": 0.54,
+        "length_mm": 330,
+        "tension_n": 0
+      },
+      "performance": {
+        "role": "yangqin_lattice",
+        "midi_note": 66,
+        "frequency_hz": 369.994,
+        "intended_release_time": 13.233333,
+        "articulation": "alternating_hammer",
+        "phrase_end": true,
+        "breath_after_ms": 13766.667
+      }
+    },
+    {
+      "time": 13.058333,
+      "duration": 0.64814815,
+      "engine": "tongue_drum",
+      "note": "G#5",
+      "velocity": 0.305,
+      "params": {
+        "material": "glass",
+        "thickness_mm": 2.45,
+        "length_mm": 64,
+        "width_mm": 24,
+        "strike_position": 0.42,
+        "exciter": "finger"
+      },
+      "performance": {
+        "role": "ethereal_echo",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 13.641667,
+        "articulation": "soft_tap",
+        "phrase_end": true,
+        "breath_after_ms": 13358.333
+      }
+    },
+    {
+      "time": 13.333333,
+      "duration": 6.44444444,
+      "engine": "water_gong",
+      "note": "C#2",
+      "velocity": 0.22,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 5.2,
+        "radius_mm": 290,
+        "strike_position": 0.49,
+        "exciter": "cotton_mallet",
+        "plate_free_edge": true
+      },
+      "performance": {
+        "role": "bronze_horizon",
+        "midi_note": 37,
+        "frequency_hz": 69.296,
+        "intended_release_time": 19.133333,
+        "articulation": "resonant_strike",
+        "phrase_end": true,
+        "breath_after_ms": 866.667
+      },
+      "comment": "自由邊界圓板作為低頻時間地平線。"
+    },
+    {
+      "time": 16.666667,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "G#5",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 80,
+        "frequency_hz": 830.609,
+        "intended_release_time": 20.066667,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 3266.666
+      }
+    },
+    {
+      "time": 16.666667,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "B5",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 83,
+        "frequency_hz": 987.767,
+        "intended_release_time": 20.066667,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 3266.666
+      }
+    },
+    {
+      "time": 16.666667,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "E6",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 88,
+        "frequency_hz": 1318.51,
+        "intended_release_time": 20.066667,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 3266.666
+      }
+    },
+    {
+      "time": 20.0,
+      "duration": 6.44444444,
+      "engine": "water_gong",
+      "note": "E2",
+      "velocity": 0.22,
+      "params": {
+        "material": "bronze",
+        "thickness_mm": 5.2,
+        "radius_mm": 340,
+        "strike_position": 0.49,
+        "exciter": "cotton_mallet",
+        "plate_free_edge": true
+      },
+      "performance": {
+        "role": "bronze_horizon",
+        "midi_note": 40,
+        "frequency_hz": 82.407,
+        "intended_release_time": 25.8,
+        "articulation": "resonant_strike",
+        "phrase_end": true,
+        "breath_after_ms": 1200.0
+      },
+      "comment": "自由邊界圓板作為低頻時間地平線。"
+    },
+    {
+      "time": 23.333333,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "E5",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 76,
+        "frequency_hz": 659.255,
+        "intended_release_time": 26.733333,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 266.667
+      }
+    },
+    {
+      "time": 23.333333,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "B5",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 83,
+        "frequency_hz": 987.767,
+        "intended_release_time": 26.733333,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 266.667
+      }
+    },
+    {
+      "time": 23.333333,
+      "duration": 3.77777778,
+      "engine": "custom",
+      "note": "F#6",
+      "velocity": 0.16,
+      "params": {
+        "material": "glass",
+        "strike_position": 0.27,
+        "exciter": "metal_tip"
+      },
+      "performance": {
+        "role": "glass_constellation",
+        "midi_note": 90,
+        "frequency_hz": 1479.978,
+        "intended_release_time": 26.733333,
+        "articulation": "spectral_flash",
+        "phrase_end": true,
+        "breath_after_ms": 266.667
+      }
+    }
+  ],
+  "rests": [
+    {
+      "track": "bronze_horizon",
+      "role": "bronze_horizon",
+      "time": 5.8,
+      "duration": 0.866667,
+      "kind": "rest"
+    },
+    {
+      "track": "bronze_horizon",
+      "role": "bronze_horizon",
+      "time": 12.466667,
+      "duration": 0.866666,
+      "kind": "rest"
+    },
+    {
+      "track": "bronze_horizon",
+      "role": "bronze_horizon",
+      "time": 19.133333,
+      "duration": 0.866667,
+      "kind": "rest"
+    },
+    {
+      "track": "bronze_horizon",
+      "role": "bronze_horizon",
+      "time": 25.8,
+      "duration": 1.2,
+      "kind": "rest"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 0.0,
+      "duration": 0.558333,
+      "kind": "entrance_rest"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 1.141667,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 1.975,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 2.808333,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 3.641667,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 4.475,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 5.308333,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 6.141667,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 6.975,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 7.808333,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 8.641667,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 9.475,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 10.308333,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 11.141667,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 11.975,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 12.808333,
+      "duration": 0.25,
+      "kind": "breath"
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "time": 13.641667,
+      "duration": 13.358333,
+      "kind": "long_rest"
+    },
+    {
+      "track": "glass_constellation",
+      "role": "glass_constellation",
+      "time": 0.0,
+      "duration": 3.333333,
+      "kind": "entrance_rest"
+    },
+    {
+      "track": "glass_constellation",
+      "role": "glass_constellation",
+      "time": 6.733333,
+      "duration": 3.266667,
+      "kind": "long_rest"
+    },
+    {
+      "track": "glass_constellation",
+      "role": "glass_constellation",
+      "time": 13.4,
+      "duration": 3.266667,
+      "kind": "long_rest"
+    },
+    {
+      "track": "glass_constellation",
+      "role": "glass_constellation",
+      "time": 20.066667,
+      "duration": 3.266666,
+      "kind": "long_rest"
+    },
+    {
+      "track": "glass_constellation",
+      "role": "glass_constellation",
+      "time": 26.733333,
+      "duration": 0.266667,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 0.316667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 0.733333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 1.15,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 1.566667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 1.983333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 2.4,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 2.816667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 3.233333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 3.65,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 4.066667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 4.483333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 4.9,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 5.316667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 5.733333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 6.15,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 6.566667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 6.983333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 7.4,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 7.816667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 8.233333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 8.65,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 9.066667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 9.483333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 9.9,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 10.316667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 10.733333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 11.15,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 11.566667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 11.983333,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 12.4,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 12.816667,
+      "duration": 0.1,
+      "kind": "breath"
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "time": 13.233333,
+      "duration": 13.766667,
+      "kind": "long_rest"
+    }
+  ],
+  "phrases": [
+    {
+      "track": "bronze_horizon",
+      "role": "bronze_horizon",
+      "number": 1,
+      "start": 0.0,
+      "end": 5.8,
+      "breath_after_ms": 866.667
+    },
+    {
+      "track": "bronze_horizon",
+      "role": "bronze_horizon",
+      "number": 2,
+      "start": 6.666667,
+      "end": 12.466667,
+      "breath_after_ms": 866.666
+    },
+    {
+      "track": "bronze_horizon",
+      "role": "bronze_horizon",
+      "number": 3,
+      "start": 13.333333,
+      "end": 19.133333,
+      "breath_after_ms": 866.667
+    },
+    {
+      "track": "bronze_horizon",
+      "role": "bronze_horizon",
+      "number": 4,
+      "start": 20.0,
+      "end": 25.8,
+      "breath_after_ms": 1200.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 1,
+      "start": 0.558333,
+      "end": 1.141667,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 2,
+      "start": 1.391667,
+      "end": 1.975,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 3,
+      "start": 2.225,
+      "end": 2.808333,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 4,
+      "start": 3.058333,
+      "end": 3.641667,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 5,
+      "start": 3.891667,
+      "end": 4.475,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 6,
+      "start": 4.725,
+      "end": 5.308333,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 7,
+      "start": 5.558333,
+      "end": 6.141667,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 8,
+      "start": 6.391667,
+      "end": 6.975,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 9,
+      "start": 7.225,
+      "end": 7.808333,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 10,
+      "start": 8.058333,
+      "end": 8.641667,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 11,
+      "start": 8.891667,
+      "end": 9.475,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 12,
+      "start": 9.725,
+      "end": 10.308333,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 13,
+      "start": 10.558333,
+      "end": 11.141667,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 14,
+      "start": 11.391667,
+      "end": 11.975,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 15,
+      "start": 12.225,
+      "end": 12.808333,
+      "breath_after_ms": 250.0
+    },
+    {
+      "track": "ethereal_echo",
+      "role": "ethereal_echo",
+      "number": 16,
+      "start": 13.058333,
+      "end": 13.641667,
+      "breath_after_ms": 13358.333
+    },
+    {
+      "track": "glass_constellation",
+      "role": "glass_constellation",
+      "number": 1,
+      "start": 3.333333,
+      "end": 6.733333,
+      "breath_after_ms": 3266.667
+    },
+    {
+      "track": "glass_constellation",
+      "role": "glass_constellation",
+      "number": 2,
+      "start": 10.0,
+      "end": 13.4,
+      "breath_after_ms": 3266.667
+    },
+    {
+      "track": "glass_constellation",
+      "role": "glass_constellation",
+      "number": 3,
+      "start": 16.666667,
+      "end": 20.066667,
+      "breath_after_ms": 3266.666
+    },
+    {
+      "track": "glass_constellation",
+      "role": "glass_constellation",
+      "number": 4,
+      "start": 23.333333,
+      "end": 26.733333,
+      "breath_after_ms": 266.667
+    },
+    {
+      "track": "yangqin_lattice",
+      "role": "yangqin_lattice",
+      "number": 1,
+      "start": 0.0,
+      "end": 13.233333,
+      "breath_after_ms": 13766.667
+    }
+  ],
+  "export": {
+    "filename": "ai_radiance_m1",
+    "export_filename": "Original_AI_Radiance_Movement1",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 1200
+  }
+}

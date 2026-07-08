@@ -19,6 +19,16 @@ xcuserdata/
 
 # CLI render output
 exports/
+output/
+
+# Verification evidence: keep logs/reports/json, exclude rendered audio (up to 90 MB each)
+reports/**/*.wav
+
+# Python
+__pycache__/
+
+# Local agent/session config
+.claude/
 
 # Compiled plugins
 *.vst3

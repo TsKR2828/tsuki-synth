@@ -1,0 +1,286 @@
+{
+  "$schema": "TsukiSynth Classical Score Catalog v1",
+  "title": "Antonio Vivaldi — The Four Seasons",
+  "generated": "2026-06-21",
+  "description": "Twelve movement-level TsukiSynth physical-string transcriptions with explicit rests, phrase boundaries and breath intervals.",
+  "license": "Creative Commons Attribution-ShareAlike 3.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+  "movements": [
+    {
+      "id": "vivaldi_four_seasons_spring_m1",
+      "season": "spring",
+      "movement": 1,
+      "tempo_name": "Allegro",
+      "bpm": 115.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 4,
+          "denominator": 4
+        }
+      ],
+      "events": 3173,
+      "rests": 444,
+      "phrases": 71,
+      "duration_sec": 171.336261,
+      "score_file": "spring/vivaldi_four_seasons_spring_m1.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=301",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_spring_m2",
+      "season": "spring",
+      "movement": 2,
+      "tempo_name": "Largo",
+      "bpm": 50.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 3,
+          "denominator": 4
+        }
+      ],
+      "events": 1042,
+      "rests": 109,
+      "phrases": 45,
+      "duration_sec": 140.345,
+      "score_file": "spring/vivaldi_four_seasons_spring_m2.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=301",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_spring_m3",
+      "season": "spring",
+      "movement": 3,
+      "tempo_name": "Danza pastorale. Allegro",
+      "bpm": 144.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 12,
+          "denominator": 8
+        }
+      ],
+      "events": 2071,
+      "rests": 474,
+      "phrases": 35,
+      "duration_sec": 222.444644,
+      "score_file": "spring/vivaldi_four_seasons_spring_m3.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=301",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_summer_m1",
+      "season": "summer",
+      "movement": 1,
+      "tempo_name": "Allegro non molto",
+      "bpm": 75.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 3,
+          "denominator": 8
+        },
+        {
+          "time": 36.0,
+          "tick": 17280,
+          "numerator": 4,
+          "denominator": 4
+        },
+        {
+          "time": 103.2,
+          "tick": 49536,
+          "numerator": 3,
+          "denominator": 8
+        }
+      ],
+      "events": 3621,
+      "rests": 748,
+      "phrases": 187,
+      "duration_sec": 251.945,
+      "score_file": "summer/vivaldi_four_seasons_summer_m1.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=336",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_summer_m2",
+      "season": "summer",
+      "movement": 2,
+      "tempo_name": "Adagio e piano – Presto e forte",
+      "bpm": 45.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 4,
+          "denominator": 4
+        }
+      ],
+      "events": 629,
+      "rests": 449,
+      "phrases": 82,
+      "duration_sec": 117.278304,
+      "score_file": "summer/vivaldi_four_seasons_summer_m2.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=336",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_summer_m3",
+      "season": "summer",
+      "movement": 3,
+      "tempo_name": "Presto",
+      "bpm": 150.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 3,
+          "denominator": 4
+        }
+      ],
+      "events": 5158,
+      "rests": 315,
+      "phrases": 54,
+      "duration_sec": 155.945,
+      "score_file": "summer/vivaldi_four_seasons_summer_m3.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=336",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_autumn_m1",
+      "season": "autumn",
+      "movement": 1,
+      "tempo_name": "Allegro",
+      "bpm": 120.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 4,
+          "denominator": 4
+        }
+      ],
+      "events": 3111,
+      "rests": 1016,
+      "phrases": 140,
+      "duration_sec": 229.945,
+      "score_file": "autumn/vivaldi_four_seasons_autumn_m1.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=350",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_autumn_m2",
+      "season": "autumn",
+      "movement": 2,
+      "tempo_name": "Adagio molto",
+      "bpm": 53.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 3,
+          "denominator": 4
+        }
+      ],
+      "events": 187,
+      "rests": 9,
+      "phrases": 5,
+      "duration_sec": 152.775125,
+      "score_file": "autumn/vivaldi_four_seasons_autumn_m2.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=350",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_autumn_m3",
+      "season": "autumn",
+      "movement": 3,
+      "tempo_name": "Allegro",
+      "bpm": 80.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 3,
+          "denominator": 8
+        }
+      ],
+      "events": 2582,
+      "rests": 567,
+      "phrases": 154,
+      "duration_sec": 176.57,
+      "score_file": "autumn/vivaldi_four_seasons_autumn_m3.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=350",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_winter_m1",
+      "season": "winter",
+      "movement": 1,
+      "tempo_name": "Allegro non molto",
+      "bpm": 140.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 4,
+          "denominator": 4
+        }
+      ],
+      "events": 3255,
+      "rests": 774,
+      "phrases": 67,
+      "duration_sec": 107.944892,
+      "score_file": "winter/vivaldi_four_seasons_winter_m1.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=351",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_winter_m2",
+      "season": "winter",
+      "movement": 2,
+      "tempo_name": "Largo",
+      "bpm": 46.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 4,
+          "denominator": 4
+        }
+      ],
+      "events": 851,
+      "rests": 142,
+      "phrases": 15,
+      "duration_sec": 93.857984,
+      "score_file": "winter/vivaldi_four_seasons_winter_m2.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=351",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    },
+    {
+      "id": "vivaldi_four_seasons_winter_m3",
+      "season": "winter",
+      "movement": 3,
+      "tempo_name": "Allegro",
+      "bpm": 75.0,
+      "time_signatures": [
+        {
+          "time": 0.0,
+          "tick": 0,
+          "numerator": 3,
+          "denominator": 8
+        }
+      ],
+      "events": 2696,
+      "rests": 340,
+      "phrases": 155,
+      "duration_sec": 183.545,
+      "score_file": "winter/vivaldi_four_seasons_winter_m3.score.json",
+      "source_url": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=351",
+      "license": "Creative Commons Attribution-ShareAlike 3.0"
+    }
+  ]
+}

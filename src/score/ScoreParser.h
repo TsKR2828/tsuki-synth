@@ -275,7 +275,7 @@ public:
                             auto dv = p->getProperty ("damping_override");
                             double damping = -1.0;
                             if (varToFiniteNumber (dv, damping))
-                                se.dampingOverride = std::max (0.0, damping);
+                                se.dampingOverride = std::clamp (damping, 0.0, 10000.0);
                         }
 
                         int fmPreset = se.fmPreset;

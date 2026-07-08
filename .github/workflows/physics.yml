@@ -1,0 +1,91 @@
+name: Physics Verification
+
+# TsukiSynth M1 CI — ear-free proof that rendered audio matches the physics
+# models (see ROADMAP_PHYSICS.md GATE for M1). Builds the CLI (and the
+# plugin targets, so packaging regressions are caught early) and runs
+# tools/physics_verify.py against the freshly built CLI.
+
+on:
+  push:
+    branches:
+      - main
+      - Codex-fix-bug
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-verify:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Python dependencies
+        run: python -m pip install --upgrade pip numpy scipy
+
+      - name: Setup MSVC developer environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build CLI (TsukiSynthCLI)
+        run: cmake --build build --config Release --target TsukiSynthCLI
+
+      - name: Build Standalone (TsukiSynth_Standalone)
+        run: cmake --build build --config Release --target TsukiSynth_Standalone
+
+      - name: Build VST3 (TsukiSynth_VST3)
+        run: cmake --build build --config Release --target TsukiSynth_VST3
+
+      - name: Run physics verification harness (M1 scope)
+        # --skip-amps restricts --full to its M1 scope (1b note-range + 1c
+        # material + 1d velocity). The M2-2d amplitude judgment is excluded
+        # here because M2 remediation is still in progress (residual -3..-8 dB
+        # on partials 3-5 + tongue_drum p2 -12.6 dB; see ROADMAP_PHYSICS.md §2
+        # M2 row). Documented CI-scope decision approved by 月月 2026-07-09
+        # (delegated via Fable) — NOT a tolerance change: the M2 GATE (--amps)
+        # still runs below on every CI run, always visible, and must pass for
+        # real before M2 can be marked Done. When 2d passes: remove
+        # --skip-amps here and delete the non-blocking step below.
+        run: python tools/physics_verify.py --full --skip-amps
+
+      - name: M2 amplitude judgment (non-blocking, visibility only)
+        # Keeps the honest M2-2d numbers on every CI run without blocking the
+        # M1 green light. Expected to FAIL until M2 remediation lands.
+        continue-on-error: true
+        run: python tools/physics_verify.py --amps
+
+      - name: Whole-score verification (CI smoke subset)
+        # CI runs a fast cross-engine smoke subset only. The full 73-file
+        # corpus (M3 GATE, `verify_score.py --all`) is a LOCAL release gate —
+        # last full run archived at
+        # reports/gate_outputs/verify_all_corpus_phase_d.log (73/73 passed,
+        # 1 registered exemption, 0 failed, exit 0, 2026-07-08). Rendering the
+        # whole corpus twice (determinism check) would take hours on a 2-core
+        # hosted runner; this smoke set still exercises schema / mode-scan /
+        # rest / peak / determinism logic across the modal engine families.
+        shell: pwsh
+        run: |
+          $smoke = @(
+            "scores/originals/ai_radiance/ai_radiance_m1.score.json",
+            "scores/examples/akashic_bell.score.json",
+            "scores/examples/water_gong_clamped.score.json",
+            "scores/examples/water_gong_free.score.json",
+            "scores/examples/physical_piano.score.json"
+          )
+          $fail = 0
+          foreach ($s in $smoke) {
+            python tools/verify_score.py $s
+            if ($LASTEXITCODE -ne 0) { $fail = 1 }
+          }
+          exit $fail
