@@ -5,6 +5,7 @@
 #include "../dsp/BiquadFilter.h"
 #include "../dsp/BodyResonance.h"
 #include "../dsp/Envelope.h"
+#include "../dsp/DiagnosticOverrides.h"
 #include "../physics/BeamModel.h"
 #include "../physics/PlateModel.h"
 #include "../physics/MaterialDB.h"
@@ -308,7 +309,11 @@ public:
         noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
 
         bodyRes.prepare (sr);
-        bodyRes.setAmount (0.5f);
+        // DIAGNOSTIC-ONLY: --body-amount overrides the hard-coded 0.5f mix
+        // (see DiagnosticOverrides.h). Sentinel < 0 -> unchanged behavior.
+        bodyRes.setAmount (DiagnosticOverrides::bodyAmountOverride >= 0.0f
+                                ? DiagnosticOverrides::bodyAmountOverride
+                                : 0.5f);
         bodyRes.reset();
         damped = false;
     }
@@ -477,7 +482,11 @@ private:
         noiseGen.reset();
 
         float amp = velocity * 0.2f * (1.0f + noiseMacro * 3.0f);
-        exciterEnv.trigger (amp, durations[idx], sr);
+        // DIAGNOSTIC-ONLY: --no-exciter-noise skips the trigger entirely, so
+        // exciterEnv.isActive() stays false for this voice's whole lifetime
+        // (ExpDecay::level defaults to 0.0f) -- see DiagnosticOverrides.h.
+        if (! DiagnosticOverrides::disableExciterNoise)
+            exciterEnv.trigger (amp, durations[idx], sr);
     }
 
     MaterialDB*    materialDB = nullptr;

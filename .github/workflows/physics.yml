@@ -47,23 +47,17 @@ jobs:
       - name: Build VST3 (TsukiSynth_VST3)
         run: cmake --build build --config Release --target TsukiSynth_VST3
 
-      - name: Run physics verification harness (M1 scope)
-        # --skip-amps restricts --full to its M1 scope (1b note-range + 1c
-        # material + 1d velocity). The M2-2d amplitude judgment is excluded
-        # here because M2 remediation is still in progress (residual -3..-8 dB
-        # on partials 3-5 + tongue_drum p2 -12.6 dB; see ROADMAP_PHYSICS.md §2
-        # M2 row). Documented CI-scope decision approved by 月月 2026-07-09
-        # (delegated via Fable) — NOT a tolerance change: the M2 GATE (--amps)
-        # still runs below on every CI run, always visible, and must pass for
-        # real before M2 can be marked Done. When 2d passes: remove
-        # --skip-amps here and delete the non-blocking step below.
-        run: python tools/physics_verify.py --full --skip-amps
-
-      - name: M2 amplitude judgment (non-blocking, visibility only)
-        # Keeps the honest M2-2d numbers on every CI run without blocking the
-        # M1 green light. Expected to FAIL until M2 remediation lands.
-        continue-on-error: true
-        run: python tools/physics_verify.py --amps
+      - name: Run physics verification harness (M1+M2 scope)
+        # Phase E (2026-07-09) fixed the M2-2d theory predictor's decay-model
+        # mismatch (tools/physics_verify.py synth_theory_signal(): `decay`
+        # was being treated as a 1/e time constant when ModalResonator::
+        # excite() defines it as T60 -- see MODAL_DECAY_LN1000 in that file).
+        # --full now covers 1b note-range + 1c material + 1d velocity + 2d
+        # amplitude judgment in one gate and passes in full (no tolerance was
+        # widened -- §6 Rule 2 -- the fix was to the theory prediction, not
+        # the ±3.0 dB bound). Evidence: reports/gate_outputs/
+        # phase_e_gate_full.txt + phase_e_gate_amps.txt.
+        run: python tools/physics_verify.py --full
 
       - name: Whole-score verification (CI smoke subset)
         # CI runs a fast cross-engine smoke subset only. The full 73-file

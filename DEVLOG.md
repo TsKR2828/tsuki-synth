@@ -2,6 +2,30 @@
 
 ---
 
+## 2026-07-09 — Phase E：`--amps` 最後根因修復（decay-law 指數），GATE 全過
+
+分支 `main`（HEAD 7c150d1 起），未 commit/push，§6 容差未動，Rule 7（不 commit/push）。
+
+### 機制：theory-side 的 decay-law 指數搞錯了，不是 C++ 渲染 bug
+Phase D 把 `--dump-modes` 理論預測法換成 windowed-synthesis 後，殘差從 -15~-40 dB 收斂到 -0.3~-8.0 dB，但 cimbalom/piano p3–p5（-3.0~-4.5 dB）、water_gong p3–p5（-3.9~-8.0 dB）、tongue_drum p2（-12.60 dB）仍超出 ±3.0 dB。逐一差異化渲染隔離（`--body-amount 0` / `--no-exciter-noise` / `--num-strings 1`，這三個是本輪新增的**診斷專用** CLI 旗標，見下段）排除 BodyResonance、敲擊噪聲、多弦拍頻後，唯一能關閉全部殘差的介入是：`tools/physics_verify.py` 的 `synth_theory_signal()` 把 `--dump-modes` 的 `decay` 欄位當 1/e 時間常數 τ 衰減（`exp(-t/decay)`），但 `ModalResonator::excite()` 自己的公式與註解明確定義 `decayTime` 是 **T60**（衰減到 -60dB 所需時間）：`decayCoeff = exp(-6.9078f/(decayTime*sampleRate))` 逐取樣套用，等效閉式解 `amp(t) = amp0*exp(-ln(1000)*t/decayTime)`，比理論端算的慢了 ln(1000)≈6.9078 倍；且不同 partial 的 decayTime 不同，這個比例誤差在「相對基頻 dB」判定下不會抵消。**這是 harness 端（`tools/`）的理論模型 bug，不是 `src/` 渲染碼的 bug**——每個差異化渲染變體都證實 C++ 渲染輸出與其自己文件化的 `decayCoeff` 公式吻合到 ≤0.22 dB。完整推導、per-partial 數字、隔離實驗表格見 `reports/gate_outputs/amps_residual_attribution.md`。
+
+### 修法：一行指數修正 + 唯讀診斷旗標
+`tools/physics_verify.py` 新增 `MODAL_DECAY_LN1000 = 6.907755278982137`（讀自 C++ 原始碼字面值 `6.9078f`，非從音訊反推——不違反無循環論證規則），`synth_theory_signal()` 的衰減項從 `exp(-t/decay)` 改成 `exp(-MODAL_DECAY_LN1000*t/decay)`。為了做隔離實驗，新增 `src/dsp/DiagnosticOverrides.h`（三個 sentinel 全域變數）+ `src/cli/RenderApp.cpp` 的 `extractDiagnosticOverrides()`（解析 `--body-amount` / `--no-exciter-noise` / `--num-strings`，從 argv 抽掉後其餘邏輯不變）+ `ChromaticEngine.h`/`CimbalomEngine.h` 三處 `noteOn()`/`setupExciter()` 讀取這些覆寫值。**這些旗標不是渲染契約的一部分**：sentinel 預設「不覆寫」，不接受任何 score JSON 欄位、外掛參數、或 preset 觸發，只有 CLI 明確傳旗標才會生效。
+
+### 音訊路徑未變：SHA256 位元級驗證
+用 `git stash`（暫存 3 個 `src/` 修改檔）建出「修正前」CLI，複製一份 exe 出來，`git stash pop` 還原（`git status` 確認 5 個修改檔全部回來），重新編譯出「修正後」CLI。兩者對 `scores/examples/akashic_bell.score.json` 做無旗標渲染，SHA256 完全相同：`7ba03dbc00e559775dcb63e1a47da98f9e0df910f194252a16e7c8bef009c522`。**音訊位元零變化**（`audio_path_changed=false`）——修的只是 harness 的理論預測公式，不是渲染碼。依規則 10，音色不變不需要前後對照報告；corpus（`verify_score.py --all`）上次 73/73 結果依然有效，本輪未重跑。
+
+### GATE 結果：全過
+3 個 build target（CLI/Standalone/VST3）重建全部 exit 0。`python tools/physics_verify.py --amps` → 5 個 modal 引擎（cimbalom / tongue_drum / water_gong / water_gong_free / piano）前 5 partial 全部 `PASS`，`RESULT: ALL WITHIN TOLERANCE`（`reports/gate_outputs/phase_e_gate_amps.txt`）。`python tools/physics_verify.py --full` → 1b/1c/1d/2d 全部 `PASS`，`RESULT: ALL WITHIN TOLERANCE`（`reports/gate_outputs/phase_e_gate_full.txt`）。**§6 容差全程未動（±3.0 dB，Rule 2）**——修的是預測公式，不是判定線。
+
+### CI workflow 更新
+`.github/workflows/physics.yml` 主 GATE 步驟原本跑 `--full --skip-amps` 並另加一個 `continue-on-error` 的非阻斷 `--amps` 步驟（Phase D 的 CI-scope 決策，見 `TODO.md`）。M2 已過，依 workflow 註解原本的承諾：拿掉 `--skip-amps`，主 GATE 步驟改跑完整 `--full`（涵蓋 1b+1c+1d+2d），刪除非阻斷的 `--amps` 步驟。規則 7 擋住尚未 push，這個新版 workflow 在 GitHub 上實際跑出綠燈一次還沒發生，待月月 push 後確認。
+
+### 文件同步（本輪，Phase E）
+`ROADMAP_PHYSICS.md`：M2 列改標 Done + GATE 段落補上 Phase E 根因證據；M1 列/1f checkbox 補充 CI workflow 更新狀態（新版尚待 push 驗證）。`TODO.md`：M2 `--amps` 殘差項移入「已解決」清單，CI 紅燈連動項與其重複項標記解決。
+
+---
+
 ## 2026-07-08 — Phase D 收尾：dumpModes O(n²) 真根因修復 + corpus 73/73 全數通過
 
 分支 `Codex-fix-bug`，未 commit/push，§6 容差未動。

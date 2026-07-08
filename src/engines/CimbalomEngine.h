@@ -5,6 +5,7 @@
 #include "../dsp/BiquadFilter.h"
 #include "../dsp/BodyResonance.h"
 #include "../dsp/Envelope.h"
+#include "../dsp/DiagnosticOverrides.h"
 #include "../physics/StringModel.h"
 #include "../physics/MaterialDB.h"
 #include "../physics/HammerImpulse.h"
@@ -242,7 +243,13 @@ public:
         float strikePos = juce::jlimit (0.05f, 0.95f,
                                         static_cast<float> (params.strikePosition));
         float diameter  = static_cast<float> (params.diameterMm) * 0.001f;
-        int   nStrings  = juce::jlimit (1, kMaxStringsPerCourse, params.numStrings);
+        // DIAGNOSTIC-ONLY (see DiagnosticOverrides.h): --num-strings lets
+        // physics_verify.py isolate multi-string beating. Sentinel <= 0
+        // means "no override" -> identical to the pre-existing behavior.
+        int   nStringsRequested = (DiagnosticOverrides::numStringsOverride > 0)
+                                     ? DiagnosticOverrides::numStringsOverride
+                                     : params.numStrings;
+        int   nStrings  = juce::jlimit (1, kMaxStringsPerCourse, nStringsRequested);
         float detCents  = params.detuningCents;
         int   hammerIdx = juce::jlimit (0, 3, static_cast<int> (params.exciter));
 
@@ -337,7 +344,11 @@ public:
         noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
 
         bodyRes.prepare (sr);
-        bodyRes.setAmount (0.5f);
+        // DIAGNOSTIC-ONLY: --body-amount overrides the hard-coded 0.5f mix
+        // (see DiagnosticOverrides.h). Sentinel < 0 -> unchanged behavior.
+        bodyRes.setAmount (DiagnosticOverrides::bodyAmountOverride >= 0.0f
+                                ? DiagnosticOverrides::bodyAmountOverride
+                                : 0.5f);
         bodyRes.reset();
         damped = false;
     }
@@ -489,7 +500,11 @@ private:
         static constexpr float noiseAmps[] = { 0.10f, 0.20f, 0.40f, 0.70f };
         float amp = velocity * noiseAmps[idx] * (1.0f + noiseMacro * 3.0f);
         float durScale = juce::jlimit (0.5f, 3.0f, 1.5f / (materialBright + 0.5f));
-        exciterEnv.trigger (amp, durations[idx] * durScale, sr);
+        // DIAGNOSTIC-ONLY: --no-exciter-noise skips the trigger entirely, so
+        // exciterEnv.isActive() stays false for this voice's whole lifetime
+        // (ExpDecay::level defaults to 0.0f) -- see DiagnosticOverrides.h.
+        if (! DiagnosticOverrides::disableExciterNoise)
+            exciterEnv.trigger (amp, durations[idx] * durScale, sr);
     }
 
     MaterialDB*    materialDB = nullptr;

@@ -3,11 +3,52 @@
 #include "../score/ScoreParser.h"
 #include "../score/ScoreRenderer.h"
 #include "../physics/MaterialDB.h"
+#include "../dsp/DiagnosticOverrides.h"
 #include "BinaryData.h"
 
 #include <iostream>
 
 static MaterialDB globalMaterialDB;
+
+// DIAGNOSTIC-ONLY (2026-07-09, M2 option b, 月月-authorized): strip
+// --body-amount / --no-exciter-noise / --num-strings out of argv, setting
+// DiagnosticOverrides accordingly, and return everything else untouched.
+// These flags exist only so tools/physics_verify.py can isolate a single
+// signal-path stage via differential renders -- they are NOT part of the
+// verified render contract (ROADMAP_PHYSICS.md §1) and are filtered out
+// here so the remaining dispatch logic below (which mimics the pre-existing
+// argc/argv shape) never has to know about them. When none of these three
+// flags are present, `remaining` is byte-for-byte the original argument
+// list and every DiagnosticOverrides value stays at its "no override"
+// sentinel -- i.e. render behavior is provably unchanged (see the
+// SHA256 no-flags proof recorded alongside this change).
+static juce::StringArray extractDiagnosticOverrides (int argc, char* argv[])
+{
+    juce::StringArray remaining;
+    for (int i = 0; i < argc; ++i)
+    {
+        juce::String arg (argv[i]);
+        if (arg == "--body-amount" && i + 1 < argc)
+        {
+            DiagnosticOverrides::bodyAmountOverride = juce::String (argv[i + 1]).getFloatValue();
+            ++i;
+        }
+        else if (arg == "--no-exciter-noise")
+        {
+            DiagnosticOverrides::disableExciterNoise = true;
+        }
+        else if (arg == "--num-strings" && i + 1 < argc)
+        {
+            DiagnosticOverrides::numStringsOverride = juce::String (argv[i + 1]).getIntValue();
+            ++i;
+        }
+        else
+        {
+            remaining.add (arg);
+        }
+    }
+    return remaining;
+}
 
 static void ensureMaterialDB()
 {
@@ -19,13 +60,12 @@ static void ensureMaterialDB()
     }
 }
 
-static juce::File getOutputDir (int argc, char* argv[])
+static juce::File getOutputDir (const juce::StringArray& args)
 {
-    for (int i = 1; i < argc - 1; ++i)
+    for (int i = 1; i < args.size() - 1; ++i)
     {
-        juce::String arg (argv[i]);
-        if (arg == "--output" || arg == "-o")
-            return juce::File (juce::String (argv[i + 1]));
+        if (args[i] == "--output" || args[i] == "-o")
+            return juce::File (args[i + 1]);
     }
     return juce::File::getCurrentWorkingDirectory()
                .getChildFile ("exports").getChildFile ("wav");
@@ -118,7 +158,13 @@ int main (int argc, char* argv[])
 {
     // No GUI init needed - pure offline rendering
 
-    if (argc < 2)
+    // Strip diagnostic-only overrides out of the argument list first (see
+    // extractDiagnosticOverrides() above) so everything below sees the same
+    // argv shape it always has. `args` mirrors the original argv indexing
+    // (args[0] = program name, args[1] = first real argument, ...).
+    juce::StringArray args = extractDiagnosticOverrides (argc, argv);
+
+    if (args.size() < 2)
     {
         std::cout << "TsukiSynth CLI Renderer" << std::endl;
         std::cout << "Usage:" << std::endl;
@@ -128,9 +174,9 @@ int main (int argc, char* argv[])
     }
 
     ensureMaterialDB();
-    auto outputDir = getOutputDir (argc, argv);
+    auto outputDir = getOutputDir (args);
 
-    juce::String firstArg (argv[1]);
+    juce::String firstArg = args[1];
 
     if (firstArg == "--help" || firstArg == "-h")
     {
@@ -139,17 +185,24 @@ int main (int argc, char* argv[])
         std::cout << "  tsukisynth-cli <score.json> [--output <dir>]" << std::endl;
         std::cout << "  tsukisynth-cli --batch <dir> [--output <dir>]" << std::endl;
         std::cout << "  tsukisynth-cli --dump-modes <score.json>" << std::endl;
+        std::cout << std::endl;
+        std::cout << "Diagnostic-only flags (NOT part of the verified render" << std::endl;
+        std::cout << "contract, ROADMAP_PHYSICS.md Sec.1 -- for isolating" << std::endl;
+        std::cout << "signal-path stages via differential renders only):" << std::endl;
+        std::cout << "  --body-amount <float>   override BodyResonance mix (0 = bypass)" << std::endl;
+        std::cout << "  --no-exciter-noise      disable the exciter noise-burst transient" << std::endl;
+        std::cout << "  --num-strings <int>     override cimbalom/piano string count" << std::endl;
         return 0;
     }
 
     if (firstArg == "--dump-modes")
     {
-        if (argc < 3)
+        if (args.size() < 3)
         {
             std::cout << "Usage: tsukisynth-cli --dump-modes <score.json>" << std::endl;
             return 1;
         }
-        juce::File scoreFile { juce::String (argv[2]) };
+        juce::File scoreFile { args[2] };
         Score score;
         if (! ScoreParser::parse (scoreFile, score))
         {
@@ -165,13 +218,13 @@ int main (int argc, char* argv[])
 
     if (firstArg == "--batch" || firstArg == "-b")
     {
-        if (argc < 3)
+        if (args.size() < 3)
         {
             std::cout << "Usage: tsukisynth-cli --batch <dir> [--output <dir>]" << std::endl;
             return 1;
         }
 
-        juce::String dirPath { argv[2] };
+        juce::String dirPath = args[2];
         juce::File dir { dirPath };
         juce::Array<juce::File> files;
 

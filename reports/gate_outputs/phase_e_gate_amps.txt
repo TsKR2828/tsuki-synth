@@ -1,0 +1,55 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+======================================================================
+TsukiSynth physics verification — measured spectrum vs theory
+======================================================================
+
+----------------------------------------------------------------------
+Partial-amplitude judgment (MIDI 60, first 5 partials, rel-dB vs --dump-modes theory, tol +/-3.0 dB):
+
+# cimbalom    MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.625    +0.00    +0.00   +0.00  ref (0 dB)
+    2     521.210   -23.16   -23.38   -0.22  PASS
+    3     788.944   -22.98   -23.05   -0.07  PASS
+    4    1051.788   -28.21   -28.28   -0.07  PASS
+    5    1315.870   -18.26   -18.32   -0.07  PASS
+   -> PASS
+
+# tongue_drum MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     721.192   -25.10   -25.16   -0.06  PASS
+    3    1413.792   -60.08   -60.27      --  weak (< -45 dB) - not assessed
+    4    2323.813  -112.81  -106.64      --  weak (< -45 dB) - not assessed
+    5    3525.631  -155.16  -107.82      --  weak (< -45 dB) - not assessed
+   -> PASS
+
+# water_gong  MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     544.467   -22.21   -22.36   -0.15  PASS
+    3     893.196   -24.35   -24.40   -0.05  PASS
+    4    1018.531   -16.66   -16.72   -0.05  PASS
+    5    1306.873   -35.60   -35.66   -0.05  PASS
+   -> PASS
+
+# water_gong_free MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     452.428    -3.50    -3.59   -0.08  PASS
+    3     609.114   -20.51   -20.59   -0.08  PASS
+    4    1021.998    -7.20    -7.25   -0.05  PASS
+    5    1021.998    -7.20    -7.25   -0.05  PASS
+   -> PASS
+
+# piano       MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.625    +0.00    +0.00   +0.00  ref (0 dB)
+    2     521.210   -28.22   -28.44   -0.22  PASS
+    3     788.945   -41.37   -41.44   -0.07  PASS
+    4    1051.789   -30.61   -30.69   -0.07  PASS
+    5    1315.868   -42.99   -43.05   -0.05  PASS
+   -> PASS
+
+======================================================================
+RESULT: ALL WITHIN TOLERANCE

@@ -555,12 +555,29 @@ def dump_modes_event(cli, score_path):
         return None
 
 
+
+# ln(1000) = 6.907755278982137. ModalResonator::excite() (src/dsp/
+# ModalResonator.h) defines and hard-codes the --dump-modes "decay" field
+# (Mode::decayTime) as a T60 -- time to fall to -60dB (~0.001x), not a 1/e
+# time constant tau: `decayCoeff = exp(-6.9078f / (decayTime * sampleRate))`
+# applied once per sample (see also the shortened-decay branch a few lines
+# below it, same -6.9078f literal). The model's own closed-form envelope is
+# therefore amp(t) = amp0 * exp(-ln(1000) * t / decayTime), not
+# amp0 * exp(-t / decayTime). This constant is read verbatim off the C++
+# source's own literal/comment, never fitted to rendered audio (no-circularity
+# rule, ROADMAP_PHYSICS.md Sec.1).
+MODAL_DECAY_LN1000 = 6.907755278982137
+
+
 def synth_theory_signal(strings, sr, duration):
     """THEORY-ONLY windowed synthesis (no rendered-audio input, per the
     no-circularity rule above): sums every active string's/voice's modal
     partials as decaying sinusoids
-        x(t) = sum_s sum_i  amp_i,s * body_mag_i,s * exp(-t/decay_i,s)
+        x(t) = sum_s sum_i  amp_i,s * body_mag_i,s * exp(-ln(1000)*t/decay_i,s)
                              * sin(2*pi*freq_i,s*t)
+    The exp(-ln(1000)*t/decay) envelope matches ModalResonator::excite()'s own
+    T60 definition of `decay` verbatim (see MODAL_DECAY_LN1000 above) --
+    `decay` is time-to-(-60dB), not a 1/e time constant.
     `body_mag` folds in the model's own BodyResonance transfer magnitude at
     that mode's frequency (steady-state/quasi-static approximation -- valid
     because the body filter's own settling time, a few ms for its Q=1.4-1.8
@@ -579,7 +596,7 @@ def synth_theory_signal(strings, sr, duration):
         for m in voice_modes:
             amp = m["amp"] * m.get("body_mag", 1.0)
             decay = m["decay"] if m["decay"] > 1e-9 else 1.0e9
-            x += amp * np.exp(-t / decay) * np.sin(2.0 * np.pi * m["freq"] * t)
+            x += amp * np.exp(-MODAL_DECAY_LN1000 * t / decay) * np.sin(2.0 * np.pi * m["freq"] * t)
     return x
 
 

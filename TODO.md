@@ -73,36 +73,37 @@ All three items resolved without ear-based verification — physics-based answer
 - ~~`moonlight_sonata_complete` 休止超標~~ → 已登記為 `rests.rms` 豁免（`scores/verify_exemptions.json`，2026-07-07 月月經 Fable 批准），`verify_score.py` 重跑 exit 0。
 - ~~5 首大型 Vivaldi 樂章 `--dump-modes` 逾時~~ → **真根因已找到並修復（2026-07-08）**：不是檔案太大，是 `ScoreRenderer::dumpModes()` 用 `juce::String` 累加輸出，每次 append 整段重配置複製 = O(n²)——3000 events 的 dump 光字串複製就 >600s。改用 `juce::MemoryOutputStream`（攤銷 O(1) append）後，最大的 summer_m3（5158 events）dump 只要 **7.2 秒**。timeout 1800s 保留作為安全網但已不再需要。四季 12 樂章全部重跑 **ALL CHECKS PASSED**（`reports/gate_outputs/corpus_phase_d_{autumn,spring,summer,winter}.log`）。
 - ~~cimbalom/piano 共用增益常數的 piano RMS 偏離約 1.4 dB~~ → 已接受此妥協。
+- ~~M2 `--amps` 殘差（cimbalom/piano p3-p5、water_gong p3-p5、tongue_drum p2）~~ → **真根因已找到並修復（2026-07-09，Phase E）**：不是 C++ 渲染 bug，是 `tools/physics_verify.py` 的 `synth_theory_signal()` 把 `decay` 欄位當 1/e 時間常數，`ModalResonator::excite()` 定義它是 T60，換成 `exp(-ln(1000)*t/decay)` 後全部收斂到 ≤±0.22 dB，`--amps`/`--full` 皆 `RESULT: ALL WITHIN TOLERANCE`（`reports/gate_outputs/phase_e_gate_amps.txt` / `phase_e_gate_full.txt`，根因推導 `reports/gate_outputs/amps_residual_attribution.md`）。容差未動；未改 `src/` 渲染碼，音訊位元不變，不需規則 10 前後對照或 corpus 重跑。原授權的「Phase E：新增 `--dump-signal-stage` 除錯旗標」改用範圍更小的 `--body-amount`/`--no-exciter-noise`/`--num-strings` 差異化渲染旗標（`src/dsp/DiagnosticOverrides.h`）就足夠隔離根因，未另建 `--dump-signal-stage`。
 
 真正還剩的裁決/待完成項：
 
 - [x] **M2 `--amps` 殘差 → 月月裁決（2026-07-09）：選 (b)，授權 C++ 層級儀器化
-      追查**。下一輪（Phase E）：新增 `--dump-signal-stage` 除錯旗標，定位
-      tongue_drum p2 的 -12.6 dB 未歸因殘差與各引擎 p3-p5 的 -3~-8 dB。
-      容差 ±3.0 dB 照舊不動。根因基線見
-      `reports/gate_outputs/amps_rootcause_analysis.md`。
+      追查** → **已解決，見上方「已解決」清單第 4 項（Phase E 根因修復）**。
 - [x] **M2 力脈衝音色改變 → 保留**（2026-07-09 月月委任 Fable 決定）：物理正確
       （軟槌打中音域本來就發不出亮音）、有完整前後對照報告
-      （`reports/m2_before_after_report.md`），且 Phase E 還會在此基礎上繼續修，
-      不宜回退。
+      （`reports/m2_before_after_report.md`）。**Phase E 修正只動 harness 端理論
+      預測公式，未再動任何 `src/` 渲染碼，此前的音色改變結論不受影響、不需要
+      新的前後對照報告。**
 - [x] **CI 紅燈連動 → 採「M1 範圍綠燈 + amps 非阻斷可視化」**（2026-07-09 月月委任
       Fable 決定）：`physics_verify.py` 新增 `--skip-amps`（僅配合 `--full`，
       不影響 `--amps` GATE 本身）；`.github/workflows/physics.yml` 主 GATE 步驟改跑
       `--full --skip-amps`，另加 `continue-on-error` 的 `--amps` 步驟讓 M2 數字
       每次 CI 都看得到但不擋綠燈；verify_score 步驟改跑 5 檔跨引擎 smoke 子集
-      （全 corpus 是本地 release gate，證據已歸檔）。**2d 通過後要把 --skip-amps
-      拿掉、刪掉非阻斷步驟**——已寫在 workflow 註解裡。
+      （全 corpus 是本地 release gate，證據已歸檔）。**Phase E 更新（2026-07-09，
+      unstaged，待 push）**：2d 已過，依 workflow 註解原本的承諾把 `--skip-amps`
+      從主 GATE 步驟拿掉、刪除非阻斷的 `--amps` 步驟，CI 主 GATE 改跑完整
+      `--full`（涵蓋 1b+1c+1d+2d）。規則 7 擋住尚未 push，新版 workflow 在
+      GitHub 上實際綠燈一次還沒發生，待月月 push 後確認。
 - [x] ~~四季 12 樂章重跑~~ → **完成（2026-07-08）**：dumpModes O(n²) 修復後 12/12
       全部 ALL CHECKS PASSED。corpus 總計 **73/73：72 乾淨 PASS + 1 登記豁免
       （moonlight）、0 FAIL**。**M3 GATE 正式達成**：單次 `--all` → exit 0、
       `73/73 passed (1 exemption), 0 failed`
       （`reports/gate_outputs/verify_all_corpus_phase_d.log`）。M3 已標 Done。
-- [ ] **CI 綠燈與 `--amps` 殘差連動（重要）** — `.github/workflows/physics.yml`
-      跑的是 `physics_verify.py --full`，而 `--full` 現在含 2d 振幅判定（M2）。
-      只要 2d 還 FAIL（見上方第一項），**push 上去 CI 必定紅燈**。月月的選項：
-      (a) 先解決/接受 2d 再 push；(b) 授權 CI 改跑 M1 範圍（例如 `--full --skip-amps`
-      之類的新旗標——這是 CI 範圍定義問題，需要月月點頭才能做，避免違反規則 3 的
-      精神）；(c) 接受紅燈先 push 留紀錄。
+      **Phase E 未改動任何渲染碼，故本輪不需要重跑整個 corpus**
+      （`tools/verify_score.py --all` 上次結果依然有效）。
+- [x] ~~CI 綠燈與 `--amps` 殘差連動（重要）~~ → **已解決**：2d 已過，見上方
+      「CI 紅燈連動」項的 Phase E 更新——`--skip-amps` 已拿掉，選項 (a) 等於
+      自然達成，不再需要 (b)/(c) 的權宜措施。
 - [ ] **M8 工程收尾** — DAW（Cubase）驗證四項（host scan / MIDI / automation /
       state round-trip）尚未執行；`Codex-fix-bug` merge → master 的時機仍待月月
       裁決（通常會在 push/CI 綠燈之後）。
