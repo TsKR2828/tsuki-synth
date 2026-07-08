@@ -1,0 +1,22 @@
+TsukiSynth regression tests
+[PASS] Envelope remains active before release time
+[PASS] Envelope ends at the configured release time
+[PASS] AudioFIFO reports the readable sample count
+[PASS] AudioFIFO never overwrites unread samples
+[PASS] Chromatic fundamental is tuned to the requested MIDI note
+[PASS] Chromatic mode ratios are preserved and ultrasonic modes removed
+[PASS] Temporary score file is writable
+[PASS] ScoreParser accepts a valid score
+[PASS] ScoreParser reads export filename and format
+[PASS] ScoreParser reads wall reflection settings
+[PASS] Note names are clamped to the MIDI range
+[PASS] FLAC writer creates an output file
+[PASS] FLAC output can be read back with the requested format
+[PASS] ScoreRenderer renders an FM event with no material database entry
+[PASS] FM release and wall reflection are included in output duration
+[PASS] Temporary layer test directory is writable
+[PASS] Layer source score is writable
+[PASS] Layered renderer accepts a valid source score
+[PASS] Layer source trim controls the mixed region length
+[PASS] Layer source master volume is applied before mixing
+PASS (0 failures)

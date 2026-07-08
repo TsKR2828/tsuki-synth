@@ -1,0 +1,85 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: C:\Users\admin\Desktop\Claude\tsuki-synth\scores\classical\vivaldi_four_seasons\spring\vivaldi_four_seasons_spring_m1.score.json
+==============================================================================
+  rendered: 179.15s @ 48000 Hz, peak -0.45 dBFS, RMS -17.04 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 3173 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 3173 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 3173 performance.frequency_hz value(s) match equal temperament (max deviation 0.007 cents, limit +/-1.0).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 3173 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (3173 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (91149 partials checked across 3173 events).
+  [OK    ] modes.frequency_range: All 91149 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 91149 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 3173 modal events (max observed: 5.005 cents).
+  [OK    ] render.ran: Score rendered successfully to Classical_Vivaldi_Spring_Movement1.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 14e00d46f4c1e947...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: C:\Users\admin\Desktop\Claude\tsuki-synth\scores\classical\vivaldi_four_seasons\spring\vivaldi_four_seasons_spring_m2.score.json
+==============================================================================
+  rendered: 149.44s @ 48000 Hz, peak -0.45 dBFS, RMS -21.08 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1042 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1042 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 1042 performance.frequency_hz value(s) match equal temperament (max deviation 0.003 cents, limit +/-1.0).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1042 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1042 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (30359 partials checked across 1042 events).
+  [OK    ] modes.frequency_range: All 30359 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 30359 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 1042 modal events (max observed: 5.004 cents).
+  [OK    ] render.ran: Score rendered successfully to Classical_Vivaldi_Spring_Movement2.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 b8c4cf23302ccfce...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: C:\Users\admin\Desktop\Claude\tsuki-synth\scores\classical\vivaldi_four_seasons\spring\vivaldi_four_seasons_spring_m3.score.json
+==============================================================================
+  rendered: 230.42s @ 48000 Hz, peak -0.45 dBFS, RMS -20.97 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2071 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2071 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 2071 performance.frequency_hz value(s) match equal temperament (max deviation 0.005 cents, limit +/-1.0).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2071 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2071 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (48591 partials checked across 2071 events).
+  [OK    ] modes.frequency_range: All 48591 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 48591 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2071 modal events (max observed: 5.005 cents).
+  [OK    ] render.ran: Score rendered successfully to Classical_Vivaldi_Spring_Movement3.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 086eefc85e727d20...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+LOOP_DONE spring

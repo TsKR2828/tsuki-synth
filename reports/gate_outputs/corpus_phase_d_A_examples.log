@@ -1,0 +1,371 @@
+=== scores/examples/akashic_bell.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\akashic_bell.score.json
+==============================================================================
+  rendered: 19.57s @ 48000 Hz, peak -0.45 dBFS, RMS -29.38 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (14 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 14 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 14 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to akashic_bell_001.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 7ba03dbc00e55977...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/akashic_bell.score.json
+=== scores/examples/epiano_3stack_test.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\epiano_3stack_test.score.json
+==============================================================================
+  rendered: 11.65s @ 44100 Hz, peak -0.45 dBFS, RMS -12.87 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 8 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 8 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully. This score has no modal-engine events (e.g. it may be pure FM, which ROADMAP_PHYSICS.md Sec.0 explicitly marks as outside the physics-verification domain) -- nothing to mode-scan.
+  [OK    ] render.ran: Score rendered successfully to epiano_3stack_test.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 709cbc0ea33e0801...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/epiano_3stack_test.score.json
+=== scores/examples/fur_elise_opening.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\fur_elise_opening.score.json
+==============================================================================
+  rendered: 6.71s @ 48000 Hz, peak -0.45 dBFS, RMS -15.29 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 12 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 12 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully. This score has no modal-engine events (e.g. it may be pure FM, which ROADMAP_PHYSICS.md Sec.0 explicitly marks as outside the physics-verification domain) -- nothing to mode-scan.
+  [OK    ] render.ran: Score rendered successfully to fur_elise_opening.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 f97eee3826fa6747...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/fur_elise_opening.score.json
+=== scores/examples/layered_transition.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\layered_transition.score.json
+==============================================================================
+  rendered: 21.03s @ 48000 Hz, peak -0.45 dBFS, RMS -29.14 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 0 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 0 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully. This score has no "events" array (it uses "layers" instead).
+  [OK    ] render.ran: Score rendered successfully to layered_transition_001.wav.
+  [OK    ] rests.checked: No events array to derive rest intervals from (layers-based score); rest check skipped.
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 237e57a83c9781c3...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/layered_transition.score.json
+=== scores/examples/physical_piano.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\physical_piano.score.json
+==============================================================================
+  rendered: 12.50s @ 48000 Hz, peak -0.45 dBFS, RMS -23.78 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 4 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 4 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 4 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (4 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (139 partials checked across 4 events).
+  [OK    ] modes.frequency_range: All 139 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 139 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 4 modal events (max observed: 5.000 cents).
+  [OK    ] render.ran: Score rendered successfully to physical_piano.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 6a103b2ba6398931...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/physical_piano.score.json
+=== scores/examples/rabbit_warning.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\rabbit_warning.score.json
+==============================================================================
+  rendered: 7.00s @ 48000 Hz, peak -0.45 dBFS, RMS -25.11 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (9 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 9 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 9 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to rabbit_warning_001.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 704f445ef7854326...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/rabbit_warning.score.json
+=== scores/examples/restraint_metal_click.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\restraint_metal_click.score.json
+==============================================================================
+  rendered: 9.17s @ 48000 Hz, peak -0.45 dBFS, RMS -36.19 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (47 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 47 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 47 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 4.994 cents).
+  [OK    ] render.ran: Score rendered successfully to restraint_metal_click_001.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 c730dc58509660b4...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/restraint_metal_click.score.json
+=== scores/examples/water_gong_clamped.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\water_gong_clamped.score.json
+==============================================================================
+  rendered: 15.00s @ 48000 Hz, peak -0.45 dBFS, RMS -23.48 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (24 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 24 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 24 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.003 cents).
+  [OK    ] render.ran: Score rendered successfully to water_gong_clamped.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 1289e56d71b8a9a6...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/water_gong_clamped.score.json
+=== scores/examples/water_gong_free.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\water_gong_free.score.json
+==============================================================================
+  rendered: 15.00s @ 48000 Hz, peak -0.45 dBFS, RMS -24.07 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (14 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 14 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 14 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.003 cents).
+  [OK    ] render.ran: Score rendered successfully to water_gong_free.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 ae3dd2d386932af2...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/water_gong_free.score.json
+=== scores/examples/moonlight_sonata_complete.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\moonlight_sonata_complete.score.json
+==============================================================================
+  rendered: 879.03s @ 48000 Hz, peak -0.45 dBFS, RMS -18.70 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 6378 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 6378 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully. This score has no modal-engine events (e.g. it may be pure FM, which ROADMAP_PHYSICS.md Sec.0 explicitly marks as outside the physics-verification domain) -- nothing to mode-scan.
+  [OK    ] render.ran: Score rendered successfully to moonlight_sonata_complete.wav.
+  [EXEMPT] rests.rms_below_limit: REST CHECK FAILED: Rest at 316.52s-316.80s has RMS -43.1 dBFS (limit: -50.0 dBFS) -- previous note may be ringing too long. 12/14 rest interval(s) exceed the limit. FX-bypass render of the same window measures -120.0 dBFS (below the -50.0 dBFS limit) -- the overshoot looks like a reverb/delay tail, not the dry model's own decay.
+           registered exemption: FX artistic intent: long reverb tail. FX-bypass diagnostic measured -120.0 dBFS on the dry path (vs -43.1 dBFS with FX), proving the overshoot is reverb tail, not model decay. See reports/m3_corpus_triage.md.
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 442e991215fb1dbb...).
+  -> PASS (with 1 registered exemption(s))
+
+RESULT: ALL CHECKS PASSED (with 1 registered exemption(s))
+EXIT:0 FILE:scores/examples/moonlight_sonata_complete.score.json
+=== scores/examples/moonlight_sonata_movement1_tongue_drum.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\moonlight_sonata_movement1_tongue_drum.score.json
+==============================================================================
+  rendered: 329.22s @ 48000 Hz, peak -0.45 dBFS, RMS -18.74 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1142 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1142 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1142 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1142 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (12538 partials checked across 1142 events).
+  [OK    ] modes.frequency_range: All 12538 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 12538 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 1142 modal events (max observed: 0.019 cents).
+  [OK    ] render.ran: Score rendered successfully to moonlight_sonata_i_tongue_drum.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 6f3073433b172382...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/moonlight_sonata_movement1_tongue_drum.score.json
+=== scores/examples/moonlight_sonata_movement1_yangqin.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\moonlight_sonata_movement1_yangqin.score.json
+==============================================================================
+  rendered: 322.42s @ 48000 Hz, peak -0.45 dBFS, RMS -22.20 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1142 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1142 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1142 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1142 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (43416 partials checked across 1142 events).
+  [OK    ] modes.frequency_range: All 43416 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 43416 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 1142 modal events (max observed: 5.013 cents).
+  [OK    ] render.ran: Score rendered successfully to moonlight_sonata_i_yangqin.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 42c7d62cc41d2b69...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/moonlight_sonata_movement1_yangqin.score.json
+=== scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json ===
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\moonlight_sonata_movement1_yangqin_tongue_mix.score.json
+==============================================================================
+  rendered: 327.86s @ 48000 Hz, peak -0.45 dBFS, RMS -21.41 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2284 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2284 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2284 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2284 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (55954 partials checked across 2284 events).
+  [OK    ] modes.frequency_range: All 55954 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 55954 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2284 modal events (max observed: 5.013 cents).
+  [OK    ] render.ran: Score rendered successfully to moonlight_sonata_i_yangqin_tongue_mix.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 00e3fa17a90d6e9b...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+EXIT:0 FILE:scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json

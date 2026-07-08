@@ -1,0 +1,21 @@
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthCLI_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_rc_lib.dir\Release\TsukiSynthCLI_rc_lib.lib
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthData.lib
+  PluginProcessor.cpp
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  TsukiSynth_vst3_helper.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynth_vst3_helper.exe
+     正在建立程式庫 C:/Users/admin/Desktop/Claude/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.lib 和物件 C:/Users/admin/Desktop/Claude/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.exp
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynth_VST3.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  removing moduleinfo.json
+  creating C:/Users/admin/Desktop/Claude/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+  audit_repro.cpp
+  TsukiSynthAuditTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthAuditTest.exe
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynth_Standalone.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe

@@ -1,0 +1,242 @@
+{
+  "description": "M2 after-baseline: top-5 FFT spectral partials per rendered WAV, amplitude expressed relative to the strongest of the 5 found peaks (0.0 dB reference). Analysis window = first 2.0s of each render. Captured AFTER M2 2a/2b (force-impulse hammer spectrum replacing the LP partial-count heuristic), per ROADMAP_PHYSICS.md Rule 10 / M2 task 2e. Same scores, same CLI, same analysis method as partials_baseline.json for direct before/after comparison.",
+  "analysis_window_s": 2.0,
+  "num_partials_requested": 5,
+  "min_peak_separation_hz": 20.0,
+  "files": {
+    "fur_elise_opening.wav": {
+      "sample_rate": 48000,
+      "analysis_window_s": 2.0,
+      "rms_dbfs": -11.104,
+      "peak_dbfs": -0.446,
+      "num_partials_found": 5,
+      "partials": [
+        {
+          "partial_index": 1,
+          "freq_hz": 622.0,
+          "rel_db": 0.0,
+          "abs_fft_mag_db": 76.182
+        },
+        {
+          "partial_index": 2,
+          "freq_hz": 659.96,
+          "rel_db": -2.21,
+          "abs_fft_mag_db": 73.971
+        },
+        {
+          "partial_index": 3,
+          "freq_hz": 1244.02,
+          "rel_db": -10.454,
+          "abs_fft_mag_db": 65.727
+        },
+        {
+          "partial_index": 4,
+          "freq_hz": 1318.01,
+          "rel_db": -10.719,
+          "abs_fft_mag_db": 65.462
+        },
+        {
+          "partial_index": 5,
+          "freq_hz": 494.04,
+          "rel_db": -21.194,
+          "abs_fft_mag_db": 54.988
+        }
+      ]
+    },
+    "moonlight_sonata_i_tongue_drum.wav": {
+      "sample_rate": 48000,
+      "analysis_window_s": 2.0,
+      "rms_dbfs": -17.369,
+      "peak_dbfs": -4.459,
+      "num_partials_found": 5,
+      "partials": [
+        {
+          "partial_index": 1,
+          "freq_hz": 69.09,
+          "rel_db": 0.0,
+          "abs_fft_mag_db": 67.439
+        },
+        {
+          "partial_index": 2,
+          "freq_hz": 138.22,
+          "rel_db": -1.893,
+          "abs_fft_mag_db": 65.546
+        },
+        {
+          "partial_index": 3,
+          "freq_hz": 207.17,
+          "rel_db": -15.878,
+          "abs_fft_mag_db": 51.561
+        },
+        {
+          "partial_index": 4,
+          "freq_hz": 276.7,
+          "rel_db": -17.755,
+          "abs_fft_mag_db": 49.684
+        },
+        {
+          "partial_index": 5,
+          "freq_hz": 327.61,
+          "rel_db": -27.343,
+          "abs_fft_mag_db": 40.096
+        }
+      ]
+    },
+    "moonlight_sonata_i_yangqin.wav": {
+      "sample_rate": 48000,
+      "analysis_window_s": 2.0,
+      "rms_dbfs": -19.965,
+      "peak_dbfs": -4.709,
+      "num_partials_found": 5,
+      "partials": [
+        {
+          "partial_index": 1,
+          "freq_hz": 276.43,
+          "rel_db": 0.0,
+          "abs_fft_mag_db": 59.677
+        },
+        {
+          "partial_index": 2,
+          "freq_hz": 138.36,
+          "rel_db": -0.315,
+          "abs_fft_mag_db": 59.362
+        },
+        {
+          "partial_index": 3,
+          "freq_hz": 69.17,
+          "rel_db": -6.724,
+          "abs_fft_mag_db": 52.953
+        },
+        {
+          "partial_index": 4,
+          "freq_hz": 207.12,
+          "rel_db": -8.565,
+          "abs_fft_mag_db": 51.112
+        },
+        {
+          "partial_index": 5,
+          "freq_hz": 328.06,
+          "rel_db": -12.254,
+          "abs_fft_mag_db": 47.424
+        }
+      ]
+    },
+    "physical_piano.wav": {
+      "sample_rate": 48000,
+      "analysis_window_s": 2.0,
+      "rms_dbfs": -16.065,
+      "peak_dbfs": -0.446,
+      "num_partials_found": 5,
+      "partials": [
+        {
+          "partial_index": 1,
+          "freq_hz": 328.56,
+          "rel_db": 0.0,
+          "abs_fft_mag_db": 67.254
+        },
+        {
+          "partial_index": 2,
+          "freq_hz": 262.43,
+          "rel_db": -14.671,
+          "abs_fft_mag_db": 52.584
+        },
+        {
+          "partial_index": 3,
+          "freq_hz": 657.9,
+          "rel_db": -24.184,
+          "abs_fft_mag_db": 43.07
+        },
+        {
+          "partial_index": 4,
+          "freq_hz": 353.94,
+          "rel_db": -24.63,
+          "abs_fft_mag_db": 42.624
+        },
+        {
+          "partial_index": 5,
+          "freq_hz": 991.95,
+          "rel_db": -24.951,
+          "abs_fft_mag_db": 42.303
+        }
+      ]
+    },
+    "water_gong_clamped.wav": {
+      "sample_rate": 48000,
+      "analysis_window_s": 2.0,
+      "rms_dbfs": -15.51,
+      "peak_dbfs": -0.446,
+      "num_partials_found": 5,
+      "partials": [
+        {
+          "partial_index": 1,
+          "freq_hz": 261.52,
+          "rel_db": 0.0,
+          "abs_fft_mag_db": 61.235
+        },
+        {
+          "partial_index": 2,
+          "freq_hz": 1018.84,
+          "rel_db": -15.596,
+          "abs_fft_mag_db": 45.639
+        },
+        {
+          "partial_index": 3,
+          "freq_hz": 544.64,
+          "rel_db": -19.097,
+          "abs_fft_mag_db": 42.138
+        },
+        {
+          "partial_index": 4,
+          "freq_hz": 1558.08,
+          "rel_db": -21.008,
+          "abs_fft_mag_db": 40.227
+        },
+        {
+          "partial_index": 5,
+          "freq_hz": 893.18,
+          "rel_db": -25.784,
+          "abs_fft_mag_db": 35.451
+        }
+      ]
+    },
+    "water_gong_free.wav": {
+      "sample_rate": 48000,
+      "analysis_window_s": 2.0,
+      "rms_dbfs": -18.605,
+      "peak_dbfs": -0.446,
+      "num_partials_found": 5,
+      "partials": [
+        {
+          "partial_index": 1,
+          "freq_hz": 261.52,
+          "rel_db": 0.0,
+          "abs_fft_mag_db": 55.519
+        },
+        {
+          "partial_index": 2,
+          "freq_hz": 452.73,
+          "rel_db": -3.821,
+          "abs_fft_mag_db": 51.698
+        },
+        {
+          "partial_index": 3,
+          "freq_hz": 1022.14,
+          "rel_db": -10.299,
+          "abs_fft_mag_db": 45.22
+        },
+        {
+          "partial_index": 4,
+          "freq_hz": 1919.49,
+          "rel_db": -13.12,
+          "abs_fft_mag_db": 42.399
+        },
+        {
+          "partial_index": 5,
+          "freq_hz": 1755.87,
+          "rel_db": -13.444,
+          "abs_fft_mag_db": 42.075
+        }
+      ]
+    }
+  }
+}

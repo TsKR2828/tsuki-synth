@@ -1,0 +1,59 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+======================================================================
+TsukiSynth physics verification — measured spectrum vs theory
+======================================================================
+
+----------------------------------------------------------------------
+Partial-amplitude judgment (MIDI 60, first 5 partials, rel-dB vs --dump-modes theory, tol +/-3.0 dB):
+
+# cimbalom    MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.625    +0.00    +0.00   +0.00  ref (0 dB)
+    2     521.210   -22.57   -23.38   -0.82  PASS
+    3     788.944   -20.04   -23.05   -3.01  FAIL
+    4    1051.788   -23.76   -28.28   -4.52  FAIL
+    5    1315.870   -14.13   -18.32   -4.19  FAIL
+   -> cimbalom FAILED. Do NOT widen the +/-3.0 dB tolerance (ROADMAP_PHYSICS.md §6) — investigate the impulse-excitation model or record the discrepancy per §1g.
+   -> FAIL
+
+# tongue_drum MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     721.192   -12.56   -25.16  -12.60  FAIL
+    3    1413.792   -26.57   -60.27      --  weak (< -45 dB) - not assessed
+    4    2323.813   -59.58  -106.64      --  weak (< -45 dB) - not assessed
+    5    3525.631   -79.02  -107.82      --  weak (< -45 dB) - not assessed
+   -> tongue_drum FAILED. Do NOT widen the +/-3.0 dB tolerance (ROADMAP_PHYSICS.md §6) — investigate the impulse-excitation model or record the discrepancy per §1g.
+   -> FAIL
+
+# water_gong  MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     544.467   -20.94   -22.36   -1.42  PASS
+    3     893.196   -20.54   -24.40   -3.86  FAIL
+    4    1018.531   -11.72   -16.72   -5.00  FAIL
+    5    1306.873   -27.70   -35.66   -7.96  FAIL
+   -> water_gong FAILED. Do NOT widen the +/-3.0 dB tolerance (ROADMAP_PHYSICS.md §6) — investigate the impulse-excitation model or record the discrepancy per §1g.
+   -> FAIL
+
+# water_gong_free MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     452.428    -3.27    -3.59   -0.31  PASS
+    3     609.114   -20.02   -20.59   -0.57  PASS
+    4    1021.998    -5.73    -7.25   -1.53  PASS
+    5    1021.998    -5.73    -7.25   -1.53  PASS
+   -> PASS
+
+# piano       MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.625    +0.00    +0.00   +0.00  ref (0 dB)
+    2     521.210   -27.62   -28.44   -0.82  PASS
+    3     788.945   -38.43   -41.44   -3.01  FAIL
+    4    1051.789   -26.17   -30.69   -4.52  FAIL
+    5    1315.868   -38.87   -43.05   -4.18  FAIL
+   -> piano FAILED. Do NOT widen the +/-3.0 dB tolerance (ROADMAP_PHYSICS.md §6) — investigate the impulse-excitation model or record the discrepancy per §1g.
+   -> FAIL
+
+======================================================================
+RESULT: SOME CHECKS FAILED

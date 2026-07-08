@@ -1,0 +1,85 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: C:\Users\admin\Desktop\Claude\tsuki-synth\scores\classical\vivaldi_four_seasons\winter\vivaldi_four_seasons_winter_m1.score.json
+==============================================================================
+  rendered: 115.83s @ 48000 Hz, peak -0.45 dBFS, RMS -15.66 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 3255 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 3255 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 3255 performance.frequency_hz value(s) match equal temperament (max deviation 0.010 cents, limit +/-1.0).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 3255 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (3255 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (94384 partials checked across 3255 events).
+  [OK    ] modes.frequency_range: All 94384 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 94384 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 3255 modal events (max observed: 5.010 cents).
+  [OK    ] render.ran: Score rendered successfully to Classical_Vivaldi_Winter_Movement1.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 29556a68457cb19b...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: C:\Users\admin\Desktop\Claude\tsuki-synth\scores\classical\vivaldi_four_seasons\winter\vivaldi_four_seasons_winter_m2.score.json
+==============================================================================
+  rendered: 105.45s @ 48000 Hz, peak -0.45 dBFS, RMS -12.13 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 851 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 851 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 851 performance.frequency_hz value(s) match equal temperament (max deviation 0.006 cents, limit +/-1.0).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 851 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (851 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (23178 partials checked across 851 events).
+  [OK    ] modes.frequency_range: All 23178 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 23178 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 851 modal events (max observed: 5.010 cents).
+  [OK    ] render.ran: Score rendered successfully to Classical_Vivaldi_Winter_Movement2.wav.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 7f1da150165b0934...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: C:\Users\admin\Desktop\Claude\tsuki-synth\scores\classical\vivaldi_four_seasons\winter\vivaldi_four_seasons_winter_m3.score.json
+==============================================================================
+  rendered: 191.37s @ 48000 Hz, peak -0.45 dBFS, RMS -22.12 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2696 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2696 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 2696 performance.frequency_hz value(s) match equal temperament (max deviation 0.010 cents, limit +/-1.0).
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2696 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2696 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (81955 partials checked across 2696 events).
+  [OK    ] modes.frequency_range: All 81955 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 81955 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2696 modal events (max observed: 5.005 cents).
+  [OK    ] render.ran: Score rendered successfully to Classical_Vivaldi_Winter_Movement3.wav.
+  [OK    ] rests.rms_below_limit: All 2 rest interval(s) are below -50.0 dBFS. Quietest margin: rest at 128.14s-128.40s measured -96.2 dBFS (46.2 dB below the limit).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 ca2c847d0a5be26e...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+LOOP_DONE winter

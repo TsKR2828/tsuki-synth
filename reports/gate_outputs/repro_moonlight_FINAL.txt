@@ -1,0 +1,22 @@
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+==============================================================================
+SCORE: scores\examples\moonlight_sonata_complete.score.json
+==============================================================================
+  rendered: 879.03s @ 48000 Hz, peak -0.45 dBFS, RMS -18.70 dBFS
+  [OK  ] file.valid_json: File parses as valid JSON.
+  [OK  ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK  ] schema.events_sorted: All 6378 events are sorted by time (ascending).
+  [OK  ] schema.event_required_fields: All 6378 events have the required fields (time, duration, engine, note, velocity).
+  [OK  ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK  ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK  ] modes.dump_modes_ran: --dump-modes ran successfully. This score has no modal-engine events (e.g. it may be pure FM, which ROADMAP_PHYSICS.md Sec.0 explicitly marks as outside the physics-verification domain) -- nothing to mode-scan.
+  [OK  ] render.ran: Score rendered successfully to moonlight_sonata_complete.wav.
+  [FAIL] rests.rms_below_limit: REST CHECK FAILED: Rest at 316.52s-316.80s has RMS -43.1 dBFS (limit: -50.0 dBFS) -- previous note may be ringing too long. 12/14 rest interval(s) exceed the limit. FX-bypass render of the same window measures -120.0 dBFS (below the -50.0 dBFS limit) -- the overshoot looks like a reverb/delay tail, not the dry model's own decay.
+  [OK  ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK  ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK  ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK  ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 442e991215fb1dbb...).
+  -> FAIL
+
+RESULT: SOME CHECKS FAILED

@@ -1,0 +1,24 @@
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+======================================================================
+TsukiSynth physics verification — measured spectrum vs theory
+======================================================================
+Per-engine output level @ matched note (vel 0.85):
+   engine      MIDI  peak dBFS  rms dBFS  velx2->dB
+   cimbalom      60       -2.0     -27.9      +6.0
+   cimbalom      69       -4.3     -33.6      +6.0
+   tongue_drum   60       -3.3     -25.2      +6.0
+   tongue_drum   69       -5.0     -32.3      +6.0
+   water_gong    60       -6.3     -26.0      +6.0
+   water_gong    69       -6.9     -31.4      +6.0
+   water_gong_free   60       -8.8     -31.1      +6.0
+   water_gong_free   69      -10.9     -32.2      +6.0
+   fm            60      -20.2     -27.0      +5.9
+   fm            69      -20.1     -26.9      +5.9
+   piano         60       -6.8     -32.3      +6.0
+   piano         69       -7.0     -35.4      +6.0
+
+(+6 dB = amplitude scales linearly with velocity = physical;
+ FM expected >+6 dB because higher velocity also raises FM index.)
+
+======================================================================
+RESULT: ALL WITHIN TOLERANCE
