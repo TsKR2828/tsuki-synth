@@ -64,14 +64,14 @@
 
 | # | 名稱 | 優先 | 支柱 | 狀態 |
 |---|------|------|------|------|
-| M1 | 驗證廣度擴大 + CI | P0 | 驗證 | **Done（2026-07-09，GATE 全過）**：本地 `--full` ALL WITHIN TOLERANCE（`reports/gate_outputs/full_FINAL_gate.txt`，Phase E 重跑見 `reports/gate_outputs/phase_e_gate_full.txt`）+ **GitHub CI 綠燈一次以上**（run 28957524611，`build-and-verify` ✓ 9m53s，月月 2026-07-09 授權 push 觸發，此時 M2 尚未過故 CI 跑 `--full --skip-amps`）。**Phase E 更新（unstaged，待 push）**：M2（`--amps`）已於本地全過，`.github/workflows/physics.yml` 已拿掉 `--skip-amps` 並刪除原本非阻斷的 M2 可視化步驟，CI 主 GATE 現改跑完整 `--full`（涵蓋 1b+1c+1d+2d）；因規則 7（不 push）尚未在 GitHub 上實際跑過這個新版 workflow，「新版 CI 綠燈」待月月 push 後才能確認，本地 `--full`/`--amps` 皆已驗證全過。|
+| M1 | 驗證廣度擴大 + CI | P0 | 驗證 | **Done（2026-07-09，GATE 全過）**：本地 `--full` ALL WITHIN TOLERANCE（`reports/gate_outputs/full_FINAL_gate.txt`，Phase E 重跑見 `reports/gate_outputs/phase_e_gate_full.txt`）+ **GitHub CI 綠燈一次以上**（run 28957524611，`build-and-verify` ✓ 9m53s，月月 2026-07-09 授權 push 觸發，此時 M2 尚未過故 CI 跑 `--full --skip-amps`）。**Phase E 更新（unstaged，待 push）**：M2（`--amps`）已於本地全過，`.github/workflows/physics.yml` 已拿掉 `--skip-amps` 並刪除原本非阻斷的 M2 可視化步驟，CI 主 GATE 現改跑完整 `--full`（涵蓋 1b+1c+1d+2d）；**新版 workflow 已於 GitHub 綠燈**（月月 2026-07-09 授權 push `64e2836` 後，run 28960975003 `build-and-verify` ✓ 9m15s，完整 `--full` 含 2d 全過）。|
 | M2 | 激發物理化 + 振幅譜驗證 | P0 | 樂器物理 | **Done（2026-07-09，Phase E，GATE 全過）**：2a–2e 全部實作完成，Phase D windowed-synthesis 預測法已就位；**Phase E 找到並修正最後根因**——`tools/physics_verify.py` 的 `synth_theory_signal()`（THEORY 端 harness 腳本，非 `src/` 渲染碼）把 `--dump-modes` 的 `decay` 欄位當成 1/e 時間常數 τ 衰減，但 `ModalResonator::excite()` 自己的公式明確把 `decayTime` 定義為 **T60**（`decayCoeff = exp(-6.9078f/(decayTime*sampleRate))`）——理論訊號衰減慢了 ln(1000)≈6.9078 倍，且不同 partial 的 decayTime 不同，此比例誤差在「相對基頻 dB」判定下不會抵消。換成正確指數 `exp(-ln(1000)*t/decayTime)` 後，5 個 modal 引擎（cimbalom / tongue_drum / water_gong / water_gong_free / piano）前 5 partial 全部收斂到 ≤±0.22 dB（原本 cimbalom/piano p3–p5 -3.0~-4.5 dB、water_gong p3–p5 -3.9~-8.0 dB、tongue_drum p2 -12.60 dB 全部 FAIL → PASS）。**容差全程未動（±3.0 dB，§6 Rule 2）**——只修了理論預測公式，不是放寬判定線；差異化渲染隔離實驗（`--body-amount 0` / `--no-exciter-noise` / `--num-strings 1`，見 `src/dsp/DiagnosticOverrides.h` + `src/cli/RenderApp.cpp` 新增的診斷專用旗標）逐一排除 BodyResonance / 敲擊噪聲 / 多弦拍頻三個候選機制，確認只有 decay-law 指數修正能關閉殘差，且這些診斷旗標預設為「不覆寫」sentinel、不在任何 score JSON / 預設 / 正常 CLI 呼叫路徑被觸發（SHA256 no-flags render 前後位元完全相同，`audio_path_changed=false`，故本輪不需規則 10 前後對照報告或整個 corpus 重跑）。GATE 證據：`reports/gate_outputs/phase_e_gate_amps.txt`（`RESULT: ALL WITHIN TOLERANCE`）、`reports/gate_outputs/phase_e_gate_full.txt`（含 `2d amplitude judgment: PASS`）；根因全推導見 `reports/gate_outputs/amps_residual_attribution.md`（承接 `amps_rootcause_analysis.md`）。|
 | M3 | 整曲驗證工具 `verify_score.py` | P0 | 驗證 | **Done（2026-07-08，GATE 全過）**：單次 `verify_score.py --all` → `73/73 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed`、exit 0（證據 `reports/gate_outputs/verify_all_corpus_phase_d.log`）。72 乾淨 PASS + 1 登記豁免（moonlight `rests.rms`，`scores/verify_exemptions.json`）。原「5 首大 Vivaldi 逾時」真根因＝`ScoreRenderer::dumpModes()` 的 `juce::String` 累加 O(n²)，改 `MemoryOutputStream` 後 5158-event 檔 dump 僅 7.2s，四季 12/12 全 PASS；逐檔證據 `corpus_phase_d_*.log`。規則 6 重驗：`--full` 之 1b/1c/1d 全 PASS 零回歸（`phase_d_gate_full_v2.txt`） |
-| M4 | 視覺驗證報告（聾人介面） | P0 | 驗證/無障礙 | Not started |
+| M4 | 視覺驗證報告（聾人介面） | P0 | 驗證/無障礙 | **In progress（2026-07-11）**：4a/4b 完工——`tools/report_html.py` 新增，`verify_score.py --html <score.json>` 產出單檔自足 HTML 視覺驗證報告（總結徽章／頻譜圖／f0 預測-實測對照／響度曲線＋休止驗證／樂句休止時間軸／頁尾），對 `scores/examples/water_gong_clamped.score.json`（110.8 KB）與 `scores/originals/ai_radiance/ai_radiance_m1.score.json`（~484 KB）皆 GATE exit 0，程式化驗證 0 個 `http(s)://` 外部參照、PNG/SVG 皆合法格式。過程中修正一個 f0 量測 bug（拋物線內插外推出頻段邊界產生假數字，已加邊界檢查改為誠實標示無法量測）。**4c 未完成**：需要月月本人用瀏覽器實際打開 `ai_radiance_m1.report.html` 確認版面可讀性，AI 不能代為視覺驗收，Milestone 因此不能標 Done（Rule 5）。|
 | M5 | 衰減（T60）驗證轉正 | P1 | 驗證 | Not started |
 | M6 | 響度物理語意 | P1 | 樂器物理 | Not started |
 | M7 | 容差緊縮 + 文獻對照 | P1 | 驗證 | Not started |
-| M8 | 工程收尾（DAW / push / merge） | P0 | — | Pending |
+| M8 | 工程收尾（DAW / push / merge） | P0 | — | **In progress（2026-07-11）**：8a 部分完成（pluginval L5+L10 自動化全過，`reports/gate_outputs/pluginval_L{5,10}.txt`；Cubase 人工項待月月）、8b 現況已核實（`master`/`Codex-fix-bug` 分支皆不存在，字面待辦 moot，剩 push 時機裁決）、8c 完成（README 措辭已改，見下方詳述）。 |
 | M9 | AI 作曲規範 v2（非諧和聲規則） | P2 | 無障礙/AI | Not started |
 
 建議執行順序：M1 → M3 → M2 → M4 → M8 → M5/M6/M7 → M9。
@@ -92,7 +92,7 @@
 - [x] 1c. 材質掃描：UI 暴露的 9 種材質，各在 MIDI 60 對 cimbalom / tongue_drum / water_gong 跑 f0 + partials 檢查。證據：`reports/gate_outputs/full_FINAL_gate.txt`（9 材質 × 3 引擎全 `[OK]`，`1c material scan : PASS`）。
 - [x] 1d. velocity 線性檢查轉正：`--levels` 的「velocity ×2 → +6 dB」從顯示改為判定（modal 引擎 +6.0 ± 1.0 dB，FM 標註豁免）。證據：`reports/gate_outputs/full_FINAL_gate.txt`（`1d velocity judgment : PASS`，cimbalom/tongue_drum/water_gong/water_gong_free/piano 皆 +6.0 dB PASS，fm +5.9 dB EXEMPT）+ 前後對照 `reports/velocity_before_after.md`。
 - [x] 1e. 加 `--full` 模式一鍵跑完 1b + 1c + 1d。證據：`reports/gate_outputs/full_FINAL_gate.txt` 開頭 `--full: M1 verification breadth`，結尾 `RESULT: ALL WITHIN TOLERANCE`。
-- [x] 1f. GitHub Actions CI：push 時 build CLI + 跑 `physics_verify.py --full`，README 加 badge。證據：2026-07-09 月月授權 push（commit 623e265/3b35d82/7c150d1）後，run **28957524611** `build-and-verify` ✓（9m53s）：3 target build exit 0 + `--full --skip-amps` ALL WITHIN TOLERANCE + verify_score 5 檔 smoke 全過；非阻斷 `--amps` 步驟如預期 FAIL（M2 殘差，不擋綠燈）。**Phase E 更新（unstaged，待月月 push）**：M2 殘差已修正、`--amps` 本地全過，`.github/workflows/physics.yml` 已改為主 GATE 直接跑不加 `--skip-amps` 的 `--full`（涵蓋 2d）並刪除原本的非阻斷 `--amps` 步驟；規則 7 擋住尚未 push，「新版 workflow 在 GitHub 上綠燈」待月月 push 後才能確認一次。
+- [x] 1f. GitHub Actions CI：push 時 build CLI + 跑 `physics_verify.py --full`，README 加 badge。證據：2026-07-09 月月授權 push（commit 623e265/3b35d82/7c150d1）後，run **28957524611** `build-and-verify` ✓（9m53s）：3 target build exit 0 + `--full --skip-amps` ALL WITHIN TOLERANCE + verify_score 5 檔 smoke 全過；非阻斷 `--amps` 步驟如預期 FAIL（M2 殘差，不擋綠燈）。**Phase E 更新（unstaged，待月月 push）**：M2 殘差已修正、`--amps` 本地全過，`.github/workflows/physics.yml` 已改為主 GATE 直接跑不加 `--skip-amps` 的 `--full`（涵蓋 2d）並刪除原本的非阻斷 `--amps` 步驟；月月 push `64e2836` 後新版 workflow 於 GitHub 綠燈：run **28960975003** `build-and-verify` ✓（9m15s，完整 `--full` 含 2d + smoke 全過）。
 - [x] 1g. 若掃描發現某引擎在某音域超差 → **不准調寬容差**，記錄實測數字，縮小該引擎宣告的有效音域或修模型，由月月裁決。本輪掃描結果：6 引擎 6 音 + 9 材質皆 PASS，未發現需縮小音域或修模型的情形，無待裁決項。
 
 **GATE**：
@@ -197,22 +197,26 @@ python tools/verify_score.py --all   # examples + 四季 + ai_radiance 全綠或
 
 **任務**：
 
-- [ ] 4a. `verify_score.py --html` 產出單檔 HTML 報告：
+- [x] 4a. `verify_score.py --html` 產出單檔 HTML 報告：
   - 全曲頻譜圖（spectrogram，時間 × 頻率 × 強度）
   - 每事件「預測 f0 vs 實測 f0」對照圖（cents 偏差著色：綠 ≤5 / 黃 ≤12 / 紅 >12）
   - 響度曲線（RMS over time）+ 休止區間標示（驗證通過打勾）
   - 樂句/呼吸區間視覺化（讀 `phrases` / `rests` 欄位）
   - 頂部總結徽章：PASS / FAIL + 各分項
-- [ ] 4b. 單一 HTML 檔、無外部網路依賴（inline SVG/JS），能用瀏覽器直接開。
-- [ ] 4c. 對 AI Radiance 第一樂章產出範例報告，月月**用眼睛**驗收版面可讀性（視覺驗收，非聽覺，允許）。
+  證據：新增 `tools/report_html.py`（純函式，不重新判定 PASS/FAIL，只把 `verify_score.py` 已算出的 `Check` 物件與已渲染的音訊畫成圖），`verify_score.py --html` 已從 M3 遺留的 placeholder 接上真正實作。全 6 個區塊（總結徽章／頻譜圖／f0 對照／響度曲線／樂句休止／頁尾）皆已在下方 GATE 輸出的兩份報告中驗證存在。實作過程中發現並修正一個真實測量 bug：f0 對照圖初版對 `ai_radiance_m1` 事件 #56（69.3 Hz 低音 water_gong）算出 +75.43 cents 的假數字——根因是拋物線峰值內插在「搜尋頻段（±3%）邊界」外插了頻段外的鄰近 bin；已在 `measure_event_f0()` 加上邊界檢查（峰值若落在頻段邊界視為「無內部峰值」，誠實標示無法量測而非外推假數字，見 `report_html.py` 內註解），修正後同一事件不再出現於最大偏差前 10 名。
+- [x] 4b. 單一 HTML 檔、無外部網路依賴（inline SVG/JS），能用瀏覽器直接開。證據：頻譜圖用純 stdlib（`zlib`+`struct`）手刻 PNG encoder 內嵌為 `data:image/png;base64,...`，無 PIL/matplotlib；已用程式化檢查確認兩份報告的 `src=`/`href=` 屬性中 `http://`/`https://` 出現次數為 0（見下方 GATE 輸出），且 PNG 的 CRC32／IDAT 解壓長度、三個 `<svg>` 區塊皆已驗證為合法格式。
+- [ ] 4c. 對 AI Radiance 第一樂章產出範例報告，月月**用眼睛**驗收版面可讀性（視覺驗收，非聽覺，允許）。**尚待**：`ai_radiance_m1.report.html` 已產出（見下方 GATE），但「月月確認報告看得懂、判斷得了作品結構」需要月月本人實際打開瀏覽器查看後才能勾選——AI 不能代為驗收視覺可讀性，Milestone 因此維持 In progress。
 
-**GATE**：
+**GATE**（**4a/4b 已過，2026-07-11**）：
 
 ```powershell
-python tools/verify_score.py --html scores/originals/ai_radiance/movement1.score.json
-# → 產出 movement1.report.html，含上述全部區塊
+python tools/verify_score.py --html scores/examples/water_gong_clamped.score.json
+# → exit 0, scores/examples/water_gong_clamped.report.html (110.8 KB), 含全部 6 區塊
+python tools/verify_score.py --html scores/originals/ai_radiance/ai_radiance_m1.score.json
+# → exit 0, scores/originals/ai_radiance/ai_radiance_m1.report.html (483–498 KB), 含全部 6 區塊
 ```
-- 月月確認報告看得懂、判斷得了作品結構。
+- 兩份報告皆已程式化驗證：`src=`/`href=` 屬性中 0 個 `http://`/`https://`；PNG chunk CRC32 與 IDAT 解壓長度正確；3 個 `<svg>` 區塊皆為合法 XML（`xml.etree.ElementTree` 可解析）。
+- 月月確認報告看得懂、判斷得了作品結構（**待辦，見 4c**）。
 
 **不算完成**：報告只有文字表格沒有圖；需要連網載入 CDN；只做了頻譜圖沒做預測對照（對照才是驗證的核心）。
 
@@ -269,11 +273,11 @@ python tools/physics_verify.py --t60
 
 ### M8 — 工程收尾（P0，既有欠帳）
 
-- [ ] 8a. DAW 驗證：VST3 在 Cubase 掃描 / MIDI / 全參數 automation lanes / state 存取 round-trip（照 `ROADMAP.md` 舊清單執行並記錄結果）。
-- [ ] 8b. `Codex-fix-bug` 剩餘 commit push；merge → master 的決定（月月裁決）。
-- [ ] 8c. `README.md` 依驗證域聲明改寫「精確」相關措辭：對外主張用「物理可驗證（physically verifiable）」，「精確」保留給 GATE 已覆蓋的項目。
+- [x] 8a（部分）. pluginval 自動化驗證：pluginval 1.0.4 對 `TsukiSynth.vst3` 分別跑 `--strictness-level 5` 與 `--strictness-level 10`（最高等級），兩次皆 `SUCCESS`、exit code 0，涵蓋 plugin scan、冷/熱開啟、editor 開關、27 組 program 枚舉、跨取樣率(44.1k/48k/96k)×block size(64–1024) 音訊處理、state 存讀、參數 automation、bus layout、（L10 額外）非釋放連續處理、Parameters/Background-thread/Parameter-thread-safety/Fuzz-parameters 測試，log 兩份皆 0 個 warn/error/fail 字樣。證據：`reports/gate_outputs/pluginval_L5.txt`、`reports/gate_outputs/pluginval_L10.txt`。**但這只涵蓋自動化可測的部分**——真正在 Cubase host 裡的**人工**確認（host 掃描辨識到外掛、MIDI in 實際彈奏出聲、GUI 上的 automation lane 手動畫自動化曲線後回放正確、專案存檔關閉重開 state 正確還原）**尚未做**，需要月月在自己的 Cubase 環境操作，AI 無法代為完成，清單見 `TODO.md`。
+- [ ] 8b. `Codex-fix-bug` 剩餘 commit push；merge → master 的決定（月月裁決）。**現況核實（2026-07-11，`git branch -a`）**：目前 repo 只有 `main`（+ `remotes/origin/HEAD`、`remotes/origin/main`），**沒有獨立的 `master` 分支存在**，也沒有本地或遠端的 `Codex-fix-bug` 分支——早前提到的 `Codex-fix-bug` 工作已經在某次月月授權的 push 中併入 `main`。故「merge `Codex-fix-bug` → master」這個字面待辦**已經 moot**（目標分支不存在，來源分支也不存在），8b 真正剩下的只是「本輪 Phase F 尚未 push 的變更何時 push」，見 8b 下方 GATE 段落與 `TODO.md`。
+- [x] 8c. `README.md` 依驗證域聲明改寫「精確」相關措辭：對外主張改用「物理可驗證（physically verifiable）」，「精確」保留給 GATE 已覆蓋的項目；新增「Physical Verification」章節列出 §0 驗證域表（域內/半域內/域外）+ 逐項引用 §6 容差數字與 GATE 證據路徑；三個引擎標題與 Effect Chain 標題皆補上域內/域外標註。證據：`README.md`（本輪 diff，`git diff README.md`）。
 
-**GATE**：DAW 驗證四項有紀錄（截圖或文字）；README 措辭審過。
+**GATE**：DAW 驗證四項有紀錄（截圖或文字）——**pluginval 自動化涵蓋 3 項（scan-equivalent／automation／state round-trip 的非-DAW 版本），Cubase 內 MIDI in 手動彈奏確認與 host 專屬行為仍待月月人工執行**；README 措辭審過（已完成，見 8c）。
 
 ---
 

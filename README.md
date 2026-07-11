@@ -37,7 +37,7 @@
 
 ## Overview
 
-TsukiSynth is a multi-engine software synthesizer plugin based on **Physical Modeling (Modal Synthesis)**. The core engines calculate vibration mode frequencies and decay from physical parameters (material density, plate thickness, string length, strike position), producing physically correct synthesized timbres.
+TsukiSynth is a multi-engine software synthesizer plugin based on **Physical Modeling (Modal Synthesis)**. The Cimbalom (string), Tongue Drum (beam), and Water Gong (plate) engines calculate vibration mode frequencies and decay from physical parameters (material density, plate thickness, string length, strike position). These are **physically verifiable**: rendered frequency, amplitude, and decay are checked by an automated harness against theoretical predictions (see [Physical Verification](#physical-verification) below). The FM Piano engine and the effect chain are outside this verification domain — see the same section for the full scope declaration.
 
 The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-play) and other Web Audio experiments. The codebase has been rewritten in C++ / JUCE as VST3 and AU format for use in DAWs (Cubase, Logic Pro, FL Studio, Reaper, etc.).
 
@@ -45,11 +45,29 @@ The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-pl
 
 TsukiSynth is positioned as a **Physical Modeling synthesizer** with semantic parameters, not a general-purpose wavetable or subtractive synth. The core differentiators:
 
-- **Physical Modeling main body** — Modal Synthesis from real material properties (density, Young's modulus, damping)
+- **Physical Modeling main body** — Modal Synthesis from real material properties (density, Young's modulus, damping); physically verifiable for the string/beam/plate engines (see [Physical Verification](#physical-verification))
 - **Semantic parameters** — "material = steel", "hammer = felt" instead of abstract oscillator/filter knobs
 - **AI JSON Score Pipeline** — AI can directly generate sound design via JSON score files
 - **VTuber / worldview sound design** — targeted at character UI sounds, world-themed sound libraries
 - **WAV export** — CLI batch rendering for sound library generation without a DAW
+
+## Physical Verification
+
+TsukiSynth's physical claims are scoped and machine-checked, not aspirational — see `ROADMAP_PHYSICS.md` §0 for the full verification-domain table. Summary:
+
+| Component | Verification domain | Status |
+|---|---|---|
+| Cimbalom / Piano (StringModel) | ✅ In domain — struck rigid string, incl. inharmonicity | Physically verifiable |
+| Tongue Drum (BeamModel) | ✅ In domain — free-free Euler-Bernoulli beam | Physically verifiable |
+| Water Gong (PlateModel) | ✅ In domain — Kirchhoff circular plate (clamped + free-edge) | Physically verifiable |
+| Custom Harmonics | ⚠️ Half-domain — additive synthesis, ratios checkable but not physically derived | Not a physical-accuracy claim |
+| FM Piano | ❌ Out of domain — explicitly non-physical synthesis | Not covered |
+| Effect Chain (Reverb/Delay/Comp/Dist) | ❌ Out of domain — verification always runs with FX off | Not covered |
+| Chromatic scaling (size → timbre, MIDI → pitch) | ⚠️ Hybrid — physics shapes the spectral content, equal temperament sets f0 | Not "fully physical"; do not describe as such |
+
+For the in-domain engines, an automated harness (`tools/physics_verify.py`, `tools/verify_score.py`) checks rendered audio against theoretical predictions with fixed, non-adjustable tolerances (`ROADMAP_PHYSICS.md` §6): partial frequency ±12 cents, partial amplitude ±3.0 dB, velocity-doubling level +6.0 ± 1.0 dB, rest-region RMS ≤ −50 dBFS, and bit-exact determinism (SHA256, same machine). As of 2026-07-09, M1 (broad verification + CI), M2 (excitation physics + amplitude-spectrum verification), and M3 (whole-score verification, `verify_score.py --all`) are all Done with these GATEs passing, including on GitHub CI (badge above). Evidence: `reports/gate_outputs/phase_e_gate_full.txt`, `reports/gate_outputs/phase_e_gate_amps.txt`, `reports/gate_outputs/verify_all_corpus_phase_d.log`.
+
+These numbers are quality claims a deaf user (or an AI) can check visually/numerically — via spectrum plots and pass/fail diffs — without relying on how anything sounds.
 
 ## Plugin Formats
 
@@ -62,7 +80,7 @@ TsukiSynth is positioned as a **Physical Modeling synthesizer** with semantic pa
 
 ## Sound Engines
 
-### Engine 1: Cimbalom (Hungarian Dulcimer) — Physical Modeling
+### Engine 1: Cimbalom (Hungarian Dulcimer) — Physical Modeling (physically verifiable)
 - **Modal Synthesis string model** + multi-string beating + damper (CC#64)
 - From physical parameters (material density, string diameter, tension, length) calculates N vibration modes with inharmonicity correction
 - Strike position affects modal amplitude distribution
@@ -70,14 +88,15 @@ TsukiSynth is positioned as a **Physical Modeling synthesizer** with semantic pa
 - Hammer hardness shapes modal excitation spectrum (cotton = warm fundamental, metal = full spectrum)
 - Parameters: string material (9 types), diameter, hammer hardness (cotton/felt/wood/metal), strike position, strings per course (1-5), detuning
 
-### Engine 2: Chromatic Synth — Physical Modeling
+### Engine 2: Chromatic Synth — Physical Modeling (hybrid pitch mapping)
 - Three-in-one engine: Tongue Drum / Water Gong / Custom Harmonics
-- Tongue Drum: **Euler-Bernoulli beam model** (non-harmonic modes from eigenvalue formula)
-- Water Gong: **Kirchhoff circular plate model** (Bessel function zeros + pitch glide simulating water immersion)
-- Custom: user-editable ratio/amplitude via **Harmonic Editor** (8 partials with ratio + amplitude sliders, APVTS-driven)
+- Tongue Drum: **Euler-Bernoulli beam model** (non-harmonic modes from eigenvalue formula) — physically verifiable
+- Water Gong: **Kirchhoff circular plate model** (Bessel function zeros + pitch glide simulating water immersion) — physically verifiable
+- Custom: user-editable ratio/amplitude via **Harmonic Editor** (8 partials with ratio + amplitude sliders, APVTS-driven) — additive synthesis, ratios checkable but not physically derived
+- Chromatic (MIDI-note) pitch mapping is a **hybrid**: physics shapes the spectral content per mode, but equal-temperament tuning sets the fundamental frequency. This is not "fully physical" and is not described as such.
 - Parameters: sub-engine, material, exciter hardness, strike position, thickness, size, pitch glide, 8 harmonic ratios, 8 harmonic amplitudes
 
-### Engine 3: FM Piano — Frequency Modulation
+### Engine 3: FM Piano — Frequency Modulation (non-physical synthesis, outside verification domain)
 - 2-operator FM synthesis with self-feedback
 - 8 sound type presets: Piano, E.Piano, Vibraphone, Bell, Organ, Pad, Bass, Brass
 - **E.Piano 3-stack mode**: parallel body (1:1) + tine/bell (14:1) + shimmer (3:1, +4 cents) for DX7-inspired timbre
@@ -102,7 +121,7 @@ TsukiSynth is positioned as a **Physical Modeling synthesizer** with semantic pa
 
 Output is applied **after** the effect chain with per-sample `juce::SmoothedValue` to prevent clicks.
 
-## Effect Chain
+## Effect Chain (outside verification domain — physical verification always runs with FX off)
 
 ```
 [Engine Output] -> Distortion -> Compressor -> Delay -> Reverb -> [Macro Output] -> Output

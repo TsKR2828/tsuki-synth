@@ -50,10 +50,35 @@ All three items resolved without ear-based verification — physics-based answer
       modes, damper pedal.
 - [ ] `--t60` decay measurement is informational (audio decay fitting is noisy).
 
-## Still pending
+## Still pending — 月月 待辦（Phase F, 2026-07-11）
 
-- [ ] DAW validation (host scan / automation / state round-trip) on a real DAW.
-- [ ] `push` remaining commits for `Codex-fix-bug`; decide merge → master when ready.
+### 1. M4-4c：視覺驗收 `ai_radiance_m1.report.html`（AI 不能代做，需要月月的眼睛）
+
+1. 用檔案總管找到 `C:\Users\admin\Desktop\Claude\tsuki-synth\scores\originals\ai_radiance\ai_radiance_m1.report.html`，直接雙擊用瀏覽器打開（不需要開任何程式或連網，單一檔案）。
+2. 頁面最上方應該看到一個總結徽章區塊（PASS/FAIL 顏色框），確認顏色看起來是「通過」的顏色（綠色系），文字旁邊還有一行整曲時長／峰值 dBFS／RMS dBFS 的數字。
+3. 往下滾動應該看到一張橫向的彩色頻譜圖（像一張色塊漸層圖），確認圖片有正常顯示、不是破圖或空白方塊。
+4. 再往下應該看到一排「預測 f0 vs 實測 f0」的散點圖，每個點是綠/黃/紅其中一色，確認大部分點是綠色（少量黃色可接受，紅色代表超出容差）。
+5. 再往下是響度曲線（一條隨時間起伏的線圖）與樂句/休止時間軸，確認線圖有畫出來、休止區間有標示（打勾符號或色塊）。
+6. 最底部頁尾應該有一份檢查清單文字（列出各項 PASS/FAIL）與容差數字表格。
+7. 只要**版面看得懂、圖有正常顯示、能大致看出這首曲子的結構**（哪裡吵哪裡靜、音準大致對不對），就算驗收通過，不需要判斷每個技術細節。看完後告訴 Fable「4c 驗收過了」或指出哪裡看不懂/顯示異常，Fable 會據此把 `ROADMAP_PHYSICS.md` 的 4c 打勾。
+
+### 2. M8-8a：Cubase 人工檢查清單（純視覺確認，不需要用耳朵判斷聲音好壞）
+
+在自己的 Cubase 裡，依序做完以下 4 步，每步只需要**看畫面**確認有沒有出現預期的視覺結果：
+
+1. **Host 掃描辨識** — 打開 Cubase 的外掛管理員（VST3 插件列表），確認清單裡出現「TsukiSynth」這個項目、沒有顯示紅色叉叉或「掃描失敗」字樣。
+2. **MIDI 輸入** — 建一軌樂器軌掛上 TsukiSynth，用滑鼠點鋼琴卷簾畫一個音符（或用 MIDI 鍵盤按一下），確認 Cubase 畫面上的音量表（meter）有跳動反應（代表有輸出訊號，不需要用耳朵聽）。
+3. **Automation lane** — 在該軌開一條 automation lane，選 TsukiSynth 的任一參數（例如 Cutoff 或 Decay），手動畫一條曲線，播放時確認外掛視窗裡對應的旋鈕/滑桿有跟著曲線同步轉動或移動。
+4. **State round-trip** — 存檔（Ctrl+S）、關閉 Cubase 專案、重新打開，確認外掛視窗裡剛剛設定的參數位置（旋鈕角度/滑桿位置）跟關閉前一致，沒有跳回預設值。
+
+四步都是看畫面有沒有反應/位置對不對，不需要判斷音色好壞。完成後跟 Fable 說「Cubase 四項都過了」（或指出哪一項有異常），據此更新 `ROADMAP_PHYSICS.md` M8-8a 為完整完成。
+
+### 3. Phase F 變更何時 push（M8-8b）
+
+本輪（Phase F）未 commit/push 的變更清單：`tools/report_html.py`（新增）、`ROADMAP_PHYSICS.md`、`README.md`、`tools/verify_score.py`、`reports/gate_outputs/pluginval_L5.txt`（新增）、`reports/gate_outputs/pluginval_L10.txt`（新增）、`scores/examples/water_gong_clamped.report.html`（新增）、`scores/originals/ai_radiance/ai_radiance_m1.report.html`（新增）。全部停在 unstaged，等月月看完上面兩項視覺驗收後，一併決定 commit 訊息與 push 時機（Rule 7，Fable 不會自己動）。
+
+- [ ] DAW validation (host scan / automation / state round-trip) on a real DAW — see Cubase checklist above.
+- [ ] `push` remaining commits for Phase F changes when 月月 is ready (see list above). `Codex-fix-bug`/`master` branches confirmed not to exist (`git branch -a`, 2026-07-11) — that specific merge decision is moot.
 - [ ] **CI workflow created, `--full` blocker now resolved — only `push` left** (`ROADMAP_PHYSICS.md` M1 task 1f):
       `.github/workflows/physics.yml` added 2026-07-02 (Windows runner, MSVC,
       builds CLI + Standalone + VST3, runs `physics_verify.py --full`).

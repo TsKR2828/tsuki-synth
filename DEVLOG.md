@@ -2,6 +2,36 @@
 
 ---
 
+## 2026-07-11 — Phase F：M4 視覺驗證報告 4a/4b 完工 + pluginval L10 全過 + README 措辭審查
+
+分支 `main`（HEAD 64e2836 起），未 commit/push，§6 容差未動，Rule 7（不 commit/push）。
+
+### M4：`tools/report_html.py` 新增，`verify_score.py --html` 從 placeholder 變真實作
+新增純函式模組 `tools/report_html.py`，不重新判定 PASS/FAIL，只把 `verify_score.py` 已算出的 `Check` 物件與已渲染音訊畫成 6 個區塊（總結徽章／頻譜圖／f0 預測-實測對照／響度曲線＋休止驗證／樂句休止時間軸／頁尾）。頻譜圖用純 stdlib（`zlib`+`struct`）手刻 PNG encoder，內嵌為 `data:image/png;base64,...`，全程無 PIL/matplotlib、無外部網路依賴。對 `scores/examples/water_gong_clamped.score.json`（110.8 KB 輸出）與 `scores/originals/ai_radiance/ai_radiance_m1.score.json`（483–498 KB 輸出）皆 GATE exit 0。
+
+過程中修正一個真實測量 bug：f0 對照圖初版對 `ai_radiance_m1` 事件 #56（69.3 Hz 低音 water_gong）算出 +75.43 cents 的假數字——根因是拋物線峰值內插在搜尋頻段（±3%）邊界外插了頻段外的鄰近 bin；已在 `measure_event_f0()` 加上邊界檢查，峰值落在頻段邊界時誠實標示「無法量測」而非外推假數字。
+
+獨立驗證（另一名 worker，非本人）另外發現並修補一個無障礙缺口：`verify_one()` 早就把整曲 duration/peak_dbfs/rms_dbfs 算進 `measured` dict，但 `report_html.py` 從未把這些數字顯示成聾人讀者看得到的文字（只有 PASS/FAIL 徽章）——違反本模組自己宣告的「每個品質主張必須是視覺化、數字化，不能是『聽起來』」規則。已在 `render_badges_section()` 加一行 `.banner-stats`（duration/peak dBFS/RMS dBFS），重跑兩份報告的 GATE 仍 exit 0。
+
+**GATE 全過**：`python tools/verify_score.py --html scores/examples/water_gong_clamped.score.json` 與對 `ai_radiance_m1.score.json` 皆 exit 0，含全部 6 區塊；程式化驗證 0 個 `http(s)://` 外部參照，PNG CRC32/IDAT 長度正確，3 個 `<svg>` 區塊皆合法 XML。**4c（月月本人瀏覽器目視驗收版面可讀性）未完成**——這是月月的眼睛，AI 不能代為勾選，M4 因此維持 In progress（Rule 5）。
+
+### M8-8a（部分）：pluginval 自動化驗證，L5 + L10 全過
+下載 pluginval 1.0.4（JUCE v8.0.3）到 scratchpad，對已建好的 `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3` 分別跑 `--strictness-level 5` 與最高等級 `--strictness-level 10`，兩次皆 `SUCCESS`、process exit code 0。L10 額外涵蓋非釋放連續處理、state 存讀、Parameters/Background-thread/Parameter-thread-safety/Fuzz-parameters 測試。兩份 log（`reports/gate_outputs/pluginval_L5.txt` / `pluginval_L10.txt`）grep `warn|error|fail|assert`（不分大小寫）零匹配。**這只涵蓋自動化可測部分**，Cubase 內 host 掃描辨識／MIDI in 手動彈奏／GUI automation lane 手畫曲線回放／專案存檔關閉重開的 state round-trip 仍需月月人工在自己的 Cubase 操作，清單已寫進 `TODO.md`。
+
+### M8-8b：核實 `master`/`Codex-fix-bug` 分支現況
+`git branch -a` 確認 repo 目前只有 `main`（+ `remotes/origin/HEAD`、`remotes/origin/main`），沒有獨立 `master` 分支，也沒有 `Codex-fix-bug` 分支（本地或遠端皆無）——早前的 `Codex-fix-bug` 工作已在某次月月授權的 push 併入 `main`。「merge Codex-fix-bug → master」字面待辦已 moot，8b 剩下的只是「本輪 Phase F 尚未 push 的變更何時 push」交給月月裁決。
+
+### M8-8c：README 驗證域措辭審查
+逐句核對 README.md 對外主張是否符合 `ROADMAP_PHYSICS.md` §0 驗證域表：把未加範圍限定的「精確模擬音色」改成明確排除 FM Piano 與 Effect Chain 的敘述；新增「Physical Verification」章節，摘要域內/半域內/域外分類並直接引用 §6 容差數字（±12 cents、±3.0 dB、+6.0±1.0 dB、≤-50 dBFS、SHA256 determinism）與 GATE 證據路徑；三個引擎小節標題與 Effect Chain 小節標題各補上域內/域外標註。**未改任何 §6 數字**（Rule 2），只是把既有數字如實引用進使用者文件。
+
+### GATE 結果彙總
+`tools/report_html.py`（新）+ `tools/verify_score.py --html` GATE：兩份報告 exit 0，6 區塊齊全，0 個外部網路參照。pluginval L5/L10：兩次 SUCCESS/exit 0，0 個 warn/error/fail 字樣。`git branch -a`：確認分支現況（見上）。三者皆為既有唯讀查驗或純新增程式碼，未動任何 `src/`、`uiux/`、score JSON，§6 容差全程未動。
+
+### 文件同步（本輪，Phase F）
+`ROADMAP_PHYSICS.md`：M4 列改標「In progress」+ 4a/4b 打勾附證據、4c 維持未勾；M8 列改標「In progress」+ 8a 部分打勾（pluginval 證據）、8b 現況核實補述（分支不存在，moot）、8c 打勾（README 已改）。`TODO.md`：新增月月待辦清單（4c 視覺驗收步驟、Cubase 人工檢查清單、push 時機）。
+
+---
+
 ## 2026-07-09 — Phase E：`--amps` 最後根因修復（decay-law 指數），GATE 全過
 
 分支 `main`（HEAD 7c150d1 起），未 commit/push，§6 容差未動，Rule 7（不 commit/push）。

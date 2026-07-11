@@ -62,7 +62,11 @@ Implementation note on 2b (deviation from a literal per-event probe):
 Usage:
     python tools/verify_score.py <score.json>       # verify a single score
     python tools/verify_score.py --all                # verify every score
-    python tools/verify_score.py --html <score.json>  # placeholder (M4)
+    python tools/verify_score.py --html <score.json>  # + write a single-file
+                                                        # HTML visual report
+                                                        # next to the score
+                                                        # (ROADMAP_PHYSICS.md M4;
+                                                        # see tools/report_html.py)
 Exit code 0 = all checks passed. Exit code 1 = one or more checks failed.
 """
 
@@ -471,13 +475,19 @@ def check_schema(score):
 
 # ── 2b. mode scanning (whole-score --dump-modes, see module docstring) ─────
 def check_modes(cli, score_path, events):
+    """Returns (checks, dumped_events). `dumped_events` is the raw
+    "events" array from --dump-modes's JSON (possibly []), returned
+    alongside the Check objects so callers that need the underlying modal
+    data (M4's HTML report: collision detection for the per-event f0
+    chart) can reuse this one CLI call instead of running --dump-modes a
+    second time -- see verify_one()."""
     checks = []
     try:
         dumped = dump_modes(cli, score_path)
     except CliError as e:
         checks.append(Check("modes.dump_modes_ran", False,
                              f"MODE SCAN FAILED: could not run --dump-modes: {e}"))
-        return checks
+        return checks, []
 
     dumped_events = dumped.get("events", [])
 
@@ -497,7 +507,7 @@ def check_modes(cli, score_path, events):
         checks.append(Check("modes.dump_modes_ran", True,
                              f"--dump-modes ran successfully. {note}",
                              {"modal_events": 0}))
-        return checks
+        return checks, []
 
     checks.append(Check("modes.dump_modes_ran", True,
                          f"--dump-modes ran successfully for {len(dumped_events)} "
@@ -623,7 +633,7 @@ def check_modes(cli, score_path, events):
                              "No fundamentals available to check (no modal events with "
                              "a resolvable MIDI note)."))
 
-    return checks
+    return checks, dumped_events
 
 
 # ── 2c. rest verification ───────────────────────────────────────────────────
@@ -728,6 +738,10 @@ def check_rests(events, sr, mono_audio, cli=None, score=None):
     failures = []
     worst_margin = None
     checked = 0
+    # Per-interval pass/fail, kept regardless of the overall verdict (M4's
+    # HTML report draws every rest span on the loudness curve, not just the
+    # first failure -- see report_html.render_loudness_section()).
+    all_intervals = []
     for judged_start, gap_end, raw_gap_start in rests:
         start_i = max(0, int(judged_start * sr))
         end_i = min(len(mono_audio), int(gap_end * sr))
@@ -737,12 +751,15 @@ def check_rests(events, sr, mono_audio, cli=None, score=None):
         seg = mono_audio[start_i:end_i]
         level = rms_dbfs(seg)
         margin = REST_RMS_LIMIT_DBFS - level  # positive = passing headroom
+        interval_pass = level <= REST_RMS_LIMIT_DBFS
+        all_intervals.append({"start": judged_start, "end": gap_end,
+                               "level_dbfs": level, "pass": interval_pass})
         # report the window that was actually MEASURED (judged_start..gap_end,
         # i.e. after the decay-allowance skip) -- raw_gap_start is kept in the
         # detail dict for anyone who wants the full un-skipped gap context.
         if worst_margin is None or margin < worst_margin[0]:
             worst_margin = (margin, judged_start, gap_end, level, raw_gap_start)
-        if level > REST_RMS_LIMIT_DBFS:
+        if not interval_pass:
             failures.append((judged_start, gap_end, level, raw_gap_start))
 
     if checked == 0:
@@ -755,7 +772,8 @@ def check_rests(events, sr, mono_audio, cli=None, score=None):
         t0, t1, level0, raw0 = failures[0]
         detail = {"count": len(failures), "checked": checked,
                    "total_score_duration_s": duration_s,
-                   "first_failure_raw_gap_start_s": raw0}
+                   "first_failure_raw_gap_start_s": raw0,
+                   "intervals": all_intervals}
         fx_note = ""
         # Diagnostic-only FX-bypass re-render (ROADMAP_PHYSICS.md M3 step 2):
         # only spend the extra render when there is nonzero FX that could
@@ -808,7 +826,7 @@ def check_rests(events, sr, mono_audio, cli=None, score=None):
             f"All {checked} rest interval(s) are below {REST_RMS_LIMIT_DBFS:.1f} "
             f"dBFS. Quietest margin: rest at {t0:.2f}s-{t1:.2f}s measured "
             f"{level0:.1f} dBFS ({margin:.1f} dB below the limit).",
-            {"checked": checked, "worst_margin_db": margin}))
+            {"checked": checked, "worst_margin_db": margin, "intervals": all_intervals}))
 
     return checks
 
@@ -1018,8 +1036,20 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
     schema_checks, events = check_schema(score)
     all_checks.extend(schema_checks)
 
-    mode_checks = check_modes(cli, score_path, events)
+    mode_checks, dumped_events = check_modes(cli, score_path, events)
     all_checks.extend(mode_checks)
+
+    # Stashed for tools/report_html.py (M4 --html mode): the parsed score,
+    # its events, and the --dump-modes result are exactly what verify_one()
+    # already computed above -- rather than have the HTML renderer re-read
+    # and re-run --dump-modes itself (a second CLI subprocess call, and a
+    # second source of truth that could drift from what was actually
+    # judged), stash them here under underscore-prefixed keys so any caller
+    # that wants them can use verify_one()'s own results directly. Ordinary
+    # callers (print_report(), the --all summary) never read these keys.
+    measured["_score"] = score
+    measured["_events"] = events
+    measured["_dumped_events"] = dumped_events
 
     # render once, reused for rest / peak-clip checks
     render_dir = Path(keep_render_dir) if keep_render_dir else None
@@ -1062,6 +1092,12 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
                 measured["duration_s"] = len(mono_audio) / sr if sr else 0.0
                 measured["peak_dbfs"] = peak_dbfs(all_ch_audio.reshape(-1))
                 measured["rms_dbfs"] = rms_dbfs(mono_audio)
+                # Full arrays for report_html.py's spectrogram/f0/loudness
+                # figures (same rendered WAV the checks above just used --
+                # ROADMAP_PHYSICS.md M4 constraint: "All figures computed
+                # from the SAME rendered WAV the checks used").
+                measured["_mono_audio"] = mono_audio
+                measured["_sample_rate"] = sr
 
                 all_checks.extend(check_rests(events, sr, mono_audio, cli=cli, score=score))
                 all_checks.extend(check_peak_and_clipping(all_ch_audio))
@@ -1113,6 +1149,21 @@ def print_report(score_path, ok, checks, measured, verbose=True):
         print(f"  -> {'PASS' if ok else 'FAIL'}")
 
 
+def default_report_path(score_path):
+    """<score_basename>.report.html next to the score (ROADMAP_PHYSICS.md M4
+    "written next to the score"). Strips a trailing ".score.json" (the
+    project's usual double extension) or plain ".json" before appending
+    ".report.html", so "ai_radiance_m1.score.json" -> "ai_radiance_m1.report.html"."""
+    name = score_path.name
+    if name.endswith(".score.json"):
+        base = name[: -len(".score.json")]
+    elif name.endswith(".json"):
+        base = name[: -len(".json")]
+    else:
+        base = name
+    return score_path.with_name(base + ".report.html")
+
+
 def find_all_scores(repo_root):
     """Task 2f directory list: examples/, vivaldi, ai_radiance, library/ (recursive)."""
     roots = [
@@ -1149,15 +1200,15 @@ def main():
                           "scores/classical/vivaldi_four_seasons, "
                           "scores/originals/ai_radiance, and scores/library (recursive)")
     ap.add_argument("--html", metavar="SCORE",
-                     help="(placeholder for M4) generate an HTML report for SCORE")
+                     help="generate a single-file, self-contained HTML visual "
+                          "verification report for SCORE (ROADMAP_PHYSICS.md M4)")
+    ap.add_argument("--html-out", metavar="PATH", default=None,
+                     help="override the output path for --html (default: "
+                          "<score_basename>.report.html next to the score)")
     ap.add_argument("--cli", default=None, help="path to TsukiSynthCLI executable")
     ap.add_argument("--quiet", action="store_true",
                      help="only print failing checks, not every passing one")
     args = ap.parse_args()
-
-    if args.html:
-        print("HTML report not yet implemented.")
-        return 0
 
     cli = Path(args.cli) if args.cli else find_cli()
     if not cli or not cli.exists():
@@ -1172,6 +1223,29 @@ def main():
     if exemptions:
         print(f"Loaded {len(exemptions)} registered exemption(s) from "
               f"{find_exemptions_path()}.")
+
+    if args.html:
+        score_path = Path(args.html)
+        if not score_path.exists():
+            print(f"ERROR: score file not found: {score_path}", file=sys.stderr)
+            return 2
+        try:
+            import report_html
+        except ImportError as e:
+            print(f"ERROR: could not import tools/report_html.py: {e}", file=sys.stderr)
+            return 2
+
+        ok, checks, measured = verify_one(cli, score_path, exemptions=exemptions)
+        print_report(score_path, ok, checks, measured, verbose=not args.quiet)
+        exempt_count = sum(1 for c in checks if c.exempt_reason)
+        print(f"\nRESULT: {'ALL CHECKS PASSED' if ok else 'SOME CHECKS FAILED'}"
+              + (f" (with {exempt_count} registered exemption(s))" if exempt_count else ""))
+
+        html_text = report_html.generate_html_report(score_path, ok, checks, measured)
+        out_path = Path(args.html_out) if args.html_out else default_report_path(score_path)
+        out_path.write_text(html_text, encoding="utf-8")
+        print(f"\nHTML report written to: {out_path}  ({len(html_text) / 1024.0:.1f} KB)")
+        return 0 if ok else 1
 
     if args.all:
         score_files = find_all_scores(repo_root)
