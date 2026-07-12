@@ -6,98 +6,98 @@
       "density": 7800,
       "youngs_modulus": 200e9,
       "poisson_ratio": 0.29,
-      "damping": { "alpha": 0.5, "beta_air": 1.2e-7, "gamma_radiation": 2e-5 }
+      "damping": { "alpha": 0.0238, "beta_air": 1.2e-7, "gamma_radiation": 2e-5 }
     },
     "copper": {
       "display_name": "銅 Copper",
       "density": 8900,
       "youngs_modulus": 120e9,
       "poisson_ratio": 0.34,
-      "damping": { "alpha": 1.2, "beta_air": 1.5e-7, "gamma_radiation": 2.5e-5 }
+      "damping": { "alpha": 0.2378, "beta_air": 1.5e-7, "gamma_radiation": 2.5e-5 }
     },
     "bronze": {
       "display_name": "青銅 Bronze",
       "density": 8800,
       "youngs_modulus": 110e9,
       "poisson_ratio": 0.34,
-      "damping": { "alpha": 0.8, "beta_air": 1.3e-7, "gamma_radiation": 2.2e-5 }
+      "damping": { "alpha": 0.1189, "beta_air": 1.3e-7, "gamma_radiation": 2.2e-5 }
     },
     "aluminum": {
       "display_name": "鋁 Aluminum",
       "density": 2700,
       "youngs_modulus": 70e9,
       "poisson_ratio": 0.33,
-      "damping": { "alpha": 0.3, "beta_air": 0.8e-7, "gamma_radiation": 1.5e-5 }
+      "damping": { "alpha": 0.0119, "beta_air": 0.8e-7, "gamma_radiation": 1.5e-5 }
     },
     "brass": {
       "display_name": "黃銅 Brass",
       "density": 8500,
       "youngs_modulus": 100e9,
       "poisson_ratio": 0.34,
-      "damping": { "alpha": 1.0, "beta_air": 1.4e-7, "gamma_radiation": 2.3e-5 }
+      "damping": { "alpha": 0.1784, "beta_air": 1.4e-7, "gamma_radiation": 2.3e-5 }
     },
     "wood_spruce": {
       "display_name": "雲杉 Spruce",
       "density": 450,
       "youngs_modulus": 12e9,
       "poisson_ratio": 0.37,
-      "damping": { "alpha": 8.0, "beta_air": 3e-7, "gamma_radiation": 5e-5 }
+      "damping": { "alpha": 0.8324, "beta_air": 3e-7, "gamma_radiation": 5e-5 }
     },
     "wood_maple": {
       "display_name": "楓木 Maple",
       "density": 650,
       "youngs_modulus": 12.5e9,
       "poisson_ratio": 0.38,
-      "damping": { "alpha": 6.5, "beta_air": 2.5e-7, "gamma_radiation": 4.5e-5 }
+      "damping": { "alpha": 1.4271, "beta_air": 2.5e-7, "gamma_radiation": 4.5e-5 }
     },
     "rubber": {
       "display_name": "橡膠 Rubber",
       "density": 1100,
-      "youngs_modulus": 1.5e9,
+      "youngs_modulus": 5e6,
       "poisson_ratio": 0.49,
-      "damping": { "alpha": 2.5, "beta_air": 1e-6, "gamma_radiation": 1e-4 }
+      "damping": { "alpha": 35.676, "beta_air": 1e-6, "gamma_radiation": 1e-4 }
     },
     "glass": {
       "display_name": "玻璃 Glass",
       "density": 2500,
       "youngs_modulus": 70e9,
       "poisson_ratio": 0.22,
-      "damping": { "alpha": 0.15, "beta_air": 0.5e-7, "gamma_radiation": 1e-5 }
+      "damping": { "alpha": 0.1784, "beta_air": 0.5e-7, "gamma_radiation": 1e-5 }
     },
     "iron": {
       "display_name": "鐵 Iron (Cast)",
       "density": 7200,
       "youngs_modulus": 170e9,
       "poisson_ratio": 0.26,
-      "damping": { "alpha": 1.5, "beta_air": 1.8e-7, "gamma_radiation": 3e-5 }
+      "damping": { "alpha": 1.1892, "beta_air": 1.8e-7, "gamma_radiation": 3e-5 }
     },
     "nylon": {
       "display_name": "尼龍 Nylon",
       "density": 1150,
       "youngs_modulus": 3e9,
       "poisson_ratio": 0.4,
-      "damping": { "alpha": 25.0, "beta_air": 5e-7, "gamma_radiation": 3e-5 }
+      "damping": { "alpha": 4.1622, "beta_air": 5e-7, "gamma_radiation": 3e-5 }
     },
     "bamboo": {
       "display_name": "竹 Bamboo",
       "density": 700,
       "youngs_modulus": 18e9,
       "poisson_ratio": 0.3,
-      "damping": { "alpha": 5.0, "beta_air": 2e-7, "gamma_radiation": 3.5e-5 }
+      "damping": { "alpha": 1.1892, "beta_air": 2e-7, "gamma_radiation": 3.5e-5 }
     },
     "wood_birch": {
       "display_name": "樺木 Birch",
       "density": 650,
       "youngs_modulus": 15e9,
       "poisson_ratio": 0.35,
-      "damping": { "alpha": 7.0, "beta_air": 2.8e-7, "gamma_radiation": 4.2e-5 }
+      "damping": { "alpha": 1.6649, "beta_air": 2.8e-7, "gamma_radiation": 4.2e-5 }
     },
     "wood_oak": {
       "display_name": "橡木 Oak",
       "density": 720,
       "youngs_modulus": 12e9,
       "poisson_ratio": 0.35,
-      "damping": { "alpha": 7.5, "beta_air": 3e-7, "gamma_radiation": 4.8e-5 }
+      "damping": { "alpha": 1.9027, "beta_air": 3e-7, "gamma_radiation": 4.8e-5 }
     }
   }
 }

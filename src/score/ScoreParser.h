@@ -44,6 +44,8 @@ struct ScoreEvent
     double      duration = 1.0;
     std::string engine;
     std::string note;
+    // velocity in [0,1] -- see the "velocity law" comment block at its parse
+    // site below (ROADMAP_PHYSICS.md M6-6a) for the physical semantics.
     float       velocity = 0.8f;
     std::string material = "steel";
     double      strikePosition = 0.3;
@@ -230,6 +232,30 @@ public:
                     ScoreEvent se;
                     double velocity = se.velocity;
 
+                    // ── velocity law (ROADMAP_PHYSICS.md M6-6a, comment only --
+                    //    no logic change here; this documents what happens
+                    //    downstream once `velocity` leaves this parser) ────────
+                    //    `velocity` in [0,1] is read here as a plain number and
+                    //    carried unchanged into ScoreEvent::velocity. It is used
+                    //    as the LINEAR excitation-force scale for the modal
+                    //    engines: ModalResonator::excite() sets
+                    //        currentAmp = baseAmp * velocity
+                    //    (src/dsp/ModalResonator.h) -- no curve, no lookup
+                    //    table. Amplitude is proportional to velocity, so
+                    //    doubling velocity doubles the waveform amplitude and
+                    //    therefore raises the rendered level by
+                    //        20 * log10(2) = +6.0206 dB.
+                    //    This is not just a design intent -- it is machine-
+                    //    verified: tools/physics_verify.py's velocity judgment
+                    //    (ROADMAP_PHYSICS.md Sec.6 "velocity ×2 電平", M1-1d)
+                    //    renders the same note at velocity and 2*velocity and
+                    //    checks the measured level difference against
+                    //    +6.0 +/- 1.0 dB for every modal engine (cimbalom /
+                    //    tongue_drum / water_gong / water_gong_free / piano);
+                    //    FM is exempted there as a non-modal, non-physical
+                    //    engine (see ROADMAP_PHYSICS.md Sec.0 domain table).
+                    //    See docs/AI_PHYSICAL_COMPOSITION_GUIDE.zh-TW.md Sec.4.6
+                    //    for the deaf-reader-facing "velocity -> dB" table.
                     if (! readNumber (*e, "time", se.time, 0.0, 24.0 * 60.0 * 60.0)
                         || ! readNumber (*e, "duration", se.duration, 0.0, 24.0 * 60.0 * 60.0)
                         || ! readString (*e, "engine", se.engine)

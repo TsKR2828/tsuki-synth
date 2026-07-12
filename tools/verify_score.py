@@ -82,13 +82,55 @@ from pathlib import Path
 
 import numpy as np
 
+import loudness
+
 # ── tolerances (mirror physics_verify.py / ROADMAP_PHYSICS.md Sec.6) ───────
 F0_TOL_CENTS = 1.0            # frequency_hz vs equal temperament (task 2a)
+# M7-7a (2026-07-12): NOT tightened to 5.0 alongside physics_verify.py's
+# F0_TOL_CENTS, despite sharing a name and a nominal target -- the two
+# constants judge fundamentally different measurements, not the same
+# quantity at different confidence:
+#   * physics_verify.py's F0_TOL_CENTS judges measure_f0()'s power-weighted
+#     spectral CENTROID of the RENDERED AUDIO -- for a multi-string course
+#     (cimbalom/piano) that centroid averages every detuned string, so it
+#     lands within ~0.05 cents of the tuned pitch at the shipped default
+#     (detuningCents=5.0) and safely clears +/-5.
+#   * check_modes() here instead reads --dump-modes' "partials"[0].freq,
+#     which ScoreRenderer::dumpModes() builds from allStrings[0] ONLY (see
+#     src/score/ScoreRenderer.h, the `for (... allStrings[0].size() ...)`
+#     loop) -- i.e. ONE SPECIFIC STRING of the course, not a blend. For
+#     numStrings>1, CimbalomVoice::noteOn() (src/engines/CimbalomEngine.h)
+#     assigns string s a fixed offset
+#         centOffset = detCents * (2*s/(numStrings-1) - 1)
+#     so string 0 is DETERMINISTICALLY tuned to -detuningCents cents (the
+#     course's low edge, e.g. exactly -5.000 cents at the default
+#     detuningCents=5.0) -- this is a by-design measurement-point artifact
+#     of "which string does --dump-modes report", not an audio-perceivable
+#     mistuning and not "noise" in the usual sense.
+#   Tested before tightening (per M7-7a step 4): ran verify_score.py on 5
+#   diverse real corpus files. The 3 that contain cimbalom/piano events
+#   measured modes.f0_deviation max cents of 5.002 (ai_radiance_m1, 64
+#   events), 5.005 (vivaldi_four_seasons_autumn_m2, 187 events), and 5.013
+#   (moonlight_sonata_movement1_yangqin, 1142 events) -- all would FAIL a
+#   5.0-cent limit on this check, on the same by-design -detuningCents
+#   offset described above, even though the audio those scores actually
+#   render is physics_verify.py-verified within 0.05 cents of true pitch.
+#   The 2 modal-single-voice files (water_gong_clamped, akashic_ambient_001)
+#   measured 0.003 cents, consistent with beam/plate engines having no
+#   per-string detuning to begin with. Tightening this check would require
+#   changing WHAT it measures (e.g. a course-average or centroid over
+#   "strings", mirroring measure_f0()) -- a real code change to
+#   check_modes(), out of scope for a tolerance-only task and not attempted
+#   here. Left at 12.0 cents, honestly, per ROADMAP_PHYSICS.md Sec.1 Rule 2
+#   ("達不到門檻 -> 回報實測數字 + 原因分析，停下來等決定"); registered on
+#   TODO.md for 月月's decision (tighten the measurement itself in a future
+#   milestone, or accept 12.0 as this check's correct value going forward).
 MODE_F0_TOL_CENTS = 12.0      # --dump-modes fundamental vs equal temperament
-                              # (same as physics_verify.py F0_TOL_CENTS; the
-                              # cimbalom multi-string model can shift the
-                              # true fundamental a few cents from the tuned
-                              # pitch, see PHYSICS_REPORT.md "5.002 cents")
+                              # (deliberately NOT the same number as
+                              # physics_verify.py's F0_TOL_CENTS=5.0 -- see
+                              # the comment block above; this reads raw
+                              # dumped string-0 data, not audio, and its
+                              # course-position offset is real and by design)
 FREQ_MIN_HZ = 0.0             # exclusive
 FREQ_MAX_HZ = 20000.0         # inclusive
 REST_RMS_LIMIT_DBFS = -50.0   # ROADMAP_PHYSICS.md Sec.6 "休止區 RMS"
@@ -1099,6 +1141,14 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
                 measured["_mono_audio"] = mono_audio
                 measured["_sample_rate"] = sr
 
+                # Loudness physical semantics (ROADMAP_PHYSICS.md M6-6c):
+                # informational only -- Sec.6 registers no LUFS tolerance,
+                # so neither of these feeds a Check/exit code, see
+                # print_report() and report_html.py's banner-stats line.
+                measured["lufs_integrated"] = loudness.integrated_lufs(mono_audio, sr)
+                measured["_phrase_rms"] = loudness.compute_segment_rms_table(
+                    score, events, mono_audio, sr)
+
                 all_checks.extend(check_rests(events, sr, mono_audio, cli=cli, score=score))
                 all_checks.extend(check_peak_and_clipping(all_ch_audio))
     finally:
@@ -1130,6 +1180,22 @@ def print_report(score_path, ok, checks, measured, verbose=True):
         if dur is not None:
             print(f"  rendered: {dur:.2f}s @ {sr} Hz, "
                   f"peak {peak:.2f} dBFS, RMS {rms:.2f} dBFS")
+        lufs = measured.get("lufs_integrated")
+        # Informational only (ROADMAP_PHYSICS.md M6-6c): Sec.6 registers no
+        # LUFS tolerance, so this line never affects PASS/FAIL or exit code.
+        lufs_str = f"{lufs:.2f} LUFS" if lufs is not None else "not measurable (too short / all gated out)"
+        print(f"  loudness (info only, no registered tolerance): "
+              f"integrated {lufs_str} (ITU-R BS.1770-4)")
+        phrase_rms = measured.get("_phrase_rms") or []
+        if phrase_rms:
+            kind = ("per-phrase" if phrase_rms[0].get("source") == "phrase"
+                    else "per merged-activity-segment")
+            print(f"    {kind} RMS ({len(phrase_rms)} segment(s)):")
+            for seg in phrase_rms:
+                r = seg.get("rms_dbfs")
+                r_str = f"{r:.1f} dBFS" if r is not None else "n/a"
+                print(f"      [{seg['track']:>16s}] {seg['label']:<14s} "
+                      f"{seg['start']:7.2f}s-{seg['end']:7.2f}s: {r_str}")
     exempt_checks = [c for c in checks if c.exempt_reason]
     for c in checks:
         if c.exempt_reason:
@@ -1208,7 +1274,26 @@ def main():
     ap.add_argument("--cli", default=None, help="path to TsukiSynthCLI executable")
     ap.add_argument("--quiet", action="store_true",
                      help="only print failing checks, not every passing one")
+    ap.add_argument("--selftest-lufs", action="store_true",
+                     help=argparse.SUPPRESS)  # hidden flag, ROADMAP_PHYSICS.md M6-6c
+                     # mandatory self-test: does not need TsukiSynthCLI or any
+                     # score file, so it is handled before the CLI-discovery
+                     # step below.
     args = ap.parse_args()
+
+    if args.selftest_lufs:
+        result = loudness._selftest()
+        print("LUFS self-test (ITU-R BS.1770-4) -- ROADMAP_PHYSICS.md M6-6c:")
+        print(f"  997 Hz full-scale sine   : {result['lufs_997hz_fullscale']:.4f} LUFS "
+              f"(target -3.01 +/- 0.1)")
+        print(f"  997 Hz sine @ -18 dBFS   : {result['lufs_997hz_minus18dbfs']:.4f} LUFS "
+              f"(target -21.01 +/- 0.1)")
+        print(f"  stage1 coeff max abs err vs published 48kHz table: "
+              f"{result['stage1_coeff_max_abs_err_vs_published_48k']:.3e}")
+        print(f"  stage2 coeff max abs err vs published 48kHz table: "
+              f"{result['stage2_coeff_max_abs_err_vs_published_48k']:.3e}")
+        print(f"RESULT: {'PASS' if result['ok'] else 'FAIL'}")
+        return 0 if result["ok"] else 1
 
     cli = Path(args.cli) if args.cli else find_cli()
     if not cli or not cli.exists():

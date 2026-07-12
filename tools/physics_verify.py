@@ -25,7 +25,9 @@ Why the predictions are exact & clean:
                                      f_n = n*f1*sqrt(1+B n^2) (reported, not failed)
         fm piano (ratio 1):          harmonic, r_n = n
 
-T60_RATIO_TOLERANCE = (0.2, 5.0)   # measured/model ratio must be within this range
+T60_RATIO_TOLERANCE = (0.5, 2.0)   # measured/model ratio must be within this range
+                                    # (M5-5b, tightened from (0.2, 5.0) after the
+                                    # 5a measurement rework -- judged, not informational)
 
 Usage:
     python tools/physics_verify.py                 # default probe set
@@ -33,7 +35,10 @@ Usage:
     python tools/physics_verify.py --engines tongue_drum water_gong
     python tools/physics_verify.py --cli <path-to-TsukiSynthCLI.exe>
     python tools/physics_verify.py --levels        # velocity/output-level report
-    python tools/physics_verify.py --t60           # modal decay T60 report
+    python tools/physics_verify.py --t60           # M5: modal decay T60 judgment
+                                                    # (narrowband envelope log-slope
+                                                    # vs --dump-modes theory, modal
+                                                    # engines, ratio tol 0.5-2.0)
     python tools/physics_verify.py --amps          # M2-2d: first-5-partial rel-dB
                                                     # judgment vs --dump-modes theory
                                                     # (modal engines, MIDI 60, +/-3.0dB)
@@ -49,18 +54,27 @@ import argparse, json, math, subprocess, sys, tempfile, wave
 from pathlib import Path
 import numpy as np
 
-# Pre-existing bug fix (not a M1 addition, not a tolerance change): this was
-# only ever written inside the module docstring above, never as real code, so
-# report_t60()'s `lo, hi = T60_RATIO_TOLERANCE` raised NameError. Restoring it
-# with the exact value already documented/registered in ROADMAP_PHYSICS.md §6
-# ("T60 比值 0.2-5.0, informational") so --t60 runs instead of crashing.
-T60_RATIO_TOLERANCE = (0.2, 5.0)   # measured/model ratio must be within this range
+# M5-5b (2026-07-12): tightened from the (0.2, 5.0) informational placeholder
+# to the (0.5, 2.0) target registered in ROADMAP_PHYSICS.md §6, after the 5a
+# measurement rework (narrowband +/-3% bandpass around the MEASURED f0 +
+# beat-period-averaged envelope for multi-string courses) brought every modal
+# engine's ratio to 1.00-1.28 at MIDI 60 and 72, reproducibly (see
+# reports/gate_outputs/phase_g_gate_t60.txt). --t60 is now judged (exit-code
+# affecting), matching --full/--amps.
+T60_RATIO_TOLERANCE = (0.5, 2.0)   # measured/model ratio must be within this range
 
 # ── physics constants (mirror the C++ models) ───────────────────────────────
 # Free-free Euler-Bernoulli beam eigenvalues betaL  (BeamModel.h)
+# SOURCE (M7 7b, 2026-07-12): analytic roots of cosh(x)*cos(x)=1, verified
+# numerically (scipy brentq) to 7-8 sig figs: 4.7300407, 7.8532046, 10.9956078,
+# 14.1371655, 17.2787597. Matches to stated precision -- see docs/EIGENVALUE_SOURCES.md.
 BEAM_BETAL = [4.730041, 7.853205, 10.995608, 14.137165, 17.278760]
 # True clamped circular Kirchhoff-plate frequency parameters Omega=lambda^2
 # (Leissa) used by PlateModel.h. f is proportional to Omega (linear).
+# SOURCE (M7 7b, 2026-07-12): Leissa NASA SP-160 Table 2.1 (clamped circular
+# plate); all 8 entries verified digit-for-digit against the primary source and
+# independently re-solved (Jn'*In - In'*Jn = 0, mpmath). Max deviation 0.03%.
+# See docs/EIGENVALUE_SOURCES.md.
 PLATE_OMEGA = [10.2158, 21.260, 34.877, 39.771, 51.030, 60.829, 69.666, 84.583]
 
 
@@ -74,8 +88,18 @@ def plate_ratios(n):
     return [o / o1 for o in PLATE_OMEGA][:n]   # f proportional to Omega
 
 
-# Approximate free-edge circular plate Omega=lambda^2 (Leissa, nu~0.33) — for A/B.
-PLATE_FREE_OMEGA = [5.253, 9.084, 12.23, 20.52, 21.83, 35.25, 38.55]
+# Free-edge circular plate Omega=lambda^2 (Leissa, nu=0.33 exactly) — for A/B.
+# SOURCE (M7 7c, 2026-07-12): Leissa NASA SP-160 Table 2.5. 6/7 entries match
+# Table 2.5 EXACTLY. CORRECTION APPLIED (Phase H, 2026-07-12, 月月 sign-off,
+# Rule 10 before/after audio re-render done): index 4, (m=4,n=0), was 21.83,
+# updated to 21.527 -- the independently re-solved exact free-plate
+# characteristic-equation root (eq. 2.14, nu=0.33, mpmath 40-digit precision,
+# reproduced twice independently in Phase G and Phase H), consistent with
+# Table 2.5's own footnoted-approximate 21.6 (asymptotic formula, not exact).
+# See src/physics/PlateModel.h and docs/EIGENVALUE_SOURCES.md for the full
+# derivation and cross-validation against the table's other 6 exact entries.
+# Old value 21.83 kept on record in docs/EIGENVALUE_SOURCES.md.
+PLATE_FREE_OMEGA = [5.253, 9.084, 12.23, 20.52, 21.527, 35.25, 38.55]
 
 def plate_free_ratios(n):
     o1 = PLATE_FREE_OMEGA[0]
@@ -131,7 +155,26 @@ ENGINES = {
     ),
 }
 
-F0_TOL_CENTS = 12.0  # fundamental pitch tolerance
+# M7-7a (2026-07-12): tightened from the (12.0 cent) placeholder to the 5.0
+# cent target registered in ROADMAP_PHYSICS.md §6 ("人耳可辨閾約 5 cents，
+# 標準不得低於耳朵"). Evidence: --full note-range scan (6 notes/engine, all
+# 6 engines) + material scan (9 UI materials x 3 modal engines) at full
+# precision (see reports/gate_outputs/phase_g_gate_full_f0.txt) measured a
+# WORST-CASE |cents| of 0.880 (tongue_drum, wood_maple material) -- every
+# other engine/material/note combination measured well under 0.1 cents. No
+# per-engine exception was needed: measure_f0()'s power-weighted spectral
+# centroid (see its docstring) already averages the multi-string course to
+# its true acoustic center, so the cimbalom/piano detuned-course beating
+# this task anticipated does NOT show up at the model's default
+# detuningCents=5.0 -- a 2-point scaling experiment (detuning_cents=5/20/40,
+# cimbalom & piano, MIDI 60) confirmed the centroid shift DOES scale with
+# detuning (~0.003 / 0.044 / 0.199 cents) but stays two orders of magnitude
+# under the 5-cent limit at the shipped default. A single global constant is
+# therefore correct here; a per-engine override dict was not warranted by
+# the data. (verify_score.py's MODE_F0_TOL_CENTS is a DIFFERENT measurement
+# -- the raw --dump-modes string-0 value, not an audio centroid -- and was
+# NOT tightened; see the comment on that constant for why.)
+F0_TOL_CENTS = 5.0  # fundamental pitch tolerance (audio-measured, power-weighted centroid)
 
 
 # ── M1-1a: per-engine valid MIDI range ──────────────────────────────────────
@@ -213,19 +256,122 @@ def measure_partials(sr, x, predicted_freqs):
     return out
 
 
+def _clamp(v, lo, hi):
+    return max(lo, min(hi, v))
+
+
+# ── FIX2/FIX3 (Phase I, 2026-07-13): adaptive f0-analysis window ────────────
+# FIX2 root cause (reports/phase_h_before_after.md §4): measure_f0()'s OLD
+# fixed 0.05-1.55s window skips the entire note for ultra-short decays (rubber
+# T60 = 14-28ms after materials physicalization) -- by 50ms the signal is 2+
+# T60 periods gone, so the window contains nothing but noise floor.
+# FIX3 root cause (same report, §6): the SAME fixed 1.55s window, at extreme
+# high notes with the NEW long steel T60, keeps slow-decaying high partials
+# alive for the whole window; their Hann-window sidelobes leak into the
+# narrow (+/-6%) fundamental search band and bias the power-weighted centroid
+# (piano MIDI108: +5.2..+7.33 cents).
+# Both are the same underlying bug: a window length that isn't derived from
+# anything about the note being measured. Two independent derivations bound
+# it now (the tighter one wins):
+# FIX2 attack-skip: src/physics/HammerImpulse.h documents the model's own
+# excitation contact-time constants (kTauCCotton=6.0ms is the LONGEST of the
+# four hammer/mallet presets -- Felt/Wood/Metal are all shorter). That 6.0ms
+# is the physically real "attack transient" duration in this model (broadband
+# excitation noise before the struck body settles into pure modal ringing),
+# not something that should scale with the STRUCK MATERIAL's decay time (T60)
+# -- those are two unrelated physical quantities (excitation-side vs
+# resonator-side). Dividing by 10 (not 4) keeps the skip a small fraction
+# even of an ultra-short note, since for the shortest T60s in this corpus
+# (rubber, 14-28ms) even the hammer's own 6ms contact time is already a large
+# fraction of the note's total life.
+F0_WINDOW_START_CAP_S = 0.006    # FIX2: HammerImpulse's longest documented
+                                  # mallet contact time (kTauCCotton)
+F0_WINDOW_START_T60_DIV = 10.0
+F0_WINDOW_LEN_MIN_S = 0.030     # FIX2: 30ms floor -- shortest window that still
+                                 # gives a usable FFT bin count at any sample rate
+F0_WINDOW_LEN_MAX_S = 1.5       # unchanged ceiling (== old fixed window's span)
+# FIX2 window length: this codebase's "decay"/model_t60 is ALREADY a -60dB
+# (T60) point, not a 1/e time constant tau (see MODAL_DECAY_LN1000 above:
+# amp(t) = amp0*exp(-ln(1000)*t/decayTime)) -- confirmed empirically: rendered
+# ultra-short (rubber) notes are bit-exact zero in the WAV by ~1.4*model_T60
+# (past the quantization floor). A naive "4x" multiplier (the rule-of-thumb
+# for settling a 1/e tau) was tried first and measured WORSE (tongue_drum/
+# rubber: -13.8 cents) because it pushes the Hann window's peak-weight region
+# (the window's temporal center) well past the point the signal has already
+# died to silence, so the FFT ends up dominated by edge/leakage artifacts
+# instead of the live signal. 2x keeps the window's center close to where the
+# note is transitioning from "mostly alive" to "silent" (the Hann taper's
+# reduced weight near the far edge naturally de-emphasizes the dead tail
+# instead of centering on it) -- measured -0.2 to +0.6 cents across all 3
+# modal engines' rubber probes (see validation notes), vs 1x's 0.5-3.8 cents
+# (fewer usable cycles) and 4x's -4.5 to -13.8 cents (Hann-center-in-silence
+# bias).
+F0_WINDOW_T60_MULT = 2.0
+F0_ZEROPAD_MIN_N = 1 << 18      # FIX2: zero-pad floor. A 30ms window at 48kHz
+                                 # is only ~1440 samples (2^11 zero-pad) -- far
+                                 # too coarse a bin grid for a centroid over a
+                                 # +/-6% band to land within a few cents; 2^18
+                                 # gives ~0.18 Hz bins at 48kHz regardless of
+                                 # how short the physical window is.
+# FIX3: cycles-based cap so a long model_T60 can't force an arbitrarily long
+# window at high f0. Derivation: a Hann window's main lobe is 4/T Hz wide
+# (null-to-null); measure_f0's own search band is +/-6% of f0 (12% total,
+# see klo/khi below). Requiring the main lobe to fit within HALF that band
+# (a 2x safety margin, so a neighbouring partial's lobe/sidelobes have room
+# to fall off before reaching band centre) gives 4/T <= 0.06*f0_pred, i.e.
+# T <= (4/0.06)/f0_pred = 66.7/f0_pred seconds -- a fixed number of CYCLES of
+# f0_pred, independent of amplitude/T60/material. This is derived purely from
+# the window's own known spectral shape and the harness's own existing search
+# -band width, not fitted to any specific note's pass/fail.
+F0_LEAKAGE_SAFETY = 2.0
+F0_WINDOW_CYCLES_NUM = 4.0 / (0.06 * F0_LEAKAGE_SAFETY)   # ~33.3 cycles of f0_pred
+
+
 # ── robust fundamental via power-weighted spectral centroid ─────────────────
 # Over a long window the centroid of the fundamental band averages the cimbalom's
 # multi-string detuned cluster to its true center, while staying correct for a
 # clean inharmonic single peak (water gong / tongue drum). NSDF/autocorrelation
 # is NOT used: inharmonic modal spectra have no true period, so it mislocates f0.
-def measure_f0(x, sr, f0_pred):
-    seg = x[int(0.05 * sr):int(1.55 * sr)]
-    if len(seg) < int(0.2 * sr):
-        seg = x[int(0.02 * sr):]
-    if len(seg) < 256:
+def measure_f0(x, sr, f0_pred, model_t60=None):
+    """model_t60: the MODEL's own predicted fundamental T60 (seconds), read
+    via --dump-modes / model_fundamental_decay() by the caller BEFORE this
+    call -- non-circular: it only sizes the OBSERVATION window (see FIX1's
+    docstring on the same principle for the T60 probe). None falls back to
+    the historical fixed 1.5s/50ms-skip window (used only if a caller can't
+    supply a model prediction)."""
+    if model_t60 and model_t60 > 0:
+        start = min(F0_WINDOW_START_CAP_S, model_t60 / F0_WINDOW_START_T60_DIV)
+        length_t60 = _clamp(F0_WINDOW_T60_MULT * model_t60,
+                             F0_WINDOW_LEN_MIN_S, F0_WINDOW_LEN_MAX_S)
+        # FIX3 leakage cap only applies when we actually HAVE a model T60 --
+        # it exists specifically to bound how long a materials-physicalized
+        # modal engine's window can get at high f0 (see docstring above). A
+        # caller with no model prediction (e.g. `fm`, entirely outside the
+        # materials/modal-decay path per module docstring) gets the
+        # historical fixed window untouched, below.
+        if f0_pred and f0_pred > 0:
+            length_leak = _clamp(F0_WINDOW_CYCLES_NUM / f0_pred,
+                                  F0_WINDOW_LEN_MIN_S, F0_WINDOW_LEN_MAX_S)
+            length = min(length_t60, length_leak)   # tighter bound wins (FIX2 vs FIX3)
+        else:
+            length = length_t60
+    else:
+        start = 0.05
+        length = 1.5   # historical fixed window, byte-for-byte, incl. no FIX3 cap
+
+    i0, i1 = int(start * sr), int((start + length) * sr)
+    seg = x[i0:i1]
+    # Fallback only if the rendered file itself ended before the (intentionally
+    # short, for fast-decaying materials) window did -- NOT just because the
+    # window is short by design. Grabbing a later/longer slice in that case
+    # would defeat FIX2 (it would run straight past an ultra-short T60 note
+    # into pure noise floor).
+    if len(seg) < 32 and i0 < len(x):
+        seg = x[i0:]
+    if len(seg) < 32:
         return None
     seg = seg * np.hanning(len(seg))
-    N = 1 << int(math.ceil(math.log2(len(seg))))
+    N = max(F0_ZEROPAD_MIN_N, 1 << int(math.ceil(math.log2(len(seg)))))
     spec = np.abs(np.fft.rfft(seg, N))
     binhz = sr / N
     klo = max(1, int(f0_pred * 0.94 / binhz))
@@ -239,9 +385,34 @@ def measure_f0(x, sr, f0_pred):
     return float((freqs * power).sum() / power.sum())
 
 
+# ── FIX2 validation: synthetic self-check (no CLI/audio involved) ──────────
+def selftest_measure_f0_short_window():
+    """FIX2 self-check (task requirement): a pure decaying sinusoid at a
+    KNOWN frequency, T60=20ms (matching the rubber regime that exposed the
+    old fixed-window bug), run through the IDENTICAL measure_f0() code path.
+    Returns (ok, recovered_cents)."""
+    sr = 48000
+    f_known = 440.0
+    t60 = 0.020
+    n = int(0.5 * sr)
+    t = np.arange(n) / sr
+    decay_rate = MODAL_DECAY_LN1000 / t60
+    x = np.exp(-decay_rate * t) * np.sin(2.0 * np.pi * f_known * t)
+    f0_meas = measure_f0(x, sr, f_known, model_t60=t60)
+    if f0_meas is None:
+        return False, None
+    c = cents(f0_meas, f_known)
+    return abs(c) <= 3.0, c
+
+
 # ── probe render via CLI ────────────────────────────────────────────────────
-def render_probe(cli, eng, midi, outdir, sr=48000, vel=0.85, dur=2.0,
-                  params_override=None, tag=""):
+def build_probe_score(eng, midi, outdir, sr=48000, vel=0.85, dur=2.0,
+                       params_override=None, tag=""):
+    """Writes a probe .score.json and returns (path, fn) WITHOUT rendering any
+    audio. Split out of render_probe() (Phase I, 2026-07-13) so a caller that
+    only needs --dump-modes' model predictions (e.g. the FIX1 T60 pre-flight
+    below) doesn't have to pay for a full CLI render first -- --dump-modes
+    only ever reads the score file, never the rendered wav."""
     spec = ENGINES[eng]
     # params_override (M1-1c, material scan): merged on top of the engine's
     # default params so callers only need to specify the one field (material)
@@ -265,6 +436,12 @@ def render_probe(cli, eng, midi, outdir, sr=48000, vel=0.85, dur=2.0,
     }
     sf = outdir / (fn + ".score.json")
     sf.write_text(json.dumps(score), encoding="utf-8")
+    return sf, fn
+
+
+def render_probe(cli, eng, midi, outdir, sr=48000, vel=0.85, dur=2.0,
+                  params_override=None, tag=""):
+    sf, fn = build_probe_score(eng, midi, outdir, sr, vel, dur, params_override, tag)
     r = subprocess.run([str(cli), str(sf), "--output", str(outdir)],
                        capture_output=True, text=True)
     wav = outdir / (fn + ".wav")
@@ -297,15 +474,16 @@ def run(cli, engines, notes, outdir):
             f0 = midi_to_hz(midi)
             ratios = spec["ratios"](spec["npart"])
             pred = [f0 * r for r in ratios]
-            wav, _ = render_probe(cli, eng, midi, outdir)
+            wav, sf = render_probe(cli, eng, midi, outdir)
             sr, x = read_wav_mono(wav)
             meas = measure_partials(sr, x, pred)
+            model_t60 = model_fundamental_decay(cli, sf)   # FIX2/3: sizes measure_f0's window
 
             print(f"\n# {eng:11s} MIDI {midi}  (f0_expected = {f0:8.3f} Hz)"
                   f"{'  [inharmonic: high-partial stretch is expected]' if spec.get('inharmonic') else ''}")
             print(f"   {'n':>2} {'predicted':>11} {'measured':>11} {'err%':>7} {'rel_dB':>6}  note")
             fund_mag = meas[0][1] if meas[0] else 0.0
-            f0_meas = measure_f0(x, sr, f0)
+            f0_meas = measure_f0(x, sr, f0, model_t60=model_t60)
             probe_ok = True
             for i, (r, fp, m) in enumerate(zip(ratios, pred, meas), 1):
                 if m is None:
@@ -410,12 +588,13 @@ def scan_materials(cli, outdir, engines=None, materials_path=None):
         ratios = spec["ratios"](spec["npart"])
         pred = [f0 * r for r in ratios]
         for mat in materials:
-            wav, _ = render_probe(cli, eng, midi, outdir,
+            wav, sf = render_probe(cli, eng, midi, outdir,
                                    params_override={"material": mat},
                                    tag=f"_mat_{mat}")
             sr, x = read_wav_mono(wav)
             meas = measure_partials(sr, x, pred)
-            f0_meas = measure_f0(x, sr, f0)
+            model_t60 = model_fundamental_decay(cli, sf)   # FIX2: rubber's ~20ms T60
+            f0_meas = measure_f0(x, sr, f0, model_t60=model_t60)
 
             probe_ok = True
             m0 = meas[0]
@@ -637,7 +816,9 @@ def judge_amps(cli, engine, midi_note, outdir):
     sr, x = read_wav_mono(wav)
     meas = measure_partials(sr, x, pred_freqs)
     fund_mag = meas[0][1] if meas[0] else 0.0
-    f0_meas = measure_f0(x, sr, pred_freqs[0])
+    model_t60 = event["partials"][0]["decay"] if event["partials"] else None  # FIX2/3: reuse the
+                                                                                # already-fetched --dump-modes event
+    f0_meas = measure_f0(x, sr, pred_freqs[0], model_t60=model_t60)
 
     probe_ok = True
     for i, (p, m) in enumerate(zip(partials, meas), 1):
@@ -811,29 +992,204 @@ def model_fundamental_decay(cli, score_path):
         return None
 
 
-def measure_t60(sr, x, f0):
-    # Hilbert envelope of the fundamental band, log-slope fit extrapolated to -60 dB.
+# ── M5-5a: T60 measurement rework ───────────────────────────────────────────
+T60_NOTEOFF_RATIO = 0.9       # mirrors ScoreRenderer's own
+                              # `start + duration*sr*0.9` note-off formula
+                              # (renderCimbalom/renderChromatic, both engines) —
+                              # read off the C++ source, not re-derived.
+T60_NOTEOFF_MARGIN_S = 0.3    # stay this far before note-off's accelerated
+                              # damping (CimbalomVoice::noteOff -> applyDamp())
+T60_ATTACK_SKIP_S = 0.1       # 5a: "skip first 100 ms" (attack transient)
+T60_FLOOR_MARGIN_DB = 10.0    # 5a: stop at noise-floor + 10 dB
+T60_BAND_HALF_WIDTH = 0.03    # 5a: narrow +/-3% band around the MEASURED f0
+                              # (not the nominal MIDI f0 -- avoids band-edge
+                              # attenuation from any small tuning offset)
+
+# ── FIX1 (Phase I, 2026-07-13): adaptive T60 probe duration ─────────────────
+# Root cause (reports/phase_h_before_after.md §3): materials physicalization
+# pushed steel's model T60 to 26.85s at MIDI60, but the probe was a hard-coded
+# 5.0s -- note-off happened before even 1/5 of a real decay period elapsed,
+# and (for cimbalom/piano) the beat-averaging box-car saw so little decay
+# inside that short window that the beat ripple itself dominated the fitted
+# slope (measured 7.61s, a fake number 28% of the true model T60).
+# Fix: read the MODEL's own predicted T60 via --dump-modes BEFORE rendering
+# the timed probe (model_t60_preflight() below), then size the render/fit
+# window off THAT prediction. This is sizing an instrument (the probe
+# duration) to the known scale of the phenomenon being measured -- standard
+# metrology (an oscilloscope's timebase is set from the signal's own period),
+# not circularity: the JUDGMENT (measured slope vs model T60,
+# T60_RATIO_TOLERANCE, unchanged) still independently re-derives T60 from the
+# rendered audio and compares it to the model -- the model's prediction is
+# never fed into the pass/fail arithmetic, only into how long to look.
+T60_PROBE_DUR_MIN = 5.0        # unchanged floor (M5-5a's original constant)
+T60_PROBE_DUR_MAX = 30.0       # task-specified cap
+T60_PROBE_DUR_SCALE = 0.5      # probe = half the model's own predicted T60
+T60_MIN_SPAN_DB = 8.0          # task-specified: fit needs >= 8 dB of clean decay
+T60_BEAT_PERIODS_MIN = 3.0     # (carried forward from Phase G) the fit window
+                                # must contain >= 3 full beat periods for the
+                                # box-car average (step 3 below) to flatten the
+                                # ripple rather than let one period's phase
+                                # alias into the fitted slope.
+
+
+def model_t60_preflight(cli, eng, midi, outdir, params_override=None):
+    """FIX1: writes a throwaway probe score (score-only, no audio render --
+    see build_probe_score()) and reads the model's predicted fundamental T60
+    via --dump-modes. decayTime is a material/frequency-derived model
+    constant; it does not depend on the note's requested duration, so a cheap
+    short-duration throwaway score is enough to learn it before deciding how
+    long the REAL timed probe needs to be. Also returns the beat frequency
+    (0.0 for single-voice engines) for the T60_BEAT_PERIODS_MIN check."""
+    sf, _ = build_probe_score(eng, midi, outdir, dur=0.05,
+                               params_override=params_override, tag="_t60pf")
+    model_t60 = model_fundamental_decay(cli, sf)
+    event = dump_modes_event(cli, sf)
+    beat_freq = fundamental_beat_freq_hz(event) if event else 0.0
+    return model_t60, beat_freq
+
+
+def adaptive_t60_probe_dur(model_t60, beat_freq_hz=0.0):
+    """FIX1: duration = clamp(0.5 * model_T60, 5s, 30s), further raised (still
+    capped at 30s) if needed so the fit window can contain
+    T60_BEAT_PERIODS_MIN full beat periods (only relevant for cimbalom/piano's
+    detuned multi-string course)."""
+    if model_t60 and model_t60 > 0:
+        dur = _clamp(T60_PROBE_DUR_SCALE * model_t60,
+                     T60_PROBE_DUR_MIN, T60_PROBE_DUR_MAX)
+    else:
+        dur = T60_PROBE_DUR_MIN
+    if beat_freq_hz and beat_freq_hz > 1e-6:
+        # fit window (after attack-skip, before note-off margin) must span
+        # >= T60_BEAT_PERIODS_MIN beat periods; solve for the note "duration"
+        # that gives that much room before the T60_NOTEOFF_RATIO note-off.
+        needed_fit_span = T60_BEAT_PERIODS_MIN / beat_freq_hz
+        needed_dur = (T60_ATTACK_SKIP_S + needed_fit_span + T60_NOTEOFF_MARGIN_S) / T60_NOTEOFF_RATIO
+        dur = max(dur, min(needed_dur, T60_PROBE_DUR_MAX))
+    return dur
+
+
+def fundamental_beat_freq_hz(event):
+    """5a multi-string-beating handling: returns the beat frequency (Hz) of
+    the struck course's fundamental, i.e. the spread between the slowest and
+    fastest detuned string, taken from the model's OWN --dump-modes "strings"
+    list (CimbalomVoice::getAllStringModes() -- non-circular, ground truth,
+    same source model_fundamental_decay() already trusts). 0.0 for engines
+    that render a single voice (ChromaticVoice: tongue_drum/water_gong/
+    water_gong_free) -- no beating, no averaging needed. Cimbalom AND piano
+    both go through renderCimbalom() with the same default numStrings=3 /
+    detuningCents=5 course, so both need this."""
+    strings = event.get("strings") or []
+    fund = [voice[0]["freq"] for voice in strings if voice]
+    if len(fund) < 2:
+        return 0.0
+    return max(fund) - min(fund)
+
+
+def measure_t60(sr, x, f0_meas, beat_freq_hz, noteoff_time_s):
+    """5a rework. Method:
+      1. Isolate the fundamental with a NARROW +/-3% zero-phase 4th-order
+         Butterworth bandpass (sosfiltfilt) around the MEASURED f0 (centroid
+         from measure_f0(), not the nominal MIDI pitch) -- wide enough to pass
+         the whole detuned string course, narrow enough to reject every other
+         partial.
+      2. Analytic-magnitude (Hilbert) envelope of that narrowband signal.
+      3. Multi-string beating: if beat_freq_hz > 0 (cimbalom/piano course),
+         box-car average the envelope over a window >= one full beat period
+         (period = 1/beat_freq_hz, +5% margin for discretization) BEFORE
+         fitting, per the task spec -- this turns the beating envelope's
+         ripple into its slowly-varying mean without touching the underlying
+         exponential decay-rate. Single-voice engines (beat_freq_hz == 0) skip
+         this step untouched.
+      4. Fit ln-envelope (in dB) vs time with a LINEAR regression (least
+         squares, np.polyfit) over the window that:
+           - starts T60_ATTACK_SKIP_S (100 ms) after the envelope peak (skips
+             the attack transient),
+           - ends at the EARLIEST of: (a) T60_NOTEOFF_MARGIN_S before the
+             note-off instant (CimbalomVoice::noteOff()/ChromaticVoice's own
+             note-off both trigger accelerated release damping -- must not be
+             included in a free-decay slope fit), (b) the -60 dB point
+             (relative to the peak), (c) noise-floor + 10 dB (noise floor
+             measured from the tail of the ACTUAL rendered buffer, i.e. past
+             the event's own note-off + release, where the CLI has already
+             hard-truncated the buffer to silence -- see ScoreRenderer::render()
+             totalDuration/tailSilenceMs).
+      5. T60 = 60 dB / |slope in dB/s| (extrapolated from whatever window was
+         actually fittable -- same convention as the model's own T60 field).
+    Returns (t60_or_None, span_db_or_None). span_db is the dB of decay
+    actually captured inside the fit window (FIX1: the achievable-span guard
+    -- report_t60() asserts this is >= T60_MIN_SPAN_DB, extending the probe
+    toward the 30s cap and retrying if not). Both None if there isn't a
+    usable window (e.g. probe too short, envelope never establishes a
+    fittable decay, or engine is silent)."""
     try:
         from scipy.signal import butter, sosfiltfilt, hilbert
     except Exception:
-        return None
+        return None, None
     nyq = sr / 2.0
-    lo, hi = max(20.0, f0 * 0.8) / nyq, min(nyq * 0.99, f0 * 1.2) / nyq
+    lo = f0_meas * (1.0 - T60_BAND_HALF_WIDTH) / nyq
+    hi = f0_meas * (1.0 + T60_BAND_HALF_WIDTH) / nyq
     if not (0.0 < lo < hi < 1.0):
-        return None
+        return None, None
     band = sosfiltfilt(butter(4, [lo, hi], btype="band", output="sos"), x)
     env = np.abs(hilbert(band))
-    seg = env[int(np.argmax(env)):]
-    if len(seg) < int(0.15 * sr):
-        return None
-    logenv = 20.0 * np.log10(np.maximum(seg, 1e-9) / max(seg[0], 1e-9))
-    t = np.arange(len(seg)) / sr
-    # clean decay region, before any note-off accelerated damping (~1.5 s)
-    mask = (logenv <= -3.0) & (logenv >= -28.0) & (t < 1.5)
-    if mask.sum() < 20:
-        return None
+
+    if beat_freq_hz and beat_freq_hz > 1e-6:
+        period_samples = sr / beat_freq_hz
+        win = max(1, int(math.ceil(period_samples * 1.05)))   # >= 1 full period
+        kernel = np.ones(win) / win
+        env = np.convolve(env, kernel, mode="same")
+
+    peak_idx = int(np.argmax(env))
+    peak_val = float(env[peak_idx])
+    if peak_val <= 1e-12:
+        return None, None
+
+    # Noise floor: tail of the ACTUAL rendered buffer (past note-off+release,
+    # into the CLI's hard-truncated/tail-silence region), referenced to the
+    # same narrowband envelope peak used for the fit.
+    noise_tail = x[-int(0.1 * sr):] if len(x) > int(0.1 * sr) else x
+    noise_rms = float(np.sqrt(np.mean(noise_tail * noise_tail))) if len(noise_tail) else 0.0
+    floor_db = (20.0 * math.log10(max(noise_rms, 1e-12) / peak_val)) + T60_FLOOR_MARGIN_DB
+
+    seg = env[peak_idx:]
+    n = len(seg)
+    t = np.arange(n) / sr
+    logenv = 20.0 * np.log10(np.maximum(seg, 1e-12) / peak_val)
+
+    start_t = T60_ATTACK_SKIP_S
+    end_candidates = [max(start_t, noteoff_time_s - T60_NOTEOFF_MARGIN_S)]
+    below60 = np.nonzero(logenv <= -60.0)[0]
+    if below60.size:
+        end_candidates.append(float(t[below60[0]]))
+    if floor_db < 0.0:   # only meaningful if the floor is actually below the peak
+        below_floor = np.nonzero(logenv <= floor_db)[0]
+        if below_floor.size:
+            end_candidates.append(float(t[below_floor[0]]))
+    end_t = min(end_candidates)
+
+    mask = (t >= start_t) & (t <= end_t)
+    if mask.sum() < 20 or (end_t - start_t) < 0.05:
+        return None, None
+    idx = np.nonzero(mask)[0]
+    span_db = float(logenv[idx[0]] - logenv[idx[-1]])   # dB of decay actually captured
     slope = np.polyfit(t[mask], logenv[mask], 1)[0]   # dB/s (negative)
-    return (-60.0 / slope) if slope < -1e-3 else None
+    t60 = (-60.0 / slope) if slope < -1e-3 else None
+    return t60, span_db
+
+
+def _probe_and_measure_t60(cli, eng, midi, outdir, f0, probe_dur, tag=""):
+    """One render + T60 measurement attempt at a given probe duration.
+    Returns (pred_t60, meas_t60, span_db, beat_freq)."""
+    wav, sf = render_probe(cli, eng, midi, outdir, dur=probe_dur, tag=tag)
+    sr, x = read_wav_mono(wav)
+    pred = model_fundamental_decay(cli, sf)
+    event = dump_modes_event(cli, sf)
+    beat_freq = fundamental_beat_freq_hz(event) if event else 0.0
+    model_t60_for_f0 = pred   # same model prediction FIX2/3 wants for measure_f0's window
+    f0_meas_center = measure_f0(x, sr, f0, model_t60=model_t60_for_f0) or f0
+    noteoff_time = probe_dur * T60_NOTEOFF_RATIO
+    meas, span_db = measure_t60(sr, x, f0_meas_center, beat_freq, noteoff_time)
+    return pred, meas, span_db, beat_freq
 
 
 def report_t60(cli, engines, notes, outdir):
@@ -845,9 +1201,24 @@ def report_t60(cli, engines, notes, outdir):
             continue   # FM decay is ADSR, not modal damping
         for midi in notes:
             f0 = midi_to_hz(midi)
-            wav, sf = render_probe(cli, eng, midi, outdir, dur=3.0)
-            sr, x = read_wav_mono(wav)
-            pred, meas = model_fundamental_decay(cli, sf), measure_t60(sr, x, f0)
+            # FIX1: pre-flight the model's own T60 (and beat frequency)
+            # BEFORE rendering the timed probe, so probe length derives from
+            # the model's own prediction rather than a fixed constant.
+            model_t60_pf, beat_freq_pf = model_t60_preflight(cli, eng, midi, outdir)
+            probe_dur = adaptive_t60_probe_dur(model_t60_pf, beat_freq_pf)
+
+            pred, meas, span_db, beat_freq = _probe_and_measure_t60(
+                cli, eng, midi, outdir, f0, probe_dur)
+
+            # FIX1 achievable-span guard: fitting needs a clean >= 8 dB span.
+            # If the first attempt didn't get one (e.g. the pre-flight
+            # estimate came in short, or note-off truncated the window),
+            # extend straight to the 30s cap and retry once.
+            if (span_db is None or span_db < T60_MIN_SPAN_DB) and probe_dur < T60_PROBE_DUR_MAX:
+                probe_dur = T60_PROBE_DUR_MAX
+                pred, meas, span_db, beat_freq = _probe_and_measure_t60(
+                    cli, eng, midi, outdir, f0, probe_dur, tag="_ext")
+
             ps = f"{pred:7.2f}s" if pred else "   --  "
             ms = f"{meas:7.2f}s" if meas else "   --  "
             if pred and meas:
@@ -859,9 +1230,17 @@ def report_t60(cli, engines, notes, outdir):
                     all_ok = False
             else:
                 rs = "  --  "
-            print(f"   {eng:11} {midi:>4} {ps:>8} {ms:>8} {rs:>6}")
+                all_ok = False
+            span_note = f"  (span {span_db:.1f}dB" if span_db is not None else "  (span --"
+            span_note += f", probe {probe_dur:.1f}s)"
+            print(f"   {eng:11} {midi:>4} {ps:>8} {ms:>8} {rs:>6}"
+                  f"{'  (beat ' + format(beat_freq, '.2f') + ' Hz)' if beat_freq > 1e-6 else ''}"
+                  f"{span_note}")
     print("\n(model = fundamental decayTime straight from the C++ model;")
-    print(" measured = Hilbert-envelope log-slope of the fundamental band.)")
+    print(" measured = narrowband (+/-3% of measured f0) Hilbert-envelope")
+    print(" log-slope fit, beat-period-averaged for multi-string courses;")
+    print(" see measure_t60()'s docstring for the exact method, "
+          "ROADMAP_PHYSICS.md M5-5a.)")
     return all_ok
 
 
@@ -880,7 +1259,9 @@ def main():
     ap.add_argument("--levels", action="store_true",
                     help="report per-engine output levels instead of partials")
     ap.add_argument("--t60", action="store_true",
-                    help="report modal decay times vs the damping model")
+                    help="M5: judge modal decay T60 (measured/model ratio) vs "
+                         "the damping model, all modal engines (FM excluded); "
+                         "tol 0.5-2.0 (ROADMAP_PHYSICS.md §6, M5-5b)")
     ap.add_argument("--amps", action="store_true",
                     help="M2-2d: judge first-5-partial relative amplitude (dB "
                          "re fundamental) vs --dump-modes theory, all modal "
@@ -896,7 +1277,19 @@ def main():
                          "M2-2d amplitude judgment. For CI while M2 remediation "
                          "is in progress (月月-approved 2026-07-09); the M2 GATE "
                          "`--amps` is unaffected. No effect without --full.")
+    ap.add_argument("--selftest", action="store_true",
+                    help="FIX2 (Phase I) synthetic self-check: a known-frequency "
+                         "decaying sinusoid (T60=20ms) through measure_f0()'s "
+                         "code path, no CLI/audio render needed; checks f0 "
+                         "recovered within +/-3 cents")
     args = ap.parse_args()
+
+    if args.selftest:
+        ok, c = selftest_measure_f0_short_window()
+        cstr = f"{c:+.3f}" if c is not None else "--"
+        print(f"selftest_measure_f0_short_window: recovered {cstr} cents "
+              f"(tol +/-3.0) -> {'PASS' if ok else 'FAIL'}")
+        return 0 if ok else 1
 
     cli = Path(args.cli) if args.cli else find_cli()
     if not cli or not cli.exists():
@@ -931,7 +1324,7 @@ def main():
             ok = do(Path(td))
 
     print("\n" + "=" * 70)
-    if args.full or args.amps:
+    if args.full or args.amps or args.t60:
         print("RESULT:", "ALL WITHIN TOLERANCE" if ok else "SOME CHECKS FAILED")
     else:
         print("RESULT:", "ALL WITHIN TOLERANCE" if ok else "SOME PROBES OUT OF TOLERANCE")

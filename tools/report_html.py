@@ -32,6 +32,8 @@ from datetime import datetime, timezone
 
 import numpy as np
 
+import loudness
+
 # ── constants (visualization-only; NEVER the source of truth for PASS/FAIL --
 #    see ROADMAP_PHYSICS.md Sec.6, "AI 不得修改本表數值") ───────────────────
 F0_CENTS_GREEN = 5.0     # ROADMAP_PHYSICS.md Sec.3 M4 4a: color thresholds
@@ -689,9 +691,23 @@ def render_loudness_section(loud_pts, duration_s, rest_intervals):
 _TRACK_PALETTE = ["#3b6fd6", "#8e5fd6", "#2e9e6b", "#d68c3b", "#d64f6f", "#4f9fd6", "#a0a03b"]
 
 
-def render_phrases_section(score, events, duration_s):
+def render_phrases_section(score, events, duration_s, phrase_rms=None):
+    """`phrase_rms`: optional list of dicts from
+    loudness.compute_segment_rms_table(score, events, mono, sr) (see
+    verify_score.py's verify_one(), measured["_phrase_rms"]) -- when the
+    score has a real "phrases" array (source == "phrase" entries), each
+    phrase bar's RMS dBFS (task 6c) is shown as a hover title AND a small
+    visible number under the bar (deaf-reader-first: never hover-only).
+    The merged-activity fallback below (no "phrases" field on the score)
+    is left as-is; RMS-over-activity-segments is still available in the
+    console output (see verify_score.py's print_report())."""
     phrases = score.get("phrases")
     rests_meta = score.get("rests")
+    phrase_rms_by_key = {}
+    if phrase_rms:
+        for seg in phrase_rms:
+            if seg.get("source") == "phrase":
+                phrase_rms_by_key[(seg["track"], seg["start"], seg["end"])] = seg.get("rms_dbfs")
     W = 1100
     row_h = 22
     pad_l, pad_r, pad_t = 120, 16, 10
@@ -728,11 +744,22 @@ def render_phrases_section(score, events, duration_s):
             k = p.get("track") or p.get("role") or "?"
             row = track_row.get(k, 0)
             y = pad_t + row * row_h
-            x0, x1 = xf(p.get("start", 0.0)), xf(p.get("end", 0.0))
-            title = f"phrase #{p.get('number','?')} {p.get('start',0):.2f}s-{p.get('end',0):.2f}s"
+            p_start, p_end = p.get("start", 0.0), p.get("end", 0.0)
+            x0, x1 = xf(p_start), xf(p_end)
+            rms = phrase_rms_by_key.get((k, float(p_start), float(p_end)))
+            # task 6c: per-phrase RMS dBFS -- both as a hover title AND a
+            # small visible number (deaf-reader-first: a claim must be
+            # readable without hovering, see module docstring).
+            rms_str = f"{rms:.1f} dBFS" if rms is not None else "n/a"
+            title = (f"phrase #{p.get('number','?')} {p_start:.2f}s-{p_end:.2f}s "
+                     f"RMS {rms_str}")
             bars.append(f'<rect x="{x0:.1f}" y="{y + 3:.1f}" width="{max(x1 - x0, 1):.1f}" '
                         f'height="{row_h - 8:.1f}" fill="{_TRACK_PALETTE[row % len(_TRACK_PALETTE)]}" '
                         f'opacity="0.75" rx="2"><title>{esc(title)}</title></rect>')
+            if x1 - x0 >= 24:
+                bars.append(f'<text x="{(x0 + x1) / 2.0:.1f}" y="{y + row_h - 4:.1f}" '
+                            f'text-anchor="middle" font-size="8" fill="#ffffff" '
+                            f'opacity="0.95">{esc(rms_str)}</text>')
         for r in (rests_meta or []):
             k = r.get("track") or r.get("role") or "?"
             row = track_row.get(k, 0)
@@ -748,8 +775,14 @@ def render_phrases_section(score, events, duration_s):
 
         svg = f'<svg viewBox="0 0 {W} {H}" class="phrase-chart" role="img" ' \
               f'aria-label="phrase and rest timeline">{"".join(bars)}</svg>'
-        source_note = ("讀取 score 的 \"phrases\"/\"rests\" 欄位繪製。"
-                        "<span class=\"en\">drawn from the score's phrases/rests fields.</span>")
+        rms_note = (" 每個樂句色塊上標示其渲染音訊的 RMS dBFS（滑鼠移入亦顯示於 tooltip；"
+                    "資訊用，§6 未登記容差，不影響 PASS/FAIL）。"
+                    if phrase_rms_by_key else "")
+        source_note = ("讀取 score 的 \"phrases\"/\"rests\" 欄位繪製。" + rms_note +
+                        "<span class=\"en\">drawn from the score's phrases/rests fields"
+                        + (" -- each phrase bar also shows its rendered RMS dBFS "
+                           "(info only, no registered tolerance)." if phrase_rms_by_key else ".")
+                        + "</span>")
     else:
         # fallback: merged event-activity timeline (say which -- task 4a spec)
         spans = []
@@ -861,11 +894,21 @@ def render_badges_section(score_path, ok, checks, exempt_count, measured=None):
         dur = measured.get("duration_s")
         peak = measured.get("peak_dbfs")
         rms = measured.get("rms_dbfs")
+        lufs = measured.get("lufs_integrated")
+        # LUFS (ROADMAP_PHYSICS.md M6-6c, ITU-R BS.1770-4): informational
+        # only -- Sec.6 registers no LUFS tolerance, so it is never part of
+        # a PASS/FAIL badge, only printed here as a plain number, same as
+        # peak/RMS above.
+        lufs_str = (f'{lufs:.2f} LUFS' if lufs is not None
+                    else '無法量測 not measurable (音檔過短或全被 gate 濾除)')
         if dur is not None and peak is not None and rms is not None:
             stats_line = (f'<div class="banner-stats">'
                            f'渲染長度 duration: <b>{dur:.2f}s</b> &middot; '
                            f'峰值 peak: <b>{peak:.2f} dBFS</b> &middot; '
-                           f'全曲 RMS: <b>{rms:.2f} dBFS</b>'
+                           f'全曲 RMS: <b>{rms:.2f} dBFS</b> &middot; '
+                           f'整曲響度 integrated loudness: <b>{lufs_str}</b>'
+                           f'<span class="en"> (ITU-R BS.1770-4, info only -- no '
+                           f'registered tolerance)</span>'
                            f'</div>')
 
     return f"""
@@ -1068,7 +1111,8 @@ def generate_html_report(score_path, ok, checks, measured):
                                             "level_dbfs": iv["level_dbfs"], "status": status})
         loudness_html = render_loudness_section(loud_pts, duration_s, rest_intervals)
 
-        phrases_html = render_phrases_section(score, events, duration_s)
+        phrase_rms = measured.get("_phrase_rms")
+        phrases_html = render_phrases_section(score, events, duration_s, phrase_rms)
 
         footer_html = render_footer_section(score_path, checks, exempt_checks)
 

@@ -50,6 +50,18 @@ public:
 
         // Free-free beam eigenvalues (beta_n * L)
         // 前 5 個精確值，之後用近似公式 beta_n ≈ (2n+1)*pi/2
+        //
+        // SOURCE (M7 7b, 2026-07-12): these are the analytic roots of
+        // cosh(x)*cos(x) = 1 (the free-free Euler-Bernoulli beam frequency
+        // equation; see e.g. Blevins, "Formulas for Natural Frequency and Mode
+        // Shape," table for a free-free uniform beam), independently verified
+        // numerically in this task (scipy.optimize.brentq bracketing each root)
+        // to 7-8 significant digits:
+        //   4.7300407, 7.8532046, 10.9956078, 14.1371655, 17.2787597
+        // All 5 tabulated values below match the numerically re-solved roots to
+        // within their stated precision (largest rounding gap: beta_4L, table
+        // 14.1372 vs solved 14.1371655 -> rounds identically at 4 decimals). No
+        // changes needed.
         static constexpr float betaL[] = {
             4.7300f, 7.8532f, 10.9956f, 14.1372f, 17.2788f
         };

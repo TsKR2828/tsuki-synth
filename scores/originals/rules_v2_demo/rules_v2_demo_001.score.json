@@ -1,0 +1,3117 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "Rules v2 Demo / 規則二版示範作",
+    "id": "rules_v2_demo_001",
+    "author": "Claude (M9 rules-v2 harness)",
+    "composer": "Claude (M9 rules-v2 harness)",
+    "work": "Rules v2 Demo",
+    "movement_number": 1,
+    "movement_name": "AABA / Consonance Demonstration",
+    "key": "G physical-consonance center (no fixed scale -- intervals chosen from Sethares dissonance-curve minima, not a key signature)",
+    "description": "M9-9d 示範作：嚴格套用 M9-9a/9b 規則（協和度表 + T60/3 時值下限）產生的原創短曲，AABA 結構，cimbalom 擔任和聲、tongue_drum 擔任色彩/節奏標記、water_gong 擔任結構標記。",
+    "created": "2026-07-12",
+    "tags": [
+      "ai-original",
+      "physical-model",
+      "cimbalom",
+      "tongue-drum",
+      "water-gong",
+      "multi-engine",
+      "accessible-score",
+      "rules-v2-demo"
+    ],
+    "mood": "structural, ritual, gamelan-adjacent",
+    "use_case": "M9 rules-v2 GATE demonstration piece",
+    "category": "original_composition",
+    "worldview": "Rules v2 Demo",
+    "variation_of": null,
+    "primary_type": "concert",
+    "sound_type": "phrase",
+    "family_id": "rules_v2_demo",
+    "character": [
+      "metallic",
+      "resonant",
+      "structural"
+    ]
+  },
+  "composition_thesis": "每一個同時發聲的音程都取自 tools/consonance.py 算出的 Sethares dissonance-curve 局部極小值（reports/consonance_tables.md）；每個引擎的同音再擊間隔都不小於該引擎/音域的 T60/3（reports/consonance_tables.md §4）。AABA 結構的每個 section 由一個『匯聚 cell』（cimbalom 持續音 + tongue_drum P5 標記 + water_gong 八度標記）開場，其餘時間 cimbalom 以單旋律琶音（不與其他引擎同時發聲）鋪陳，避免需要驗證的同時音程過度複雜——這是本曲刻意的範圍限制，寫在 README 裡，不是隱藏的簡化。",
+  "global": {
+    "bpm": 84,
+    "sample_rate": 48000,
+    "master_volume": 0.6,
+    "effects": {
+      "reverb": {
+        "decay": 1.2,
+        "wet": 0.05
+      },
+      "delay": {
+        "time_ms": 0,
+        "feedback": 0,
+        "wet": 0
+      },
+      "distortion": {
+        "type": "overdrive",
+        "drive": 0.0,
+        "instability": 0.0,
+        "wet": 0.0
+      }
+    }
+  },
+  "tempo_map": [
+    {
+      "time": 0.0,
+      "quarter_bpm": 84
+    }
+  ],
+  "time_signatures": [
+    {
+      "time": 0.0,
+      "numerator": 4,
+      "denominator": 4
+    }
+  ],
+  "timing_policy": {
+    "time_unit": "seconds",
+    "renderer_note_off_ratio": 0.9,
+    "duration_compensation": "event.duration = intended sounding duration / 0.9",
+    "silence_representation": "rests[] plus absence of events"
+  },
+  "events": [
+    {
+      "time": 0.0,
+      "duration": 3.2,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arrival",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 2.88,
+        "articulation": "sustained_arrival",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 0.0,
+      "duration": 0.35,
+      "engine": "tongue_drum",
+      "note": "62",
+      "velocity": 0.3,
+      "params": {
+        "material": "aluminum",
+        "strike_position": 0.27,
+        "thickness_mm": 3.0,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "tongue_drum_pulse",
+        "role": "A_mark",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 0.315,
+        "articulation": "mark_pulse",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 0.45,
+      "duration": 1.3,
+      "engine": "water_gong",
+      "note": "67",
+      "velocity": 0.5,
+      "params": {
+        "material": "bronze",
+        "strike_position": 0.3,
+        "thickness_mm": 4.0,
+        "radius_mm": 140,
+        "plate_free_edge": false,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "water_gong_mark",
+        "role": "A_mark",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 1.62,
+        "articulation": "resonant_mark",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 3.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 3.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 3.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 4.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 4.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 5.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 5.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 6.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 6.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 6.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 6.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 7.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 7.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 8.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 8.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 9.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 9.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 9.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 9.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 10.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 10.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 11.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 11.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 12.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 12.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 12.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 12.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 13.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 13.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 14.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 14.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 15.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 15.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 15.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 15.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 16.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 16.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.4,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 17.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": true,
+        "breath_after_ms": 300.0
+      }
+    },
+    {
+      "time": 17.75,
+      "duration": 3.2,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arrival",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 20.63,
+        "articulation": "sustained_arrival",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 17.75,
+      "duration": 0.35,
+      "engine": "tongue_drum",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "aluminum",
+        "strike_position": 0.27,
+        "thickness_mm": 3.0,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "tongue_drum_pulse",
+        "role": "A2_mark",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 18.065,
+        "articulation": "mark_pulse",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 18.2,
+      "duration": 1.3,
+      "engine": "water_gong",
+      "note": "67",
+      "velocity": 0.5,
+      "params": {
+        "material": "bronze",
+        "strike_position": 0.3,
+        "thickness_mm": 4.0,
+        "radius_mm": 140,
+        "plate_free_edge": false,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "water_gong_mark",
+        "role": "A2_mark",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 19.37,
+        "articulation": "resonant_mark",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 20.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 21.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 21.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 22.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 22.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 23.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 23.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 23.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 23.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "59",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 59,
+        "frequency_hz": 246.942,
+        "intended_release_time": 24.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 24.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 25.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 25.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 26.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 26.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 26.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 26.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 27.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 27.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 28.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 28.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "59",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 59,
+        "frequency_hz": 246.942,
+        "intended_release_time": 29.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 29.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 29.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 29.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 30.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 30.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 31.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 31.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 32.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 32.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 32.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 32.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "59",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 59,
+        "frequency_hz": 246.942,
+        "intended_release_time": 33.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 33.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 34.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 34.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A2_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 35.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": true,
+        "breath_after_ms": 400.0
+      }
+    },
+    {
+      "time": 35.6,
+      "duration": 3.4,
+      "engine": "cimbalom",
+      "note": "60",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arrival",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 38.66,
+        "articulation": "sustained_arrival",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 35.6,
+      "duration": 0.35,
+      "engine": "tongue_drum",
+      "note": "67",
+      "velocity": 0.675,
+      "params": {
+        "material": "aluminum",
+        "strike_position": 0.27,
+        "thickness_mm": 3.0,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "tongue_drum_pulse",
+        "role": "B_mark",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 35.915,
+        "articulation": "mark_pulse",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 36.05,
+      "duration": 1.6,
+      "engine": "water_gong",
+      "note": "72",
+      "velocity": 0.6,
+      "params": {
+        "material": "bronze",
+        "strike_position": 0.3,
+        "thickness_mm": 4.0,
+        "radius_mm": 140,
+        "plate_free_edge": false,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "water_gong_mark",
+        "role": "B_mark",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 37.49,
+        "articulation": "resonant_mark",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 39.0,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "60",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 39.63,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 39.75,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 40.38,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 40.5,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "72",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 41.13,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 41.25,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 41.88,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 42.0,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "60",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 42.63,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 42.75,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 43.38,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 43.5,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "72",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 44.13,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 44.25,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 44.88,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 45.0,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "60",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 45.63,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 45.75,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.9,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_1",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 46.38,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 46.8,
+      "duration": 2.4,
+      "engine": "cimbalom",
+      "note": "60",
+      "velocity": 0.6,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_echo",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 48.96,
+        "articulation": "sustained_echo",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 46.8,
+      "duration": 0.35,
+      "engine": "tongue_drum",
+      "note": "67",
+      "velocity": 0.45,
+      "params": {
+        "material": "aluminum",
+        "strike_position": 0.27,
+        "thickness_mm": 3.0,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "tongue_drum_pulse",
+        "role": "B_echo_mark",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 47.115,
+        "articulation": "mark_pulse",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 47.25,
+      "duration": 1.2,
+      "engine": "water_gong",
+      "note": "72",
+      "velocity": 0.5,
+      "params": {
+        "material": "bronze",
+        "strike_position": 0.3,
+        "thickness_mm": 4.0,
+        "radius_mm": 140,
+        "plate_free_edge": false,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "water_gong_mark",
+        "role": "B_echo_mark",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 48.33,
+        "articulation": "resonant_mark",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 49.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "60",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 49.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 49.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 50.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 50.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "72",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 51.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 51.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 52.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 52.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "60",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 52.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 52.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 53.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 53.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "72",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 54.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 54.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 55.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 55.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "60",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 55.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 55.95,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 56.58,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 56.7,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "72",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 72,
+        "frequency_hz": 523.251,
+        "intended_release_time": 57.33,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 57.45,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 58.08,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 58.2,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "60",
+      "velocity": 0.75,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "B_arpeggio_2",
+        "midi_note": 60,
+        "frequency_hz": 261.626,
+        "intended_release_time": 58.83,
+        "articulation": "alternating_hammer",
+        "phrase_end": true,
+        "breath_after_ms": 400.0
+      }
+    },
+    {
+      "time": 59.35,
+      "duration": 3.2,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arrival",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 62.23,
+        "articulation": "sustained_arrival",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 59.35,
+      "duration": 0.35,
+      "engine": "tongue_drum",
+      "note": "62",
+      "velocity": 0.3375,
+      "params": {
+        "material": "aluminum",
+        "strike_position": 0.27,
+        "thickness_mm": 3.0,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "tongue_drum_pulse",
+        "role": "A3_mark",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 59.665,
+        "articulation": "mark_pulse",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 59.8,
+      "duration": 1.3,
+      "engine": "water_gong",
+      "note": "67",
+      "velocity": 0.35,
+      "params": {
+        "material": "bronze",
+        "strike_position": 0.3,
+        "thickness_mm": 4.0,
+        "radius_mm": 140,
+        "plate_free_edge": false,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "water_gong_mark",
+        "role": "A3_mark",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 60.97,
+        "articulation": "resonant_mark",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 62.55,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 63.18,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 63.3,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 63.93,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 64.05,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 64.68,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 64.8,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 65.43,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 65.55,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "59",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 59,
+        "frequency_hz": 246.942,
+        "intended_release_time": 66.18,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 66.3,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 66.93,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 67.05,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 67.68,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 67.8,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 68.43,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 68.55,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 69.18,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 69.3,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 69.93,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 70.05,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "59",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 59,
+        "frequency_hz": 246.942,
+        "intended_release_time": 70.68,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 70.8,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 71.43,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 71.55,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 72.18,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 72.3,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 72.93,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 73.05,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "67",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 73.68,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 73.8,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 74.43,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 74.55,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "59",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 59,
+        "frequency_hz": 246.942,
+        "intended_release_time": 75.18,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 75.3,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "62",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 75.93,
+        "articulation": "alternating_hammer",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 76.05,
+      "duration": 0.7,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "A3_arpeggio",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 76.68,
+        "articulation": "alternating_hammer",
+        "phrase_end": true,
+        "breath_after_ms": 500.0
+      }
+    },
+    {
+      "time": 77.3,
+      "duration": 4.5,
+      "engine": "cimbalom",
+      "note": "55",
+      "velocity": 0.45,
+      "params": {
+        "material": "steel",
+        "strike_position": 0.27,
+        "diameter_mm": 0.8,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "cimbalom_harmony",
+        "role": "final_cadence",
+        "midi_note": 55,
+        "frequency_hz": 195.998,
+        "intended_release_time": 81.35,
+        "articulation": "sustained_final",
+        "phrase_end": false,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 77.3,
+      "duration": 0.35,
+      "engine": "tongue_drum",
+      "note": "62",
+      "velocity": 0.225,
+      "params": {
+        "material": "aluminum",
+        "strike_position": 0.27,
+        "thickness_mm": 3.0,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "tongue_drum_pulse",
+        "role": "final_mark",
+        "midi_note": 62,
+        "frequency_hz": 293.665,
+        "intended_release_time": 77.615,
+        "articulation": "mark_pulse",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    },
+    {
+      "time": 77.75,
+      "duration": 6.0,
+      "engine": "water_gong",
+      "note": "67",
+      "velocity": 0.225,
+      "params": {
+        "material": "bronze",
+        "strike_position": 0.3,
+        "thickness_mm": 4.0,
+        "radius_mm": 140,
+        "plate_free_edge": false,
+        "exciter": "wood_mallet"
+      },
+      "performance": {
+        "track": "water_gong_mark",
+        "role": "final_mark",
+        "midi_note": 67,
+        "frequency_hz": 391.995,
+        "intended_release_time": 83.15,
+        "articulation": "resonant_mark",
+        "phrase_end": true,
+        "breath_after_ms": 0.0
+      }
+    }
+  ],
+  "rests": [
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 3.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 4.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 5.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 6.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 6.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 7.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 8.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 9.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 9.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 10.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 11.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 12.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 12.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 13.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 14.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 15.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 15.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 16.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 17.4,
+      "duration": 0.35,
+      "kind": "rest"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 21.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 22.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 23.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 23.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 24.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 25.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 26.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 26.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 27.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 28.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 29.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 29.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 30.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 31.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 32.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 32.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 33.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 34.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 35.15,
+      "duration": 0.45,
+      "kind": "rest"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 39.7,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 40.45,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 41.2,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 41.95,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 42.7,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 43.45,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 44.2,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 44.95,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 45.7,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 46.45,
+      "duration": 0.35,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 49.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 50.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 51.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 52.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 52.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 53.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 54.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 55.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 55.9,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 56.65,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 57.4,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 58.15,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 58.9,
+      "duration": 0.45,
+      "kind": "rest"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 63.25,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 64.0,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 64.75,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 65.5,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 66.25,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 67.0,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 67.75,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 68.5,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 69.25,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 70.0,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 70.75,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 71.5,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 72.25,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 73.0,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 73.75,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 74.5,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 75.25,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 76.0,
+      "duration": 0.05,
+      "kind": "breath"
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony",
+      "time": 76.75,
+      "duration": 0.55,
+      "kind": "rest"
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse",
+      "time": 0.35,
+      "duration": 17.4,
+      "kind": "long_rest"
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse",
+      "time": 18.1,
+      "duration": 17.5,
+      "kind": "long_rest"
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse",
+      "time": 35.95,
+      "duration": 10.85,
+      "kind": "long_rest"
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse",
+      "time": 47.15,
+      "duration": 12.2,
+      "kind": "long_rest"
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse",
+      "time": 59.7,
+      "duration": 17.6,
+      "kind": "long_rest"
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark",
+      "time": 0.0,
+      "duration": 0.45,
+      "kind": "rest"
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark",
+      "time": 1.75,
+      "duration": 16.45,
+      "kind": "long_rest"
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark",
+      "time": 19.5,
+      "duration": 16.55,
+      "kind": "long_rest"
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark",
+      "time": 37.65,
+      "duration": 9.6,
+      "kind": "long_rest"
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark",
+      "time": 48.45,
+      "duration": 11.35,
+      "kind": "long_rest"
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark",
+      "time": 61.1,
+      "duration": 16.65,
+      "kind": "long_rest"
+    }
+  ],
+  "phrases": [
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony_A",
+      "number": 1,
+      "start": 0.0,
+      "end": 20.95,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony_A2",
+      "number": 2,
+      "start": 17.75,
+      "end": 39.0,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony_B",
+      "number": 3,
+      "start": 35.6,
+      "end": 62.55,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony_A3",
+      "number": 4,
+      "start": 59.35,
+      "end": 81.8,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "cimbalom_harmony",
+      "role": "cimbalom_harmony_final",
+      "number": 5,
+      "start": 77.3,
+      "end": 81.8,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse_A",
+      "number": 1,
+      "start": 0.0,
+      "end": 18.1,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse_A2",
+      "number": 2,
+      "start": 17.75,
+      "end": 35.95,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse_B",
+      "number": 3,
+      "start": 35.6,
+      "end": 59.7,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse_A3",
+      "number": 4,
+      "start": 59.35,
+      "end": 77.65,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "tongue_drum_pulse",
+      "role": "tongue_drum_pulse_final",
+      "number": 5,
+      "start": 77.3,
+      "end": 77.65,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark_A",
+      "number": 1,
+      "start": 0.45,
+      "end": 19.5,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark_A2",
+      "number": 2,
+      "start": 18.2,
+      "end": 37.65,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark_B",
+      "number": 3,
+      "start": 36.05,
+      "end": 61.1,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark_A3",
+      "number": 4,
+      "start": 59.8,
+      "end": 83.75,
+      "breath_after_ms": 0.0
+    },
+    {
+      "track": "water_gong_mark",
+      "role": "water_gong_mark_final",
+      "number": 5,
+      "start": 77.75,
+      "end": 83.75,
+      "breath_after_ms": 0.0
+    }
+  ],
+  "export": {
+    "filename": "rules_v2_demo_001",
+    "export_filename": "TsukiSynth_Rules_v2_Demo",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 2500
+  }
+}

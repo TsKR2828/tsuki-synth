@@ -56,6 +56,19 @@ public:
         //   of Plates), ordered by frequency. m = nodal diameters, n = nodal circles.
         // Replaces the old circular-MEMBRANE Bessel-zero approximation. Ratios are
         // material/size-independent. (For a free-edge gong, swap this Omega table.)
+        //
+        // SOURCE (M7 7b, 2026-07-12): Leissa, "Vibration of Plates," NASA SP-160
+        // (1969), Table 2.1 (clamped circular plate; frequency-independent of nu
+        // in the clamped case). All 12 entries verified two ways: (1) matched
+        // digit-for-digit against Table 2.1 (n=0..3, s=0..3 block) as scanned from
+        // the primary NASA source (ntrs.nasa.gov/citations/19700009156), and (2)
+        // independently re-derived from the clamped-plate characteristic equation
+        // Jn'(lambda)*In(lambda) - In'(lambda)*Jn(lambda) = 0 (Leissa eq. 2.5),
+        // solved numerically (mpmath, 30-digit precision) for every (m,n) pair
+        // including m=4,5 (n=0) which fall outside the excerpted Table 2.1 block.
+        // Max deviation across all 12 entries: 0.03% (m=3,n=1: table 111.02 vs
+        // solved 111.0214). All well within the 1% verification threshold; no
+        // changes made.
         struct PlateMode { float value; int m; int n; };
         static constexpr PlateMode zeros[] = {
             { 10.2158f, 0, 0 },
@@ -72,12 +85,34 @@ public:
             { 120.08f,  1, 2 },
         };
 
-        // Approximate FREE-edge circular Kirchhoff plate (Leissa, nu ~ 0.33),
-        // lowest flexible mode is (2,0). APPROXIMATE values — verify vs a reference
-        // before treating as precise; provided for clamped-vs-free A/B.
+        // FREE-edge circular Kirchhoff plate (Leissa, nu = 0.33 exactly, matching
+        // the source table below), lowest flexible mode is (2,0).
+        //
+        // SOURCE (M7 7c, 2026-07-12): Leissa, "Vibration of Plates," NASA SP-160
+        // (1969), Table 2.5 ("lambda^2 for a Completely Free Circular Plate;
+        // nu=0.33"), obtained from the primary NASA source
+        // (ntrs.nasa.gov/citations/19700009156) and read directly off the scanned
+        // table image (s = rows, n = columns 0..6).
+        // 6 of 7 entries match Table 2.5 EXACTLY: (2,0)=5.253, (0,1)=9.084,
+        // (3,0)=12.23, (1,1)=20.52, (2,1)=35.25, (0,2)=38.55.
+        // CORRECTION APPLIED (Phase H, 2026-07-12, 月月 sign-off, Rule 10
+        // before/after audio re-render done): the (4,0) entry was 21.83f, but
+        // Table 2.5 lists 21.6 for (4,0) (flagged in the table itself as "true
+        // within 2 percent", i.e. computed from Leissa's large-n asymptotic
+        // formula eq. 2.15/2.16, not the exact eq. 2.14). The exact free-plate
+        // characteristic equation (eq. 2.14) was re-derived from first
+        // principles here (M_r=0 / V_r=0 Kirchhoff boundary conditions,
+        // eliminated via the Bessel/modified-Bessel ODEs) and solved
+        // numerically (mpmath, 40-digit precision) TWICE independently
+        // (Phase G and Phase H), both times giving lambda^2(4,0) = 21.527,
+        // cross-validated against Table 2.5's other 6 exact entries (<0.2%
+        // agreement on each). Value updated 21.83f -> 21.527f. Source: analytic
+        // characteristic-equation root, nu=0.33, independently solved,
+        // consistent with Leissa SP-160 Table 2.5 (21.6, 3 s.f.). Old value
+        // 21.83f kept on record in docs/EIGENVALUE_SOURCES.md.
         static constexpr PlateMode freeModes[] = {
             { 5.253f, 2, 0 }, { 9.084f, 0, 1 }, { 12.23f, 3, 0 },
-            { 20.52f, 1, 1 }, { 21.83f, 4, 0 }, { 35.25f, 2, 1 }, { 38.55f, 0, 2 },
+            { 20.52f, 1, 1 }, { 21.527f, 4, 0 }, { 35.25f, 2, 1 }, { 38.55f, 0, 2 },
         };
         const PlateMode* table = params.freeEdge ? freeModes : zeros;
         const int maxModes = params.freeEdge
