@@ -48,3 +48,7 @@ Thumbs.db
 # Precompiled headers
 *.pch
 *.gch
+
+# Rule-10 comparison scratch binaries (rebuildable from git history)
+reports/**/bin[AB]/
+reports/**/*.pkl
