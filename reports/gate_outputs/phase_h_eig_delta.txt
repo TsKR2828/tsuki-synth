@@ -1,0 +1,27 @@
+Phase H eigenvalue-correction delta evidence
+======================================================================
+Change: PLATE_FREE_OMEGA (m=4,n=0) 21.83 -> 21.527
+Probe: water_gong_free engine, MIDI 60 (f0=261.626 Hz), material=bronze
+
+Binaries: TsukiSynthCLI built from HEAD 4c77c54 (before) vs current
+working tree with the corrected eigenvalue (after). Same score.json,
+same seed/render path; only the PlateModel.h freeModes[4] value differs.
+
+Partial 4 (m=1,n=1, ratio 20.52, UNCHANGED -- sanity check other partials
+are unaffected):
+  before: 1021.998 Hz (mag 60.41)
+  after:  1021.998 Hz (mag 60.41)   delta: 0.000%
+
+Partial 5 (m=4,n=0, THE CHANGED MODE):
+  predicted before (21.83)  = 1087.243 Hz
+  predicted after  (21.527) = 1072.152 Hz
+  predicted shift           = -1.388%
+
+  measured  before = 1087.243 Hz (mag 9.537)   [matches predicted exactly]
+  measured  after  = 1072.150 Hz (mag 9.630)   [matches predicted exactly]
+  measured  shift  = -1.388%
+
+Result: measured shift (-1.388%) matches the expected ~-1.4% shift from
+the eigenvalue-table correction. All other partials (1-4) identical
+before/after (0.000% delta), confirming the change is isolated to the
+(m=4,n=0) mode as intended.

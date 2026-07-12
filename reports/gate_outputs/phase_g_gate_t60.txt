@@ -1,0 +1,24 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+======================================================================
+TsukiSynth physics verification — measured spectrum vs theory
+======================================================================
+Modal decay T60 - measured (audio) vs model ground truth (--dump-modes):
+   engine      MIDI    model     meas  ratio
+   cimbalom      60    1.95s    2.26s   1.16  (beat 1.51 Hz)
+   cimbalom      72    1.84s    2.13s   1.16  (beat 3.02 Hz)
+   tongue_drum   60    1.22s    1.22s   1.00
+   tongue_drum   72    1.22s    1.22s   1.00
+   water_gong    60    1.19s    1.19s   1.00
+   water_gong    72    1.19s    1.19s   1.00
+   water_gong_free   60    1.23s    1.23s   1.00
+   water_gong_free   72    1.23s    1.23s   1.00
+   piano         60    1.95s    2.28s   1.17  (beat 1.51 Hz)
+   piano         72    1.84s    2.35s   1.28  (beat 3.02 Hz)
+
+(model = fundamental decayTime straight from the C++ model;
+ measured = narrowband (+/-3% of measured f0) Hilbert-envelope
+ log-slope fit, beat-period-averaged for multi-string courses;
+ see measure_t60()'s docstring for the exact method, ROADMAP_PHYSICS.md M5-5a.)
+
+======================================================================
+RESULT: ALL WITHIN TOLERANCE
