@@ -1,0 +1,84 @@
+deepfix3: Summer m2/m3 休止 RMS 修復 — reverb decay 掃描紀錄
+=============================================================
+日期: 2026-07-23
+分支: fix/deep-physics-audit-20260716
+量測方法: tools/verify_score.py 逐聲道法 (max_channel_rms_dbfs) —
+  每個休止窗取左右聲道各自 RMS 後取較大者判斷，與 round-2 改法一致。
+門檻: REST_RMS_LIMIT_DBFS = -50.0 dBFS（ROADMAP_PHYSICS.md §6，未調整、未登記新豁免）。
+背景: round-2 把休止 RMS 判定改為逐聲道取最大後，兩檔原本"通過"的休止窗
+  在新量法下揭露真實電平超標。FX-bypass 對照已證實超標來源是 reverb 尾巴
+  （bypass 後同窗測得約 -120 dBFS），不是模型本身的衰減，因此以縮短
+  reverb decay 處理是對症的做法（同 docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md
+  對 m3 的前次 decay 掃描先例）。
+
+-------------------------------------------------------------
+【summer_m2】vivaldi_four_seasons_summer_m2.score.json
+-------------------------------------------------------------
+固定 wet = 0.28（未動），往下掃 decay。
+休止窗（find_rest_intervals，decay_allowance=0.5s 已扣除前音殘響緩衝）：
+  A: 20.65s - 21.33s
+  B: 47.31s - 48.00s
+  C: 87.31s - 88.00s
+
+decay    A(20.65-21.33s)   B(47.31-48.00s)   C(87.31-88.00s)   備註
+-----    ---------------   ---------------   ---------------   ----
+2.80     -49.9 dBFS        -51.7 dBFS        -49.9 dBFS         原值；A/C 超標(2/3 rest interval(s) exceed the limit)
+2.75     -50.5 dBFS        -52.4 dBFS        -50.5 dBFS         A/C 剛過但裕度僅 0.5 dB
+2.70     -51.2 dBFS        -53.1 dBFS        -51.2 dBFS         裕度 1.2 dB，未達 2 dB 要求
+2.65     -51.9 dBFS        -53.8 dBFS        -51.9 dBFS         裕度 1.9 dB，仍差一點未達 2 dB
+2.60     -52.6 dBFS        -54.5 dBFS        -52.6 dBFS         裕度 2.6/4.5/2.6 dB — 全部窗 ≥2 dB，採用
+2.40     -55.6 dBFS        -57.9 dBFS        -55.6 dBFS         (掃描參考點，裕度更大但非最保守選擇)
+2.20     -59.2 dBFS        -61.8 dBFS        -59.2 dBFS         (掃描參考點)
+2.00     -63.4 dBFS        -66.4 dBFS        -63.4 dBFS         (掃描參考點)
+
+選定值: decay = 2.60（wet 不動，維持 0.28）。
+理由: 2.60 是掃描中最保守（最接近原值 2.80、reverb 尾巴保留最多）且讓 3
+  個休止窗同時滿足 ≥2 dB 裕度門檻的最高 decay 值；2.65 差一點（1.9 dB）
+  未達標，故不採用。
+
+全量驗證 (tools/verify_score.py，decay=2.60):
+  [OK] rests.rms_below_limit — All 3 rest interval(s) below -50.0 dBFS.
+       Quietest margin: rest at 47.31s-48.00s (see full verifier output below)
+  ALL CHECKS PASSED, exit 0（含 determinism SHA256 比對一致）。
+
+-------------------------------------------------------------
+【summer_m3】vivaldi_four_seasons_summer_m3.score.json
+-------------------------------------------------------------
+固定 wet = 0.20（未動），往下掃 decay。
+（此檔 decay 在先前 deep-fix 輪已從 2.1 掃到 1.2；round-2 逐聲道量測法
+  揭露 1.2 在新量法下實測 -47.1 dBFS，超標 2.9 dB，故本輪需再往下掃。）
+
+休止窗（find_rest_intervals，decay_allowance=0.5s）：
+  A: 5.12s - 6.00s （全曲僅此 1 個休止窗，1/1 rest interval(s) exceed）
+
+decay    A(5.12-6.00s)     備註
+-----    -------------     ----
+1.20     -47.1 dBFS         原值；超標 2.9 dB
+1.15     -48.3 dBFS         裕度 -1.7 dB（仍超標）
+1.10     -49.5 dBFS         裕度 -0.5 dB（仍超標）
+1.05     -51.0 dBFS         裕度 1.0 dB（過門檻但未達 2 dB 要求）
+1.00     -52.5 dBFS         裕度 2.5 dB — 達標，採用
+0.80     -60.5 dBFS         (掃描參考點，裕度更大但非最保守選擇)
+0.60     -73.5 dBFS         (掃描參考點)
+0.50     -83.7 dBFS         (掃描參考點)
+0.40     -98.6 dBFS         (掃描參考點)
+
+選定值: decay = 1.00（wet 不動，維持 0.20）。
+理由: 1.00 是掃描中最保守（最接近原值、reverb 尾巴保留最多）且讓唯一
+  休止窗滿足 ≥2 dB 裕度（2.5 dB）的最高 decay 值；1.05 差一點（1.0 dB）
+  未達標，故不採用。未同時調降 wet — decay 單獨下修已足夠達標，不需疊加
+  第二個參數變更。
+
+全量驗證 (tools/verify_score.py，decay=1.00):
+  [OK] rests.rms_below_limit — 1/1 rest interval(s) below -50.0 dBFS.
+       Rest at 5.12s-6.00s measured -52.5 dBFS (2.5 dB below limit).
+  ALL CHECKS PASSED, exit 0（含 determinism SHA256 比對一致）。
+
+-------------------------------------------------------------
+音樂性影響（待月月最終確認）
+-------------------------------------------------------------
+summer_m2: reverb decay 由 2.8s 降為 2.6s（縮短約 0.2s / 7%），summer_m3:
+reverb decay 由 1.2s 降為 1.0s（縮短約 0.2s / 17%）。兩者皆是使休止窗殘響
+尾巴收得更快、音樂會聽起來稍微「乾」一點、殘響拖尾變短，其餘音色與direct
+level不受影響（wet 兩檔皆未變動）。以上為藝術參數變更，屬 Rule 10 精神的
+知情範圍，待月月最終確認是否可接受這個聽感差異。

@@ -10,7 +10,7 @@
  * Decomposes vibration into N independent decaying sinusoids (modes).
  * Each mode has its own frequency, amplitude, and decay time.
  *
- *   output(t) = sum[ amp[n] * exp(-t/decay[n]) * sin(2*pi*freq[n]*t) ]
+ *   output(t) = sum[ amp[n] * 10^(-3t/T60[n]) * sin(2*pi*freq[n]*t) ]
  *
  * Mode parameters are computed by physics models (StringModel / BeamModel / PlateModel)
  * and passed in. This module only handles efficient rendering.
@@ -27,6 +27,7 @@ public:
     };
 
     void setSampleRate (double sr) { sampleRate = sr; }
+    void reserveModes (size_t count) { modes.reserve (count); }
 
     /// Set modes (computed by physics model, passed in)
     void setModes (const std::vector<Mode>& newModes)
@@ -52,14 +53,19 @@ public:
         active = true;
         for (auto& m : modes)
         {
-            // skip modes outside audible range
-            if (m.freq > 20000.0f || m.freq < 20.0f)
+            // Never synthesize above Nyquist.  The 20 kHz ceiling is a product
+            // contract, while Nyquist depends on the actual host sample rate.
+            const float maxFrequency = (float) std::min (20000.0,
+                                                         sampleRate * 0.5 * 0.98);
+            if (m.freq > maxFrequency || m.freq < 20.0f)
             {
                 m.currentAmp = 0.0f;
+                m.stopAmp = 0.0f;
                 continue;
             }
 
             m.currentAmp = m.baseAmp * velocity;
+            m.stopAmp    = std::abs (m.currentAmp) * 0.001f; // exactly -60 dB
             m.phase      = 0.0f;
             m.phaseDelta = m.freq * (float) juce::MathConstants<double>::twoPi / (float) sampleRate;
 
@@ -95,7 +101,7 @@ public:
 
         for (auto& m : modes)
         {
-            if (m.currentAmp < 0.0001f)
+            if (std::abs (m.currentAmp) <= m.stopAmp || m.stopAmp <= 0.0f)
                 continue;
 
             output += m.currentAmp * std::sin (m.phase);
@@ -146,7 +152,7 @@ public:
     {
         int count = 0;
         for (const auto& m : modes)
-            if (m.currentAmp >= 0.0001f) ++count;
+            if (std::abs (m.currentAmp) > m.stopAmp && m.stopAmp > 0.0f) ++count;
         return count;
     }
 
@@ -170,6 +176,7 @@ private:
         float phase      = 0.0f;
         float phaseDelta = 0.0f;
         float currentAmp = 0.0f;
+        float stopAmp    = 0.0f;
         float decayCoeff = 1.0f;
     };
 

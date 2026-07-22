@@ -1,7 +1,8 @@
 # TsukiSynth 音效設計規格補充
 
 > 來源：音效設計師回饋（2026-05-07）
-> 狀態：已整合 — Phase A（metadata）+ Phase B（distortion / glide）+ Phase C（trim）完成
+> 狀態（2026-07-17）：metadata、distortion、glide、trim 與嚴格 score 契約已整合；
+> 本文末尾的 tags 範例仍是分類提案，不代表每個 key 都是 renderer 欄位。
 
 ---
 
@@ -274,7 +275,7 @@ UI_Soft_OneShot.wav                   ← 介面提示音
     "bell": "鐘聲 — 圓板模型，長殘響",
     "chime": "風鈴 — 梁模型，清脆短音",
     "gong": "鑼 — 圓板模型，深沉共鳴",
-    "drum": "鼓類 — 圓膜模型",
+    "drum": "鼓類 — 目前僅作 metadata；尚無真圓膜物理 engine",
     "string": "弦類 — 弦模型",
     "alert": "警告提示 — 短促高頻",
     "motif": "短旋律 — 多音符序列"
@@ -333,4 +334,7 @@ UI_Soft_OneShot.wav                   ← 介面提示音
 
 ---
 
-*本文件為補充規格，待確認後整合進 score.schema.json、tags.json、sound_names.json。*
+*目前已整合的 renderer 契約以 `scores/schema/score.schema.json` 與
+`src/score/ScoreParser.h` 為準：`primary_type`、`sound_type`、`family_id`、`character`、
+`mood`、`use_case` 等已受嚴格驗證；本節其他 taxonomy 只作索引設計參考。不存在真
+`membrane` engine，`drum` 不得被誤寫成事件的 engine。*

@@ -1,9 +1,15 @@
 # Material Constant Sourcing — data/materials.json
 
+> **Current-code update (2026-07-17):** `MaterialDB` now rejects non-finite or non-physical
+> density, Young's modulus, Poisson ratio and damping values, parses into a temporary map, and
+> commits only after the entire file validates. A failed reload preserves the last known-good
+> database. The provenance and uncertainty caveats in this document still apply: input
+> validation prevents invalid numbers but does not turn estimated constants into measurements.
+
 Authoritative store: `data/materials.json` (14 materials; `MaterialDB::getOrderedKeys()` in
 `src/physics/MaterialDB.h` exposes 9 of them to the UI: steel, copper, bronze, aluminum, brass,
-wood_spruce, wood_maple, glass, rubber). This document is descriptive only — **no values in
-materials.json were changed while writing it.**
+wood_spruce, wood_maple, glass, rubber). The sentence “no values changed” in the original Phase-G
+task is historical; Phase H changes and the current validation behavior are recorded below.
 
 ## How the damping triple is used (context, from src/physics/BeamModel.h:57-76)
 
@@ -134,8 +140,8 @@ tonewood — flagged in the prior documentation pass. Corrected `8.0 -> 0.8324` 
 bamboo/iron-adjacent region < maple (1.43) < birch (1.66) < oak (1.90) — spruce is now correctly
 the lowest-damped wood in the set.
 
-**New reordering flag (needs 月月/Opus review before Rule 10 corpus re-render, proposal §3
-"Reordering effects")**: glass's alpha barely moves (0.15 -> 0.178) while steel/aluminum drop
+**Phase-H reordering observation (retained for provenance)**: glass's alpha barely moves
+(0.15 -> 0.178) while steel/aluminum drop
 20-25x, so glass is no longer the lowest-alpha material — aluminum and steel now are. This is
 literature-consistent (ordinary soda-lime glass eta ~1-2e-3 is genuinely higher than clean metals'
 1-6e-4, even though fused-silica/quartz lab resonators can be orders of magnitude lower), not a
@@ -144,7 +150,7 @@ to shape/weak radiative coupling as to bulk material loss).
 
 ---
 
-## Summary — sourcing status (updated Phase H, 2026-07-12)
+## Summary — sourcing status (updated 2026-07-17)
 
 **Changed this phase** (all sourced to `reports/materials_physicalization_proposal.md`, applied
 2026-07-12 per 月月's sign-off):
@@ -159,6 +165,11 @@ to shape/weak radiative coupling as to bulk material loss).
 all 14 materials — the functional form (f² / f scaling) is textbook-standard, but no per-material
 magnitude source was found (proposal §4); `density` / `poisson_ratio` and the other 13 materials'
 `youngs_modulus` — already 文獻-backed per the table above, untouched by this phase.
+
+**Current verification qualification:** checked T60 probes measure about 0.99–1.00 of the model.
+`cimbalom/rubber`, `tongue_drum/rubber`, and `water_gong/rubber` remain
+`UNVERIFIED/N/A` because 0.014–0.028 s is shorter than the eight-cycle measurement window at
+MIDI 60. This is an instrument-resolution limit, not evidence that those three cases pass.
 
 **Open flags carried forward from this phase** (see full detail in the damping-table section
 above and `reports/materials_physicalization_proposal.md` §6):

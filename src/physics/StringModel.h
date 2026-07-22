@@ -30,6 +30,18 @@ public:
         int   numModes       = 40;       // 模態數
     };
 
+    static float decayTimeForFrequency (
+        float frequency, const MaterialDB::Material& material,
+        float alphaOverride = -1.0f)
+    {
+        const float alpha = alphaOverride >= 0.0f
+            ? alphaOverride : material.damping.alpha;
+        const float denominator = alpha
+            + material.damping.beta_air * frequency * frequency
+            + material.damping.gamma_radiation * frequency;
+        return denominator > 0.0f ? 1.0f / denominator : 10.0f;
+    }
+
     /**
      * 從物理參數計算所有模態
      * @return 模態列表，可直接傳入 ModalResonator::setModes()
@@ -39,6 +51,16 @@ public:
         const MaterialDB::Material& material)
     {
         std::vector<ModalResonator::Mode> modes;
+        calculateModes (params, material, modes);
+        return modes;
+    }
+
+    static void calculateModes (
+        const Params& params,
+        const MaterialDB::Material& material,
+        std::vector<ModalResonator::Mode>& modes)
+    {
+        modes.clear();
         modes.reserve ((size_t) params.numModes);
 
         const float L = params.length;
@@ -62,11 +84,6 @@ public:
         const float B = (pi3 * material.youngsModulus * d4)
                         / (64.0f * T * L * L);
 
-        // 阻尼參數
-        const float alpha = material.damping.alpha;
-        const float beta  = material.damping.beta_air;
-        const float gamma = material.damping.gamma_radiation;
-
         for (int n = 1; n <= params.numModes; ++n)
         {
             float fn = (float) n;
@@ -79,17 +96,33 @@ public:
                 break;
 
             // 衰減時間
-            float decayDenom = alpha + beta * freq * freq + gamma * freq;
-            float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 10.0f;
+            float decay = decayTimeForFrequency (freq, material);
 
             // 擊打位置影響振幅
+            //
+            // ── Modal amplitude convention: VELOCITY (equal-weight) ────────
+            // amp = |mode shape at the strike point|, one factor per mode,
+            // with NO 1/omega_n or omega_n weighting. For an impulsive point
+            // force at x_hit each mode's initial modal VELOCITY is
+            // proportional to phi_n(x_hit)/m_n; with the equal modal mass of
+            // the ideal string (m_n = mu*L/2 for every n) that reduces to
+            // amp ∝ |phi_n(x_hit)| -- i.e. this is the modal-velocity
+            // amplitude convention. All three modal sources (StringModel /
+            // BeamModel / PlateModel) deliberately use this SAME convention
+            // so cross-engine spectra are comparable. Alternative
+            // conventions differ by an overall spectral slope, not by
+            // per-mode structure:
+            //   displacement convention  = velocity × 1/omega_n
+            //                              (≈ −6 dB/oct relative tilt)
+            //   acceleration / far-field pressure convention
+            //                            = velocity × omega_n
+            //                              (≈ +6 dB/oct relative tilt)
             float amp = std::abs (std::sin (fn * juce::MathConstants<float>::pi
                                             * params.strikePosition));
 
             modes.push_back ({ freq, amp, decay });
         }
 
-        return modes;
     }
 
     /**

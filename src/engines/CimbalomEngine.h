@@ -9,6 +9,7 @@
 #include "../physics/StringModel.h"
 #include "../physics/MaterialDB.h"
 #include "../physics/HammerImpulse.h"
+#include <array>
 
 /**
  * Cimbalom 引擎 — 物理建模弦振動
@@ -35,6 +36,9 @@ struct CimbalomParams
     float  detuningCents    = 5.0f;
     double tensionOverride  = 0.0;   // >0 = use this tension (N), 0 = auto-calculate
     double dampingOverride  = -1.0;  // >=0 = override material damping alpha
+    bool   tuneToMidi       = true;  // false = tension/geometry determine absolute pitch
+    uint64_t randomSeed     = 0x5453554B4953594Eull;
+    uint64_t eventIndex     = 0;
 };
 
 // ─── Sound ───
@@ -49,7 +53,18 @@ public:
 class CimbalomVoice : public juce::SynthesiserVoice
 {
 public:
+    CimbalomVoice()
+    {
+        baseModesScratch.reserve (40);
+        for (int i = 0; i < kMaxStringsPerCourse; ++i)
+        {
+            stringModesScratch[(size_t) i].reserve (40);
+            strings[i].reserveModes (40);
+        }
+    }
+
     void setMaterialDB (MaterialDB* db) { materialDB = db; }
+    void setNoiseIdentity (uint64_t identity) { noiseIdentity = identity; }
 
     // 參數指標（由 Processor 設定，指向 APVTS 的 raw parameter）
     std::atomic<float>* pMaterial       = nullptr;  // index
@@ -79,7 +94,7 @@ public:
         if (materialDB == nullptr) return;
 
         // ── 讀取參數 ──
-        auto keys = MaterialDB::getOrderedKeys();
+        const auto& keys = MaterialDB::getOrderedKeys();
         int matIdx = juce::jlimit (0, keys.size() - 1,
                                    (int) pMaterial->load());
         auto* mat = materialDB->getMaterial (keys[matIdx]);
@@ -121,9 +136,25 @@ public:
         sp.strikePosition = strikePos;
         sp.numModes       = 40;
 
-        auto baseModes = StringModel::calculateModes (sp, *mat);
+        StringModel::calculateModes (sp, *mat, baseModesScratch);
+        auto& baseModes = baseModesScratch;
 
-        // Material spectral tilt: stiffer materials sustain more overtones
+        // ── spectralTilt: CREATIVE / HEURISTIC LAYER (not physics) ──────────
+        // "Stiffer materials sustain more overtones" is a sound-design
+        // intuition, NOT a derived result. Every constant here is an
+        // empirical tuning value with no literature/derivation/measurement
+        // source (repo Rule 4 traceability: NONE):
+        //   7.5  -- log10(E) anchor ("softest" material, E = 10^7.5 Pa)
+        //   4.0  -- log10(E) span mapped onto the 0..1 tilt range
+        //   0.2  -- exponent scale per (partialN - 1) applied below
+        //   2.0  -- materialBright = spectralTilt * 2.0 (exciter block below)
+        // Impact: multiplies PHYSICAL modal amplitudes (StringModel mode
+        // shapes) and therefore also flows into --dump-modes "amp"; it does
+        // NOT touch modal frequencies or decay times. DO NOT change these
+        // numbers casually -- they alter the rendered sound (Rule 10
+        // before/after audio re-render applies). Whether this layer should
+        // be removed / separated from the physical amplitude path is an open
+        // question awaiting 月月's decision.
         float logE = std::log10 (mat->youngsModulus);
         float spectralTilt = juce::jlimit (0.1f, 1.0f, (logE - 7.5f) / 4.0f);
 
@@ -157,23 +188,11 @@ public:
         for (auto& m : baseModes)
         {
             m.frequency *= tScale * tuneScale;
-            m.decayTime *= matScale * dmpScale;
+            m.decayTime = StringModel::decayTimeForFrequency (m.frequency, *mat)
+                        * matScale * dmpScale;
         }
 
-        // Hammer force-impulse spectrum (M2 2a/2b, replaces the old LP
-        // partial-count heuristic hammerCutoffPartial[]={3,8,20,60}). Applied
-        // AFTER MIDI-tuning so f_n is the real sounding frequency the physical
-        // hammer excites — the LP heuristic worked on partial INDEX (n), which
-        // is not what a real hammer responds to; a real hammer's force spectrum
-        // is a function of actual frequency (Hz), not mode number. See
-        // HammerImpulse.h for the half-sine contact-pulse derivation, the
-        // DC-normalized |F(w)| formula, and tau_c literature sources.
-        float tauC = HammerImpulse::tauCForHardness (hammer);
-        for (auto& m : baseModes)
-        {
-            float omega = juce::MathConstants<float>::twoPi * m.frequency;
-            m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
-        }
+        const float tauC = HammerImpulse::tauCForStrike (hammer, velocity);
 
         // ── 多弦 beating ──
         numActiveStrings = nStrings;
@@ -188,10 +207,15 @@ public:
 
             float freqMul = std::pow (2.0f, centOffset / 1200.0f);
 
-            auto modes = baseModes;
+            auto& modes = stringModesScratch[(size_t) s];
+            modes.assign (baseModes.begin(), baseModes.end());
             for (auto& m : modes)
             {
                 m.frequency *= freqMul;
+                m.decayTime = StringModel::decayTimeForFrequency (m.frequency, *mat)
+                            * matScale * dmpScale;
+                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (
+                    juce::MathConstants<float>::twoPi * m.frequency, tauC);
                 m.amplitude *= gain;
             }
 
@@ -203,7 +227,8 @@ public:
         // ── Exciter（槌頭噪音脈衝）──
         float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
         setupExciter (hammer, velocity, mBrightness, mNoise, materialBright, getSampleRate());
-        noiseGen.setSeed ((uint32_t) (midiNoteNumber * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
+        seedNoise (0x504C5547494Eull, noiseEventCounter++, midiNoteNumber, velocity);
+        configureCreativeBodyLayer (baseModes);
         damped = false;
     }
 
@@ -263,16 +288,19 @@ public:
         sp.strikePosition = strikePos;
         sp.numModes       = 40;
 
-        auto baseModes = StringModel::calculateModes (sp, mat);
+        StringModel::calculateModes (sp, mat, baseModesScratch);
+        auto& baseModes = baseModesScratch;
 
-        // Apply damping override if specified
-        if (params.dampingOverride >= 0.0)
-        {
-            float alpha = static_cast<float> (params.dampingOverride);
-            for (auto& m : baseModes)
-                m.decayTime = (alpha > 0.0f) ? (1.0f / alpha) : 5.0f;
-        }
-
+        // ── spectralTilt: CREATIVE / HEURISTIC LAYER (not physics) ──────────
+        // Same untraced empirical constants (7.5 / 4.0 / 0.2, plus the 2.0
+        // in materialBright below) as startNote() -- see the full comment
+        // block there. NOTE this is the CLI/ScoreRenderer path: the tilt is
+        // multiplied into the physical modal amplitudes BEFORE
+        // strings[s].setModes(), so it is baked into --dump-modes "amp"
+        // values as well as the rendered audio. Frequencies and decay times
+        // are unaffected. Values must not be changed without 月月's sign-off
+        // (Rule 10); removal/separation of this layer is likewise 月月's
+        // call.
         float logE = std::log10 (mat.youngsModulus);
         float spectralTilt = juce::jlimit (0.1f, 1.0f, (logE - 7.5f) / 4.0f);
 
@@ -288,7 +316,7 @@ public:
 
         // Tune fundamental to the exact MIDI pitch (compensate stiff-string
         // inharmonic sharpening: actual f1 = target·√(1+B)). Ratios + detuning kept.
-        if (! baseModes.empty() && std::isfinite (baseModes[0].frequency)
+        if (params.tuneToMidi && ! baseModes.empty() && std::isfinite (baseModes[0].frequency)
             && baseModes[0].frequency > 0.0f)
         {
             const float target = 440.0f
@@ -298,21 +326,16 @@ public:
                 m.frequency *= tuneScale;
         }
 
-        // Hammer force-impulse spectrum (M2 2a/2b, replaces the old LP
-        // partial-count heuristic hCutPartial[]={3,8,20,60}). Applied AFTER
-        // MIDI-tuning so f_n is the real sounding frequency — see
-        // HammerImpulse.h for the half-sine contact-pulse derivation, the
-        // DC-normalized |F(w)| formula, and tau_c literature sources. This is
-        // the single source of truth also read by --dump-modes (ModalResonator
-        // ::getModes() returns baseAmp verbatim, per ROADMAP_PHYSICS.md §2c).
-        {
-            float tauC = HammerImpulse::tauCForHardness ((float) hammerIdx);
-            for (auto& m : baseModes)
-            {
-                float omega = juce::MathConstants<float>::twoPi * m.frequency;
-                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
-            }
-        }
+        const float tauC = HammerImpulse::tauCForStrike ((float) hammerIdx, velocity);
+        // dampingOverride semantics: >= 0 replaces ONLY the material's
+        // frequency-independent alpha term in the decay law
+        //   tau(f) = 1 / (alpha + beta_air*f^2 + gamma_radiation*f);
+        // the beta_air*f^2 and gamma_radiation*f terms always stay
+        // material-driven (see StringModel::decayTimeForFrequency). It is
+        // NOT a scale factor on the whole damping. Sentinel -1 = no
+        // override (pure material damping).
+        const float alphaOverride = params.dampingOverride >= 0.0
+            ? (float) params.dampingOverride : -1.0f;
 
         numActiveStrings = nStrings;
         float gain = 1.0f / std::sqrt ((float) numActiveStrings);
@@ -326,10 +349,15 @@ public:
 
             float freqMul = std::pow (2.0f, centOffset / 1200.0f);
 
-            auto modes = baseModes;
+            auto& modes = stringModesScratch[(size_t) s];
+            modes.assign (baseModes.begin(), baseModes.end());
             for (auto& m : modes)
             {
                 m.frequency *= freqMul;
+                m.decayTime = StringModel::decayTimeForFrequency (
+                    m.frequency, mat, alphaOverride);
+                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (
+                    juce::MathConstants<float>::twoPi * m.frequency, tauC);
                 m.amplitude *= gain;
             }
 
@@ -341,14 +369,18 @@ public:
         float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
         setupExciter (static_cast<float> (hammerIdx), velocity,
                       0.5f, 0.0f, materialBright, sr);
-        noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
+        seedNoise (params.randomSeed, params.eventIndex, midiNote, velocity);
 
         bodyRes.prepare (sr);
-        // DIAGNOSTIC-ONLY: --body-amount overrides the hard-coded 0.5f mix
-        // (see DiagnosticOverrides.h). Sentinel < 0 -> unchanged behavior.
+        // DIAGNOSTIC-ONLY: --body-amount overrides the CLI default body mix
+        // of 0.0f, i.e. the body-resonance layer is OFF in this standalone /
+        // physics-verified path unless the flag is passed (the plugin's
+        // Macro Body knob is a separate path via startNote()). See
+        // DiagnosticOverrides.h. Sentinel < 0 -> unchanged 0.0f behavior.
         bodyRes.setAmount (DiagnosticOverrides::bodyAmountOverride >= 0.0f
                                 ? DiagnosticOverrides::bodyAmountOverride
-                                : 0.5f);
+                                : 0.0f);
+        configureCreativeBodyLayer (baseModes);
         bodyRes.reset();
         damped = false;
     }
@@ -478,6 +510,28 @@ private:
         }
     }
 
+    void configureCreativeBodyLayer (
+        const std::vector<ModalResonator::Mode>& modes)
+    {
+        if (modes.empty())
+            return;
+        const float first = juce::jlimit (40.0f, 4000.0f, modes[0].frequency);
+        const float second = juce::jlimit (40.0f, 4000.0f,
+            modes.size() > 1 ? modes[1].frequency : modes[0].frequency * 2.0f);
+        bodyRes.setFrequencies (first, second);
+        bodyRes.reset();
+    }
+
+    void seedNoise (uint64_t scoreSeed, uint64_t eventIndex,
+                    int midiNote, float velocity)
+    {
+        const uint32_t velocityCode = (uint32_t) std::lround (
+            juce::jlimit (0.0f, 1.0f, velocity) * 16777215.0f);
+        const uint64_t streamEvent = (eventIndex << 8) ^ noiseIdentity;
+        noiseGen.setSeed (NoiseGen::mixSeed (
+            scoreSeed, streamEvent, (uint32_t) midiNote, velocityCode));
+    }
+
     void setupExciter (float hardness, float velocity,
                        float brightMacro, float noiseMacro,
                        float materialBright, double sr)
@@ -510,8 +564,12 @@ private:
     MaterialDB*    materialDB = nullptr;
     double         standaloneSR = 0.0;
     ModalResonator strings[kMaxStringsPerCourse];
+    std::vector<ModalResonator::Mode> baseModesScratch;
+    std::array<std::vector<ModalResonator::Mode>, kMaxStringsPerCourse> stringModesScratch;
     int            numActiveStrings = 1;
     bool           damped = false;
+    uint64_t       noiseIdentity = 0;
+    uint64_t       noiseEventCounter = 0;
 
     NoiseGen           noiseGen;
     BiquadFilter       exciterFilter;

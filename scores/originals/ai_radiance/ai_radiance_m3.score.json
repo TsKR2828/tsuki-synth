@@ -216,9 +216,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.27,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -265,9 +263,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.29500000000000004,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -414,9 +410,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.32,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -463,9 +457,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.27,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -636,9 +628,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.29500000000000004,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -685,9 +675,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.32,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -834,9 +822,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.27,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -883,9 +869,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.29500000000000004,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -1056,9 +1040,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.32,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -1105,9 +1087,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.27,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -1254,9 +1234,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.29500000000000004,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -1303,9 +1281,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.32,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -1476,9 +1452,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.27,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -1525,9 +1499,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.29500000000000004,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -1674,9 +1646,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.32,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",
@@ -1723,9 +1693,7 @@
         "diameter_mm": 0.58,
         "strike_position": 0.27,
         "exciter": "felt_mallet",
-        "damping_override": 0.28,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.28
       },
       "performance": {
         "role": "remembering_yangqin",

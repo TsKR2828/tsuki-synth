@@ -38,7 +38,6 @@
       "params": {
         "material": "nylon",
         "diameter_mm": 3.0,
-        "length_mm": 200,
         "tension_n": 300,
         "strike_position": 0.5,
         "exciter": "bow_slow",
@@ -70,7 +69,6 @@
       "params": {
         "material": "nylon",
         "diameter_mm": 3.0,
-        "length_mm": 180,
         "tension_n": 320,
         "strike_position": 0.45,
         "exciter": "bow_slow",

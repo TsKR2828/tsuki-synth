@@ -52,7 +52,6 @@
       "params": {
         "material": "nylon",
         "diameter_mm": 3.5,
-        "length_mm": 250,
         "tension_n": 250,
         "strike_position": 0.5,
         "exciter": "bow_slow",
@@ -68,10 +67,6 @@
       "params": {
         "material": "bronze",
         "thickness_mm": 0.8,
-        "width_mm": 250,
-        "height_mm": 250,
-        "strike_position_x": 0.4,
-        "strike_position_y": 0.6,
         "exciter": "bow_slow",
         "radius_mm": 150
       },
@@ -86,7 +81,6 @@
       "params": {
         "material": "nylon",
         "diameter_mm": 3.0,
-        "length_mm": 220,
         "tension_n": 280,
         "strike_position": 0.45,
         "exciter": "bow_slow",

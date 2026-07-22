@@ -10,15 +10,21 @@
  *
  * 模態頻率：f(n) = (beta_n^2 / (2*pi*L^2)) * sqrt(E*I / (rho*A))
  *
- * Free-free beam beta_n values:
- *   beta_1=4.730, beta_2=7.853, beta_3=10.996, beta_4=14.137, beta_5=17.279
- *   -> ratio: 1.000, 2.757, 5.404, 8.933, 13.345
+ * 舌片與鼓身相連的一端近似固支、另一端自由，因此預設使用 cantilever
+ * (fixed-free) 邊界。Free-free 仍保留為明確的替代模型，不能再用一條
+ * sin(n*pi*x) 同時假裝兩種邊界。
  *
  * 特徵：非諧波模態序列（不是整數倍），產生空靈鼓特有的「鐘聲感」
  */
 class BeamModel
 {
 public:
+    enum class Boundary
+    {
+        Cantilever, // fixed-free: tongue / tine
+        FreeFree    // suspended bar
+    };
+
     struct Params
     {
         float length    = 0.12f;     // 舌片長度 (m)
@@ -26,13 +32,33 @@ public:
         float thickness = 0.003f;    // 舌片厚度 (m)
         float strikePosition = 0.5f; // 擊打位置 (0~1)
         int   numModes  = 12;        // 模態數（梁模態密度低，12 足夠）
+        Boundary boundary = Boundary::Cantilever;
     };
+
+    static float decayTimeForFrequency (
+        float frequency, const MaterialDB::Material& material)
+    {
+        const float denominator = material.damping.alpha * 2.0f
+            + material.damping.beta_air * frequency * frequency
+            + material.damping.gamma_radiation * frequency;
+        return denominator > 0.0f ? 1.0f / denominator : 5.0f;
+    }
 
     static std::vector<ModalResonator::Mode> calculateModes (
         const Params& params,
         const MaterialDB::Material& material)
     {
         std::vector<ModalResonator::Mode> modes;
+        calculateModes (params, material, modes);
+        return modes;
+    }
+
+    static void calculateModes (
+        const Params& params,
+        const MaterialDB::Material& material,
+        std::vector<ModalResonator::Mode>& modes)
+    {
+        modes.clear();
         modes.reserve ((size_t) params.numModes);
 
         const float L = params.length;
@@ -48,27 +74,16 @@ public:
         const float stiffness = std::sqrt (
             material.youngsModulus * I / (material.density * A));
 
-        // Free-free beam eigenvalues (beta_n * L)
-        // 前 5 個精確值，之後用近似公式 beta_n ≈ (2n+1)*pi/2
-        //
-        // SOURCE (M7 7b, 2026-07-12): these are the analytic roots of
-        // cosh(x)*cos(x) = 1 (the free-free Euler-Bernoulli beam frequency
-        // equation; see e.g. Blevins, "Formulas for Natural Frequency and Mode
-        // Shape," table for a free-free uniform beam), independently verified
-        // numerically in this task (scipy.optimize.brentq bracketing each root)
-        // to 7-8 significant digits:
-        //   4.7300407, 7.8532046, 10.9956078, 14.1371655, 17.2787597
-        // All 5 tabulated values below match the numerically re-solved roots to
-        // within their stated precision (largest rounding gap: beta_4L, table
-        // 14.1372 vs solved 14.1371655 -> rounds identically at 4 decimals). No
-        // changes needed.
-        static constexpr float betaL[] = {
+        // cosh(lambda) cos(lambda) = -1 (cantilever) and = +1 (free-free).
+        // These are the non-rigid Euler-Bernoulli roots.  The corresponding
+        // analytic eigenfunctions are evaluated below, so a fixed end is
+        // actually a node and a free end is not accidentally forced to zero.
+        static constexpr float cantileverBetaL[] = {
+            1.8751041f, 4.6940911f, 7.8547574f, 10.9955407f, 14.1371684f
+        };
+        static constexpr float freeFreeBetaL[] = {
             4.7300f, 7.8532f, 10.9956f, 14.1372f, 17.2788f
         };
-
-        const float alpha = material.damping.alpha;
-        const float beta  = material.damping.beta_air;
-        const float gamma = material.damping.gamma_radiation;
 
         const float twoPiL2 = juce::MathConstants<float>::twoPi * L * L;
 
@@ -77,25 +92,71 @@ public:
             // beta_n * L
             float bn;
             if (n < 5)
-                bn = betaL[n];
+                bn = params.boundary == Boundary::Cantilever
+                    ? cantileverBetaL[n] : freeFreeBetaL[n];
             else
-                bn = ((float) (2 * (n + 1) + 1)) * juce::MathConstants<float>::pi / 2.0f;
+                bn = ((float) n + (params.boundary == Boundary::Cantilever ? 0.5f : 1.5f))
+                    * juce::MathConstants<float>::pi;
 
             // 模態頻率
             float freq = (bn * bn / twoPiL2) * stiffness;
 
             // 衰減（梁比弦衰減快，damping 加權）
-            float decayDenom = alpha * 2.0f + beta * freq * freq + gamma * freq;
-            float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 5.0f;
+            float decay = decayTimeForFrequency (freq, material);
 
-            // 擊打位置影響（free-free beam mode shape 近似）
-            float x = params.strikePosition;
-            float amp = std::abs (std::sin (((float) (n + 1)) * juce::MathConstants<float>::pi * x));
+            // Analytic Euler-Bernoulli mode-shape coupling at the strike point.
+            // Keep amplitude as a magnitude because ModalResonator currently
+            // starts every mode at a common phase; sign belongs in a future
+            // independently measurable phase field rather than being hidden in
+            // amplitude.
+            //
+            // ── Modal amplitude convention: VELOCITY (equal-weight) ────────
+            // amp = |phi_n(strike point)| with equal weight per mode -- no
+            // 1/omega_n (displacement) or omega_n (acceleration/pressure)
+            // factor. This is the modal-velocity convention: an impulsive
+            // point force gives each mode an initial velocity ∝
+            // phi_n(x_hit)/m_n, and with this eigenfunction scaling the
+            // modal mass is the same for every mode (see the norm note
+            // below), leaving amp ∝ |phi_n(x_hit)|. StringModel and
+            // PlateModel use the SAME convention (cross-engine consistency).
+            // Choosing the displacement or pressure convention instead would
+            // tilt the whole spectrum by ≈ ∓/±6 dB/oct respectively but not
+            // change per-mode structure.
+            const double x = (double) juce::jlimit (0.0f, 1.0f, params.strikePosition);
+            const double lambda = (double) bn;
+            const double raw = modeShape (params.boundary, lambda, x);
+            // With this conventional eigenfunction scaling the flexible
+            // cantilever/free-free endpoint magnitude is 2.  Using the analytic
+            // value avoids subtracting two ~exp(lambda) numbers for high modes.
+            //
+            // Normalization note: dividing by the endpoint value 2 is a
+            // DISPLAY-SCALE normalization (puts max|phi| ≈ 1, matching
+            // PlateModel's max|W| = 1 tables), NOT a mass normalization.
+            // For these beam families the two are equivalent up to one
+            // mode-independent global gain: the endpoint magnitude is
+            // exactly 2 for EVERY cantilever/free-free mode, and under the
+            // same conventional scaling ∫₀ᴸ phi_n² dx = L for every mode
+            // (standard Euler-Bernoulli result, e.g. Blevins, "Formulas for
+            // Natural Frequency and Mode Shape", Table 8-1 normalization),
+            // so mass normalization would also divide all modes by the same
+            // constant. Inter-mode amplitude ratios are therefore identical
+            // under either normalization.
+            constexpr double norm = 2.0;
+
+            // Energy-normalised geometry gain.  Width cancels out of the ideal
+            // beam eigenfrequency, but it does not cancel out of modal mass.
+            // The reference merely keeps legacy output around unity; the ratio
+            // is dimensionless and makes width/density/volume audibly testable.
+            constexpr double referenceMassKg = 7800.0 * 0.020 * 0.003 * 0.120;
+            const double massKg = std::max (1.0e-9,
+                (double) material.density * (double) A * (double) L);
+            const float geometryGain = juce::jlimit (0.125f, 8.0f,
+                (float) std::sqrt (referenceMassKg / massKg));
+            const float amp = (float) std::abs (raw / norm) * geometryGain;
 
             modes.push_back ({ freq, amp, decay });
         }
 
-        return modes;
     }
 
     /// 從 MIDI 音符計算舌片長度（A4=0.12m 基準）
@@ -104,5 +165,42 @@ public:
         float semitoneOffset = (float) (midiNote - 69);
         // 梁頻率 ∝ 1/L^2，所以 L ∝ 1/sqrt(f)
         return referenceLength * std::pow (2.0f, -semitoneOffset / 24.0f);
+    }
+
+private:
+    static double modeShape (Boundary boundary, double lambda, double x)
+    {
+        // Evaluate the hyperbolic combination in an exponentially scaled form.
+        // Direct cosh(lx)-sigma*sinh(lx) loses virtually all precision around
+        // the free endpoint once lambda grows beyond ~30.
+        const double q = std::exp (-lambda);
+        const double q2 = q * q;
+        const double s = std::sin (lambda);
+        const double c = std::cos (lambda);
+
+        if (boundary == Boundary::Cantilever)
+        {
+            // phi = cosh(lx)-cos(lx)-sigma[sinh(lx)-sin(lx)]
+            // sigma=(cosh(l)+cos(l))/(sinh(l)+sin(l)).
+            const double denominator = 1.0 - q2 + 2.0 * q * s;
+            const double sigma = (1.0 + q2 + 2.0 * q * c) / denominator;
+            const double grow = (-q2 + q * (s - c)) / denominator;
+            const double fall = (1.0 + q * (s + c)) / denominator;
+            const double hyperbolic = grow * std::exp (lambda * x)
+                                    + fall * std::exp (-lambda * x);
+            return hyperbolic - std::cos (lambda * x)
+                 + sigma * std::sin (lambda * x);
+        }
+
+        // Flexible free-free modes (the two rigid-body modes are excluded):
+        // phi = cosh(lx)+cos(lx)-sigma[sinh(lx)+sin(lx)].
+        const double denominator = 1.0 - q2 - 2.0 * q * s;
+        const double sigma = (1.0 + q2 - 2.0 * q * c) / denominator;
+        const double grow = (-q2 + q * (c - s)) / denominator;
+        const double fall = (1.0 - q * (s + c)) / denominator;
+        const double hyperbolic = grow * std::exp (lambda * x)
+                                + fall * std::exp (-lambda * x);
+        return hyperbolic + std::cos (lambda * x)
+             - sigma * std::sin (lambda * x);
     }
 };

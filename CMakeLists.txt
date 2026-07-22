@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(TsukiSynth VERSION 0.2.0)
+project(TsukiSynth VERSION 0.3.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -117,4 +117,38 @@ if(TSUKI_BUILD_TESTS)
             juce::juce_recommended_config_flags
     )
     add_test(NAME audit_repro COMMAND TsukiSynthAuditTest)
+
+    add_executable(TsukiSynthTunerTest tests/tuner_repro.cpp)
+    target_include_directories(TsukiSynthTunerTest PRIVATE src)
+    # Kept consistent with the other two test targets. tuner_repro.cpp's
+    # current includes (PitchDetector/AudioFIFO/MidiNoteTracker) are std-only,
+    # but parity here means a future JUCE-touching include cannot silently
+    # build this target with different definitions/flags than its siblings.
+    target_compile_definitions(TsukiSynthTunerTest PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+    )
+    target_link_libraries(TsukiSynthTunerTest
+        PRIVATE
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+        PUBLIC
+            juce::juce_recommended_config_flags
+    )
+    add_test(NAME tuner_repro COMMAND TsukiSynthTunerTest)
+
+    add_executable(TsukiSynthPhysicsModelsTest tests/physics_models_repro.cpp)
+    target_include_directories(TsukiSynthPhysicsModelsTest PRIVATE src)
+    target_compile_definitions(TsukiSynthPhysicsModelsTest PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+    )
+    target_link_libraries(TsukiSynthPhysicsModelsTest
+        PRIVATE
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+        PUBLIC
+            juce::juce_recommended_config_flags
+    )
+    add_test(NAME physics_models_repro COMMAND TsukiSynthPhysicsModelsTest)
 endif()

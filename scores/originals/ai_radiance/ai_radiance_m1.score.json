@@ -117,9 +117,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.16,
         "exciter": "metal_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -142,9 +140,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.195,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -191,9 +187,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.23,
         "exciter": "wood_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -216,9 +210,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.265,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -265,9 +257,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.16,
         "exciter": "metal_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -290,9 +280,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.195,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -339,9 +327,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.23,
         "exciter": "wood_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -364,9 +350,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.265,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -476,9 +460,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.16,
         "exciter": "metal_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -501,9 +483,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.195,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -550,9 +530,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.23,
         "exciter": "wood_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -575,9 +553,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.265,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -624,9 +600,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.16,
         "exciter": "metal_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -649,9 +623,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.195,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -698,9 +670,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.23,
         "exciter": "wood_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -723,9 +693,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.265,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -797,9 +765,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.16,
         "exciter": "metal_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -822,9 +788,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.195,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -871,9 +835,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.23,
         "exciter": "wood_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -896,9 +858,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.265,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -945,9 +905,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.16,
         "exciter": "metal_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -970,9 +928,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.195,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1019,9 +975,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.23,
         "exciter": "wood_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1044,9 +998,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.265,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1156,9 +1108,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.16,
         "exciter": "metal_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1181,9 +1131,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.195,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1230,9 +1178,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.23,
         "exciter": "wood_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1255,9 +1201,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.265,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1304,9 +1248,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.16,
         "exciter": "metal_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1329,9 +1271,7 @@
         "diameter_mm": 0.6,
         "strike_position": 0.195,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1378,9 +1318,7 @@
         "diameter_mm": 0.52,
         "strike_position": 0.23,
         "exciter": "wood_mallet",
-        "damping_override": 0.46,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.46
       },
       "performance": {
         "role": "yangqin_lattice",
@@ -1403,9 +1341,7 @@
         "diameter_mm": 0.56,
         "strike_position": 0.265,
         "exciter": "wood_mallet",
-        "damping_override": 0.54,
-        "length_mm": 330,
-        "tension_n": 0
+        "damping_override": 0.54
       },
       "performance": {
         "role": "yangqin_lattice",

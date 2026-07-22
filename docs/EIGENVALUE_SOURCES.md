@@ -1,15 +1,22 @@
-# Modal Eigenvalue Constant Sourcing — M7 (7b + 7c)
+# Modal Eigenvalue Constant Sourcing — M7 + 2026-07-17 model correction
+
+> Current-code update (2026-07-17): Tongue Drum now defaults to the physically
+> appropriate fixed-free **cantilever**, while free-free remains an explicit
+> `beam_boundary` option. Both use their analytic mode shapes. Free circular-plate
+> roots now vary with each material's Poisson ratio via a deterministic root table;
+> clamped roots remain Poisson-independent. Sections describing Phase G/H below are
+> retained as provenance, not as a claim that the old defaults still apply.
 
 Scope: literature verification of the three hard-coded eigenvalue tables that
 drive the modal-synthesis engines' partial-frequency ratios:
 
-- `BEAM_BETAL` — free-free Euler-Bernoulli beam (Tongue Drum engine), in
-  `src/physics/BeamModel.h` + mirrored in `tools/physics_verify.py`.
-- `PLATE_OMEGA` — clamped circular Kirchhoff plate (Water Gong engine,
-  default), in `src/physics/PlateModel.h` (`zeros[]`) + mirrored in
+- cantilever and free-free Euler-Bernoulli beam roots in
+  `src/physics/BeamModel.h` + independently checked by the C++ regression tests.
+- `PLATE_OMEGA` — clamped circular Kirchhoff plate (an explicit Water Gong
+  option; the score-level default is free edge), in `src/physics/PlateModel.h` (`zeros[]`) + mirrored in
   `tools/physics_verify.py`.
-- `PLATE_FREE_OMEGA` — free-edge circular Kirchhoff plate (Water Gong engine,
-  `freeEdge=true` A/B variant), in `src/physics/PlateModel.h` (`freeModes[]`) +
+- `PLATE_FREE_OMEGA` — free-edge circular Kirchhoff plate (score-level Water
+  Gong default), in `src/physics/PlateModel.h` (`freeModes[]`) +
   mirrored in `tools/physics_verify.py`.
 
 **No C++ or `.json` values were changed in this task (Phase G, M7 7b+7c).**
@@ -40,7 +47,17 @@ number below was cross-checked visually against the table image).
 
 ---
 
-## 1. `BEAM_BETAL` — free-free Euler-Bernoulli beam
+## 1. Euler-Bernoulli beam roots
+
+### 1.1 Cantilever / fixed-free (current Tongue Drum default)
+
+Frequency equation: `cosh(betaL)*cos(betaL) = -1`. The first five non-rigid
+roots used by the code are 1.8751041, 4.6940911, 7.8547574, 10.9955407 and
+14.1371684. Because frequency is proportional to `(betaL)^2`, the first four
+ratios are 1 : 6.2669 : 17.5475 : 34.3861. Regression tests additionally check
+the fixed-end displacement node and the non-zero free endpoint.
+
+### 1.2 Free-free (explicit alternative)
 
 Frequency equation for a uniform free-free beam: `cosh(betaL)*cos(betaL) = 1`
 (standard result; tabulated in e.g. Blevins, *Formulas for Natural Frequency
@@ -198,6 +215,7 @@ the top of this document).
 
 | table | entries | result | change proposed | change applied |
 |---|---|---|---|---|
-| `BEAM_BETAL` | 5 | PASS — all match analytic roots | none | n/a |
+| cantilever beam roots/shapes | 5 | PASS — analytic roots and boundary nodes | old free-free default replaced | **APPLIED 2026-07-17** |
+| free-free beam roots/shapes | 5 | PASS — all match analytic roots | retained as explicit option | n/a |
 | `PLATE_OMEGA` (clamped) | 12 | PASS — max 0.03% vs Leissa Table 2.1 + independent re-solve | none | n/a |
 | `PLATE_FREE_OMEGA` (free, nu=0.33) | 7 | 6/7 PASS (exact match); 1 discrepancy | (4,0): 21.83 -> 21.6/21.527 | **APPLIED Phase H: 21.83 -> 21.527** |

@@ -2,6 +2,10 @@
 
 > 目標：為 6 個世界觀各設計一組音效家族，產出可用的素材庫。
 > 預計產出：30-36 個 score.json + 對應 sound_names.json 索引更新
+>
+> **狀態更新（2026-07-17）：** 此歷史計畫已超額完成；`scores/library/` 現有 43 份
+> score。後續新增／修改必須通過嚴格 schema/C++ parser、`verify_score.py`，並設定
+> `global.random_seed` 以保存同環境可重現性。物理驗證時 FX 必須關閉；藝術渲染可用 FX。
 
 ---
 
@@ -237,7 +241,7 @@ feat(library): add clockwork sound family (6 scores)
 | 加失真 | distortion | 不穩定/故障感 |
 | 加滑音 | glide | 流動/不安定感 |
 | 改 reverb | effects.reverb | 空間大小改變 |
-| 改尺寸 | thickness/radius/length | 音高和共鳴特性 |
+| 改尺寸 | thickness/radius/length | `frequency_mode=midi` 改模態比例／質量振幅；`geometry` 也改絕對音高 |
 
 ---
 
@@ -253,4 +257,5 @@ feat(library): add clockwork sound family (6 scores)
 
 ---
 
-*本計畫確認後即可開始執行。*
+*本計畫已執行；當前完成度與未驗證範圍以 `TODO.md`、`ROADMAP_PHYSICS.md` 與
+`docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md` 為準。*

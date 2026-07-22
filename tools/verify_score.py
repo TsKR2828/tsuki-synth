@@ -23,6 +23,12 @@ Checks performed (see ROADMAP_PHYSICS.md Sec.3 M3):
   2c. Rest verification  -- render the full score, merge every event's
                             sounding interval (+ decay tail) into a single
                             timeline, and measure RMS in every leftover gap.
+                            RMS is measured PER CHANNEL and the loudest
+                            channel is judged (2026-07-18 measurement-method
+                            fix: a (L+R)/2 mixdown lets decorrelated stereo
+                            reverb tails partially cancel, under-measuring
+                            the rest level by several dB; the -50 dBFS limit
+                            itself is unchanged).
                             This is the core new capability of M3: proof
                             that a rest is actually quiet in the rendered
                             audio, not just "no event happens to start here".
@@ -74,6 +80,7 @@ import argparse
 import hashlib
 import json
 import math
+import re
 import subprocess
 import sys
 import tempfile
@@ -81,6 +88,10 @@ import wave
 from pathlib import Path
 
 import numpy as np
+try:
+    from jsonschema import Draft202012Validator
+except ImportError:  # reported as a failed verification check; never silently bypassed
+    Draft202012Validator = None
 
 import loudness
 
@@ -140,20 +151,32 @@ PEAK_LIMIT_DBFS = -0.3
 CLIP_THRESHOLD = 0.999        # |sample| >= this counts as "clipped"
 MAX_CONSECUTIVE_CLIPPED = 1   # no two clipped samples in a row allowed
 
+# Render-manifest contracts written by the CLI next to each output file
+# (src/cli/RenderApp.cpp, writeRenderManifest()). v2 (2026-07-18) adds
+# `wav_sha256` (SHA256 of the output file's bytes, so the artifact carries
+# its own verifiability) and stores `score` relative to the manifest's own
+# directory instead of an absolute path. v1 is the legacy contract emitted
+# by binaries built before that change and is still recognised -- it simply
+# has no hash to verify (reported as such, never silently ignored).
+MANIFEST_CONTRACT_V1 = "TsukiSynth Render Manifest v1"
+MANIFEST_CONTRACT_V2 = "TsukiSynth Render Manifest v2"
+
 MIDI_NOTE_MIN, MIDI_NOTE_MAX = 0, 127
 
 # Engines dumpModes() actually reports partials for (see RenderApp.cpp /
 # ScoreRenderer::dumpModes -- fm is synthesised, not modal, and is skipped).
 MODAL_ENGINES = {"string", "cimbalom", "piano",
                   "beam", "tongue_drum", "plate", "water_gong",
-                  "membrane", "custom"}
+                  "custom"}
 
-REQUIRED_TOP_KEYS = ("meta", "global", "export")
+REQUIRED_TOP_KEYS = ("$schema", "meta", "global", "export")
 REQUIRED_EVENT_KEYS = ("time", "duration", "engine", "note", "velocity")
+SCHEMA_PATH = Path(__file__).resolve().parent.parent / "scores" / "schema" / "score.schema.json"
 
 
 # ── note-name <-> MIDI (mirrors ScoreParser.h noteNameToMidi) ──────────────
 _NOTE_BASE = {"A": 9, "B": 11, "C": 0, "D": 2, "E": 4, "F": 5, "G": 7}
+_NOTE_RE = re.compile(r"^([A-Ga-g])([#b]?)(-?[0-9]+)$")
 
 
 def note_to_midi(note):
@@ -163,35 +186,33 @@ def note_to_midi(note):
     to a default rather than fail, but a verifier should say so)."""
     if note is None:
         return None
+    if isinstance(note, bool):
+        return None
     if isinstance(note, (int, float)):
-        return int(round(note))
-    s = str(note).strip()
+        if not math.isfinite(note) or int(note) != note:
+            return None
+        midi = int(note)
+        return midi if MIDI_NOTE_MIN <= midi <= MIDI_NOTE_MAX else None
+    if not isinstance(note, str):
+        return None
+    s = note
     if not s:
         return None
-    if s[0].isdigit():
-        try:
-            return int(round(float(s)))
-        except ValueError:
-            return None
-    letter = s[0].upper()
-    if letter not in _NOTE_BASE:
+    if s.isdigit():
+        midi = int(s)
+        return midi if MIDI_NOTE_MIN <= midi <= MIDI_NOTE_MAX else None
+    match = _NOTE_RE.fullmatch(s)
+    if not match:
         return None
+    letter = match.group(1).upper()
     base = _NOTE_BASE[letter]
-    pos = 1
-    if pos < len(s) and s[pos] == "#":
+    if match.group(2) == "#":
         base += 1
-        pos += 1
-    elif pos < len(s) and s[pos] == "b":
+    elif match.group(2) == "b":
         base -= 1
-        pos += 1
-    octave_str = s[pos:]
-    octave = 4
-    if octave_str:
-        try:
-            octave = int(octave_str)
-        except ValueError:
-            return None
-    return (octave + 1) * 12 + base
+    octave = int(match.group(3))
+    midi = (octave + 1) * 12 + base
+    return midi if MIDI_NOTE_MIN <= midi <= MIDI_NOTE_MAX else None
 
 
 def midi_to_hz(midi):
@@ -260,6 +281,29 @@ def rms_dbfs(samples):
         return -120.0
     rms = float(np.sqrt(np.mean(samples.astype(np.float64) ** 2)))
     return 20.0 * math.log10(rms) if rms > 1e-12 else -120.0
+
+
+def max_channel_rms_dbfs(channels):
+    """RMS of each channel measured separately; the loudest channel wins.
+
+    Measurement-method correction (2026-07-18): the rest-RMS check used to
+    measure a (L+R)/2 mono mixdown. Decorrelated stereo content -- exactly
+    what a stereo reverb tail is -- partially CANCELS in that sum, so the
+    mixdown understates the level actually present on disk by several dB
+    (fully anti-correlated content cancels completely). Measuring each
+    channel on its own and reporting the maximum judges what a listener's
+    worse ear would actually receive. The -50 dBFS limit itself
+    (REST_RMS_LIMIT_DBFS, ROADMAP_PHYSICS.md Sec.6 registered value) is
+    deliberately UNCHANGED: this fixes how the quantity is measured, it is
+    not a tolerance change.
+
+    Accepts a 2D [n_samples, n_channels] array (read_wav_all_channels());
+    a 1D array is treated as a single channel."""
+    if channels.ndim == 1:
+        channels = channels.reshape(-1, 1)
+    if channels.size == 0:
+        return -120.0
+    return max(rms_dbfs(channels[:, ch]) for ch in range(channels.shape[1]))
 
 
 def peak_dbfs(samples):
@@ -394,6 +438,47 @@ class Check:
 def check_schema(score):
     checks = []
 
+    if Draft202012Validator is None:
+        checks.append(Check(
+            "schema.json_schema", False,
+            "SCHEMA CHECK FAILED: Python package 'jsonschema' is required; "
+            "validation is never downgraded to a partial fallback."))
+    else:
+        try:
+            schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+            Draft202012Validator.check_schema(schema)
+            errors = sorted(
+                Draft202012Validator(schema).iter_errors(score),
+                key=lambda error: tuple(str(part) for part in error.absolute_path),
+            )
+        except (OSError, json.JSONDecodeError) as exc:
+            errors = []
+            checks.append(Check(
+                "schema.json_schema", False,
+                f"SCHEMA CHECK FAILED: cannot load {SCHEMA_PATH}: {exc}"))
+        except Exception as exc:
+            errors = []
+            checks.append(Check(
+                "schema.json_schema", False,
+                f"SCHEMA CHECK FAILED: schema itself is invalid: {exc}"))
+        else:
+            if errors:
+                first = errors[0]
+                path = "$" + "".join(
+                    f"[{part}]" if isinstance(part, int) else f".{part}"
+                    for part in first.absolute_path
+                )
+                checks.append(Check(
+                    "schema.json_schema", False,
+                    f"SCHEMA CHECK FAILED at {path}: {first.message} "
+                    f"({len(errors)} violation(s) total).",
+                    {"count": len(errors), "path": path}))
+            else:
+                checks.append(Check(
+                    "schema.json_schema", True,
+                    "Draft 2020-12 schema validation passed with unknown fields, "
+                    "wrong types, out-of-range values, and extra fields rejected."))
+
     missing_top = [k for k in REQUIRED_TOP_KEYS if k not in score]
     if missing_top:
         checks.append(Check(
@@ -408,7 +493,7 @@ def check_schema(score):
     events = score.get("events")
     if events is None:
         # layers-based scores legitimately have no events array; that is
-        # covered by the schema (anyOf events/layers) and is not an error
+        # covered by the schema (exactly one of events/layers) and is not an error
         # here, but every per-event check below is then a no-op.
         checks.append(Check(
             "schema.events_present", True,
@@ -460,7 +545,8 @@ def check_schema(score):
 
         perf = ev.get("performance") or {}
         freq_hz = perf.get("frequency_hz")
-        if freq_hz is not None and midi is not None:
+        frequency_mode = (ev.get("params") or {}).get("frequency_mode", "midi")
+        if freq_hz is not None and midi is not None and frequency_mode == "midi":
             expected = midi_to_hz(midi)
             err_cents = cents_between(freq_hz, expected)
             if err_cents is not None:
@@ -532,6 +618,30 @@ def check_modes(cli, score_path, events):
         return checks, []
 
     dumped_events = dumped.get("events", [])
+    expected_modal_indices = [
+        i for i, event in enumerate(events)
+        if isinstance(event, dict) and event.get("engine") in MODAL_ENGINES
+    ]
+    actual_source_indices = [event.get("source_index") for event in dumped_events]
+    declared_input_count = dumped.get("input_event_count")
+    declared_dumped_count = dumped.get("dumped_event_count")
+    count_contract_ok = (
+        declared_input_count == len(events)
+        and declared_dumped_count == len(dumped_events)
+        and actual_source_indices == expected_modal_indices
+    )
+    checks.append(Check(
+        "modes.event_identity_contract", count_contract_ok,
+        (f"Mode dump preserved all event identities: input={len(events)}, "
+         f"modal={len(expected_modal_indices)}, source indices match."
+         if count_contract_ok else
+         "MODE SCAN FAILED: input/dumped event counts or source_index mapping "
+         f"do not match the score (declared input={declared_input_count}, "
+         f"declared dumped={declared_dumped_count}, actual dumped={len(dumped_events)}, "
+         f"expected modal indices={expected_modal_indices[:10]}, "
+         f"actual={actual_source_indices[:10]})."),
+        {"input_events": len(events), "expected_modal": len(expected_modal_indices),
+         "dumped": len(dumped_events)}))
 
     if not dumped_events:
         if not events:
@@ -546,7 +656,8 @@ def check_modes(cli, score_path, events):
                      "mode-scan.")
         else:
             note = "--dump-modes returned zero events even though modal events exist."
-        checks.append(Check("modes.dump_modes_ran", True,
+        zero_ok = not expected_modal_indices
+        checks.append(Check("modes.dump_modes_ran", zero_ok,
                              f"--dump-modes ran successfully. {note}",
                              {"modal_events": 0}))
         return checks, []
@@ -587,7 +698,7 @@ def check_modes(cli, score_path, events):
                 if d <= 0.0:
                     bad_decay.append((i, j, d))
 
-        if expected_f0 is not None and partials:
+        if expected_f0 is not None and partials and ev.get("frequency_mode", "midi") == "midi":
             f0 = partials[0].get("freq")
             if f0 is not None and math.isfinite(f0) and f0 > 0:
                 c = cents_between(f0, expected_f0)
@@ -678,6 +789,28 @@ def check_modes(cli, score_path, events):
     return checks, dumped_events
 
 
+def check_top_level_modes(cli, score_path, score, events):
+    """Route mode verification without asking the CLI to flatten layers.
+
+    ``TsukiSynthCLI --dump-modes`` deliberately accepts event scores only:
+    a composite's crossfades/regions are an audio-layer operation and do not
+    define one unambiguous top-level event identity list.  Layer leaves are
+    recursively schema-checked and mode-scanned by ``verify_one`` below, so
+    treating the expected top-level CLI refusal as a failure is a harness bug.
+    This N/A is explicit; it is not a claim that the composite itself has a
+    modal spectrum.
+    """
+    if score.get("layers"):
+        return [Check(
+            "modes.top_level_not_applicable", True,
+            "Top-level --dump-modes is N/A for a layered composite by CLI "
+            "contract; every recursively resolved leaf score is mode-scanned "
+            "below instead.",
+            {"status": "N/A", "reason": "layered_composite"},
+        )], []
+    return check_modes(cli, score_path, events)
+
+
 # ── 2c. rest verification ───────────────────────────────────────────────────
 def merge_intervals(intervals):
     """[(start, end), ...] -> sorted, merged, non-overlapping list."""
@@ -744,22 +877,33 @@ def fx_bypass_rest_rms(cli, score, rests, sr_hint=None):
         if wav_path.suffix.lower() != ".wav":
             return None
         try:
-            sr, mono_audio, _ = read_wav_mono(wav_path)
+            # Per-channel max, NOT a mono mixdown -- must match how
+            # check_rests() measures the FX-on render (see
+            # max_channel_rms_dbfs()), otherwise the FX-on vs FX-bypass
+            # comparison in the failure message would mix two different
+            # measurement methods.
+            sr, channels = read_wav_all_channels(wav_path)
         except Exception:
             return None
 
         result = {}
         for judged_start, gap_end, _raw_gap_start in rests:
             start_i = max(0, int(judged_start * sr))
-            end_i = min(len(mono_audio), int(gap_end * sr))
+            end_i = min(channels.shape[0], int(gap_end * sr))
             if end_i <= start_i:
                 continue
-            seg = mono_audio[start_i:end_i]
-            result[(judged_start, gap_end)] = rms_dbfs(seg)
+            seg = channels[start_i:end_i]
+            result[(judged_start, gap_end)] = max_channel_rms_dbfs(seg)
         return result
 
 
-def check_rests(events, sr, mono_audio, cli=None, score=None):
+def check_rests(events, sr, channels, cli=None, score=None):
+    """`channels` is the un-mixed [n_samples, n_channels] array from
+    read_wav_all_channels(). Each rest window is judged on the RMS of its
+    LOUDEST channel (max_channel_rms_dbfs()), not on a mono mixdown --
+    decorrelated stereo reverb tails partially cancel in a (L+R)/2 sum and
+    would be under-measured by several dB. Same -50 dBFS limit as before
+    (REST_RMS_LIMIT_DBFS); only the measurement method changed."""
     checks = []
     if not events:
         checks.append(Check("rests.checked", True,
@@ -776,7 +920,7 @@ def check_rests(events, sr, mono_audio, cli=None, score=None):
                              "gaps, or is continuously sounding)."))
         return checks
 
-    duration_s = len(mono_audio) / sr if sr else 0.0
+    duration_s = channels.shape[0] / sr if sr else 0.0
     failures = []
     worst_margin = None
     checked = 0
@@ -786,12 +930,12 @@ def check_rests(events, sr, mono_audio, cli=None, score=None):
     all_intervals = []
     for judged_start, gap_end, raw_gap_start in rests:
         start_i = max(0, int(judged_start * sr))
-        end_i = min(len(mono_audio), int(gap_end * sr))
+        end_i = min(channels.shape[0], int(gap_end * sr))
         if end_i <= start_i:
             continue
         checked += 1
-        seg = mono_audio[start_i:end_i]
-        level = rms_dbfs(seg)
+        seg = channels[start_i:end_i]
+        level = max_channel_rms_dbfs(seg)
         margin = REST_RMS_LIMIT_DBFS - level  # positive = passing headroom
         interval_pass = level <= REST_RMS_LIMIT_DBFS
         all_intervals.append({"start": judged_start, "end": gap_end,
@@ -939,6 +1083,93 @@ def check_peak_and_clipping(all_ch_audio):
     return checks
 
 
+# ── render-manifest contract check ──────────────────────────────────────────
+def check_render_manifest(manifest_path, wav_path, events):
+    """Validates the render manifest the CLI wrote next to `wav_path`
+    (src/cli/RenderApp.cpp, writeRenderManifest()).
+
+    Recognised contracts (see MANIFEST_CONTRACT_V1/V2 at the top):
+      * v2 (current): everything v1 had, plus `wav_sha256` -- the SHA256 of
+        the output file's bytes. For v2 the hash MUST match the actual file
+        on disk: the artifact carries its own verifiability instead of
+        trusting that nothing touched the output directory.
+      * v1 (legacy, binaries built before 2026-07-18): pre-normalize stats
+        only. Still accepted so this tool works against an older binary; it
+        has no wav_sha256 field, and the pass message says so explicitly.
+
+    Returns (Check, measured_dict); measured_dict carries the pre-normalize
+    stats that print_report() / report_html.py read from `measured`."""
+    contract = None
+    manifest_sha = actual_sha = None
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        contract = manifest.get("contract")
+        pre_peak = float(manifest["pre_normalize_peak"])
+        applied_gain = float(manifest["applied_gain"])
+        full_scale_samples = int(manifest["samples_at_or_above_full_scale"])
+        problems = []
+        if contract not in (MANIFEST_CONTRACT_V1, MANIFEST_CONTRACT_V2):
+            problems.append(f"unrecognised contract: {contract!r}")
+        if manifest.get("input_event_count") != len(events):
+            problems.append(
+                f"input_event_count={manifest.get('input_event_count')!r} "
+                f"does not match the parsed event count {len(events)}")
+        if not (math.isfinite(pre_peak) and pre_peak >= 0.0):
+            problems.append(f"pre_normalize_peak invalid: {pre_peak!r}")
+        if not (math.isfinite(applied_gain) and applied_gain >= 0.0):
+            problems.append(f"applied_gain invalid: {applied_gain!r}")
+        if full_scale_samples < 0:
+            problems.append(
+                f"samples_at_or_above_full_scale invalid: {full_scale_samples!r}")
+        if contract == MANIFEST_CONTRACT_V2:
+            # v2 contract: wav_sha256 is REQUIRED (KeyError -> invalid) and
+            # must match the bytes actually on disk.
+            manifest_sha = manifest["wav_sha256"]
+            actual_sha = sha256_file(wav_path)
+            if not (isinstance(manifest_sha, str)
+                    and manifest_sha.lower() == actual_sha):
+                problems.append(
+                    f"wav_sha256 mismatch: manifest says {manifest_sha!r}, "
+                    f"actual {wav_path.name} bytes hash to {actual_sha}")
+        manifest_ok = not problems
+        manifest_error = "; ".join(problems)
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        pre_peak = applied_gain = float("nan")
+        full_scale_samples = -1
+        manifest_ok = False
+        manifest_error = str(exc)
+
+    if manifest_ok:
+        if contract == MANIFEST_CONTRACT_V2:
+            message = (
+                f"Pre-normalize manifest (v2): peak={pre_peak:.6g}, "
+                f"gain={applied_gain:.6g}, "
+                f"samples >= 0 dBFS={full_scale_samples}; wav_sha256 "
+                f"verified against WAV bytes ({actual_sha[:12]}...).")
+        else:
+            message = (
+                f"Pre-normalize manifest (v1 legacy contract -- no "
+                f"wav_sha256 to verify): peak={pre_peak:.6g}, "
+                f"gain={applied_gain:.6g}, "
+                f"samples >= 0 dBFS={full_scale_samples}.")
+    else:
+        message = (
+            f"RENDER CONTRACT FAILED: missing or invalid render manifest "
+            f"{manifest_path.name}: {manifest_error}")
+
+    check = Check(
+        "render.pre_normalize_manifest", manifest_ok, message,
+        {"pre_normalize_peak": pre_peak, "applied_gain": applied_gain,
+         "samples_at_or_above_full_scale": full_scale_samples,
+         "manifest_contract": contract,
+         "manifest_wav_sha256": manifest_sha,
+         "actual_wav_sha256": actual_sha})
+    measured = {"pre_normalize_peak": pre_peak,
+                "normalization_gain": applied_gain,
+                "pre_normalize_full_scale_samples": full_scale_samples}
+    return check, measured
+
+
 # ── 2e. determinism check ───────────────────────────────────────────────────
 def sha256_file(path):
     h = hashlib.sha256()
@@ -1053,6 +1284,92 @@ def apply_exemptions(score_path, checks, exemptions):
     return exempted
 
 
+def inspect_layer_tree(score_path, score):
+    """Validate every referenced layer recursively and return leaf scores.
+
+    Layer references may use ``..`` only while remaining inside the nearest
+    ``scores`` directory (or the parent directory for standalone fixtures).
+    Cycles, missing files, sample-rate drift, invalid schemas and nested
+    contract failures are fatal rather than being treated as zero events.
+    """
+    score_path = Path(score_path).resolve()
+    allowed_root = score_path.parent
+    for parent in score_path.parents:
+        if parent.name.lower() == "scores":
+            allowed_root = parent
+            break
+
+    leaves = []
+    failures = []
+    validated_files = 0
+
+    def visit(path, document, parent_sr, stack):
+        nonlocal validated_files
+        resolved = Path(path).resolve()
+        if resolved in stack:
+            failures.append(f"layer cycle detected: {' -> '.join(str(p) for p in [*stack, resolved])}")
+            return
+        try:
+            resolved.relative_to(allowed_root)
+        except ValueError:
+            failures.append(f"layer source escapes allowed root {allowed_root}: {resolved}")
+            return
+        if resolved.suffixes[-2:] != [".score", ".json"]:
+            failures.append(f"layer source must end in .score.json: {resolved}")
+            return
+
+        checks, events = check_schema(document)
+        failed = [check for check in checks if not check.ok]
+        if failed:
+            failures.append(f"{resolved}: {failed[0].message}")
+            return
+        sr = (document.get("global") or {}).get("sample_rate")
+        if parent_sr is not None and sr != parent_sr:
+            failures.append(f"{resolved}: sample_rate {sr} differs from parent {parent_sr}")
+            return
+        validated_files += 1
+
+        layers = document.get("layers")
+        if not layers:
+            leaves.append((resolved, document, events))
+            return
+        for index, layer in enumerate(layers):
+            child = (resolved.parent / layer["source"]).resolve()
+            if not child.is_file():
+                failures.append(f"{resolved} layer {index}: source not found: {child}")
+                continue
+            try:
+                child_doc = json.loads(child.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                failures.append(f"{resolved} layer {index}: cannot read valid JSON {child}: {exc}")
+                continue
+            visit(child, child_doc, sr, (*stack, resolved))
+
+    parent_sr = (score.get("global") or {}).get("sample_rate")
+    for index, layer in enumerate(score.get("layers") or []):
+        child = (score_path.parent / layer["source"]).resolve()
+        if not child.is_file():
+            failures.append(f"root layer {index}: source not found: {child}")
+            continue
+        try:
+            child_doc = json.loads(child.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            failures.append(f"root layer {index}: cannot read valid JSON {child}: {exc}")
+            continue
+        visit(child, child_doc, parent_sr, (score_path,))
+
+    check = Check(
+        "layers.recursive_contract", not failures,
+        (f"Recursively validated {validated_files} layer score(s); "
+         f"{len(leaves)} leaf score(s) are eligible for mode verification."
+         if not failures else
+         f"LAYER CONTRACT FAILED: {failures[0]} ({len(failures)} failure(s) total)."),
+        {"validated_files": validated_files, "leaf_scores": len(leaves),
+         "failures": len(failures)},
+    )
+    return [check], leaves
+
+
 # ── main verification driver for a single score ────────────────────────────
 def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
     """Returns (overall_ok: bool, checks: list[Check], measured: dict).
@@ -1078,8 +1395,19 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
     schema_checks, events = check_schema(score)
     all_checks.extend(schema_checks)
 
-    mode_checks, dumped_events = check_modes(cli, score_path, events)
+    mode_checks, dumped_events = check_top_level_modes(
+        cli, score_path, score, events)
     all_checks.extend(mode_checks)
+
+    if score.get("layers"):
+        layer_checks, leaf_scores = inspect_layer_tree(score_path, score)
+        all_checks.extend(layer_checks)
+        for leaf_index, (leaf_path, _leaf_score, leaf_events) in enumerate(leaf_scores):
+            child_checks, _child_dump = check_modes(cli, leaf_path, leaf_events)
+            for check in child_checks:
+                check.name = f"layers.leaf_{leaf_index}.{check.name}"
+                check.message = f"{leaf_path.name}: {check.message}"
+            all_checks.extend(child_checks)
 
     # Stashed for tools/report_html.py (M4 --html mode): the parsed score,
     # its events, and the --dump-modes result are exactly what verify_one()
@@ -1113,6 +1441,14 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
         else:
             all_checks.append(Check("render.ran", True,
                                      f"Score rendered successfully to {wav_path.name}."))
+
+            # Manifest contract check (v1 legacy / v2 with wav_sha256
+            # self-verification) -- see check_render_manifest().
+            manifest_path = wav_path.with_name(wav_path.name + ".render.json")
+            manifest_check, manifest_measured = check_render_manifest(
+                manifest_path, wav_path, events)
+            all_checks.append(manifest_check)
+            measured.update(manifest_measured)
 
             if wav_path.suffix.lower() != ".wav":
                 # SHA256 determinism (below) is format-agnostic and still runs;
@@ -1149,7 +1485,10 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
                 measured["_phrase_rms"] = loudness.compute_segment_rms_table(
                     score, events, mono_audio, sr)
 
-                all_checks.extend(check_rests(events, sr, mono_audio, cli=cli, score=score))
+                # Rest RMS is judged per channel (loudest channel wins), so
+                # the un-mixed array is passed -- see max_channel_rms_dbfs()
+                # for why a mono mixdown under-measures stereo reverb tails.
+                all_checks.extend(check_rests(events, sr, all_ch_audio, cli=cli, score=score))
                 all_checks.extend(check_peak_and_clipping(all_ch_audio))
     finally:
         if tmp_ctx is not None:

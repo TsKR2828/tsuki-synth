@@ -52,7 +52,6 @@
       "params": {
         "material": "nylon",
         "diameter_mm": 2.0,
-        "length_mm": 200,
         "tension_n": 300,
         "strike_position": 0.5,
         "exciter": "bow_slow",
@@ -69,10 +68,6 @@
       "params": {
         "material": "bronze",
         "thickness_mm": 1.0,
-        "width_mm": 150,
-        "height_mm": 150,
-        "strike_position_x": 0.5,
-        "strike_position_y": 0.5,
         "exciter": "cotton_mallet",
         "radius_mm": 150
       }

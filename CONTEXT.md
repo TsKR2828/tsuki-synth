@@ -1,104 +1,82 @@
-# TsukiSynth — Session Handoff Context
+# TsukiSynth — Current Handoff Context
 
-> Copy this into a new conversation to continue seamlessly.
->
-> **⚠️ This is TsukiSynth (月亮旋律), NOT haguruma-engine (齒輪引擎). Independent projects.**
+> Last updated: 2026-07-17
+> Project: TsukiSynth（與 haguruma-engine 無關）
 
----
+## Goal
 
-## One-liner
+讓聾人與 AI 不依賴聽感，而能用數值、物理模型與可重現測試建立聲音：
 
-Physical-modeling (modal synthesis) multi-engine VST3/Standalone synth + AI JSON
-sound generator (CLI score → WAV).
+1. 可重現：相同 score、seed 與同一建置環境得到相同輸出。
+2. 物理可驗：頻率、相對振幅、衰減可由程式對理論 oracle 驗證。
+3. 樂器物理正確：弦、舌片梁、圓板使用相符的邊界條件與模態形狀。
 
-## 🎯 Project goal (月月, 2026-06)
+## Repository state
 
-**Deaf people + AI verify and simulate sound by PHYSICAL THEORY, not by ear.**
-Three pillars: **reproducibility, physical verifiability, instrument-physics
-correctness.** The CLI/score path (no listening) is the primary interface; the
-verification harness (`tools/physics_verify.py`) is the "ruler".
-
-## GitHub / branch / local
-
-- Repo: https://github.com/TsKR2828/tsuki-synth
-- **Active branch: `Codex-fix-bug`** (pushed). Built on Codex `b5a370d` (PR #4).
 - Local path: `C:\Users\admin\Desktop\Claude\tsuki-synth`
+- Active branch: `fix/deep-physics-audit-20260716`
+- This branch intentionally remains local/uncommitted until the owner decides to commit or push.
+- User-owned untracked evidence under `reports/phase_h_before_after/binA/` and `binB/` must not be removed.
 
-## Current state (2026-06-17)
+## Current implementation
 
-All audit bugs fixed; physics-accuracy pass done. **All 6 engines pass the
-verification harness; CLI + Standalone + VST3 build clean.**
+| Area | Current contract |
+|---|---|
+| Tuner | Measures dry audio, displays TARGET and MEASURED separately, A0–C8 at 44.1/48/96/192 kHz, bounded ±700-cent search, confidence and explicit refusal states |
+| Cimbalom / physical piano | Stiff-string modes, multi-string beating, final-frequency damping, deterministic PCG exciter noise |
+| Tongue drum | Euler–Bernoulli fixed-free cantilever by default; explicit `beam_boundary: "free_free"` is available for a suspended bar |
+| Water gong | Kirchhoff circular plate; score default is free edge, clamped is explicit; free-edge roots depend on Poisson ratio |
+| Pitch semantics | `frequency_mode: "midi"` pitch-locks to the note; `"geometry"` keeps the absolute material/geometry prediction |
+| Score contract | Unknown keys/engines, wrong types, irrelevant/no-op parameters, unsafe filenames and fake `membrane` aliases fail |
+| Reproducibility | `global.random_seed` plus event index selects deterministic noise streams; render manifest records pre-normalization peak/gain/full-scale count |
+| Effects | Plugin and CLI share Distortion → Compressor → Delay → Reverb; score delay supports 0–5000 ms; score reverb decay is a measurable T60 |
+| Presets | Stable preset IDs, atomic replacement, cached user state, no user-preset disk read from program loading |
 
-| Area | State |
-|------|-------|
-| Determinism | ✅ NoiseGen seeded; same score → byte-identical render |
-| Verification | ✅ `tools/physics_verify.py` (partials / `--levels` / `--t60`) |
-| CLI introspection | ✅ `--dump-modes <score.json>` (model's exact partials, JSON) |
-| Cimbalom tuning | ✅ pinned to MIDI pitch (stiff-string √(1+B) comp) |
-| Engine levels | ✅ equal-RMS calibrated (cross-engine 8 dB → 0.2 dB) |
-| Water gong | ✅ true Kirchhoff plate; **default free-edge** (hung plate, edges free); clamped optional via `plate_free_edge: false` |
-| Physical piano | ✅ CLI engine `"piano"` + **dedicated plugin Piano tab** (engine index 3, shares CimbalomEngine) |
-| FM Piano | kept as labelled **non-physical** FM synth voice |
-| Plugin UI | ✅ **4 engine tabs** (Cimbalom / Chromatic / FM Piano / Piano); bilingual tooltip popups on all controls |
+## Verification status
 
-## Engines
+- `physics_verify.py --full`: no checked failures. Frequency range, velocity, partial amplitude and measured T60 pass. Three rubber cases are honestly reported `UNVERIFIED/N/A` because T60 (14–28 ms) is shorter than the required eight-cycle measurement window.
+- Tuner Python acceptance: 1056 A0–C8 cases pass; 160 outside-range cases are refused; worst independent-oracle error 0.2076 cent.
+- C++ regression suites cover tuner, MIDI note/sustain tracking, score parser/renderer, beam/plate shapes, frequency modes, T60, random streams, delay/reverb and effects parity.
+- All 80 repository score JSON files pass Draft 2020-12 schema validation.
+- Release audio corpus: 73/73 PASS, 0 FAIL; one existing moonlight FX-art rest exemption remains visible, with no new exemptions.
+- Rules-v2 consonance validation now uses each event's real dumped modal spectrum; the demo is 13/13 PASS with 0 unverified pairs. The static MIDI 60 table is design reference only.
+- Exact commands and remaining limitations are recorded in `docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md`.
 
-| # | Engine | Physics |
-|---|--------|---------|
-| Cimbalom (tab 0) | modal | stiff string + inharmonicity + multi-string beating |
-| Chromatic (tab 1): Tongue Drum | modal | free-free Euler-Bernoulli beam |
-| Chromatic (tab 1): Water Gong | modal | Kirchhoff plate (Ω=λ², Leissa); **default free-edge** (hung); clamped optional |
-| Chromatic (tab 1): Custom | additive | user ratio/amplitude |
-| FM Piano (tab 2) | FM | 2-op (non-physical; labelled) |
-| Piano (tab 3) / CLI `"piano"` | modal | struck stiff steel string (StringModel, shares CimbalomEngine) |
+## Verification-domain boundary
 
-## Build environment
+- In domain: modal frequency ratios, relative modal amplitude under the implemented strike model, T60 law and deterministic score rendering.
+- Half-domain: Custom Harmonics (authored ratios, not instrument physics) and MIDI pitch-lock mode (physical spectrum shape with equal-tempered f0).
+- Out of domain: FM Piano, artistic Body macro, compressor/delay/reverb/distortion, and sample/granular ideas.
+- Passing implementation-vs-oracle tests proves that code follows its equations. It does not prove that every material constant matches a particular real specimen.
 
-- JUCE 8.0.12 (submodule `libs/JUCE`); CMake; MSVC. Build dir `build/`,
-  generator **Visual Studio 18 2026**.
-- This machine: load `D:\Visual_Studio\VC\Auxiliary\Build\vcvars64.bat` before `cl`/cmake.
-- Python 3.13 with numpy + scipy (for the harness).
-
-## Build & verify commands
+## Standard commands
 
 ```powershell
-# build (after vcvars64)
-cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_Standalone
+cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone
+ctest --test-dir build -C Release --output-on-failure
 
-# physics verification (ear-free)
-python tools/physics_verify.py                 # all engines: f0 cents + partials
-python tools/physics_verify.py --levels        # per-engine RMS/peak
-python tools/physics_verify.py --t60           # modal decay vs model
-python tools/physics_verify.py --engines water_gong water_gong_free   # A/B
-
-# inspect a score's predicted physics
-build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes <score.json>
+python -m unittest tests\test_physics_verify.py tests\test_consonance_contract.py tests\test_verify_score_contract.py -v
+python tools\tuner_audit.py
+python tools\tuner_audit_v2.py
+python tools\physics_verify.py --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --selftest
+python tools\physics_verify.py --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --full
+python tools\verify_score.py --all --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+python tools\check_piece_consonance.py scores\originals\rules_v2_demo\rules_v2_demo_001.score.json --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --out reports\rules_v2_demo_consonance_check.md
 ```
 
-## Key files
+## Remaining scientific/product gaps
 
-| File | Content |
-|------|---------|
-| `tools/physics_verify.py` | render → FFT → compare-to-theory harness (the "ruler") |
-| `tests/audit_repro.cpp` | the 2026-06 audit bugs as executable checks |
-| `src/physics/{String,Beam,Plate}Model.h` | the physics (string / beam / clamped+free plate) |
-| `src/engines/CimbalomEngine.h` | struck stiff string (also backs the physical piano) |
-| `src/engines/ChromaticEngine.h` | tongue drum / water gong / custom; `tuneChromaticModesToMidi` |
-| `src/score/ScoreRenderer.h` | CLI render + `dumpModes`; **no Macro feel-layer (pure physics)** |
-| `src/PluginProcessor.cpp` | 4 plugin engine tabs (3 synths), FX chain, dynamic tail length |
-| `data/materials.json` | 14 materials (density / Young's / Poisson / damping) |
+- Material `beta_air` and `gamma_radiation` still lack specimen-level traceability; `alpha` is anchored, not broadband calibrated.
+- Output amplitude is normalized/dimensionless: no calibrated Newton → Pascal/SPL path, microphone/directivity or spatial phase.
+- No soundboard/body coupling, sympathetic resonance, damper/pedal system, anisotropic wood, nonlinear contact solver, temperature/humidity model or measured specimen fitting.
+- FM Piano is deliberately non-physical; plugin creative macros are not physical evidence.
+- Same-machine SHA256 reproducibility is tested; cross-OS/compiler bit identity is not promised.
+- Tuner is target-aware and monophonic; polyphonic/missing-fundamental mixtures may be refused rather than guessed.
+- Real DAW automation/state round-trip and deaf-user accessibility still require human/host validation after this branch is built.
 
-## Pending
+## Working rules
 
-- DAW validation (host scan / automation / state round-trip) on a real DAW.
-- Push remaining commits + decide merge → master.
-
-## Rules for Claude
-
-1. This is TsukiSynth, not haguruma-engine.
-2. Default: leave files unstaged, don't commit/push unless asked (this session
-   was an explicit exception — `Codex-fix-bug` is pushed).
-3. Work on a branch, not main.
-4. Don't delete legacy prototypes.
-5. For physics changes, **verify with `physics_verify.py`** before claiming done;
-   don't hardcode physical constants you can't confirm against a reference.
+1. Work on a branch, never silently on `main`.
+2. Do not call N/A an acceptance pass or describe FM/effects as physically verified.
+3. Any physics/audio change requires C++ regression tests plus `physics_verify.py --full`.
+4. Do not commit, push or delete historical evidence unless the user explicitly asks.

@@ -4,7 +4,8 @@
   "title": "TsukiSynth Score",
   "description": "AI-readable physical modeling sound event format for TsukiSynth",
   "type": "object",
-  "required": ["meta", "global", "export"],
+  "additionalProperties": false,
+  "required": ["$schema", "meta", "global", "export"],
   "properties": {
     "$schema": {
       "type": "string",
@@ -12,6 +13,7 @@
     },
     "meta": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["title", "id"],
       "properties": {
         "title":        { "type": "string", "description": "Human-readable name" },
@@ -21,7 +23,7 @@
         "work":         { "type": "string", "description": "Parent work or collection title" },
         "catalogue":    { "type": "string", "description": "Catalogue identifier, e.g. RV 269" },
         "opus_number":  { "type": "string" },
-        "movement_number": { "type": "integer", "minimum": 1 },
+        "movement_number": { "type": "integer", "minimum": 1, "maximum": 100000 },
         "movement_name": { "type": "string" },
         "key":          { "type": "string", "description": "Human-readable tonal center, e.g. E major" },
         "description":  { "type": "string" },
@@ -36,22 +38,26 @@
         "sound_type":   { "type": "string", "enum": ["oneshot", "loop", "variant"], "description": "Playback type: single trigger, loopable, or derived variant" },
         "family_id":    { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "Groups related sounds (oneshot + loop + variants share same family_id)" },
         "character":    { "type": "array", "items": { "type": "string", "enum": ["punch", "soft", "dark", "bright", "pulse", "stomp", "airy", "metallic", "glitch"] }, "description": "Sonic texture descriptors" },
-        "loop_bpm":     { "type": "number", "minimum": 1, "description": "BPM for loop-type sounds" },
-        "loop_bars":    { "type": "integer", "minimum": 1, "description": "Bar count for loop-type sounds" }
+        "loop_bpm":     { "type": "number", "minimum": 1, "maximum": 999, "description": "BPM for loop-type sounds" },
+        "loop_bars":    { "type": "integer", "minimum": 1, "maximum": 100000, "description": "Bar count for loop-type sounds" }
       }
     },
     "global": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["bpm", "sample_rate", "master_volume"],
       "properties": {
         "bpm":           { "type": "number", "minimum": 1, "maximum": 999 },
         "sample_rate":   { "type": "integer", "enum": [44100, 48000, 88200, 96000] },
         "master_volume": { "type": "number", "minimum": 0, "maximum": 1 },
+        "random_seed":   { "type": "integer", "minimum": 0, "maximum": 9007199254740991, "description": "Deterministic score-level seed. Event index derives independent reproducible streams." },
         "effects": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "reverb": {
               "type": "object",
+              "additionalProperties": false,
               "properties": {
                 "decay": { "type": "number", "minimum": 0, "maximum": 30 },
                 "wet":   { "type": "number", "minimum": 0, "maximum": 1 }
@@ -59,6 +65,7 @@
             },
             "delay": {
               "type": "object",
+              "additionalProperties": false,
               "properties": {
                 "time_ms":  { "type": "number", "minimum": 0, "maximum": 5000 },
                 "feedback": { "type": "number", "minimum": 0, "maximum": 0.95 },
@@ -67,13 +74,15 @@
             },
             "wall": {
               "type": "object",
+              "additionalProperties": false,
               "properties": {
                 "distance_m": { "type": "number", "minimum": 0, "maximum": 100 },
-                "material":   { "type": "string" }
+                "material":   { "type": "string", "enum": ["stone", "concrete", "glass", "metal", "wood", "fabric", "curtain"] }
               }
             },
             "distortion": {
               "type": "object",
+              "additionalProperties": false,
               "properties": {
                 "type":        { "type": "string", "enum": ["overdrive", "bitcrush", "wavefold"], "default": "overdrive" },
                 "drive":       { "type": "number", "minimum": 0, "maximum": 1, "description": "Distortion intensity" },
@@ -87,31 +96,36 @@
     },
     "events": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["time", "duration", "engine", "note", "velocity"],
         "properties": {
-          "time":     { "type": "number", "minimum": 0, "description": "Start time in seconds" },
-          "duration": { "type": "number", "minimum": 0, "description": "Duration in seconds" },
-          "engine":   { "type": "string", "enum": ["string", "cimbalom", "beam", "tongue_drum", "plate", "water_gong", "membrane", "custom", "fm", "piano"], "description": "Synthesis engine; modal engines (string..membrane, piano) produce physical spectra, fm/custom use non-physical synthesis" },
-          "note":     { "description": "Pitch as note name (C5) or MIDI number (72)" },
+          "time":     { "type": "number", "minimum": 0, "maximum": 86400, "description": "Start time in seconds" },
+          "duration": { "type": "number", "minimum": 0, "maximum": 86400, "description": "Duration in seconds" },
+          "engine":   { "type": "string", "enum": ["string", "cimbalom", "beam", "tongue_drum", "plate", "water_gong", "custom", "fm", "piano"], "description": "Synthesis engine. membrane is deliberately rejected until a true membrane model exists." },
+          "note":     { "oneOf": [{ "type": "integer", "minimum": 0, "maximum": 127 }, { "type": "string", "pattern": "^(?:[0-9]{1,3}|[A-Ga-g][#b]?-?[0-9]+)$" }], "description": "Pitch as exact note name (C5/Bb3) or integer MIDI number (0..127); parsed values outside MIDI range fail." },
           "velocity": { "type": "number", "minimum": 0, "maximum": 1 },
           "params": {
             "type": "object",
+            "additionalProperties": false,
             "description": "Engine-specific physical parameters",
             "properties": {
               "material":         { "type": "string", "description": "Key from materials.json" },
-              "thickness_mm":     { "type": "number", "minimum": 0.1 },
-              "radius_mm":        { "type": "number", "minimum": 1 },
-              "length_mm":        { "type": "number", "minimum": 1 },
-              "width_mm":         { "type": "number", "minimum": 1 },
-              "diameter_mm":      { "type": "number", "minimum": 0.1 },
+              "thickness_mm":     { "type": "number", "minimum": 0.1, "maximum": 1000 },
+              "radius_mm":        { "type": "number", "minimum": 1, "maximum": 10000 },
+              "length_mm":        { "type": "number", "minimum": 1, "maximum": 10000 },
+              "width_mm":         { "type": "number", "minimum": 1, "maximum": 10000 },
+              "beam_boundary":    { "type": "string", "enum": ["cantilever", "free_free"], "default": "cantilever", "description": "Beam boundary condition; tongue_drum defaults to the physically appropriate fixed-free cantilever." },
+              "frequency_mode":   { "type": "string", "enum": ["midi", "geometry"], "default": "midi", "description": "midi locks f0 to the authored note; geometry retains the absolute frequency predicted by material and geometry." },
+              "diameter_mm":      { "type": "number", "minimum": 0.1, "maximum": 50 },
               "num_strings":      { "type": "integer", "minimum": 1, "maximum": 5, "default": 3, "description": "Number of strings per course (cimbalom beating effect)" },
               "detuning_cents":   { "type": "number", "minimum": 0, "maximum": 50, "default": 5, "description": "Detuning spread in cents between multi-string courses" },
-              "tension_n":        { "type": "number", "minimum": 1 },
+              "tension_n":        { "type": "number", "minimum": 1, "maximum": 100000 },
               "strike_position":  { "type": "number", "minimum": 0, "maximum": 1, "description": "0=edge, 0.5=center, 1=opposite edge" },
               "exciter":          { "type": "string", "enum": ["cotton", "cotton_mallet", "felt", "felt_mallet", "wood", "wood_mallet", "metal", "metal_mallet", "metal_hammer", "metal_tip", "hard_plastic", "hard_strike", "finger", "finger_tap", "bow", "bow_slow", "brush", "rubber_mallet", "metal_scrape", "pluck", "medium", "sharp"], "description": "Semantic excitation method; renderer maps aliases to physical hardness classes" },
-              "damping_override": { "type": ["number", "null"], "description": "Override material damping alpha, null = use material default" },
+              "damping_override": { "oneOf": [{ "type": "number", "minimum": 0, "maximum": 10000 }, { "type": "null" }], "description": "Override material damping alpha, null = use material default" },
               "plate_free_edge":  { "type": "boolean", "default": true, "description": "true = hung plate with free edges (water gong default), false = clamped edges" },
               "fm_preset":    { "type": "integer", "minimum": 0, "maximum": 7, "description": "FM sound type: 0=Piano, 1=E.Piano, 2=Vibraphone, 3=Bell, 4=Organ, 5=Pad, 6=Bass, 7=Brass" },
               "fm_ratio":     { "type": "number", "minimum": 0.25, "maximum": 16.0, "description": "Modulator/carrier frequency ratio" },
@@ -135,43 +149,66 @@
               "amp_4":   { "type": "number", "minimum": 0, "maximum": 1 },
               "amp_5":   { "type": "number", "minimum": 0, "maximum": 1 },
               "amp_6":   { "type": "number", "minimum": 0, "maximum": 1 },
-              "amp_7":   { "type": "number", "minimum": 0, "maximum": 1 },
-              "height_mm":          { "type": "number", "minimum": 0.1, "description": "Height dimension for 3D resonators (plates, bells)" },
-              "strike_position_x":  { "type": "number", "minimum": 0, "maximum": 1, "description": "X coordinate of strike point on 2D surface" },
-              "strike_position_y":  { "type": "number", "minimum": 0, "maximum": 1, "description": "Y coordinate of strike point on 2D surface" }
+              "amp_7":   { "type": "number", "minimum": 0, "maximum": 1 }
             }
           },
           "glide": {
             "type": "object",
+            "additionalProperties": false,
+            "required": ["from_note", "duration_ms"],
             "description": "Portamento/slide from another pitch",
             "properties": {
-              "from_note":    { "description": "Starting pitch as note name (C4) or MIDI number" },
+              "from_note":    { "oneOf": [{ "type": "integer", "minimum": 0, "maximum": 127 }, { "type": "string", "pattern": "^(?:[0-9]{1,3}|[A-Ga-g][#b]?-?[0-9]+)$" }], "description": "Starting pitch as an exact note name or integer MIDI number" },
               "duration_ms":  { "type": "number", "minimum": 1, "maximum": 5000, "description": "Glide duration in milliseconds" },
               "curve":        { "type": "string", "enum": ["linear", "exponential"], "default": "linear" }
             }
           },
           "performance": {
             "type": "object",
+            "additionalProperties": false,
             "description": "Non-audio accessibility and timing annotations. The renderer may ignore these fields.",
             "properties": {
               "track":                  { "type": "string" },
               "role":                   { "type": "string" },
               "midi_note":              { "type": "integer", "minimum": 0, "maximum": 127 },
               "frequency_hz":           { "type": "number", "exclusiveMinimum": 0 },
-              "source_duration_sec":    { "type": "number", "minimum": 0 },
-              "intended_release_time":  { "type": "number", "minimum": 0 },
+              "source_duration_sec":    { "type": "number", "minimum": 0, "maximum": 86400 },
+              "intended_release_time":  { "type": "number", "minimum": 0, "maximum": 86400 },
               "articulation":           { "type": "string" },
-              "articulation_gap_ms":    { "type": "number", "minimum": 0 },
+              "articulation_gap_ms":    { "type": "number", "minimum": 0, "maximum": 86400000 },
               "phrase_end":             { "type": "boolean" },
-              "breath_after_ms":        { "type": "number", "minimum": 0 }
+              "breath_after_ms":        { "type": "number", "minimum": 0, "maximum": 86400000 }
             }
           },
           "comment": { "type": "string", "description": "Optional note for humans/AI explaining intent" }
-        }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "engine": { "enum": ["string", "cimbalom", "piano"] } } },
+            "then": { "properties": { "params": { "propertyNames": { "enum": ["material", "strike_position", "exciter", "damping_override", "diameter_mm", "num_strings", "detuning_cents", "tension_n", "frequency_mode"] } } } }
+          },
+          {
+            "if": { "properties": { "engine": { "enum": ["beam", "tongue_drum"] } } },
+            "then": { "properties": { "params": { "propertyNames": { "enum": ["material", "strike_position", "exciter", "damping_override", "length_mm", "width_mm", "thickness_mm", "beam_boundary", "frequency_mode"] } } } }
+          },
+          {
+            "if": { "properties": { "engine": { "enum": ["plate", "water_gong"] } } },
+            "then": { "properties": { "params": { "propertyNames": { "enum": ["material", "strike_position", "exciter", "damping_override", "radius_mm", "thickness_mm", "plate_free_edge", "frequency_mode"] } } } }
+          },
+          {
+            "if": { "properties": { "engine": { "const": "fm" } } },
+            "then": { "properties": { "params": { "propertyNames": { "enum": ["fm_preset", "fm_ratio", "fm_index", "fm_brightness", "fm_feedback", "fm_attack", "fm_release"] } } } }
+          },
+          {
+            "if": { "properties": { "engine": { "const": "custom" } } },
+            "then": { "properties": { "params": { "propertyNames": { "enum": ["material", "strike_position", "exciter", "damping_override", "ratio_0", "ratio_1", "ratio_2", "ratio_3", "ratio_4", "ratio_5", "ratio_6", "ratio_7", "amp_0", "amp_1", "amp_2", "amp_3", "amp_4", "amp_5", "amp_6", "amp_7"] } } } }
+          }
+        ]
       }
     },
     "source": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Source, attribution, licence, and editorial provenance for a transcription",
       "properties": {
         "score_source":     { "type": "string" },
@@ -189,6 +226,7 @@
       "description": "Explicit tempo timeline for AI and non-auditory score inspection",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["time", "quarter_bpm"],
         "properties": {
           "time":                     { "type": "number", "minimum": 0 },
@@ -202,6 +240,7 @@
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["time", "numerator", "denominator"],
         "properties": {
           "time":        { "type": "number", "minimum": 0 },
@@ -213,17 +252,40 @@
     },
     "track_profiles": {
       "type": "object",
-      "description": "Semantic orchestration and physical-model defaults by source track"
+      "description": "Semantic orchestration and physical-model defaults by source track",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "role": { "type": "string" }, "label": { "type": "string" },
+          "engine": { "type": "string" }, "material": { "type": "string" },
+          "diameter_mm": { "type": "number", "minimum": 0.1, "maximum": 50 },
+          "strike_position": { "type": "number", "minimum": 0, "maximum": 1 },
+          "exciter": { "type": "string" },
+          "damping_override": { "type": "number", "minimum": 0, "maximum": 10000 },
+          "base_velocity": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
     },
     "timing_policy": {
       "type": "object",
-      "description": "Human-readable explanation of note-off, articulation, and silence calculations"
+      "additionalProperties": false,
+      "description": "Human-readable explanation of note-off, articulation, and silence calculations",
+      "properties": {
+        "time_unit": { "type": "string" },
+        "renderer_note_off_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "duration_compensation": { "type": "string" },
+        "silence_representation": { "type": "string" },
+        "source_timing": { "type": "string" },
+        "articulation_policy": { "type": "string" }
+      }
     },
     "rests": {
       "type": "array",
       "description": "Explicit silence map. Rests are annotations, not fake pitched events.",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["track", "time", "duration", "kind"],
         "properties": {
           "track":                { "type": "string" },
@@ -243,6 +305,7 @@
       "description": "Per-track phrase regions separated by audible rests",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["track", "number", "start", "end"],
         "properties": {
           "track":           { "type": "string" },
@@ -256,23 +319,26 @@
     },
     "export": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["filename"],
       "properties": {
-        "filename":         { "type": "string", "description": "Output filename without extension" },
+        "filename":         { "type": "string", "minLength": 1, "pattern": "^(?!.*\\.\\.)(?!.*[\\\\/]).+$", "description": "Safe output filename without extension or path separators" },
         "format":           { "type": "string", "enum": ["wav", "flac"], "default": "wav" },
         "bit_depth":        { "type": "integer", "enum": [16, 24, 32], "default": 24 },
         "normalize":        { "type": "boolean", "default": true },
-        "tail_silence_ms":  { "type": "integer", "minimum": 0, "default": 300 },
-        "export_filename":  { "type": "string", "description": "Industry-convention filename override (Type_Character_SoundType_Pitch)" },
+        "tail_silence_ms":  { "type": "integer", "minimum": 0, "maximum": 60000, "default": 300 },
+        "export_filename":  { "type": "string", "minLength": 1, "pattern": "^(?!.*\\.\\.)(?!.*[\\\\/]).+$", "description": "Safe industry-convention filename override (Type_Character_SoundType_Pitch)" },
         "start_position":   { "type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Playback start offset (0=beginning, 0.5=middle)" },
         "end_position":     { "type": "number", "minimum": 0, "maximum": 1, "default": 1, "description": "Playback end offset (1=full length)" }
       }
     },
     "layers": {
       "type": "array",
+      "minItems": 1,
       "description": "Combine multiple score sources into a single output (alternative to events-based rendering)",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["source"],
         "properties": {
           "source": { "type": "string", "description": "Relative path to a .score.json file" },
@@ -290,13 +356,18 @@
     "crossfade_ms": {
       "type": "integer",
       "minimum": 0,
+      "maximum": 60000,
       "default": 0,
       "description": "Crossfade duration between consecutive layers in milliseconds"
+    },
+    "composition_thesis": {
+      "type": "string",
+      "description": "Human-readable composition intent; annotation only"
     }
   }
   ,
-  "anyOf": [
-    { "required": ["events"] },
-    { "required": ["layers"] }
+  "oneOf": [
+    { "required": ["events"], "not": { "required": ["layers"] } },
+    { "required": ["layers"], "not": { "required": ["events"] } }
   ]
 }

@@ -1,22 +1,21 @@
 name: Physics Verification
 
-# TsukiSynth M1 CI — ear-free proof that rendered audio matches the physics
-# models (see ROADMAP_PHYSICS.md GATE for M1). Builds the CLI (and the
-# plugin targets, so packaging regressions are caught early) and runs
-# tools/physics_verify.py against the freshly built CLI.
+# Ear-free implementation-conformance CI: rendered audio must match declared
+# modal frequencies, amplitudes and T60.  This is not independent proof that
+# model/material constants match a real instrument specimen.
 
 on:
   push:
     branches:
       - main
-      - Codex-fix-bug
+      - "fix/**"
   pull_request:
     branches:
       - main
 
 jobs:
   build-and-verify:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Checkout code (with submodules)
@@ -27,16 +26,20 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.12.8"
+          cache: pip
+          cache-dependency-path: tools/requirements-physics.txt
 
       - name: Install Python dependencies
-        run: python -m pip install --upgrade pip numpy scipy
+        run: |
+          python -m pip install pip==24.3.1
+          python -m pip install -r tools/requirements-physics.txt
 
       - name: Setup MSVC developer environment
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
 
       - name: Build CLI (TsukiSynthCLI)
         run: cmake --build build --config Release --target TsukiSynthCLI
@@ -47,24 +50,39 @@ jobs:
       - name: Build VST3 (TsukiSynth_VST3)
         run: cmake --build build --config Release --target TsukiSynth_VST3
 
-      - name: Run physics verification harness (M1+M2 scope)
+      - name: Build regression tests
+        run: cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+
+      - name: Run C++ audit and tuner regression tests
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Run spectral and T60 metrology self-tests
+        run: |
+          python -m unittest tests/test_physics_verify.py -v
+          python -m unittest tests/test_consonance_contract.py -v
+          python -m unittest tests/test_verify_score_contract.py -v
+          python tools/physics_verify.py --selftest
+
+      - name: Run standalone T60 gate
+        run: python tools/physics_verify.py --t60 --engines tongue_drum water_gong --notes 60
+
+      - name: Run complete physics implementation gate (M1+M2+M5)
         # Phase E (2026-07-09) fixed the M2-2d theory predictor's decay-model
         # mismatch (tools/physics_verify.py synth_theory_signal(): `decay`
         # was being treated as a 1/e time constant when ModalResonator::
         # excite() defines it as T60 -- see MODAL_DECAY_LN1000 in that file).
-        # --full now covers 1b note-range + 1c material + 1d velocity + 2d
-        # amplitude judgment in one gate and passes in full (no tolerance was
-        # widened -- §6 Rule 2 -- the fix was to the theory prediction, not
-        # the ±3.0 dB bound). Evidence: reports/gate_outputs/
-        # phase_e_gate_full.txt + phase_e_gate_amps.txt.
+        # --full covers note range, material implementation sensitivity,
+        # velocity, one-to-one modal frequency/amplitude assignment, and
+        # measured T60. Missing/model-audible partials and insufficient
+        # coverage are exit-code-affecting; no weak/missing path is auto-PASS.
         run: python tools/physics_verify.py --full
 
       - name: Whole-score verification (CI smoke subset)
         # CI runs a fast cross-engine smoke subset only. The full 73-file
         # corpus (M3 GATE, `verify_score.py --all`) is a LOCAL release gate —
-        # last full run archived at
-        # reports/gate_outputs/verify_all_corpus_phase_d.log (73/73 passed,
-        # 1 registered exemption, 0 failed, exit 0, 2026-07-08). Rendering the
+        # latest local four-shard run is documented in DEVLOG.md and
+        # docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md (73/73 passed,
+        # 1 existing registered exemption, 0 failed, 2026-07-17). Rendering the
         # whole corpus twice (determinism check) would take hours on a 2-core
         # hosted runner; this smoke set still exercises schema / mode-scan /
         # rest / peak / determinism logic across the modal engine families.
@@ -72,6 +90,7 @@ jobs:
         run: |
           $smoke = @(
             "scores/originals/ai_radiance/ai_radiance_m1.score.json",
+            "scores/originals/rules_v2_demo/rules_v2_demo_001.score.json",
             "scores/examples/akashic_bell.score.json",
             "scores/examples/water_gong_clamped.score.json",
             "scores/examples/water_gong_free.score.json",
@@ -83,3 +102,9 @@ jobs:
             if ($LASTEXITCODE -ne 0) { $fail = 1 }
           }
           exit $fail
+
+      - name: Run event-specific consonance gate
+        run: >-
+          python tools/check_piece_consonance.py
+          scores/originals/rules_v2_demo/rules_v2_demo_001.score.json
+          --out "${{ runner.temp }}\rules_v2_demo_consonance_check.md"

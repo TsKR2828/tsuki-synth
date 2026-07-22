@@ -1,0 +1,12 @@
+short_t60_f0: PASS (-0.259 cents)
+relative_axis_t60: PASS (2.0000s span=56.4dB)
+positive_control: PASS
+50pct_shift_rejected: PASS
+missing_p3_p5_rejected: PASS
+super_nyquist_rejected: PASS
+overlap_peak_reuse_rejected: PASS
+partial_negative_suite: PASS
+amps_wrong_amplitude_rejected: PASS (honest=PASS, +6dB-p3 rejected, p3 err=+6.00 dB)
+velocity_law_violation_rejected: PASS (f0-band delta +9.00 dB rejected both ways (wideband would have read +6.03 dB, masking the violation))
+velocity_law_violation_rejected_uniform: PASS (uniform-scale f0-band delta +9.00 dB rejected both ways)
+EXIT:0

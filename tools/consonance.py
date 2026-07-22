@@ -41,9 +41,10 @@ swept over interval is exactly the cross-tone sum.
 ── 9b: duration rules ──────────────────────────────────────────────────────
 --dump-modes reports each mode's `decay` field, which src/dsp/ModalResonator.h
 (ModalResonator::excite(): `decayCoeff = exp(-6.9078f/(decayTime*sampleRate))`)
-defines as T60 (time to fall 60 dB), confirmed in M5 (ROADMAP_PHYSICS.md §6,
-"T60 比值" — measured/model ratio 1.00-1.28 at MIDI 60/72, all 5 modal
-engines). Because dB decays LINEARLY in time for a single exponential decay,
+defines as T60 (time to fall 60 dB), confirmed by the 2026-07-17 independent
+narrow-band gate (measurable standard probes have measured/model 0.99-1.00;
+three sub-eight-cycle rubber cases are explicitly UNVERIFIED/N/A). Because dB
+decays LINEARLY in time for a single exponential decay,
 the time to fall 20 dB is exactly T60/3:
     -60 dB at t=T60   =>   -20 dB at t = T60 * (20/60) = T60/3
 This is the "let the previous strike decay 20 dB before re-striking the same
@@ -222,6 +223,9 @@ def build_report(cli, outdir, duration_outdir=None):
                 "本表**全部由 `--dump-modes` 的理論模態頻譜（freq/amp/body_mag，"
                 "M2 已驗證過的同一組理論值）+ Sethares (1993) dissonance-curve 公式計算**，"
                 "未使用聽感、未從渲染音訊校準（no-circularity rule，ROADMAP_PHYSICS.md §0）。\n")
+    out.append("> 參考音色固定為 MIDI 60 與本工具列出的 probe 參數；材質、敲擊位置、"
+               "beam boundary、plate edge、custom ratio 或 geometry mode 改變後，必須針對"
+               "實際 score 重新取得模態。Sethares 數值是 roughness 模型，不是主觀美感保證。\n")
     out.append("## 0. 方法與公式來源\n")
     out.append(
         "Sethares, W.A. \"Local consonance and the relationship between timbre and "
@@ -287,8 +291,8 @@ def build_report(cli, outdir, duration_outdir=None):
         out.append(fmt_curve_table(cents_axis, vals) + "\n")
 
     out.append("## 3. 跨引擎音程協和度\n")
-    out.append("每一對「聲部 A 固定、聲部 B 整體移調該音程」計算跨音對總協和度——"
-                "用來判斷兩個不同引擎的音同時響起時，音程差要落在哪裡才不會泛音打架。"
+    out.append("每一對「聲部 A 固定、聲部 B 整體移調該音程」計算跨音對總 roughness——"
+                "用來排列這組參考音色的局部低粗糙度音程；它不保證任意參數或配器都不會衝突。"
                 "至少涵蓋 ROADMAP_PHYSICS.md M9 指定的 tongue_drum（色彩）vs cimbalom"
                 "（和聲）；本表額外算了另外兩對排列組合，供 9d 新作的三引擎配器決策使用。\n")
     cross_pairs = [
@@ -317,7 +321,8 @@ def build_report(cli, outdir, duration_outdir=None):
     out.append("\n## 4. 時值規則（M9-9b）：T60/3 = 衰減 20 dB 所需時間\n")
     out.append(
         "`--dump-modes` 的 `decay` 欄位是 T60（衰減 60dB 所需時間，`ModalResonator::excite()` "
-        "定義，M5 已用音訊實測驗證 measured/model 比值 1.00–1.28）。單一指數衰減的 dB 值對時間"
+        "定義；2026-07-17 可量標準 probe 的 measured/model 約 0.99–1.00，過短 rubber "
+        "案例列為 UNVERIFIED/N/A）。單一指數衰減的 dB 值對時間"
         "**線性**，故衰減 20dB 所需時間精確等於 T60/3（不是新常數，是既有已驗證 T60 欄位的代數"
         "推論）。\n\n"
         "建議：同一音高要再次擊發前，至少等待「T60/3」秒，讓上一擊衰減 20dB 以上，"

@@ -38,9 +38,7 @@
       "params": {
         "material": "steel",
         "strike_position": 0.3,
-        "diameter_mm": 0.8,
-        "length_mm": 330,
-        "tension_n": 0
+        "diameter_mm": 0.8
       }
     },
     {

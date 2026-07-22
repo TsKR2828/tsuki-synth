@@ -11,6 +11,7 @@
 #include <cmath>
 #include <functional>
 #include <memory>
+#include <cstring>
 
 /**
  * Offline score -> WAV renderer (the CLI / deaf + AI path).
@@ -29,6 +30,102 @@ public:
     void setMaterialDB (MaterialDB* db) { materialDB = db; }
     void setBaseDir (const juce::File& dir) { baseDir = dir; }
     const std::vector<std::string>& getWarnings() const { return renderWarnings; }
+    const WavWriter::Report& getWriteReport() const { return writeReport; }
+
+    bool validateScore (const Score& score, bool clearMessages = true)
+    {
+        if (clearMessages) renderWarnings.clear();
+        if (materialDB == nullptr)
+        {
+            renderWarnings.push_back ("Material database is not initialized");
+            return false;
+        }
+        for (size_t i = 0; i < score.events.size(); ++i)
+        {
+            const auto& ev = score.events[i];
+            if (noteNameToMidi (ev.note) < 0)
+            {
+                renderWarnings.push_back ("Event " + std::to_string (i) + ": invalid note");
+                return false;
+            }
+            if (ev.engine != "fm")
+            {
+                if (materialDB->getMaterial (juce::String (ev.material)) == nullptr)
+                {
+                    renderWarnings.push_back ("Event " + std::to_string (i)
+                        + ": unknown material \"" + ev.material + "\"");
+                    return false;
+                }
+                if (! isKnownExciter (ev.exciter))
+                {
+                    renderWarnings.push_back ("Event " + std::to_string (i)
+                        + ": unknown exciter \"" + ev.exciter + "\"");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** Validate every layer reference before a batch starts writing outputs. */
+    bool validateLayeredScore (const Score& score, bool clearMessages = true)
+    {
+        if (clearMessages) renderWarnings.clear();
+        if (materialDB == nullptr)
+        {
+            renderWarnings.push_back ("Material database is not initialized");
+            return false;
+        }
+        if (score.layers.empty())
+        {
+            renderWarnings.push_back ("Layered score has no layers");
+            return false;
+        }
+
+        for (const auto& layer : score.layers)
+        {
+            const juce::File sourceFile = baseDir.getChildFile (
+                juce::String (layer.source));
+            const auto allowedRoot = layerAllowedRoot();
+            if ((! sourceFile.isAChildOf (allowedRoot) && sourceFile != allowedRoot)
+                || ! sourceFile.hasFileExtension (".score.json"))
+            {
+                renderWarnings.push_back ("Layer source must remain inside "
+                    + allowedRoot.getFullPathName().toStdString()
+                    + " and end in .score.json: " + layer.source);
+                return false;
+            }
+            if (! sourceFile.existsAsFile())
+            {
+                renderWarnings.push_back ("Layer source does not exist: " + layer.source);
+                return false;
+            }
+
+            Score subScore;
+            if (! ScoreParser::parse (sourceFile, subScore))
+            {
+                for (const auto& error : subScore.errors)
+                    renderWarnings.push_back ("Layer " + layer.source + ": " + error);
+                return false;
+            }
+            if (subScore.hasLayers())
+            {
+                renderWarnings.push_back ("Nested layer scores are not supported by this renderer");
+                return false;
+            }
+            if (subScore.global.sampleRate != score.global.sampleRate)
+            {
+                renderWarnings.push_back ("Layer sample rate differs from parent score");
+                return false;
+            }
+            if (! validateScore (subScore, false))
+            {
+                renderWarnings.push_back ("Layer validation failed: " + layer.source);
+                return false;
+            }
+        }
+        return true;
+    }
 
     /// Dump each modal event's model-predicted partials as JSON (single source
     /// of truth for verification). Non-modal (fm) events are skipped.
@@ -40,8 +137,11 @@ public:
         // took >600 s purely in string copies (the real cause of the Vivaldi
         // --dump-modes timeouts, not the modal math, which is milliseconds).
         juce::MemoryOutputStream out (1 << 20);
-        out << "{\n  \"events\": [\n";
+        out << "{\n  \"input_event_count\": " << static_cast<int> (score.events.size())
+            << ",\n  \"events\": [\n";
         bool first = true;
+        int sourceIndex = 0;
+        int dumpedCount = 0;
         for (const auto& ev : score.events)
         {
             int midiNote = noteNameToMidi (ev.note);
@@ -85,6 +185,9 @@ public:
                 cp.tensionOverride = ev.tensionN;
                 cp.dampingOverride = ev.dampingOverride;
                 cp.exciter = cimbalomExciterFromString (strikeExciter);
+                cp.tuneToMidi = ev.frequencyMode == "midi";
+                cp.randomSeed = score.global.randomSeed;
+                cp.eventIndex = static_cast<uint64_t> (sourceIndex);
                 auto voice = std::make_shared<CimbalomVoice>();
                 voice->prepare (score.global.sampleRate);
                 voice->noteOn (midiNote, ev.velocity, *mat, cp);
@@ -93,10 +196,9 @@ public:
             }
             else if (ev.engine == "beam" || ev.engine == "tongue_drum"
                   || ev.engine == "plate" || ev.engine == "water_gong"
-                  || ev.engine == "membrane" || ev.engine == "custom")
+                  || ev.engine == "custom")
             {
                 const Material* mat = materialDB->getMaterial (juce::String (ev.material));
-                if (mat == nullptr) mat = materialDB->getMaterial ("steel");
                 if (mat == nullptr) continue;
                 ChromaticParams cp;
                 cp.materialKey = ev.material;
@@ -110,16 +212,63 @@ public:
                 cp.tongueLength = ev.lengthMm / 1000.0;
                 cp.tongueWidth = ev.widthMm / 1000.0;
                 cp.tongueThickness = ev.thicknessMm / 1000.0;
+                cp.tongueBoundary = ev.beamBoundary == "free_free"
+                    ? BeamModel::Boundary::FreeFree : BeamModel::Boundary::Cantilever;
                 cp.plateFreeEdge = ev.plateFreeEdge;
                 cp.exciterHardness = chromaticExciterHardness (ev.exciter);
-                auto voice = std::make_shared<ChromaticVoice>();
+                cp.tuneToMidi = ev.frequencyMode == "midi";
+                cp.randomSeed = score.global.randomSeed;
+                cp.eventIndex = static_cast<uint64_t> (sourceIndex);
+                // Lifetime fix (2026-07-18): the custom-partial atoms used to be
+                // stack locals whose ADDRESSES were wired into voice->pRatio/pAmp.
+                // The voice itself outlives this block (the bodyMagFn lambda
+                // below captures the shared_ptr), so once the block ended the
+                // voice held dangling pointers -- only "safe" by accident
+                // because nothing re-reads pRatio/pAmp after noteOn(). Bundling
+                // the atoms into the same heap allocation as the voice (and
+                // handing out an aliasing shared_ptr) makes the atoms' lifetime
+                // cover the voice's by construction. Pure lifetime refactor:
+                // the values stored/loaded are identical, so neither the dump
+                // output nor any rendered audio changes.
+                struct VoiceWithCustomAtoms
+                {
+                    std::atomic<float> ratioAtoms[8];
+                    std::atomic<float> ampAtoms[8];
+                    ChromaticVoice voice;
+                };
+                auto bundle = std::make_shared<VoiceWithCustomAtoms>();
+                // Aliasing shared_ptr: shares ownership of the whole bundle but
+                // points at the voice member, so existing capture sites keep
+                // the entire bundle (voice + atoms) alive together.
+                std::shared_ptr<ChromaticVoice> voice (bundle, &bundle->voice);
                 voice->prepare (score.global.sampleRate);
+
+                // Custom partials must be wired before noteOn(), exactly as in
+                // renderChromatic().  The dump is a contract, not a second set
+                // of defaults.
+                if (cp.subEngine == ChromaticSubEngine::CustomHarmonics)
+                {
+                    for (int ci = 0; ci < 8; ++ci)
+                    {
+                        if (ev.customRatios[ci] >= 0.0f)
+                        {
+                            bundle->ratioAtoms[ci].store (ev.customRatios[ci]);
+                            voice->pRatio[ci] = &bundle->ratioAtoms[ci];
+                        }
+                        if (ev.customAmps[ci] >= 0.0f)
+                        {
+                            bundle->ampAtoms[ci].store (ev.customAmps[ci]);
+                            voice->pAmp[ci] = &bundle->ampAtoms[ci];
+                        }
+                    }
+                }
                 voice->noteOn (midiNote, ev.velocity, *mat, cp);
                 allStrings.push_back (voice->getModes());
                 bodyMagFn = [voice] (float f) { return voice->getBodyMagnitudeAt (f); };
             }
             else
             {
+                ++sourceIndex;
                 continue;   // fm = non-modal synthesis
             }
 
@@ -159,9 +308,12 @@ public:
                 return s;
             };
 
-            out << "    { \"engine\": \"" << jsonEsc (juce::String (ev.engine))
+            out << "    { \"source_index\": " << sourceIndex
+                << ", \"engine\": \"" << jsonEsc (juce::String (ev.engine))
                 << "\", \"note\": \"" << jsonEsc (juce::String (ev.note))
-                << "\", \"midi\": " << midiNote << ", \"partials\": [";
+                << "\", \"midi\": " << midiNote
+                << ", \"frequency_mode\": \"" << jsonEsc (juce::String (ev.frequencyMode))
+                << "\", \"partials\": [";
             if (! allStrings.empty())
                 for (size_t i = 0; i < allStrings[0].size(); ++i)
                 {
@@ -181,14 +333,18 @@ public:
                 out << "]";
             }
             out << "] }";
+            ++sourceIndex;
+            ++dumpedCount;
         }
-        out << "\n  ]\n}\n";
+        out << "\n  ],\n  \"dumped_event_count\": " << dumpedCount << "\n}\n";
         return out.toString();
     }
 
     bool render (const Score& score, const juce::File& outputFile)
     {
-        if (materialDB == nullptr || score.events.empty())
+        renderWarnings.clear();
+        writeReport = {};
+        if (score.events.empty() || ! validateScore (score, false))
             return false;
 
         double sr = score.global.sampleRate;
@@ -196,22 +352,23 @@ public:
             return false;
 
         double totalDuration = 0.0;
-        for (const auto& ev : score.events)
-            totalDuration = std::max (totalDuration, eventEndTime (ev));
+        for (size_t i = 0; i < score.events.size(); ++i)
+            totalDuration = std::max (totalDuration, eventEndTime (
+                score.events[i], sr, score.global.randomSeed, i));
 
         totalDuration += wallDelaySeconds (score.global.effects);
         totalDuration += effectTailSeconds (score.global.effects);
         totalDuration += score.exportSettings.tailSilenceMs / 1000.0;
-        int64_t totalSamples64 = static_cast<int64_t> (totalDuration * sr) + 1;
-        if (totalSamples64 <= 0 || totalSamples64 > 345600000)
+        int64_t totalSamples64 = static_cast<int64_t> (std::ceil (totalDuration * sr)) + 1;
+        if (! validateBufferBudget (totalSamples64, "render output"))
             return false;
         int totalSamples = static_cast<int> (totalSamples64);
 
         juce::AudioBuffer<float> buffer (2, totalSamples);
         buffer.clear();
 
-        for (const auto& ev : score.events)
-            renderEvent (ev, buffer, sr);
+        for (size_t i = 0; i < score.events.size(); ++i)
+            renderEvent (score.events[i], buffer, sr, score.global.randomSeed, i);
 
         applyEffects (buffer, score.global, sr);
         if (! trimBuffer (buffer, score.exportSettings))
@@ -219,12 +376,14 @@ public:
 
         return WavWriter::write (outputFile, buffer, sr,
                                  score.exportSettings.bitDepth,
-                                 score.exportSettings.normalize);
+                                 score.exportSettings.normalize,
+                                 &writeReport);
     }
 
     bool renderLayered (const Score& score, const juce::File& outputFile)
     {
-        if (materialDB == nullptr || score.layers.empty())
+        writeReport = {};
+        if (! validateLayeredScore (score))
             return false;
 
         double sr = score.global.sampleRate;
@@ -241,42 +400,65 @@ public:
 
         std::vector<RenderedLayer> renderedLayers;
         renderedLayers.reserve (score.layers.size());
+        int64_t retainedLayerSamples = 0;
 
         for (const auto& layer : score.layers)
         {
             juce::File sourceFile = baseDir.getChildFile (juce::String (layer.source));
-            if (! sourceFile.isAChildOf (baseDir) && sourceFile != baseDir)
+            const auto allowedRoot = layerAllowedRoot();
+            if ((! sourceFile.isAChildOf (allowedRoot) && sourceFile != allowedRoot)
+                || ! sourceFile.hasFileExtension (".score.json"))
             {
-                renderWarnings.push_back ("Layer source blocked (path traversal): " + layer.source);
+                renderWarnings.push_back ("Layer source must remain inside "
+                    + allowedRoot.getFullPathName().toStdString()
+                    + " and end in .score.json: " + layer.source);
                 return false;
             }
             if (! sourceFile.existsAsFile())
+            {
+                renderWarnings.push_back ("Layer source does not exist: " + layer.source);
                 return false;
+            }
 
             Score subScore;
             if (! ScoreParser::parse (sourceFile, subScore))
+            {
+                for (const auto& error : subScore.errors)
+                    renderWarnings.push_back ("Layer " + layer.source + ": " + error);
                 return false;
+            }
             if (subScore.hasLayers()
                 || subScore.global.sampleRate != score.global.sampleRate)
+            {
+                renderWarnings.push_back (subScore.hasLayers()
+                    ? "Nested layer scores are not supported by this renderer"
+                    : "Layer sample rate differs from parent score");
                 return false;
+            }
+            if (! validateScore (subScore, false)) return false;
 
             double subDuration = 0.0;
-            for (const auto& ev : subScore.events)
-                subDuration = std::max (subDuration, eventEndTime (ev));
+            for (size_t i = 0; i < subScore.events.size(); ++i)
+                subDuration = std::max (subDuration, eventEndTime (
+                    subScore.events[i], sr, subScore.global.randomSeed, i));
             subDuration += wallDelaySeconds (subScore.global.effects);
             subDuration += effectTailSeconds (subScore.global.effects);
             subDuration += subScore.exportSettings.tailSilenceMs / 1000.0;
 
-            int64_t subTotalSamples64 = static_cast<int64_t> (subDuration * sr) + 1;
-            if (subTotalSamples64 <= 0 || subTotalSamples64 > 345600000)
+            int64_t subTotalSamples64 = static_cast<int64_t> (std::ceil (subDuration * sr)) + 1;
+            if (! validateBufferBudget (subTotalSamples64, "layer source " + layer.source)
+                || ! validateBufferBudget (retainedLayerSamples + subTotalSamples64,
+                                            "layered render working set while loading "
+                                                + layer.source))
                 return false;
             int subTotalSamples = static_cast<int> (subTotalSamples64);
 
             juce::AudioBuffer<float> subBuffer (2, subTotalSamples);
             subBuffer.clear();
 
-            for (const auto& ev : subScore.events)
-                renderEvent (ev, subBuffer, sr);
+            for (size_t i = 0; i < subScore.events.size(); ++i)
+                renderEvent (subScore.events[i], subBuffer, sr,
+                             subScore.global.randomSeed, i);
 
             applyEffects (subBuffer, subScore.global, sr);
             if (! trimBuffer (subBuffer, subScore.exportSettings))
@@ -291,12 +473,17 @@ public:
             int regionLen   = regionEnd - regionStart;
 
             RenderedLayer rl;
-            rl.buffer.setSize (2, regionLen);
-            rl.buffer.copyFrom (0, 0, subBuffer, 0, regionStart, regionLen);
-            rl.buffer.copyFrom (1, 0, subBuffer, 1, regionStart, regionLen);
+            for (int channel = 0; channel < subBuffer.getNumChannels(); ++channel)
+                std::memmove (subBuffer.getWritePointer (channel),
+                              subBuffer.getReadPointer (channel, regionStart),
+                              static_cast<size_t> (regionLen) * sizeof (float));
+            subBuffer.setSize (subBuffer.getNumChannels(), regionLen,
+                               true, false, true);
+            rl.buffer = std::move (subBuffer);
             rl.buffer.applyGain (static_cast<float> (layer.gain));
             rl.numSamples = regionLen;
             renderedLayers.push_back (std::move (rl));
+            retainedLayerSamples += regionLen;
         }
 
         // Clamp crossfade to shortest layer to prevent negative offsets
@@ -316,7 +503,18 @@ public:
         }
         totalOut = std::max (totalOut, 1);
 
-        juce::AudioBuffer<float> output (2, totalOut);
+        const int wallSamples = static_cast<int> (
+            wallDelaySeconds (score.global.effects) * sr);
+        const int effectSamples = static_cast<int> (
+            effectTailSeconds (score.global.effects) * sr);
+        const int tailSamples = static_cast<int> (
+            score.exportSettings.tailSilenceMs / 1000.0 * sr);
+        const int64_t finalSamples = static_cast<int64_t> (totalOut) + wallSamples
+            + effectSamples + tailSamples;
+        if (! validateBufferBudget (finalSamples + retainedLayerSamples,
+                                    "layered render working set")) return false;
+
+        juce::AudioBuffer<float> output (2, static_cast<int> (finalSamples));
         output.clear();
 
         int writePos = 0;
@@ -359,12 +557,6 @@ public:
                 writePos += rl.numSamples - crossfadeSamples;
         }
 
-        const int wallSamples = static_cast<int> (
-            wallDelaySeconds (score.global.effects) * sr);
-        const int effectSamples = static_cast<int> (
-            effectTailSeconds (score.global.effects) * sr);
-        int tailSamples = static_cast<int> (score.exportSettings.tailSilenceMs / 1000.0 * sr);
-        output.setSize (2, totalOut + wallSamples + effectSamples + tailSamples, true, true, true);
         applyEffects (output, score.global, sr);
 
         if (! trimBuffer (output, score.exportSettings))
@@ -372,11 +564,13 @@ public:
 
         return WavWriter::write (outputFile, output, sr,
                                  score.exportSettings.bitDepth,
-                                 score.exportSettings.normalize);
+                                 score.exportSettings.normalize,
+                                 &writeReport);
     }
 
 private:
-    void renderEvent (const ScoreEvent& ev, juce::AudioBuffer<float>& buffer, double sr)
+    void renderEvent (const ScoreEvent& ev, juce::AudioBuffer<float>& buffer, double sr,
+                      uint64_t randomSeed, uint64_t eventIndex)
     {
         int startSample = juce::jlimit (0, buffer.getNumSamples(),
                                         static_cast<int> (std::max (0.0, ev.time) * sr));
@@ -387,45 +581,31 @@ private:
 
         int midiNote = noteNameToMidi (ev.note);
         const Material* mat = materialDB->getMaterial (juce::String (ev.material));
-        if (mat == nullptr)
-        {
-            renderWarnings.push_back ("Event at t=" + std::to_string (ev.time)
-                + ": unknown material \"" + ev.material + "\", using steel");
-            mat = materialDB->getMaterial ("steel");
-        }
-        if (ev.engine != "fm" && ! isKnownExciter (ev.exciter))
-        {
-            renderWarnings.push_back ("Event at t=" + std::to_string (ev.time)
-                + ": unknown exciter \"" + ev.exciter + "\", using default");
-        }
 
         if (ev.engine == "string" || ev.engine == "cimbalom")
         {
-            renderCimbalom (ev, mat, midiNote, startSample, endSample, buffer, sr);
+            renderCimbalom (ev, mat, midiNote, startSample, endSample, buffer, sr,
+                            randomSeed, eventIndex);
         }
         else if (ev.engine == "beam" || ev.engine == "tongue_drum")
         {
             renderChromatic (ev, mat, midiNote, ChromaticSubEngine::TongueDrum,
-                             startSample, endSample, buffer, sr);
+                             startSample, endSample, buffer, sr, randomSeed, eventIndex);
         }
         else if (ev.engine == "plate" || ev.engine == "water_gong")
         {
             renderChromatic (ev, mat, midiNote, ChromaticSubEngine::WaterGong,
-                             startSample, endSample, buffer, sr);
+                             startSample, endSample, buffer, sr, randomSeed, eventIndex);
         }
         else if (ev.engine == "fm")
         {
-            renderFM (ev, midiNote, startSample, endSample, buffer, sr);
+            renderFM (ev, midiNote, startSample, endSample, buffer, sr,
+                      randomSeed, eventIndex);
         }
         else if (ev.engine == "custom")
         {
             renderChromatic (ev, mat, midiNote, ChromaticSubEngine::CustomHarmonics,
-                             startSample, endSample, buffer, sr);
-        }
-        else if (ev.engine == "membrane")
-        {
-            renderChromatic (ev, mat, midiNote, ChromaticSubEngine::WaterGong,
-                             startSample, endSample, buffer, sr);
+                             startSample, endSample, buffer, sr, randomSeed, eventIndex);
         }
         else if (ev.engine == "piano")
         {
@@ -435,12 +615,14 @@ private:
             ScoreEvent pev = ev;
             if (pev.exciter == "wood_mallet") pev.exciter = "felt";
             if (pev.strikePosition == 0.3)    pev.strikePosition = 0.125;
-            renderCimbalom (pev, mat, midiNote, startSample, endSample, buffer, sr);
+            renderCimbalom (pev, mat, midiNote, startSample, endSample, buffer, sr,
+                            randomSeed, eventIndex);
         }
     }
 
     void renderCimbalom (const ScoreEvent& ev, const Material* mat, int midiNote,
-                          int start, int end, juce::AudioBuffer<float>& buf, double sr)
+                          int start, int end, juce::AudioBuffer<float>& buf, double sr,
+                          uint64_t randomSeed, uint64_t eventIndex)
     {
         if (mat == nullptr) return;
 
@@ -453,6 +635,9 @@ private:
         cp.tensionOverride = ev.tensionN;
         cp.dampingOverride = ev.dampingOverride;
         cp.exciter = cimbalomExciterFromString (ev.exciter);
+        cp.tuneToMidi = ev.frequencyMode == "midi";
+        cp.randomSeed = randomSeed;
+        cp.eventIndex = eventIndex;
 
         CimbalomVoice voice;
         voice.prepare (sr);
@@ -499,7 +684,8 @@ private:
 
     void renderChromatic (const ScoreEvent& ev, const Material* mat, int midiNote,
                            ChromaticSubEngine sub, int start, int end,
-                           juce::AudioBuffer<float>& buf, double sr)
+                           juce::AudioBuffer<float>& buf, double sr,
+                           uint64_t randomSeed, uint64_t eventIndex)
     {
         if (mat == nullptr) return;
 
@@ -512,8 +698,13 @@ private:
         cp.tongueLength = ev.lengthMm / 1000.0;
         cp.tongueWidth = ev.widthMm / 1000.0;
         cp.tongueThickness = ev.thicknessMm / 1000.0;
+        cp.tongueBoundary = ev.beamBoundary == "free_free"
+            ? BeamModel::Boundary::FreeFree : BeamModel::Boundary::Cantilever;
         cp.plateFreeEdge = ev.plateFreeEdge;
         cp.exciterHardness = chromaticExciterHardness (ev.exciter);
+        cp.tuneToMidi = ev.frequencyMode == "midi";
+        cp.randomSeed = randomSeed;
+        cp.eventIndex = eventIndex;
 
         ChromaticVoice voice;
         voice.prepare (sr);
@@ -580,10 +771,13 @@ private:
 
     void renderFM (const ScoreEvent& ev, int midiNote,
                     int start, int end,
-                    juce::AudioBuffer<float>& buf, double sr)
+                    juce::AudioBuffer<float>& buf, double sr,
+                    uint64_t randomSeed, uint64_t eventIndex)
     {
         FMParams fp;
         fp.preset = static_cast<FMPreset> (ev.fmPreset);
+        fp.randomSeed = randomSeed;
+        fp.eventIndex = eventIndex;
 
         // Forward detailed FM params if specified in JSON (>=0 means explicitly set)
         if (ev.fmRatio      >= 0.0f) fp.ratio      = ev.fmRatio;
@@ -639,6 +833,7 @@ private:
     MaterialDB* materialDB = nullptr;
     juce::File  baseDir;
     std::vector<std::string> renderWarnings;
+    WavWriter::Report writeReport;
 
     static bool isKnownExciter (const std::string& exciter)
     {
@@ -690,7 +885,95 @@ private:
         return 2.0f;
     }
 
-    static double eventEndTime (const ScoreEvent& ev)
+    double eventMaxT60 (const ScoreEvent& ev, double sr,
+                        uint64_t randomSeed, uint64_t eventIndex) const
+    {
+        if (ev.engine == "fm") return 0.0;
+        const Material* mat = materialDB != nullptr
+            ? materialDB->getMaterial (juce::String (ev.material)) : nullptr;
+        if (mat == nullptr) return 0.0;
+
+        std::vector<std::vector<ModalResonator::Mode>> modeSets;
+        if (ev.engine == "string" || ev.engine == "cimbalom" || ev.engine == "piano")
+        {
+            ScoreEvent effective = ev;
+            if (effective.engine == "piano")
+            {
+                if (effective.exciter == "wood_mallet") effective.exciter = "felt";
+                if (effective.strikePosition == 0.3) effective.strikePosition = 0.125;
+            }
+            CimbalomParams cp;
+            cp.materialKey = effective.material;
+            cp.strikePosition = effective.strikePosition;
+            cp.diameterMm = effective.diameterMm;
+            cp.numStrings = effective.numStrings;
+            cp.detuningCents = effective.detuningCents;
+            cp.tensionOverride = effective.tensionN;
+            cp.dampingOverride = effective.dampingOverride;
+            cp.exciter = cimbalomExciterFromString (effective.exciter);
+            cp.tuneToMidi = effective.frequencyMode == "midi";
+            cp.randomSeed = randomSeed;
+            cp.eventIndex = eventIndex;
+            CimbalomVoice voice;
+            voice.prepare (sr);
+            voice.noteOn (noteNameToMidi (effective.note), effective.velocity, *mat, cp);
+            modeSets = voice.getAllStringModes();
+        }
+        else
+        {
+            ChromaticParams cp;
+            cp.materialKey = ev.material;
+            cp.subEngine = (ev.engine == "beam" || ev.engine == "tongue_drum")
+                ? ChromaticSubEngine::TongueDrum
+                : ev.engine == "custom" ? ChromaticSubEngine::CustomHarmonics
+                                          : ChromaticSubEngine::WaterGong;
+            cp.strikePosition = ev.strikePosition;
+            cp.plateRadius = ev.radiusMm / 1000.0;
+            cp.plateThickness = ev.thicknessMm / 1000.0;
+            cp.tongueLength = ev.lengthMm / 1000.0;
+            cp.tongueWidth = ev.widthMm / 1000.0;
+            cp.tongueThickness = ev.thicknessMm / 1000.0;
+            cp.tongueBoundary = ev.beamBoundary == "free_free"
+                ? BeamModel::Boundary::FreeFree : BeamModel::Boundary::Cantilever;
+            cp.plateFreeEdge = ev.plateFreeEdge;
+            cp.exciterHardness = chromaticExciterHardness (ev.exciter);
+            cp.tuneToMidi = ev.frequencyMode == "midi";
+            cp.randomSeed = randomSeed;
+            cp.eventIndex = eventIndex;
+            ChromaticVoice voice;
+            voice.prepare (sr);
+            std::atomic<float> ratios[8];
+            std::atomic<float> amps[8];
+            if (cp.subEngine == ChromaticSubEngine::CustomHarmonics)
+            {
+                for (int i = 0; i < 8; ++i)
+                {
+                    if (ev.customRatios[i] >= 0.0f)
+                    {
+                        ratios[i].store (ev.customRatios[i]);
+                        voice.pRatio[i] = &ratios[i];
+                    }
+                    if (ev.customAmps[i] >= 0.0f)
+                    {
+                        amps[i].store (ev.customAmps[i]);
+                        voice.pAmp[i] = &amps[i];
+                    }
+                }
+            }
+            voice.noteOn (noteNameToMidi (ev.note), ev.velocity, *mat, cp);
+            modeSets.push_back (voice.getModes());
+        }
+
+        double maxT60 = 0.0;
+        for (const auto& modes : modeSets)
+            for (const auto& mode : modes)
+                if (std::isfinite (mode.decayTime) && mode.decayTime > maxT60)
+                    maxT60 = mode.decayTime;
+        return maxT60;
+    }
+
+    double eventEndTime (const ScoreEvent& ev, double sr,
+                         uint64_t randomSeed, uint64_t eventIndex) const
     {
         const double start = std::max (0.0, ev.time);
         const double duration = std::max (0.0, ev.duration);
@@ -704,13 +987,17 @@ private:
             const double noteOff = start + duration * 0.9;
             end = std::max (end, noteOff + releaseMs * 0.001);
         }
-        else if (ev.engine == "string" || ev.engine == "cimbalom"
-                 || ev.engine == "beam" || ev.engine == "tongue_drum"
-                 || ev.engine == "plate" || ev.engine == "water_gong"
-                 || ev.engine == "custom" || ev.engine == "membrane"
-                 || ev.engine == "piano")
+        else
         {
-            end += 5.0;
+            // ModalResonator reaches -60 dB at T60. noteOff occurs at 90%
+            // of the authored duration and changes the remaining decay time
+            // to 5%, so allocate the exact worst-mode active interval rather
+            // than a fixed five-second tail.
+            const double maxT60 = eventMaxT60 (ev, sr, randomSeed, eventIndex);
+            const double noteOff = duration * 0.9;
+            const double active = maxT60 <= noteOff
+                ? maxT60 : noteOff + (maxT60 - noteOff) * 0.05;
+            end = std::max (end, start + active);
         }
 
         return end;
@@ -727,13 +1014,55 @@ private:
     {
         double tail = 0.0;
         if (fx.reverbWet > 0.001)
-            tail += fx.reverbDecay;
-        if (fx.delayWet > 0.001 && fx.delayTimeMs > 0.0 && fx.delayFeedback > 0.01)
         {
-            double repeats = std::ceil (std::log (0.001) / std::log (fx.delayFeedback));
-            tail += std::min (repeats * fx.delayTimeMs / 1000.0, 30.0);
+            // SimpleReverb::setDecayTime() makes decay an authored T60.
+            // Even T60=0 retains the first comb + serial-allpass response.
+            const double longestComb = (1617.0 + 23.0) / 44100.0;
+            const double allPassLatency = (556.0 + 441.0 + 341.0 + 225.0
+                                           + 4.0 * 23.0) / 44100.0;
+            tail += longestComb + fx.reverbDecay + allPassLatency;
+        }
+        if (fx.delayWet > 0.001 && fx.delayTimeMs > 0.0)
+        {
+            const double repeats = fx.delayFeedback > 0.0
+                ? std::ceil (std::log (0.001) / std::log (fx.delayFeedback)) : 1.0;
+            // StereoDelay's right channel is intentionally 10% longer.
+            tail += std::max (1.0, repeats) * fx.delayTimeMs * 0.001 * 1.10;
         }
         return tail;
+    }
+
+    bool validateBufferBudget (int64_t samples, const std::string& label)
+    {
+        static constexpr int64_t maxBytes = int64_t (1) << 30; // 1 GiB per stereo buffer
+        if (samples <= 0 || samples > std::numeric_limits<int>::max())
+        {
+            renderWarnings.push_back (label + ": invalid or address-space-exceeding sample count "
+                + std::to_string (samples));
+            return false;
+        }
+        const int64_t bytes = samples * 2 * static_cast<int64_t> (sizeof (float));
+        if (bytes > maxBytes)
+        {
+            renderWarnings.push_back (label + " requires " + std::to_string (bytes)
+                + " bytes, exceeding the explicit 1 GiB render-buffer budget");
+            return false;
+        }
+        return true;
+    }
+
+    juce::File layerAllowedRoot() const
+    {
+        juce::File current = baseDir;
+        for (;;)
+        {
+            if (current.getFileName().equalsIgnoreCase ("scores"))
+                return current;
+            const auto parent = current.getParentDirectory();
+            if (parent == current) break;
+            current = parent;
+        }
+        return baseDir;
     }
 
     static float wallReflectionGain (const std::string& material)
@@ -773,8 +1102,7 @@ private:
         EffectsParams fxp;
         fxp.reverbEnabled = global.effects.reverbWet > 0.001;
         fxp.reverbWet = static_cast<float> (global.effects.reverbWet);
-        fxp.reverbRoomSize = static_cast<float> (
-            std::min (global.effects.reverbDecay / 10.0, 1.0));
+        fxp.reverbDecaySeconds = static_cast<float> (global.effects.reverbDecay);
         fxp.delayEnabled = global.effects.delayWet > 0.001;
         fxp.delayWet = static_cast<float> (global.effects.delayWet);
         fxp.delayTime = global.effects.delayTimeMs / 1000.0;
@@ -827,11 +1155,11 @@ private:
         if (trimLength >= totalSamples && trimStart == 0)
             return true;
 
-        juce::AudioBuffer<float> trimmed (buffer.getNumChannels(), trimLength);
         for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
-            trimmed.copyFrom (
-                channel, 0, buffer, channel, trimStart, trimLength);
-        buffer = std::move (trimmed);
+            std::memmove (buffer.getWritePointer (channel),
+                          buffer.getReadPointer (channel, trimStart),
+                          static_cast<size_t> (trimLength) * sizeof (float));
+        buffer.setSize (buffer.getNumChannels(), trimLength, true, false, true);
         return true;
     }
 

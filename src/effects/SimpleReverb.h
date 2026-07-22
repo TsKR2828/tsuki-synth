@@ -43,7 +43,17 @@ public:
         }
     }
 
-    void setRoomSize (float size) { roomSize = std::clamp (size, 0.0f, 1.0f); }
+    void setRoomSize (float size)
+    {
+        roomSize = std::clamp (size, 0.0f, 1.0f);
+        decayTimeSeconds = -1.0f;
+    }
+    /// Set a measurable T60 for offline/score rendering. A value of zero keeps
+    /// the first delayed response but removes recirculating comb feedback.
+    void setDecayTime (float seconds)
+    {
+        decayTimeSeconds = std::max (0.0f, seconds);
+    }
     void setDamping  (float damp) { damping  = std::clamp (damp, 0.0f, 1.0f); }
     void setMix      (float m)    { mix      = std::clamp (m,    0.0f, 1.0f); }
 
@@ -68,7 +78,23 @@ public:
         float inL = left;
         float inR = right;
 
-        float feedback = roomSize * 0.28f + 0.7f;
+        const float roomFeedback = roomSize * 0.28f + 0.7f;
+        const auto feedbackForLength = [this, roomFeedback] (size_t samples)
+        {
+            if (decayTimeSeconds < 0.0f)
+                return roomFeedback;
+            if (decayTimeSeconds == 0.0f)
+                return 0.0f;
+
+            // Every comb, including the stereo-spread right channel, reaches
+            // -60 dB after the authored T60.  A single shared feedback value
+            // made T60 proportional to each comb length and therefore gave
+            // eight different decay times (and a left/right mismatch).
+            const double delaySeconds = (double) samples / sampleRate;
+            return std::clamp ((float) std::pow (
+                0.001, delaySeconds / (double) decayTimeSeconds),
+                0.0f, 0.9995f);
+        };
         float damp1 = damping * 0.4f;
         float damp2 = 1.0f - damp1;
 
@@ -84,7 +110,8 @@ public:
                 int& pos = combPosL[i];
                 float output = buf[(size_t) pos];
                 combFilterL[i] = output * damp2 + combFilterL[i] * damp1;
-                buf[(size_t) pos] = inL + combFilterL[i] * feedback;
+                buf[(size_t) pos] = inL + combFilterL[i]
+                    * feedbackForLength (buf.size());
                 pos = (pos + 1) % (int) buf.size();
                 outL += output;
             }
@@ -94,7 +121,8 @@ public:
                 int& pos = combPosR[i];
                 float output = buf[(size_t) pos];
                 combFilterR[i] = output * damp2 + combFilterR[i] * damp1;
-                buf[(size_t) pos] = inR + combFilterR[i] * feedback;
+                buf[(size_t) pos] = inR + combFilterR[i]
+                    * feedbackForLength (buf.size());
                 pos = (pos + 1) % (int) buf.size();
                 outR += output;
             }
@@ -152,6 +180,7 @@ private:
 
     // Parameters
     float roomSize = 0.5f;
+    float decayTimeSeconds = -1.0f;
     float damping  = 0.5f;
     float mix      = 0.3f;
 

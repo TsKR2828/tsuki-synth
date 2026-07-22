@@ -10,13 +10,11 @@
  *
  * Current factory preset count: 27.
  *
- * Presets grouped by engine:
- *   0-9:   Cimbalom (physical modeling string)
- *          0-5 raw variants, 6-7 Body variants, 8-9 Piano (Physical)
- *   10-17: Chromatic (beam / plate / custom)
- *          10-15 raw variants, 16-17 Body variants
- *   18-26: FM Piano (frequency modulation)
- *          8 sound-type presets plus Layered E.Piano
+ * Registry order:
+ *   0-7:   Cimbalom (6 raw variants + 2 Body variants)
+ *   8-15:  Chromatic (6 raw variants + 2 Body variants)
+ *   16-24: FM Piano (8 sound-type presets + Layered E.Piano)
+ *   25-26: Piano (Physical)
  */
 struct PresetEntry
 {
@@ -482,7 +480,7 @@ inline const FactoryPreset* getFactoryPresetList (int& count)
 {
     static const FactoryPreset presets[] =
     {
-        // Cimbalom (0-9)
+        // Cimbalom (0-7)
         // Raw variants (0-5)
         { "Steel Hammered Dulcimer",  preset_steel_dulcimer,      (int)(sizeof(preset_steel_dulcimer)/sizeof(preset_steel_dulcimer[0]))          },
         { "Copper Warm Strings",      preset_copper_warm,         (int)(sizeof(preset_copper_warm)/sizeof(preset_copper_warm[0]))                },
@@ -495,14 +493,14 @@ inline const FactoryPreset* getFactoryPresetList (int& count)
         { "Copper Warm Strings (Body)",     preset_copper_warm_body,    (int)(sizeof(preset_copper_warm_body)/sizeof(preset_copper_warm_body[0]))      },
 
         // Chromatic (8-15)
-        // Raw variants (10-15)
+        // Raw variants (8-13)
         { "Crystal Tongue Drum",      preset_crystal_tongue,      (int)(sizeof(preset_crystal_tongue)/sizeof(preset_crystal_tongue[0]))          },
         { "Bronze Water Gong",        preset_bronze_gong,         (int)(sizeof(preset_bronze_gong)/sizeof(preset_bronze_gong[0]))                },
         { "Wooden Kalimba",           preset_wooden_kalimba,      (int)(sizeof(preset_wooden_kalimba)/sizeof(preset_wooden_kalimba[0]))          },
         { "Ethereal Steel Bells",     preset_ethereal_bells,      (int)(sizeof(preset_ethereal_bells)/sizeof(preset_ethereal_bells[0]))          },
         { "Glass Singing Bowl",       preset_glass_singing_bowl,  (int)(sizeof(preset_glass_singing_bowl)/sizeof(preset_glass_singing_bowl[0]))  },
         { "Rubber Tongue Pad",        preset_rubber_tongue_pad,   (int)(sizeof(preset_rubber_tongue_pad)/sizeof(preset_rubber_tongue_pad[0]))    },
-        // Body variants (16-17)
+        // Body variants (14-15)
         { "Crystal Tongue Drum (Body)", preset_crystal_tongue_body, (int)(sizeof(preset_crystal_tongue_body)/sizeof(preset_crystal_tongue_body[0]))},
         { "Bronze Water Gong (Body)",   preset_bronze_gong_body,    (int)(sizeof(preset_bronze_gong_body)/sizeof(preset_bronze_gong_body[0]))      },
 

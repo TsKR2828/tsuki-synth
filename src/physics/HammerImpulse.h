@@ -24,10 +24,10 @@
  *
  *   H(w) = |cos(w*tau_c/2)| / |1 - (w*tau_c/pi)^2|,   H(0) = 1
  *
- * 分母在 w*tau_c = pi 處有可去奇點，H 在該點的極限值 = π/4（羅必達法則）。
- * 頻譜第一個零點在 w*tau_c/2 = pi/2，即 f_null = 1/(2*tau_c) —— 這就是題目
- * 描述的「簡化實用頻譜包絡在 f_cutoff ~= 1/(2*tau_c) 以上滾降」的精確版本：
- * f_cutoff 不再是查表任意值，而是由 tau_c 直接導出的物理量。
+ * 分母在 w*tau_c = pi 處有可去奇點，H 在該點的極限值 = π/4（羅必達法則），
+ * 所以 f=1/(2*tau_c) **不是零點**。分子下一個零點才沒有被分母抵消：
+ * f_null = 3/(2*tau_c)。1/(2*tau_c) 只能當作主瓣轉折的尺度，不能在驗證
+ * 或文件中誤稱第一個 spectral null。
  *
  * ── tau_c（接觸時間）數值來源 ──
  *
@@ -91,6 +91,23 @@ public:
         float frac = idx - (float) lo;
 
         return tauTable[lo] + (tauTable[hi] - tauTable[lo]) * frac;
+    }
+
+    /** Contact time adjusted for strike speed.
+     *
+     * For an elastic Hertz-type impact, contact duration scales approximately
+     * with impact speed^(-1/5).  The public MIDI velocity is explicitly treated
+     * as a normalised speed proxy here, referenced at velocity 0.5.  The clamp
+     * keeps the approximation inside the +-20% measured range cited above;
+     * scores requiring metrology-grade reproduction should provide/measure
+     * tau_c directly rather than infer it from MIDI velocity.
+     */
+    static float tauCForStrike (float hardnessIndex, float velocity)
+    {
+        const float speed = juce::jlimit (0.02f, 1.0f, velocity);
+        const float hertzScale = juce::jlimit (0.8f, 1.2f,
+            std::pow (0.5f / speed, 0.2f));
+        return tauCForHardness (hardnessIndex) * hertzScale;
     }
 
     /**

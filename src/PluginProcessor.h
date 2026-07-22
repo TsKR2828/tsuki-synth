@@ -4,6 +4,7 @@
 #include "physics/MaterialDB.h"
 #include "effects/EffectChain.h"
 #include "dsp/AudioFIFO.h"
+#include "dsp/MidiNoteTracker.h"
 #include "PresetManager.h"
 
 class TsukiSynthProcessor : public juce::AudioProcessor
@@ -46,14 +47,15 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presetManager { apvts };
-    AudioFIFO analyzerFifo { 4096 };
-    AudioFIFO analyzerDryFifo { 8192 };
+    AudioFIFO analyzerFifo { 16384 };
+    // At 192 kHz this retains >340 ms, enough for six cycles at the A0
+    // detector's lowest search frequency even
+    // across a delayed GUI timer tick. AudioFIFO always keeps newest history.
+    AudioFIFO analyzerDryFifo { 65536 };
     juce::MidiKeyboardState keyboardState;
     MaterialDB materialDB;
 
-    /** Most recent noteOn MIDI number across any source (-1 = none).
-     *  Used by TunerView for synth-aware display on the Chromatic engine,
-     *  where inharmonic modal stacks make NSDF detection unreliable. */
+    /** Most recent still-held or sustained MIDI note across all channels. */
     std::atomic<int> lastNoteOnMidi { -1 };
 
     /** Direct access to the engine choice param so analyzer/tuner can branch. */
@@ -72,6 +74,7 @@ private:
     std::atomic<float>* pFMRelease = nullptr;
     juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
+    MidiNoteTracker tunerNoteTracker;
     std::atomic<int> restoredProgramToIgnore { -1 };
     double currentSampleRate = 44100.0;
 

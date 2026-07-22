@@ -60,10 +60,6 @@
       "params": {
         "material": "iron",
         "thickness_mm": 5.0,
-        "width_mm": 100,
-        "height_mm": 100,
-        "strike_position_x": 0.5,
-        "strike_position_y": 0.5,
         "exciter": "metal_hammer",
         "radius_mm": 150
       }
@@ -92,10 +88,6 @@
       "params": {
         "material": "iron",
         "thickness_mm": 5.0,
-        "width_mm": 100,
-        "height_mm": 100,
-        "strike_position_x": 0.4,
-        "strike_position_y": 0.6,
         "exciter": "metal_hammer",
         "radius_mm": 150
       }
@@ -124,10 +116,6 @@
       "params": {
         "material": "iron",
         "thickness_mm": 5.0,
-        "width_mm": 100,
-        "height_mm": 100,
-        "strike_position_x": 0.5,
-        "strike_position_y": 0.5,
         "exciter": "metal_hammer",
         "radius_mm": 150
       }
@@ -156,10 +144,6 @@
       "params": {
         "material": "iron",
         "thickness_mm": 5.0,
-        "width_mm": 100,
-        "height_mm": 100,
-        "strike_position_x": 0.6,
-        "strike_position_y": 0.4,
         "exciter": "metal_hammer",
         "radius_mm": 150
       }

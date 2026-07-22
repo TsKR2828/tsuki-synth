@@ -1,0 +1,32 @@
+=== python tools/tuner_audit.py ===
+TsukiSynth tuner acceptance audit
+[PASS] A0-C8 sweep: 1056 measured cases
+[PASS] outside-range sweep: 160 explicitly refused cases
+[PASS] independent oracle worst error: 0.2076 cents
+[PASS] audio shift -281.36 cents is measured, not copied
+[PASS] audio shift +241.96 cents is measured, not copied
+[PASS] audio shift -562.72 cents is measured, not copied
+[PASS] 0.5x octave substitution is refused
+[PASS] 2x octave substitution is refused
+[PASS] silence never becomes a measured pitch
+PASS (9 checks, 0 failures)
+exit=0
+
+=== python tools/tuner_audit_v2.py ===
+TsukiSynth tuner acceptance audit
+[PASS] A0-C8 sweep: 1056 measured cases
+[PASS] outside-range sweep: 160 explicitly refused cases
+[PASS] independent oracle worst error: 0.2076 cents
+[PASS] audio shift -281.36 cents is measured, not copied
+[PASS] audio shift +241.96 cents is measured, not copied
+[PASS] audio shift -562.72 cents is measured, not copied
+[PASS] 0.5x octave substitution is refused
+[PASS] 2x octave substitution is refused
+[PASS] silence never becomes a measured pitch
+[PASS] C++ detector declares the audited A0-C8 contract
+[PASS] C++ detector has fixed storage and bounded work
+[PASS] UI labels target, audio measurement, delta and confidence
+[PASS] tuner consumes newest dry audio with 192 kHz A0 history
+[PASS] real C++ tuner regression target is registered with CTest
+PASS (14 checks, 0 failures)
+exit=0

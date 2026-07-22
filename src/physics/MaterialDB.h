@@ -1,5 +1,6 @@
 #pragma once
 #include <juce_core/juce_core.h>
+#include <cmath>
 #include <map>
 
 /**
@@ -70,10 +71,13 @@ public:
     int size() const { return (int) materials.size(); }
 
     /// 以固定順序取得材質 key（給 AudioParameterChoice 用）
-    static juce::StringArray getOrderedKeys()
+    static const juce::StringArray& getOrderedKeys()
     {
-        return { "steel", "copper", "bronze", "aluminum", "brass",
-                 "wood_spruce", "wood_maple", "glass", "rubber" };
+        static const juce::StringArray keys {
+            "steel", "copper", "bronze", "aluminum", "brass",
+            "wood_spruce", "wood_maple", "glass", "rubber"
+        };
+        return keys;
     }
 
 private:
@@ -91,31 +95,59 @@ private:
         if (materialsObj == nullptr)
             return false;
 
-        materials.clear();
+        std::map<juce::String, Material> parsedMaterials;
         for (const auto& prop : materialsObj->getProperties())
         {
             auto key = prop.name.toString();
             auto* matObj = prop.value.getDynamicObject();
-            if (matObj == nullptr) continue;
+            if (key.isEmpty() || matObj == nullptr)
+                return false;
+
+            auto finiteNumber = [] (const juce::var& value, double& result)
+            {
+                if (! value.isInt() && ! value.isInt64() && ! value.isDouble())
+                    return false;
+                result = (double) value;
+                return std::isfinite (result);
+            };
+
+            const auto displayName = matObj->getProperty ("display_name");
+            double density = 0.0, youngsModulus = 0.0, poissonRatio = 0.0;
+            if (! displayName.isString() || displayName.toString().trim().isEmpty()
+                || ! finiteNumber (matObj->getProperty ("density"), density)
+                || ! finiteNumber (matObj->getProperty ("youngs_modulus"), youngsModulus)
+                || ! finiteNumber (matObj->getProperty ("poisson_ratio"), poissonRatio)
+                || density <= 0.0 || youngsModulus <= 0.0
+                || poissonRatio < 0.0 || poissonRatio >= 0.5)
+                return false;
+
+            auto* dampObj = matObj->getProperty ("damping").getDynamicObject();
+            double alpha = 0.0, betaAir = 0.0, gammaRadiation = 0.0;
+            if (dampObj == nullptr
+                || ! finiteNumber (dampObj->getProperty ("alpha"), alpha)
+                || ! finiteNumber (dampObj->getProperty ("beta_air"), betaAir)
+                || ! finiteNumber (dampObj->getProperty ("gamma_radiation"), gammaRadiation)
+                || alpha < 0.0 || betaAir < 0.0 || gammaRadiation < 0.0)
+                return false;
 
             Material mat;
-            mat.displayName  = matObj->getProperty ("display_name").toString();
-            mat.density      = (float) (double) matObj->getProperty ("density");
-            mat.youngsModulus = (float) (double) matObj->getProperty ("youngs_modulus");
-            mat.poissonRatio  = (float) (double) matObj->getProperty ("poisson_ratio");
-
-            auto dampingVar = matObj->getProperty ("damping");
-            if (auto* dampObj = dampingVar.getDynamicObject())
-            {
-                mat.damping.alpha           = (float) (double) dampObj->getProperty ("alpha");
-                mat.damping.beta_air        = (float) (double) dampObj->getProperty ("beta_air");
-                mat.damping.gamma_radiation  = (float) (double) dampObj->getProperty ("gamma_radiation");
-            }
-
-            materials[key] = mat;
+            mat.displayName = displayName.toString();
+            mat.density = (float) density;
+            mat.youngsModulus = (float) youngsModulus;
+            mat.poissonRatio = (float) poissonRatio;
+            mat.damping.alpha = (float) alpha;
+            mat.damping.beta_air = (float) betaAir;
+            mat.damping.gamma_radiation = (float) gammaRadiation;
+            parsedMaterials.emplace (key, mat);
         }
 
-        return ! materials.empty();
+        if (parsedMaterials.empty())
+            return false;
+
+        // Commit only after every entry is valid.  A failed reload must not
+        // destroy the last known-good database used by active voices.
+        materials = std::move (parsedMaterials);
+        return true;
     }
 
     std::map<juce::String, Material> materials;

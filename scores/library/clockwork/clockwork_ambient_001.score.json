@@ -97,10 +97,6 @@
       "params": {
         "material": "brass",
         "thickness_mm": 1.5,
-        "width_mm": 100,
-        "height_mm": 100,
-        "strike_position_x": 0.5,
-        "strike_position_y": 0.5,
         "exciter": "bow_slow",
         "radius_mm": 150
       },

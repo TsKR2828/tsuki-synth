@@ -210,6 +210,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         {
             auto* voice = new CimbalomVoice();
             voice->setMaterialDB (&materialDB);
+            voice->setNoiseIdentity ((uint64_t) i);
             voice->pMaterial       = pMaterial;
             voice->pStrikePos      = pStrike;
             voice->pDiameter       = pDiameter;
@@ -244,6 +245,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         {
             auto* voice = new ChromaticVoice();
             voice->setMaterialDB (&materialDB);
+            voice->setNoiseIdentity ((uint64_t) i);
             voice->pSubEngine  = pSubEngine;
             voice->pMaterial   = pMaterial;
             voice->pStrikePos  = pStrike;
@@ -276,6 +278,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         for (int i = 0; i < 16; ++i)
         {
             auto* voice = new FMPianoVoice();
+            voice->setNoiseIdentity ((uint64_t) i);
             voice->pType       = pType;
             voice->pRatio      = pRatio;
             voice->pIndex      = pIndex;
@@ -422,24 +425,35 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         if (lastEngine == 0 || lastEngine == 3) cimbalomSynth.allNotesOff (0, true);
         else if (lastEngine == 1) chromaticSynth.allNotesOff (0, true);
         else if (lastEngine == 2) fmPianoSynth.allNotesOff (0, true);
-        // Drop stale noteOn so the new engine's tuner starts on "Awaiting note"
+        // Drop stale targets so the new engine starts with a clean tuner state.
+        tunerNoteTracker.clear();
         lastNoteOnMidi.store (-1, std::memory_order_release);
         lastEngine = currentEngine;
     }
 
-    // Track most recent noteOn (any source) for synth-aware tuner display.
-    // Scan after engine switch so a noteOn in the same block as a switch survives.
+    // Track the most recently struck note that is still held or sustained.
+    // State is per channel/per note, retrigger-aware, and follows CC64/120/121/123.
     for (const auto meta : midiMessages)
     {
         const auto msg = meta.getMessage();
+        const int channel = msg.getChannel() - 1;
         if (msg.isNoteOn())
-            lastNoteOnMidi.store (msg.getNoteNumber(), std::memory_order_release);
-        else if (msg.isNoteOff()
-                 && msg.getNoteNumber() == lastNoteOnMidi.load (std::memory_order_acquire))
-            lastNoteOnMidi.store (-1, std::memory_order_release);
+            tunerNoteTracker.noteOn (channel, msg.getNoteNumber());
+        else if (msg.isNoteOff())
+            tunerNoteTracker.noteOff (channel, msg.getNoteNumber());
+        else if (msg.isSustainPedalOn())
+            tunerNoteTracker.sustainPedal (channel, true);
+        else if (msg.isSustainPedalOff())
+            tunerNoteTracker.sustainPedal (channel, false);
+        else if (msg.isAllSoundOff())
+            tunerNoteTracker.allSoundOff (channel);
         else if (msg.isAllNotesOff())
-            lastNoteOnMidi.store (-1, std::memory_order_release);
+            tunerNoteTracker.allNotesOff (channel);
+        else if (msg.isResetAllControllers())
+            tunerNoteTracker.resetControllers (channel);
     }
+    lastNoteOnMidi.store (tunerNoteTracker.selectedNote(),
+                          std::memory_order_release);
 
     // Render every engine each block so tails from ANY previously-played engine
     // ring out naturally (idle synths early-return). Only the current engine
@@ -617,22 +631,12 @@ juce::File TsukiSynthProcessor::getLastRecordingFile() const
 }
 
 // == Logging (Release-safe, writes to %APPDATA%/TsukiSynth/debug.log) ==
-static void tsukiLog (const juce::String& msg)
-{
-    static auto logFile = juce::File::getSpecialLocation (
-                              juce::File::userApplicationDataDirectory)
-                              .getChildFile ("TsukiSynth")
-                              .getChildFile ("debug.log");
-    logFile.getParentDirectory().createDirectory();
-    logFile.appendText (juce::Time::getCurrentTime().toString (true, true, true, true)
-                        + "  " + msg + "\n");
-}
-
 // == State ==
 void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     state.setProperty ("presetIndex", presetManager.getCurrentIndex(), nullptr);
+    state.setProperty ("presetId", presetManager.getCurrentPresetId(), nullptr);
     state.setProperty ("presetDirty", presetManager.isDirty() ? 1 : 0, nullptr);
 
     if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (apvts.getParameter ("engine")))
@@ -643,15 +647,6 @@ void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
     auto xml = state.createXml();
     copyXmlToBinary (*xml, destData);
 
-    auto v = [&] (const char* id) -> juce::String {
-        if (auto* p = apvts.getParameter (id))
-            return juce::String (id) + "=" + juce::String (p->getValue(), 4);
-        return {};
-    };
-    tsukiLog ("SAVE  presetIdx=" + juce::String (presetManager.getCurrentIndex())
-              + "  " + v ("engine") + "  " + v ("chr_sub_engine")
-              + "  " + v ("chr_thickness") + "  " + v ("chr_size")
-              + "  " + v ("chr_pitch_glide") + "  " + v ("chr_strike_pos"));
 }
 
 void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -661,6 +656,7 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
     {
         auto tree = juce::ValueTree::fromXml (*xml);
         int presetIdx  = tree.getProperty ("presetIndex", -1);
+        const juce::String presetId = tree.getProperty ("presetId", juce::String()).toString();
         int engineIdx  = tree.hasProperty ("engine_index")
                              ? (int) tree.getProperty ("engine_index") : -1;
         int subEngIdx  = tree.hasProperty ("chr_sub_engine_index")
@@ -683,20 +679,13 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         restoreChoice (apvts, "chr_sub_engine", subEngIdx);
 
         presetManager.reattachListener();
-        presetManager.restoreIndex (presetIdx);
-        if ((int) tree.getProperty ("presetDirty", 0) != 0)
-            presetManager.setDirty();
-        restoredProgramToIgnore.store (presetIdx, std::memory_order_release);
-
-        auto v = [&] (const char* id) -> juce::String {
-            if (auto* p = apvts.getParameter (id))
-                return juce::String (id) + "=" + juce::String (p->getValue(), 4);
-            return {};
-        };
-        tsukiLog ("RESTORE  presetIdx=" + juce::String (presetIdx)
-                  + "  " + v ("engine") + "  " + v ("chr_sub_engine")
-                  + "  " + v ("chr_thickness") + "  " + v ("chr_size")
-                  + "  " + v ("chr_pitch_glide") + "  " + v ("chr_strike_pos"));
+        const int resolvedPreset = presetId.isNotEmpty()
+            ? presetManager.findPresetById (presetId) : presetIdx;
+        presetManager.restoreIndex (resolvedPreset);
+        const bool missingSavedPreset = presetId.isNotEmpty() && resolvedPreset < 0;
+        presetManager.restoreDirty (
+            (int) tree.getProperty ("presetDirty", 0) != 0 || missingSavedPreset);
+        restoredProgramToIgnore.store (resolvedPreset, std::memory_order_release);
     }
 }
 
@@ -719,12 +708,9 @@ void TsukiSynthProcessor::setCurrentProgram (int index)
         && index == restoredIndex
         && presetManager.getCurrentIndex() == restoredIndex)
     {
-        tsukiLog ("setCurrentProgram(" + juce::String (index)
-                  + ")  SKIPPED (duplicate post-restore)");
         return;
     }
 
-    tsukiLog ("setCurrentProgram(" + juce::String (index) + ")  LOADING");
     presetManager.loadPreset (index);
 }
 

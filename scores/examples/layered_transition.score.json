@@ -22,7 +22,6 @@
     "sample_rate": 48000,
     "master_volume": 0.85
   },
-  "events": [],
   "export": {
     "filename": "layered_transition_001",
     "format": "wav",

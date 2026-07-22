@@ -52,7 +52,6 @@
       "params": {
         "material": "steel",
         "diameter_mm": 3.0,
-        "length_mm": 200,
         "tension_n": 400,
         "strike_position": 0.5,
         "exciter": "bow_slow",
@@ -69,10 +68,6 @@
       "params": {
         "material": "iron",
         "thickness_mm": 4.0,
-        "width_mm": 200,
-        "height_mm": 200,
-        "strike_position_x": 0.3,
-        "strike_position_y": 0.7,
         "exciter": "bow_slow",
         "radius_mm": 150
       },
@@ -87,7 +82,6 @@
       "params": {
         "material": "steel",
         "diameter_mm": 3.0,
-        "length_mm": 180,
         "tension_n": 350,
         "strike_position": 0.45,
         "exciter": "bow_slow",

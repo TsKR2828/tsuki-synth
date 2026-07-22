@@ -1,0 +1,31 @@
+=== python tools/consonance.py ===
+wrote C:\Users\admin\Desktop\Claude\tsuki-synth\reports\consonance_tables.md
+
+== recommended self-intervals (cents) ==
+  cimbalom         minima: [0, 235, 270, 320, 390, 505, 590, 705, 825, 890, 980, 1200]
+  tongue_drum      minima: [0, 870, 955, 1165]
+  water_gong       minima: [0, 235, 305, 335, 430, 570, 660, 735, 855, 965, 1085, 1200]
+  water_gong_free  minima: [0, 505, 935, 1090, 1175]
+  piano            minima: [0, 500, 590, 705, 885, 1200]
+
+== duration rules (T60/3, s) ==
+  cimbalom         MIDI  48  T60=35.149s min_spacing=11.716s  density<=0.09/s
+  cimbalom         MIDI  60  T60=26.893s min_spacing=8.964s  density<=0.11/s
+  cimbalom         MIDI  72  T60=14.948s min_spacing=4.983s  density<=0.20/s
+  tongue_drum      MIDI  48  T60=36.858s min_spacing=12.286s  density<=0.08/s
+  tongue_drum      MIDI  60  T60=30.120s min_spacing=10.040s  density<=0.10/s
+  tongue_drum      MIDI  72  T60=18.673s min_spacing=6.224s  density<=0.16/s
+  water_gong       MIDI  48  T60=8.064s min_spacing=2.688s  density<=0.37/s
+  water_gong       MIDI  60  T60=7.488s min_spacing=2.496s  density<=0.40/s
+  water_gong       MIDI  72  T60=6.024s min_spacing=2.008s  density<=0.50/s
+  water_gong_free  MIDI  48  T60=8.064s min_spacing=2.688s  density<=0.37/s
+  water_gong_free  MIDI  60  T60=7.488s min_spacing=2.496s  density<=0.40/s
+  water_gong_free  MIDI  72  T60=6.024s min_spacing=2.008s  density<=0.50/s
+  piano            MIDI  48  T60=35.149s min_spacing=11.716s  density<=0.09/s
+  piano            MIDI  60  T60=26.893s min_spacing=8.964s  density<=0.11/s
+  piano            MIDI  72  T60=14.948s min_spacing=4.983s  density<=0.20/s
+exit=0
+
+=== python tools/check_piece_consonance.py scores/originals/rules_v2_demo/rules_v2_demo_001.score.json ===
+wrote reports\rules_v2_demo_consonance_check.md: 13 pairs, 13 PASS, 0 not-PASS
+exit=0

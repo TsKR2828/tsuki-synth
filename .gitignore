@@ -50,5 +50,9 @@ Thumbs.db
 *.gch
 
 # Rule-10 comparison scratch binaries (rebuildable from git history)
-reports/**/bin[AB]/
+# NOTE: two literal rules on purpose -- the character-class form `bin[AB]/`
+# does not match on this machine's git (binA/binB stayed untracked; verified
+# with `git check-ignore -v` 2026-07-18). Do not fold back into one pattern.
+reports/**/binA/
+reports/**/binB/
 reports/**/*.pkl

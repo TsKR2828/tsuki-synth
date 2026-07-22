@@ -2,6 +2,140 @@
 
 ---
 
+## 2026-07-22 — Deep physics audit round-3：velocity 量測域修正 + summer m2/m3 rest 超標修復
+
+分支 `fix/deep-physics-audit-20260716`（延續 round-2，全程 unstaged、未 commit/push）。本輪處理 round-2 留下的兩項月月待裁決：piano velocity 物理律「違規」與 `summer_m2`／`summer_m3` 的 rest RMS 超標。兩者都不是容差變動——前者是量測域對齊物理律本身的適用範圍，後者是藝術參數（reverb decay）的收斂。
+
+### F3 velocity 量測域修正：寬帶 → 基頻窄帶
+
+`20·log10(2) = 6.0206 dB` 這條律的物理主張是「單一模態激發振幅正比於槌速」（`ModalResonator::excite()`），適用域是逐模態，不是寬帶頻譜形狀。round-2 的判定拿寬帶 RMS 當量測域，因此把 Hertz 接觸時間隨槌速變短、帶來的頻譜變亮（物理真實，見 `HammerImpulse.h`）也算進了「違反振幅律」——這不是振幅律的錯，是量測域選錯了。
+
+`tools/physics_verify.py` 新增 `measure_band_rms_db()`／`FUND_BAND_HALF_WIDTH`（沿用 `measure_t60()` 同一套 ±3% Butterworth band-pass 家族），`judge_velocity()` 改在以 `measure_f0()` 量得的 f0 為中心的基頻窄帶上算 `measured_delta`/`predicted_delta`；`assess_velocity_delta()` 的判定式（`|predicted−6.0206|≤1.0` 且 `|measured−predicted|≤1.0`）數值本身**未動**。舊寬帶 RMS delta 仍印出，但標為資訊性行（「含 Hertz 接觸時間頻譜變亮，物理真實，見 `HammerImpulse.h`」），不再影響判定與 exit code。
+
+selftest 4b（`selftest_velocity_law_negative`）改注入「弱基頻（440 Hz，比合法的 880 Hz 泛音弱 400 倍）裡的違規」，證明基頻窄帶能抓到寬帶會漏掉的問題（實測：同一對違規資料，f0-band +9.00 dB vs 寬帶 +6.03 dB）；原本的 uniform-scale +9 dB 反例保留為 `selftest_velocity_law_negative_uniform_scale()`。`tests/test_physics_verify.py` 新增 3 項（`test_selftest_velocity_law_negative_uniform_scale`、`test_fundamental_band_counterexample_isolates_violation`、`test_fundamental_band_lawful_pair_passes`）。
+
+**實測（5 個 modal 引擎，MIDI 60，velocity 48→96，基頻窄帶）**：cimbalom +6.0587 dB（偏差 +0.04）PASS、tongue_drum +6.0574 dB（+0.04）PASS、water_gong +6.0586 dB（+0.04）PASS、water_gong_free +6.0588 dB（+0.04）PASS、piano +6.6702 dB（+0.65）PASS——**全數 PASS**。piano 的寬帶違規（+7.4373 dB，資訊性，round-2 舊值不變）確認是主迴圈已診斷的 Hertz 接觸時間頻譜變亮，不是振幅律破功。
+
+### summer_m2／summer_m3：reverb decay 收斂修復 rest RMS 超標
+
+round-2 逐聲道量測揭露的兩個既有超標，本輪用 FX-bypass 已鎖定源自 reverb 尾巴這個前提，收斂 `reverb.decay`（`wet` 兩首都不動）：
+
+- **summer_m2**：`decay` 2.8 → 2.6（wet 0.28 不動）。全窗口掃描 2.8/2.75/2.7/2.65/2.6/2.4/2.2/2.0；2.8（原值）3 個休止窗量到 -49.9/-51.7/-49.9 dBFS（2/3 超標）；2.65 裕度仍不足（1.9 dB）；**2.6 是達到全窗口 ≥2 dB 裕度最保守的值**：-52.6/-54.5/-52.6 dBFS（2.6/4.5/2.6 dB 裕度）。
+- **summer_m3**：`decay` 1.2 → 1.0（wet 0.20 不動；此曲 decay 在更早、尚未 commit 的階段已從 2.1 掃到 1.2，本輪是在 1.2 之上再收）。1 個休止窗；1.2（原值）量到 -47.1 dBFS（超標 2.9 dB）；1.05 裕度仍不足（1.0 dB）；**1.0 是達到 ≥2 dB 裕度最保守的值**：-52.5 dBFS（2.5 dB 裕度）。
+
+完整逐點掃描（含每個 decay 值對音樂效果的影響備註）存於 `reports/gate_outputs/deepfix3_summer_rest_sweep.txt`，結尾標「待月月最終確認」。兩份改動後的 score 各自用 `tools/verify_score.py` 全項重驗（schema/modes/render/rests/peak/clipping/determinism）：**exit 0，含 SHA256 determinism match**。`-50.0 dBFS` 門檻數值全程未動，未新增豁免。
+
+順帶重新產生已過期的 `scores/originals/rules_v2_demo/rules_v2_demo_001.report.html`（原檔停留在改動前的 2026-07-17，score.json 已於同日稍後改動）：`verify_score.py --html` exit 0，程式化確認六區塊齊全（banner + 2 spectrogram + 3 f0 + 4 loudness + 5 phrases/rests + 6 footer）、0 個 http(s) 外部參照。
+
+### 最終 GATE（本輪）
+
+- `physics_verify.py --selftest`：**PASS** 11/11，含新反例 `velocity_law_violation_rejected`（f0-band +9.00 dB 雙向拒絕；寬帶會讀到 +6.03 dB 而漏掉）與 `velocity_law_violation_rejected_uniform`（`reports/gate_outputs/deepfix3_selftest.txt`）。
+- `python -m unittest tests.test_physics_verify tests.test_consonance_contract tests.test_verify_score_contract`：**PASS** 47 tests OK（`reports/gate_outputs/deepfix3_pytests.txt`）。
+- `physics_verify.py --full --skip-amps`：**PASS**，`RESULT: NO CHECKED FAILURES`，「1d velocity judgment：PASS」；未驗證範圍仍是既有 3 個 rubber T60 過短案例（`reports/gate_outputs/deepfix3_gate_full.txt`）。
+- `summer_m2`／`summer_m3` `verify_score.py`：**PASS**，兩者 exit 0，rest RMS 裕度 2.6/2.5 dB，determinism SHA256 match（`reports/gate_outputs/deepfix3_summer_verify.txt`）。
+- `rules_v2_demo` HTML 重生成：**PASS**，六區塊齊全、0 外部參照（同上檔）。
+- Corpus 回歸抽驗（未觸碰的 `physical_piano.score.json`）：**PASS**，exit 0，SHA256 match（`180b4267…`），確認本輪兩處 score 編輯以外零回歸（同上檔尾段）。
+
+### 文件同步（本輪）
+
+`ROADMAP_PHYSICS.md`：頂部補「2026-07-22 deep-audit round-3 update」節；§6 velocity 列措辭更新為「基頻窄帶（測得 f0 ±3%）」量測域、判定數值不變、寬帶 delta 改列資訊性，依據欄註記 2026-07-22 授權與 round-2 寬帶存證出處。`TODO.md`：piano velocity 待裁決項改記為已修正量測域、`--full` 回綠；summer m2/m3 兩筆待裁決改記為已修（decay 前後值），藝術變更待月月確認；rules_v2_demo HTML 過時項關閉。`docs/DEEP_FIX_ROUND2_2026-07-18.zh-TW.md` 文末追加 Round-3 補記，紀錄三項遺留（velocity、summer rest RMS、HTML 過時）的處置與新證據路徑。
+
+---
+
+## 2026-07-18 — Deep physics audit round-2：覆核修復 + 四線並行 GATE + corpus 全量重跑
+
+分支 `fix/deep-physics-audit-20260716`（延續 2026-07-17 第一輪，全程 unstaged、未 commit/push）。本輪四線並行覆核第一輪成果本身（harness／測量工具、score 資產／manifest、C++ 引擎／文件、docs／CI 設定），找到的是**驗證程序缺口**——理論特徵值常數是死碼、f0 判定退化成模型驗證自己、velocity 律沒有上限、立體聲混降掩蓋真實超標——不是新的物理模型錯誤。完整方法、逐項 GATE 命令與 corpus 完整清單見
+`docs/DEEP_FIX_ROUND2_2026-07-18.zh-TW.md`。
+
+### 稽核發現與修復清單
+
+- **F1 特徵值錨退化**：`BEAM_BETAL`／`PLATE_OMEGA`／`PLATE_FREE_OMEGA` 常數從未接回驗證路徑。`tools/physics_verify.py` 新增 `CANTILEVER_BETAL`（解析根）與 `free_plate_omegas()`（scipy 從 Kirchhoff 自由板特徵行列式第一原理重解，與 C++ 表獨立），`scan_eigenvalue_anchors()` 對 4 個邊界條件 case 判定，容差 0.10%／0.50%（free-edge）。
+- **F2 f0 主錨退化**：midi 模式的 f0 判定曾拿 dump 值驗證自己；新增 `f0_expected_et` 錨回 12-TET 理論頻率（±5 cents，§6 數值未動），dump 一致性降為輔助檢查。
+- **F3 velocity 律無上限**：新增 `VELOCITY_LAW_DB = 20·log10(2) = 6.0206` 上限判定，要求模型預測值本身（非僅 render vs 模型互相印證）落在 ±1.0 dB 窗內——這正是本輪抓到 piano 違規的機制。
+- **F5 殘差頻譜能量**（新增，資訊性）：扣除 30ms exciter 噪聲窗後量測預測模態帶外殘留能量，不影響 exit code，門檻轉判定制待月月批准。
+- **逐聲道 rest RMS**：`tools/verify_score.py` 的休止 RMS 判定改量每個窗口「最大聲聲道」而非 `(L+R)/2` 混降，避免去相關立體聲殘響尾巴互相抵消掩蓋真實超標；`-50.0 dBFS` 門檻數值未動。
+- **Render manifest v2**：`src/cli/RenderApp.cpp` 新增 `wav_sha256`（實際 WAV bytes 的 SHA256），`verify_score.py` 據此驗證 manifest 與音訊一致；v1 仍明確接受為 legacy。
+- **C++ 文件/生命週期**：`ScoreRenderer.h` dumpModes 的 chromatic custom-atoms 分支改用堆積配置杜絕潛在懸空指標；`StringModel.h`／`BeamModel.h`／`PlateModel.h` 補齊 velocity 慣例與正規化語意註解；`CimbalomEngine.h` `spectralTilt` 啟發式與過期 mix 註解補正；`CMakeLists.txt` 的 `TsukiSynthTunerTest` 補齊與另兩個測試 target 相同的編譯/連結設定，`VERSION 0.2.0→0.3.0`。
+- **docs／CI 設定**：`.gitignore` 的 `bin[AB]/` 字元類改成兩條字面規則（實際生效，`git check-ignore` 驗證）；`physics.yml` push 分支 `main`+`Codex-fix-bug` → `main`+`fix/**`；`README.md` 清除過期 v0.2.0 敘述與 `DEV-LOG.md` 舊參照。
+
+### 最終 GATE（本輪）
+
+- Rebuild（六 target）：**PASS**，零編譯錯誤。
+- `ctest`：**PASS** 3/3（`reports/gate_outputs/deepfix2_ctest.txt`）。
+- `physics_verify.py --selftest`：**PASS**，含新反例 `amps_wrong_amplitude_rejected`／`velocity_law_violation_rejected`（`reports/gate_outputs/deepfix2_selftest.txt`）。
+- `physics_verify.py --full`：**FAIL（誠實）**，exit 1（`reports/gate_outputs/deepfix2_gate_full.txt`）。唯一紅燈：piano MIDI 60 velocity ×2，模型預測自身 `+7.4373 dB` 違反 `6.0206 ± 1.0 dB` 物理律上限（render `+7.4367 dB` 與模型互相吻合，正是新檢查要抓的退化）；tongue_drum margin 僅 `0.012 dB` 逼近上限，一併提請留意。其餘：F1 特徵值錨、1b ET 範圍掃描（最大偏差 0.031 cents）、1c 材質敏感度（可量測案例）、2d 振幅判定、5b 測得 T60（0.99–1.00）全 PASS；F5 殘差能量純資訊性 `-74.7`～`-83.1 dB re total`；3 個既有 rubber `UNVERIFIED/N/A` 案例維持不變。
+- Tuner oracle（`tuner_audit.py` + `tuner_audit_v2.py`）：**PASS**，v1 9 checks／v2 14 checks 0 failure，獨立 oracle 最差誤差 0.2076 cents（`reports/gate_outputs/deepfix2_tuner_oracle.txt`）。
+- `python -m unittest tests.test_physics_verify tests.test_consonance_contract tests.test_verify_score_contract`：**PASS** 44 tests OK（`reports/gate_outputs/deepfix2_pytests.txt`）。
+- Draft 2020-12 schema，80 個 tracked `.score.json`：**PASS** 80/80（`reports/gate_outputs/deepfix2_schema80.txt`；`verify_score.py` 無 schema-only CLI 模式，本 GATE 依指示用 scratchpad 驅動腳本原封不動呼叫 `check_schema()`，方法記錄於存證檔標頭）。
+- `consonance.py` + `check_piece_consonance.py`（rules_v2_demo_001）：**PASS**，13 pairs 13 PASS 0 not-PASS（`reports/gate_outputs/deepfix2_consonance.txt`）。
+- Probe SHA 比對：**match**——`physical_piano.wav`／`water_gong_clamped.wav` 用重新編譯的 CLI 渲染後與改動前基線位元完全相同，manifest v2 修改未影響音訊。
+
+### Corpus 全量重跑（四分片 + HTML 抽驗，涵蓋全部 73 個 repository score）
+
+- `A_examples_airadiance`（18 檔）：**18/18 PASS**（`reports/gate_outputs/deepfix2_corpus_A_examples_airadiance.txt`），既有 moonlight `rests.rms` 登記豁免依原樣觸發，無新增豁免。
+- `B_classical`（Vivaldi 四季 12 檔）：**9 PASS／3 FAIL**（`reports/gate_outputs/deepfix2_corpus_B_classical.txt`）——`summer_m2` rest 20.65–21.33s 實測 `-49.9 dBFS`（門檻 -50.0，超標 0.1 dB）、`summer_m3` rest 5.12–6.00s 實測 `-47.1 dBFS`（超標 2.9 dB，舊混降法只量到 -52.6 dBFS）；FX-bypass 同窗皆 `-120.0 dBFS`，確認源自 reverb 尾巴而非模型衰減，**均未登記豁免，待月月裁決**。`autumn_m1` 的 `determinism.rendered_twice` FAIL 為高併發環境下第二次渲染進程啟動失敗（`STATUS_DLL_INIT_FAILED`），2026-07-21 單獨重驗 `ALL CHECKS PASSED`、SHA256 `2c1aa8efe869…` 兩次一致，**非真回歸，已解除**。
+- `C_library_1`（21 檔）：**21/21 PASS**（`reports/gate_outputs/deepfix2_corpus_C_library_1.txt`）。
+- `D_library_2`（22 檔）：**22/22 PASS**（`reports/gate_outputs/deepfix2_corpus_D_library_2.txt`）。
+- `html` 樣本報告（2 份，重新生成）：**2/2 PASS**，六區塊齊全、0 外部參照。
+- **淨結果**：73 個 repository score 中 71/73 淨 PASS，2 個新 FAIL（`summer_m2`／`summer_m3`）皆為逐聲道 RMS 量測法（取代舊混降法）首次揭露的既有真實超標，非本輪引擎/資產改動造成的回歸；§6 容差全程未動，無新增豁免。
+
+### Rule 10 前後對照
+
+`reports/deep_fix_before_after.md`：改動前 baseline CLI（commit `485c6c1`）與工作樹 CLI 對 8 首代表曲目（7 首指派 + 1 首額外 FM 域外對照組）做 RMS/peak/頻譜質心/T60/f0 全面比對。RMS 變化 `-3.712`（water_gong_free，完整觸發 Bessel free-edge 重寫）～`+2.346 dB`（physical_piano，唯一變大聲，歸因弱模態 -60dB 生命週期修正蓋過 tau→T60 縮短）；3 個獨立音符探針 f0 偏移 <1.5 cents，音高不受影響。`vivaldi_four_seasons_summer_m3` 為 score+engine 雙重改動未拆解（before 用改前 score `reverb.decay=2.1`）。
+
+### 文件同步（本輪）
+
+`ROADMAP_PHYSICS.md`：頂部「2026-07-18 deep-audit round-2 update」節補上本輪實際 GATE 結果與證據路徑；§6 容差登記表僅前一階段已授權的四列（T60、velocity、殘差、休止 RMS）變動，其餘未動。`TODO.md`：round-2 骨架逐項填實，corpus 新 FAIL 與 Rule 10 報告列入月月待裁決／待審閱。詳見 `docs/DEEP_FIX_ROUND2_2026-07-18.zh-TW.md` 全文。
+
+---
+
+## 2026-07-17 — Deep physics audit 全面修復、事件級協和度與最終 corpus 收斂
+
+分支 `fix/deep-physics-audit-20260716`，保持 local／uncommitted／unpushed，並保留使用者
+未追蹤的 `reports/phase_h_before_after/binA/`、`binB/`。本節是目前狀態；下方 Phase
+D–K 數字是歷史存證，不應拿來覆蓋本節的新模型與新 GATE 結果。
+
+### 實作結果
+
+- Tuner 改為量測 dry audio，TARGET／MEASURED 分離；A0–C8、44.1–192 kHz、confidence
+  與明確 refusal，並補 MIDI channel/retrigger/sustain/CC120/121/123 狀態機。
+- Beam 預設 fixed-free cantilever，free-free 明確選用；Plate 改用含 Bessel／modified
+  Bessel 的圓板模態形狀與 Poisson-dependent free-edge roots。MIDI／geometry 頻率模式
+  分開，阻尼在最終頻率後計算，槌接觸時間含 velocity 律，弱模態以相對 −60 dB 截止。
+- Score parser/schema 改為嚴格契約；custom ratios/amps、事件 identity、PCG seed、尾巴、
+  layer/batch/manifest/atomic write 全接線。MaterialDB reload 交易式提交。Plugin／CLI 共用
+  FX 實作，delay 0–5 s 與 reverb per-comb T60 有回歸測試。Preset 使用 stable ID/cache。
+- `tools/check_piece_consonance.py` 不再拿固定 MIDI 60／固定引擎方向表代替實曲；它讀取
+  每個 event 真實 `--dump-modes` 的所有 active strings、material/geometry/boundary/
+  strike/velocity hammer spectrum 重算 Sethares curve。報告記錄 score／checker／公式
+  工具／CLI SHA256，預設依 score 命名，不再覆蓋別首曲子的報告。
+- Rules-v2 demo 的 MIDI 55 匯聚 cell 改用 event-specific 200-cent M2；MIDI 60 B 段保留
+  700-cent P5。每個 steel cimbalom event 明寫 `damping_override: 0.5`，鎖住 T60/3 契約。
+- 全庫重跑暴露兩個最後問題並修掉：(1) layered composite 的頂層 `--dump-modes` 是 CLI
+  契約上的 N/A，verifier 現改成頂層明列 N/A、逐一 mode-scan leaf；(2) Vivaldi Summer
+  m3 的 reverb `decay=2.1s` 令唯一休止窗只有 −40.1 dBFS。固定 wet=0.2 掃描 1.8/1.5/
+  1.3/1.2/1.1/1.0 s 得 −43.02/−46.93/−50.44/−52.60/−55.10/−58.07 dBFS，選 1.2 s
+  保留 2.6 dB 裕度，未改 −50 dBFS 門檻、未新增豁免。
+
+### 最終 GATE（本分支）
+
+- Release build：CLI、VST3、Standalone、Audit、Tuner、PhysicsModels 六 target 全部 exit 0。
+- CTest：3/3 PASS。Python metrology/contract 單元測試全部 PASS；`physics_verify.py
+  --selftest` 的 adversarial cases 全部依預期拒絕錯誤輸入。
+- Tuner oracle：A0–C8 共 1056 個量測 PASS，160 個範圍外案例明確拒絕，最差 0.2076 cent。
+- `physics_verify.py --full`：所有 checked cases 無失敗；10 個 T60 probe measured/model
+  約 0.99–1.00。三個 14–28 ms rubber 案例明列 `UNVERIFIED/N/A`，不是 PASS。
+- Draft 2020-12 schema：80/80 repository score PASS。
+- `verify_score` 全 release corpus 四分片：34/34、18/18、16/16、5/5，合計 **73/73
+  PASS、0 FAIL**；1 個既有 moonlight `rests.rms` 登記豁免保持可見，無新增豁免。
+- Rules-v2 event-specific consonance：**13 PASS、0 VIOLATION、0 UNVERIFIED**；完整表在
+  `reports/rules_v2_demo_consonance_check.md`。
+
+完整方法、命令、驗證域與剩餘科學落差見
+`docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md`。
+
+---
+
 ## 2026-07-13 — Phase I 收尾：測量法適配物理化材質 + 最終 GATE 存證 + 月月「留」決策記錄
 
 **月月 2026-07-12 決策**：materials 物理化（Phase G+H，密度/楊氏模數/阻尼全面改為文獻/推導值）**維持（「留」）**，不 revert。本輪任務性質是「調整量測方法去配合新物理」，不是調容差——§6 容差全程凍結（f0 ±5 cents 預設、partial 2–4%、amps ±3.0 dB、T60 0.5–2.0、velocity ±1.0 dB、rest -50dB、peak -0.3dBFS，一個數字都沒動，Rule 2）。範圍限定 `tools/physics_verify.py`（Python-only），未碰 `src/` C++、`data/materials.json`、`uiux/`、任何 score JSON，渲染音訊維持位元不變。

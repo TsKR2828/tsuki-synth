@@ -1,7 +1,13 @@
 # TsukiSynth GUI Design Guide
 
 > Phase 7 Visual Design Brief — for designer reference
-> Last updated: 2026-05-08
+> Original brief: 2026-05-08 · current-code reconciliation: 2026-07-17
+>
+> **Current implementation wins over the historical brief below.** The editor now has four
+> top-level tabs (Cimbalom, Chromatic, FM Piano, Physical Piano), a three-tab analyzer
+> (Scope / Spectrum / Tuner), target-vs-measured tuner readouts with Hz/cents/confidence/refusal,
+> and a resizable 620×920 default window constrained to 540×820–1100×1400. Any future mockup
+> must preserve those states and accessibility information.
 
 ---
 
@@ -9,14 +15,16 @@
 
 **TsukiSynth** is a physical modeling + FM synthesis VST3/Standalone plugin built with C++/JUCE.
 
-It contains **3 synthesis engines** that the user switches between:
+It exposes **4 top-level instrument states**:
 1. **Cimbalom** — hammered string (physical modeling)
 2. **Chromatic** — tongue drum / water gong / custom harmonics (physical modeling)
 3. **FM Piano** — frequency modulation synthesis (DX7-style)
+4. **Piano** — struck stiff-string physical model
 
-Plus a **global effect chain** (Reverb, Delay, Compressor) that applies to all engines.
+Plus a shared **global effect chain** (Distortion, Compressor, Delay, Reverb) and an analyzer
+with Scope / Spectrum / Tuner tabs.
 
-**Window size**: approximately 520 x 580 px (resizable is optional but not required).
+**Window size**: 620×920 px default; resizable within 540×820–1100×1400.
 
 ---
 
@@ -299,11 +307,13 @@ The switch to rotary knobs is the biggest visual change. All parameter wiring (A
 
 ## 12. Deliverables Expected
 
-1. **Full plugin window mockup** (520x580 or adjusted size) showing one engine active
-2. **All 3 engine states** (Cimbalom / Chromatic / FM Piano tab selected)
+1. **Full plugin window mockup** at the current 620×920 default showing one engine active
+2. **All 4 top-level states** (Cimbalom / Chromatic / FM Piano / Physical Piano)
 3. **Component close-ups**: knob states (default / hover / active), ComboBox, tab buttons
 4. **Color/token sheet**: final hex values for all roles
 5. **Effects section** detail view
+6. **Analyzer states**: Scope, Spectrum, and Tuner with TARGET / MEASURED distinction,
+   out-of-range refusal, confidence, actual Hz and cents readable without colour alone
 
 ---
 
