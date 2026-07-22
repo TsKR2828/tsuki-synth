@@ -37,7 +37,8 @@ Usage:
                                                     # x2 -> +6dB judgment (all engines)
                                                     # + amplitude + measured T60
                                                     # + eigenvalue anchors (F1) +
-                                                    # residual energy (informational)
+                                                    # residual energy (F5, judged
+                                                    # vs RESIDUAL_ENERGY_LIMIT_DB)
 Independent anchors (2026-07-18 harness repair):
   F1 eigenvalue anchors — --dump-modes frequency RATIOS for tongue_drum
       (cantilever + free_free), water_gong (clamped) and water_gong_free
@@ -52,8 +53,9 @@ Independent anchors (2026-07-18 harness repair):
       must satisfy |predicted - 20*log10(2)| <= 1.0 dB (§6 "+6.0 ± 1.0"),
       in addition to the render-vs-model conformance check.
   F5 residual energy — unpredicted spectral energy outside all predicted
-      modal bands, reported in --full; INFORMATIONAL ONLY (threshold pending
-      月月 approval).
+      modal bands, reported and JUDGED in --full against
+      RESIDUAL_ENERGY_LIMIT_DB = -60.0 dB re total (月月 approval 2026-07-23;
+      see the constant's comment for the baseline data and margin).
 Exit code 0 = all probes within tolerance.
 """
 
@@ -1672,7 +1674,7 @@ def run_full(cli, engines, outdir, skip_amps=False):
           "sensitivity + velocity)"
           + (" [--skip-amps: M1 scope only, M2-2d amplitude judgment NOT run]"
              if skip_amps else " + M2 amplitude judgment")
-          + " + measured T60 + residual energy (informational)")
+          + " + measured T60 + residual energy")
     print("=" * 70)
 
     # F1: dump-only eigenvalue anchors first (cheap, no audio) — they catch a
@@ -1724,8 +1726,9 @@ def run_full(cli, engines, outdir, skip_amps=False):
     else:
         print("\n(T60 judgment skipped: no physical modal engines requested)")
 
-    # F5: informational only — printed, never ANDed into the gate result.
-    report_residual_energy(cli, engines, outdir)
+    # F5: exit-code-affecting since 2026-07-23 (月月 approval) — ANDed into
+    # the --full gate result below.
+    residual_ok = report_residual_energy(cli, engines, outdir)
 
     print("\n" + "=" * 70)
     print("--full summary:")
@@ -1739,8 +1742,8 @@ def run_full(cli, engines, outdir, skip_amps=False):
     print(f"   2d amplitude judgment: "
           f"{'SKIPPED (--skip-amps)' if skip_amps else ('PASS' if amps_ok else 'FAIL')}")
     print(f"   5b measured T60       : {'PASS' if t60_ok else 'FAIL'}")
-    print("   F5 residual energy   : informational only (threshold pending "
-          "approval; see lines above)")
+    print(f"   F5 residual energy   : {'PASS' if residual_ok else 'FAIL'} "
+          f"(limit {RESIDUAL_ENERGY_LIMIT_DB:+.1f} dB re total; see lines above)")
     if LAST_FULL_UNVERIFIED:
         print("   Unverified ranges      : "
               + ", ".join(f"{c['engine']}/{c['material']} "
@@ -1748,7 +1751,7 @@ def run_full(cli, engines, outdir, skip_amps=False):
                           for c in LAST_FULL_UNVERIFIED))
 
     return (eig_ok and range_ok and material_ok and velocity_ok
-            and amps_ok and t60_ok)
+            and amps_ok and t60_ok and residual_ok)
 
 
 def measure_levels(sr, x):
@@ -2232,6 +2235,41 @@ def selftest_velocity_law_negative_uniform_scale():
     return ok, f"uniform-scale f0-band delta {delta:+.2f} dB rejected both ways"
 
 
+def selftest_residual_energy_negative():
+    """F5 (2026-07-23, judgment conversion): synthetic counterexample. Injects
+    a strong peak at 3000 Hz -- OUTSIDE every predicted mode's ±3% band --
+    at -40 dB re total signal energy, well above RESIDUAL_ENERGY_LIMIT_DB
+    (-60.0 dB). Asserts judge_residual_energy() FAILs it through the SAME
+    measure_residual_energy() -> judge_residual_energy() path the real F5
+    gate (report_residual_energy()) uses, while a clean signal with the same
+    predicted modes and no extra peak PASSes."""
+    sr = 48000
+    freqs = [440.0, 880.0, 1320.0]
+    noteoff = 1.8
+
+    clean = _synthetic_modal_signal(sr, 2.0, freqs)
+    clean_rdb = measure_residual_energy(sr, clean, freqs, noteoff)
+    clean_ok = judge_residual_energy(clean_rdb)
+
+    # -40 dB re total: total power ~= sum(amp_i^2)/2 for the 3 unit-amplitude
+    # predicted partials; solve for the injected amplitude that puts the
+    # extra peak's power at 10**(-40/20) of that total.
+    total_power_predicted = sum(0.5 for _ in freqs)   # amp=1.0 each
+    injected_amp = math.sqrt(total_power_predicted
+                              * 10.0 ** (-40.0 / 10.0) / 0.5)
+    dirty = clean + _synthetic_modal_signal(sr, 2.0, [3000.0], [injected_amp])
+    dirty_rdb = measure_residual_energy(sr, dirty, freqs, noteoff)
+    dirty_ok = judge_residual_energy(dirty_rdb)
+
+    ok = clean_ok and (not dirty_ok) and dirty_rdb is not None and dirty_rdb > -45.0
+    detail = (f"clean={'PASS' if clean_ok else 'FAIL'} "
+              f"({clean_rdb:+.1f} dB), unmodeled-peak "
+              f"{'rejected' if not dirty_ok else 'ACCEPTED (bug)'} "
+              f"({dirty_rdb:+.1f} dB vs limit {RESIDUAL_ENERGY_LIMIT_DB:+.1f} dB)"
+              if dirty_rdb is not None else "dirty measurement returned None")
+    return ok, detail
+
+
 def run_internal_selftests():
     f0_ok, f0_cents = selftest_measure_f0_short_window()
     t60_ok, t60_measured, t60_span = selftest_measure_t60_relative_axis()
@@ -2239,6 +2277,7 @@ def run_internal_selftests():
     amps_ok, amps_detail = selftest_amps_wrong_amplitude()
     vel_ok, vel_detail = selftest_velocity_law_negative()
     vel_uniform_ok, vel_uniform_detail = selftest_velocity_law_negative_uniform_scale()
+    residual_ok, residual_detail = selftest_residual_energy_negative()
     return {
         "short_t60_f0": (f0_ok, f"{f0_cents:+.3f} cents" if f0_cents is not None else "none"),
         "relative_axis_t60": (t60_ok,
@@ -2249,6 +2288,7 @@ def run_internal_selftests():
         "amps_wrong_amplitude_rejected": (amps_ok, amps_detail),
         "velocity_law_violation_rejected": (vel_ok, vel_detail),
         "velocity_law_violation_rejected_uniform": (vel_uniform_ok, vel_uniform_detail),
+        "residual_energy_unmodeled_peak_rejected": (residual_ok, residual_detail),
     }
 
 
@@ -2319,7 +2359,7 @@ def report_t60(cli, engines, notes, outdir):
     return all_ok
 
 
-# ── F5 (2026-07-18): residual spectral energy — INFORMATIONAL ONLY ──────────
+# ── F5 (2026-07-18, judgment 2026-07-23): residual spectral energy ─────────
 # Blind-spot being instrumented: every existing gate asks "are the PREDICTED
 # modes present and right?" — none asks "is there ENERGY the model did NOT
 # predict?" (e.g. an accidentally-enabled extra oscillator, aliasing, or FX
@@ -2327,8 +2367,6 @@ def report_t60(cli, engines, notes, outdir):
 # sounding period, the spectral energy OUTSIDE all predicted modal bands
 # (each ±3%, matching T60_BAND_HALF_WIDTH's convention) and OUTSIDE the
 # documented exciter-noise window, in dB relative to total energy.
-# NO EXIT-CODE EFFECT: a pass/fail threshold needs 月月's approval first
-# (§6 Rule 2 — thresholds are registered, not invented mid-fix).
 #
 # Documented exciter-noise window (time-domain exclusion): both engines add a
 # white-noise burst through an ExpDecay envelope at note-on. Envelope T60s,
@@ -2340,6 +2378,34 @@ def report_t60(cli, engines, notes, outdir):
 # 2.5 * 12 ms = 30 ms the noise is <= -150 dB — negligible in this measure.
 EXCITER_NOISE_SKIP_S = 0.030
 RESIDUAL_BAND_HALF_WIDTH = 0.03   # ±3% per predicted mode, per task spec
+
+# RESIDUAL_ENERGY_LIMIT_DB — approval record: 月月, chat, 2026-07-23, converting
+# F5 from informational to exit-code-affecting (this is a TIGHTENING per that
+# day's ground rules; do not widen it back without a fresh approval).
+# Basis: round-2/3 measured residual-energy baselines at MIDI 60 for the 5
+# AMPS_SCAN_ENGINES probes (--full's own scan set) were
+#   cimbalom -76.8 dB, tongue_drum -77.2 dB, water_gong -74.9 dB,
+#   water_gong_free -83.1 dB, piano -74.7 dB   (all re total sounding energy)
+# The chosen ceiling, -60.0 dB, sits >= 14.7 dB above the worst-case observed
+# baseline (piano, -74.7 dB) -- wide enough that normal render-to-render
+# metrology noise cannot false-positive, yet tight enough to still catch a
+# genuinely unmodeled strong peak (e.g. an accidentally-enabled oscillator,
+# aliasing, or FX leakage) landing at a physically real level. Physical
+# meaning: bounds how much rendered energy is allowed to fall OUTSIDE every
+# predicted modal band during the sounding period -- the blind spot no other
+# gate in this harness checks (every other gate only asks "is the predicted
+# mode right?", never "is there energy the model did NOT predict?").
+RESIDUAL_ENERGY_LIMIT_DB = -60.0
+
+
+def judge_residual_energy(rdb):
+    """Pure judgment (unit-testable without a CLI): residual energy (dB re
+    total, from measure_residual_energy()) vs RESIDUAL_ENERGY_LIMIT_DB.
+    None (segment unusable / not measured) is an honest FAIL -- an
+    un-measurable probe must not be silently treated as clean."""
+    if rdb is None:
+        return False
+    return rdb <= RESIDUAL_ENERGY_LIMIT_DB
 
 
 def measure_residual_energy(sr, x, mode_freqs, noteoff_time_s):
@@ -2376,42 +2442,54 @@ def measure_residual_energy(sr, x, mode_freqs, noteoff_time_s):
 
 
 def report_residual_energy(cli, engines, outdir, midi=60):
-    """F5 driver: one probe per modal engine. INFORMATIONAL, never affects
-    the exit code — see the block comment above."""
+    """F5 driver: one probe per modal engine. Exit-code-affecting since
+    2026-07-23 (月月 approval) -- judges each measured residual dB against
+    RESIDUAL_ENERGY_LIMIT_DB and returns the overall PASS/FAIL, while still
+    printing the actual measured dB numbers."""
     scan_engines = [e for e in AMPS_SCAN_ENGINES if engines is None or e in engines]
     if not scan_engines:
-        return
+        return True
     print("\n" + "-" * 70)
     print(f"Residual spectral energy outside predicted modal bands "
           f"(MIDI {midi}, bands ±{RESIDUAL_BAND_HALF_WIDTH * 100:.0f}% per "
           f"dumped mode, first {EXCITER_NOISE_SKIP_S * 1000:.0f} ms exciter-"
-          f"noise window excluded):")
+          f"noise window excluded, judgment threshold "
+          f"{RESIDUAL_ENERGY_LIMIT_DB:+.1f} dB re total):")
+    overall_ok = True
     for eng in scan_engines:
         try:
             wav, sf = render_probe(cli, eng, midi, outdir, tag="_resid")
             sr, x = read_wav_mono(wav)
             event = dump_modes_event(cli, sf)
         except RuntimeError as exc:
-            print(f"   {eng:11} residual: NOT MEASURED ({exc}) "
-                  f"[informational, threshold pending approval]")
+            print(f"   {eng:11} residual: NOT MEASURED ({exc}) -> FAIL")
+            overall_ok = False
             continue
         if not event or not event.get("partials"):
             print(f"   {eng:11} residual: NOT MEASURED (--dump-modes gave no "
-                  f"modes) [informational, threshold pending approval]")
+                  f"modes) -> FAIL")
+            overall_ok = False
             continue
         strings = event.get("strings") or [event["partials"]]
         mode_freqs = sorted({float(m["freq"]) for voice in strings for m in voice})
         noteoff = 2.0 * T60_NOTEOFF_RATIO   # render_probe default dur=2.0
         rdb = measure_residual_energy(sr, x, mode_freqs, noteoff)
+        eng_ok = judge_residual_energy(rdb)
+        overall_ok = overall_ok and eng_ok
         if rdb is None:
             print(f"   {eng:11} residual: NOT MEASURED (unusable segment) "
-                  f"[informational, threshold pending approval]")
+                  f"-> FAIL")
         else:
             print(f"   {eng:11} residual: {rdb:+7.1f} dB re total "
-                  f"({len(mode_freqs)} predicted modes) "
-                  f"[informational, threshold pending approval]")
-    print("   (No PASS/FAIL: this quantifies UNPREDICTED energy; a judgment "
-          "threshold awaits 月月's approval per §6 Rule 2.)")
+                  f"({len(mode_freqs)} predicted modes, limit "
+                  f"{RESIDUAL_ENERGY_LIMIT_DB:+.1f} dB) "
+                  f"-> {'PASS' if eng_ok else 'FAIL'}")
+    if not overall_ok:
+        print(f"   -> FAIL. Do NOT widen the {RESIDUAL_ENERGY_LIMIT_DB:+.1f} dB "
+              "threshold (月月 approval 2026-07-23) -- unpredicted energy "
+              "above the ceiling means the render contains something the "
+              "physics model did not predict; investigate, don't relax the gate.")
+    return overall_ok
 
 
 def main():
@@ -2451,9 +2529,12 @@ def main():
                          "on the peak-relative time axis, adversarial "
                          "partial injections (50%% shift, missing p3-p5, "
                          "super-Nyquist, overlapping-window peak reuse), a "
-                         "+6dB wrong-amplitude partial (4a), and a "
+                         "+6dB wrong-amplitude partial (4a), a "
                          "fundamental-band velocity delta violating the "
-                         "+6.02dB law plus a uniform-scale legacy variant (4b)")
+                         "+6.02dB law plus a uniform-scale legacy variant (4b), "
+                         "and an unmodeled -40dB peak outside every predicted "
+                         "mode's band violating the F5 residual-energy "
+                         "threshold (RESIDUAL_ENERGY_LIMIT_DB)")
     args = ap.parse_args()
 
     if args.selftest:

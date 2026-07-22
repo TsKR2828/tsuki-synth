@@ -2,6 +2,34 @@
 
 ---
 
+## 2026-07-23 — round-4：五項待裁決落地 + 殘差判定制/f0 course 質心收緊規約
+
+分支 `fix/deep-physics-audit-20260716`（延續 round-3，全程 unstaged、未 commit/push）。月月在對話中對 round-3 留下的五項待裁決明示「都照推薦的做」，本輪把裁決結果落地到文件（`ROADMAP_PHYSICS.md`／`TODO.md`／`DEVLOG.md`／`README.md`），**未改動任何 `src/`／`tools/` 程式碼**——(4)(5) 兩項需要的程式改動由另一輪工作平行進行中。
+
+### 五項裁決
+
+1. **velocity 量測域（寬帶→基頻窄帶）** — 追認。round-3 已把 F3 velocity 判定的量測域從寬帶 RMS 改到基頻 ±3% 窄帶，判定式數值未動；月月本輪正式追認此程式邏輯變更。
+2. **`summer_m2`／`summer_m3` reverb decay 收斂** — 接受。`summer_m2` 2.8→2.6、`summer_m3` 累計 2.1→1.0，機器 GATE round-3 已過（`verify_score.py` 全項 PASS 含 determinism SHA256 match），藝術效果本輪由月月最終確認。
+3. **`spectralTilt` heuristic 層去留** — 降級保留。聲音不動（`src/engines/CimbalomEngine.h` 的 `spectralTilt` 邏輯本輪零改動），劃界為已文件化 creative 層，不算入物理主張；`ROADMAP_PHYSICS.md` §0 與 `README.md` 域表同步加註。
+4. **殘差頻譜能量：資訊性 → 判定制** — 批准，門檻 **-60.0 dB re total**。依據 round-2/round-3 累計實測基線 -74.7～-83.1 dB re total（`reports/gate_outputs/deepfix2_gate_full.txt` 等），距門檻留有 ≥14.7 dB 安全邊際。**程式改動（`tools/physics_verify.py`）由另一輪工作平行進行中**：本輪檢查確認 `RESIDUAL_BAND_HALF_WIDTH` 一帶截至此刻仍是資訊性輸出，尚未切換判定邏輯。
+5. **`MODE_F0_TOL_CENTS`：授權改量測法後收緊** — 批准，量測邏輯改為 course 質心／平均後，數值由 **12.0 → 5.0**（與 `physics_verify.py` 全域容差一致）。歷史理由：舊量測點是 `--dump-modes` 的 `partials[0]`（多弦課「第 0 條弦」，by design 偏移 `-detuningCents`），非聲學質心。**程式改動（`tools/verify_score.py` 的 `check_modes()`）由另一輪工作平行進行中**：本輪檢查確認 `MODE_F0_TOL_CENTS` 截至此刻仍是字面值 `12.0`，尚未改寫。
+
+### GATE 證據路徑規約
+
+`reports/gate_outputs/deepfix4_*`——(4)(5) 兩項程式改動落地後，該輪工作需在此路徑下補存 selftest／`--full`／`verify_score` 等 GATE 輸出；本條目先登記路徑規約，實際結果由後續補上或引用。
+
+### 文件同步（本輪，僅文件，Rule 5）
+
+- `ROADMAP_PHYSICS.md`：§0 驗證域表 Cimbalom/Piano 列加 spectralTilt 劃界註記；§6 容差登記表 velocity 列依據欄追加 2026-07-23 追認記錄、殘差頻譜能量列現值改為「判定制 -60.0 dB re total（批准，實作中）」、f0（`verify_score.py`）列改為「±5 cents（course 質心量測法，授權收緊，實作中）」，三列皆保留舊有歷史理由一句。
+- `README.md`：Physical Verification 域表 Cimbalom/Piano 列同步 spectralTilt 劃界註記（與 `ROADMAP_PHYSICS.md` 同一句意譯為英文）。
+- `TODO.md`：五項裁決逐條改標 `[x]` + 裁決日期 + 一句話結果；新增「2026-07-23 round-4 裁決落地」段落記錄範圍與程式改動現況；round-3 snapshot 段落補一句 ratified 標記；Rule 10 報告審閱、Cubase 人工驗證、HTML 視覺驗收、push 時機等月月人工項維持 open，未關閉。
+
+### Rule 1/2/4 確認
+
+本輪未執行任何 git 變更狀態指令（commit/push/add/checkout/restore/stash/clean/reset），檔案留 unstaged。未調寬任何容差——(4)(5) 皆為收緊方向的裁決記錄，且尚未落地到程式碼；文件中新出現的數字（-60.0 dB re total、5.0 cents）均已註明來源（實測基線／歷史理由）與批准記錄（月月 2026-07-23）。驗收依 git diff --stat 摘要為準，見本條目末尾。
+
+---
+
 ## 2026-07-22 — Deep physics audit round-3：velocity 量測域修正 + summer m2/m3 rest 超標修復
 
 分支 `fix/deep-physics-audit-20260716`（延續 round-2，全程 unstaged、未 commit/push）。本輪處理 round-2 留下的兩項月月待裁決：piano velocity 物理律「違規」與 `summer_m2`／`summer_m3` 的 rest RMS 超標。兩者都不是容差變動——前者是量測域對齊物理律本身的適用範圍，後者是藝術參數（reverb decay）的收斂。

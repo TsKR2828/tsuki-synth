@@ -58,7 +58,7 @@ TsukiSynth's physical claims are scoped and machine-checked, not aspirational �
 
 | Component | Verification domain | Status |
 |---|---|---|
-| Cimbalom / Piano (StringModel) | ✅ In domain — struck rigid string, incl. inharmonicity | Physically verifiable |
+| Cimbalom / Piano (StringModel) | ✅ In domain — struck rigid string, incl. inharmonicity; amplitude includes a documented creative layer (`spectralTilt`, see `CimbalomEngine.h` comments) — frequency/decay are unaffected; kept and scope-fenced per 月月's 2026-07-23 ruling | Physically verifiable |
 | Tongue Drum (BeamModel) | ✅ In domain — fixed-free cantilever by default; explicit free-free suspended bar | Physically verifiable |
 | Water Gong (PlateModel) | ✅ In domain — Kirchhoff circular plate (clamped + free-edge) | Physically verifiable |
 | Custom Harmonics | ⚠️ Half-domain — additive synthesis, ratios checkable but not physically derived | Not a physical-accuracy claim |

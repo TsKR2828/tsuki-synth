@@ -49,6 +49,175 @@ class VerifyScoreRoutingTests(unittest.TestCase):
         self.assertEqual(["dump"], dumped)
 
 
+class CourseF0Tests(unittest.TestCase):
+    """Contract: vs.course_f0() judges the COURSE's centroid fundamental,
+    not one arbitrary string (2026-07-23 measurement-method change, see
+    the comment block above MODE_F0_TOL_CENTS in tools/verify_score.py)."""
+
+    def test_symmetric_detune_course_centroid_is_near_zero_cents(self):
+        # -5/0/+5 cent course (CimbalomVoice::noteOn()'s default 3-string,
+        # detuningCents=5.0 layout) with roughly-equal amplitudes must
+        # average out to ~0 cents from center, NOT -5 (the old string-0
+        # reading). Amplitudes are close-but-not-identical, like the real
+        # measured physical_piano.score.json dump (spectral tilt makes
+        # them slightly asymmetric), so this also exercises the general
+        # weighted-mean path, not just the equal-weight special case.
+        center = 261.626
+        low = center * 2.0 ** (-5.0 / 1200.0)
+        high = center * 2.0 ** (5.0 / 1200.0)
+        ev = {"strings": [
+            [{"freq": low, "amp": 0.17781, "decay": 1.0}],
+            [{"freq": center, "amp": 0.17757, "decay": 1.0}],
+            [{"freq": high, "amp": 0.17734, "decay": 1.0}],
+        ]}
+        f0 = vs.course_f0(ev)
+        self.assertIsNotNone(f0)
+        cents = vs.cents_between(f0, center)
+        # Exponential-vs-linear averaging leaves a residual far below 1
+        # cent for a +/-5c spread; nowhere near the old ~5c string-0 bias.
+        self.assertLess(abs(cents), 0.01)
+
+    def test_symmetric_detune_with_exactly_equal_amplitudes_is_exact(self):
+        center = 440.0
+        low = center * 2.0 ** (-5.0 / 1200.0)
+        high = center * 2.0 ** (5.0 / 1200.0)
+        ev = {"strings": [
+            [{"freq": low, "amp": 1.0, "decay": 1.0}],
+            [{"freq": center, "amp": 1.0, "decay": 1.0}],
+            [{"freq": high, "amp": 1.0, "decay": 1.0}],
+        ]}
+        f0 = vs.course_f0(ev)
+        cents = vs.cents_between(f0, center)
+        self.assertLess(abs(cents), 0.01)
+
+    def test_missing_amplitude_degrades_to_arithmetic_mean(self):
+        ev = {"strings": [
+            [{"freq": 100.0, "amp": None, "decay": 1.0}],
+            [{"freq": 200.0, "amp": 5.0, "decay": 1.0}],
+        ]}
+        self.assertAlmostEqual(150.0, vs.course_f0(ev))
+
+    def test_non_finite_amplitude_degrades_to_arithmetic_mean(self):
+        ev = {"strings": [
+            [{"freq": 100.0, "amp": float("nan"), "decay": 1.0}],
+            [{"freq": 300.0, "amp": 2.0, "decay": 1.0}],
+        ]}
+        self.assertAlmostEqual(200.0, vs.course_f0(ev))
+
+    def test_single_string_engine_falls_back_to_partials0(self):
+        # strings has length 1 (single-string engine, e.g. beam/plate):
+        # unaffected by the course-centroid change, same as before.
+        ev = {"partials": [{"freq": 440.0, "amp": 1.0, "decay": 1.0}],
+              "strings": [[{"freq": 440.0, "amp": 1.0, "decay": 1.0}]]}
+        self.assertEqual(440.0, vs.course_f0(ev))
+
+    def test_no_strings_key_falls_back_to_partials0(self):
+        # older-shaped dump / engine with no "strings" key at all.
+        ev = {"partials": [{"freq": 220.0, "amp": 1.0, "decay": 1.0}]}
+        self.assertEqual(220.0, vs.course_f0(ev))
+
+    def test_empty_strings_list_falls_back_to_partials0(self):
+        ev = {"partials": [{"freq": 330.0, "amp": 1.0, "decay": 1.0}],
+              "strings": []}
+        self.assertEqual(330.0, vs.course_f0(ev))
+
+    def test_no_usable_fundamental_returns_none(self):
+        self.assertIsNone(vs.course_f0({"partials": []}))
+        self.assertIsNone(vs.course_f0({"strings": [[]]}))
+
+
+class ModeF0ToleranceTests(unittest.TestCase):
+    """Contract: modes.f0_deviation now judges the course centroid against
+    the tightened 5.0-cent tolerance (MODE_F0_TOL_CENTS, 12.0 -> 5.0,
+    2026-07-23 月月-authorized). Both directions of the 5-cent boundary are
+    covered, plus the regression this whole change fixes: a course whose
+    string-0 reading alone would have failed the old 12c limit's tighter
+    replacement now passes because the centroid is used instead."""
+
+    def _run(self, dumped_events, events):
+        original = vs.dump_modes
+        vs.dump_modes = lambda cli, path: {
+            "input_event_count": len(events),
+            "dumped_event_count": len(dumped_events),
+            "events": dumped_events,
+        }
+        try:
+            checks, _ = vs.check_modes(Path("unused-cli"), Path("score.json"), events)
+        finally:
+            vs.dump_modes = original
+        return {c.name: c for c in checks}
+
+    def test_course_centroid_within_5_cents_passes(self):
+        midi = 60
+        expected = vs.midi_to_hz(midi)
+        low = expected * 2.0 ** (-5.0 / 1200.0)
+        high = expected * 2.0 ** (5.0 / 1200.0)
+        dumped = [{
+            "source_index": 0, "engine": "cimbalom", "note": "C4", "midi": midi,
+            "frequency_mode": "midi",
+            "partials": [{"freq": low, "amp": 1.0, "decay": 1.0}],
+            "strings": [
+                [{"freq": low, "amp": 1.0, "decay": 1.0}],
+                [{"freq": expected, "amp": 1.0, "decay": 1.0}],
+                [{"freq": high, "amp": 1.0, "decay": 1.0}],
+            ],
+        }]
+        result = self._run(dumped, [{"engine": "cimbalom"}])
+        self.assertTrue(result["modes.f0_deviation"].ok,
+                         result["modes.f0_deviation"].detail)
+        self.assertLess(result["modes.f0_deviation"].detail["max_cents"], 5.0)
+
+    def test_old_string0_only_reading_would_have_exceeded_new_5c_limit(self):
+        # Regression proof for WHY the measurement had to change: judging
+        # string 0 alone (the old behavior) on this exact course is a
+        # -5.00c deviation, which fails a tightened 5.0c limit. The course
+        # centroid (what check_modes now actually measures) passes because
+        # it is ~0c. Cross-checked directly via course_f0() vs. the naive
+        # string-0 reading, independent of check_modes()'s wiring.
+        midi = 60
+        expected = vs.midi_to_hz(midi)
+        low = expected * 2.0 ** (-5.0 / 1200.0)
+        high = expected * 2.0 ** (5.0 / 1200.0)
+        ev = {
+            "partials": [{"freq": low, "amp": 1.0, "decay": 1.0}],
+            "strings": [
+                [{"freq": low, "amp": 1.0, "decay": 1.0}],
+                [{"freq": expected, "amp": 1.0, "decay": 1.0}],
+                [{"freq": high, "amp": 1.0, "decay": 1.0}],
+            ],
+        }
+        old_reading = ev["partials"][0]["freq"]  # what check_modes used to read
+        old_cents = vs.cents_between(old_reading, expected)
+        self.assertLess(old_cents, -4.99)  # ~ -5.00c, would fail a 5.0c limit
+        new_cents = vs.cents_between(vs.course_f0(ev), expected)
+        self.assertLess(abs(new_cents), 5.0)  # course centroid comfortably passes
+
+    def test_single_string_deviation_over_5_cents_fails(self):
+        midi = 60
+        expected = vs.midi_to_hz(midi)
+        bad = expected * 2.0 ** (10.0 / 1200.0)  # 10 cents sharp, single string
+        dumped = [{
+            "source_index": 0, "engine": "beam", "note": "C4", "midi": midi,
+            "frequency_mode": "midi",
+            "partials": [{"freq": bad, "amp": 1.0, "decay": 1.0}],
+        }]
+        result = self._run(dumped, [{"engine": "beam"}])
+        self.assertFalse(result["modes.f0_deviation"].ok)
+
+    def test_single_string_deviation_under_5_cents_passes(self):
+        midi = 60
+        expected = vs.midi_to_hz(midi)
+        ok_freq = expected * 2.0 ** (3.0 / 1200.0)  # 3 cents sharp, single string
+        dumped = [{
+            "source_index": 0, "engine": "beam", "note": "C4", "midi": midi,
+            "frequency_mode": "midi",
+            "partials": [{"freq": ok_freq, "amp": 1.0, "decay": 1.0}],
+        }]
+        result = self._run(dumped, [{"engine": "beam"}])
+        self.assertTrue(result["modes.f0_deviation"].ok,
+                         result["modes.f0_deviation"].detail)
+
+
 class RestRmsPerChannelTests(unittest.TestCase):
     """Contract: rest RMS is judged per channel (loudest channel wins), NOT
     on a (L+R)/2 mono mixdown -- decorrelated stereo content cancels in the

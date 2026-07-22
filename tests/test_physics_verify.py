@@ -287,7 +287,9 @@ class AmplitudeCounterexampleTests(unittest.TestCase):
 
 
 class ResidualEnergyTests(unittest.TestCase):
-    """F5 (2026-07-18): informational unpredicted-energy measurement."""
+    """F5 (2026-07-18, judgment conversion 2026-07-23): unpredicted-energy
+    measurement, now judged against RESIDUAL_ENERGY_LIMIT_DB (月月
+    approval 2026-07-23)."""
 
     def test_clean_signal_has_low_residual(self):
         sr = 48000
@@ -312,6 +314,39 @@ class ResidualEnergyTests(unittest.TestCase):
         import numpy as np
         self.assertIsNone(pv.measure_residual_energy(
             48000, np.zeros(64), [440.0], 1.8))
+
+    def test_limit_constant_value(self):
+        # Approved 月月 2026-07-23; see the constant's comment in
+        # tools/physics_verify.py for the baseline data and margin. This test
+        # pins the value so a future edit can't silently widen it.
+        self.assertEqual(-60.0, pv.RESIDUAL_ENERGY_LIMIT_DB)
+
+    def test_judge_passes_clean_signal_below_limit(self):
+        sr = 48000
+        freqs = [440.0, 880.0, 1320.0]
+        clean = pv._synthetic_modal_signal(sr, 2.0, freqs)
+        rdb = pv.measure_residual_energy(sr, clean, freqs, 1.8)
+        self.assertLessEqual(rdb, pv.RESIDUAL_ENERGY_LIMIT_DB)
+        self.assertTrue(pv.judge_residual_energy(rdb))
+
+    def test_judge_fails_unmodeled_strong_peak_above_limit(self):
+        sr = 48000
+        freqs = [440.0, 880.0, 1320.0]
+        clean = pv._synthetic_modal_signal(sr, 2.0, freqs)
+        # A peak well outside every predicted ±3% band, strong enough to
+        # land the residual comfortably above the -60.0 dB ceiling.
+        dirty = clean + pv._synthetic_modal_signal(sr, 2.0, [3000.0], [0.5])
+        rdb = pv.measure_residual_energy(sr, dirty, freqs, 1.8)
+        self.assertGreater(rdb, pv.RESIDUAL_ENERGY_LIMIT_DB)
+        self.assertFalse(pv.judge_residual_energy(rdb))
+
+    def test_judge_treats_unmeasurable_none_as_fail(self):
+        # An honest "cannot measure" must not be silently accepted as clean.
+        self.assertFalse(pv.judge_residual_energy(None))
+
+    def test_selftest_residual_energy_negative(self):
+        ok, detail = pv.selftest_residual_energy_negative()
+        self.assertTrue(ok, detail)
 
 
 if __name__ == "__main__":

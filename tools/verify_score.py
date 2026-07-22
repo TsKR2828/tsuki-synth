@@ -97,51 +97,48 @@ import loudness
 
 # ── tolerances (mirror physics_verify.py / ROADMAP_PHYSICS.md Sec.6) ───────
 F0_TOL_CENTS = 1.0            # frequency_hz vs equal temperament (task 2a)
-# M7-7a (2026-07-12): NOT tightened to 5.0 alongside physics_verify.py's
-# F0_TOL_CENTS, despite sharing a name and a nominal target -- the two
-# constants judge fundamentally different measurements, not the same
-# quantity at different confidence:
-#   * physics_verify.py's F0_TOL_CENTS judges measure_f0()'s power-weighted
-#     spectral CENTROID of the RENDERED AUDIO -- for a multi-string course
-#     (cimbalom/piano) that centroid averages every detuned string, so it
-#     lands within ~0.05 cents of the tuned pitch at the shipped default
-#     (detuningCents=5.0) and safely clears +/-5.
-#   * check_modes() here instead reads --dump-modes' "partials"[0].freq,
-#     which ScoreRenderer::dumpModes() builds from allStrings[0] ONLY (see
-#     src/score/ScoreRenderer.h, the `for (... allStrings[0].size() ...)`
-#     loop) -- i.e. ONE SPECIFIC STRING of the course, not a blend. For
-#     numStrings>1, CimbalomVoice::noteOn() (src/engines/CimbalomEngine.h)
-#     assigns string s a fixed offset
-#         centOffset = detCents * (2*s/(numStrings-1) - 1)
-#     so string 0 is DETERMINISTICALLY tuned to -detuningCents cents (the
-#     course's low edge, e.g. exactly -5.000 cents at the default
-#     detuningCents=5.0) -- this is a by-design measurement-point artifact
-#     of "which string does --dump-modes report", not an audio-perceivable
-#     mistuning and not "noise" in the usual sense.
-#   Tested before tightening (per M7-7a step 4): ran verify_score.py on 5
-#   diverse real corpus files. The 3 that contain cimbalom/piano events
-#   measured modes.f0_deviation max cents of 5.002 (ai_radiance_m1, 64
-#   events), 5.005 (vivaldi_four_seasons_autumn_m2, 187 events), and 5.013
-#   (moonlight_sonata_movement1_yangqin, 1142 events) -- all would FAIL a
-#   5.0-cent limit on this check, on the same by-design -detuningCents
-#   offset described above, even though the audio those scores actually
-#   render is physics_verify.py-verified within 0.05 cents of true pitch.
-#   The 2 modal-single-voice files (water_gong_clamped, akashic_ambient_001)
-#   measured 0.003 cents, consistent with beam/plate engines having no
-#   per-string detuning to begin with. Tightening this check would require
-#   changing WHAT it measures (e.g. a course-average or centroid over
-#   "strings", mirroring measure_f0()) -- a real code change to
-#   check_modes(), out of scope for a tolerance-only task and not attempted
-#   here. Left at 12.0 cents, honestly, per ROADMAP_PHYSICS.md Sec.1 Rule 2
-#   ("達不到門檻 -> 回報實測數字 + 原因分析，停下來等決定"); registered on
-#   TODO.md for 月月's decision (tighten the measurement itself in a future
-#   milestone, or accept 12.0 as this check's correct value going forward).
-MODE_F0_TOL_CENTS = 12.0      # --dump-modes fundamental vs equal temperament
-                              # (deliberately NOT the same number as
-                              # physics_verify.py's F0_TOL_CENTS=5.0 -- see
-                              # the comment block above; this reads raw
-                              # dumped string-0 data, not audio, and its
-                              # course-position offset is real and by design)
+# M7-7a (2026-07-12): originally NOT tightened to 5.0 alongside
+# physics_verify.py's F0_TOL_CENTS -- check_modes() here read --dump-modes'
+# "partials"[0].freq, which ScoreRenderer::dumpModes() built from
+# allStrings[0] ONLY (see src/score/ScoreRenderer.h) -- i.e. ONE SPECIFIC
+# STRING of a multi-string course, not a blend. For numStrings>1,
+# CimbalomVoice::noteOn() (src/engines/CimbalomEngine.h) assigns string s a
+# fixed offset
+#     centOffset = detCents * (2*s/(numStrings-1) - 1)
+# so string 0 was DETERMINISTICALLY tuned to -detuningCents cents (the
+# course's low edge, e.g. exactly -5.000 cents at the default
+# detuningCents=5.0) -- a by-design measurement-point artifact of "which
+# string does --dump-modes report", not an audio-perceivable mistuning.
+# Tested at the time (M7-7a step 4): 3 real corpus files containing
+# cimbalom/piano events measured modes.f0_deviation max cents of 5.002
+# (ai_radiance_m1), 5.005 (vivaldi_four_seasons_autumn_m2), and 5.013
+# (moonlight_sonata_movement1_yangqin) -- all would have FAILED a 5.0-cent
+# limit purely on this string-0 offset, even though the audio those scores
+# actually render is physics_verify.py-verified within 0.05 cents of true
+# pitch. Left at 12.0 cents at the time, pending a real fix to the
+# measurement itself (registered on TODO.md).
+#
+# 2026-07-23 (course-centroid remeasurement, 月月-authorized): the
+# measurement point above has now been fixed. check_modes() no longer
+# reads partials[0] (= allStrings[0] = string 0) for multi-string engines;
+# it reads --dump-modes' "strings" array (each event's full per-string
+# mode list, see ScoreRenderer::dumpModes()) and computes the COURSE's
+# fundamental as the amplitude-weighted mean of every active string's
+# fundamental -- mirroring what measure_f0()'s spectral centroid already
+# does on rendered audio. Single-string engines (strings absent, or length
+# <= 1) are unaffected and still read partials[0]/allStrings[0] exactly as
+# before. With this fix the string-0 -detuningCents offset cancels out (a
+# symmetric -5/0/+5 course averages to ~0 cents, not -5), so the tolerance
+# is tightened from 12.0 to 5.0 cents per 月月's 2026-07-23 approval of
+# this measurement-method change. Re-measured with the new course-centroid
+# formula on the same 3 cimbalom/piano files: all landed far under 5.0
+# cents (near 0, see verify_score.py run output) -- the old 5.00x-5.01x
+# readings were purely the string-0 artifact, not real mistuning.
+MODE_F0_TOL_CENTS = 5.0       # --dump-modes course-centroid fundamental vs
+                              # equal temperament (measurement changed
+                              # 2026-07-23, see comment block above; single-
+                              # string engines still read partials[0]/
+                              # allStrings[0] directly)
 FREQ_MIN_HZ = 0.0             # exclusive
 FREQ_MAX_HZ = 20000.0         # inclusive
 REST_RMS_LIMIT_DBFS = -50.0   # ROADMAP_PHYSICS.md Sec.6 "休止區 RMS"
@@ -223,6 +220,64 @@ def cents_between(f_measured, f_predicted):
     if f_measured is None or f_predicted is None or f_measured <= 0 or f_predicted <= 0:
         return None
     return 1200.0 * math.log2(f_measured / f_predicted)
+
+
+def course_f0(dumped_event):
+    """Returns the fundamental frequency to judge for MODE_F0_TOL_CENTS
+    (see the 2026-07-23 comment block above MODE_F0_TOL_CENTS).
+
+    For a multi-string course (--dump-modes "strings": [[mode,...], ...],
+    one inner list per active string, added for exactly this purpose by
+    ScoreRenderer::dumpModes()), returns the AMPLITUDE-WEIGHTED MEAN of
+    every active string's fundamental (partials[0] of each string) --
+    mirroring what physics_verify.py's measure_f0() spectral centroid
+    already does on the rendered audio, instead of the old string-0-only
+    reading. A weighted mean with equal (or missing) weights reduces to
+    the plain arithmetic mean, so no separate code path is needed for the
+    "amplitudes are equal" case; only genuinely missing/non-finite/
+    non-positive amplitudes are special-cased below (weighting by an
+    absent or nonsensical number would be worse than not weighting).
+
+    For a single-string engine ("strings" absent, empty, or length <= 1 --
+    e.g. beam/tongue_drum/plate, or an older dump without "strings" at
+    all), falls back to the original measurement: partials[0].freq
+    (== allStrings[0][0].freq), unchanged from before this function
+    existed.
+
+    Returns None if no usable fundamental can be found at all.
+    """
+    strings = dumped_event.get("strings")
+    if not strings or len(strings) <= 1:
+        partials = dumped_event.get("partials", [])
+        if not partials:
+            return None
+        f0 = partials[0].get("freq")
+        return f0 if (f0 is not None and math.isfinite(f0) and f0 > 0) else None
+
+    freqs = []
+    amps = []
+    for s in strings:
+        if not s:
+            continue
+        f0 = s[0].get("freq")
+        if f0 is None or not math.isfinite(f0) or f0 <= 0:
+            continue
+        a0 = s[0].get("amp")
+        amps.append(a0 if (a0 is not None and math.isfinite(a0) and a0 > 0) else None)
+        freqs.append(f0)
+
+    if not freqs:
+        return None
+    if any(a is None for a in amps):
+        # At least one active string's amplitude is missing/non-finite/
+        # non-positive -- degrade to the plain arithmetic mean rather than
+        # weight by a number that can't be trusted.
+        return sum(freqs) / len(freqs)
+
+    total_amp = sum(amps)
+    if total_amp <= 0:
+        return sum(freqs) / len(freqs)
+    return sum(f * a for f, a in zip(freqs, amps)) / total_amp
 
 
 # ── WAV reader (16 / 24 / 32-bit PCM -> mono float), same approach as
@@ -699,7 +754,7 @@ def check_modes(cli, score_path, events):
                     bad_decay.append((i, j, d))
 
         if expected_f0 is not None and partials and ev.get("frequency_mode", "midi") == "midi":
-            f0 = partials[0].get("freq")
+            f0 = course_f0(ev)
             if f0 is not None and math.isfinite(f0) and f0 > 0:
                 c = cents_between(f0, expected_f0)
                 if c is not None:

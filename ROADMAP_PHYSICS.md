@@ -76,7 +76,7 @@
 
 | 元件 | 域 | 說明 |
 |---|---|---|
-| Cimbalom / Piano（StringModel） | ✅ 域內 | 敲擊剛性弦，含非諧性 |
+| Cimbalom / Piano（StringModel） | ✅ 域內 | 敲擊剛性弦，含非諧性；振幅含已文件化 creative 層（`spectralTilt`，見 `CimbalomEngine.h` 註解），頻率／衰減不受影響；月月 2026-07-23 裁決保留並劃界 |
 | Tongue Drum（BeamModel） | ✅ 域內 | 預設 fixed-free cantilever；`free_free` 是明確替代的懸掛 bar |
 | Water Gong（PlateModel） | ✅ 域內 | Kirchhoff 圓板（clamped + free-edge） |
 | Custom Harmonics | ⚠️ 半域內 | 加法合成，頻率比可驗但非物理推導 |
@@ -394,12 +394,12 @@ python tools/physics_verify.py --t60
 | 項目 | 現值 | 目標值（Milestone） | 依據 |
 |---|---|---|---|
 | f0 誤差（`physics_verify.py` 音訊量測） | ±5 cents（全域，無 per-engine 放寬） | ±5 cents（M7） | 2026-07-17 note-range 全過；rubber 三例因不足八週期列 N/A，不以攻擊噪聲假造 f0 |
-| f0 誤差（`verify_score.py` `--dump-modes` 原始 string-0 值） | ±12 cents（刻意未跟進收緊，見 M7-7a 說明） | 留待改量測法後再議 | 量測點是單一弦（by design -detuningCents 偏移），非聲學質心；5 首曲目測試 3 首含多弦引擎的量得 5.002–5.013 cents，收緊到 5 會誤殺；`verify_score.py --all` 全 corpus 在 Phase H 材質修正後重跑仍 73/73 PASS（`reports/gate_outputs/verify_all_corpus_phase_h.log`），此檢查未受影響 |
+| f0 誤差（`verify_score.py` `--dump-modes` course 質心值） | ±5 cents（2026-07-23 月月授權改量測法後收緊；程式改動由另一輪工作平行進行中，`tools/verify_score.py` 的 `check_modes()` 尚待改為 course 質心／平均量測與 GATE 存證） | ±5 cents（M7，與 `physics_verify.py` 全域容差一致） | 歷史理由：舊量測點是單一弦（by design `-detuningCents` 偏移），非聲學質心，5 首曲目測試 3 首含多弦引擎量得 5.002–5.013 cents，直接收緊到 5.0 會誤殺；2026-07-23 月月授權：待 `check_modes()` 改為量測 course 質心／平均後，將 `MODE_F0_TOL_CENTS` 由 12.0 收緊至 5.0；實作與新 GATE 證據路徑見 `reports/gate_outputs/deepfix4_*`（待補） |
 | Partial 頻率誤差 | 2–4%（依引擎） | 維持，M7 檢討 | FFT 量測窗 ±6% 的解析限制 |
 | Partial 振幅誤差 | ±3.0 dB（M2 已達成，Phase H 材質修正後重跑 `--amps` 仍 `RESULT: ALL WITHIN TOLERANCE`，`reports/gate_outputs/phase_h_gate_amps.txt`，確認材質阻尼/E 修正不影響 t=0 振幅判定） | ±3.0 dB（M2） | M2 實測後定案 |
 | T60 比值 | 0.80–1.25（exit-code 判定） | 0.5–2.0 判定制（M5） | 2026-07-18 月月授權同步至工具實值（收緊方向）；2026-07-17 十個標準 probe measured/model 0.99–1.00；rubber 極短瞬態另列 N/A |
-| velocity ×2 電平 | 量測域：基頻窄帶（測得 f0 ±3%，非寬帶）；雙重判定數值不變：實測 vs 模型預測 ±1.0 dB，且模型預測自身 \|Δ−6.0206\| ≤ 1.0 dB（物理律上限）；寬帶 delta 僅資訊性列印，不影響判定 | +6.0 ± 1.0 dB 判定制（M1） | 振幅正比力的物理律（20·log10 2 = +6.0206 dB）是逐模態律（`ModalResonator::excite()`），非寬帶頻譜形狀律；2026-07-18 月月授權語意同步為雙重判定；**2026-07-22 月月授權修理：量測域對齊物理律適用範圍（寬帶→基頻窄帶），非容差變更**；round-2 寬帶量測值（piano +7.4373 dB）見 `reports/gate_outputs/deepfix2_gate_full.txt` 存證，本輪起降為資訊性 |
-| 殘差頻譜能量 | 資訊性（不影響 exit code） | 門檻待月月批准後轉判定制 | 2026-07-18 round-2 新增；門檻數值與轉判定待月月批准（見 `TODO.md` 待裁決） |
+| velocity ×2 電平 | 量測域：基頻窄帶（測得 f0 ±3%，非寬帶）；雙重判定數值不變：實測 vs 模型預測 ±1.0 dB，且模型預測自身 \|Δ−6.0206\| ≤ 1.0 dB（物理律上限）；寬帶 delta 僅資訊性列印，不影響判定 | +6.0 ± 1.0 dB 判定制（M1） | 振幅正比力的物理律（20·log10 2 = +6.0206 dB）是逐模態律（`ModalResonator::excite()`），非寬帶頻譜形狀律；2026-07-18 月月授權語意同步為雙重判定；**2026-07-22 月月授權修理：量測域對齊物理律適用範圍（寬帶→基頻窄帶），非容差變更**；round-2 寬帶量測值（piano +7.4373 dB）見 `reports/gate_outputs/deepfix2_gate_full.txt` 存證，本輪起降為資訊性；**2026-07-23 月月正式追認此量測域變更**（round-4 裁決，見 `TODO.md`「2026-07-23 round-4 裁決落地」） |
+| 殘差頻譜能量 | 判定制 −60.0 dB re total（2026-07-23 月月批准；程式改動由另一輪工作平行進行中，`tools/physics_verify.py` 尚待該輪更新與 GATE 存證） | −60.0 dB re total 判定制（已批准，M2/F5） | 2026-07-18 round-2 新增為資訊性；round-2/round-3 累計實測基線 −74.7～−83.1 dB re total（`reports/gate_outputs/deepfix2_gate_full.txt` 等），距 −60.0 dB 門檻留有 ≥14.7 dB 安全邊際；2026-07-23 月月批准轉判定制，門檻取 −60.0 dB re total；實作與新 GATE 證據路徑見 `reports/gate_outputs/deepfix4_*`（待補） |
 | 休止區 RMS | 無 | ≤ −50 dBFS（M3，含殘響衰減窗） | 待 M3 實測後檢討；2026-07-18 量測法改為逐聲道 RMS 取最大（門檻 −50 dBFS 不變；量測方法變更，非容差變更） |
 | 跨引擎等 RMS | 0.2 dB（已達） | 維持 | 2026-06 校準 |
 | 決定性 | SHA256 一致（同機） | 維持；跨機另訂（NTH-4） | — |

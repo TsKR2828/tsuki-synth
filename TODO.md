@@ -26,16 +26,27 @@ Summer: `reverb.decay` narrowed on both files (wet untouched) — `summer_m2` 2.
 margin), `summer_m3` 1.2→1.0 (2.5 dB margin); both re-verified PASS incl. determinism SHA256 match. Stale
 `rules_v2_demo_001.report.html` (predating its score.json's 2026-07-17 edit) regenerated and re-checked.
 No §6 tolerance widened; no new exemption registered; both score edits and the measurement-domain change
-await 月月's sign-off (musical effect / domain-change ratification respectively).
+awaited 月月's sign-off (musical effect / domain-change ratification respectively) — **ratified 2026-07-23,
+see "2026-07-23 round-4 裁決落地" below.**
 
 ## 月月待裁決（pending decisions）
 
-- [ ] **`verify_score.py` 的 `MODE_F0_TOL_CENTS = 12.0` 是否授權改量測法後收緊**（ROADMAP_PHYSICS §6 該列完整理由）：此檢查的量測點是 `--dump-modes` 的 `partials[0]`，即多弦課「第 0 條弦」的原始值，而 `CimbalomVoice::noteOn()` 按設計把第 0 條弦精準調到 `-detuningCents`（預設 -5.000 cents），量的不是聲學質心；5 首真實曲目測試中 3 首含 cimbalom/piano 的量得 5.002–5.013 cents，直接收緊到 5.0 會誤殺，即使 `physics_verify.py` 已驗證同曲實際渲染音訊的真實基頻在 0.05 cents 內。收緊的前提是改「量測什麼」（例如改為 course 質心/平均），屬程式邏輯變更非容差變更，需月月授權後才做。
-- [ ] **殘差頻譜能量檢查：門檻轉判定制的批准**——目前為資訊性輸出（不影響 exit code），門檻數值與轉為 exit-code 判定需月月批准（§6 已登記為資訊性列）。
-- [ ] **spectralTilt heuristic 層去留**——是否保留該啟發式層，或移除/降級為已文件化近似，待月月裁決。
-- [ ] **【2026-07-18 round-2 → 2026-07-22 round-3 已修正】piano velocity 物理律「違規」**——round-2 的 `physics_verify.py --full` 紅燈是量測域選錯：舊判定拿寬帶 RMS 驗證一條逐模態律（`20·log10(2) = 6.0206 ± 1.0 dB`，源自 `ModalResonator::excite()` 振幅正比槌速），把 Hertz 接觸時間隨槌速變短帶來的頻譜變亮（物理真實，`HammerImpulse.h`）也算了進去。round-3 把量測域改到以 `measure_f0()` 為中心的基頻 ±3% 窄帶（`measure_band_rms_db()`，沿用 `measure_t60()` 同一 Butterworth band 家族），判定式數值本身（`|predicted−6.0206|≤1.0` 且 `|measured−predicted|≤1.0`）未動。**重測全數 PASS**：cimbalom +6.0587 dB、tongue_drum +6.0574 dB、water_gong +6.0586 dB、water_gong_free +6.0588 dB、piano +6.6702 dB（dev +0.65）；`--full --skip-amps` 回綠。舊寬帶違規數字（piano +7.4373 dB）保留為資訊性行，不再影響判定。**待裁決：此量測域變更（寬帶→基頻窄帶）屬程式邏輯調整，需月月追認**；詳見 `DEVLOG.md` 2026-07-22 條目、`reports/gate_outputs/deepfix3_selftest.txt`／`deepfix3_gate_full.txt`。
-- [ ] **【2026-07-18 round-2 → 2026-07-22 round-3 已修】corpus 逐聲道 RMS 揭露的 2 個既有 rest 超標**——`scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m2.score.json` `reverb.decay` 2.8→2.6（wet 0.28 不動）：3 個休止窗最緊裕度從超標 0.1 dB 改善為 2.6 dB 裕度；`vivaldi_four_seasons_summer_m3.score.json` `reverb.decay` 1.2→1.0（wet 0.20 不動）：唯一休止窗從超標 2.9 dB 改善為 2.5 dB 裕度。m3 的 decay 完整歷史為 2.1（原始）→1.2（deep-fix 輪，mono 量測時代，掃描證據見 `docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md`）→1.0（round-3，逐聲道量測），月月要確認的是**累計** 2.1→1.0 的殘響變化。兩者 `verify_score.py` 全項重驗 PASS（含 determinism SHA256 match），`-50.0 dBFS` 門檻未動，未新增豁免。完整逐點掃描見 `reports/gate_outputs/deepfix3_summer_rest_sweep.txt`。**待裁決：兩處 decay 縮短造成的殘響尾巴變化，藝術效果需月月最終確認**（機器 GATE 已過）。
+- [x] **`verify_score.py` 的 `MODE_F0_TOL_CENTS = 12.0` 是否授權改量測法後收緊**——**2026-07-23 裁決：授權**，改為 course 質心／平均量測法後收緊至 5.0；程式改動（`check_modes()`）由另一輪工作平行進行中，尚待該輪 GATE 存證（見「2026-07-23 round-4 裁決落地」）。
+- [x] **殘差頻譜能量檢查：門檻轉判定制的批准**——**2026-07-23 裁決：批准**，轉判定制、門檻取 -60.0 dB re total（依據 round-2/round-3 累計實測基線 -74.7~-83.1 dB re total，留有 ≥14.7 dB 邊際）；程式改動（`tools/physics_verify.py`）由另一輪工作平行進行中，尚待該輪 GATE 存證。
+- [x] **spectralTilt heuristic 層去留**——**2026-07-23 裁決：降級保留**，聲音不動，劃界為已文件化 creative 層（不算入物理主張），已同步 `ROADMAP_PHYSICS.md` §0 與 `README.md` 域表註記。
+- [x] **【2026-07-18 round-2 → 2026-07-22 round-3 已修正】piano velocity 物理律「違規」**——量測域變更（寬帶→基頻窄帶）**2026-07-23 裁決：追認**，已同步 `ROADMAP_PHYSICS.md` §6 velocity 列依據欄。詳見 `DEVLOG.md` 2026-07-22 條目、`reports/gate_outputs/deepfix3_selftest.txt`／`deepfix3_gate_full.txt`。
+- [x] **【2026-07-18 round-2 → 2026-07-22 round-3 已修】corpus 逐聲道 RMS 揭露的 2 個既有 rest 超標**——`summer_m2`（decay 2.8→2.6）／`summer_m3`（decay 1.2→1.0，累計 2.1→1.0）的殘響藝術效果**2026-07-23 裁決：接受**。機器 GATE 已於 round-3 過（`verify_score.py` 全項 PASS 含 determinism SHA256 match）。
 - [ ] **Rule 10 前後對照報告審閱**——`reports/deep_fix_before_after.md`（2026-07-18 round-2）：8 首代表曲目改動前後 RMS/頻譜質心/T60/f0 比對，`physical_piano` 是唯一變大聲的一首（+2.346 dB），值得月月過目確認方向是否符合預期。
+
+## 2026-07-23 round-4 裁決落地
+
+> 月月於對話中對 2026-07-22 round-3 留下的五項待裁決明示「都照推薦的做」。本輪只落地文件記錄，不改 `src/`／`tools/` 程式碼。
+
+- 決議：(1) velocity 量測域（寬帶→基頻窄帶）追認；(2) `summer_m2`/`summer_m3` decay 收斂（2.8→2.6、2.1 累計→1.0）接受；(3) `spectralTilt` 降級保留，劃界為已文件化 creative 層；(4) 殘差頻譜能量轉判定制 -60.0 dB re total；(5) `MODE_F0_TOL_CENTS` 授權改 course 質心量測法後收緊至 5.0。
+- 文件同步：`ROADMAP_PHYSICS.md` §0 域表（Cimbalom/Piano 列 spectralTilt 劃界註記）+ §6 容差表（velocity/殘差/f0 三列）；`README.md` Physical Verification 域表同步 spectralTilt 劃界註記；本檔（`TODO.md`）五項裁決逐條關閉；`DEVLOG.md` 新增本輪條目。
+- **(4)（殘差判定制 -60.0 dB）與 (5)（f0 course 質心 5.0）的程式碼改動已於同日稍後落地並全 GATE 綠**（文件線寫作當下平行進行中，故上一版此條標「尚未落地」）：`tools/physics_verify.py` `RESIDUAL_ENERGY_LIMIT_DB = -60.0` 判定制生效（5 引擎實測 -74.7~-83.1 dB 全 PASS，selftest 新增未建模強峰反例會 FAIL）；`tools/verify_score.py` `course_f0()` 振幅加權質心 + `MODE_F0_TOL_CENTS = 5.0`（moonlight yangqin 實測 5.013→0.019 cents，證實舊讀數為 string-0 設計偏移非真走音）。GATE 存證：`reports/gate_outputs/deepfix4_selftest.txt`／`deepfix4_gate_full.txt`（`F5 residual energy : PASS`、`RESULT: NO CHECKED FAILURES`）／`deepfix4_pytests.txt`（32+26 測試全過）。
+- **corpus 全量重驗（新 f0 質心 + 5c 收緊下）：73/73**——四分片 `deepfix4_corpus_{A,B,C,D}*.txt`：B 12/12、C 21/21、D 22/22 全過；A 分片 18 檔中 `moonlight_sonata_complete` 首跑 determinism 檢查因 CLI 第二次渲染進程啟動失敗（exit 0xC0000142 = STATUS_DLL_INIT_FAILED，高併發環境故障，同 deepfix2 輪 autumn_m1 前例）記 FAIL；**2026-07-23 已單獨重驗：ALL CHECKS PASSED（含既登記 moonlight 豁免）、determinism SHA256 aaaa46e8... 兩次一致，非真回歸，已解除**。其餘 17 檔含 ai_radiance 5 檔全過。豁免仍僅 moonlight 一筆，零新增。
+- Rule 1/2/4：本輪未執行任何 git 變更狀態指令，未調寬任何容差（(4)(5) 皆為收緊方向），文件中的新數字（-60.0 dB、5.0 cents）均註明批准依據與日期。
 
 ## Before merging this branch
 
