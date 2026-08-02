@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import median
@@ -163,12 +164,36 @@ def shifted_and_negative_cases(audit: Audit) -> None:
                 "silence never becomes a measured pitch")
 
 
+def _relative_luminance(rgb: tuple[int, int, int]) -> float:
+    def linear(value: int) -> float:
+        srgb = value / 255.0
+        return (srgb / 12.92 if srgb <= 0.04045
+                else ((srgb + 0.055) / 1.055) ** 2.4)
+    r, g, b = (linear(value) for value in rgb)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def _contrast_ratio(foreground: tuple[int, int, int],
+                    background: tuple[int, int, int]) -> float:
+    a, b = _relative_luminance(foreground), _relative_luminance(background)
+    return (max(a, b) + 0.05) / (min(a, b) + 0.05)
+
+
+def _source_colour(source: str, name: str) -> tuple[int, int, int] | None:
+    match = re.search(rf"\b{name}\s*\(0xff([0-9a-fA-F]{{6}})\)", source)
+    if not match:
+        return None
+    value = int(match.group(1), 16)
+    return ((value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff)
+
+
 def source_contract(audit: Audit) -> None:
     root = Path(__file__).resolve().parents[1]
     detector = (root / "src/analyzer/PitchDetector.h").read_text(encoding="utf-8")
     view = (root / "src/analyzer/TunerView.h").read_text(encoding="utf-8")
     processor = (root / "src/PluginProcessor.h").read_text(encoding="utf-8")
     cmake = (root / "CMakeLists.txt").read_text(encoding="utf-8")
+    look_and_feel = (root / "src/TsukiLookAndFeel.h").read_text(encoding="utf-8")
 
     audit.check("minSupportedMidi = 21" in detector
                 and "maxSupportedMidi = 108" in detector,
@@ -183,6 +208,14 @@ def source_contract(audit: Audit) -> None:
                 "tuner consumes newest dry audio with 192 kHz A0 history")
     audit.check("TsukiSynthTunerTest" in cmake,
                 "real C++ tuner regression target is registered with CTest")
+    text_mid = _source_colour(look_and_feel, "textMid")
+    panel_bg = _source_colour(look_and_feel, "panelBg")
+    contrast = (_contrast_ratio(text_mid, panel_bg)
+                if text_mid is not None and panel_bg is not None else 0.0)
+    audit.check("textDim" not in view and "scaledFont (8.0f)" not in view
+                and contrast >= 4.5,
+                f"tuner secondary text contrast is {contrast:.2f}:1 "
+                "with >=9 pt base size")
 
 
 def run(include_source: bool = False, inject_failure: bool = False) -> int:

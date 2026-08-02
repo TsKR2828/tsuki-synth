@@ -23,8 +23,10 @@
 | 作曲規範 v2 示範曲 | 全管線驗證綠 + 13/13 音程合規的標準範本 | `scores/originals/rules_v2_demo/`（含 `.report.html`） |
 
 渲染在**相同程式版本、build、平台與浮點執行環境**內是決定性的：同一份 score
-重複渲染會得到相同 SHA-256。跨編譯器／CPU 的 bit-exact 尚未建立保證；因此交接時
-需一併記錄 commit、CLI 版本、sample rate、bit depth 與 `global.random_seed`。
+重複渲染會得到相同 SHA-256。跨編譯器／CPU 的 bit-exact 尚未建立保證。新版 CLI
+會在 `.render.json` manifest v3 自動記錄 WAV、根 score、CLI 執行檔 SHA-256，以及
+configure 時的 commit／dirty 狀態、編譯器、目標平台、sample rate 與 random seed。
+分層 score 所引用的 layer 檔仍須與根 score 一起封存；bit depth 可由 WAV/FLAC 本身核對。
 
 ## 1. 30 秒上手
 

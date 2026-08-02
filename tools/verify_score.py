@@ -149,14 +149,13 @@ CLIP_THRESHOLD = 0.999        # |sample| >= this counts as "clipped"
 MAX_CONSECUTIVE_CLIPPED = 1   # no two clipped samples in a row allowed
 
 # Render-manifest contracts written by the CLI next to each output file
-# (src/cli/RenderApp.cpp, writeRenderManifest()). v2 (2026-07-18) adds
-# `wav_sha256` (SHA256 of the output file's bytes, so the artifact carries
-# its own verifiability) and stores `score` relative to the manifest's own
-# directory instead of an absolute path. v1 is the legacy contract emitted
-# by binaries built before that change and is still recognised -- it simply
-# has no hash to verify (reported as such, never silently ignored).
+# (src/cli/RenderApp.cpp, writeRenderManifest()). v2 (2026-07-18) added
+# `wav_sha256`. v3 additionally binds the artifact to the exact root-score
+# bytes and renderer executable bytes, and records configure-time source and
+# toolchain provenance. v1/v2 remain explicit legacy contracts.
 MANIFEST_CONTRACT_V1 = "TsukiSynth Render Manifest v1"
 MANIFEST_CONTRACT_V2 = "TsukiSynth Render Manifest v2"
+MANIFEST_CONTRACT_V3 = "TsukiSynth Render Manifest v3"
 
 MIDI_NOTE_MIN, MIDI_NOTE_MAX = 0, 127
 
@@ -1139,12 +1138,16 @@ def check_peak_and_clipping(all_ch_audio):
 
 
 # ── render-manifest contract check ──────────────────────────────────────────
-def check_render_manifest(manifest_path, wav_path, events):
+def check_render_manifest(manifest_path, wav_path, events,
+                          score_path=None, cli_path=None):
     """Validates the render manifest the CLI wrote next to `wav_path`
     (src/cli/RenderApp.cpp, writeRenderManifest()).
 
-    Recognised contracts (see MANIFEST_CONTRACT_V1/V2 at the top):
-      * v2 (current): everything v1 had, plus `wav_sha256` -- the SHA256 of
+    Recognised contracts (see MANIFEST_CONTRACT_V1/V2/V3 at the top):
+      * v3 (current): everything v2 had, plus root-score and renderer-binary
+        SHA256 values and configure-time source/toolchain provenance. The
+        hashes are compared with the exact score and CLI used by this run.
+      * v2 (legacy): everything v1 had, plus `wav_sha256` -- the SHA256 of
         the output file's bytes. For v2 the hash MUST match the actual file
         on disk: the artifact carries its own verifiability instead of
         trusting that nothing touched the output directory.
@@ -1156,6 +1159,10 @@ def check_render_manifest(manifest_path, wav_path, events):
     stats that print_report() / report_html.py read from `measured`."""
     contract = None
     manifest_sha = actual_sha = None
+    manifest_score_sha = actual_score_sha = None
+    manifest_renderer_sha = actual_renderer_sha = None
+    renderer_executable = renderer_version = source_commit = None
+    source_dirty = compiler = target = build_configuration = None
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         contract = manifest.get("contract")
@@ -1163,7 +1170,9 @@ def check_render_manifest(manifest_path, wav_path, events):
         applied_gain = float(manifest["applied_gain"])
         full_scale_samples = int(manifest["samples_at_or_above_full_scale"])
         problems = []
-        if contract not in (MANIFEST_CONTRACT_V1, MANIFEST_CONTRACT_V2):
+        recognised = (MANIFEST_CONTRACT_V1, MANIFEST_CONTRACT_V2,
+                      MANIFEST_CONTRACT_V3)
+        if contract not in recognised:
             problems.append(f"unrecognised contract: {contract!r}")
         if manifest.get("input_event_count") != len(events):
             problems.append(
@@ -1176,8 +1185,8 @@ def check_render_manifest(manifest_path, wav_path, events):
         if full_scale_samples < 0:
             problems.append(
                 f"samples_at_or_above_full_scale invalid: {full_scale_samples!r}")
-        if contract == MANIFEST_CONTRACT_V2:
-            # v2 contract: wav_sha256 is REQUIRED (KeyError -> invalid) and
+        if contract in (MANIFEST_CONTRACT_V2, MANIFEST_CONTRACT_V3):
+            # v2/v3 contract: wav_sha256 is REQUIRED (KeyError -> invalid) and
             # must match the bytes actually on disk.
             manifest_sha = manifest["wav_sha256"]
             actual_sha = sha256_file(wav_path)
@@ -1186,6 +1195,52 @@ def check_render_manifest(manifest_path, wav_path, events):
                 problems.append(
                     f"wav_sha256 mismatch: manifest says {manifest_sha!r}, "
                     f"actual {wav_path.name} bytes hash to {actual_sha}")
+        if contract == MANIFEST_CONTRACT_V3:
+            manifest_score_sha = manifest["root_score_sha256"]
+            manifest_renderer_sha = manifest["renderer_executable_sha256"]
+            renderer_executable = manifest["renderer_executable"]
+            renderer_version = manifest["renderer_version"]
+            source_commit = manifest["configured_source_commit"]
+            source_dirty = manifest["configured_source_dirty"]
+            compiler = manifest["compiler"]
+            target = manifest["target"]
+            build_configuration = manifest["build_configuration"]
+
+            if score_path is None:
+                problems.append("v3 verification requires the input score path")
+            else:
+                actual_score_sha = sha256_file(Path(score_path))
+                if not (isinstance(manifest_score_sha, str)
+                        and manifest_score_sha.lower() == actual_score_sha):
+                    problems.append(
+                        "root_score_sha256 mismatch: manifest says "
+                        f"{manifest_score_sha!r}, actual input score bytes hash "
+                        f"to {actual_score_sha}")
+
+            if cli_path is None:
+                problems.append("v3 verification requires the renderer CLI path")
+            else:
+                actual_renderer_sha = sha256_file(Path(cli_path))
+                if not (isinstance(manifest_renderer_sha, str)
+                        and manifest_renderer_sha.lower() == actual_renderer_sha):
+                    problems.append(
+                        "renderer_executable_sha256 mismatch: manifest says "
+                        f"{manifest_renderer_sha!r}, actual CLI bytes hash to "
+                        f"{actual_renderer_sha}")
+
+            text_fields = {
+                "renderer_executable": renderer_executable,
+                "renderer_version": renderer_version,
+                "configured_source_commit": source_commit,
+                "compiler": compiler,
+                "target": target,
+                "build_configuration": build_configuration,
+            }
+            for key, value in text_fields.items():
+                if not isinstance(value, str) or not value.strip():
+                    problems.append(f"{key} must be a non-empty string")
+            if not isinstance(source_dirty, bool):
+                problems.append("configured_source_dirty must be boolean")
         manifest_ok = not problems
         manifest_error = "; ".join(problems)
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
@@ -1195,7 +1250,17 @@ def check_render_manifest(manifest_path, wav_path, events):
         manifest_error = str(exc)
 
     if manifest_ok:
-        if contract == MANIFEST_CONTRACT_V2:
+        if contract == MANIFEST_CONTRACT_V3:
+            message = (
+                f"Render manifest v3 verified: WAV {actual_sha[:12]}..., "
+                f"root score {actual_score_sha[:12]}..., renderer "
+                f"{actual_renderer_sha[:12]}...; version={renderer_version}, "
+                f"configured source={source_commit[:12]}"
+                f"{' dirty' if source_dirty else ' clean'}, "
+                f"{compiler}, {target}, {build_configuration}; "
+                f"peak={pre_peak:.6g}, gain={applied_gain:.6g}, "
+                f"samples >= 0 dBFS={full_scale_samples}.")
+        elif contract == MANIFEST_CONTRACT_V2:
             message = (
                 f"Pre-normalize manifest (v2): peak={pre_peak:.6g}, "
                 f"gain={applied_gain:.6g}, "
@@ -1218,7 +1283,18 @@ def check_render_manifest(manifest_path, wav_path, events):
          "samples_at_or_above_full_scale": full_scale_samples,
          "manifest_contract": contract,
          "manifest_wav_sha256": manifest_sha,
-         "actual_wav_sha256": actual_sha})
+         "actual_wav_sha256": actual_sha,
+         "manifest_root_score_sha256": manifest_score_sha,
+         "actual_root_score_sha256": actual_score_sha,
+         "manifest_renderer_sha256": manifest_renderer_sha,
+         "actual_renderer_sha256": actual_renderer_sha,
+         "renderer_executable": renderer_executable,
+         "renderer_version": renderer_version,
+         "configured_source_commit": source_commit,
+         "configured_source_dirty": source_dirty,
+         "compiler": compiler,
+         "target": target,
+         "build_configuration": build_configuration})
     measured = {"pre_normalize_peak": pre_peak,
                 "normalization_gain": applied_gain,
                 "pre_normalize_full_scale_samples": full_scale_samples}
@@ -1497,11 +1573,12 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
             all_checks.append(Check("render.ran", True,
                                      f"Score rendered successfully to {wav_path.name}."))
 
-            # Manifest contract check (v1 legacy / v2 with wav_sha256
-            # self-verification) -- see check_render_manifest().
+            # Manifest contract check (legacy v1/v2 or current v3 provenance)
+            # -- see check_render_manifest().
             manifest_path = wav_path.with_name(wav_path.name + ".render.json")
             manifest_check, manifest_measured = check_render_manifest(
-                manifest_path, wav_path, events)
+                manifest_path, wav_path, events, score_path=score_path,
+                cli_path=cli)
             all_checks.append(manifest_check)
             measured.update(manifest_measured)
 

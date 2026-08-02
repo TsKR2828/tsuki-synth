@@ -258,6 +258,30 @@ class VelocityLawTests(unittest.TestCase):
         self.assertTrue(ok, detail)
 
 
+class T60JudgmentTests(unittest.TestCase):
+    """A good ratio alone must never pass an under-observed decay fit."""
+
+    def test_good_ratio_and_sufficient_span_pass(self):
+        ok, detail = pv.assess_t60_measurement(10.0, 10.0, 8.0)
+        self.assertTrue(ok, detail)
+        self.assertTrue(detail["ratio_ok"])
+        self.assertTrue(detail["span_ok"])
+
+    def test_good_ratio_with_insufficient_span_fails(self):
+        # This is the exact former false-pass: the retry could still return a
+        # 1 dB fit, yet report_t60() judged only measured/model == 1.0.
+        ok, detail = pv.assess_t60_measurement(10.0, 10.0, 1.0)
+        self.assertFalse(ok)
+        self.assertTrue(detail["ratio_ok"])
+        self.assertFalse(detail["span_ok"])
+
+    def test_non_finite_measurement_fails_closed(self):
+        ok, detail = pv.assess_t60_measurement(
+            10.0, float("nan"), pv.T60_MIN_SPAN_DB)
+        self.assertFalse(ok)
+        self.assertFalse(detail["ratio_ok"])
+
+
 class AmplitudeCounterexampleTests(unittest.TestCase):
     """Task 4a (2026-07-18): wrong-amplitude counterexample."""
 

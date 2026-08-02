@@ -284,16 +284,16 @@ class RestRmsPerChannelTests(unittest.TestCase):
 
 
 class RenderManifestContractTests(unittest.TestCase):
-    """Contract: manifest v2 must carry wav_sha256 matching the bytes of the
-    output file on disk; v1 (legacy binaries) stays accepted without a hash;
-    anything else fails."""
+    """Current v3 provenance plus explicit v1/v2 backward compatibility."""
 
     WAV_BYTES = b"RIFF-not-actually-decoded-by-the-manifest-check"
+    SCORE_BYTES = b'{"$schema":"TsukiSynth Score v1"}'
+    CLI_BYTES = b"fake-tsuki-renderer-executable"
 
     def _base_manifest(self, contract, event_count=2):
         return {
             "contract": contract,
-            "score": "../scores/examples/example.score.json",
+            "score": "input.score.json",
             "output": "out.wav",
             "sample_rate": 48000,
             "random_seed": 1,
@@ -305,18 +305,78 @@ class RenderManifestContractTests(unittest.TestCase):
             "samples_at_or_above_full_scale": 0,
         }
 
-    def _run(self, manifest_dict, wav_bytes=WAV_BYTES, event_count=2):
+    def _v3_manifest(self, event_count=2):
+        manifest = self._base_manifest(vs.MANIFEST_CONTRACT_V3, event_count)
+        manifest.update({
+            "wav_sha256": self._sha(self.WAV_BYTES),
+            "root_score_sha256": self._sha(self.SCORE_BYTES),
+            "renderer_executable": "fake-cli.exe",
+            "renderer_executable_sha256": self._sha(self.CLI_BYTES),
+            "renderer_version": "0.3.0",
+            "configured_source_commit": "a" * 40,
+            "configured_source_dirty": False,
+            "compiler": "MSVC 19.44",
+            "target": "Windows AMD64",
+            "build_configuration": "Release",
+        })
+        return manifest
+
+    def _run(self, manifest_dict, wav_bytes=WAV_BYTES, event_count=2,
+             score_bytes=SCORE_BYTES, cli_bytes=CLI_BYTES):
         with tempfile.TemporaryDirectory(prefix="tsuki_manifest_test_") as d:
             wav_path = Path(d) / "out.wav"
             wav_path.write_bytes(wav_bytes)
+            score_path = Path(d) / "input.score.json"
+            score_path.write_bytes(score_bytes)
+            cli_path = Path(d) / "fake-cli.exe"
+            cli_path.write_bytes(cli_bytes)
             manifest_path = Path(d) / "out.wav.render.json"
             manifest_path.write_text(json.dumps(manifest_dict), encoding="utf-8")
             events = [{}] * event_count
-            return vs.check_render_manifest(manifest_path, wav_path, events)
+            return vs.check_render_manifest(
+                manifest_path, wav_path, events,
+                score_path=score_path, cli_path=cli_path)
 
     def _sha(self, data=WAV_BYTES):
         import hashlib
         return hashlib.sha256(data).hexdigest()
+
+    def test_v3_with_matching_artifacts_and_provenance_passes(self):
+        check, measured = self._run(self._v3_manifest())
+        self.assertTrue(check.ok, check.message)
+        self.assertIn("Render manifest v3 verified", check.message)
+        self.assertEqual(self._sha(self.SCORE_BYTES),
+                         check.detail["actual_root_score_sha256"])
+        self.assertEqual(self._sha(self.CLI_BYTES),
+                         check.detail["actual_renderer_sha256"])
+        self.assertEqual("0.3.0", check.detail["renderer_version"])
+        self.assertEqual(0.25, measured["pre_normalize_peak"])
+
+    def test_v3_detects_root_score_changed_after_render(self):
+        check, _ = self._run(
+            self._v3_manifest(), score_bytes=b'{"tampered":true}')
+        self.assertFalse(check.ok)
+        self.assertIn("root_score_sha256", check.message)
+
+    def test_v3_detects_different_renderer_binary(self):
+        check, _ = self._run(
+            self._v3_manifest(), cli_bytes=b"different-cli-build")
+        self.assertFalse(check.ok)
+        self.assertIn("renderer_executable_sha256", check.message)
+
+    def test_v3_missing_provenance_field_fails(self):
+        manifest = self._v3_manifest()
+        del manifest["compiler"]
+        check, _ = self._run(manifest)
+        self.assertFalse(check.ok)
+        self.assertIn("compiler", check.message)
+
+    def test_v3_dirty_flag_must_be_boolean(self):
+        manifest = self._v3_manifest()
+        manifest["configured_source_dirty"] = "false"
+        check, _ = self._run(manifest)
+        self.assertFalse(check.ok)
+        self.assertIn("configured_source_dirty", check.message)
 
     def test_v2_with_matching_hash_passes(self):
         manifest = self._base_manifest(vs.MANIFEST_CONTRACT_V2)

@@ -1,9 +1,18 @@
 # TsukiSynth — Current TODO
 
-> Last updated: 2026-07-22 (round-3)
+> Last updated: 2026-08-02
 > Branch: `fix/deep-physics-audit-20260716`
 
 The deep-audit implementation fixes are on the branch. Historical Phase D–I decisions remain in `DEVLOG.md`; this file lists only current work and scientific gaps.
+
+## 2026-08-02 audit follow-up
+
+- [x] T60 final judgment now requires both the 0.80–1.25 measured/model ratio and at least 8.0 dB of fitted decay; insufficient span fails closed after the 30 s retry. Regression tests include the former false-pass counterexample.
+- [x] Render manifest v3 binds WAV bytes, root-score bytes and renderer-executable bytes, and records version, configured commit/dirty state, compiler, target and build configuration. `verify_score.py` verifies all three hashes while retaining explicit v1/v2 compatibility.
+- [x] Tuner status/support/label text now uses the higher-contrast `textMid` colour and at least 9 pt base size.
+- [x] README/roadmap/playbook wording now distinguishes implementation conformance from external physical validation and reflects the 5-cent course-centroid gate.
+- [x] Rebuilt CLI, VST3, Standalone and all three C++ test targets in Release; CTest 3/3, fresh-build `physics_verify.py --full`, manifest-v3 representative scores and Standalone smoke test all pass.
+- [ ] Complete a new 73-score corpus run. The 2026-08-02 single-process `verify_score.py --all --quiet` attempt exceeded the 20-minute command limit and was terminated without a usable summary; do not call that run 73/73. `physical_piano`, `layered_transition` and `rules_v2_demo_001` were then verified individually and passed with manifest v3.
 
 Acceptance snapshot (round-1, 2026-07-17): six Release targets build; CTest and Python contract/metrology tests pass;
 schema 80/80; release corpus 73/73 with one existing visible FX-art exemption; event-specific

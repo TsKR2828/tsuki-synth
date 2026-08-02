@@ -1,8 +1,8 @@
 #include <juce_core/juce_core.h>
 #include <juce_audio_formats/juce_audio_formats.h>
 
-// juce::SHA256 (used by writeRenderManifest() for the v2 manifest's
-// wav_sha256 field) lives in the juce_cryptography module, which is NOT in
+// juce::SHA256 (used by writeRenderManifest() for the v3 manifest's artifact
+// hashes) lives in the juce_cryptography module, which is NOT in
 // this target's link list (CMakeLists.txt links juce_core /
 // juce_audio_formats / juce_audio_processors only, and CMakeLists.txt is
 // outside this fix line's file scope). The class depends only on juce_core,
@@ -18,6 +18,7 @@
 #include "../score/ScoreRenderer.h"
 #include "../physics/MaterialDB.h"
 #include "../dsp/DiagnosticOverrides.h"
+#include "BuildProvenance.h"
 #include "BinaryData.h"
 
 #include <iostream>
@@ -138,16 +139,30 @@ static void printRendererMessages (const ScoreRenderer& renderer)
         std::cout << "  ERROR: " << warning << std::endl;
 }
 
-// Manifest contract v2 (2026-07-18), consumed by tools/verify_score.py:
-//   * wav_sha256: SHA256 of the written output file's bytes, hashed from
-//     disk AFTER the renderer has finished writing it -- the artifact
-//     carries its own verifiability (a verifier needs nothing but the WAV
-//     and its manifest to prove they belong together). Read-only: the
-//     audio bytes and the render order are untouched by this change.
+// Manifest contract v3, consumed by tools/verify_score.py:
+//   * SHA256 binds the written WAV, root score and running renderer binary.
+//     Configure-time commit/dirty/toolchain fields explain the binary; its
+//     runtime hash is the authoritative identity.
 //   * score: stored relative to the manifest's own directory (falling back
 //     to the bare file name when no relative path exists, e.g. the score
 //     sits on a different drive) instead of v1's machine-specific absolute
 //     path, so the output directory is relocatable.
+static bool hashFileForManifest (const juce::File& file,
+                                 const juce::String& label,
+                                 juce::String& hashOut)
+{
+    juce::FileInputStream stream (file);
+    if (! stream.openedOk())
+    {
+        std::cout << "  ERROR: failed to open " << label << " for hashing: "
+                  << file.getFullPathName() << std::endl;
+        return false;
+    }
+
+    hashOut = juce::SHA256 (stream).toHexString();
+    return true;
+}
+
 static bool writeRenderManifest (const juce::File& scoreFile,
                                  const juce::File& outputFile,
                                  const Score& score,
@@ -155,18 +170,20 @@ static bool writeRenderManifest (const juce::File& scoreFile,
 {
     const auto& report = renderer.getWriteReport();
 
-    // Hash exactly what is on disk. Opening the stream explicitly (instead
-    // of the juce::SHA256(File) convenience constructor) lets a failed open
-    // be reported as an error rather than silently hashing to all-zeros.
-    juce::FileInputStream wavStream (outputFile);
-    if (! wavStream.openedOk())
+    // v3 binds the output to all locally-verifiable provenance available at
+    // render time: exact WAV bytes, exact root-score bytes and exact renderer
+    // executable bytes.  The executable hash remains authoritative even when
+    // the source tree was dirty or the configured commit is unavailable.
+    juce::String wavHash, scoreHash, rendererHash;
+    const auto rendererFile = juce::File::getSpecialLocation (
+        juce::File::currentExecutableFile);
+    if (! hashFileForManifest (outputFile, "rendered output", wavHash)
+        || ! hashFileForManifest (scoreFile, "root score", scoreHash)
+        || ! hashFileForManifest (rendererFile, "renderer executable", rendererHash))
     {
-        std::cout << "  ERROR: failed to re-open output for hashing: "
-                  << outputFile.getFullPathName() << std::endl;
         outputFile.deleteFile();
         return false;
     }
-    const juce::SHA256 wavHash (wavStream);
 
     // Score path relative to where this manifest lands. JUCE's
     // getRelativePathFrom() returns the untouched absolute path when no
@@ -180,10 +197,27 @@ static bool writeRenderManifest (const juce::File& scoreFile,
     scoreRef = scoreRef.replaceCharacter ('\\', '/');
 
     juce::DynamicObject::Ptr root (new juce::DynamicObject());
-    root->setProperty ("contract", "TsukiSynth Render Manifest v2");
+    root->setProperty ("contract", "TsukiSynth Render Manifest v3");
     root->setProperty ("score", scoreRef);
     root->setProperty ("output", outputFile.getFileName());
-    root->setProperty ("wav_sha256", wavHash.toHexString());
+    root->setProperty ("wav_sha256", wavHash);
+    root->setProperty ("root_score_sha256", scoreHash);
+    root->setProperty ("renderer_executable", rendererFile.getFileName());
+    root->setProperty ("renderer_executable_sha256", rendererHash);
+    root->setProperty ("renderer_version", TsukiBuildProvenance::projectVersion);
+    root->setProperty ("configured_source_commit", TsukiBuildProvenance::sourceCommit);
+    root->setProperty ("configured_source_dirty", TsukiBuildProvenance::sourceDirty);
+    root->setProperty ("compiler",
+        juce::String (TsukiBuildProvenance::compilerId) + " "
+            + TsukiBuildProvenance::compilerVersion);
+    root->setProperty ("target",
+        juce::String (TsukiBuildProvenance::targetSystem) + " "
+            + TsukiBuildProvenance::targetProcessor);
+#if JUCE_DEBUG
+    root->setProperty ("build_configuration", "Debug");
+#else
+    root->setProperty ("build_configuration", "Release");
+#endif
     root->setProperty ("sample_rate", score.global.sampleRate);
     root->setProperty ("random_seed", static_cast<juce::int64> (score.global.randomSeed));
     root->setProperty ("input_event_count", static_cast<int> (score.events.size()));

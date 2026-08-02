@@ -115,8 +115,8 @@ public:
             g.drawText (delta, measuredRow,
                         juce::Justification::centredRight);
 
-            g.setColour (Clr::textDim.withAlpha (0.75f));
-            g.setFont (TsukiLookAndFeel::scaledFont (8.0f));
+            g.setColour (Clr::textMid);
+            g.setFont (TsukiLookAndFeel::scaledFont (9.0f));
             g.drawText ("audio confidence "
                             + juce::String (juce::roundToInt (confidence * 100.0f))
                             + "%",
@@ -124,13 +124,13 @@ public:
         }
         else
         {
-            g.setColour (Clr::textDim.withAlpha (0.75f));
+            g.setColour (Clr::textMid);
             g.setFont (TsukiLookAndFeel::scaledFont (9.0f));
             g.drawText (measurementStatus, measuredRow,
                         juce::Justification::centredLeft);
 
-            g.setColour (Clr::textDim.withAlpha (0.55f));
-            g.setFont (TsukiLookAndFeel::scaledFont (8.0f));
+            g.setColour (Clr::textMid);
+            g.setFont (TsukiLookAndFeel::scaledFont (9.0f));
             g.drawText ("Supported: A0-C8 at 44.1-192 kHz", statusRow,
                         juce::Justification::centred);
         }
@@ -287,7 +287,7 @@ private:
     void drawCentredStatus (juce::Graphics& g, juce::Rectangle<float> area,
                             const juce::String& text) const
     {
-        g.setColour (Clr::textDim.withAlpha (0.45f));
+        g.setColour (Clr::textMid);
         g.setFont (TsukiLookAndFeel::scaledFont (10.0f));
         g.drawText (text, area, juce::Justification::centred);
     }
@@ -295,8 +295,8 @@ private:
     static void drawLabel (juce::Graphics& g, juce::Rectangle<float> area,
                            const juce::String& text)
     {
-        g.setColour (Clr::textDim);
-        g.setFont (TsukiLookAndFeel::scaledFont (8.0f));
+        g.setColour (Clr::textMid);
+        g.setFont (TsukiLookAndFeel::scaledFont (9.0f));
         g.drawText (text, area, juce::Justification::centredLeft);
     }
 

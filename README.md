@@ -24,21 +24,21 @@
 | Responsive UI (resizable 420x700 ~ 900x1200) | Done |
 | Custom LookAndFeel (dark theme, arc knobs) | Done |
 | MIDI Keyboard (on-screen) | Done |
-| CLI Score Renderer (strict JSON -> WAV/FLAC + manifest) | Done (80/80 schema-valid; 73/73 release corpus verified) |
-| **VST3 build** | **Passed** (current x64 binary 7.42 MiB) |
-| **Standalone build** | **Passed** (current x64 binary 7.30 MiB) |
-| **Standalone launch** | **Passed** (smoke test OK) |
+| CLI Score Renderer (strict JSON -> WAV/FLAC + provenance manifest) | **Passed** — fresh Release build emits and verifies manifest v3 |
+| **VST3 build** | **Passed** — fresh Release build from current source |
+| **Standalone build** | **Passed** — fresh Release build from current source |
+| **Standalone launch** | **Passed** — current Release build smoke-tested |
 | **DAW plugin host validation** | **Passed for v0.2.0 (historical)** — Cubase AI 12, MIDI OK, 56 APVTS params verified. Manual DAW re-validation after the current deep-fix round is still pending (see `TODO.md`) |
 | State save/load | Done (skipNextProgramChange + reattachListener fix) |
-| Version display | Done (v0.2.0 in title bar) |
+| Version display | Done (v0.3.0 in title bar) |
 | EN/中文 localization | Done |
 | Standalone REC recording | Done |
 
-**Version**: `v0.2.0` — the active deep-audit branch and exact verification state are documented in `docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md`.
+**Version**: `v0.3.0` — the active deep-audit branch and exact verification state are documented in `docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md` and `TODO.md`.
 
 ## Overview
 
-TsukiSynth is a multi-engine software synthesizer plugin based on **Physical Modeling (Modal Synthesis)**. The Cimbalom (string), Tongue Drum (beam), and Water Gong (plate) engines calculate vibration mode frequencies and decay from physical parameters (material density, plate thickness, string length, strike position). These are **physically verifiable**: rendered frequency, amplitude, and decay are checked by an automated harness against theoretical predictions (see [Physical Verification](#physical-verification) below). The FM Piano engine and the effect chain are outside this verification domain — see the same section for the full scope declaration.
+TsukiSynth is a multi-engine software synthesizer plugin based on **Physical Modeling (Modal Synthesis)**. The Cimbalom (string), Tongue Drum (beam), and Water Gong (plate) engines calculate vibration mode frequencies and decay from physical parameters (material density, plate thickness, string length, strike position). The automated harness verifies rendered output against the implemented equations and independently anchors pitch/eigenvalue relationships. Amplitude and T60 checks currently establish implementation conformance, not external specimen accuracy; calibrated radiated-pressure and laboratory validation remain open. The FM Piano engine and the effect chain are outside this verification domain — see the same section for the full scope declaration.
 
 The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-play) and other Web Audio experiments. The codebase has been rewritten in C++ / JUCE as VST3 and AU format for use in DAWs (Cubase, Logic Pro, FL Studio, Reaper, etc.).
 
@@ -46,7 +46,7 @@ The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-pl
 
 TsukiSynth is positioned as a **Physical Modeling synthesizer** with semantic parameters, not a general-purpose wavetable or subtractive synth. The core differentiators:
 
-- **Physical Modeling main body** — Modal Synthesis from real material properties (density, Young's modulus, damping); physically verifiable for the string/beam/plate engines (see [Physical Verification](#physical-verification))
+- **Physical Modeling main body** — Modal Synthesis from real material properties (density, Young's modulus, damping), with machine-checkable model conformance and explicit external-validation gaps (see [Physical Verification](#physical-verification))
 - **Semantic parameters** — "material = steel", "hammer = felt" instead of abstract oscillator/filter knobs
 - **AI JSON Score Pipeline** — AI can directly generate sound design via JSON score files
 - **VTuber / worldview sound design** — targeted at character UI sounds, world-themed sound libraries
@@ -66,9 +66,9 @@ TsukiSynth's physical claims are scoped and machine-checked, not aspirational �
 | Effect Chain (Reverb/Delay/Comp/Dist) | ❌ Out of domain — verification always runs with FX off | Not covered |
 | Chromatic scaling (size → timbre, MIDI → pitch) | ⚠️ Hybrid — physics shapes the spectral content, equal temperament sets f0 | Not "fully physical"; do not describe as such |
 
-For the in-domain engines, `tools/physics_verify.py` compares rendered audio with theory using a ±5-cent frequency gate, ±3.0 dB partial-amplitude gate, +6.0 ±1.0 dB velocity-doubling gate and a measured/model T60 ratio gate. `tools/verify_score.py` separately keeps a ±12-cent dump-mode check because a multi-string course's first dumped string is intentionally detuned; it also checks rest RMS ≤ −50 dBFS, clipping, manifests and same-environment SHA256 determinism. The 2026-07-17 `--full` run has no checked failures; three ultra-short rubber cases are reported as `UNVERIFIED/N/A`, not as passes. The latest release corpus is 73/73 PASS with one pre-existing, visible FX-art exemption and no new exemptions. See the [deep-fix verification report](docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md).
+For the in-domain engines, `tools/physics_verify.py` compares rendered audio with theory using a ±5-cent frequency gate, ±3.0 dB partial-amplitude gate, +6.0 ±1.0 dB velocity-doubling gate and a measured/model T60 ratio gate; T60 fits must also capture at least 8.0 dB of clean decay. `tools/verify_score.py` measures a multi-string course by its amplitude-weighted centroid with a ±5-cent gate, and also checks rest RMS ≤ −50 dBFS, clipping, manifests and same-environment SHA256 determinism. Manifest v3 binds the WAV to the exact root-score bytes and renderer executable, plus configure-time commit/dirty/toolchain metadata; referenced layer files still need to be archived with the root score. The 2026-08-02 fresh-build `--full` run has no checked failures; three ultra-short rubber cases are reported as `UNVERIFIED/N/A`, not as passes. The last completed release-corpus baseline is 73/73 PASS with one pre-existing, visible FX-art exemption; the 2026-08-02 single-process full-corpus rerun exceeded its 20-minute command limit, so it is not reported as a new 73/73 result. Representative event, layered and composition-rules scores passed against manifest v3. See the [deep-fix verification report](docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md) and `TODO.md`.
 
-These numbers are quality claims a deaf user (or an AI) can check visually/numerically — via spectrum plots and pass/fail diffs — without relying on how anything sounds.
+These numbers are model-conformance evidence a deaf user (or an AI) can check visually/numerically — via spectrum plots and pass/fail diffs — without relying on how anything sounds. They are not yet a substitute for calibrated external-instrument measurements.
 
 ## Plugin Formats
 
@@ -281,8 +281,11 @@ ctest --test-dir build -C Release --output-on-failure
 ```
 
 ### Output
-- VST3: `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3` (current x64 binary 7.42 MiB)
-- Standalone: `build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe` (current x64 binary 7.30 MiB)
+- VST3: `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3`
+- Standalone: `build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe`
+- CLI: `build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe`
+
+The binaries already present in a checkout may predate the current source. Rebuild before treating their manifests or test results as evidence for this revision.
 
 ### Verified Build Environment
 - VS 2022 Build Tools 17.14.31, MSVC 19.44, Windows SDK 10.0.26100.0

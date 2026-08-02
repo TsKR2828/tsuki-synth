@@ -2,6 +2,23 @@
 
 ---
 
+## 2026-08-02 — T60 fail-closed、render provenance v3、調音器可讀性
+
+- `tools/physics_verify.py`：把 T60 最終判定抽成 `assess_t60_measurement()`；除了 measured/model 0.80–1.25，現在強制要求 fit span ≥ 8.0 dB。延長到 30 秒後仍不足時明確 FAIL，不再只看 ratio。新增「ratio=1.0、span=1.0 dB 必須失敗」與 NaN fail-closed 回歸測試。
+- `src/cli/RenderApp.cpp`、`CMakeLists.txt`、`src/BuildProvenance.h.in`、`tools/verify_score.py`：render manifest 升級 v3，記錄並驗證 WAV、根 score、CLI 執行檔三個 SHA-256，以及版本、configure-time commit/dirty、編譯器、目標平台與 build configuration；v1/v2 維持明確向後相容。CLI 執行檔 hash 是實際 build 身分的主依據。分層 score 的 child 檔尚未逐檔納入 manifest，交接仍須一起封存。
+- `src/analyzer/TunerView.h`、`tools/tuner_audit.py`：次要狀態字改用 `textMid`、base font ≥ 9 pt；自動 gate 從實際色碼計得對 `panelBg` 5.82:1，並禁止 tuner 退回 `textDim`/8 pt。
+- 文件同步：README/roadmap/playbook/TODO 改正 v0.3、5-cent course 質心、manifest v3 與物理主張邊界；振幅/T60 現階段是實作對模型的一致性證據，不冒充外部標本或校準 SPL 驗證。
+
+### 本輪實際測試
+
+- Release build：CLI、VST3、Standalone、AuditTest、TunerTest、PhysicsModelsTest 全部成功；Standalone 隱藏啟動 smoke test PASS。
+- CTest 3/3；Python unittest discover 72/72；物理 selftest 12/12；tuner audit v2 15/15（含 5.82:1）；score schema 80/80。
+- fresh CLI `physics_verify.py --full`：`RESULT: NO CHECKED FAILURES`；T60 10 組 ratio 0.99–1.00、fit span 23.7–40.6 dB；3 個 rubber 超短衰減案例維持 `UNVERIFIED/N/A`。
+- manifest v3 實際驗證：`physical_piano`、`layered_transition`、`rules_v2_demo_001` 全項 PASS；rules v2 event-specific consonance 13/13 PASS。
+- corpus 全量：單程序 `verify_score.py --all --quiet` 在 20 分鐘命令上限 timeout，未取得可用 summary，故本輪不宣告 73/73。timeout 後確認並終止該次殘留的 verifier/CLI 程序。
+
+---
+
 ## 2026-07-23 — round-4：五項待裁決落地 + 殘差判定制/f0 course 質心收緊規約
 
 分支 `fix/deep-physics-audit-20260716`（延續 round-3，全程 unstaged、未 commit/push）。月月在對話中對 round-3 留下的五項待裁決明示「都照推薦的做」，本輪把裁決結果落地到文件（`ROADMAP_PHYSICS.md`／`TODO.md`／`DEVLOG.md`／`README.md`），**未改動任何 `src/`／`tools/` 程式碼**——(4)(5) 兩項需要的程式改動由另一輪工作平行進行中。

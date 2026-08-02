@@ -4,6 +4,44 @@ project(TsukiSynth VERSION 0.3.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Build provenance for the CLI render manifest.  The executable hashes itself
+# at runtime; these configure-time fields explain which source/toolchain
+# produced those exact bytes.  A dirty flag prevents an uncommitted build from
+# being mistaken for the named commit.
+set(TSUKI_GIT_COMMIT "unknown")
+set(TSUKI_GIT_DIRTY_BOOL true)
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --verify HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE TSUKI_GIT_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE TSUKI_GIT_REV_RESULT
+    )
+    if(NOT TSUKI_GIT_REV_RESULT EQUAL 0)
+        set(TSUKI_GIT_COMMIT "unknown")
+    endif()
+
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" status --porcelain
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE TSUKI_GIT_STATUS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(TSUKI_GIT_STATUS STREQUAL "")
+        set(TSUKI_GIT_DIRTY_BOOL false)
+    endif()
+endif()
+
+configure_file(
+    src/BuildProvenance.h.in
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/BuildProvenance.h"
+    @ONLY
+)
+
 if(MSVC)
     add_compile_options(/utf-8)
 endif()
@@ -81,7 +119,10 @@ target_sources(TsukiSynthCLI PRIVATE
     src/cli/RenderApp.cpp
 )
 
-target_include_directories(TsukiSynthCLI PRIVATE src)
+target_include_directories(TsukiSynthCLI PRIVATE
+    src
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
 
 target_compile_definitions(TsukiSynthCLI PRIVATE
     JUCE_WEB_BROWSER=0

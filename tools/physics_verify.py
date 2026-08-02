@@ -2307,6 +2307,34 @@ def _probe_and_measure_t60(cli, eng, midi, outdir, f0, probe_dur, tag=""):
     return pred, meas, span_db, beat_freq
 
 
+def assess_t60_measurement(pred_t60, measured_t60, span_db):
+    """Pure T60 pass/fail judgment shared by the report and regression tests.
+
+    A numerically plausible measured/model ratio is not evidence when the
+    fitted decay covered less than T60_MIN_SPAN_DB.  Both conditions are
+    therefore mandatory, and non-finite/non-positive inputs fail closed.
+    """
+    try:
+        pred = float(pred_t60)
+        measured = float(measured_t60)
+        span = float(span_db)
+    except (TypeError, ValueError):
+        pred = measured = span = float("nan")
+
+    values_ok = (math.isfinite(pred) and pred > 0.0
+                 and math.isfinite(measured) and measured > 0.0)
+    ratio = measured / pred if values_ok else None
+    lo, hi = T60_RATIO_TOLERANCE
+    ratio_ok = ratio is not None and lo <= ratio <= hi
+    span_ok = math.isfinite(span) and span >= T60_MIN_SPAN_DB
+    return ratio_ok and span_ok, {
+        "ratio": ratio,
+        "ratio_ok": ratio_ok,
+        "span_ok": span_ok,
+        "span_db": span if math.isfinite(span) else None,
+    }
+
+
 def report_t60(cli, engines, notes, outdir):
     print("Modal decay T60 - measured (audio) vs model ground truth (--dump-modes):")
     print(f"   {'engine':11} {'MIDI':>4} {'model':>8} {'meas':>8} {'ratio':>6}")
@@ -2336,15 +2364,17 @@ def report_t60(cli, engines, notes, outdir):
 
             ps = f"{pred:7.2f}s" if pred else "   --  "
             ms = f"{meas:7.2f}s" if meas else "   --  "
-            if pred and meas:
-                ratio = meas / pred
-                rs = f"{ratio:5.2f}"
-                lo, hi = T60_RATIO_TOLERANCE
-                if ratio < lo or ratio > hi:
-                    rs += " << FAIL"
-                    all_ok = False
-            else:
-                rs = "  --  "
+            measurement_ok, judgment = assess_t60_measurement(
+                pred, meas, span_db)
+            ratio = judgment["ratio"]
+            rs = f"{ratio:5.2f}" if ratio is not None else "  --  "
+            if not measurement_ok:
+                reasons = []
+                if not judgment["ratio_ok"]:
+                    reasons.append("ratio")
+                if not judgment["span_ok"]:
+                    reasons.append(f"span < {T60_MIN_SPAN_DB:.1f} dB")
+                rs += " << FAIL (" + ", ".join(reasons) + ")"
                 all_ok = False
             span_note = f"  (span {span_db:.1f}dB" if span_db is not None else "  (span --"
             span_note += f", probe {probe_dur:.1f}s)"
