@@ -61,6 +61,7 @@ jobs:
           python -m unittest tests/test_physics_verify.py -v
           python -m unittest tests/test_consonance_contract.py -v
           python -m unittest tests/test_verify_score_contract.py -v
+          python -m unittest tests/test_specimen_verify.py -v
           python tools/physics_verify.py --selftest
 
       - name: Run standalone T60 gate
@@ -108,3 +109,30 @@ jobs:
           python tools/check_piece_consonance.py
           scores/originals/rules_v2_demo/rules_v2_demo_001.score.json
           --out "${{ runner.temp }}\rules_v2_demo_consonance_check.md"
+
+  cpp-address-sanitizer:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout code (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSVC developer environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure AddressSanitizer regression build
+        run: >-
+          cmake -B build-asan
+          -DTSUKI_BUILD_TESTS=ON
+          -DTSUKI_ENABLE_SANITIZERS=ON
+
+      - name: Build AddressSanitizer regression tests
+        run: >-
+          cmake --build build-asan --config RelWithDebInfo --target
+          TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+
+      - name: Run AddressSanitizer regression tests
+        shell: pwsh
+        run: ./tools/run_asan_ctest.ps1 -BuildDirectory build-asan -Configuration RelWithDebInfo

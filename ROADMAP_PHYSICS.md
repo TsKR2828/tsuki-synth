@@ -8,6 +8,16 @@
 
 ---
 
+## 2026-08-02 P1–P7 hardening update
+
+- Modal modes outside the actual 20 Hz–`min(20 kHz, 0.98 Nyquist)` DSP band are rejected centrally. A modal event with no finite positive render-active energy now refuses rendering instead of producing an attack-only file that could falsely pass.
+- Render manifest v4 recursively binds every layer dependency. Noise identity is semantic and stable under simultaneous-event permutation or zero-velocity insertion; optional unique `event_id` is available for AI editing.
+- Score/parser/renderer/tuner share the six-rate 44.1–192 kHz contract. C++ gates now cover dimensional scaling, passivity, invalid numerics, causality, future-event locality, FX-off superposition and allocation refusal; MSVC ASan is a normal CI gate.
+- Release CI adds pluginval L10, Steinberg's official VST3 validator and four deterministic complete-corpus shards. Local current-source results: `ctest` 3/3, Python 84/84, ASan 3/3, `physics_verify.py --full` no checked failures, validators PASS, corpus 73/73.
+- `specimens/schema/specimen_measurement.schema.json` and `tools/specimen_verify.py` establish the external evidence path with raw/calibration/uncertainty hashes. Presently supported specimen claims are modal frequency, relative modal magnitude and T60. Complex phase, calibrated SPL and radiation directivity remain `UNVERIFIED`; infrastructure completion is not laboratory evidence.
+
+---
+
 ## 2026-07-17 deep-audit update
 
 - 現行完整方法與結果：`docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md`。

@@ -24,9 +24,10 @@
 
 渲染在**相同程式版本、build、平台與浮點執行環境**內是決定性的：同一份 score
 重複渲染會得到相同 SHA-256。跨編譯器／CPU 的 bit-exact 尚未建立保證。新版 CLI
-會在 `.render.json` manifest v3 自動記錄 WAV、根 score、CLI 執行檔 SHA-256，以及
-configure 時的 commit／dirty 狀態、編譯器、目標平台、sample rate 與 random seed。
-分層 score 所引用的 layer 檔仍須與根 score 一起封存；bit depth 可由 WAV/FLAC 本身核對。
+會在 `.render.json` manifest v4 自動記錄 WAV、CLI 執行檔、根 score 與所有遞迴 layer
+檔的 SHA-256，另存 canonical dependency-tree hash，以及 configure 時的 commit／dirty
+狀態、編譯器、目標平台、sample rate 與 random seed。驗證器會重走完整 layer tree；
+任一 child 被替換都會 FAIL。bit depth 可由 WAV/FLAC 本身核對。
 
 ## 1. 30 秒上手
 
@@ -65,7 +66,11 @@ build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --dump-modes my_piece.sc
 }
 ```
 
-`note` 接受音名（`"C#4"`）或 MIDI 數字（`60`）。`sample_rate` 支援 44100 / 48000 / 88200 / 96000。
+`note` 接受音名（`"C#4"`）或 MIDI 數字（`60`）。`sample_rate` 支援 44100 / 48000 / 88200 / 96000 / 176400 / 192000。
+
+建議 AI 為每個事件加唯一且穩定的 `event_id`（例如 `"violin-1-bar-08-note-03"`）。
+噪聲種子使用事件的物理語意／`event_id`，不是 JSON 陣列位置；交換同時事件或插入
+`velocity: 0` 的事件不會改變 WAV。複製事件時必須換新 `event_id`，重複 ID 會被 parser 拒絕。
 
 ## 2. SOP A — 改編既有樂曲
 

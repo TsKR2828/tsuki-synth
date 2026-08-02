@@ -2,6 +2,26 @@
 
 ---
 
+## 2026-08-02 — P1–P7 物理／重現性／發布閘門完整修復
+
+- **P1 可渲染模態**：`ModalResonator` 統一採 20 Hz–`min(20 kHz, 0.98 Nyquist)`；非有限、零能量或全數低於 20 Hz 的事件 fail closed，杜絕 attack-only 假 PASS。
+- **P2 證據鏈**：render manifest 升級 v4，列出根 score 與遞迴 layer 的 role/path/SHA256，另算 canonical dependency-tree SHA256；child 變更、缺 child、layered score 搭配 v3 均 FAIL。
+- **P3 語意重現性**：新增固定欄位順序、明確 little-endian、FNV-1a 的事件身分；支援唯一 `event_id`。交換同時事件或插入 `velocity:0` 事件後 WAV 位元完全相同，重複 ID 被拒絕。
+- **P4 取樣率**：parser、schema、renderer、modal band 與 tuner 共用 44.1/48/88.2/96/176.4/192 kHz 合約；實際物理事件六率皆能寫檔，tuner 528 組可量測、240 組誠實拒絕。
+- **P5 不變量／反例**：新增 beam/plate 量綱縮放、無外力能量單調衰減、NaN/Inf、因果性、未來事件局部性、FX-off 線性疊加、1 GiB buffer budget，以及既有錯頻／錯振幅／錯 T60／未建模殘差 mutation-style 反例。
+- **P6 發布 gate**：一般 CI 加 MSVC ASan；tag／手動發布 workflow 固定 pluginval v1.0.4（下載 SHA256 鎖定）與 Steinberg VST3 SDK commit，再跑四分片完整 corpus。`validate_plugin.ps1` 使用 `Start-Process -Wait`，避免 Windows GUI-subsystem child 尚未跑完就假綠。
+- **P7 實物驗證**：新增 Measurement v1 schema、模板、protocol 與 `specimen_verify.py`。工具驗 raw excitation/response、兩份 calibration、uncertainty analysis 與 Mode Dump 的 SHA256，並保守合併量測／模型不確定度。現階段 phase／絕對 SPL／radiation 要求一律 `UNVERIFIED`，不冒充 PASS。
+
+### 本輪實際測試
+
+- Release 六 target build 成功；CTest 3/3；Python unittest 84/84；MSVC AddressSanitizer 3/3。
+- `physics_verify.py --full`：所有 checked gate PASS；3 個 rubber 超短 T60 維持 `UNVERIFIED/N/A`。
+- pluginval L10：6 sample rates、11 個含 1/2/3/7 samples 的 block sizes、固定 seed，exit 0／SUCCESS。
+- Steinberg VST3 SDK 3.8 validator（commit `58f8da7936800732561402d7936584ca4505de07`）：47 tests passed、0 failed。
+- 全曲庫 round-robin 四分片：19/19、18/18、18/18、18/18，合計 73/73、0 fail；既有 moonlight FX 藝術豁免 1 筆保持可見。
+
+---
+
 ## 2026-08-02 — T60 fail-closed、render provenance v3、調音器可讀性
 
 - `tools/physics_verify.py`：把 T60 最終判定抽成 `assess_t60_measurement()`；除了 measured/model 0.80–1.25，現在強制要求 fit span ≥ 8.0 dB。延長到 30 秒後仍不足時明確 FAIL，不再只看 ratio。新增「ratio=1.0、span=1.0 dB 必須失敗」與 NaN fail-closed 回歸測試。

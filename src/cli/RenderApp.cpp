@@ -139,8 +139,9 @@ static void printRendererMessages (const ScoreRenderer& renderer)
         std::cout << "  ERROR: " << warning << std::endl;
 }
 
-// Manifest contract v3, consumed by tools/verify_score.py:
-//   * SHA256 binds the written WAV, root score and running renderer binary.
+// Manifest contract v4, consumed by tools/verify_score.py:
+//   * SHA256 binds the written WAV, every score dependency (root + layers)
+//     and the running renderer binary.
 //     Configure-time commit/dirty/toolchain fields explain the binary; its
 //     runtime hash is the authoritative identity.
 //   * score: stored relative to the manifest's own directory (falling back
@@ -163,6 +164,83 @@ static bool hashFileForManifest (const juce::File& file,
     return true;
 }
 
+struct ManifestScoreDependency
+{
+    juce::String role;
+    juce::String path;
+    juce::String sha256;
+};
+
+static bool collectScoreDependencies (
+    const juce::File& rootScoreFile,
+    const juce::File& currentFile,
+    const Score& currentScore,
+    const juce::String& role,
+    std::vector<ManifestScoreDependency>& dependencies,
+    std::set<std::string>& visiting,
+    std::set<std::string>& visited)
+{
+    auto identity = currentFile.getFullPathName().toStdString();
+#if JUCE_WINDOWS
+    // NTFS paths used by the Windows release build are case-insensitive;
+    // preserve case distinctions on case-sensitive hosts so C++ and Python
+    // enumerate the same dependency graph.
+    identity = currentFile.getFullPathName().toLowerCase().toStdString();
+#endif
+    if (visiting.count (identity) != 0)
+    {
+        std::cout << "  ERROR: layer dependency cycle while writing manifest: "
+                  << currentFile.getFullPathName() << std::endl;
+        return false;
+    }
+    if (visited.count (identity) != 0)
+        return true;
+
+    visiting.insert (identity);
+
+    juce::String hash;
+    if (! hashFileForManifest (currentFile, role, hash))
+        return false;
+
+    auto relative = currentFile.getRelativePathFrom (
+        rootScoreFile.getParentDirectory());
+    if (juce::File::isAbsolutePath (relative))
+        relative = currentFile.getFileName();
+    relative = relative.replaceCharacter ('\\', '/');
+    dependencies.push_back ({ role, relative, hash });
+
+    for (const auto& layer : currentScore.layers)
+    {
+        const auto childFile = currentFile.getParentDirectory().getChildFile (
+            juce::String (layer.source));
+        Score childScore;
+        if (! childFile.existsAsFile() || ! ScoreParser::parse (childFile, childScore))
+        {
+            std::cout << "  ERROR: cannot parse layer dependency for manifest: "
+                      << childFile.getFullPathName() << std::endl;
+            return false;
+        }
+        if (! collectScoreDependencies (rootScoreFile, childFile, childScore,
+                                        "layer_score", dependencies,
+                                        visiting, visited))
+            return false;
+    }
+
+    visiting.erase (identity);
+    visited.insert (identity);
+    return true;
+}
+
+static juce::String dependencyTreeDigest (
+    const std::vector<ManifestScoreDependency>& dependencies)
+{
+    juce::String material;
+    for (const auto& dependency : dependencies)
+        material << dependency.role << "\t" << dependency.path << "\t"
+                 << dependency.sha256.toLowerCase() << "\n";
+    return juce::SHA256 (material.toUTF8()).toHexString();
+}
+
 static bool writeRenderManifest (const juce::File& scoreFile,
                                  const juce::File& outputFile,
                                  const Score& score,
@@ -170,7 +248,7 @@ static bool writeRenderManifest (const juce::File& scoreFile,
 {
     const auto& report = renderer.getWriteReport();
 
-    // v3 binds the output to all locally-verifiable provenance available at
+    // v4 binds the output to all locally-verifiable provenance available at
     // render time: exact WAV bytes, exact root-score bytes and exact renderer
     // executable bytes.  The executable hash remains authoritative even when
     // the source tree was dirty or the configured commit is unavailable.
@@ -185,6 +263,16 @@ static bool writeRenderManifest (const juce::File& scoreFile,
         return false;
     }
 
+    std::vector<ManifestScoreDependency> dependencies;
+    std::set<std::string> visiting, visited;
+    if (! collectScoreDependencies (scoreFile, scoreFile, score, "root_score",
+                                    dependencies, visiting, visited))
+    {
+        outputFile.deleteFile();
+        return false;
+    }
+    const auto treeHash = dependencyTreeDigest (dependencies);
+
     // Score path relative to where this manifest lands. JUCE's
     // getRelativePathFrom() returns the untouched absolute path when no
     // relative path exists -- detect that and fall back to the file name.
@@ -197,11 +285,22 @@ static bool writeRenderManifest (const juce::File& scoreFile,
     scoreRef = scoreRef.replaceCharacter ('\\', '/');
 
     juce::DynamicObject::Ptr root (new juce::DynamicObject());
-    root->setProperty ("contract", "TsukiSynth Render Manifest v3");
+    root->setProperty ("contract", "TsukiSynth Render Manifest v4");
     root->setProperty ("score", scoreRef);
     root->setProperty ("output", outputFile.getFileName());
     root->setProperty ("wav_sha256", wavHash);
     root->setProperty ("root_score_sha256", scoreHash);
+    juce::Array<juce::var> dependencyArray;
+    for (const auto& dependency : dependencies)
+    {
+        juce::DynamicObject::Ptr item (new juce::DynamicObject());
+        item->setProperty ("role", dependency.role);
+        item->setProperty ("path", dependency.path);
+        item->setProperty ("sha256", dependency.sha256);
+        dependencyArray.add (juce::var (item.get()));
+    }
+    root->setProperty ("input_dependencies", dependencyArray);
+    root->setProperty ("dependency_tree_sha256", treeHash);
     root->setProperty ("renderer_executable", rendererFile.getFileName());
     root->setProperty ("renderer_executable_sha256", rendererHash);
     root->setProperty ("renderer_version", TsukiBuildProvenance::projectVersion);

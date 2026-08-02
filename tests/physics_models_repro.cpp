@@ -10,6 +10,7 @@
 #include <atomic>
 #include <cmath>
 #include <iostream>
+#include <limits>
 
 namespace
 {
@@ -142,6 +143,111 @@ void testGeometryFrequencyModeAndDamping()
            "Damping alpha override retains air and radiation losses");
 }
 
+void testDimensionalScalingLaws()
+{
+    const auto material = steel();
+
+    BeamModel::Params beam;
+    beam.numModes = 1;
+    beam.length = 0.12f;
+    beam.thickness = 0.003f;
+    const float beamBase = BeamModel::calculateModes (beam, material)[0].frequency;
+    beam.length *= 2.0f;
+    const float beamLong = BeamModel::calculateModes (beam, material)[0].frequency;
+    beam.length = 0.12f;
+    beam.thickness *= 2.0f;
+    const float beamThick = BeamModel::calculateModes (beam, material)[0].frequency;
+    auto fourE = material;
+    fourE.youngsModulus *= 4.0f;
+    beam.thickness = 0.003f;
+    const float beamFourE = BeamModel::calculateModes (beam, fourE)[0].frequency;
+    auto fourRho = material;
+    fourRho.density *= 4.0f;
+    const float beamFourRho = BeamModel::calculateModes (beam, fourRho)[0].frequency;
+    CHECK (std::abs (beamLong / beamBase - 0.25f) < 2.0e-5f
+           && std::abs (beamThick / beamBase - 2.0f) < 2.0e-5f
+           && std::abs (beamFourE / beamBase - 2.0f) < 2.0e-5f
+           && std::abs (beamFourRho / beamBase - 0.5f) < 2.0e-5f,
+           "Beam frequencies obey L^-2, thickness, sqrt(E), and rho^-1/2 scaling");
+
+    PlateModel::Params plate;
+    plate.freeEdge = false;
+    plate.numModes = 1;
+    plate.radius = 0.15f;
+    plate.thickness = 0.003f;
+    const float plateBase = PlateModel::calculateModes (plate, material)[0].frequency;
+    plate.radius *= 2.0f;
+    const float plateLarge = PlateModel::calculateModes (plate, material)[0].frequency;
+    plate.radius = 0.15f;
+    plate.thickness *= 2.0f;
+    const float plateThick = PlateModel::calculateModes (plate, material)[0].frequency;
+    plate.thickness = 0.003f;
+    const float plateFourE = PlateModel::calculateModes (plate, fourE)[0].frequency;
+    const float plateFourRho = PlateModel::calculateModes (plate, fourRho)[0].frequency;
+    CHECK (std::abs (plateLarge / plateBase - 0.25f) < 2.0e-5f
+           && std::abs (plateThick / plateBase - 2.0f) < 2.0e-5f
+           && std::abs (plateFourE / plateBase - 2.0f) < 2.0e-5f
+           && std::abs (plateFourRho / plateBase - 0.5f) < 2.0e-5f,
+           "Plate frequencies obey R^-2, thickness, sqrt(E), and rho^-1/2 scaling");
+}
+
+void testPassivityAndInvalidNumericRefusal()
+{
+    ModalResonator passive;
+    passive.setSampleRate (48000.0);
+    passive.setModes ({ { 1000.0f, 1.0f, 0.1f } });
+    passive.excite (1.0f);
+    float previousCycleEnergy = std::numeric_limits<float>::infinity();
+    bool monotonicallyDecaying = true;
+    for (int cycle = 0; cycle < 80; ++cycle)
+    {
+        float energy = 0.0f;
+        for (int i = 0; i < 48; ++i)
+        {
+            const float sample = passive.processSample();
+            energy += sample * sample;
+        }
+        monotonicallyDecaying = monotonicallyDecaying
+            && energy < previousCycleEnergy;
+        previousCycleEnergy = energy;
+    }
+    CHECK (monotonicallyDecaying,
+           "Unforced modal energy decays monotonically cycle by cycle");
+
+    ModalResonator invalid;
+    invalid.setSampleRate (48000.0);
+    invalid.setModes ({
+        { std::numeric_limits<float>::quiet_NaN(), 1.0f, 1.0f },
+        { std::numeric_limits<float>::infinity(), 1.0f, 1.0f },
+        { 440.0f, std::numeric_limits<float>::quiet_NaN(), 1.0f },
+        { 880.0f, 1.0f, std::numeric_limits<float>::quiet_NaN() }
+    });
+    invalid.excite (1.0f);
+    bool finiteSilence = ! invalid.isActive();
+    for (int i = 0; i < 128; ++i)
+    {
+        const float sample = invalid.processSample();
+        finiteSilence = finiteSilence && std::isfinite (sample)
+            && sample == 0.0f;
+    }
+    CHECK (finiteSilence,
+           "Invalid modal numbers fail closed without NaN output or a live voice");
+
+    ModalResonator mixed;
+    mixed.setSampleRate (48000.0);
+    mixed.setModes ({
+        { 440.0f, 1.0f, 1.0f },
+        { 880.0f, std::numeric_limits<float>::quiet_NaN(), 1.0f },
+        { 1320.0f, 0.5f, std::numeric_limits<float>::infinity() }
+    });
+    mixed.excite (1.0f);
+    bool mixedFinite = mixed.isActive();
+    for (int i = 0; i < 4096; ++i)
+        mixedFinite = mixedFinite && std::isfinite (mixed.processSample());
+    CHECK (mixedFinite && mixed.getModes().size() == 1,
+           "Invalid modes cannot poison a simultaneously active valid mode");
+}
+
 void testHammerSpectrum()
 {
     constexpr float tau = 0.002f;
@@ -161,6 +267,27 @@ void testHammerSpectrum()
 
 void testRelativeCutoffAndNoiseStreams()
 {
+    ModalResonator frequencyGate;
+    frequencyGate.setSampleRate (48000.0);
+    frequencyGate.setModes ({ { 19.99f, 1.0f, 1.0f },
+                              { 20.0f, 1.0f, 1.0f },
+                              { 20001.0f, 1.0f, 1.0f } });
+    const auto retained = frequencyGate.getModes();
+    CHECK (retained.size() == 1 && retained[0].frequency == 20.0f,
+           "Modal frequency gate exactly matches the DSP renderable band");
+
+    ChromaticParams subaudible;
+    subaudible.subEngine = ChromaticSubEngine::TongueDrum;
+    subaudible.tongueLength = 10.0;
+    subaudible.tongueWidth = 0.001;
+    subaudible.tongueThickness = 0.0001;
+    subaudible.tuneToMidi = false;
+    ChromaticVoice subaudibleVoice;
+    subaudibleVoice.prepare (48000.0);
+    subaudibleVoice.noteOn (60, 0.8f, steel(), subaudible);
+    CHECK (subaudibleVoice.getModes().empty(),
+           "Geometry modes below 20 Hz are rejected instead of becoming attack-only audio");
+
     ModalResonator resonator;
     resonator.setSampleRate (48000.0);
     resonator.reserveModes (2);
@@ -191,7 +318,7 @@ void testRelativeCutoffAndNoiseStreams()
     }
     CHECK (identical, "Specified PCG noise is exactly reproducible for the same event seed");
     CHECK (seed0 != seed1 && eventSeparated,
-           "Event index prevents coherent repeated-note noise streams");
+           "Distinct semantic event identities prevent coherent repeated-note noise streams");
 }
 
 void testLongDelayAndSharedEffects()
@@ -311,6 +438,8 @@ int main()
     testBeamBoundaryAndGeometry();
     testPlateModesAndPoisson();
     testGeometryFrequencyModeAndDamping();
+    testDimensionalScalingLaws();
+    testPassivityAndInvalidNumericRefusal();
     testHammerSpectrum();
     testRelativeCutoffAndNoiseStreams();
     testLongDelayAndSharedEffects();

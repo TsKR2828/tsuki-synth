@@ -38,7 +38,7 @@ class VerifyScoreRoutingTests(unittest.TestCase):
     def test_event_score_still_delegates_to_real_mode_check(self):
         sentinel = [vs.Check("sentinel", True, "delegated")]
         original = vs.check_modes
-        vs.check_modes = lambda cli, path, events: (sentinel, ["dump"])
+        vs.check_modes = lambda cli, path, events, sample_rate=48000: (sentinel, ["dump"])
         try:
             checks, dumped = vs.check_top_level_modes(
                 Path("cli"), Path("event.score.json"),
@@ -218,6 +218,52 @@ class ModeF0ToleranceTests(unittest.TestCase):
                          result["modes.f0_deviation"].detail)
 
 
+class ModeAudibilityContractTests(unittest.TestCase):
+    def _run(self, dumped_event, sample_rate=48000):
+        original = vs.dump_modes
+        vs.dump_modes = lambda cli, path: {
+            "input_event_count": 1,
+            "dumped_event_count": 1,
+            "events": [dumped_event],
+        }
+        try:
+            checks, _ = vs.check_modes(
+                Path("unused-cli"), Path("score.json"),
+                [{"engine": dumped_event.get("engine", "beam")}], sample_rate)
+        finally:
+            vs.dump_modes = original
+        return {c.name: c for c in checks}
+
+    def test_subaudible_geometry_mode_fails_closed(self):
+        result = self._run({
+            "source_index": 0, "engine": "beam", "note": "C4", "midi": 60,
+            "frequency_mode": "geometry",
+            "partials": [{"freq": 0.304, "amp": 1.0, "decay": 1.0}],
+        })
+        self.assertFalse(result["modes.frequency_range"].ok)
+        self.assertFalse(result["modes.render_active_energy"].ok)
+        self.assertEqual(
+            "N/A", result["modes.f0_deviation_not_applicable"].detail["status"])
+
+    def test_attack_only_zero_amplitude_fails_closed(self):
+        result = self._run({
+            "source_index": 0, "engine": "beam", "note": "C4", "midi": 60,
+            "frequency_mode": "geometry",
+            "partials": [{"freq": 440.0, "amp": 0.0, "decay": 1.0}],
+        })
+        self.assertTrue(result["modes.frequency_range"].ok)
+        self.assertFalse(result["modes.render_active_energy"].ok)
+
+    def test_twenty_hz_boundary_is_renderable(self):
+        result = self._run({
+            "source_index": 0, "engine": "beam", "note": "C4", "midi": 60,
+            "frequency_mode": "geometry",
+            "partials": [{"freq": 20.0, "amp": 1.0, "decay": 1.0}],
+        })
+        self.assertTrue(result["modes.frequency_range"].ok)
+        self.assertTrue(result["modes.render_active_energy"].ok)
+
+
 class RestRmsPerChannelTests(unittest.TestCase):
     """Contract: rest RMS is judged per channel (loudest channel wins), NOT
     on a (L+R)/2 mono mixdown -- decorrelated stereo content cancels in the
@@ -284,13 +330,13 @@ class RestRmsPerChannelTests(unittest.TestCase):
 
 
 class RenderManifestContractTests(unittest.TestCase):
-    """Current v3 provenance plus explicit v1/v2 backward compatibility."""
+    """Current v4 provenance plus explicit v1/v2/v3 compatibility limits."""
 
     WAV_BYTES = b"RIFF-not-actually-decoded-by-the-manifest-check"
     SCORE_BYTES = b'{"$schema":"TsukiSynth Score v1"}'
     CLI_BYTES = b"fake-tsuki-renderer-executable"
 
-    def _base_manifest(self, contract, event_count=2):
+    def _base_manifest(self, contract, event_count=2, layer_count=0):
         return {
             "contract": contract,
             "score": "input.score.json",
@@ -298,7 +344,7 @@ class RenderManifestContractTests(unittest.TestCase):
             "sample_rate": 48000,
             "random_seed": 1,
             "input_event_count": event_count,
-            "input_layer_count": 0,
+            "input_layer_count": layer_count,
             "normalize": True,
             "pre_normalize_peak": 0.25,
             "applied_gain": 3.8,
@@ -321,8 +367,25 @@ class RenderManifestContractTests(unittest.TestCase):
         })
         return manifest
 
+    def _v4_manifest(self, score_bytes=SCORE_BYTES, event_count=2,
+                     dependencies=None, layer_count=0):
+        manifest = self._v3_manifest(event_count)
+        manifest["contract"] = vs.MANIFEST_CONTRACT_V4
+        manifest["root_score_sha256"] = self._sha(score_bytes)
+        manifest["input_layer_count"] = layer_count
+        if dependencies is None:
+            dependencies = [{
+                "role": "root_score",
+                "path": "input.score.json",
+                "sha256": self._sha(score_bytes),
+            }]
+        manifest["input_dependencies"] = dependencies
+        manifest["dependency_tree_sha256"] = vs.dependency_tree_sha256(
+            dependencies)
+        return manifest
+
     def _run(self, manifest_dict, wav_bytes=WAV_BYTES, event_count=2,
-             score_bytes=SCORE_BYTES, cli_bytes=CLI_BYTES):
+             score_bytes=SCORE_BYTES, cli_bytes=CLI_BYTES, extra_files=None):
         with tempfile.TemporaryDirectory(prefix="tsuki_manifest_test_") as d:
             wav_path = Path(d) / "out.wav"
             wav_path.write_bytes(wav_bytes)
@@ -330,6 +393,10 @@ class RenderManifestContractTests(unittest.TestCase):
             score_path.write_bytes(score_bytes)
             cli_path = Path(d) / "fake-cli.exe"
             cli_path.write_bytes(cli_bytes)
+            for relative, content in (extra_files or {}).items():
+                child = Path(d) / relative
+                child.parent.mkdir(parents=True, exist_ok=True)
+                child.write_bytes(content)
             manifest_path = Path(d) / "out.wav.render.json"
             manifest_path.write_text(json.dumps(manifest_dict), encoding="utf-8")
             events = [{}] * event_count
@@ -351,6 +418,49 @@ class RenderManifestContractTests(unittest.TestCase):
                          check.detail["actual_renderer_sha256"])
         self.assertEqual("0.3.0", check.detail["renderer_version"])
         self.assertEqual(0.25, measured["pre_normalize_peak"])
+
+    def test_v4_with_complete_dependency_tree_passes(self):
+        check, _ = self._run(self._v4_manifest())
+        self.assertTrue(check.ok, check.message)
+        self.assertIn("Render manifest v4 verified", check.message)
+        self.assertEqual(
+            check.detail["manifest_dependency_tree_sha256"],
+            check.detail["actual_dependency_tree_sha256"])
+
+    def test_v4_detects_layer_changed_after_render(self):
+        root = json.dumps({
+            "$schema": "TsukiSynth Score v1",
+            "layers": [{"source": "child.score.json"}],
+        }, separators=(",", ":")).encode()
+        old_child = b'{"events":[{"note":"C5"}]}'
+        changed_child = b'{"events":[{"note":"C6"}]}'
+        dependencies = [
+            {"role": "root_score", "path": "input.score.json",
+             "sha256": self._sha(root)},
+            {"role": "layer_score", "path": "child.score.json",
+             "sha256": self._sha(old_child)},
+        ]
+        manifest = self._v4_manifest(
+            root, event_count=0, dependencies=dependencies, layer_count=1)
+        check, _ = self._run(
+            manifest, event_count=0, score_bytes=root,
+            extra_files={"child.score.json": changed_child})
+        self.assertFalse(check.ok)
+        self.assertIn("input_dependencies", check.message)
+
+    def test_v3_is_rejected_for_layered_score(self):
+        root = json.dumps({
+            "$schema": "TsukiSynth Score v1",
+            "layers": [{"source": "child.score.json"}],
+        }, separators=(",", ":")).encode()
+        manifest = self._v3_manifest(event_count=0)
+        manifest["root_score_sha256"] = self._sha(root)
+        manifest["input_layer_count"] = 1
+        check, _ = self._run(
+            manifest, event_count=0, score_bytes=root,
+            extra_files={"child.score.json": b'{"events":[]}'})
+        self.assertFalse(check.ok)
+        self.assertIn("incomplete provenance", check.message)
 
     def test_v3_detects_root_score_changed_after_render(self):
         check, _ = self._run(

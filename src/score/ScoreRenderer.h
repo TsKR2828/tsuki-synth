@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ScoreParser.h"
+#include "EventIdentity.h"
 #include "WavWriter.h"
 #include "../engines/CimbalomEngine.h"
 #include "../engines/ChromaticEngine.h"
@@ -137,13 +138,28 @@ public:
         // took >600 s purely in string copies (the real cause of the Vivaldi
         // --dump-modes timeouts, not the modal math, which is milliseconds).
         juce::MemoryOutputStream out (1 << 20);
-        out << "{\n  \"input_event_count\": " << static_cast<int> (score.events.size())
+        out << "{\n  \"contract\": \"TsukiSynth Mode Dump v2\","
+            << "\n  \"sample_rate_hz\": " << score.global.sampleRate
+            << ",\n  \"model_observables\": "
+               "[\"modal_frequency_hz\", \"relative_modal_amplitude\", \"modal_t60_s\"],"
+            << "\n  \"unsupported_observables\": "
+               "[\"complex_phase\", \"absolute_spl\", \"radiation_directivity\"],"
+            << "\n  \"input_event_count\": " << static_cast<int> (score.events.size())
             << ",\n  \"events\": [\n";
         bool first = true;
         int sourceIndex = 0;
         int dumpedCount = 0;
+        const auto eventIdentities =
+            TsukiEventIdentity::identitiesBySourceIndex (score.events);
         for (const auto& ev : score.events)
         {
+            // A zero-velocity event is not part of the render plan and must
+            // not appear as model-active evidence in --dump-modes.
+            if (ev.velocity <= 0.0f)
+            {
+                ++sourceIndex;
+                continue;
+            }
             int midiNote = noteNameToMidi (ev.note);
             std::vector<std::vector<ModalResonator::Mode>> allStrings;
             // per-partial body-filter magnitude lookup, filled below (same
@@ -187,7 +203,7 @@ public:
                 cp.exciter = cimbalomExciterFromString (strikeExciter);
                 cp.tuneToMidi = ev.frequencyMode == "midi";
                 cp.randomSeed = score.global.randomSeed;
-                cp.eventIndex = static_cast<uint64_t> (sourceIndex);
+                cp.eventIndex = eventIdentities[(size_t) sourceIndex];
                 auto voice = std::make_shared<CimbalomVoice>();
                 voice->prepare (score.global.sampleRate);
                 voice->noteOn (midiNote, ev.velocity, *mat, cp);
@@ -218,7 +234,7 @@ public:
                 cp.exciterHardness = chromaticExciterHardness (ev.exciter);
                 cp.tuneToMidi = ev.frequencyMode == "midi";
                 cp.randomSeed = score.global.randomSeed;
-                cp.eventIndex = static_cast<uint64_t> (sourceIndex);
+                cp.eventIndex = eventIdentities[(size_t) sourceIndex];
                 // Lifetime fix (2026-07-18): the custom-partial atoms used to be
                 // stack locals whose ADDRESSES were wired into voice->pRatio/pAmp.
                 // The voice itself outlives this block (the bodyMagFn lambda
@@ -351,10 +367,17 @@ public:
         if (! isValidSampleRate (sr))
             return false;
 
+        const auto renderPlan = TsukiEventIdentity::buildPlan (score.events);
+        if (renderPlan.empty())
+        {
+            renderWarnings.push_back ("Score has no non-zero-velocity events to render");
+            return false;
+        }
+
         double totalDuration = 0.0;
-        for (size_t i = 0; i < score.events.size(); ++i)
+        for (const auto& planned : renderPlan)
             totalDuration = std::max (totalDuration, eventEndTime (
-                score.events[i], sr, score.global.randomSeed, i));
+                *planned.event, sr, score.global.randomSeed, planned.identity));
 
         totalDuration += wallDelaySeconds (score.global.effects);
         totalDuration += effectTailSeconds (score.global.effects);
@@ -367,8 +390,11 @@ public:
         juce::AudioBuffer<float> buffer (2, totalSamples);
         buffer.clear();
 
-        for (size_t i = 0; i < score.events.size(); ++i)
-            renderEvent (score.events[i], buffer, sr, score.global.randomSeed, i);
+        for (const auto& planned : renderPlan)
+            if (! renderEvent (*planned.event, buffer, sr,
+                               score.global.randomSeed, planned.identity,
+                               planned.sourceIndex))
+                return false;
 
         applyEffects (buffer, score.global, sr);
         if (! trimBuffer (buffer, score.exportSettings))
@@ -437,10 +463,20 @@ public:
             }
             if (! validateScore (subScore, false)) return false;
 
+            const auto subRenderPlan =
+                TsukiEventIdentity::buildPlan (subScore.events);
+            if (subRenderPlan.empty())
+            {
+                renderWarnings.push_back (
+                    "Layer has no non-zero-velocity events: " + layer.source);
+                return false;
+            }
+
             double subDuration = 0.0;
-            for (size_t i = 0; i < subScore.events.size(); ++i)
+            for (const auto& planned : subRenderPlan)
                 subDuration = std::max (subDuration, eventEndTime (
-                    subScore.events[i], sr, subScore.global.randomSeed, i));
+                    *planned.event, sr, subScore.global.randomSeed,
+                    planned.identity));
             subDuration += wallDelaySeconds (subScore.global.effects);
             subDuration += effectTailSeconds (subScore.global.effects);
             subDuration += subScore.exportSettings.tailSilenceMs / 1000.0;
@@ -456,9 +492,16 @@ public:
             juce::AudioBuffer<float> subBuffer (2, subTotalSamples);
             subBuffer.clear();
 
-            for (size_t i = 0; i < subScore.events.size(); ++i)
-                renderEvent (subScore.events[i], subBuffer, sr,
-                             subScore.global.randomSeed, i);
+            for (const auto& planned : subRenderPlan)
+            {
+                if (! renderEvent (*planned.event, subBuffer, sr,
+                                   subScore.global.randomSeed, planned.identity,
+                                   planned.sourceIndex))
+                {
+                    renderWarnings.push_back ("Layer render failed: " + layer.source);
+                    return false;
+                }
+            }
 
             applyEffects (subBuffer, subScore.global, sr);
             if (! trimBuffer (subBuffer, subScore.exportSettings))
@@ -569,43 +612,63 @@ public:
     }
 
 private:
-    void renderEvent (const ScoreEvent& ev, juce::AudioBuffer<float>& buffer, double sr,
-                      uint64_t randomSeed, uint64_t eventIndex)
+    static bool hasRenderableModalEnergy (
+        const std::vector<std::vector<ModalResonator::Mode>>& modeSets,
+        double sr)
+    {
+        for (const auto& modes : modeSets)
+            for (const auto& mode : modes)
+                if (ModalResonator::isRenderableFrequency (mode.frequency, sr)
+                    && std::isfinite (mode.amplitude)
+                    && std::abs (mode.amplitude) > 1.0e-12f
+                    && std::isfinite (mode.decayTime)
+                    && mode.decayTime > 0.0f)
+                    return true;
+        return false;
+    }
+
+    bool renderEvent (const ScoreEvent& ev, juce::AudioBuffer<float>& buffer, double sr,
+                      uint64_t randomSeed, uint64_t eventIdentity,
+                      size_t sourceIndex)
     {
         int startSample = juce::jlimit (0, buffer.getNumSamples(),
                                         static_cast<int> (std::max (0.0, ev.time) * sr));
         // Let voice ring into tail region — isActive() stops the loop naturally
         int endSample = buffer.getNumSamples();
-        if (startSample >= endSample)
-            return;
+        if (startSample >= endSample || ev.velocity <= 0.0)
+            return true;
 
         int midiNote = noteNameToMidi (ev.note);
         const Material* mat = materialDB->getMaterial (juce::String (ev.material));
 
         if (ev.engine == "string" || ev.engine == "cimbalom")
         {
-            renderCimbalom (ev, mat, midiNote, startSample, endSample, buffer, sr,
-                            randomSeed, eventIndex);
+            return renderCimbalom (ev, mat, midiNote, startSample, endSample, buffer, sr,
+                                   randomSeed, eventIdentity, sourceIndex);
         }
         else if (ev.engine == "beam" || ev.engine == "tongue_drum")
         {
-            renderChromatic (ev, mat, midiNote, ChromaticSubEngine::TongueDrum,
-                             startSample, endSample, buffer, sr, randomSeed, eventIndex);
+            return renderChromatic (ev, mat, midiNote, ChromaticSubEngine::TongueDrum,
+                                    startSample, endSample, buffer, sr, randomSeed,
+                                    eventIdentity, sourceIndex);
         }
         else if (ev.engine == "plate" || ev.engine == "water_gong")
         {
-            renderChromatic (ev, mat, midiNote, ChromaticSubEngine::WaterGong,
-                             startSample, endSample, buffer, sr, randomSeed, eventIndex);
+            return renderChromatic (ev, mat, midiNote, ChromaticSubEngine::WaterGong,
+                                    startSample, endSample, buffer, sr, randomSeed,
+                                    eventIdentity, sourceIndex);
         }
         else if (ev.engine == "fm")
         {
             renderFM (ev, midiNote, startSample, endSample, buffer, sr,
-                      randomSeed, eventIndex);
+                      randomSeed, eventIdentity);
+            return true;
         }
         else if (ev.engine == "custom")
         {
-            renderChromatic (ev, mat, midiNote, ChromaticSubEngine::CustomHarmonics,
-                             startSample, endSample, buffer, sr, randomSeed, eventIndex);
+            return renderChromatic (ev, mat, midiNote, ChromaticSubEngine::CustomHarmonics,
+                                    startSample, endSample, buffer, sr, randomSeed,
+                                    eventIdentity, sourceIndex);
         }
         else if (ev.engine == "piano")
         {
@@ -615,16 +678,18 @@ private:
             ScoreEvent pev = ev;
             if (pev.exciter == "wood_mallet") pev.exciter = "felt";
             if (pev.strikePosition == 0.3)    pev.strikePosition = 0.125;
-            renderCimbalom (pev, mat, midiNote, startSample, endSample, buffer, sr,
-                            randomSeed, eventIndex);
+            return renderCimbalom (pev, mat, midiNote, startSample, endSample, buffer, sr,
+                                   randomSeed, eventIdentity, sourceIndex);
         }
+        return true;
     }
 
-    void renderCimbalom (const ScoreEvent& ev, const Material* mat, int midiNote,
+    bool renderCimbalom (const ScoreEvent& ev, const Material* mat, int midiNote,
                           int start, int end, juce::AudioBuffer<float>& buf, double sr,
-                          uint64_t randomSeed, uint64_t eventIndex)
+                          uint64_t randomSeed, uint64_t eventIdentity,
+                          size_t sourceIndex)
     {
-        if (mat == nullptr) return;
+        if (mat == nullptr) return false;
 
         CimbalomParams cp;
         cp.materialKey = ev.material;
@@ -637,11 +702,21 @@ private:
         cp.exciter = cimbalomExciterFromString (ev.exciter);
         cp.tuneToMidi = ev.frequencyMode == "midi";
         cp.randomSeed = randomSeed;
-        cp.eventIndex = eventIndex;
+        cp.eventIndex = eventIdentity;
 
         CimbalomVoice voice;
         voice.prepare (sr);
         voice.noteOn (midiNote, ev.velocity, *mat, cp);
+        if (! hasRenderableModalEnergy (voice.getAllStringModes(), sr))
+        {
+            renderWarnings.push_back (
+                "Event " + std::to_string (sourceIndex)
+                + " has no render-active modal energy in ["
+                + std::to_string ((int) ModalResonator::minimumRenderableFrequency)
+                + ", " + std::to_string ((int) ModalResonator::maximumRenderableFrequency (sr))
+                + "] Hz; refusing attack-only output");
+            return false;
+        }
 
         int noteOffSample = juce::jlimit (start, end,
             start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
@@ -680,14 +755,16 @@ private:
             buf.addSample (0, i, v);
             buf.addSample (1, i, v);
         }
+        return true;
     }
 
-    void renderChromatic (const ScoreEvent& ev, const Material* mat, int midiNote,
+    bool renderChromatic (const ScoreEvent& ev, const Material* mat, int midiNote,
                            ChromaticSubEngine sub, int start, int end,
                            juce::AudioBuffer<float>& buf, double sr,
-                           uint64_t randomSeed, uint64_t eventIndex)
+                           uint64_t randomSeed, uint64_t eventIdentity,
+                           size_t sourceIndex)
     {
-        if (mat == nullptr) return;
+        if (mat == nullptr) return false;
 
         ChromaticParams cp;
         cp.materialKey = ev.material;
@@ -704,7 +781,7 @@ private:
         cp.exciterHardness = chromaticExciterHardness (ev.exciter);
         cp.tuneToMidi = ev.frequencyMode == "midi";
         cp.randomSeed = randomSeed;
-        cp.eventIndex = eventIndex;
+        cp.eventIndex = eventIdentity;
 
         ChromaticVoice voice;
         voice.prepare (sr);
@@ -729,6 +806,16 @@ private:
         }
 
         voice.noteOn (midiNote, ev.velocity, *mat, cp);
+        if (! hasRenderableModalEnergy ({ voice.getModes() }, sr))
+        {
+            renderWarnings.push_back (
+                "Event " + std::to_string (sourceIndex)
+                + " has no render-active modal energy in ["
+                + std::to_string ((int) ModalResonator::minimumRenderableFrequency)
+                + ", " + std::to_string ((int) ModalResonator::maximumRenderableFrequency (sr))
+                + "] Hz; refusing attack-only output");
+            return false;
+        }
 
         int noteOffSample = juce::jlimit (start, end,
             start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
@@ -767,17 +854,18 @@ private:
             buf.addSample (0, i, v);
             buf.addSample (1, i, v);
         }
+        return true;
     }
 
     void renderFM (const ScoreEvent& ev, int midiNote,
                     int start, int end,
                     juce::AudioBuffer<float>& buf, double sr,
-                    uint64_t randomSeed, uint64_t eventIndex)
+                    uint64_t randomSeed, uint64_t eventIdentity)
     {
         FMParams fp;
         fp.preset = static_cast<FMPreset> (ev.fmPreset);
         fp.randomSeed = randomSeed;
-        fp.eventIndex = eventIndex;
+        fp.eventIndex = eventIdentity;
 
         // Forward detailed FM params if specified in JSON (>=0 means explicitly set)
         if (ev.fmRatio      >= 0.0f) fp.ratio      = ev.fmRatio;
@@ -886,7 +974,7 @@ private:
     }
 
     double eventMaxT60 (const ScoreEvent& ev, double sr,
-                        uint64_t randomSeed, uint64_t eventIndex) const
+                        uint64_t randomSeed, uint64_t eventIdentity) const
     {
         if (ev.engine == "fm") return 0.0;
         const Material* mat = materialDB != nullptr
@@ -913,7 +1001,7 @@ private:
             cp.exciter = cimbalomExciterFromString (effective.exciter);
             cp.tuneToMidi = effective.frequencyMode == "midi";
             cp.randomSeed = randomSeed;
-            cp.eventIndex = eventIndex;
+            cp.eventIndex = eventIdentity;
             CimbalomVoice voice;
             voice.prepare (sr);
             voice.noteOn (noteNameToMidi (effective.note), effective.velocity, *mat, cp);
@@ -939,7 +1027,7 @@ private:
             cp.exciterHardness = chromaticExciterHardness (ev.exciter);
             cp.tuneToMidi = ev.frequencyMode == "midi";
             cp.randomSeed = randomSeed;
-            cp.eventIndex = eventIndex;
+            cp.eventIndex = eventIdentity;
             ChromaticVoice voice;
             voice.prepare (sr);
             std::atomic<float> ratios[8];
@@ -973,7 +1061,7 @@ private:
     }
 
     double eventEndTime (const ScoreEvent& ev, double sr,
-                         uint64_t randomSeed, uint64_t eventIndex) const
+                         uint64_t randomSeed, uint64_t eventIdentity) const
     {
         const double start = std::max (0.0, ev.time);
         const double duration = std::max (0.0, ev.duration);
@@ -993,7 +1081,7 @@ private:
             // of the authored duration and changes the remaining decay time
             // to 5%, so allocate the exact worst-mode active interval rather
             // than a fixed five-second tail.
-            const double maxT60 = eventMaxT60 (ev, sr, randomSeed, eventIndex);
+            const double maxT60 = eventMaxT60 (ev, sr, randomSeed, eventIdentity);
             const double noteOff = duration * 0.9;
             const double active = maxT60 <= noteOff
                 ? maxT60 : noteOff + (maxT60 - noteOff) * 0.05;
@@ -1165,6 +1253,6 @@ private:
 
     static bool isValidSampleRate (double sr)
     {
-        return sr == 44100.0 || sr == 48000.0 || sr == 88200.0 || sr == 96000.0;
+        return TsukiSampleRates::isSupported (sr);
     }
 };

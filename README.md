@@ -24,7 +24,7 @@
 | Responsive UI (resizable 420x700 ~ 900x1200) | Done |
 | Custom LookAndFeel (dark theme, arc knobs) | Done |
 | MIDI Keyboard (on-screen) | Done |
-| CLI Score Renderer (strict JSON -> WAV/FLAC + provenance manifest) | **Passed** — fresh Release build emits and verifies manifest v3 |
+| CLI Score Renderer (strict JSON -> WAV/FLAC + provenance manifest) | **Passed** — fresh Release build emits and verifies manifest v4, including recursive layer dependencies |
 | **VST3 build** | **Passed** — fresh Release build from current source |
 | **Standalone build** | **Passed** — fresh Release build from current source |
 | **Standalone launch** | **Passed** — current Release build smoke-tested |
@@ -66,9 +66,32 @@ TsukiSynth's physical claims are scoped and machine-checked, not aspirational �
 | Effect Chain (Reverb/Delay/Comp/Dist) | ❌ Out of domain — verification always runs with FX off | Not covered |
 | Chromatic scaling (size → timbre, MIDI → pitch) | ⚠️ Hybrid — physics shapes the spectral content, equal temperament sets f0 | Not "fully physical"; do not describe as such |
 
-For the in-domain engines, `tools/physics_verify.py` compares rendered audio with theory using a ±5-cent frequency gate, ±3.0 dB partial-amplitude gate, +6.0 ±1.0 dB velocity-doubling gate and a measured/model T60 ratio gate; T60 fits must also capture at least 8.0 dB of clean decay. `tools/verify_score.py` measures a multi-string course by its amplitude-weighted centroid with a ±5-cent gate, and also checks rest RMS ≤ −50 dBFS, clipping, manifests and same-environment SHA256 determinism. Manifest v3 binds the WAV to the exact root-score bytes and renderer executable, plus configure-time commit/dirty/toolchain metadata; referenced layer files still need to be archived with the root score. The 2026-08-02 fresh-build `--full` run has no checked failures; three ultra-short rubber cases are reported as `UNVERIFIED/N/A`, not as passes. The last completed release-corpus baseline is 73/73 PASS with one pre-existing, visible FX-art exemption; the 2026-08-02 single-process full-corpus rerun exceeded its 20-minute command limit, so it is not reported as a new 73/73 result. Representative event, layered and composition-rules scores passed against manifest v3. See the [deep-fix verification report](docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md) and `TODO.md`.
+For the in-domain engines, `tools/physics_verify.py` compares rendered audio with theory using a ±5-cent frequency gate, ±3.0 dB partial-amplitude gate, +6.0 ±1.0 dB velocity-doubling gate and a measured/model T60 ratio gate; T60 fits must also capture at least 8.0 dB of clean decay. `tools/verify_score.py` measures a multi-string course by its amplitude-weighted centroid with a ±5-cent gate, and also checks rest RMS ≤ −50 dBFS, clipping, manifests and same-environment SHA256 determinism. Manifest v4 binds the WAV, renderer executable, root score and every recursively referenced layer by SHA256, plus a canonical dependency-tree digest and configure-time commit/dirty/toolchain metadata. The 2026-08-02 fresh-build `--full` run has no checked failures; three ultra-short rubber cases are reported as `UNVERIFIED/N/A`, not as passes. A new four-shard full-corpus run passed 73/73 with the one pre-existing visible FX-art exemption and no failures. Current VST3 also passes pluginval L10 across six sample rates and adversarial block sizes, plus the pinned Steinberg SDK 3.8 validator (47/47). See `DEVLOG.md` and `TODO.md`.
 
 These numbers are model-conformance evidence a deaf user (or an AI) can check visually/numerically — via spectrum plots and pass/fail diffs — without relying on how anything sounds. They are not yet a substitute for calibrated external-instrument measurements.
+
+### Verification commands
+
+```powershell
+# C++ invariants, causality, semantic determinism and tuner coverage
+ctest --test-dir build -C Release --output-on-failure
+
+# Python metrology/counterexample contracts and the complete physics matrix
+python -m unittest discover -s tests -p "test_*.py" -v
+python tools\physics_verify.py --selftest
+python tools\physics_verify.py --full
+
+# Full score corpus; release CI runs indexes 0..3 in parallel
+python tools\verify_score.py --all --shard-index 0 --shard-count 4 `
+  --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+# MSVC AddressSanitizer regression build
+cmake -B build-asan -DTSUKI_BUILD_TESTS=ON -DTSUKI_ENABLE_SANITIZERS=ON
+cmake --build build-asan --config RelWithDebInfo --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+tools\run_asan_ctest.ps1
+```
+
+The exact P1–P7 methods and results are recorded in [the 2026-08-02 verification report](docs/P1_P7_VERIFICATION_2026-08-02.zh-TW.md). For a real instrument specimen, follow [the specimen protocol](docs/SPECIMEN_VALIDATION_PROTOCOL.zh-TW.md). It requires hashed raw excitation/response, calibration evidence and an uncertainty budget. Current Mode Dump v2 supports modal frequency, relative modal magnitude and T60. Requested complex phase, absolute SPL or radiation claims return `UNVERIFIED`, never PASS.
 
 ## Plugin Formats
 

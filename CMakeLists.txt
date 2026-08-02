@@ -4,6 +4,28 @@ project(TsukiSynth VERSION 0.3.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(TSUKI_ENABLE_SANITIZERS
+       "Enable AddressSanitizer (and UndefinedBehaviorSanitizer where supported) on regression tests"
+       OFF)
+
+function(tsuki_enable_test_sanitizers target_name)
+    if(NOT TSUKI_ENABLE_SANITIZERS)
+        return()
+    endif()
+
+    if(MSVC)
+        target_compile_options(${target_name} PRIVATE /fsanitize=address /Zi)
+        target_link_options(${target_name} PRIVATE /INCREMENTAL:NO)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(${target_name} PRIVATE
+            -fsanitize=address,undefined -fno-omit-frame-pointer)
+        target_link_options(${target_name} PRIVATE -fsanitize=address,undefined)
+    else()
+        message(FATAL_ERROR
+            "TSUKI_ENABLE_SANITIZERS is not supported by ${CMAKE_CXX_COMPILER_ID}")
+    endif()
+endfunction()
+
 # Build provenance for the CLI render manifest.  The executable hashes itself
 # at runtime; these configure-time fields explain which source/toolchain
 # produced those exact bytes.  A dirty flag prevents an uncommitted build from
@@ -157,6 +179,7 @@ if(TSUKI_BUILD_TESTS)
         PUBLIC
             juce::juce_recommended_config_flags
     )
+    tsuki_enable_test_sanitizers(TsukiSynthAuditTest)
     add_test(NAME audit_repro COMMAND TsukiSynthAuditTest)
 
     add_executable(TsukiSynthTunerTest tests/tuner_repro.cpp)
@@ -176,6 +199,7 @@ if(TSUKI_BUILD_TESTS)
         PUBLIC
             juce::juce_recommended_config_flags
     )
+    tsuki_enable_test_sanitizers(TsukiSynthTunerTest)
     add_test(NAME tuner_repro COMMAND TsukiSynthTunerTest)
 
     add_executable(TsukiSynthPhysicsModelsTest tests/physics_models_repro.cpp)
@@ -191,5 +215,6 @@ if(TSUKI_BUILD_TESTS)
         PUBLIC
             juce::juce_recommended_config_flags
     )
+    tsuki_enable_test_sanitizers(TsukiSynthPhysicsModelsTest)
     add_test(NAME physics_models_repro COMMAND TsukiSynthPhysicsModelsTest)
 endif()

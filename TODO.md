@@ -8,11 +8,12 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 ## 2026-08-02 audit follow-up
 
 - [x] T60 final judgment now requires both the 0.80–1.25 measured/model ratio and at least 8.0 dB of fitted decay; insufficient span fails closed after the 30 s retry. Regression tests include the former false-pass counterexample.
-- [x] Render manifest v3 binds WAV bytes, root-score bytes and renderer-executable bytes, and records version, configured commit/dirty state, compiler, target and build configuration. `verify_score.py` verifies all three hashes while retaining explicit v1/v2 compatibility.
+- [x] Render manifest v4 binds WAV, renderer, root score and every recursive layer dependency, plus a canonical dependency-tree SHA256. Layer mutation and legacy-v3 layered false-provenance cases are regression-tested.
 - [x] Tuner status/support/label text now uses the higher-contrast `textMid` colour and at least 9 pt base size.
 - [x] README/roadmap/playbook wording now distinguishes implementation conformance from external physical validation and reflects the 5-cent course-centroid gate.
-- [x] Rebuilt CLI, VST3, Standalone and all three C++ test targets in Release; CTest 3/3, fresh-build `physics_verify.py --full`, manifest-v3 representative scores and Standalone smoke test all pass.
-- [ ] Complete a new 73-score corpus run. The 2026-08-02 single-process `verify_score.py --all --quiet` attempt exceeded the 20-minute command limit and was terminated without a usable summary; do not call that run 73/73. `physical_piano`, `layered_transition` and `rules_v2_demo_001` were then verified individually and passed with manifest v3.
+- [x] Rebuilt CLI, VST3, Standalone and all three C++ test targets in Release; CTest 3/3, Python 84/84, ASan 3/3, fresh-build `physics_verify.py --full`, pluginval L10 and Steinberg validator 47/47 all pass.
+- [x] New 73-score corpus run completed in deterministic round-robin shards: 19/19 + 18/18 + 18/18 + 18/18 = 73/73, 0 fail; the one existing moonlight FX-art exemption remains explicit.
+- [x] Added Specimen Measurement v1 schema, hashed evidence-chain verifier and laboratory protocol. Frequency/relative magnitude/T60 are comparable now; unsupported phase/SPL/radiation claims fail closed as `UNVERIFIED`.
 
 Acceptance snapshot (round-1, 2026-07-17): six Release targets build; CTest and Python contract/metrology tests pass;
 schema 80/80; release corpus 73/73 with one existing visible FX-art exemption; event-specific
@@ -59,7 +60,7 @@ see "2026-07-23 round-4 裁決落地" below.**
 
 ## Before merging this branch
 
-- [ ] Review the complete diff and choose commit boundaries.
+- [x] Review the complete P1–P7 diff; keep it as one atomic physics-hardening commit because production changes, fail-closed contracts, CI gates and their evidence documentation must land together.
 - [ ] Push the branch and let the updated Windows CI run Python unit tests, CTest, build targets, the event-specific consonance gate and `physics_verify.py --full`.
 - [ ] Validate VST3 scan, MIDI, automation and state round-trip in the intended DAW.
 - [ ] Perform a visual accessibility review of the tuner and generated HTML report with the intended deaf user; automated tests cannot certify readability.

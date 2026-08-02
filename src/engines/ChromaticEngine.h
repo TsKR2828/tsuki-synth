@@ -42,13 +42,11 @@ struct ChromaticParams
 inline void filterChromaticModesForSampleRate (
     std::vector<ModalResonator::Mode>& modes, double sampleRate)
 {
-    const float maxFrequency = (float) std::min (20000.0, sampleRate * 0.5 * 0.98);
     modes.erase (
-        std::remove_if (modes.begin(), modes.end(), [maxFrequency] (const auto& mode)
+        std::remove_if (modes.begin(), modes.end(), [sampleRate] (const auto& mode)
         {
-            return ! std::isfinite (mode.frequency)
-                || mode.frequency <= 0.0f
-                || mode.frequency > maxFrequency;
+            return ! ModalResonator::isRenderableFrequency (
+                mode.frequency, sampleRate);
         }),
         modes.end());
 }

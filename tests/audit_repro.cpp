@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -35,6 +36,18 @@ std::unique_ptr<juce::AudioFormatReader> openAudioFile (
     manager.registerBasicFormats();
     return std::unique_ptr<juce::AudioFormatReader> (
         manager.createReaderFor (file));
+}
+
+bool readAudioFile (const juce::File& file, juce::AudioBuffer<float>& audio,
+                    double* sampleRate = nullptr)
+{
+    auto reader = openAudioFile (file);
+    if (reader == nullptr || reader->lengthInSamples <= 0
+        || reader->lengthInSamples > std::numeric_limits<int>::max())
+        return false;
+    audio.setSize (2, (int) reader->lengthInSamples);
+    if (sampleRate != nullptr) *sampleRate = reader->sampleRate;
+    return reader->read (&audio, 0, audio.getNumSamples(), 0, true, true);
 }
 
 void loadTestMaterial (MaterialDB& materials)
@@ -117,7 +130,7 @@ void testScoreParserFields()
         "meta": { "title": "Parser Test", "id": "parser_test" },
         "global": {
             "bpm": 120,
-            "sample_rate": 48000,
+            "sample_rate": 192000,
             "master_volume": 0.8,
             "random_seed": 123456789,
             "effects": {
@@ -125,6 +138,7 @@ void testScoreParserFields()
             }
         },
         "events": [{
+            "event_id": "parser-g9",
             "time": 0,
             "duration": 0.1,
             "engine": "fm",
@@ -150,6 +164,10 @@ void testScoreParserFields()
            "ScoreParser reads wall reflection settings");
     CHECK (score.global.randomSeed == 123456789ull,
            "ScoreParser reads an exact deterministic random seed");
+    CHECK (score.global.sampleRate == 192000,
+           "ScoreParser accepts the shared 192 kHz render contract");
+    CHECK (score.events.size() == 1 && score.events[0].eventId == "parser-g9",
+           "ScoreParser reads an optional stable event_id");
     CHECK (noteNameToMidi ("G9") == 127 && noteNameToMidi ("A9") == -1,
            "Note names are exact and out-of-range notes are rejected");
 
@@ -188,6 +206,40 @@ void testScoreParserRejectsInvalidContract()
         CHECK (! accepted && ! score.errors.empty(), label);
         file.deleteFile();
     }
+
+    const auto duplicateIdFile = juce::File::createTempFile (".score.json");
+    duplicateIdFile.replaceWithText (R"json({
+      "$schema":"TsukiSynth Score v1",
+      "meta":{"title":"Duplicate IDs","id":"duplicate_ids"},
+      "global":{"bpm":120,"sample_rate":48000,"master_volume":0.8},
+      "events":[
+        {"event_id":"same","time":0,"duration":0.1,"engine":"fm","note":60,"velocity":0.5},
+        {"event_id":"same","time":1,"duration":0.1,"engine":"fm","note":61,"velocity":0.5}
+      ],
+      "export":{"filename":"duplicate_ids"}
+    })json");
+    Score duplicateIdScore;
+    CHECK (! ScoreParser::parse (duplicateIdFile, duplicateIdScore)
+           && ! duplicateIdScore.errors.empty(),
+           "duplicate event_id");
+    duplicateIdFile.deleteFile();
+
+    const auto longIdFile = juce::File::createTempFile (".score.json");
+    const auto longId = juce::String::repeatedString ("x", 129);
+    longIdFile.replaceWithText (
+        juce::String (R"json({
+          "$schema":"TsukiSynth Score v1",
+          "meta":{"title":"Long ID","id":"long_id"},
+          "global":{"bpm":120,"sample_rate":48000,"master_volume":0.8},
+          "events":[{"event_id":")json") + longId + R"json(","time":0,
+            "duration":0.1,"engine":"fm","note":60,"velocity":0.5}],
+          "export":{"filename":"long_id"}
+        })json");
+    Score longIdScore;
+    CHECK (! ScoreParser::parse (longIdFile, longIdScore)
+           && ! longIdScore.errors.empty(),
+           "overlong event_id");
+    longIdFile.deleteFile();
 }
 
 void testCustomDumpUsesEffectiveParameters()
@@ -207,6 +259,10 @@ void testCustomDumpUsesEffectiveParameters()
     event.customAmps[1] = 0.9f;
     event.customAmps[2] = 0.8f;
     score.events.push_back (event);
+    auto silentEvent = event;
+    silentEvent.velocity = 0.0f;
+    silentEvent.time = 1.0;
+    score.events.push_back (silentEvent);
 
     ScoreRenderer renderer;
     renderer.setMaterialDB (&materials);
@@ -222,10 +278,256 @@ void testCustomDumpUsesEffectiveParameters()
         && std::abs ((double) (*partials)[1].getDynamicObject()->getProperty ("freq") - 660.0) < 0.1
         && std::abs ((double) (*partials)[2].getDynamicObject()->getProperty ("freq") - 990.0) < 0.1;
     CHECK (frequenciesMatch, "Custom dump reports authored 1:1.5:2.25 ratios");
-    CHECK (root != nullptr && (int) root->getProperty ("input_event_count") == 1
+    CHECK (root != nullptr
+           && root->getProperty ("contract").toString() == "TsukiSynth Mode Dump v2"
+           && (int) root->getProperty ("input_event_count") == 2
            && (int) root->getProperty ("dumped_event_count") == 1
            && dumped != nullptr && (int) dumped->getProperty ("source_index") == 0,
-           "Mode dump carries input/dumped event-count identity");
+           "Mode dump v2 carries explicit observable and event identity metadata");
+}
+
+void testRendererRejectsAttackOnlyModalEvent()
+{
+    MaterialDB materials;
+    loadTestMaterial (materials);
+
+    Score score;
+    score.global.sampleRate = 48000;
+    score.global.effects.reverbWet = 0.0;
+    score.exportSettings.normalize = false;
+    ScoreEvent event;
+    event.engine = "tongue_drum";
+    event.note = "C4";
+    event.velocity = 0.8f;
+    event.material = "steel";
+    event.frequencyMode = "geometry";
+    event.lengthMm = 10000.0;
+    event.widthMm = 1.0;
+    event.thicknessMm = 0.1;
+    score.events.push_back (event);
+
+    ScoreRenderer renderer;
+    renderer.setMaterialDB (&materials);
+    const auto output = juce::File::createTempFile (".wav");
+    CHECK (! renderer.render (score, output),
+           "Renderer refuses a modal event whose geometry is entirely below 20 Hz");
+    const auto& warnings = renderer.getWarnings();
+    CHECK (! warnings.empty()
+           && warnings.back().find ("no render-active modal energy") != std::string::npos,
+           "Attack-only refusal reports the renderable-frequency reason");
+    output.deleteFile();
+}
+
+void testSemanticEventOrderIsBitExact()
+{
+    MaterialDB materials;
+    loadTestMaterial (materials);
+
+    ScoreEvent cimbalom;
+    cimbalom.time = 0.0;
+    cimbalom.duration = 0.2;
+    cimbalom.engine = "cimbalom";
+    cimbalom.note = "C4";
+    cimbalom.velocity = 0.8f;
+    cimbalom.material = "steel";
+
+    ScoreEvent tongue = cimbalom;
+    tongue.engine = "tongue_drum";
+    tongue.note = "G4";
+    tongue.lengthMm = 100.0;
+    tongue.widthMm = 25.0;
+    tongue.thicknessMm = 3.0;
+
+    auto makeScore = []
+    {
+        Score score;
+        score.global.sampleRate = 48000;
+        score.global.masterVolume = 1.0;
+        score.global.randomSeed = 987654321;
+        score.global.effects.reverbWet = 0.0;
+        score.global.effects.delayWet = 0.0;
+        score.global.effects.distortionWet = 0.0;
+        score.exportSettings.normalize = false;
+        score.exportSettings.tailSilenceMs = 0.0;
+        return score;
+    };
+
+    auto ordered = makeScore();
+    ordered.events = { cimbalom, tongue };
+    auto permuted = makeScore();
+    permuted.events = { tongue, cimbalom };
+    auto withSilent = makeScore();
+    ScoreEvent silent = tongue;
+    silent.time = 0.0;
+    silent.duration = 10.0;
+    silent.velocity = 0.0f;
+    withSilent.events = { silent, cimbalom, tongue };
+
+    const auto fileA = juce::File::createTempFile (".wav");
+    const auto fileB = juce::File::createTempFile (".wav");
+    const auto fileC = juce::File::createTempFile (".wav");
+    ScoreRenderer renderer;
+    renderer.setMaterialDB (&materials);
+    const bool rendered = renderer.render (ordered, fileA)
+        && renderer.render (permuted, fileB)
+        && renderer.render (withSilent, fileC);
+    CHECK (rendered, "Semantic-order regression fixtures render successfully");
+
+    juce::MemoryBlock bytesA, bytesB, bytesC;
+    const bool loaded = fileA.loadFileAsData (bytesA)
+        && fileB.loadFileAsData (bytesB)
+        && fileC.loadFileAsData (bytesC);
+    CHECK (loaded && bytesA == bytesB,
+           "Permuting simultaneous events preserves the exact WAV bytes");
+    CHECK (loaded && bytesA == bytesC,
+           "Inserting a zero-velocity event preserves the exact WAV bytes");
+
+    fileA.deleteFile();
+    fileB.deleteFile();
+    fileC.deleteFile();
+}
+
+void testRendererSupportsContractSampleRates()
+{
+    MaterialDB materials;
+    loadTestMaterial (materials);
+    bool allRendered = true;
+
+    for (const int sampleRate : TsukiSampleRates::supported)
+    {
+        Score score;
+        score.global.sampleRate = sampleRate;
+        score.global.masterVolume = 1.0;
+        score.global.effects.reverbWet = 0.0;
+        score.exportSettings.normalize = false;
+        score.exportSettings.tailSilenceMs = 0.0;
+        ScoreEvent event;
+        event.time = 0.0;
+        event.duration = 0.01;
+        event.engine = "tongue_drum";
+        event.note = "A4";
+        event.velocity = 0.5f;
+        event.material = "steel";
+        event.dampingOverride = 100.0;
+        score.events.push_back (event);
+
+        ScoreRenderer renderer;
+        renderer.setMaterialDB (&materials);
+        const auto output = juce::File::createTempFile (".wav");
+        const bool rendered = renderer.render (score, output);
+        auto reader = rendered ? openAudioFile (output) : nullptr;
+        allRendered = allRendered && reader != nullptr
+            && (int) reader->sampleRate == sampleRate
+            && reader->lengthInSamples > 0;
+        output.deleteFile();
+    }
+
+    CHECK (allRendered,
+           "Physical renderer writes valid audio at every shared sample rate through 192 kHz");
+}
+
+void testCausalityLocalityAndLinearSuperposition()
+{
+    MaterialDB materials;
+    loadTestMaterial (materials);
+
+    auto baseScore = []
+    {
+        Score score;
+        score.global.sampleRate = 48000;
+        score.global.masterVolume = 0.5;
+        score.global.randomSeed = 424242;
+        score.global.effects.reverbWet = 0.0;
+        score.global.effects.delayWet = 0.0;
+        score.global.effects.distortionWet = 0.0;
+        score.exportSettings.normalize = false;
+        score.exportSettings.bitDepth = 32;
+        score.exportSettings.tailSilenceMs = 0.0;
+        return score;
+    };
+    auto event = [] (const char* id, double time, double strike)
+    {
+        ScoreEvent value;
+        value.eventId = id;
+        value.time = time;
+        value.duration = 0.1;
+        value.engine = "tongue_drum";
+        value.note = "C4";
+        value.velocity = 0.2f;
+        value.material = "steel";
+        value.strikePosition = strike;
+        value.dampingOverride = 100.0;
+        return value;
+    };
+    auto renderToAudio = [&materials] (const Score& score,
+                                       juce::AudioBuffer<float>& audio)
+    {
+        ScoreRenderer renderer;
+        renderer.setMaterialDB (&materials);
+        const auto output = juce::File::createTempFile (".wav");
+        const bool ok = renderer.render (score, output)
+            && readAudioFile (output, audio);
+        output.deleteFile();
+        return ok;
+    };
+
+    auto delayed = baseScore();
+    delayed.events = { event ("delayed", 0.2, 0.3) };
+    juce::AudioBuffer<float> delayedAudio;
+    const bool delayedOk = renderToAudio (delayed, delayedAudio);
+    const int causalPrefix = std::min (delayedAudio.getNumSamples(), 9600);
+    CHECK (delayedOk && causalPrefix == 9600
+           && delayedAudio.getMagnitude (0, 0, causalPrefix) == 0.0f
+           && delayedAudio.getMagnitude (1, 0, causalPrefix) == 0.0f,
+           "Renderer is causal: an event produces no samples before its authored time");
+
+    auto present = baseScore();
+    present.exportSettings.tailSilenceMs = 1000.0;
+    present.events = { event ("present", 0.0, 0.3) };
+    auto withFuture = present;
+    withFuture.events.push_back (event ("future", 0.5, 0.6));
+    juce::AudioBuffer<float> presentAudio, futureAudio;
+    bool locality = renderToAudio (present, presentAudio)
+        && renderToAudio (withFuture, futureAudio);
+    const int futureStart = 24000;
+    locality = locality && presentAudio.getNumSamples() >= futureStart
+        && futureAudio.getNumSamples() >= futureStart;
+    for (int ch = 0; locality && ch < 2; ++ch)
+        for (int i = 0; i < futureStart; ++i)
+            locality = locality
+                && presentAudio.getSample (ch, i) == futureAudio.getSample (ch, i);
+    CHECK (locality,
+           "Adding a future event leaves every earlier rendered sample bit-exact");
+
+    const auto a = event ("linear-a", 0.0, 0.25);
+    const auto b = event ("linear-b", 0.0, 0.65);
+    auto scoreA = baseScore(); scoreA.events = { a };
+    auto scoreB = baseScore(); scoreB.events = { b };
+    auto scoreAB = baseScore(); scoreAB.events = { a, b };
+    juce::AudioBuffer<float> audioA, audioB, audioAB;
+    bool linear = renderToAudio (scoreA, audioA)
+        && renderToAudio (scoreB, audioB)
+        && renderToAudio (scoreAB, audioAB)
+        && audioA.getNumSamples() == audioB.getNumSamples()
+        && audioA.getNumSamples() == audioAB.getNumSamples();
+    float maxLinearError = 0.0f;
+    for (int ch = 0; linear && ch < 2; ++ch)
+        for (int i = 0; i < audioAB.getNumSamples(); ++i)
+            maxLinearError = std::max (maxLinearError, std::abs (
+                audioAB.getSample (ch, i)
+                - audioA.getSample (ch, i) - audioB.getSample (ch, i)));
+    CHECK (linear && maxLinearError < 2.0e-6f,
+           "FX-off renderer obeys linear superposition within PCM quantization error");
+
+    auto oversized = baseScore();
+    oversized.global.sampleRate = 192000;
+    oversized.events = { event ("oversized", 86400.0, 0.3) };
+    ScoreRenderer budgetRenderer;
+    budgetRenderer.setMaterialDB (&materials);
+    const auto oversizedOutput = juce::File::createTempFile (".wav");
+    CHECK (! budgetRenderer.render (oversized, oversizedOutput),
+           "Extreme valid-duration input is rejected by the 1 GiB buffer budget");
+    oversizedOutput.deleteFile();
 }
 
 void testFullWetShortReverbHasAudibleTail()
@@ -405,6 +707,10 @@ int main()
     testScoreParserFields();
     testScoreParserRejectsInvalidContract();
     testCustomDumpUsesEffectiveParameters();
+    testRendererRejectsAttackOnlyModalEvent();
+    testSemanticEventOrderIsBitExact();
+    testRendererSupportsContractSampleRates();
+    testCausalityLocalityAndLinearSuperposition();
     testFullWetShortReverbHasAudibleTail();
     testFlacWriter();
     testFmRenderTailAndWall();

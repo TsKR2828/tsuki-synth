@@ -18,6 +18,9 @@
 class ModalResonator
 {
 public:
+    static constexpr float minimumRenderableFrequency = 20.0f;
+    static constexpr float productMaximumFrequency = 20000.0f;
+
     /// Physical description of a single mode
     struct Mode
     {
@@ -29,35 +32,54 @@ public:
     void setSampleRate (double sr) { sampleRate = sr; }
     void reserveModes (size_t count) { modes.reserve (count); }
 
+    static float maximumRenderableFrequency (double sr)
+    {
+        return (float) std::min ((double) productMaximumFrequency,
+                                 sr * 0.5 * 0.98);
+    }
+
+    /** True only when a mode is inside the frequency domain that the DSP
+        actually synthesizes.  Model generation, diagnostic dumps and the
+        renderer must share this predicate: otherwise an inaudible model can
+        be reported as verified while ModalResonator silently discards it. */
+    static bool isRenderableFrequency (float frequency, double sr)
+    {
+        return std::isfinite (frequency)
+            && frequency >= minimumRenderableFrequency
+            && frequency <= maximumRenderableFrequency (sr);
+    }
+
     /// Set modes (computed by physics model, passed in)
     void setModes (const std::vector<Mode>& newModes)
     {
-        int n = (int) newModes.size();
-        modes.resize ((size_t) n);
+        modes.clear();
+        modes.reserve (newModes.size());
 
-        for (int i = 0; i < n; ++i)
+        for (const auto& newMode : newModes)
         {
-            modes[(size_t) i].freq       = newModes[(size_t) i].frequency;
-            modes[(size_t) i].baseAmp    = newModes[(size_t) i].amplitude;
-            modes[(size_t) i].decayTime  = newModes[(size_t) i].decayTime;
-            modes[(size_t) i].phase      = 0.0f;
-            modes[(size_t) i].currentAmp = 0.0f;
-            modes[(size_t) i].decayCoeff = 1.0f;
-            modes[(size_t) i].phaseDelta = 0.0f;
+            if (! isRenderableFrequency (newMode.frequency, sampleRate)
+                || ! std::isfinite (newMode.amplitude)
+                || ! std::isfinite (newMode.decayTime)
+                || newMode.decayTime <= 0.0f)
+                continue;
+
+            ModeState state;
+            state.freq       = newMode.frequency;
+            state.baseAmp    = newMode.amplitude;
+            state.decayTime  = newMode.decayTime;
+            modes.push_back (state);
         }
     }
 
     /// Excite (MIDI note on)
     void excite (float velocity)
     {
-        active = true;
+        active = false;
         for (auto& m : modes)
         {
-            // Never synthesize above Nyquist.  The 20 kHz ceiling is a product
-            // contract, while Nyquist depends on the actual host sample rate.
-            const float maxFrequency = (float) std::min (20000.0,
-                                                         sampleRate * 0.5 * 0.98);
-            if (m.freq > maxFrequency || m.freq < 20.0f)
+            // setModes() already filters this domain; retain a defensive check
+            // in case a future real-time frequency update crosses the limit.
+            if (! isRenderableFrequency (m.freq, sampleRate))
             {
                 m.currentAmp = 0.0f;
                 m.stopAmp = 0.0f;
@@ -74,6 +96,10 @@ public:
                 m.decayCoeff = std::exp (-6.9078f / (m.decayTime * (float) sampleRate));
             else
                 m.decayCoeff = 0.0f;
+
+            if (std::isfinite (m.currentAmp) && m.stopAmp > 0.0f
+                && std::isfinite (m.decayTime) && m.decayTime > 0.0f)
+                active = true;
         }
     }
 

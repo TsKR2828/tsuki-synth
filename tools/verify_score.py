@@ -80,6 +80,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -139,7 +140,7 @@ MODE_F0_TOL_CENTS = 5.0       # --dump-modes course-centroid fundamental vs
                               # 2026-07-23, see comment block above; single-
                               # string engines still read partials[0]/
                               # allStrings[0] directly)
-FREQ_MIN_HZ = 0.0             # exclusive
+FREQ_MIN_HZ = 20.0            # inclusive; mirrors ModalResonator
 FREQ_MAX_HZ = 20000.0         # inclusive
 REST_RMS_LIMIT_DBFS = -50.0   # ROADMAP_PHYSICS.md Sec.6 "休止區 RMS"
 REST_DECAY_ALLOWANCE_S = 0.5  # let the previous note's tail decay before
@@ -151,11 +152,13 @@ MAX_CONSECUTIVE_CLIPPED = 1   # no two clipped samples in a row allowed
 # Render-manifest contracts written by the CLI next to each output file
 # (src/cli/RenderApp.cpp, writeRenderManifest()). v2 (2026-07-18) added
 # `wav_sha256`. v3 additionally binds the artifact to the exact root-score
-# bytes and renderer executable bytes, and records configure-time source and
-# toolchain provenance. v1/v2 remain explicit legacy contracts.
+# bytes and renderer executable. v4 closes the layered-score provenance gap
+# by hashing the complete transitive score dependency tree. Older contracts
+# remain explicit legacy formats but are insufficient for layered scores.
 MANIFEST_CONTRACT_V1 = "TsukiSynth Render Manifest v1"
 MANIFEST_CONTRACT_V2 = "TsukiSynth Render Manifest v2"
 MANIFEST_CONTRACT_V3 = "TsukiSynth Render Manifest v3"
+MANIFEST_CONTRACT_V4 = "TsukiSynth Render Manifest v4"
 
 MIDI_NOTE_MIN, MIDI_NOTE_MAX = 0, 127
 
@@ -656,7 +659,7 @@ def check_schema(score):
 
 
 # ── 2b. mode scanning (whole-score --dump-modes, see module docstring) ─────
-def check_modes(cli, score_path, events):
+def check_modes(cli, score_path, events, sample_rate=48000):
     """Returns (checks, dumped_events). `dumped_events` is the raw
     "events" array from --dump-modes's JSON (possibly []), returned
     alongside the Check objects so callers that need the underlying modal
@@ -674,7 +677,8 @@ def check_modes(cli, score_path, events):
     dumped_events = dumped.get("events", [])
     expected_modal_indices = [
         i for i, event in enumerate(events)
-        if isinstance(event, dict) and event.get("engine") in MODAL_ENGINES
+        if (isinstance(event, dict) and event.get("engine") in MODAL_ENGINES
+            and event.get("velocity", 0) > 0)
     ]
     actual_source_indices = [event.get("source_index") for event in dumped_events]
     declared_input_count = dumped.get("input_event_count")
@@ -703,6 +707,7 @@ def check_modes(cli, score_path, events):
             # events list for these, there is nothing per-event to dump.
             note = "This score has no \"events\" array (it uses \"layers\" instead)."
         elif not any(isinstance(ev, dict) and ev.get("engine") in MODAL_ENGINES
+                     and ev.get("velocity", 0) > 0
                      for ev in events):
             note = ("This score has no modal-engine events (e.g. it may be pure "
                      "FM, which ROADMAP_PHYSICS.md Sec.0 explicitly marks as "
@@ -724,6 +729,7 @@ def check_modes(cli, score_path, events):
     nan_inf = []
     bad_freq_range = []
     bad_decay = []
+    no_render_active_energy = []
     f0_devs = []
 
     for i, ev in enumerate(dumped_events):
@@ -734,6 +740,8 @@ def check_modes(cli, score_path, events):
 
         midi = ev.get("midi")
         expected_f0 = midi_to_hz(midi) if isinstance(midi, (int, float)) else None
+        max_renderable_hz = min(FREQ_MAX_HZ, float(sample_rate) * 0.5 * 0.98)
+        has_render_active_energy = False
 
         for j, p in enumerate(partials):
             f = p.get("freq")
@@ -745,12 +753,21 @@ def check_modes(cli, score_path, events):
                     nan_inf.append((i, j, label, v))
 
             if f is not None and math.isfinite(f):
-                if not (FREQ_MIN_HZ < f <= FREQ_MAX_HZ):
+                if not (FREQ_MIN_HZ <= f <= max_renderable_hz):
                     bad_freq_range.append((i, j, f))
+
+            if (f is not None and math.isfinite(f)
+                    and FREQ_MIN_HZ <= f <= max_renderable_hz
+                    and a is not None and math.isfinite(a) and abs(a) > 1e-12
+                    and d is not None and math.isfinite(d) and d > 0.0):
+                has_render_active_energy = True
 
             if d is not None and math.isfinite(d):
                 if d <= 0.0:
                     bad_decay.append((i, j, d))
+
+        if not has_render_active_energy:
+            no_render_active_energy.append(i)
 
         if expected_f0 is not None and partials and ev.get("frequency_mode", "midi") == "midi":
             f0 = course_f0(ev)
@@ -792,13 +809,30 @@ def check_modes(cli, score_path, events):
             "modes.frequency_range", False,
             f"MODE SCAN FAILED: modal event {i0}, partial {j0} has "
             f"frequency {f0:.2f} Hz, outside the allowed range "
-            f"(0, {FREQ_MAX_HZ:.0f}] Hz. {len(bad_freq_range)} partial(s) "
+            f"[{FREQ_MIN_HZ:.0f}, {min(FREQ_MAX_HZ, float(sample_rate) * 0.5 * 0.98):.0f}] "
+            f"Hz. {len(bad_freq_range)} partial(s) "
             "affected total.",
             {"count": len(bad_freq_range)}))
     else:
         checks.append(Check("modes.frequency_range", True,
                              f"All {total_partials} partial frequencies are within "
-                             f"(0, {FREQ_MAX_HZ:.0f}] Hz."))
+                             f"[{FREQ_MIN_HZ:.0f}, "
+                             f"{min(FREQ_MAX_HZ, float(sample_rate) * 0.5 * 0.98):.0f}] Hz."))
+
+    if no_render_active_energy:
+        checks.append(Check(
+            "modes.render_active_energy", False,
+            f"MODE SCAN FAILED: {len(no_render_active_energy)} modal event(s) "
+            "have no finite, non-zero modal energy inside the DSP renderable "
+            f"band [{FREQ_MIN_HZ:.0f}, "
+            f"{min(FREQ_MAX_HZ, float(sample_rate) * 0.5 * 0.98):.0f}] Hz. "
+            "Attack noise alone is not a verified physical tone.",
+            {"count": len(no_render_active_energy)}))
+    else:
+        checks.append(Check(
+            "modes.render_active_energy", True,
+            f"Every modal event has render-active modal energy "
+            f"({len(dumped_events)} event(s) checked)."))
 
     if bad_decay:
         i0, j0, d0 = bad_decay[0]
@@ -836,9 +870,11 @@ def check_modes(cli, score_path, events):
                 f"{max_dev:.3f} cents).",
                 {"max_cents": max_dev, "checked": len(f0_devs)}))
     else:
-        checks.append(Check("modes.f0_deviation", True,
-                             "No fundamentals available to check (no modal events with "
-                             "a resolvable MIDI note)."))
+        checks.append(Check(
+            "modes.f0_deviation_not_applicable", True,
+            "MIDI-fundamental comparison is not applicable: no modal event "
+            "declares a resolvable MIDI-locked fundamental.",
+            {"status": "N/A", "checked": 0}))
 
     return checks, dumped_events
 
@@ -862,7 +898,8 @@ def check_top_level_modes(cli, score_path, score, events):
             "below instead.",
             {"status": "N/A", "reason": "layered_composite"},
         )], []
-    return check_modes(cli, score_path, events)
+    sample_rate = (score.get("global") or {}).get("sample_rate", 48000)
+    return check_modes(cli, score_path, events, sample_rate)
 
 
 # ── 2c. rest verification ───────────────────────────────────────────────────
@@ -1138,13 +1175,67 @@ def check_peak_and_clipping(all_ch_audio):
 
 
 # ── render-manifest contract check ──────────────────────────────────────────
+def collect_score_dependencies(score_path):
+    """Return the deterministic root/layer dependency list used by manifest v4.
+
+    Paths are relative to the root score's directory and use '/' separators,
+    matching RenderApp.cpp. Each score file appears once in depth-first order;
+    cycles and malformed/missing children fail closed.
+    """
+    root = Path(score_path).resolve()
+    dependencies = []
+    visiting = set()
+    visited = set()
+
+    def visit(path, role):
+        resolved = Path(path).resolve()
+        identity = str(resolved).casefold()
+        if identity in visiting:
+            raise ValueError(f"layer dependency cycle: {resolved}")
+        if identity in visited:
+            return
+        if not resolved.is_file():
+            raise ValueError(f"layer dependency is missing: {resolved}")
+
+        visiting.add(identity)
+        document = json.loads(resolved.read_text(encoding="utf-8"))
+        relative = os.path.relpath(resolved, root.parent).replace("\\", "/")
+        dependencies.append({
+            "role": role,
+            "path": relative,
+            "sha256": sha256_file(resolved),
+        })
+        layers = document.get("layers") or []
+        if not isinstance(layers, list):
+            raise ValueError(f"layers must be an array: {resolved}")
+        for index, layer in enumerate(layers):
+            if not isinstance(layer, dict) or not isinstance(layer.get("source"), str):
+                raise ValueError(
+                    f"layer {index} has no string source in {resolved}")
+            visit(resolved.parent / layer["source"], "layer_score")
+        visiting.remove(identity)
+        visited.add(identity)
+
+    visit(root, "root_score")
+    return dependencies
+
+
+def dependency_tree_sha256(dependencies):
+    material = "".join(
+        f"{item['role']}\t{item['path']}\t{item['sha256'].lower()}\n"
+        for item in dependencies)
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+
 def check_render_manifest(manifest_path, wav_path, events,
                           score_path=None, cli_path=None):
     """Validates the render manifest the CLI wrote next to `wav_path`
     (src/cli/RenderApp.cpp, writeRenderManifest()).
 
-    Recognised contracts (see MANIFEST_CONTRACT_V1/V2/V3 at the top):
-      * v3 (current): everything v2 had, plus root-score and renderer-binary
+    Recognised contracts (see MANIFEST_CONTRACT_V1..V4 at the top):
+      * v4 (current): everything v3 had, plus the complete transitive score
+        dependency list and a deterministic digest over that tree.
+      * v3 (legacy): everything v2 had, plus root-score and renderer-binary
         SHA256 values and configure-time source/toolchain provenance. The
         hashes are compared with the exact score and CLI used by this run.
       * v2 (legacy): everything v1 had, plus `wav_sha256` -- the SHA256 of
@@ -1161,6 +1252,8 @@ def check_render_manifest(manifest_path, wav_path, events,
     manifest_sha = actual_sha = None
     manifest_score_sha = actual_score_sha = None
     manifest_renderer_sha = actual_renderer_sha = None
+    manifest_dependencies = actual_dependencies = None
+    manifest_tree_sha = actual_tree_sha = None
     renderer_executable = renderer_version = source_commit = None
     source_dirty = compiler = target = build_configuration = None
     try:
@@ -1171,7 +1264,7 @@ def check_render_manifest(manifest_path, wav_path, events,
         full_scale_samples = int(manifest["samples_at_or_above_full_scale"])
         problems = []
         recognised = (MANIFEST_CONTRACT_V1, MANIFEST_CONTRACT_V2,
-                      MANIFEST_CONTRACT_V3)
+                      MANIFEST_CONTRACT_V3, MANIFEST_CONTRACT_V4)
         if contract not in recognised:
             problems.append(f"unrecognised contract: {contract!r}")
         if manifest.get("input_event_count") != len(events):
@@ -1185,8 +1278,9 @@ def check_render_manifest(manifest_path, wav_path, events,
         if full_scale_samples < 0:
             problems.append(
                 f"samples_at_or_above_full_scale invalid: {full_scale_samples!r}")
-        if contract in (MANIFEST_CONTRACT_V2, MANIFEST_CONTRACT_V3):
-            # v2/v3 contract: wav_sha256 is REQUIRED (KeyError -> invalid) and
+        if contract in (MANIFEST_CONTRACT_V2, MANIFEST_CONTRACT_V3,
+                        MANIFEST_CONTRACT_V4):
+            # v2+ contract: wav_sha256 is REQUIRED (KeyError -> invalid) and
             # must match the bytes actually on disk.
             manifest_sha = manifest["wav_sha256"]
             actual_sha = sha256_file(wav_path)
@@ -1195,7 +1289,7 @@ def check_render_manifest(manifest_path, wav_path, events,
                 problems.append(
                     f"wav_sha256 mismatch: manifest says {manifest_sha!r}, "
                     f"actual {wav_path.name} bytes hash to {actual_sha}")
-        if contract == MANIFEST_CONTRACT_V3:
+        if contract in (MANIFEST_CONTRACT_V3, MANIFEST_CONTRACT_V4):
             manifest_score_sha = manifest["root_score_sha256"]
             manifest_renderer_sha = manifest["renderer_executable_sha256"]
             renderer_executable = manifest["renderer_executable"]
@@ -1207,7 +1301,8 @@ def check_render_manifest(manifest_path, wav_path, events,
             build_configuration = manifest["build_configuration"]
 
             if score_path is None:
-                problems.append("v3 verification requires the input score path")
+                problems.append(
+                    f"{contract} verification requires the input score path")
             else:
                 actual_score_sha = sha256_file(Path(score_path))
                 if not (isinstance(manifest_score_sha, str)
@@ -1216,6 +1311,18 @@ def check_render_manifest(manifest_path, wav_path, events,
                         "root_score_sha256 mismatch: manifest says "
                         f"{manifest_score_sha!r}, actual input score bytes hash "
                         f"to {actual_score_sha}")
+
+                score_document = json.loads(
+                    Path(score_path).read_text(encoding="utf-8"))
+                actual_layer_count = len(score_document.get("layers") or [])
+                if manifest.get("input_layer_count") != actual_layer_count:
+                    problems.append(
+                        f"input_layer_count={manifest.get('input_layer_count')!r} "
+                        f"does not match parsed layer count {actual_layer_count}")
+                if actual_layer_count and contract != MANIFEST_CONTRACT_V4:
+                    problems.append(
+                        f"{contract} is incomplete provenance for a layered score; "
+                        "manifest v4 is required")
 
             if cli_path is None:
                 problems.append("v3 verification requires the renderer CLI path")
@@ -1241,6 +1348,26 @@ def check_render_manifest(manifest_path, wav_path, events,
                     problems.append(f"{key} must be a non-empty string")
             if not isinstance(source_dirty, bool):
                 problems.append("configured_source_dirty must be boolean")
+
+            if contract == MANIFEST_CONTRACT_V4:
+                manifest_dependencies = manifest["input_dependencies"]
+                manifest_tree_sha = manifest["dependency_tree_sha256"]
+                if score_path is None:
+                    problems.append("v4 dependency verification requires score_path")
+                else:
+                    actual_dependencies = collect_score_dependencies(score_path)
+                    actual_tree_sha = dependency_tree_sha256(actual_dependencies)
+                    if manifest_dependencies != actual_dependencies:
+                        problems.append(
+                            "input_dependencies do not match the current root/layer "
+                            f"files: manifest={manifest_dependencies!r}, "
+                            f"actual={actual_dependencies!r}")
+                    if not (isinstance(manifest_tree_sha, str)
+                            and manifest_tree_sha.lower() == actual_tree_sha):
+                        problems.append(
+                            "dependency_tree_sha256 mismatch: manifest says "
+                            f"{manifest_tree_sha!r}, actual tree hashes to "
+                            f"{actual_tree_sha}")
         manifest_ok = not problems
         manifest_error = "; ".join(problems)
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
@@ -1250,7 +1377,18 @@ def check_render_manifest(manifest_path, wav_path, events,
         manifest_error = str(exc)
 
     if manifest_ok:
-        if contract == MANIFEST_CONTRACT_V3:
+        if contract == MANIFEST_CONTRACT_V4:
+            message = (
+                f"Render manifest v4 verified: WAV {actual_sha[:12]}..., "
+                f"{len(actual_dependencies)} score dependency file(s), tree "
+                f"{actual_tree_sha[:12]}..., renderer "
+                f"{actual_renderer_sha[:12]}...; version={renderer_version}, "
+                f"configured source={source_commit[:12]}"
+                f"{' dirty' if source_dirty else ' clean'}, "
+                f"{compiler}, {target}, {build_configuration}; "
+                f"peak={pre_peak:.6g}, gain={applied_gain:.6g}, "
+                f"samples >= 0 dBFS={full_scale_samples}.")
+        elif contract == MANIFEST_CONTRACT_V3:
             message = (
                 f"Render manifest v3 verified: WAV {actual_sha[:12]}..., "
                 f"root score {actual_score_sha[:12]}..., renderer "
@@ -1288,6 +1426,10 @@ def check_render_manifest(manifest_path, wav_path, events,
          "actual_root_score_sha256": actual_score_sha,
          "manifest_renderer_sha256": manifest_renderer_sha,
          "actual_renderer_sha256": actual_renderer_sha,
+         "manifest_input_dependencies": manifest_dependencies,
+         "actual_input_dependencies": actual_dependencies,
+         "manifest_dependency_tree_sha256": manifest_tree_sha,
+         "actual_dependency_tree_sha256": actual_tree_sha,
          "renderer_executable": renderer_executable,
          "renderer_version": renderer_version,
          "configured_source_commit": source_commit,
@@ -1736,6 +1878,10 @@ def main():
                      help="verify every .score.json under scores/examples, "
                           "scores/classical/vivaldi_four_seasons, "
                           "scores/originals/ai_radiance, and scores/library (recursive)")
+    ap.add_argument("--shard-index", type=int, default=None,
+                    help="with --all, verify only this zero-based deterministic shard")
+    ap.add_argument("--shard-count", type=int, default=None,
+                    help="with --all, split the sorted corpus into this many shards")
     ap.add_argument("--html", metavar="SCORE",
                      help="generate a single-file, self-contained HTML visual "
                           "verification report for SCORE (ROADMAP_PHYSICS.md M4)")
@@ -1751,6 +1897,15 @@ def main():
                      # score file, so it is handled before the CLI-discovery
                      # step below.
     args = ap.parse_args()
+
+    shard_args_present = args.shard_index is not None or args.shard_count is not None
+    if shard_args_present:
+        if not args.all or args.shard_index is None or args.shard_count is None:
+            ap.error("--shard-index and --shard-count must be supplied together with --all")
+        if args.shard_count <= 0:
+            ap.error("--shard-count must be greater than zero")
+        if args.shard_index < 0 or args.shard_index >= args.shard_count:
+            ap.error("--shard-index must satisfy 0 <= index < shard-count")
 
     if args.selftest_lufs:
         result = loudness._selftest()
@@ -1811,7 +1966,16 @@ def main():
                   "scores/originals/ai_radiance, scores/library.",
                   file=sys.stderr)
             return 2
-        print(f"Found {len(score_files)} score file(s) to verify.\n")
+        corpus_size = len(score_files)
+        if shard_args_present:
+            # Round-robin over the already sorted corpus.  This assignment is
+            # deterministic across hosts and keeps a few unusually long
+            # scores from all landing in one contiguous shard.
+            score_files = score_files[args.shard_index::args.shard_count]
+            print(f"Selected shard {args.shard_index}/{args.shard_count}: "
+                  f"{len(score_files)} of {corpus_size} score file(s).\n")
+        else:
+            print(f"Found {len(score_files)} score file(s) to verify.\n")
 
         results = []
         for sp in score_files:

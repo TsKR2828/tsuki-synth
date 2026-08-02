@@ -1,12 +1,14 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
+#include "SampleRateContract.h"
 #include <algorithm>
 #include <cmath>
 #include <initializer_list>
 #include <limits>
 #include <cstdint>
 #include <regex>
+#include <set>
 #include <vector>
 #include <string>
 
@@ -45,6 +47,7 @@ struct ScoreGlobal
 
 struct ScoreEvent
 {
+    std::string eventId;       // optional stable identity for AI-authored edits
     double      time     = 0.0;
     double      duration = 1.0;
     std::string engine;
@@ -306,6 +309,8 @@ public:
                     }
 
                     se.velocity = static_cast<float> (velocity);
+                    if (e->hasProperty ("event_id"))
+                        readString (*e, "event_id", se.eventId);
 
                     if (auto* p = e->getProperty ("params").getDynamicObject())
                     {
@@ -664,13 +669,14 @@ private:
         if (! validateKeys (global, { "bpm", "sample_rate", "master_volume", "random_seed", "effects" },
                             "global", score)
             || ! validateNumber (global, "bpm", 1, 999, "global", score, true)
-            || ! validateNumber (global, "sample_rate", 44100, 96000, "global", score, true, true)
+            || ! validateNumber (global, "sample_rate", 44100, 192000, "global", score, true, true)
             || ! validateNumber (global, "master_volume", 0, 1, "global", score, true)
             || ! validateNumber (global, "random_seed", 0, 9007199254740991.0,
                                  "global", score, false, true)) return false;
         const int sr = static_cast<int> ((double) global.getProperty ("sample_rate"));
         if (! isSupportedSampleRate (sr))
-            return fail (score, "global.sample_rate must be one of 44100, 48000, 88200, 96000");
+            return fail (score, std::string ("global.sample_rate must be one of ")
+                + TsukiSampleRates::description);
         if (! global.hasProperty ("effects")) return true;
         auto* effects = global.getProperty ("effects").getDynamicObject();
         return effects != nullptr ? validateEffects (*effects, score)
@@ -791,8 +797,9 @@ private:
     static bool validateEvent (juce::DynamicObject& event, int index, Score& score)
     {
         const auto path = "events[" + std::to_string (index) + "]";
-        if (! validateKeys (event, { "time", "duration", "engine", "note", "velocity",
+        if (! validateKeys (event, { "event_id", "time", "duration", "engine", "note", "velocity",
                                     "params", "glide", "performance", "comment" }, path, score)
+            || ! validateString (event, "event_id", path, score)
             || ! validateNumber (event, "time", 0, 86400, path, score, true)
             || ! validateNumber (event, "duration", 0, 86400, path, score, true)
             || ! validateEnum (event, "engine", { "string", "cimbalom", "beam",
@@ -800,6 +807,9 @@ private:
                 path, score, true)
             || ! validateNumber (event, "velocity", 0, 1, path, score, true)
             || ! validateString (event, "comment", path, score, false, true)) return false;
+        if (event.hasProperty ("event_id")
+            && event.getProperty ("event_id").toString().length() > 128)
+            return fail (score, path + ".event_id must be at most 128 characters");
         if (! event.hasProperty ("note")) return fail (score, path + ".note is required");
         if (! validateNoteValue (event.getProperty ("note"), path + ".note", score)) return false;
         const auto engine = event.getProperty ("engine").toString().toStdString();
@@ -997,11 +1007,18 @@ private:
             if (events == nullptr || events->isEmpty())
                 return fail (score, "events must be a non-empty array");
             double previousTime = -1.0;
+            std::set<std::string> eventIds;
             for (int i = 0; i < events->size(); ++i)
             {
                 auto* event = (*events)[i].getDynamicObject();
                 if (event == nullptr) return fail (score, "events[" + std::to_string (i) + "] must be an object");
                 if (! validateEvent (*event, i, score)) return false;
+                if (event->hasProperty ("event_id"))
+                {
+                    const auto id = event->getProperty ("event_id").toString().toStdString();
+                    if (! eventIds.insert (id).second)
+                        return fail (score, "Duplicate event_id: " + id);
+                }
                 const double time = (double) event->getProperty ("time");
                 if (time < previousTime) return fail (score, "events must be sorted by ascending time");
                 previousTime = time;
@@ -1132,6 +1149,6 @@ private:
 
     static bool isSupportedSampleRate (int sr)
     {
-        return sr == 44100 || sr == 48000 || sr == 88200 || sr == 96000;
+        return TsukiSampleRates::isSupported (sr);
     }
 };

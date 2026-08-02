@@ -1,4 +1,5 @@
 #include "analyzer/PitchDetector.h"
+#include "score/SampleRateContract.h"
 #include "dsp/AudioFIFO.h"
 #include "dsp/MidiNoteTracker.h"
 
@@ -146,13 +147,13 @@ void testMidiNoteTracker()
 
 void testPitchRangeSweep()
 {
-    constexpr double rates[] = { 44100.0, 48000.0, 96000.0, 192000.0 };
     int supportedCases = 0;
     int refusedCases = 0;
     float worstCents = 0.0f;
 
-    for (const double sampleRate : rates)
+    for (const int rate : TsukiSampleRates::supported)
     {
+        const double sampleRate = (double) rate;
         PitchDetector detector;
         detector.setSampleRate (sampleRate);
         for (int midi = 0; midi <= 127; ++midi)
@@ -195,11 +196,13 @@ void testPitchRangeSweep()
         }
     }
 
-    CHECK (supportedCases == 4 * (PitchDetector::maxSupportedMidi
+    CHECK (supportedCases == (int) TsukiSampleRates::supported.size()
+                                  * (PitchDetector::maxSupportedMidi
                                   - PitchDetector::minSupportedMidi + 1),
-           "PitchDetector measures every A0-C8 target at 44.1/48/96/192 kHz");
-    CHECK (refusedCases == 4 * (128 - (PitchDetector::maxSupportedMidi
-                                      - PitchDetector::minSupportedMidi + 1)),
+           "PitchDetector measures every A0-C8 target at every supported sample rate");
+    CHECK (refusedCases == (int) TsukiSampleRates::supported.size()
+                                * (128 - (PitchDetector::maxSupportedMidi
+                                  - PitchDetector::minSupportedMidi + 1)),
            "PitchDetector explicitly refuses every target outside A0-C8");
     std::printf ("[INFO] pitch sweep worst error %.4f cents (%d measured, %d refused)\n",
                  worstCents, supportedCases, refusedCases);
@@ -270,11 +273,11 @@ void testPitchIsMeasuredNotCopiedFromTarget()
 
 void testInharmonicRangeBoundaries()
 {
-    constexpr double rates[] = { 44100.0, 48000.0, 96000.0, 192000.0 };
     bool allDetected = true;
     float worstError = 0.0f;
-    for (const double sampleRate : rates)
+    for (const int rate : TsukiSampleRates::supported)
     {
+        const double sampleRate = (double) rate;
         for (const int midi : { 21, 108 })
         {
             PitchDetector detector;
@@ -318,7 +321,9 @@ void testInharmonicRangeBoundaries()
 void testBroadbandNoiseIsUncertain()
 {
     bool allRefused = true;
-    for (const double sampleRate : { 44100.0, 192000.0 })
+    for (const double sampleRate : {
+             (double) TsukiSampleRates::supported.front(),
+             (double) TsukiSampleRates::supported.back() })
     {
         for (const int midi : { 21, 69, 108 })
         {

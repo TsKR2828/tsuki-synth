@@ -26,11 +26,11 @@ public:
         nextUInt();
     }
 
-    /** Stable mixer for a score seed, event index and note metadata. */
-    static uint64_t mixSeed (uint64_t scoreSeed, uint64_t eventIndex,
+    /** Stable mixer for a score seed, semantic event identity and metadata. */
+    static uint64_t mixSeed (uint64_t scoreSeed, uint64_t eventIdentity,
                              uint32_t midiNote, uint32_t velocityCode) noexcept
     {
-        uint64_t x = scoreSeed ^ (eventIndex + 0x9E3779B97F4A7C15ull);
+        uint64_t x = scoreSeed ^ (eventIdentity + 0x9E3779B97F4A7C15ull);
         x ^= (uint64_t) midiNote << 32;
         x ^= velocityCode;
         x += 0x9E3779B97F4A7C15ull;
