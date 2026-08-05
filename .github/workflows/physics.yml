@@ -62,6 +62,7 @@ jobs:
           python -m unittest tests/test_consonance_contract.py -v
           python -m unittest tests/test_verify_score_contract.py -v
           python -m unittest tests/test_specimen_verify.py -v
+          python -m unittest tests/test_specimen_pipeline.py -v
           python tools/physics_verify.py --selftest
 
       - name: Run standalone T60 gate

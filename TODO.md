@@ -14,6 +14,7 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 - [x] Rebuilt CLI, VST3, Standalone and all three C++ test targets in Release; CTest 3/3, Python 84/84, ASan 3/3, fresh-build `physics_verify.py --full`, pluginval L10 and Steinberg validator 47/47 all pass.
 - [x] New 73-score corpus run completed in deterministic round-robin shards: 19/19 + 18/18 + 18/18 + 18/18 = 73/73, 0 fail; the one existing moonlight FX-art exemption remains explicit.
 - [x] Added Specimen Measurement v1 schema, hashed evidence-chain verifier and laboratory protocol. Frequency/relative magnitude/T60 are comparable now; unsupported phase/SPL/radiation claims fail closed as `UNVERIFIED`.
+- [x] Added the non-human Specimen Measurement v2 pipeline: repeated synchronized CSV → calibrator-derived V/Pa → complex H1/coherence/phase/T60/Pa-per-N/SPL/directivity → uncertainty, hashes, self-contained bundle and report. All v2 comparators are implemented; current synth phase/absolute-radiation model observables correctly remain `UNVERIFIED` until the physical model emits them.
 
 Acceptance snapshot (round-1, 2026-07-17): six Release targets build; CTest and Python contract/metrology tests pass;
 schema 80/80; release corpus 73/73 with one existing visible FX-art exemption; event-specific
@@ -88,7 +89,7 @@ see "2026-07-23 round-4 裁決落地" below.**
 
 - [ ] Obtain citable or measured values for every material's `beta_air` and `gamma_radiation`.
 - [ ] Replace single-frequency damping anchors with broadband/specimen measurements and uncertainty intervals.
-- [ ] Add a calibrated force → displacement → radiated pressure/SPL model, including pickup/microphone position and modal phase.
+- [ ] Add the synth-side calibrated force → displacement → radiated pressure/SPL model, including pickup/microphone position, signed/complex modal residue and spatial radiation. The v2 measurement pipeline/comparators are complete; this remaining item is specifically the physical prediction model.
 - [ ] Add coupled-body/soundboard/sympathetic-resonance and realistic damper/pedal physics for piano.
 - [ ] Replace the velocity proxy with a parameterized nonlinear contact solver using hammer mass, compliance and geometry.
 - [ ] Model anisotropic/orthotropic wood, temperature and humidity where those claims are needed.

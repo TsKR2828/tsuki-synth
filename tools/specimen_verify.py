@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Compare a real-specimen modal measurement bundle with a mode dump.
+"""Compare a real-specimen measurement bundle with a model mode dump.
 
-This gate deliberately does not infer missing physical observables.  Current
-mode dumps predict modal frequency, relative amplitude and T60; phase, absolute
-SPL and radiation directivity remain UNVERIFIED until the model emits them.
+The v1 contract covers modal frequency, relative amplitude, T60 and optional
+phase.  The v2 contract additionally carries calibrated pressure/force points
+so absolute acoustic transfer and complex radiation directivity can be judged
+when (and only when) the model dump contains matching physical predictions.
 """
 
 from __future__ import annotations
@@ -20,15 +21,23 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 
 CONTRACT = "TsukiSynth Specimen Measurement v1"
+CONTRACT_V2 = "TsukiSynth Specimen Measurement v2"
 MODE_DUMP_CONTRACT = "TsukiSynth Mode Dump v2"
-SCHEMA_PATH = (Path(__file__).resolve().parent.parent / "specimens" / "schema"
-               / "specimen_measurement.schema.json")
+SCHEMA_DIR = Path(__file__).resolve().parent.parent / "specimens" / "schema"
+SCHEMA_PATHS = {
+    CONTRACT: SCHEMA_DIR / "specimen_measurement.schema.json",
+    CONTRACT_V2: SCHEMA_DIR / "specimen_measurement_v2.schema.json",
+}
 REQUIRED_ARTIFACT_ROLES = {
     "raw_excitation",
     "raw_response",
     "excitation_calibration",
     "response_calibration",
     "uncertainty_analysis",
+}
+V2_REQUIRED_ARTIFACT_ROLES = {"analysis_config", "derived_frf"}
+V2_ACOUSTIC_ARTIFACT_ROLES = {
+    "raw_acoustic_response", "acoustic_calibration", "derived_acoustic_transfer",
 }
 EXIT_CODES = {"PASS": 0, "FAIL": 1, "REFUSED": 2, "UNVERIFIED": 3}
 
@@ -77,9 +86,13 @@ def _load_json(path: Path) -> Any:
 
 
 def _schema_errors(bundle: Any) -> list[str]:
-    schema = _load_json(SCHEMA_PATH)
+    if not isinstance(bundle, dict) or bundle.get("$schema") not in SCHEMA_PATHS:
+        known = ", ".join(repr(item) for item in SCHEMA_PATHS)
+        return [f"$schema: expected one of {known}"]
+    schema = _load_json(SCHEMA_PATHS[bundle["$schema"]])
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
-    errors = sorted(validator.iter_errors(bundle), key=lambda e: list(e.absolute_path))
+    errors = sorted(validator.iter_errors(bundle),
+                    key=lambda error: tuple(str(part) for part in error.absolute_path))
     rendered = []
     for error in errors:
         path = ".".join(str(part) for part in error.absolute_path) or "$"
@@ -87,17 +100,22 @@ def _schema_errors(bundle: Any) -> list[str]:
     return rendered
 
 
-def _verify_artifacts(bundle_path: Path, artifacts: list[dict[str, Any]]) -> tuple[bool, list[str]]:
+def _verify_artifacts(bundle_path: Path, artifacts: list[dict[str, Any]],
+                      required_roles: set[str] | None = None) -> tuple[bool, list[str]]:
     base = bundle_path.parent.resolve()
     roles: set[str] = set()
+    role_paths: set[tuple[str, str]] = set()
+    hash_cache: dict[Path, str] = {}
     messages: list[str] = []
     ok = True
     for artifact in artifacts:
         role = artifact["role"]
-        if role in roles:
+        role_path = (role, artifact["path"])
+        if role_path in role_paths:
             ok = False
-            messages.append(f"duplicate artifact role: {role}")
+            messages.append(f"duplicate artifact entry: {role}: {artifact['path']}")
             continue
+        role_paths.add(role_path)
         roles.add(role)
         relative = Path(artifact["path"])
         if relative.is_absolute():
@@ -115,14 +133,17 @@ def _verify_artifacts(bundle_path: Path, artifacts: list[dict[str, Any]]) -> tup
             ok = False
             messages.append(f"{role}: file not found: {relative.as_posix()}")
             continue
-        actual = _sha256(candidate)
+        actual = hash_cache.get(candidate)
+        if actual is None:
+            actual = _sha256(candidate)
+            hash_cache[candidate] = actual
         if actual.lower() != artifact["sha256"].lower():
             ok = False
             messages.append(f"{role}: SHA256 mismatch ({actual})")
         else:
             messages.append(f"{role}: SHA256 verified ({actual})")
 
-    missing = sorted(REQUIRED_ARTIFACT_ROLES - roles)
+    missing = sorted((required_roles or REQUIRED_ARTIFACT_ROLES) - roles)
     if missing:
         ok = False
         messages.append("missing required artifact roles: " + ", ".join(missing))
@@ -139,9 +160,33 @@ def _wrap_phase_error(a: float, b: float) -> float:
     return abs((a - b + 180.0) % 360.0 - 180.0)
 
 
-def verify_bundle(bundle_path: Path, dump_path: Path) -> dict[str, Any]:
+def _resolve_bundled_path(bundle_path: Path, relative_text: str) -> Path | None:
+    base = bundle_path.parent.resolve()
+    relative = Path(relative_text)
+    if relative.is_absolute():
+        return None
+    candidate = (base / relative).resolve()
+    try:
+        candidate.relative_to(base)
+    except ValueError:
+        return None
+    return candidate
+
+
+def _complex_level_db(real: float, imag: float) -> float:
+    magnitude = math.hypot(real, imag)
+    if magnitude <= 0.0:
+        raise ValueError("complex pressure/force magnitude must be positive")
+    return 20.0 * math.log10(magnitude / 20.0e-6)
+
+
+def _acoustic_key(point: dict[str, Any]) -> tuple[int, float, float, float]:
+    return (int(point["model_partial_index"]), float(point["radius_m"]),
+            float(point["azimuth_deg"]), float(point["elevation_deg"]))
+
+
+def verify_bundle(bundle_path: Path, dump_path: Path | None = None) -> dict[str, Any]:
     bundle_path = Path(bundle_path)
-    dump_path = Path(dump_path)
     try:
         bundle = _load_json(bundle_path)
     except Exception as exc:
@@ -160,15 +205,34 @@ def verify_bundle(bundle_path: Path, dump_path: Path) -> dict[str, Any]:
     all_numbers: list[Any] = []
     for mode in bundle["measured_modes"]:
         all_numbers.extend(value for key, value in mode.items() if key != "model_partial_index")
+    for point in bundle.get("acoustic_measurements", []):
+        all_numbers.extend(point.values())
     all_numbers.extend(bundle["model"]["uncertainty"].values())
     all_numbers.extend(bundle["acceptance"].values())
     if not all(_finite_number(value) for value in all_numbers):
         return _refused("NaN or infinity is forbidden in measurement data", specimen_id)
 
-    provenance_ok, provenance = _verify_artifacts(bundle_path, bundle["artifacts"])
+    required_roles = set(REQUIRED_ARTIFACT_ROLES)
+    if bundle["$schema"] == CONTRACT_V2:
+        required_roles.update(V2_REQUIRED_ARTIFACT_ROLES)
+        scopes = bundle["claim_scope"]
+        if scopes["absolute_spl"] or scopes["radiation_directivity"]:
+            required_roles.update(V2_ACOUSTIC_ARTIFACT_ROLES)
+    provenance_ok, provenance = _verify_artifacts(
+        bundle_path, bundle["artifacts"], required_roles)
     if not provenance_ok:
         return _refused("measurement artifact provenance failed", specimen_id, provenance)
 
+    if dump_path is None:
+        relative_dump = bundle["model"].get("mode_dump_path")
+        if not relative_dump:
+            return _refused("mode dump path was not supplied", specimen_id, provenance)
+        dump_path = _resolve_bundled_path(bundle_path, relative_dump)
+        if dump_path is None:
+            return _refused("model.mode_dump_path escapes the measurement bundle directory",
+                            specimen_id, provenance)
+    else:
+        dump_path = Path(dump_path)
     if not dump_path.is_file():
         return _refused(f"mode dump not found: {dump_path}", specimen_id, provenance)
     actual_dump_hash = _sha256(dump_path)
@@ -214,6 +278,39 @@ def verify_bundle(bundle_path: Path, dump_path: Path) -> dict[str, Any]:
         if _finite_number(partial.get("phase_deg")):
             predicted_by_index[index]["phase_deg"] = float(partial["phase_deg"])
 
+    predicted_acoustic_by_key: dict[tuple[int, float, float, float], dict[str, float]] = {}
+    for point_index, point in enumerate(event.get("acoustic_transfer", [])):
+        if not isinstance(point, dict):
+            return _refused(f"model acoustic point {point_index} is not an object",
+                            specimen_id, provenance)
+        required = ("model_partial_index", "radius_m", "azimuth_deg", "elevation_deg",
+                    "pressure_per_force_real_pa_n", "pressure_per_force_imag_pa_n")
+        if any(name not in point or not _finite_number(point[name]) for name in required):
+            return _refused(f"model acoustic point {point_index} is incomplete or non-finite",
+                            specimen_id, provenance)
+        if (not isinstance(point["model_partial_index"], int)
+                or isinstance(point["model_partial_index"], bool)):
+            return _refused(f"model acoustic point {point_index} has a non-integer partial index",
+                            specimen_id, provenance)
+        key = _acoustic_key(point)
+        if key in predicted_acoustic_by_key:
+            return _refused(f"duplicate model acoustic coordinate: {key}",
+                            specimen_id, provenance)
+        if key[0] not in predicted_by_index or key[1] <= 0.0:
+            return _refused(f"model acoustic point {point_index} has an invalid partial or radius",
+                            specimen_id, provenance)
+        real = float(point["pressure_per_force_real_pa_n"])
+        imag = float(point["pressure_per_force_imag_pa_n"])
+        try:
+            level_db = _complex_level_db(real, imag)
+        except ValueError as exc:
+            return _refused(f"model acoustic point {point_index}: {exc}",
+                            specimen_id, provenance)
+        predicted_acoustic_by_key[key] = {
+            "real": real, "imag": imag, "level_db": level_db,
+            "phase_deg": math.degrees(math.atan2(imag, real)),
+        }
+
     measured_by_index: dict[int, dict[str, Any]] = {}
     for mode in bundle["measured_modes"]:
         index = mode["model_partial_index"]
@@ -227,6 +324,38 @@ def verify_bundle(bundle_path: Path, dump_path: Path) -> dict[str, Any]:
             return _refused(f"partial {index}: t60 uncertainty reaches or exceeds T60",
                             specimen_id, provenance)
         measured_by_index[index] = mode
+
+    measured_acoustic_by_key: dict[tuple[int, float, float, float], dict[str, Any]] = {}
+    for point_index, point in enumerate(bundle.get("acoustic_measurements", [])):
+        key = _acoustic_key(point)
+        if key in measured_acoustic_by_key:
+            return _refused(f"duplicate measured acoustic coordinate: {key}",
+                            specimen_id, provenance)
+        if key[0] not in predicted_by_index:
+            return _refused(f"measured acoustic partial {key[0]} is absent from model dump",
+                            specimen_id, provenance)
+        if (abs(point["frequency_hz"] - measured_by_index[key[0]]["frequency_hz"])
+                > bundle["acquisition"]["frequency_resolution_hz"] + 1.0e-9):
+            return _refused(
+                f"measured acoustic point {point_index}: frequency is not the matched modal bin",
+                specimen_id, provenance)
+        try:
+            calculated_level = _complex_level_db(
+                point["pressure_per_force_real_pa_n"],
+                point["pressure_per_force_imag_pa_n"])
+        except ValueError as exc:
+            return _refused(f"measured acoustic point {point_index}: {exc}",
+                            specimen_id, provenance)
+        if abs(calculated_level - point["transfer_level_db_re_20upa_per_n"]) > 1.0e-6:
+            return _refused(
+                f"measured acoustic point {point_index}: transfer level does not match complex Pa/N",
+                specimen_id, provenance)
+        expected_spl = calculated_level + 20.0 * math.log10(point["reference_force_rms_n"])
+        if abs(expected_spl - point["spl_db_re_20upa"]) > 1.0e-6:
+            return _refused(
+                f"measured acoustic point {point_index}: SPL does not match Pa/N and reference force",
+                specimen_id, provenance)
+        measured_acoustic_by_key[key] = point
 
     reference = bundle.get("relative_magnitude_reference_partial_index")
     if reference is None:
@@ -255,6 +384,16 @@ def verify_bundle(bundle_path: Path, dump_path: Path) -> dict[str, Any]:
         quality_ok = quality_ok and passed
         quality_modes.append({
             "partial_index": index,
+            "coherence": measured["coherence"],
+            "minimum": acceptance["min_coherence"],
+            "status": "PASS" if passed else "FAIL",
+        })
+    for key, measured in sorted(measured_acoustic_by_key.items()):
+        passed = measured["coherence"] >= acceptance["min_coherence"]
+        quality_ok = quality_ok and passed
+        quality_modes.append({
+            "partial_index": key[0], "acoustic": True,
+            "radius_m": key[1], "azimuth_deg": key[2], "elevation_deg": key[3],
             "coherence": measured["coherence"],
             "minimum": acceptance["min_coherence"],
             "status": "PASS" if passed else "FAIL",
@@ -382,18 +521,120 @@ def verify_bundle(bundle_path: Path, dump_path: Path) -> dict[str, Any]:
         claims.append(_claim("complex_phase", True, "PASS" if passed_all else "FAIL",
                              "wrapped phase error", mode_results))
 
-    for scope_name, observable, message in (
-        ("absolute_spl", "absolute_spl", "current model has no calibrated source-to-pressure transfer"),
-        ("radiation_directivity", "radiation_directivity", "current model has no spatial radiation operator"),
-    ):
-        requested = scopes[scope_name]
-        if not requested:
-            claims.append(_claim(scope_name, False, "N/A", "not requested"))
-        elif observable not in observables:
-            claims.append(_claim(scope_name, True, "UNVERIFIED", message))
+    requested = scopes["absolute_spl"]
+    acoustic_observable = "absolute_pressure_per_force" in observables \
+        or "absolute_spl" in observables
+    if not requested:
+        claims.append(_claim("absolute_spl", False, "N/A", "not requested"))
+    elif not acoustic_observable:
+        claims.append(_claim(
+            "absolute_spl", True, "UNVERIFIED",
+            "model has no calibrated force-to-pressure transfer"))
+    elif not measured_acoustic_by_key:
+        claims.append(_claim("absolute_spl", True, "UNVERIFIED",
+                             "bundle has no calibrated acoustic measurement points"))
+    else:
+        missing = sorted(set(measured_acoustic_by_key) - set(predicted_acoustic_by_key))
+        if missing:
+            claims.append(_claim(
+                "absolute_spl", True, "UNVERIFIED",
+                f"model lacks {len(missing)} measured acoustic coordinate(s)"))
         else:
-            claims.append(_claim(scope_name, True, "UNVERIFIED",
-                                 "observable declared but comparator is not implemented"))
+            mode_results = []
+            passed_all = True
+            model_level_u = model_u.get("absolute_level_db", 0.0)
+            for key, measured in sorted(measured_acoustic_by_key.items()):
+                predicted_point = predicted_acoustic_by_key[key]
+                central = abs(measured["transfer_level_db_re_20upa_per_n"]
+                              - predicted_point["level_db"])
+                conservative = central + measured["transfer_u_db"] + model_level_u
+                passed = conservative <= acceptance["max_absolute_level_error_db"]
+                passed_all = passed_all and passed
+                mode_results.append({
+                    "partial_index": key[0], "radius_m": key[1],
+                    "azimuth_deg": key[2], "elevation_deg": key[3],
+                    "predicted_db_re_20upa_per_n": predicted_point["level_db"],
+                    "measured_db_re_20upa_per_n":
+                        measured["transfer_level_db_re_20upa_per_n"],
+                    "central_error_db": central,
+                    "conservative_error_db": conservative,
+                    "limit_db": acceptance["max_absolute_level_error_db"],
+                    "status": "PASS" if passed else "FAIL",
+                })
+            claims.append(_claim(
+                "absolute_spl", True, "PASS" if passed_all else "FAIL",
+                "absolute pressure/force level; reported SPL uses the declared RMS force",
+                mode_results))
+
+    requested = scopes["radiation_directivity"]
+    if not requested:
+        claims.append(_claim("radiation_directivity", False, "N/A", "not requested"))
+    elif "radiation_directivity" not in observables:
+        claims.append(_claim(
+            "radiation_directivity", True, "UNVERIFIED",
+            "model has no complex spatial radiation operator"))
+    elif not measured_acoustic_by_key:
+        claims.append(_claim("radiation_directivity", True, "UNVERIFIED",
+                             "bundle has no calibrated directivity points"))
+    else:
+        missing = sorted(set(measured_acoustic_by_key) - set(predicted_acoustic_by_key))
+        if missing:
+            claims.append(_claim(
+                "radiation_directivity", True, "UNVERIFIED",
+                f"model lacks {len(missing)} measured directivity coordinate(s)"))
+        else:
+            grouped: dict[int, list[tuple[tuple[int, float, float, float], dict[str, Any]]]] = {}
+            for key, measured in measured_acoustic_by_key.items():
+                grouped.setdefault(key[0], []).append((key, measured))
+            mode_results = []
+            passed_all = True
+            min_points = acceptance["min_directivity_points"]
+            model_level_u = model_u.get("directivity_db", 0.0)
+            model_phase_u = model_u.get("directivity_phase_deg", 0.0)
+            for partial_index, points in sorted(grouped.items()):
+                if len(points) < min_points:
+                    passed_all = False
+                    mode_results.append({
+                        "partial_index": partial_index, "point_count": len(points),
+                        "minimum_point_count": min_points, "status": "FAIL",
+                    })
+                    continue
+                measured_max = max(point[1]["transfer_level_db_re_20upa_per_n"]
+                                   for point in points)
+                predicted_max = max(predicted_acoustic_by_key[point[0]]["level_db"]
+                                    for point in points)
+                for key, measured in sorted(points):
+                    predicted_point = predicted_acoustic_by_key[key]
+                    measured_relative = measured["transfer_level_db_re_20upa_per_n"] - measured_max
+                    predicted_relative = predicted_point["level_db"] - predicted_max
+                    level_error = abs(measured_relative - predicted_relative)
+                    conservative_level = level_error + measured["transfer_u_db"] + model_level_u
+                    measured_phase = math.degrees(math.atan2(
+                        measured["pressure_per_force_imag_pa_n"],
+                        measured["pressure_per_force_real_pa_n"]))
+                    phase_error = _wrap_phase_error(
+                        measured_phase, predicted_point["phase_deg"])
+                    conservative_phase = (phase_error + measured["phase_u_deg"]
+                                          + model_phase_u)
+                    passed = (conservative_level <= acceptance["max_directivity_error_db"]
+                              and conservative_phase
+                              <= acceptance["max_directivity_phase_error_deg"])
+                    passed_all = passed_all and passed
+                    mode_results.append({
+                        "partial_index": partial_index, "radius_m": key[1],
+                        "azimuth_deg": key[2], "elevation_deg": key[3],
+                        "predicted_relative_db": predicted_relative,
+                        "measured_relative_db": measured_relative,
+                        "conservative_level_error_db": conservative_level,
+                        "level_limit_db": acceptance["max_directivity_error_db"],
+                        "conservative_phase_error_deg": conservative_phase,
+                        "phase_limit_deg": acceptance["max_directivity_phase_error_deg"],
+                        "status": "PASS" if passed else "FAIL",
+                    })
+            claims.append(_claim(
+                "radiation_directivity", True, "PASS" if passed_all else "FAIL",
+                "per-mode normalized complex pressure/force pattern",
+                mode_results))
 
     requested_statuses = [item["status"] for item in claims if item["requested"]]
     if "FAIL" in requested_statuses:
@@ -403,7 +644,9 @@ def verify_bundle(bundle_path: Path, dump_path: Path) -> dict[str, Any]:
     else:
         status = "PASS"
     return {
-        "contract": "TsukiSynth Specimen Verification Report v1",
+        "contract": ("TsukiSynth Specimen Verification Report v2"
+                     if bundle["$schema"] == CONTRACT_V2
+                     else "TsukiSynth Specimen Verification Report v1"),
         "specimen_id": specimen_id,
         "status": status,
         "exit_code": EXIT_CODES[status],
@@ -431,14 +674,16 @@ def print_report(report: dict[str, Any]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Verify real-specimen modal measurements without listening")
-    parser.add_argument("measurement", help="Specimen Measurement v1 JSON bundle")
-    parser.add_argument("--dump-modes", required=True,
-                        help="exact TsukiSynth Mode Dump v2 JSON referenced by the bundle")
+        description="Verify real-specimen measurements without listening")
+    parser.add_argument("measurement", help="Specimen Measurement v1/v2 JSON bundle")
+    parser.add_argument(
+        "--dump-modes",
+        help="exact Mode Dump v2 JSON; v2 bundles may instead use model.mode_dump_path")
     parser.add_argument("--json-out", help="write the machine-readable verification report")
     args = parser.parse_args()
 
-    report = verify_bundle(Path(args.measurement), Path(args.dump_modes))
+    report = verify_bundle(
+        Path(args.measurement), Path(args.dump_modes) if args.dump_modes else None)
     print_report(report)
     if args.json_out:
         Path(args.json_out).write_text(

@@ -2,6 +2,27 @@
 
 ---
 
+## 2026-08-02 — 實物量測 v2 非人工處理管線
+
+- 新增 `tools/specimen_pipeline.py`：從每次獨立同步 CSV 自動檢查時基、NaN/Inf、DAQ 過載、impact double-hit 與最低 averages；支援 `path_glob` 批次展開，不必逐檔手填。
+- 自動處理 force／structure／microphone 通道靈敏度、極性與相對延遲；用 calibrator before/after 訊號求 V/Pa、檢查標稱音調與前後漂移。
+- 多紀錄交叉／自功率平均產生 H1、coherence、複數 FRF／phase；impact 從量得的自由衰減、shaker 從 FRF impulse response，經 band-pass、Hilbert envelope 與 dB regression 求 T60／R²。
+- 自動輸出 Pa/N、`dB re 20 µPa/N`、指定 RMS force 下的 SPL，以及每個 `(r, azimuth, elevation, partial)` 複數 directivity；統計不確定度採 repeated-record expanded standard error 與預先宣告 floor 的 RSS。
+- v2 bundle 自包含 raw、calibration、原始／resolved config、Mode Dump、衍生 CSV、calibrator 結果、uncertainty budget、verification report；所有證據 SHA256 驗證，輸出目錄已存在時拒絕覆寫。
+- `specimen_verify.py` 向後相容 v1，新增 v2 phase／absolute Pa/N-SPL／normalized complex directivity 比較器。公式不一致、hash 竄改、低 coherence 或反例資料 fail closed；模型缺 observable／座標仍為 `UNVERIFIED`，不以量測資料回填模型預測。
+- 現行 synth Mode Dump 尚未輸出 signed/complex modal residue、絕對 force-to-pressure 與 spatial radiation operator，因此這輪完成的是量測／證據／比較自動化，不宣稱三項模型已通過真實標本。
+
+### 本輪實際測試方法
+
+- Python 全量：`python -m unittest discover -s tests -p "test_*.py" -v`，92/92 PASS。新增 end-to-end 合成同步 DAQ fixture，只驗 pipeline 數學與封裝，明確標記不是實物證據。
+- 正向 comparator：完全一致的 complex phase、Pa/N、SPL 與兩點 complex directivity 必須 PASS。
+- 負向／mutation：錯誤 directivity level 必須 FAIL；Pa/N 與 SPL 公式不一致、缺 hash 證據、NaN/Inf 必須 REFUSED；缺模型方向點必須 `UNVERIFIED`；double-hit 與 calibrator drift 必須拒絕建 bundle。
+- C++ 回歸：`ctest --test-dir build -C Release --output-on-failure`，3/3 PASS。
+- 物理 metrology 反例：`python tools/physics_verify.py --selftest`，既有錯頻、缺 partial、錯振幅、velocity-law、未建模殘差等反例全數被拒絕。
+- 靜態／契約：兩支 Python `py_compile`、四份新增 JSON schema/template `json.tool`、`git diff --check` 全通過。
+
+---
+
 ## 2026-08-02 — P1–P7 物理／重現性／發布閘門完整修復
 
 - **P1 可渲染模態**：`ModalResonator` 統一採 20 Hz–`min(20 kHz, 0.98 Nyquist)`；非有限、零能量或全數低於 20 Hz 的事件 fail closed，杜絕 attack-only 假 PASS。

@@ -91,7 +91,15 @@ cmake --build build-asan --config RelWithDebInfo --target TsukiSynthAuditTest Ts
 tools\run_asan_ctest.ps1
 ```
 
-The exact P1–P7 methods and results are recorded in [the 2026-08-02 verification report](docs/P1_P7_VERIFICATION_2026-08-02.zh-TW.md). For a real instrument specimen, follow [the specimen protocol](docs/SPECIMEN_VALIDATION_PROTOCOL.zh-TW.md). It requires hashed raw excitation/response, calibration evidence and an uncertainty budget. Current Mode Dump v2 supports modal frequency, relative modal magnitude and T60. Requested complex phase, absolute SPL or radiation claims return `UNVERIFIED`, never PASS.
+The exact P1–P7 methods and results are recorded in [the 2026-08-02 verification report](docs/P1_P7_VERIFICATION_2026-08-02.zh-TW.md). For a real instrument specimen, follow [the specimen protocol](docs/SPECIMEN_VALIDATION_PROTOCOL.zh-TW.md). `tools/specimen_pipeline.py` now turns synchronized repeated CSV records into a self-contained v2 bundle: calibrated H1/coherence, complex phase, automatic modal T60, Pa/N, SPL at a declared RMS force, complex directivity points, uncertainty records and SHA256 provenance. `tools/specimen_verify.py` implements all corresponding comparators. The current synth Mode Dump still emits only modal frequency, relative modal magnitude and T60, so phase/SPL/radiation claims remain honestly `UNVERIFIED` until the synth gains those physical model observables; measured data alone is never promoted to PASS.
+
+```powershell
+# Copy and fill specimens/templates/measurement_v2.template.json and
+# specimens/templates/acquisition.template.json, then:
+python tools\specimen_pipeline.py path\to\acquisition.json --out path\to\new-bundle
+python tools\specimen_verify.py path\to\new-bundle\measurement.json `
+  --json-out path\to\new-bundle\verification-report.json
+```
 
 ## Plugin Formats
 
