@@ -141,6 +141,14 @@ TsukiSynthProcessor::createParameterLayout()
     rev->addChild (std::make_unique<FloatParam> (
         PID { "fx_reverb_size", 1 }, "Room Size",
         Range (0.0f, 1.0f, 0.01f), 0.5f));
+    // Authored T60 in seconds; below 0.01 the room-size knob stays in
+    // control. Range mirrors the score schema's reverb.decay [0, 30].
+    rev->addChild (std::make_unique<FloatParam> (
+        PID { "fx_reverb_decay", 1 }, "Reverb T60 (s)",
+        Range (0.0f, 30.0f, 0.01f, 0.35f), 0.0f));
+    rev->addChild (std::make_unique<ChoiceParam> (
+        PID { "fx_reverb_mode", 1 }, "Reverb Mode",
+        juce::StringArray { "Algorithmic", "Impulse Response" }, 0));
 
     auto dly = std::make_unique<Group> ("delay", "Delay", "|");
     dly->addChild (std::make_unique<FloatParam> (
@@ -329,6 +337,8 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     // ---- Effect chain ----
     effectChain.pReverbMix     = apvts.getRawParameterValue ("fx_reverb_mix");
     effectChain.pReverbSize    = apvts.getRawParameterValue ("fx_reverb_size");
+    effectChain.pReverbDecay   = apvts.getRawParameterValue ("fx_reverb_decay");
+    effectChain.pReverbMode    = apvts.getRawParameterValue ("fx_reverb_mode");
     effectChain.pDelayTime     = apvts.getRawParameterValue ("fx_delay_time");
     effectChain.pDelayFeedback = apvts.getRawParameterValue ("fx_delay_feedback");
     effectChain.pDelayMix      = apvts.getRawParameterValue ("fx_delay_mix");
@@ -351,13 +361,13 @@ TsukiSynthProcessor::~TsukiSynthProcessor()
 }
 
 // == Audio ==
-void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
+void TsukiSynthProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
     cimbalomSynth.setCurrentPlaybackSampleRate (sampleRate);
     chromaticSynth.setCurrentPlaybackSampleRate (sampleRate);
     fmPianoSynth.setCurrentPlaybackSampleRate (sampleRate);
-    effectChain.prepare (sampleRate);
+    effectChain.prepare (sampleRate, samplesPerBlock);
     smoothedOutput.reset (sampleRate, 0.02);
 }
 
@@ -395,13 +405,32 @@ double TsukiSynthProcessor::getTailLengthSeconds() const
     if (effectChain.pReverbMix != nullptr
         && effectChain.pReverbMix->load() > 0.001f)
     {
-        const double roomSize = effectChain.pReverbSize != nullptr
-            ? effectChain.pReverbSize->load()
-            : 0.5;
-        const double feedback = roomSize * 0.28 + 0.7;
-        const double longestCombSeconds = 1617.0 / 44100.0;
-        const double repeats = std::log (0.001) / std::log (feedback);
-        tailSeconds += longestCombSeconds * repeats;
+        const bool irMode = effectChain.pReverbMode != nullptr
+                         && effectChain.pReverbMode->load() >= 0.5f
+                         && effectChain.hasImpulseResponse();
+        const double decay = effectChain.pReverbDecay != nullptr
+            ? effectChain.pReverbDecay->load()
+            : 0.0;
+
+        if (irMode)
+        {
+            tailSeconds += reverbIRSeconds;
+        }
+        else if (decay >= 0.01)
+        {
+            // Authored T60 mode: the tail is the T60 itself.
+            tailSeconds += decay;
+        }
+        else
+        {
+            const double roomSize = effectChain.pReverbSize != nullptr
+                ? effectChain.pReverbSize->load()
+                : 0.5;
+            const double feedback = roomSize * 0.28 + 0.7;
+            const double longestCombSeconds = 1617.0 / 44100.0;
+            const double repeats = std::log (0.001) / std::log (feedback);
+            tailSeconds += longestCombSeconds * repeats;
+        }
     }
 
     return std::clamp (tailSeconds, 0.0, 300.0);
@@ -644,6 +673,9 @@ void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
     if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (apvts.getParameter ("chr_sub_engine")))
         state.setProperty ("chr_sub_engine_index", p->getIndex(), nullptr);
 
+    if (reverbIRPath.isNotEmpty())
+        state.setProperty ("reverb_ir_path", reverbIRPath, nullptr);
+
     auto xml = state.createXml();
     copyXmlToBinary (*xml, destData);
 
@@ -678,6 +710,18 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         restoreChoice (apvts, "engine",         engineIdx);
         restoreChoice (apvts, "chr_sub_engine", subEngIdx);
 
+        // Reload the saved reverb IR if its file still exists; a missing file
+        // silently degrades to the algorithmic reverb (EffectChain falls back
+        // whenever no IR is loaded).
+        const juce::String irPath = tree.getProperty ("reverb_ir_path",
+                                                      juce::String()).toString();
+        if (irPath.isNotEmpty())
+        {
+            juce::String irError;
+            loadReverbIRFile (juce::File (irPath), irError,
+                              /*switchModeToIR*/ false);
+        }
+
         presetManager.reattachListener();
         const int resolvedPreset = presetId.isNotEmpty()
             ? presetManager.findPresetById (presetId) : presetIdx;
@@ -687,6 +731,104 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
             (int) tree.getProperty ("presetDirty", 0) != 0 || missingSavedPreset);
         restoredProgramToIgnore.store (resolvedPreset, std::memory_order_release);
     }
+}
+
+// == Reverb profile / IR loading ==
+bool TsukiSynthProcessor::loadReverbIRFile (const juce::File& file,
+                                            juce::String& error,
+                                            bool switchModeToIR)
+{
+    if (! file.existsAsFile())
+    {
+        error = "File not found: " + file.getFullPathName();
+        return false;
+    }
+
+    juce::AudioFormatManager formats;
+    formats.registerBasicFormats();
+    std::unique_ptr<juce::AudioFormatReader> reader (
+        formats.createReaderFor (file));
+    if (reader == nullptr)
+    {
+        error = "Not a readable audio file: " + file.getFileName();
+        return false;
+    }
+    if (reader->lengthInSamples <= 0 || reader->sampleRate <= 0.0)
+    {
+        error = "Impulse response is empty: " + file.getFileName();
+        return false;
+    }
+
+    const double seconds = (double) reader->lengthInSamples
+                         / reader->sampleRate;
+    if (seconds > 30.0)   // matches the score schema's reverb.decay ceiling
+    {
+        error = "Impulse response longer than 30 s refused ("
+              + juce::String (seconds, 1) + " s)";
+        return false;
+    }
+    reader.reset();
+
+    effectChain.loadImpulseResponse (file);
+    reverbIRPath = file.getFullPathName();
+    reverbIRName = file.getFileName();
+    reverbIRSeconds = seconds;
+
+    if (switchModeToIR)
+        if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
+                apvts.getParameter ("fx_reverb_mode")))
+            *p = 1;
+
+    return true;
+}
+
+bool TsukiSynthProcessor::loadReverbProfileFile (const juce::File& file,
+                                                 juce::String& error)
+{
+    if (! file.existsAsFile())
+    {
+        error = "File not found: " + file.getFullPathName();
+        return false;
+    }
+
+    const auto parsed = juce::JSON::parse (file.loadFileAsString());
+
+    // Accept the scene_reverb.py output fragment {"reverb": {...}} or a full
+    // score whose global.effects.reverb carries the same keys.
+    auto rev = parsed.getProperty ("reverb", juce::var());
+    if (! rev.isObject())
+        rev = parsed.getProperty ("global", juce::var())
+                    .getProperty ("effects", juce::var())
+                    .getProperty ("reverb", juce::var());
+    if (! rev.isObject())
+    {
+        error = "No reverb object found (expected {\"reverb\":{\"decay\",\"wet\"}}"
+                " or a score with global.effects.reverb)";
+        return false;
+    }
+
+    const double decay = (double) rev.getProperty ("decay", -1.0);
+    const double wet   = (double) rev.getProperty ("wet",   -1.0);
+    if (decay < 0.0 || decay > 30.0 || wet < 0.0 || wet > 1.0)
+    {
+        error = "reverb.decay must be 0-30 and reverb.wet 0-1 (got decay="
+              + juce::String (decay) + ", wet=" + juce::String (wet) + ")";
+        return false;
+    }
+
+    auto setParam = [this] (const char* id, float value)
+    {
+        if (auto* p = apvts.getParameter (id))
+            p->setValueNotifyingHost (p->convertTo0to1 (value));
+    };
+    setParam ("fx_reverb_decay", (float) decay);
+    setParam ("fx_reverb_mix",   (float) wet);
+
+    if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
+            apvts.getParameter ("fx_reverb_mode")))
+        *p = 0;   // profile values drive the algorithmic engine
+
+    return true;
 }
 
 // == Programs (routed through PresetManager) ==

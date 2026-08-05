@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "TsukiLookAndFeel.h"
 #include "UiLocale.h"
+#include "HoverMagnifier.h"
 #include "analyzer/AnalyzerPanel.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 
@@ -167,9 +168,16 @@ private:
     KnobParam macroBrightness, macroBody, macroNoise, macroOutput;
 
     // Effects
-    KnobParam fxRevMix, fxRevSize;
+    KnobParam fxRevMix, fxRevSize, fxRevDecay;
     KnobParam fxDlyTime, fxDlyFeedback, fxDlyMix;
     KnobParam fxCompThresh, fxCompRatio;
+
+    // Reverb profile / IR loading
+    juce::TextButton revLoadButton { "Load" };
+    juce::TextButton revModeButton { "ALGO" };
+    std::unique_ptr<juce::FileChooser> revChooser;
+    void launchReverbFileChooser();
+    void refreshReverbModeButton();
 
     // Distortion
     ComboParam  distType;
@@ -177,6 +185,9 @@ private:
 
     // Analyzer
     AnalyzerPanel analyzerPanel;
+
+    // Accessibility hover magnifier (must outlive nothing -- plain member)
+    HoverMagnifier magnifier;
 
     // Brand assets
     juce::Path moonPath;

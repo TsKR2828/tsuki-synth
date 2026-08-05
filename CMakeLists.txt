@@ -212,6 +212,7 @@ if(TSUKI_BUILD_TESTS)
         PRIVATE
             juce::juce_audio_formats
             juce::juce_audio_processors
+            juce::juce_dsp
         PUBLIC
             juce::juce_recommended_config_flags
     )

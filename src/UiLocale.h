@@ -208,6 +208,7 @@ private:
             // -- Effects --
             { "fx_reverb_mix",     "MIX",         "混合"       },
             { "fx_reverb_size",    "SIZE",        "空間大小"   },
+            { "fx_reverb_decay",   "T60 (s)",     "殘響秒數"   },
             { "fx_delay_time",     "TIME",        "時間"       },
             { "fx_delay_feedback", "FB",          "回授"       },
             { "fx_delay_mix",      "MIX",         "混合"       },
@@ -242,6 +243,15 @@ private:
             { "ui_btn_init",         "Init",       "初始化"     },
             { "ui_btn_rec",          "REC",        "REC"        },
             { "ui_btn_stop",         "STOP",       "STOP"       },
+            { "ui_btn_revload",      "Load",       "載入"       },
+            { "ui_tip_revload",      "Load reverb profile (.json) or impulse response (.wav)",
+                                                   "載入殘響設定檔(.json)或脈衝響應(.wav)" },
+            { "ui_btn_revmode_algo", "Algorithmic reverb (click to switch to IR)",
+                                                   "演算法殘響（點擊切換為 IR 卷積）" },
+            { "ui_btn_revmode_ir",   "IR convolution reverb (click to switch to algorithmic)",
+                                                   "IR 卷積殘響（點擊切換為演算法）" },
+            { "ui_dlg_revload",      "Load reverb profile or impulse response",
+                                                   "載入殘響設定檔或脈衝響應" },
 
             // -- Analyzer --
             { "ui_scope",            "SCOPE",      "示波器"     },

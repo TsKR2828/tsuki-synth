@@ -4,6 +4,7 @@
 #include "SimpleReverb.h"
 #include "dsp/Distortion.h"
 #include <juce_audio_basics/juce_audio_basics.h>
+#include <juce_dsp/juce_dsp.h>
 
 class EffectChain
 {
@@ -11,6 +12,8 @@ public:
     // Parameter pointers (set by Processor)
     std::atomic<float>* pReverbMix      = nullptr;
     std::atomic<float>* pReverbSize     = nullptr;
+    std::atomic<float>* pReverbDecay    = nullptr;  // seconds; <0.01 = use size
+    std::atomic<float>* pReverbMode     = nullptr;  // 0 = algorithmic, 1 = IR
     std::atomic<float>* pDelayTime      = nullptr;
     std::atomic<float>* pDelayFeedback  = nullptr;
     std::atomic<float>* pDelayMix       = nullptr;
@@ -23,13 +26,20 @@ public:
     std::atomic<float>* pDistInstability = nullptr;
     std::atomic<float>* pDistMix         = nullptr;
 
-    void prepare (double sampleRate)
+    void prepare (double sampleRate, int maxBlockSize = 2048)
     {
         distortionL.prepare (sampleRate);
         distortionR.prepare (sampleRate);
         compressor.prepare (sampleRate);
         delay.prepare (sampleRate);
         reverb.prepare (sampleRate);
+
+        maxBlock = juce::jmax (16, maxBlockSize);
+        juce::dsp::ProcessSpec spec { sampleRate,
+                                      (juce::uint32) maxBlock, 2 };
+        convolution.prepare (spec);
+        dryBuffer.setSize (2, maxBlock, false, false, true);
+        mixScratch.resize ((size_t) maxBlock, 0.0f);
 
         auto init = [sampleRate] (juce::SmoothedValue<float>& value, float current,
                                   double rampSeconds = 0.02)
@@ -57,6 +67,29 @@ public:
         compressor.reset();
         delay.reset();
         reverb.reset();
+        convolution.reset();
+    }
+
+    /** Load a convolution impulse response. juce::dsp::Convolution copies /
+        resamples on its own background thread, so this is safe to call from
+        the message thread while audio runs. */
+    void loadImpulseResponse (const juce::File& file)
+    {
+        convolution.loadImpulseResponse (file,
+                                         juce::dsp::Convolution::Stereo::yes,
+                                         juce::dsp::Convolution::Trim::yes,
+                                         0);
+        irLoaded.store (true, std::memory_order_release);
+    }
+
+    void clearImpulseResponse()
+    {
+        irLoaded.store (false, std::memory_order_release);
+    }
+
+    bool hasImpulseResponse() const
+    {
+        return irLoaded.load (std::memory_order_acquire);
     }
 
     void processBlock (juce::AudioBuffer<float>& buffer)
@@ -80,6 +113,21 @@ public:
         float* chL = buffer.getWritePointer (0);
         float* chR = (numChannels > 1) ? buffer.getWritePointer (1) : chL;
 
+        // IR mode replaces the algorithmic reverb with convolution. Fall back
+        // to algorithmic when no IR is loaded, and skip IR on any block larger
+        // than the prepared maximum (never allocate on the audio thread).
+        const bool irMode = pReverbMode != nullptr
+                         && pReverbMode->load() >= 0.5f
+                         && hasImpulseResponse()
+                         && numSamples <= maxBlock;
+
+        // Authored T60 mode: a decay in seconds overrides the room-size knob
+        // (mirrors the score renderer's SimpleReverb::setDecayTime contract).
+        const float decaySeconds = pReverbDecay != nullptr
+                                       ? pReverbDecay->load() : 0.0f;
+        if (! irMode && decaySeconds >= 0.01f)
+            reverb.setDecayTime (decaySeconds);
+
         for (int i = 0; i < numSamples; ++i)
         {
             compressor.setThreshold (smCompThreshold.getNextValue());
@@ -87,8 +135,14 @@ public:
             delay.setTime (smDelayTime.getNextValue());
             delay.setFeedback (smDelayFeedback.getNextValue());
             delay.setMix (smDelayMix.getNextValue());
-            reverb.setRoomSize (smReverbSize.getNextValue());
-            reverb.setMix (smReverbMix.getNextValue());
+            const float sizeValue = smReverbSize.getNextValue();
+            const float mixValue  = smReverbMix.getNextValue();
+            if (! irMode && decaySeconds < 0.01f)
+                reverb.setRoomSize (sizeValue);
+            if (! irMode)
+                reverb.setMix (mixValue);
+            else
+                mixScratch[(size_t) i] = mixValue;
 
             DistortionParams dp;
             dp.type = static_cast<DistortionType> (
@@ -108,11 +162,35 @@ public:
             right = distortionR.processSample (right);
             compressor.processStereo (left, right);
             delay.processStereo (left, right);
-            reverb.processStereo (left, right);
+            if (! irMode)
+                reverb.processStereo (left, right);
 
             chL[i] = left;
             if (numChannels > 1)
                 chR[i] = right;
+        }
+
+        if (irMode)
+        {
+            // Keep the dry post-delay signal, convolve in place, then apply
+            // the same smoothed wet/dry mix the algorithmic path uses.
+            dryBuffer.copyFrom (0, 0, buffer, 0, 0, numSamples);
+            dryBuffer.copyFrom (1, 0, buffer, numChannels > 1 ? 1 : 0, 0,
+                                numSamples);
+
+            juce::dsp::AudioBlock<float> block (buffer);
+            juce::dsp::ProcessContextReplacing<float> ctx (block);
+            convolution.process (ctx);
+
+            const float* dryL = dryBuffer.getReadPointer (0);
+            const float* dryR = dryBuffer.getReadPointer (1);
+            for (int i = 0; i < numSamples; ++i)
+            {
+                const float m = mixScratch[(size_t) i];
+                chL[i] = dryL[i] * (1.0f - m) + chL[i] * m;
+                if (numChannels > 1)
+                    chR[i] = dryR[i] * (1.0f - m) + chR[i] * m;
+            }
         }
     }
 
@@ -121,6 +199,11 @@ private:
     Compressor   compressor;
     StereoDelay  delay;
     SimpleReverb reverb;
+    juce::dsp::Convolution convolution;
+    juce::AudioBuffer<float> dryBuffer;
+    std::vector<float> mixScratch;
+    std::atomic<bool> irLoaded { false };
+    int maxBlock = 2048;
     juce::SmoothedValue<float> smCompThreshold, smCompRatio;
     juce::SmoothedValue<float> smDelayTime, smDelayFeedback, smDelayMix;
     juce::SmoothedValue<float> smReverbSize, smReverbMix;

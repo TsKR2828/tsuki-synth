@@ -61,6 +61,20 @@ public:
     /** Direct access to the engine choice param so analyzer/tuner can branch. */
     std::atomic<float>* getEngineParam() noexcept { return pEngine; }
 
+    // ---- Reverb profile / impulse-response loading (editor API) ----------
+    /** Load a convolution IR (.wav). Switches fx_reverb_mode to IR on
+        success unless switchModeToIR is false (state restore keeps the saved
+        mode). Returns false and fills `error` on failure. */
+    bool loadReverbIRFile (const juce::File& file, juce::String& error,
+                           bool switchModeToIR = true);
+    /** Load a reverb profile: either a scene_reverb JSON fragment
+        {"reverb":{"decay":..,"wet":..}} or a full score whose
+        global.effects.reverb carries the same keys. Sets fx_reverb_decay +
+        fx_reverb_mix and switches fx_reverb_mode to Algorithmic. */
+    bool loadReverbProfileFile (const juce::File& file, juce::String& error);
+    juce::String getReverbIRName() const { return reverbIRName; }
+    bool hasReverbIR() const { return reverbIRName.isNotEmpty(); }
+
 private:
     juce::Synthesiser cimbalomSynth;
     juce::Synthesiser chromaticSynth;
@@ -86,6 +100,11 @@ private:
     std::atomic<int> recordingDroppedBlocks { 0 };
     juce::File lastRecordingFile;
     juce::String recordingStatus;
+
+    // Reverb IR state (path persisted via getStateInformation)
+    juce::String reverbIRPath;
+    juce::String reverbIRName;
+    double reverbIRSeconds = 0.0;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout
         createParameterLayout();

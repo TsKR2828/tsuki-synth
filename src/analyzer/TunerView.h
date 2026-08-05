@@ -39,6 +39,8 @@ public:
         fifo.clear();
         clearHistory();
         clearMeasurement();
+        clearLastGood();
+        holding = false;
         targetMidi = -1;
         lastEngine = -1;
 
@@ -58,6 +60,8 @@ public:
         fifo.clear();
         clearHistory();
         clearMeasurement();
+        clearLastGood();
+        holding = false;
     }
 
     juce::Colour accentColour { Clr::gold };
@@ -93,10 +97,14 @@ public:
         g.drawText (juce::String (targetFrequency, 2) + " Hz", targetRow,
                     juce::Justification::centredLeft);
 
-        drawLabel (g, measuredRow.removeFromLeft (50.0f), "MEASURED");
+        // While holding, the display is a frozen copy of the last successful
+        // detection (not a live measurement) -- label and dim it accordingly.
+        drawLabel (g, measuredRow.removeFromLeft (50.0f),
+                   holding ? "LAST" : "MEASURED");
         if (hasSignal)
         {
-            g.setColour (Clr::text);
+            const float dim = holding ? 0.65f : 1.0f;
+            g.setColour (Clr::text.withMultipliedAlpha (dim));
             g.setFont (TsukiLookAndFeel::scaledFont (13.0f).boldened());
             g.drawText (midiToNoteName (nearestMidi),
                         measuredRow.removeFromLeft (42.0f),
@@ -111,15 +119,17 @@ public:
                                                         : juce::String())
                              + juce::String (centsFromTarget, 1)
                              + juce::String (juce::CharPointer_UTF8 (" \xc2\xa2"));
-            g.setColour (centColour());
+            g.setColour (centColour().withMultipliedAlpha (dim));
             g.drawText (delta, measuredRow,
                         juce::Justification::centredRight);
 
             g.setColour (Clr::textMid);
             g.setFont (TsukiLookAndFeel::scaledFont (9.0f));
-            g.drawText ("audio confidence "
-                            + juce::String (juce::roundToInt (confidence * 100.0f))
-                            + "%",
+            g.drawText (holding
+                            ? "note released - holding last measurement"
+                            : "audio confidence "
+                                  + juce::String (juce::roundToInt (confidence * 100.0f))
+                                  + "%",
                         statusRow, juce::Justification::centred);
         }
         else
@@ -157,6 +167,17 @@ private:
     bool isActive = false;
     juce::String measurementStatus { "Measuring..." };
 
+    // Hold-after-release: the last successful detection stays on screen
+    // (dimmed, labelled LAST) after note-off instead of vanishing, until a
+    // new note arrives or the hold times out.
+    static constexpr juce::uint32 holdTimeoutMs = 10000;
+    bool holding = false;
+    juce::uint32 holdStartMs = 0;
+    int   lgMidi = -1;      // last-good detection snapshot
+    float lgFrequency = 0.0f;
+    float lgCents = 0.0f;
+    float lgConfidence = 0.0f;
+
     std::atomic<int>* pLastMidi = nullptr;
     std::atomic<float>* pEngineParam = nullptr;
 
@@ -170,16 +191,54 @@ private:
                              ? pLastMidi->load (std::memory_order_acquire)
                              : -1;
 
-        if (engine != lastEngine || midi != targetMidi)
+        const juce::uint32 now = juce::Time::getMillisecondCounter();
+
+        if (midi >= 0)
         {
-            lastEngine = engine;
-            targetMidi = midi;
-            targetFrequency = (midi >= 0 && midi <= 127)
-                                  ? static_cast<float> (
-                                        PitchDetector::midiFrequency (midi))
-                                  : 0.0f;
-            clearHistory();
-            clearMeasurement();
+            holding = false;
+            if (engine != lastEngine || midi != targetMidi)
+            {
+                lastEngine = engine;
+                targetMidi = midi;
+                targetFrequency = (midi <= 127)
+                                      ? static_cast<float> (
+                                            PitchDetector::midiFrequency (midi))
+                                      : 0.0f;
+                clearHistory();
+                clearMeasurement();
+                clearLastGood();
+            }
+        }
+        else if (targetMidi >= 0)
+        {
+            // Note released. Freeze the last successful detection on screen
+            // instead of clearing; the frozen values are explicitly labelled
+            // as held (not live) in paint().
+            if (! holding)
+            {
+                if (lgMidi >= 0)
+                {
+                    holding = true;
+                    holdStartMs = now;
+                    hasSignal = true;
+                    nearestMidi = lgMidi;
+                    detectedFrequency = lgFrequency;
+                    centsFromTarget = lgCents;
+                    confidence = lgConfidence;
+                }
+                else
+                {
+                    targetMidi = -1;   // nothing was ever detected -- no hold
+                }
+            }
+            else if (engine != lastEngine || now - holdStartMs > holdTimeoutMs)
+            {
+                holding = false;
+                targetMidi = -1;
+                clearHistory();
+                clearMeasurement();
+                clearLastGood();
+            }
         }
 
         // Consume only the newest FIFO snapshot. When no target is active we
@@ -191,6 +250,14 @@ private:
         {
             clearHistory();
             measurementStatus = "Awaiting note";
+            repaint();
+            return;
+        }
+
+        if (holding)
+        {
+            // Frozen display: discard incoming audio, no live analysis.
+            clearHistory();
             repaint();
             return;
         }
@@ -219,6 +286,11 @@ private:
                 + 12.0f * std::log2 (detectedFrequency / 440.0f);
             nearestMidi = juce::jlimit (0, 127, juce::roundToInt (midiValue));
             measurementStatus.clear();
+
+            lgMidi = nearestMidi;
+            lgFrequency = detectedFrequency;
+            lgCents = centsFromTarget;
+            lgConfidence = confidence;
         }
         else
         {
@@ -273,6 +345,14 @@ private:
     }
 
     void clearHistory() noexcept { historySize = 0; }
+
+    void clearLastGood() noexcept
+    {
+        lgMidi = -1;
+        lgFrequency = 0.0f;
+        lgCents = 0.0f;
+        lgConfidence = 0.0f;
+    }
 
     void clearMeasurement()
     {
