@@ -19,7 +19,12 @@
 | Preset Manager (27 factory + user save/load) | Done |
 | Preset Browser (visual popup + category filter) | Done |
 | Spectrum Analyzer (FFT, log-freq, toggle) | Done |
-| Tuner (measured dry audio, A0-C8, confidence/refusal states) | Done |
+| Tuner (measured dry audio, A0-C8, confidence/refusal states, hold-after-release) | Done |
+| Reverb profile / IR loading (scene JSON → params, WAV → convolution) | Done (2026-08-06) |
+| Brightness EQ (creative high shelf: score `effects.eq` + plugin BRIGHTNESS panel) | Done (2026-08-06) |
+| Standalone Score console (render score.json / open report, no DAW; bundles CLI) | Done (2026-08-06) |
+| Scene→Reverb tool (`tools/scene_reverb.py`, Sabine/Eyring → authored T60) | Done (2026-08-05) |
+| Hover magnifier + enlarged tooltips (visual accessibility) | Done (2026-08-06) |
 | Harmonic Editor (Custom sub-engine, 8 partials) | Done |
 | Responsive UI (resizable 420x700 ~ 900x1200) | Done |
 | Custom LookAndFeel (dark theme, arc knobs) | Done |
@@ -107,6 +112,13 @@ python tools\specimen_verify.py path\to\new-bundle\measurement.json `
 |--------|-------------|--------|
 | VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | **Built** (current x64 binary 7.42 MiB) |
 | Standalone | No DAW required | **Built** (current x64 binary 7.30 MiB) |
+
+The Standalone doubles as a self-contained tool: the title-bar **Score** button opens a
+console that renders a `score.json` to WAV (spawning the bundled `TsukiSynthCLI.exe` —
+the single verified render path, output to `Desktop\TsukiSynth_Renders`), opens the
+output folder, and opens/generates the score's HTML verification report (generation
+needs Python and a repo checkout). Distribute `TsukiSynth.exe` and `TsukiSynthCLI.exe`
+in the same folder.
 | AU (Audio Unit) | Logic Pro, GarageBand, MainStage | CMake option ready |
 | AAX | Pro Tools | CMake option ready (requires Avid SDK) |
 
@@ -156,19 +168,20 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 ## Effect Chain (outside verification domain — physical verification always runs with FX off)
 
 ```
-[Engine Output] -> Distortion -> Compressor -> Delay -> Reverb -> [Macro Output] -> Output
+[Engine Output] -> Distortion -> Compressor -> Delay -> Reverb -> Brightness EQ -> [Macro Output] -> Output
 ```
 
 - **Distortion**: Overdrive / Bitcrush / Wavefold with instability control
 - **Compressor**: Peak-based, linked stereo detection, auto makeup gain
 - **Delay**: Stereo with LP-filtered feedback, R channel offset for width
-- **Reverb**: Schroeder (8 comb + 4 allpass), stereo spread
+- **Reverb**: two modes — algorithmic Schroeder (8 comb + 4 allpass, room-size knob or authored T60 seconds) or IR convolution (load a .wav impulse response via the panel's Load button; also accepts a `scene_reverb.py` JSON profile, which sets T60 + wet on the algorithmic engine)
+- **Brightness EQ**: RBJ high shelf (`fx_eq_freq`/`fx_eq_gain`, score `global.effects.eq`); documented creative layer added 2026-08-06 to compensate the perceived darkening after damping physicalization; 0 dB = hard bypass (bit-identical renders)
 
 ## Analyzer
 
 - **Oscilloscope**: Lock-free AudioFIFO pipeline, 30Hz refresh, zero-crossing trigger, engine-colored waveform
 - **Spectrum**: FFT-based SpectrumView (2048-sample Hann window, log-frequency 30Hz–20kHz, smoothed dB), toggle button in AnalyzerPanel
-- **Tuner**: dry pre-FX audio measurement; TARGET and MEASURED are separate; A0–C8 at 44.1/48/96/192 kHz; cent delta, confidence, and explicit `Uncertain`/out-of-range states. It is target-aware monophonic and does not claim polyphonic pitch separation.
+- **Tuner**: dry pre-FX audio measurement; TARGET and MEASURED are separate; A0–C8 at 44.1/48/96/192 kHz; cent delta, confidence, and explicit `Uncertain`/out-of-range states. It is target-aware monophonic and does not claim polyphonic pitch separation. After note release the last successful detection stays on screen for 10 s, dimmed and labelled LAST (explicitly a held value, not a live measurement).
 
 ## Preset System
 

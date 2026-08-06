@@ -1,6 +1,6 @@
 # TsukiSynth — Current Handoff Context
 
-> Last updated: 2026-07-17
+> Last updated: 2026-08-06
 > Project: TsukiSynth（與 haguruma-engine 無關）
 
 ## Goal
@@ -14,22 +14,28 @@
 ## Repository state
 
 - Local path: `C:\Users\admin\Desktop\Claude\tsuki-synth`
-- Active branch: `fix/deep-physics-audit-20260716`
-- This branch intentionally remains local/uncommitted until the owner decides to commit or push.
+- Active branch: `fix/deep-physics-audit-20260716` — fully pushed, Windows CI green
+  through `c0615fa` (2026-08-06). Working tree clean. Merge to `main` is gated on
+  the owner's manual items in `TODO.md` (Cubase 4-step validation, HTML report
+  second visual review).
+- Desktop release package: `Desktop\TsukiSynth_v0.3.0_20260806\` (Standalone +
+  bundled TsukiSynthCLI + VST3).
 - User-owned untracked evidence under `reports/phase_h_before_after/binA/` and `binB/` must not be removed.
 
 ## Current implementation
 
 | Area | Current contract |
 |---|---|
-| Tuner | Measures dry audio, displays TARGET and MEASURED separately, A0–C8 at 44.1/48/96/192 kHz, bounded ±700-cent search, confidence and explicit refusal states |
+| Tuner | Measures dry audio, displays TARGET and MEASURED separately, A0–C8 at 44.1/48/96/192 kHz, bounded ±700-cent search, confidence and explicit refusal states; after note release the last detection holds on screen 10 s, dimmed and labelled LAST |
 | Cimbalom / physical piano | Stiff-string modes, multi-string beating, final-frequency damping, deterministic PCG exciter noise |
 | Tongue drum | Euler–Bernoulli fixed-free cantilever by default; explicit `beam_boundary: "free_free"` is available for a suspended bar |
 | Water gong | Kirchhoff circular plate; score default is free edge, clamped is explicit; free-edge roots depend on Poisson ratio |
 | Pitch semantics | `frequency_mode: "midi"` pitch-locks to the note; `"geometry"` keeps the absolute material/geometry prediction |
 | Score contract | Unknown keys/engines, wrong types, irrelevant/no-op parameters, unsafe filenames and fake `membrane` aliases fail |
 | Reproducibility | `global.random_seed` plus event index selects deterministic noise streams; render manifest records pre-normalization peak/gain/full-scale count |
-| Effects | Plugin and CLI share Distortion → Compressor → Delay → Reverb; score delay supports 0–5000 ms; score reverb decay is a measurable T60 |
+| Effects | Plugin and CLI share Distortion → Compressor → Delay → Reverb → Brightness EQ; score delay supports 0–5000 ms; score reverb decay is a measurable T60; `global.effects.eq` high shelf (creative layer, 0 dB = bit-identical bypass); plugin reverb additionally offers IR convolution (Load button: .wav IR or scene_reverb JSON profile, path persisted in state) |
+| Scene→Reverb | `tools/scene_reverb.py`: scene JSON (preset tag or dimensions+materials) → Sabine/Eyring T60 + critical-distance wet → `--apply` into a score (never overwrites input); design map `docs/SCENE_REVERB_DESIGN.zh-TW.md` |
+| Standalone console | Title-bar Score button → render score.json via the bundled TsukiSynthCLI (single render contract), open output folder / HTML report, generate report via python when inside a repo checkout |
 | Presets | Stable preset IDs, atomic replacement, cached user state, no user-preset disk read from program loading |
 
 ## Verification status
@@ -38,6 +44,11 @@
 - Tuner Python acceptance: 1056 A0–C8 cases pass; 160 outside-range cases are refused; worst independent-oracle error 0.2076 cent.
 - C++ regression suites cover tuner, MIDI note/sustain tracking, score parser/renderer, beam/plate shapes, frequency modes, T60, random streams, delay/reverb and effects parity.
 - All 80 repository score JSON files pass Draft 2020-12 schema validation.
+- 2026-08-06 snapshot: six Release targets build warning-clean; ctest 3/3; full
+  pytest suite 121/121 (incl. 29 scene_reverb contract tests); pluginval
+  strictness 10 + Steinberg validator 47/47; release corpus stays 73/73 with the
+  single registered moonlight exemption; adding the EQ code path leaves a
+  no-eq score's render bit-identical (SHA256-verified).
 - Release audio corpus: 73/73 PASS, 0 FAIL; one existing moonlight FX-art rest exemption remains visible, with no new exemptions.
 - Rules-v2 consonance validation now uses each event's real dumped modal spectrum; the demo is 13/13 PASS with 0 unverified pairs. The static MIDI 60 table is design reference only.
 - Exact commands and remaining limitations are recorded in `docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md`.

@@ -2,6 +2,47 @@
 
 ---
 
+## 2026-08-06 — Plugin 三需求 + 審聽/驗收裁決落地 + Standalone Score 控制台
+
+三批同日（`cbffebd` / `86b3190` / `c0615fa`，CI 各自綠燈）：
+
+**批一：月月三需求（`cbffebd`）**
+- Reverb 面板 [Load] 鈕：載入 `scene_reverb.py` 輸出片段或完整 score 的 `global.effects.reverb`（設 `fx_reverb_decay`+`fx_reverb_mix` 走演算法），或 IR WAV（`juce::dsp::Convolution` 卷積模式；讀檔頭驗證、>30 s 拒絕、路徑存 state 重開自動載回、面板標題顯示 IR 名）。新參數 `fx_reverb_decay`（authored T60 0–30 s，<0.01 維持 Room Size 控制）、`fx_reverb_mode`（Algo/IR）。IR 模式 fail-safe：無 IR 或 block 超出 prepared 上限即回退演算法殘響，音訊執行緒零配置。
+- 調音器瞬閃修正：根因＝`MidiNoteTracker::selectedNote()` 放鍵回 -1 → `TunerView` 立刻清畫面。改為最後一筆成功偵測凍結顯示 10 秒（變暗、MEASURED→LAST、狀態列標明 released），新音符或逾時才清；凍結期間丟棄音訊不做活體分析，不動 fail-closed 偵測語意。
+- 視覺可及性：`src/HoverMagnifier.h` — 滑鼠停在任何 Label/TextButton/ComboBox 上浮出 22 pt 放大文字泡泡（不攔截滑鼠事件）；tooltip 字級 12→14。
+
+**批二：Rule 10 審聽 + M4-4c 首輪驗收裁決落地（`86b3190`）**
+- 月月審聽確認全體音色「低音變大、高音變超小」（機制＝Phase H 阻尼物理化 + round-2 T60 語意修正疊加，`phase_h_before_after.md` §3 既有記錄），裁決短期補償＋長期物理兩者都做。
+- 短期：`global.effects.eq.{high_shelf_freq_hz, high_shelf_gain_db}` 亮度補償層（RBJ HighShelf 新增進 `BiquadFilter`；documented creative 層不入物理主張）。gain 0 = 硬 bypass——`akashic_opening_bell_001` 改動前後 SHA256 位元一致；+6 dB 實測 3k–12k 帶 +5.67 dB、100–1k 帶 +0.01 dB。schema/ScoreParser/ScoreRenderer/離線 EffectsChain/`verify_score.py`（bypass 複本 eq 歸零、nonzero-fx 偵測）全鏈同步；plugin 端 `fx_eq_freq`/`fx_eq_gain` + BRIGHTNESS 面板。EQ 開啟的完整 `verify_score` 合約 PASS 含 determinism。
+- 長期：TODO「阻尼寬頻化」條目升級為本問題的物理修法（單頻 η 錨高估高頻衰減為主因之一）。
+- M4-4c 首輪回饋「看不出報告用途」→ `report_html.py` 頁首「這一頁是什麼？」導讀卡 + 六區塊「💬 白話」說明行，`ai_radiance_m1.report.html` 重產待二輪目視。
+
+**批三：Standalone Score 控制台（`c0615fa`）**
+- 月月二輪回饋：報告無介面直達入口像隱藏功能；Standalone 應可當獨立工具（不開 Cubase 一鍵渲染）。
+- `src/ScoreConsole.h`：頂列 [Score] 鈕（僅 Standalone）開非模態控制台——載入 score.json 一鍵渲染（輸出 `桌面\TsukiSynth_Renders`）、開輸出資料夾、開 `<name>.report.html`、「產生報告」呼叫 `python tools/verify_score.py --html`（由 score 路徑向上找 repo root，找不到誠實報錯）。
+- 渲染不另寫路徑：子程序呼叫同一顆 `TsukiSynthCLI.exe`（manifest v4／決定性合約單一來源）；發佈包自此同捆 CLI。
+
+### 本輪實際測試方法
+- 六 Release target 零警告 build；`ctest -C Release` 3/3；`python -m pytest tests -q` 121/121。
+- pluginval strictness 10 + Steinberg validator 47/47（批一參數新增後與批三 editor 改動後各跑一輪）。
+- 位元一致性：EQ 程式碼加入後、gain=0 下 `akashic_opening_bell_001` 渲染 SHA256 與基準完全相同（改動前後各渲染一次比對）。
+- EQ 功能驗證：+6 dB 變體經 `verify_score.py` 全項 PASS（含 determinism SHA），頻帶能量差以 24-bit 正確解碼後量測。
+- Standalone 啟動煙霧測試（6 秒存活）；三批 push 後 Windows CI（build-and-verify + cpp-address-sanitizer）全綠。
+
+---
+
+## 2026-08-05 — scene→reverb 自動化工具（`4cf4817`）
+
+- 需求：由 2D 場景描述自動推 `global.effects.reverb.{decay, wet}`；`reverb.decay` 經 `SimpleReverb::setDecayTime()` 即 authored T60，零引擎改動。
+- `tools/scene_reverb.py`：preset 模式（10 場景 documented creative 預設）＋ space 模式（Sabine T60，ᾱ>0.2 判定制自動切 Eyring；wet 由房間常數/臨界距離推導 `r²/(r²+r_c²)`，creative 上限 0.6，report 印 raw 與應用值及全部中間量）。`--apply` 強制 `--output`≠input（`normcase(realpath)`+`samefile` 防大小寫路徑別名繞過）。
+- 材質 α 表 14 條逐條引用註解（Kuttruff／Everest & Pohlmann 中頻列值；戶外三材質誠實標為文獻推估非書列）。
+- Workflow 模式（Fable 規劃、Sonnet 實作、Opus 三鏡頭對抗驗證）抓到 4 blocker 全修：α 三值與所引文獻列不符（carpet_heavy 0.35→0.63 等）、引用註解缺半、`--apply` 防覆寫 guard 可被 Windows 大小寫路徑繞過、wet 推導鏈（R/r_c）測試盲區（飽和 fixture 遮蔽，mutation 驗證補錨）。
+- 測試：`tests/test_scene_reverb.py` 29 項（三個手算錨、ᾱ=0.2 邊界雙側、fail-closed 全反例、決定性、round-trip）；全套 pytest 綠。
+- 設計文件：`docs/SCENE_REVERB_DESIGN.zh-TW.md`（設計即文件，含誠實分層：Sabine/Eyring＝物理推導層、preset 表＝creative 層）。
+- 實戰驗證：阿卡夏圖書館背景圖 → 視覺分析出 scene JSON（書牆用 carpet_heavy 代理並揭露）→ 工具推 decay 1.36 s／wet 0.6 → `--apply` 至 akashic score → CLI 渲染 A/B 對照交月月試聽。已知缺口：α 表缺 `bookshelf_filled` 材質、`ir_synth.py`（參數化 IR 合成）未做。
+
+---
+
 ## 2026-08-02 — 實物量測 v2 非人工處理管線
 
 - 新增 `tools/specimen_pipeline.py`：從每次獨立同步 CSV 自動檢查時基、NaN/Inf、DAQ 過載、impact double-hit 與最低 averages；支援 `path_glob` 批次展開，不必逐檔手填。
