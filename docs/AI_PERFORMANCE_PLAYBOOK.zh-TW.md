@@ -135,7 +135,8 @@ build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --dump-modes my_piece.sc
 
 **glide 區塊**（事件層級）：`{ "glide": { "from_note": "C4", "duration_ms": 300, "curve": "..." } }`。
 
-**effects**（global 層級）：reverb / delay / distortion / wall——**全部在物理驗證域外**。藝術用可以，驗證渲染時 wet 全設 0。
+**effects**（global 層級）：reverb / delay / distortion / wall / eq——**全部在物理驗證域外**。藝術用可以，驗證渲染時 wet 全設 0（eq 則 gain 設 0）。
+- `eq`（2026-08-06 新增，亮度補償 creative 層）：`{"eq": {"high_shelf_freq_hz": 2000, "high_shelf_gain_db": 6.0}}`——RBJ 高頻 shelf，freq 100–16000、gain −24~+24；**gain 0 = 硬 bypass（渲染位元與沒寫 eq 完全相同）**。用途：抵銷材質物理化後的整體變暗（低音大、高音小），長期物理修法（頻變阻尼）落地前的過渡工具。起手式：金屬打擊系 +4~+8 dB @ 2 kHz 自行審聽。
 
 ## 6. 驗收 SOP — 不用耳朵的品管
 

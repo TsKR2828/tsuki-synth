@@ -214,6 +214,8 @@ private:
             { "fx_delay_mix",      "MIX",         "混合"       },
             { "fx_comp_threshold", "THRESH",      "閾值"       },
             { "fx_comp_ratio",     "RATIO",       "比率"       },
+            { "fx_eq_freq",        "FREQ",        "轉折頻率"   },
+            { "fx_eq_gain",        "GAIN",        "高頻增益"   },
 
             // -- Distortion --
             { "fx_dist_type",      "TYPE",        "類型"       },
@@ -231,6 +233,7 @@ private:
             { "ui_panel_delay",      "DELAY",      "延遲"       },
             { "ui_panel_compressor", "COMPRESSOR", "壓縮器"     },
             { "ui_panel_distortion", "DISTORTION", "失真"       },
+            { "ui_panel_eq",         "BRIGHTNESS", "亮度補償"   },
 
             // -- Engine tabs --
             { "ui_tab_cimbalom",     "Cimbalom",   "揚琴"       },

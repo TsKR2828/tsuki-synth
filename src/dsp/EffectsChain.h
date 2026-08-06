@@ -3,6 +3,7 @@
 #include "../effects/SimpleReverb.h"
 #include "../effects/StereoDelay.h"
 #include "../effects/Compressor.h"
+#include "BiquadFilter.h"
 #include "Distortion.h"
 
 struct EffectsParams
@@ -29,6 +30,12 @@ struct EffectsParams
     float          distortionInstability = 0.0f;
     float          distortionWet        = 0.5f;
 
+    // Brightness-compensation high shelf (documented creative layer,
+    // 2026-08-06). gain 0 dB = hard bypass: the filter is skipped entirely
+    // so scores without an eq block render bit-identically.
+    float  eqHighShelfFreqHz = 2000.0f;
+    float  eqHighShelfGainDb = 0.0f;
+
     float  masterVolume      = 1.0f;
 };
 
@@ -42,6 +49,11 @@ public:
         compressor.prepare (sampleRate);
         delay.prepare (sampleRate);
         reverb.prepare (sampleRate);
+        eqL.setSampleRate (sampleRate);
+        eqR.setSampleRate (sampleRate);
+        eqL.reset();
+        eqR.reset();
+        applyEqParams();
     }
 
     void setParameters (const EffectsParams& p)
@@ -68,6 +80,7 @@ public:
         delay.setMix (p.delayEnabled ? p.delayWet : 0.0f);
         compressor.setThreshold (p.compThreshold);
         compressor.setRatio (p.compressorEnabled ? p.compRatio : 1.0f);
+        applyEqParams();
     }
 
     void processStereo (float& left, float& right)
@@ -84,6 +97,13 @@ public:
         delay.processStereo (left, right);
         reverb.processStereo (left, right);
 
+        // Hard bypass at 0 dB: existing scores must stay bit-identical.
+        if (std::abs (params.eqHighShelfGainDb) >= 0.005f)
+        {
+            left  = eqL.processSample (left);
+            right = eqR.processSample (right);
+        }
+
         left  *= params.masterVolume;
         right *= params.masterVolume;
     }
@@ -95,12 +115,23 @@ public:
         compressor.reset();
         delay.reset();
         reverb.reset();
+        eqL.reset();
+        eqR.reset();
     }
 
 private:
+    void applyEqParams()
+    {
+        eqL.setParams (BiquadFilter::Type::HighShelf, params.eqHighShelfFreqHz,
+                       0.707f, params.eqHighShelfGainDb);
+        eqR.setParams (BiquadFilter::Type::HighShelf, params.eqHighShelfFreqHz,
+                       0.707f, params.eqHighShelfGainDb);
+    }
+
     EffectsParams params;
     Distortion distortionL, distortionR;
     Compressor compressor;
     StereoDelay delay;
     SimpleReverb reverb;
+    BiquadFilter eqL, eqR;
 };

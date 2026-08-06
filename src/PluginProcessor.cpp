@@ -183,10 +183,21 @@ TsukiSynthProcessor::createParameterLayout()
         PID { "fx_dist_mix", 1 }, "Mix",
         Range (0.0f, 1.0f, 0.01f), 0.5f));
 
+    // Brightness-compensation high shelf (documented creative layer,
+    // 2026-08-06 月月 ruling) -- gain 0 dB bypasses the filter entirely.
+    auto eqg = std::make_unique<Group> ("eqfx", "EQ", "|");
+    eqg->addChild (std::make_unique<FloatParam> (
+        PID { "fx_eq_freq", 1 }, "EQ Shelf Freq (Hz)",
+        Range (100.0f, 16000.0f, 1.0f, 0.3f), 2000.0f));
+    eqg->addChild (std::make_unique<FloatParam> (
+        PID { "fx_eq_gain", 1 }, "EQ Shelf Gain (dB)",
+        Range (-24.0f, 24.0f, 0.1f), 0.0f));
+
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
     layout.add (std::move (global), std::move (macro), std::move (cim),
                 std::move (chr), std::move (fm), std::move (rev),
-                std::move (dly), std::move (comp), std::move (dist));
+                std::move (dly), std::move (comp), std::move (dist),
+                std::move (eqg));
     return layout;
 }
 
@@ -350,6 +361,10 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     effectChain.pDistDrive       = apvts.getRawParameterValue ("fx_dist_drive");
     effectChain.pDistInstability = apvts.getRawParameterValue ("fx_dist_instability");
     effectChain.pDistMix         = apvts.getRawParameterValue ("fx_dist_mix");
+
+    // ---- Brightness EQ ----
+    effectChain.pEqFreq = apvts.getRawParameterValue ("fx_eq_freq");
+    effectChain.pEqGain = apvts.getRawParameterValue ("fx_eq_gain");
 
     recordingThread.startThread();
 }

@@ -241,6 +241,10 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     setupKnob  (distInstability, "fx_dist_instability",   true);
     setupKnob  (distMix,         "fx_dist_mix",           true);
 
+    // -- Brightness EQ ---------------------------------------------------
+    setupKnob (fxEqFreq, "fx_eq_freq", true);
+    setupKnob (fxEqGain, "fx_eq_gain", true);
+
     // -- Macro -----------------------------------------------------------
     setupKnob (macroMaterial,   "macro_material",   true);
     setupKnob (macroTension,    "macro_tension",    true);
@@ -593,6 +597,8 @@ void TsukiSynthEditor::refreshLocalizedText()
     refreshKnobLabel (fxDlyTime);
     refreshKnobLabel (fxDlyFeedback);
     refreshKnobLabel (fxDlyMix);
+    refreshKnobLabel (fxEqFreq);
+    refreshKnobLabel (fxEqGain);
     refreshKnobLabel (fxCompThresh);
     refreshKnobLabel (fxCompRatio);
 
@@ -1033,6 +1039,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.setColour (Clr::effectsBg);
         g.fillRect (0, y, w, distRow_.getHeight());
         paintPanel (g, distPanelBounds_, UiLocale::label ("ui_panel_distortion"));
+        paintPanel (g, eqPanelBounds_,   UiLocale::label ("ui_panel_eq"));
     }
 
     // -- analyzer row ----------------------------------------------------
@@ -1122,7 +1129,10 @@ void TsukiSynthEditor::resized()
 
     distRow_ = area.removeFromBottom (kDistH);
     {
-        distPanelBounds_ = distRow_.reduced (kSidePad, 4);
+        auto row = distRow_.reduced (kSidePad, 4);
+        eqPanelBounds_ = row.removeFromRight (row.getWidth() * 28 / 100);
+        row.removeFromRight (8);
+        distPanelBounds_ = row;
         auto inner = distPanelBounds_.reduced (8, 0).withTrimmedTop (28);
 
         auto typeArea = inner.removeFromLeft (inner.getWidth() * 2 / 7);
@@ -1135,6 +1145,11 @@ void TsukiSynthEditor::resized()
         layoutFxKnob (inner.removeFromLeft (knobW), distDrive);
         layoutFxKnob (inner.removeFromLeft (knobW), distInstability);
         layoutFxKnob (inner, distMix);
+
+        auto eqInner = eqPanelBounds_.reduced (8, 0).withTrimmedTop (28);
+        int eqKnobW = eqInner.getWidth() / 2;
+        layoutFxKnob (eqInner.removeFromLeft (eqKnobW), fxEqFreq);
+        layoutFxKnob (eqInner, fxEqGain);
     }
 
     effectsRow_ = area.removeFromBottom (kEffectsH);

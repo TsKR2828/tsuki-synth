@@ -2,6 +2,7 @@
 #include "Compressor.h"
 #include "StereoDelay.h"
 #include "SimpleReverb.h"
+#include "dsp/BiquadFilter.h"
 #include "dsp/Distortion.h"
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_dsp/juce_dsp.h>
@@ -26,6 +27,11 @@ public:
     std::atomic<float>* pDistInstability = nullptr;
     std::atomic<float>* pDistMix         = nullptr;
 
+    // Brightness-compensation high shelf (documented creative layer);
+    // gain 0 dB = hard bypass.
+    std::atomic<float>* pEqFreq = nullptr;
+    std::atomic<float>* pEqGain = nullptr;
+
     void prepare (double sampleRate, int maxBlockSize = 2048)
     {
         distortionL.prepare (sampleRate);
@@ -40,6 +46,11 @@ public:
         convolution.prepare (spec);
         dryBuffer.setSize (2, maxBlock, false, false, true);
         mixScratch.resize ((size_t) maxBlock, 0.0f);
+
+        eqL.setSampleRate (sampleRate);
+        eqR.setSampleRate (sampleRate);
+        eqL.reset();
+        eqR.reset();
 
         auto init = [sampleRate] (juce::SmoothedValue<float>& value, float current,
                                   double rampSeconds = 0.02)
@@ -68,6 +79,8 @@ public:
         delay.reset();
         reverb.reset();
         convolution.reset();
+        eqL.reset();
+        eqR.reset();
     }
 
     /** Load a convolution impulse response. juce::dsp::Convolution copies /
@@ -192,6 +205,23 @@ public:
                     chR[i] = dryR[i] * (1.0f - m) + chR[i] * m;
             }
         }
+
+        // Brightness-compensation shelf at the end of the chain (after
+        // either reverb path). Coefficients update once per block; at
+        // 0 dB the filter is skipped entirely (hard bypass).
+        const float eqGain = pEqGain != nullptr ? pEqGain->load() : 0.0f;
+        if (std::abs (eqGain) >= 0.005f)
+        {
+            const float eqFreq = pEqFreq != nullptr ? pEqFreq->load() : 2000.0f;
+            eqL.setParams (BiquadFilter::Type::HighShelf, eqFreq, 0.707f, eqGain);
+            eqR.setParams (BiquadFilter::Type::HighShelf, eqFreq, 0.707f, eqGain);
+            for (int i = 0; i < numSamples; ++i)
+            {
+                chL[i] = eqL.processSample (chL[i]);
+                if (numChannels > 1)
+                    chR[i] = eqR.processSample (chR[i]);
+            }
+        }
     }
 
 private:
@@ -204,6 +234,7 @@ private:
     std::vector<float> mixScratch;
     std::atomic<bool> irLoaded { false };
     int maxBlock = 2048;
+    BiquadFilter eqL, eqR;
     juce::SmoothedValue<float> smCompThreshold, smCompRatio;
     juce::SmoothedValue<float> smDelayTime, smDelayFeedback, smDelayMix;
     juce::SmoothedValue<float> smReverbSize, smReverbMix;

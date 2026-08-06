@@ -428,9 +428,13 @@ def score_has_nonzero_fx(score):
     rev = fx.get("reverb") or {}
     dly = fx.get("delay") or {}
     dist = fx.get("distortion") or {}
+    eq = fx.get("eq") or {}
     for v in (rev.get("wet"), dly.get("wet"), dist.get("wet"), dist.get("drive")):
         if isinstance(v, (int, float)) and v > 0.0:
             return True
+    g = eq.get("high_shelf_gain_db")
+    if isinstance(g, (int, float)) and abs(g) > 0.0:
+        return True
     return False
 
 
@@ -450,6 +454,8 @@ def make_fx_bypassed_copy(score):
     if "distortion" in fx and isinstance(fx["distortion"], dict):
         fx["distortion"]["wet"] = 0.0
         fx["distortion"]["drive"] = 0.0
+    if "eq" in fx and isinstance(fx["eq"], dict):
+        fx["eq"]["high_shelf_gain_db"] = 0.0
     return bypassed
 
 

@@ -183,6 +183,9 @@ private:
     ComboParam  distType;
     KnobParam   distDrive, distInstability, distMix;
 
+    // Brightness EQ (documented creative layer)
+    KnobParam   fxEqFreq, fxEqGain;
+
     // Analyzer
     AnalyzerPanel analyzerPanel;
 
@@ -196,6 +199,7 @@ private:
     // Layout bounds (stored in resized, used in paint)
     juce::Rectangle<int> macroArea_, engineArea_, effectsRow_, distRow_, analyzerRow_;
     juce::Rectangle<int> reverbBounds_, delayBounds_, compBounds_, distPanelBounds_;
+    juce::Rectangle<int> eqPanelBounds_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)
 };

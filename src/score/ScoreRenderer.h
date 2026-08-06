@@ -1206,6 +1206,8 @@ private:
             fxp.distortionType = DistortionType::Wavefold;
         else
             fxp.distortionType = DistortionType::Overdrive;
+        fxp.eqHighShelfFreqHz = static_cast<float> (global.effects.eqHighShelfFreqHz);
+        fxp.eqHighShelfGainDb = static_cast<float> (global.effects.eqHighShelfGainDb);
         fxp.masterVolume = static_cast<float> (global.masterVolume);
         fx.setParameters (fxp);
     }

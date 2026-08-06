@@ -89,6 +89,15 @@
                 "instability": { "type": "number", "minimum": 0, "maximum": 1, "description": "LFO-modulated drive wobble" },
                 "wet":         { "type": "number", "minimum": 0, "maximum": 1, "description": "Dry/wet mix" }
               }
+            },
+            "eq": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Brightness-compensation high shelf (documented creative layer, 2026-08-06; gain_db 0 = bypassed, renders bit-identically to no eq block)",
+              "properties": {
+                "high_shelf_freq_hz": { "type": "number", "minimum": 100, "maximum": 16000, "default": 2000 },
+                "high_shelf_gain_db": { "type": "number", "minimum": -24, "maximum": 24, "default": 0 }
+              }
             }
           }
         }

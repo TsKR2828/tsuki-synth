@@ -146,6 +146,37 @@ def event_predicted_hz(ev):
     return midi_to_hz(midi)
 
 
+def plain_note(text):
+    """One-sentence plain-language explainer shown at the top of a section.
+
+    M4-4c acceptance feedback (2026-08-06): the intended reader could not
+    tell what the report is for -- every section must open with ONE sentence
+    of everyday language saying what it checks and why the reader should
+    care, before any measurement jargon.
+    """
+    return f'<p class="plain">💬 白話：{text}</p>'
+
+
+def render_intro_section():
+    """Top-of-page reader orientation card (M4-4c feedback, 2026-08-06)."""
+    return """
+<section class="card intro-card">
+  <h2>這一頁是什麼？ <span class="en">What is this page?</span></h2>
+  <p class="plain-big">你（或 AI）剛用 CLI 把一份樂譜（score.json）渲染成聲音檔（WAV）。
+     這一頁就是<b>那一次渲染的品管檢驗單</b>：不用耳朵，光靠數字和圖，確認渲染出來的檔案
+     沒壞、沒走音、該安靜的地方真的安靜。</p>
+  <ul class="plain-big">
+    <li><b>輸入</b>：一份 score.json ＋ 它渲染出的 WAV。<b>輸出</b>：就是這一頁；每次重新渲染會重新產生，看完即可丟。</li>
+    <li><b>什麼時候看</b>：改了曲子、引擎或工具之後，想確認「這次輸出還是好的」。</li>
+    <li><b>怎麼讀</b>：第 1 區全綠 PASS 就代表機器檢查全過，下面的圖只是佐證細節；
+        每一區左上角都有一行「💬 白話」說明那區在檢查什麼。</li>
+    <li><b>它不是</b> plugin 裡的示波器／頻譜／調音器——那些是即時演奏用；
+        這頁是渲染完成後的成品檢查，兩者互不取代。</li>
+  </ul>
+</section>
+"""
+
+
 def esc(s):
     return html.escape("" if s is None else str(s), quote=True)
 
@@ -288,6 +319,8 @@ def render_spectrogram_section(sr, mono):
     return f"""
 <section class="card">
   <h2>2. 全曲頻譜圖 <span class="en">Spectrogram (whole rendered mix)</span></h2>
+  {plain_note("整首曲子的「聲音長相」——橫軸是時間、縱軸是頻率、越亮越大聲。"
+              "用來一眼掃出怪雜訊、爆音、或該結束卻拖著不停的聲音。")}
   <p class="hint">STFT, window 2048 / hop 512 (Hann), dB floor {spec['floor_db']:.0f} dB,
      linear frequency axis 0–{fmax_khz:.1f} kHz, viridis-like colormap
      ({spec['n_frames_raw']} STFT frame(s) → {spec['width']} display column(s)).</p>
@@ -579,6 +612,9 @@ def render_f0_section(f0_events, duration_s):
 <section class="card">
   <h2>3. 每事件 f0：預測 vs 實測 <span class="en">Per-event predicted vs measured f0
       (verification core)</span></h2>
+  {plain_note("每個音符「理論上該是什麼音高」對「實際渲染出來的音高」。"
+              "點越貼近中線 0c 越準（±5 cents 內人耳分不出來）；"
+              "灰點不是失敗，是那顆音被別的聲音蓋住、誠實承認量不到。")}
   <p class="hint">250 ms Hann 量測窗，FFT ≥ 16384 zero-padded，拋物線峰值內插，
      搜尋頻段 = 預測 f0 ± 3%。綠 ≤{F0_CENTS_GREEN:.0f} cents / 黃 ≤{F0_CENTS_YELLOW:.0f} cents
      / 紅 &gt;{F0_CENTS_YELLOW:.0f} cents（此為顯示用色階，非 GATE 容差 — 見頁尾容差表）。
@@ -679,6 +715,8 @@ def render_loudness_section(loud_pts, duration_s, rest_intervals):
     return f"""
 <section class="card">
   <h2>4. 響度曲線 <span class="en">Loudness curve (RMS, 50 ms hops)</span></h2>
+  {plain_note("音量隨時間的變化曲線。重點看陰影區：譜上寫了休止（安靜）的地方，"
+              "實測必須真的安靜——綠✓過、紅✗沒過。")}
   <p class="hint">陰影區間 = 休止 (rest) 區間，顏色對應該休止的驗證結果
      （見 check "rests.rms_below_limit"）；標記符號畫在區間中央。</p>
   <div class="legend-row">{legend}</div>
@@ -819,6 +857,7 @@ def render_phrases_section(score, events, duration_s, phrase_rms=None):
     return f"""
 <section class="card">
   <h2>5. 樂句／休止結構 <span class="en">Phrases / rests structure</span></h2>
+  {plain_note("譜面的段落結構攤成時間軸，對照「譜上寫的」和「實際渲染的」對不對得上。")}
   <p class="hint">{source_note}</p>
   <div class="phrase-chart-wrap">{svg}</div>
 </section>
@@ -913,6 +952,8 @@ def render_badges_section(score_path, ok, checks, exempt_count, measured=None):
 
     return f"""
 <section class="card banner-card" style="border-color:{overall_color}">
+  {plain_note("五類機器檢查的總結。全部綠色 PASS 就代表這次渲染沒問題，"
+              "下面各區的圖只是佐證細節；有紅色 FAIL 才需要往下追。")}
   <div class="banner-row">
     <div class="banner-main" style="color:{overall_color}">{overall_status}</div>
     <div class="banner-text">
@@ -959,6 +1000,7 @@ def render_footer_section(score_path, checks, exemptions_applied, tool_name="ver
     return f"""
 <section class="card">
   <h2>6. 頁尾 <span class="en">Footer</span></h2>
+  {plain_note("本頁所有 PASS/FAIL 判定用的容差數字和它們的依據，給想追根究柢的人查表用。")}
   <h3>本工具檢查項目 <span class="en">verify_score.py's own check list</span></h3>
   <table class="data-table"><thead><tr><th>check family</th><th>說明 / description</th></tr></thead>
     <tbody>{check_list_rows}</tbody></table>
@@ -989,6 +1031,10 @@ h2 { font-size: 1.15rem; margin: 0 0 8px 0; }
 h3 { font-size: 0.95rem; margin: 18px 0 6px 0; }
 .en { font-weight: 400; font-size: 0.78em; opacity: 0.65; margin-left: 6px; }
 .hint { font-size: 0.85rem; opacity: 0.8; margin: 0 0 10px 0; }
+.plain { font-size: 0.98rem; margin: 0 0 10px 0; padding: 8px 12px;
+  background: #fdf6e3; border-left: 4px solid #c49a6c; border-radius: 0 6px 6px 0; }
+.plain-big { font-size: 1.0rem; margin: 6px 0; }
+.intro-card { background: #fbf8f1; border-color: #c49a6c; }
 .container { max-width: 1180px; margin: 0 auto; }
 .card { border: 1px solid var(--card-border, #d9d9df); border-radius: 10px;
   padding: 16px 18px; margin-bottom: 18px; background: var(--card-bg, #fff); }
@@ -1066,7 +1112,8 @@ def generate_html_report(score_path, ok, checks, measured):
     exempt_checks = [c for c in checks if c.exempt_reason]
     title_text = (score.get("meta") or {}).get("title") or str(score_path)
 
-    badges_html = render_badges_section(score_path, ok, checks, len(exempt_checks), measured)
+    badges_html = render_intro_section() \
+        + render_badges_section(score_path, ok, checks, len(exempt_checks), measured)
 
     if mono is None or sr is None or len(mono) == 0:
         body_sections = badges_html + f"""

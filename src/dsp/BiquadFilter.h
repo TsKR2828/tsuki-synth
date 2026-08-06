@@ -10,11 +10,14 @@
 class BiquadFilter
 {
 public:
-    enum class Type { LowPass, HighPass, BandPass, Notch };
+    enum class Type { LowPass, HighPass, BandPass, Notch, HighShelf };
 
     void setSampleRate (double sr) { sampleRate = sr; }
 
-    void setParams (Type type, float cutoffHz, float q = 0.707f)
+    /** `gainDb` is only used by the shelf type (RBJ cookbook A = 10^(dB/40));
+        the pass/notch types ignore it. */
+    void setParams (Type type, float cutoffHz, float q = 0.707f,
+                    float gainDb = 0.0f)
     {
         float w0 = juce::MathConstants<float>::twoPi * cutoffHz / (float) sampleRate;
         float cosW0 = std::cos (w0);
@@ -25,6 +28,20 @@ public:
 
         switch (type)
         {
+            case Type::HighShelf:
+            {
+                // RBJ Audio EQ Cookbook "highShelf" (same source as the
+                // other types above).
+                const float A = std::pow (10.0f, gainDb / 40.0f);
+                const float twoSqrtAAlpha = 2.0f * std::sqrt (A) * alpha;
+                b0 =        A * ((A + 1.0f) + (A - 1.0f) * cosW0 + twoSqrtAAlpha);
+                b1 = -2.0f * A * ((A - 1.0f) + (A + 1.0f) * cosW0);
+                b2 =        A * ((A + 1.0f) + (A - 1.0f) * cosW0 - twoSqrtAAlpha);
+                a0 =             (A + 1.0f) - (A - 1.0f) * cosW0 + twoSqrtAAlpha;
+                a1 =     2.0f * ((A - 1.0f) - (A + 1.0f) * cosW0);
+                a2 =             (A + 1.0f) - (A - 1.0f) * cosW0 - twoSqrtAAlpha;
+                break;
+            }
             case Type::LowPass:
                 b0 = (1.0f - cosW0) / 2.0f;
                 b1 =  1.0f - cosW0;

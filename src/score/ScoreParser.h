@@ -34,6 +34,16 @@ struct ScoreEffects
     double distortionDrive       = 0.0;
     double distortionInstability = 0.0;
     double distortionWet         = 0.0;
+
+    // Documented creative layer (same standing as the rest of the effect
+    // chain, see TODO.md "Deliberately outside the physical claim"): a
+    // high-shelf EQ for brightness compensation. gain_db == 0 -> bypassed,
+    // so every existing score renders bit-identically. Added 2026-08-06
+    // (月月 ruling) to counteract the perceived darkening after the Phase H
+    // damping physicalization while the broadband-damping physical fix
+    // remains open in TODO.md.
+    double eqHighShelfFreqHz = 2000.0;
+    double eqHighShelfGainDb = 0.0;
 };
 
 struct ScoreGlobal
@@ -253,6 +263,11 @@ public:
                     readNumber (*dist, "drive", score.global.effects.distortionDrive, 0.0, 1.0);
                     readNumber (*dist, "instability", score.global.effects.distortionInstability, 0.0, 1.0);
                     readNumber (*dist, "wet", score.global.effects.distortionWet, 0.0, 1.0);
+                }
+                if (auto* eq = fx->getProperty ("eq").getDynamicObject())
+                {
+                    readNumber (*eq, "high_shelf_freq_hz", score.global.effects.eqHighShelfFreqHz, 100.0, 16000.0);
+                    readNumber (*eq, "high_shelf_gain_db", score.global.effects.eqHighShelfGainDb, -24.0, 24.0);
                 }
             }
         }
@@ -630,7 +645,7 @@ private:
 
     static bool validateEffects (juce::DynamicObject& effects, Score& score)
     {
-        if (! validateKeys (effects, { "reverb", "delay", "wall", "distortion" },
+        if (! validateKeys (effects, { "reverb", "delay", "wall", "distortion", "eq" },
                             "global.effects", score)) return false;
         auto validateObject = [&] (const char* name, auto fn)
         {
@@ -661,7 +676,12 @@ private:
                                      "global.effects.distortion", score)
                     && validateNumber (o, "drive", 0, 1, "global.effects.distortion", score)
                     && validateNumber (o, "instability", 0, 1, "global.effects.distortion", score)
-                    && validateNumber (o, "wet", 0, 1, "global.effects.distortion", score); });
+                    && validateNumber (o, "wet", 0, 1, "global.effects.distortion", score); })
+            && validateObject ("eq", [&] (juce::DynamicObject& o) {
+                return validateKeys (o, { "high_shelf_freq_hz", "high_shelf_gain_db" },
+                                    "global.effects.eq", score)
+                    && validateNumber (o, "high_shelf_freq_hz", 100, 16000, "global.effects.eq", score)
+                    && validateNumber (o, "high_shelf_gain_db", -24, 24, "global.effects.eq", score); });
     }
 
     static bool validateGlobal (juce::DynamicObject& global, Score& score)
