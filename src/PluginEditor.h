@@ -139,6 +139,11 @@ private:
     // Standalone recorder
     juce::TextButton recordButton { "REC" };
 
+    // Standalone score console (one-click render / report without Cubase)
+    juce::TextButton scoreConsoleButton { "Score" };
+    std::unique_ptr<juce::DocumentWindow> scoreConsoleWindow;
+    void openScoreConsole();
+
     // Preset
     juce::ComboBox   presetCombo;
     juce::TextButton presetPrev, presetNext;

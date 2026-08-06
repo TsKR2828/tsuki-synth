@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include "Presets.h"
+#include "ScoreConsole.h"
 #include "BinaryData.h"
 
 #include <array>
@@ -140,6 +141,14 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     recordButton.setVisible (kStandaloneBuild);
     if (kStandaloneBuild)
         addAndMakeVisible (recordButton);
+
+    // -- Standalone score console (one-click render / report) ------------
+    scoreConsoleButton.setComponentID ("step");
+    scoreConsoleButton.setTooltip (UiLocale::tooltip ("ui_btn_score_console"));
+    scoreConsoleButton.onClick = [this] { openScoreConsole(); };
+    scoreConsoleButton.setVisible (kStandaloneBuild);
+    if (kStandaloneBuild)
+        addAndMakeVisible (scoreConsoleButton);
 
     // -- Preset ----------------------------------------------------------
     presetCombo.setColour (juce::ComboBox::backgroundColourId, Clr::comboBg);
@@ -676,6 +685,33 @@ void TsukiSynthEditor::launchReverbFileChooser()
     });
 }
 
+void TsukiSynthEditor::openScoreConsole()
+{
+    if (scoreConsoleWindow == nullptr)
+    {
+        class ConsoleWindow : public juce::DocumentWindow
+        {
+        public:
+            ConsoleWindow()
+                : juce::DocumentWindow (
+                      juce::String::fromUTF8 ("Score 控制台 — 渲染 / 報告"),
+                      juce::Colour (0xff1a1a2e),
+                      juce::DocumentWindow::closeButton
+                          | juce::DocumentWindow::minimiseButton)
+            {
+                setUsingNativeTitleBar (true);
+                setContentOwned (new ScoreConsole(), true);
+                setResizable (true, true);
+                centreWithSize (660, 440);
+            }
+            void closeButtonPressed() override { setVisible (false); }
+        };
+        scoreConsoleWindow = std::make_unique<ConsoleWindow>();
+    }
+    scoreConsoleWindow->setVisible (true);
+    scoreConsoleWindow->toFront (true);
+}
+
 void TsukiSynthEditor::refreshRecorderText()
 {
     if (! kStandaloneBuild)
@@ -1073,7 +1109,10 @@ void TsukiSynthEditor::resized()
     area.removeFromTop (kTitleH);
     langToggle.setBounds (w - 72, 20, 56, 24);
     if (kStandaloneBuild)
+    {
         recordButton.setBounds (w - 136, 20, 56, 24);
+        scoreConsoleButton.setBounds (w - 200, 20, 56, 24);
+    }
 
     // -- preset row ------------------------------------------------------
     {

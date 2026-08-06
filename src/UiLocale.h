@@ -255,6 +255,8 @@ private:
                                                    "IR 卷積殘響（點擊切換為演算法）" },
             { "ui_dlg_revload",      "Load reverb profile or impulse response",
                                                    "載入殘響設定檔或脈衝響應" },
+            { "ui_btn_score_console", "Render a score.json to WAV / open its verification report without a DAW",
+                                                   "不開 DAW 直接把 score.json 渲染成 WAV／開驗證報告" },
 
             // -- Analyzer --
             { "ui_scope",            "SCOPE",      "示波器"     },
