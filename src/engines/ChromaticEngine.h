@@ -21,6 +21,13 @@
 
 enum class ChromaticSubEngine { TongueDrum = 0, WaterGong = 1, CustomHarmonics = 2 };
 
+// 跨音域響度補償錨點（[0]=TongueDrum aluminum、[1]=WaterGong bronze，皆為
+// A4 / strike 0.3 / 預設幾何下、以 velocity=0.5 Hertz 錨 τc 預估的攻擊窗
+// 能量 Σ modeAttackEnergy()，2026-08-06 引擎內實測值）。gain(A4) = 1，維持
+// 既有 subEngineOutputGain 校準；Custom Harmonics 是使用者自填振幅的加法
+// 合成，與槌頭頻譜同理不做補償。見 ModalResonator::loudnessCompensationGain()。
+static constexpr float kChromaticAttackEnergyRefA4[2] = { 0.009852f, 0.1182f };
+
 struct ChromaticParams
 {
     std::string materialKey;
@@ -209,11 +216,31 @@ public:
         // for the half-sine contact-pulse derivation and tau_c sources.
         if (subEngine == 0 || subEngine == 1)
         {
-            float tauC = HammerImpulse::tauCForStrike (exciter, velocity);
+            float tauC = HammerImpulse::tauCForNote (exciter, velocity,
+                                                     midiNoteNumber);
+
+            // 跨音域響度補償（noteOn 時算好的決定性 scalar，模態間相對
+            // 振幅不變）— 見 ModalResonator::loudnessCompensationGain()。
+            // 能量預估用 velocity=0.5（Hertz 錨）的 τc 而非實際 τc(velocity)，
+            // 否則補償增益隨力度變動、把線性 velocity 律拉成次線性
+            // （F3 判定會破）；理由詳見 CimbalomEngine::startNote() 同段註解。
+            const float tauCRef = HammerImpulse::tauCForNote (exciter, 0.5f,
+                                                              midiNoteNumber);
+            float attackE = 0.0f;
+            for (const auto& m : modes)
+                attackE += ModalResonator::modeAttackEnergy (
+                    m.frequency,
+                    m.amplitude * HammerImpulse::forceSpectrumMagnitude (
+                        juce::MathConstants<float>::twoPi * m.frequency, tauCRef),
+                    m.decayTime, getSampleRate());
+            const float noteComp = ModalResonator::loudnessCompensationGain (
+                attackE, kChromaticAttackEnergyRefA4[subEngine]);
+
             for (auto& m : modes)
             {
                 float omega = juce::MathConstants<float>::twoPi * m.frequency;
-                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
+                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC)
+                             * noteComp;
             }
         }
 
@@ -320,11 +347,28 @@ public:
         // ROADMAP_PHYSICS.md §2c). See HammerImpulse.h for derivation/sources.
         if (subEng == 0 || subEng == 1)
         {
-            float tauC = HammerImpulse::tauCForStrike (params.exciterHardness, velocity);
+            float tauC = HammerImpulse::tauCForNote (params.exciterHardness, velocity,
+                                                     midiNote);
+
+            // 跨音域響度補償 — 與 startNote() 相同（見該處註解，含能量預估
+            // 用 velocity=0.5 Hertz 錨 τc 的理由）。
+            const float tauCRef = HammerImpulse::tauCForNote (params.exciterHardness,
+                                                              0.5f, midiNote);
+            float attackE = 0.0f;
+            for (const auto& m : modes)
+                attackE += ModalResonator::modeAttackEnergy (
+                    m.frequency,
+                    m.amplitude * HammerImpulse::forceSpectrumMagnitude (
+                        juce::MathConstants<float>::twoPi * m.frequency, tauCRef),
+                    m.decayTime, sr);
+            const float noteComp = ModalResonator::loudnessCompensationGain (
+                attackE, kChromaticAttackEnergyRefA4[subEng]);
+
             for (auto& m : modes)
             {
                 float omega = juce::MathConstants<float>::twoPi * m.frequency;
-                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
+                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC)
+                             * noteComp;
             }
         }
 

@@ -110,6 +110,36 @@ public:
         return tauCForHardness (hardnessIndex) * hertzScale;
     }
 
+    /** 音高 keytrack 縮放 tau_c。
+     *
+     * Askenfelt & Jansson (KTH, "String contact duration and dynamic
+     * level"，本檔案頂端已引) 量測真實鋼琴的接觸時間是隨音域遞減的：
+     * 低音端 ~4 ms、最高音域 <1 ms——因為高音區的槌頭更輕、氈更硬。
+     * 舊版 tauCForStrike() 全鍵盤共用同一 tau_c，等於整台琴裝同一顆槌，
+     * 造成高音基頻落在力脈衝頻譜 H(w) 的深度滾降區（例：Felt 2 ms 下
+     * C7 基頻約 -37 dB），跨音域響度斜到低音大聲、高音幾乎消失。
+     *
+     * 模型：tau_c ∝ f^(-k)。用上述量測擬合鋼琴全音域
+     * （A0 27.5 Hz @ 4 ms → C8 4186 Hz @ ~0.8 ms）得 k ≈ 0.32。
+     * 錨點取 A4 (MIDI 69) = 1.0，中音域維持既有校準不動；clamp 範圍
+     * [0.4, 2.6] 恰好罩住 88 鍵兩端的擬合值（A0 ≈ 2.43、C8 ≈ 0.49），
+     * 只擋 MIDI 0~20 / 109~127 的極端外插。
+     */
+    static float keytrackScale (int midiNote)
+    {
+        constexpr float k = 0.32f;
+        const float semitonesFromA4 = (float) (midiNote - 69);
+        const float scale = std::pow (2.0f, -semitonesFromA4 * k / 12.0f);
+        return juce::jlimit (0.4f, 2.6f, scale);
+    }
+
+    /// 完整的每音符接觸時間：硬度檔位 × 力度 (Hertz) × 音高 keytrack。
+    /// 引擎端一律用這個；tauCForStrike() 保留給不知道音高的呼叫者。
+    static float tauCForNote (float hardnessIndex, float velocity, int midiNote)
+    {
+        return tauCForStrike (hardnessIndex, velocity) * keytrackScale (midiNote);
+    }
+
     /**
      * DC 正規化力脈衝頻譜振幅 H(omega)，H(0) = 1。
      *

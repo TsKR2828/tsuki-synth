@@ -24,6 +24,12 @@
 
 static constexpr int kMaxStringsPerCourse = 5;
 
+// 跨音域響度補償錨點：A4、預設參數（steel / strike 0.3 / Ø0.8mm / Wood 槌）
+// 下、以 velocity=0.5 Hertz 錨 τc 預估的攻擊窗能量 Σ modeAttackEnergy()
+// （2026-08-06 引擎內實測值）。gain(A4) = 1，中音域維持既有 equal-RMS 校準；
+// 見 ModalResonator::loudnessCompensationGain() 與 noteOn() 內 tauCRef 註解。
+static constexpr float kCimbalomAttackEnergyRefA4 = 0.1609f;
+
 enum class ExciterType { Cotton = 0, Felt = 1, Wood = 2, Metal = 3 };
 
 struct CimbalomParams
@@ -192,11 +198,35 @@ public:
                         * matScale * dmpScale;
         }
 
-        const float tauC = HammerImpulse::tauCForStrike (hammer, velocity);
+        const float tauC = HammerImpulse::tauCForNote (hammer, velocity,
+                                                       midiNoteNumber);
+
+        // ── 跨音域響度補償（見 ModalResonator::loudnessCompensationGain）──
+        // 攻擊能量用 baseModes（此時 freq/decay 已定案）+ 槌頭頻譜預估；
+        // 不含 velocity（excite() 才乘）也不含 1/√N（N 弦不相干疊加的
+        // 總能量 ≈ N × (amp/√N)²，兩者相消）。detune ±數 cents 對能量的
+        // 影響 << 1 dB，忽略。
+        // 預估一律用 velocity=0.5（Hertz 錨，hertzScale=1）的 τc，而非實際
+        // τc(velocity)：補償只管跨音域平衡，若把 velocity 相依 τc 算進來，
+        // 增益會隨力度變動、把 excite() 的線性 velocity 律拉成次線性
+        // （F3 +6.0206±1.0 dB 判定會破——tongue_drum 實測 +4.72 dB FAIL 的
+        // 教訓）。實際渲染振幅（下方弦迴圈）仍用實際 τc，物理不變。
+        const float tauCRef = HammerImpulse::tauCForNote (hammer, 0.5f,
+                                                          midiNoteNumber);
+        float attackE = 0.0f;
+        for (const auto& m : baseModes)
+        {
+            const float a = m.amplitude * HammerImpulse::forceSpectrumMagnitude (
+                juce::MathConstants<float>::twoPi * m.frequency, tauCRef);
+            attackE += ModalResonator::modeAttackEnergy (
+                m.frequency, a, m.decayTime, getSampleRate());
+        }
+        const float noteComp = ModalResonator::loudnessCompensationGain (
+            attackE, kCimbalomAttackEnergyRefA4);
 
         // ── 多弦 beating ──
         numActiveStrings = nStrings;
-        float gain = 1.0f / std::sqrt ((float) numActiveStrings);
+        float gain = noteComp / std::sqrt ((float) numActiveStrings);
 
         for (int s = 0; s < numActiveStrings; ++s)
         {
@@ -326,7 +356,8 @@ public:
                 m.frequency *= tuneScale;
         }
 
-        const float tauC = HammerImpulse::tauCForStrike ((float) hammerIdx, velocity);
+        const float tauC = HammerImpulse::tauCForNote ((float) hammerIdx, velocity,
+                                                       midiNote);
         // dampingOverride semantics: >= 0 replaces ONLY the material's
         // frequency-independent alpha term in the decay law
         //   tau(f) = 1 / (alpha + beta_air*f^2 + gamma_radiation*f);
@@ -337,8 +368,27 @@ public:
         const float alphaOverride = params.dampingOverride >= 0.0
             ? (float) params.dampingOverride : -1.0f;
 
+        // ── 跨音域響度補償 —— 與 startNote() 相同（見該處註解，含 τc 用
+        // velocity=0.5 Hertz 錨的理由）。此路徑的 baseModes 尚未設 decayTime，
+        // 預估時套用與下方弦迴圈同一條衰減律（含 alphaOverride），確保預估
+        // 與實際渲染一致。
+        const float tauCRef = HammerImpulse::tauCForNote ((float) hammerIdx, 0.5f,
+                                                          midiNote);
+        float attackE = 0.0f;
+        for (const auto& m : baseModes)
+        {
+            const float a = m.amplitude * HammerImpulse::forceSpectrumMagnitude (
+                juce::MathConstants<float>::twoPi * m.frequency, tauCRef);
+            attackE += ModalResonator::modeAttackEnergy (
+                m.frequency, a,
+                StringModel::decayTimeForFrequency (m.frequency, mat, alphaOverride),
+                sr);
+        }
+        const float noteComp = ModalResonator::loudnessCompensationGain (
+            attackE, kCimbalomAttackEnergyRefA4);
+
         numActiveStrings = nStrings;
-        float gain = 1.0f / std::sqrt ((float) numActiveStrings);
+        float gain = noteComp / std::sqrt ((float) numActiveStrings);
 
         for (int s = 0; s < numActiveStrings; ++s)
         {

@@ -2,6 +2,44 @@
 
 ---
 
+## 2026-08-06（夜）— 跨音域響度失衡：激發端物理修正 + 響度校準層（unstaged 待審）
+
+月月再次反映「高音變小聲、低音變大聲」（同題三線的第三線：亮度 EQ＝頻譜補償應急、
+阻尼寬頻化＝長期物理、本輪＝激發端根因）。實測 C2~C7 同力度掃音 RMS 差
+Cimbalom 27.3 / TongueDrum 29.7 / WaterGong 36.3 dB，且 Cimbalom C2 peak 打到 0 dBFS。
+
+- **根因**：槌頭接觸時間 τc 全鍵盤共用（力脈衝頻譜低通 → Felt 2ms 下 C7 基頻 -37 dB）
+  ＋模態數量隨音高遞減無正規化＋高頻衰減快。前者與 `HammerImpulse.h` 檔頭自引的
+  Askenfelt & Jansson 量測（低音 ~4ms → 高音 <1ms，keytracked）直接矛盾。
+- **修法 A（物理）**：`HammerImpulse::keytrackScale()`/`tauCForNote()` — τc ∝ f^(-0.32)
+  （文獻擬合），錨 A4、clamp [0.4, 2.6]，四個引擎呼叫點全接。
+- **修法 B（已文件化校準層，比照 spectralTilt 劃界）**：`ModalResonator::modeAttackEnergy()`
+  ＋ `loudnessCompensationGain()` — noteOn 時算 300ms 攻擊窗模態能量，乘
+  (ref/e)^(amount/2) 決定性 scalar（非 AGC；不含 velocity 與 1/√N；clamp ±12 dB）。
+  錨點 = A4 預設參數 `--dump-modes` 實測（Cimbalom 0.1716 / TongueDrum 0.01082 /
+  WaterGong 0.1307）。amount 三輪審聽定案 **0.78**（0.7「高音偏低一點點」→0.85→0.78，
+  月月欽點吉祥數）。Custom Harmonics / FM 域外不套用。
+- **結果**：spread 8.65 / 8.19 / 8.62 dB；C5~C7 攻擊 peak 持平；C2 削波消除（peak -9.4）。
+  詳表見 `reports/loudness_keytrack_before_after.md`（Rule 10 報告）。
+- **不變量**：T60 / f0 / 模態相對振幅 / velocity 線性律 / determinism 合約皆未動；
+  FM 與 Custom 位元不變。**絕對電平全面改變 → corpus 73 檔需重驗**（待月月同意執行）。
+
+- **velocity 律誠實 FAIL 與修正（同晚）**：第一版能量預估含實際 τc(velocity)，
+  `--full` F3 抓到 tongue_drum 基頻帶 delta +4.72 dB 違反 +6.0206±1.0 律。修正＝
+  預估一律用 velocity=0.5 Hertz 錨 τc（補償只管音域、力度交還線性路徑；實際渲染
+  振幅仍用實際 τc），錨點常數隨新式重量（0.1609 / 0.009852 / 0.1182，引擎內實測）。
+  修正後 `--full` → `NO CHECKED FAILURES`（velocity 五引擎 +6.1、piano +7.0 既有
+  Hertz 增亮）。容差全程未動（Rule 2）。
+
+### 本輪實際測試方法
+- ctest 3/3、pytest 121/121、CLI/Standalone/VST3 Release rebuild exit 0。
+- `physics_verify.py --full` 兩輪：第一輪抓到 velocity 次線性（見上），修正後全綠。
+- corpus 73 檔四分片重驗 `reports/gate_outputs/loudnessfix_corpus_{A..D}.txt`（結果見 Rule 10 報告 §7）。
+- 掃音量測：11 音（C2~C7 半八度）× 3 引擎 × {改前, keytrack-only, 0.7, 0.85, 0.78} 逐音 RMS/peak。
+- A/B WAV（改前/定案）已交月月試聽。
+
+---
+
 ## 2026-08-06 — Plugin 三需求 + 審聽/驗收裁決落地 + Standalone Score 控制台
 
 三批同日（`cbffebd` / `86b3190` / `c0615fa`，CI 各自綠燈）：

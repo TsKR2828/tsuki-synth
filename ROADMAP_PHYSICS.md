@@ -8,6 +8,28 @@
 
 ---
 
+## 2026-08-06 excitation keytrack + loudness calibration update（unstaged 待審）
+
+- **M2 2a 槌頭模型補完音高維度（物理修正）**：`HammerImpulse::tauCForNote()`/
+  `keytrackScale()` — 接觸時間 τc 隨音高 f^(-0.32) 縮放（Askenfelt & Jansson
+  鋼琴量測 A0 ~4ms → C8 <1ms 擬合；該文獻本就引於檔頭，舊實作缺音高維度），
+  錨 A4=1.0、clamp [0.4, 2.6]，Cimbalom/Chromatic 四個呼叫點全接。修正跨音域
+  響度失衡的主因（Felt 2ms 下 C7 基頻被力脈衝頻譜壓 -37 dB）。
+- **新增已文件化校準層（非物理主張，比照 spectralTilt 劃界，Rule 9 標註）**：
+  `ModalResonator::modeAttackEnergy()` + `loudnessCompensationGain()` — noteOn 時
+  以 300ms 攻擊窗模態能量做部分正規化（amount=0.78，月月 2026-08-06 三輪審聽
+  定案），決定性 scalar、模態相對振幅不變、T60/f0 不動；Custom Harmonics 與 FM
+  域外不套用。錨點常數 = A4 預設參數引擎內實測值（見 `CimbalomEngine.h`/
+  `ChromaticEngine.h` 常數註解）。**velocity 律保線性**：能量預估一律用
+  velocity=0.5（Hertz 錨）τc，不用實際 τc(velocity)——第一版用實際 τc 被
+  `--full` F3 抓到 tongue_drum +4.72 dB 次線性 FAIL，修正後五引擎 +6.1 全 PASS，
+  容差未動（Rule 2）。
+- 量測與 Rule 10 前後對照：`reports/loudness_keytrack_before_after.md`
+  （C2~C7 掃音 spread 27.3~36.3 dB → 8.2~8.7 dB，C2 削波消除）。
+  絕對電平全面改變 → **corpus 73 檔重驗待執行**（登記於 `TODO.md`）。
+
+---
+
 ## 2026-08-02 P1–P7 hardening update
 
 - Modal modes outside the actual 20 Hz–`min(20 kHz, 0.98 Nyquist)` DSP band are rejected centrally. A modal event with no finite positive render-active energy now refuses rendering instead of producing an attack-only file that could falsely pass.
