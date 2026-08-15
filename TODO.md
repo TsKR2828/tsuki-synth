@@ -1,9 +1,73 @@
 # TsukiSynth — Current TODO
 
-> Last updated: 2026-08-02
+> Last updated: 2026-08-15
 > Branch: `fix/deep-physics-audit-20260716`
 
 The deep-audit implementation fixes are on the branch. Historical Phase D–I decisions remain in `DEVLOG.md`; this file lists only current work and scientific gaps.
+
+---
+
+# 待辦總表（2026-08-15 整理）
+
+> 文獻依據與依賴關係見 [`docs/RESEARCH_INDEX.md`](docs/RESEARCH_INDEX.md)。
+> 下面各項的細節在本檔後半段的原始條目裡，這裡只列「要做什麼」。
+
+## A. 等月月決定（AI 不能自己動）
+
+- [ ] **A1 Rule 10 前後對照裁決** — 讀 `reports/deep_fix_before_after.md` §00 白話導讀後，決定「整批接受」或「指名回退某一項」。這是 7/22 那六項物理修正的最終放行。
+- [ ] **A2 阻尼寬頻化那批 unstaged 怎麼處理** — 三選一：(a) 先回退、等 B1 做完再重來；(b) 保留在工作樹、B1 落地後一起收；(c) 現況接受（**不建議**，C2 的 T60 會是 129 s、corpus 掉到 72/73）。**推薦 (b)**。
+- [ ] **A3 琴橋導納要不要開工**（= B1）。資料齊、只需新增一個參數、能解鎖 A2 與另外兩個缺口。**推薦做**。
+- [ ] **A4 亮度 EQ 應急層去留** — 8/6 激發端修正落地後，`global.effects.eq` 高頻 shelf 的補償需求可能已部分消失，需審聽後決定是否調整建議值／文件。
+- [ ] **A5 push 到 GitHub** — 跨平台 CI（C3）的第一輪實測數字非 push 不可得。
+- [ ] **A6 merge → `main` 時機** — M8-8b，分支 `fix/deep-physics-audit-20260716` 至今未併。
+- [ ] **A7 repo License 定案** — 已決定「保留商業」。要寫 `LICENSE` + 更新 `README.md:349` 的 `TBD`。JUCE 8 走 Starter 層（免費、營收 $20,000 以下、允許閉源商業散布），發行前要讀一次 JUCE 8 EULA 的署名條款。VST3 SDK 在 JUCE 8 內是 MIT，無虞。
+- [ ] **A8 外部資料集要不要下載** — CC BY-SA 4.0 與「保留商業」的相容性。**推薦：只當外部參照，repo 內只留 DOI + SHA256 + 比對數字，資料檔不進版控。**
+- [ ] **A9 Cubase 四步人工驗證**（M8-8a 剩餘）— host 掃描／MIDI 實彈／automation lane 畫曲線回放／專案存讀 state。AI 無法代做。
+- [ ] **A10 Score 控制台實操驗收** — Standalone 頂列 [Score] 鈕的實際操作。
+
+## B. 資料齊、可以開工（**依此順序**，理由見 `RESEARCH_INDEX.md` §4）
+
+- [ ] **B1 琴橋導納／共鳴板耦合**（前置：無）
+      `Y∞ = 1/(8√(D·ρs))` → `α = (T/L)·Re Y` → `1/T60_bridge = T·G/(ln1000·L)`。
+      新增參數只有音板厚度 `h`。刻意不加耦合折減係數（Rule 4）。
+      → 依據 `docs/BRIDGE_ADMITTANCE_SOURCES.md`
+- [ ] **B2 阻尼寬頻化收尾**（前置：B1）
+      程式已寫好在工作樹，B1 落地後低音發散問題自動消失，重跑 GATE + corpus 即可收。
+- [ ] **B3 弦阻尼律換第一原理**（前置：建議排在 B2 之後，避免歸因混淆）
+      Cuesta & Valette 三機制，零自由參數。**注意這是改阻尼律的形狀（`f²` → `f^0.5`+常數），不是換數字。**
+      需依 Rule 9 標註「同一份 materials.json 對不同引擎語意不同」。
+      → 依據 `docs/STRING_DAMPING_SOURCES.md`
+- [ ] **B4 槌頭非線性接觸求解器**（前置：無，但風險最集中）
+      `F = K·δ^α` 逐音實測值 + 槌質量表 + Stulov 遲滯參數。
+      **只適用 Cimbalom/Piano**；Chromatic 在 D2 補搜完成前不得套用。
+      **必須連同 noteOn 能量正規化層一起設計**，否則會撞 §6 velocity 判定。
+      → 依據 `docs/HAMMER_CONTACT_SOURCES.md`
+- [ ] **B5 木材正交異向**（前置：B1，等音板需要 `D` 時一併進場）
+      24 樹種彈性比 + 25 樹種泊松比 + 含水率公式已備。
+      Kirchhoff 板改異向版是**模型結構改動**，不是換數字。
+      → 依據 `docs/WOOD_ANISOTROPY_SOURCES.md`
+- [ ] **B6 force → 輻射壓力／SPL 模型**（前置：B1 + B5）
+      量測面定義可沿用文獻慣例（1.05 m 球面、數位振幅 1.0 ≡ 1 Pa ≡ 94 dB）。
+      實作後 `specimen_verify.py` 的 SPL/指向性才可能脫離 `UNVERIFIED`。
+      → 依據 `docs/EXTERNAL_ANCHOR_SOURCES.md` §2–§3
+
+## C. 不需要任何資料、純工程（可隨時插隊）
+
+- [ ] **C1 rubber 短瞬態 T60 估計器** — 現行「不足八週期即 N/A」太粗，改用 EDT／Schroeder 反向積分 + 明確拒答條件，把三個 `UNVERIFIED/N/A` 轉成可判定。**需月月裁決可信門檻（幾個週期算數）**。
+- [ ] **C2 多音／缺基頻調音器模式** — 只在能可靠拒答模稜兩可的情況下才做。工作量最大、對物理驗證主張價值最小。
+- [ ] **C3 跨平台容差登記** — 工具與 CI 已就位（`tools/crossplatform_verify.py`，本機 GATE 全過）。**等 A5 push → CI 產出實測數字 → 月月把數字登記進 `ROADMAP_PHYSICS.md` §6「決定性」列**，該檢查即由 informational 轉為阻斷式 GATE。
+
+## D. 還要補搜的資料（阻擋上面某些項）
+
+- [ ] **D1 梁／板的空氣與輻射阻尼** — **未搜尋，狀態未知**。弦的公式內建圓截面幾何不適用。**這一項擋住 B3 對 Chromatic 引擎的適用性。**
+- [ ] **D2 舌鼓／鑼的槌具接觸參數** — **未搜尋，狀態未知**。**擋住 B4 對 Chromatic 引擎的適用性。**
+- [ ] **D3 `gamma_radiation` 的真實物理來源** — 弦的文獻明指細弦輻射可忽略，故現行那一項對弦而言的物理標籤可能就是錯的。
+- [ ] **D4 舌鼓 ICSV27 2021 全文** — 機構庫 403，可試作者自存版／ResearchGate。
+- [ ] **D5 銅鑼 JCIE 2005 全文** — 付費牆。
+- [ ] **D6 Wood Handbook Table 5–15（溫度係數）** — 簡單，同一份 PDF 的後續頁面。
+- [ ] **D7 揚琴／舌鼓／鑼的實體試體量測** — **文獻買不到，只能自己量**（`docs/SPECIMEN_VALIDATION_PROTOCOL.zh-TW.md`）。這是唯一能讓域內引擎升級到 specimen-level 主張的路。
+
+---
 
 ## 2026-08-02 audit follow-up
 
@@ -110,14 +174,37 @@ see "2026-07-23 round-4 裁決落地" below.**
 
 ## Verification gaps that must stay explicit
 
-- [ ] Obtain citable or measured values for every material's `beta_air` and `gamma_radiation`. **2026-08-15 文獻線：弦的部分已解決（未實作）**，見 `docs/STRING_DAMPING_SOURCES.md`——Cuesta & Valette 模型給出**零自由參數**的第一原理式：`Q⁻¹_air = (ρa/ρ)[√2/M + 1/(2M²)]`（`M = (r/2)√(ω/μa)`）、`Q⁻¹_visc = 0.003·E·ρ·π²·r⁶·ω²/(4T²)`、`Q⁻¹_disl = 1/18000`；所需量（`ρ`/`E` 在 materials.json、`r`/`T` 在 StringModel、`ρa=1.225`/`μa=1.619e-5` 為空氣常數）**全部已有**。轉錄正確性經數值核對（重現原文「Q 在 1–4 kHz 有極大值」的實測特徵）。**關鍵發現：現行 `beta_air·f²` 的頻率次方與物理推導對不上**——推導給的是空氣項 `f^0.5 + 常數`、黏彈項 `f³`、位錯項 `f¹`，**沒有任何一項是 f²**；這解釋了那 42 個數字為何一直查不到出處（為一個物理上沒有對應的函數形式而存在的擬合值）。且原文明指**細弦聲輻射可忽略**，故現行 `gamma_radiation·f`（標為聲輻射）對弦而言物理標籤很可能是錯的，實際承擔的是位錯／熱傳導。**仍缺**：`gamma_radiation` 的真實物理來源；**梁／板的空氣與輻射阻尼未搜尋，狀態未知**（§2 三式內建圓截面弦幾何，不適用）。**實作＝改阻尼律形狀非換數字**，觸發 Rule 10 + Rule 6 + corpus 重驗 + schema 遷移，且會造成「同一份 materials.json 對不同引擎語意不同」需依 Rule 9 標註——**待月月裁決**。
+> 2026-08-15：各條的文獻現況與可開工性已整理到 [`docs/RESEARCH_INDEX.md`](docs/RESEARCH_INDEX.md)，
+> 可執行工作項見本檔開頭的「待辦總表」。下面保留缺口本身的定義（不得因為
+> 找到文獻就刪除——缺口關閉的條件是 GATE 通過，不是資料到手）。
+
+- [ ] Obtain citable or measured values for every material's `beta_air` and `gamma_radiation`.
+      **弦：已找到零自由參數的第一原理式**（Cuesta & Valette）→ `docs/STRING_DAMPING_SOURCES.md`。
+      同時發現現行 `beta_air·f²` 的頻率次方與物理推導對不上（推導是 `f^0.5`+常數 / `f³` / `f¹`）。
+      **梁／板未搜尋、`gamma_radiation` 真實來源未溯源。** 工作項 B3 / D1 / D3。
 - [ ] Replace single-frequency damping anchors with broadband/specimen measurements and uncertainty intervals. **2026-08-06 月月裁決升級**：Rule 10 審聽確認材質物理化後全體音色「低音變大聲、高音變超小聲」（`phase_h_before_after.md` §3 已記錄的機制——單頻 η 錨高估高頻衰減是主因之一），本項定為該問題的**長期物理修法**；短期先以 `global.effects.eq` 亮度補償 creative 層應急（同日已落地，見下）。
-- [ ] Add the synth-side calibrated force → displacement → radiated pressure/SPL model, including pickup/microphone position, signed/complex modal residue and spatial radiation. The v2 measurement pipeline/comparators are complete; this remaining item is specifically the physical prediction model. **2026-08-15 文獻線推進（未實作）**：`docs/EXTERNAL_ANCHOR_SOURCES.md` §1–§3 — 找到**校準到絕對聲壓**的外部量測（樂器指向性資料庫，消音室 32 通道球陣列半徑 1.05 m，**數位振幅 1.0 ≡ 1 Pa ≡ 94 dB**，SOFA/CC BY-SA 4.0），提供了 TsukiSynth 目前完全欠缺的「量測面定義 + 絕對單位慣例」；輻射效率的理論骨架（臨界頻率 `fc = ca²/(2π√(Dx·H))` ≈ 1.8 kHz、波導聲學截止 `fga = ca/(2p)` ≈ 1.3 kHz）可由材質／幾何算出無需新查表常數。**仍缺**：合成端「位移→輻射功率→指定距離 Pa」那一段未實作；相位預測未實作 ⇒ 相位主張維持 `UNVERIFIED`（順序是先實作再比對，不是先找資料）；資料庫**不含**揚琴／舌鼓／鑼，最接近的只有撥弦的吉他／豎琴。
-- [ ] Add coupled-body/soundboard/sympathetic-resonance and realistic damper/pedal physics for piano. **2026-08-15 文獻線推進（未實作）**：`docs/BRIDGE_ADMITTANCE_SOURCES.md` — 找到可實作的閉式公式鏈，解決 `damping_broadband_findings.md` §4 指出的「缺頻率無關損耗通道」缺口：無限板驅動點導納 `Y∞ = 1/(8√(D·ρs))`（純實數、與頻率無關；Cremer/Heckl/Ungar + Skudrzyk，與 Ege & Boutillon 的 `Y_C=(1/4h²)√(3(1−ν²)/(Eρ))` 代數等價，已獨立驗算）→ 弦端振幅衰減率 `α=(T/L)·Re Y`（由反射係數推導，與文獻引用形式一致）→ `1/T60_bridge = T·G/(ln(1000)·L)`。量級估算：`G=1.3e-3 s/kg`（Ege & Boutillon 直立鋼琴實測平均）下 C4 得 4.7 s vs Wogram 實測 ≈5.1 s（現行模型 26.9 s）。**只需新增一個參數（共鳴板厚度 h）**。侷限已列：平滑導納抓不到相鄰半音 5:1 落差（那需要第二階段的音板模態模型）、>1.1 kHz 換波導區、丟棄虛部、單極化、揚琴無對應實測。**實作會改所有既有 score 的衰減 → 觸發 Rule 10 + Rule 6 + corpus 重驗，待月月裁決是否開工。**
-- [ ] Replace the velocity proxy with a parameterized nonlinear contact solver using hammer mass, compliance and geometry. **2026-08-15 文獻線完成（未實作）**：`docs/HAMMER_CONTACT_SOURCES.md` — 取得槌氈冪律 `F = K·δ^α` 的逐音實測值（C2 `K=4e8, α=2.3`／C4 `4.5e9, 2.5`／C7 `1e12, 3.0`，Hall & Askenfelt 經 Chaigne & Askenfelt）+ 逐音槌質量（C1 12 g → C8 5 g）、弦長／直徑／張力-弦長比／敲擊比（C1–C8 全表，已通過 `f₁` 回推自洽檢查 <0.15%）。**具體發現**：現行 `tauCForStrike()` 的 `τc ∝ v^-0.2` 正好對應 `α=1.5`（純赫茲，金屬對金屬），實測鋼琴氈是 `α=2.3~3.0` ⇒ `v^-0.39~-0.50`，敏感度差約 2 倍；且現行 `f^-0.32` keytrack 與由 `m`/`K`/`α` 推導的相對 τc（C2:C4:C7 = 1.000:0.726:0.451 vs 現行 1.000:0.641:0.330）方向量級一致，證實 8/6 那個擬合抓到的是真物理、只是係數是配的。**風險**：改力度指數會直接撞 §6「velocity ×2 電平」判定（8/6 那輪就因此被 F3 抓到次線性 FAIL），必須連同能量正規化層一起設計；且 K/α 是**鋼琴專屬**，beam/plate 引擎無對應文獻，硬套違反 Rule 4。遲滯（Stulov）參數未取得。
-- [ ] Model anisotropic/orthotropic wood, temperature and humidity where those claims are needed. **2026-08-15 文獻線完成（未實作，且建議暫緩）**：`docs/WOOD_ANISOTROPY_SOURCES.md` — 由 USDA Wood Handbook (FPL-GTR-190) Ch.5 取得 24 樹種正交異向彈性比（Table 5–1）、25 樹種 12 個泊松比（Table 5–2）、含水率修正式 Eq. 5–3 `P = P12·(P12/Pg)^((12−M)/(Mp−12))` 與 `Mp` 表（Table 5–13，未列樹種可假設 25）、溫度線性關係與 150 °C 適用上限。西加雲杉 `ET/EL = 0.043` ⇒ 順紋比切向硬 23 倍，等向性近似在板模態頻率上可差 √23 ≈ 4.8 倍。**建議暫緩的理由**：弦是鋼的不咬；Beam/Plate 改正交異向是**模型結構改動**（Kirchhoff 板要換成 `Dx/Dy/Dxy` 異向版）不是換數字；溫濕度目前沒有任何 score 欄位或 UI 暴露環境條件。真正會用到的是**共鳴板**的 `D`（`BRIDGE_ADMITTANCE_SOURCES.md` §2.1），故建議共鳴板耦合先做、本批資料隨之進場。溫度逐項係數表（Table 5–15）未取得。
-- [ ] Validate models against external measured recordings or laboratory modal data not generated by TsukiSynth itself. **2026-08-15 盤點完成（未下載任何資料）**：`docs/EXTERNAL_ANCHOR_SOURCES.md` §1／§4 — 絕對錨只有一個候選（§1 的校準指向性資料庫，但**不含揚琴／舌鼓／鑼**，最接近的是撥弦吉他／豎琴；其打擊樂器是定音鼓＝膜，schema 明確拒收，域外）。相對錨（泛音比例／非諧性 B／T60 隨頻率走勢）可用 SNDB／MAPS／BiVib，**但這些資料集不記錄幾何、材質、邊界與張力**，故永遠只能是相對比對、不能升級為 specimen-level 證據。**結論：揚琴／舌鼓／鑼的外部證據仍然是零，只有走 `SPECIMEN_VALIDATION_PROTOCOL` 實體量測一途。** 資料集是否下載、BY-SA 授權與 repo 的相容性待月月裁決。
-- [ ] Establish cross-platform numerical reproducibility rules (bit identity where possible, numeric/audio tolerance otherwise). **2026-08-15 工具與 CI 已就位，unstaged，尚未取得跨平台實測**：新增 `tools/crossplatform_verify.py`（`--emit` 各平台渲染 5 首固定探針；`--compare` 以 Windows/MSVC 為參考比對 SHA256、max|Δ| dBFS、Δ RMS re signal、首個相異取樣、頻譜偏差 dB、峰值 bin 音高 cents）+ `.github/workflows/physics.yml` 新增 `cross-platform-emit`（windows-2022 / ubuntu-24.04 / macos-14 三矩陣）與 `cross-platform-compare` 兩個 job。**Rule 2 遵守**：無登記容差時輸出 exit 3 `UNREGISTERED` 只印實測數字、不自行判定 PASS/FAIL，CI 端以 notice 而非紅燈呈現；等月月把數字登記進 `ROADMAP_PHYSICS.md` §6 後才轉為阻斷式 GATE。**本機 GATE 已過**：`--selftest` 11/11（含反例：1 LSB 擾動須測得 −138.47 dBFS、+0.5 dB 增益須測得 0.5 dB 頻譜偏差、+50 cents 位移須測到、判定器對超限必須 FAIL、空容差檔不得靜默 PASS）；同機 emit×2 → `BIT_IDENTICAL` 5/5；注入 1 LSB 反例 → 正確偵測並定位到第 50000 frame；四個 exit code（0/1/2/3）逐一實測正確。**剩下的是月月 push 才能取得的證據**——跨平台實測數字必須等 CI 在 GitHub 上跑過。
+      **2026-08-10 實作完成但卡住**（程式仍 unstaged）：寬頻化揭露模型缺頻率無關的損耗通道，C2 的 T60 由 39 s 變 129 s、corpus 掉到 72/73 → `reports/damping_broadband_findings.md`。
+      該缺口的閉式解已找到（琴橋導納），**本項的前置是 B1**。工作項 A2 / B2。
+- [ ] Add the synth-side calibrated force → displacement → radiated pressure/SPL model, including pickup/microphone position, signed/complex modal residue and spatial radiation. The v2 measurement pipeline/comparators are complete; this remaining item is specifically the physical prediction model.
+      **輻射理論骨架與絕對校準慣例已備**（1.05 m 球面、1.0 ≡ 1 Pa ≡ 94 dB）→ `docs/EXTERNAL_ANCHOR_SOURCES.md` §1–§3。
+      合成端預測模型仍未實作；相位維持 `UNVERIFIED`。工作項 B6。
+- [ ] Add coupled-body/soundboard/sympathetic-resonance and realistic damper/pedal physics for piano.
+      **閉式公式鏈完整、只需新增音板厚度一個參數** → `docs/BRIDGE_ADMITTANCE_SOURCES.md`。
+      是阻尼寬頻化／輻射／木材異向三項的前置。工作項 **B1（建議最先做）**。
+- [ ] Replace the velocity proxy with a parameterized nonlinear contact solver using hammer mass, compliance and geometry.
+      **鋼琴逐音 `K`/`α` + 槌質量 + Stulov 遲滯參數已備** → `docs/HAMMER_CONTACT_SOURCES.md`。
+      現行 `v^-0.2` 對應 `α=1.5`（純赫茲），實測鋼琴氈是 `α=2.3~3.0`。
+      **僅適用 Cimbalom/Piano；會撞 §6 velocity 判定。** 工作項 B4 / D2。
+- [ ] Model anisotropic/orthotropic wood, temperature and humidity where those claims are needed.
+      **24 樹種彈性比 + 25 樹種泊松比 + 含水率公式已備** → `docs/WOOD_ANISOTROPY_SOURCES.md`。
+      **建議等 B1 的音板需要 `D` 時一併進場**；單獨做效益低、破壞面大。工作項 B5 / D6。
+- [ ] Validate models against external measured recordings or laboratory modal data not generated by TsukiSynth itself.
+      **揚琴／舌鼓／鑼都有公開量測文獻**（初版「證據是零」已更正）→ `docs/EXTERNAL_ANCHOR_SOURCES.md` §5.1。
+      但已取得的方法學等級不足、其餘卡付費牆；**可信外部錨仍須實體試體量測**。工作項 D4 / D5 / D7 / A8。
+- [ ] Establish cross-platform numerical reproducibility rules (bit identity where possible, numeric/audio tolerance otherwise).
+      **工具與 CI 三平台矩陣已就位、本機 GATE 全過**（`tools/crossplatform_verify.py`）。
+      Rule 2：無登記容差時 exit 3 `UNREGISTERED` 只印數字不判定。
+      **跨平台實測數字須 push 後由 CI 產出。** 工作項 A5 / C3。
 - [ ] Add a polyphonic/missing-fundamental tuner mode only if it can refuse ambiguous cases reliably; the current target-aware monophonic detector must not guess.
 
 ## Honest N/A cases
