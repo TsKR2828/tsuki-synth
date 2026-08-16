@@ -10,7 +10,26 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 # 待辦總表（2026-08-15 整理）
 
 > 文獻依據與依賴關係見 [`docs/RESEARCH_INDEX.md`](docs/RESEARCH_INDEX.md)。
+> 新 session 請先讀 [`HANDOVER.md`](HANDOVER.md)。
 > 下面各項的細節在本檔後半段的原始條目裡，這裡只列「要做什麼」。
+
+## 🔴 0. 紅燈（優先於一切，2026-08-16）
+
+- [ ] **X1 修 B1 引入的 `audit_repro` 回歸** — CI run `31933324875` 紅燈，本機重建測試 target 後同樣三項 FAIL：
+      `Semantic-order regression fixtures render successfully`／`Permuting simultaneous events preserves the exact WAV bytes`／`Inserting a zero-velocity event preserves the exact WAV bytes`。
+      **根因已定位**：B1 在 `CimbalomEngine.h` 寫死 `kBridgeSoundboardMaterialKey="wood_spruce"` 且查表 fail-closed，
+      但 `tests/audit_repro.cpp` 的測試專用材質 DB 沒有 `wood_spruce`（`grep` 確認無此鍵）→ 渲染放棄 → 連鎖失敗。
+      修法三選一**待月月裁決**：(a) 測試 DB 補 `wood_spruce`（讓測試遷就實作）；
+      (b) 共鳴板材質改成可注入參數不寫死；(c) 查不到就不加 bridgeLoss（**不建議**，fail-closed 變 fail-open）。
+      與 A11 是同一個結構問題的兩面。
+- [ ] **X2 修 macOS 建置失敗（可攜性）** — `std::cyl_bessel_j`／`std::cyl_bessel_i`（`src/physics/PlateModel.h:265,270`）
+      是 C++17 數學特殊函式，**libstdc++ 有、libc++（Apple）沒有**。ubuntu-24.04 與 windows-2022 皆建置成功，僅 macos-14 失敗。
+      修法：自實作或引入 Bessel（Boost.Math／級數實作）；若決定不支援 macOS 就拿掉該矩陣腿——**但那是縮小 GATE 範圍，需月月裁決（R3）**。
+- [ ] **X3 跨平台實測數字仍未取得** — `cross-platform-compare` 因 macos 腿失敗而 skipped。X2 修好後才拿得到，C3 才能往下走。
+- [ ] **X4 施工卡與流程補上「跑 ctest 前必先重建三個測試 target」** — 本輪 B1 的 `b1_ctest_all.txt`「3/3 passed」
+      是**測到未重建的舊 binary**，對抗驗證的 GATE 視角「獨立重跑」也踩同一個坑。
+      規約：`cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest` 之後才跑 `ctest`。
+      要加進 `docs/workcards/` 六張卡的 GATE 段與未來所有卡。
 
 ## A. 等月月決定（AI 不能自己動）
 
