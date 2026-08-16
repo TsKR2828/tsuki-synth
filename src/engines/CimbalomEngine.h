@@ -26,9 +26,29 @@ static constexpr int kMaxStringsPerCourse = 5;
 
 // 跨音域響度補償錨點：A4、預設參數（steel / strike 0.3 / Ø0.8mm / Wood 槌）
 // 下、以 velocity=0.5 Hertz 錨 τc 預估的攻擊窗能量 Σ modeAttackEnergy()
-// （2026-08-06 引擎內實測值）。gain(A4) = 1，中音域維持既有 equal-RMS 校準；
+// （2026-08-10 引擎內實測值，阻尼寬頻化後重量：A4=440Hz 在舊 MIDI 60 錨點
+// 之上，寬頻化使該處內部摩擦增加、T60 縮短，攻擊能量由 0.1609 降為 0.1497）。
+// gain(A4) = 1，中音域維持既有 equal-RMS 校準；
 // 見 ModalResonator::loudnessCompensationGain() 與 noteOn() 內 tauCRef 註解。
-static constexpr float kCimbalomAttackEnergyRefA4 = 0.1609f;
+static constexpr float kCimbalomAttackEnergyRefA4 = 0.1497f;
+
+// ── 琴橋導納／共鳴板耦合（2026-08-16 B1，見 StringModel::bridgeLossRate()
+// 與 docs/BRIDGE_ADMITTANCE_SOURCES.md）──
+//
+// 這兩個常數是 bridgeLossRate() 的 h（共鳴板厚度）與共鳴板材質選擇。都不是
+// TsukiSynth cimbalom 的實測值，是文獻類比預設值——待月月確認，見 TODO.md
+// A11。**不開放為 score.json 參數**（原因：數值本身還沒定案，先固化 schema
+// 之後要改會動到樂譜相容性，見 docs/workcards/B1.md §5）。
+//
+// kBridgeSoundboardThicknessM = 9mm：docs/BRIDGE_ADMITTANCE_SOURCES.md §5
+// 只給「鋼琴音板 8-10mm」的文獻範圍，取中點。這是鋼琴文獻值，不是 TsukiSynth
+// cimbalom 的實測值。
+static constexpr float kBridgeSoundboardThicknessM = 0.009f;
+
+// kBridgeSoundboardMaterialKey = "wood_spruce"：materials.json 既有項；
+// 鋼琴/揚琴音板慣用雲杉，但這是類比選擇，不是實測。見 MaterialDB.h 檔頭
+// 「wood_spruce 的雙重語意」註解。
+static constexpr const char* kBridgeSoundboardMaterialKey = "wood_spruce";
 
 enum class ExciterType { Cotton = 0, Felt = 1, Wood = 2, Metal = 3 };
 
@@ -41,7 +61,7 @@ struct CimbalomParams
     int    numStrings       = 3;
     float  detuningCents    = 5.0f;
     double tensionOverride  = 0.0;   // >0 = use this tension (N), 0 = auto-calculate
-    double dampingOverride  = -1.0;  // >=0 = override material damping alpha
+    double dampingOverride  = -1.0;  // >=0 = override internal friction (MIDI 60 anchor scale)
     bool   tuneToMidi       = true;  // false = tension/geometry determine absolute pitch
     uint64_t randomSeed     = 0x5453554B4953594Eull;
     uint64_t eventIndex     = 0;
@@ -106,6 +126,13 @@ public:
         auto* mat = materialDB->getMaterial (keys[matIdx]);
         if (mat == nullptr) return;
 
+        // Bridge/soundboard coupling loss (2026-08-16 B1) needs a soundboard
+        // material lookup separate from the string material above. materialDB
+        // must already contain wood_spruce, so this guard should never trigger
+        // in practice -- but it is written anyway (fail-closed, not skipped).
+        auto* soundboardMat = materialDB->getMaterial (kBridgeSoundboardMaterialKey);
+        if (soundboardMat == nullptr) return;
+
         float strikePos = pStrikePos->load();
         float diameter  = pDiameter->load() * 0.001f;   // mm → m
         int   nStrings  = juce::jlimit (1, kMaxStringsPerCourse,
@@ -141,6 +168,18 @@ public:
         sp.diameter       = diameter;
         sp.strikePosition = strikePos;
         sp.numModes       = 40;
+
+        // Bridge/soundboard coupling loss (2026-08-16 B1): frequency-independent,
+        // computed once from the string's tension/length (already fixed above)
+        // and the soundboard material/thickness, then shared by BOTH decayTime
+        // call sites below (attack-energy estimate loop + final per-string loop)
+        // -- see StringModel::bridgeLossRate() for the derivation. Recomputing
+        // it separately in each loop would be numerically equal today but is
+        // exactly the kind of drift that caused the 2026-08-06 tongue_drum
+        // velocity-law regression (+4.72 dB), so it is deliberately one shared
+        // local instead.
+        const float bridgeLoss = StringModel::bridgeLossRate (
+            sp.tension, sp.length, *soundboardMat, kBridgeSoundboardThicknessM);
 
         StringModel::calculateModes (sp, *mat, baseModesScratch);
         auto& baseModes = baseModesScratch;
@@ -194,7 +233,8 @@ public:
         for (auto& m : baseModes)
         {
             m.frequency *= tScale * tuneScale;
-            m.decayTime = StringModel::decayTimeForFrequency (m.frequency, *mat)
+            m.decayTime = StringModel::decayTimeForFrequency (
+                              m.frequency, *mat, -1.0f, bridgeLoss)
                         * matScale * dmpScale;
         }
 
@@ -242,7 +282,8 @@ public:
             for (auto& m : modes)
             {
                 m.frequency *= freqMul;
-                m.decayTime = StringModel::decayTimeForFrequency (m.frequency, *mat)
+                m.decayTime = StringModel::decayTimeForFrequency (
+                                  m.frequency, *mat, -1.0f, bridgeLoss)
                             * matScale * dmpScale;
                 m.amplitude *= HammerImpulse::forceSpectrumMagnitude (
                     juce::MathConstants<float>::twoPi * m.frequency, tauC);
@@ -291,7 +332,9 @@ public:
     void prepare (double sr) { standaloneSR = sr; }
 
     void noteOn (int midiNote, float velocity,
-                 const MaterialDB::Material& mat, const CimbalomParams& params)
+                 const MaterialDB::Material& mat,
+                 const MaterialDB::Material& soundboardMat,   // bridge coupling (2026-08-16 B1)
+                 const CimbalomParams& params)
     {
         double sr = standaloneSR;
 
@@ -317,6 +360,13 @@ public:
         sp.diameter       = diameter;
         sp.strikePosition = strikePos;
         sp.numModes       = 40;
+
+        // Bridge/soundboard coupling loss (2026-08-16 B1) -- see the matching
+        // comment in startNote() for why this is computed exactly once and
+        // shared between the attack-energy estimate loop and the final
+        // per-string render loop below.
+        const float bridgeLoss = StringModel::bridgeLossRate (
+            sp.tension, sp.length, soundboardMat, kBridgeSoundboardThicknessM);
 
         StringModel::calculateModes (sp, mat, baseModesScratch);
         auto& baseModes = baseModesScratch;
@@ -358,14 +408,22 @@ public:
 
         const float tauC = HammerImpulse::tauCForNote ((float) hammerIdx, velocity,
                                                        midiNote);
-        // dampingOverride semantics: >= 0 replaces ONLY the material's
-        // frequency-independent alpha term in the decay law
-        //   tau(f) = 1 / (alpha + beta_air*f^2 + gamma_radiation*f);
+        // dampingOverride semantics: >= 0 replaces ONLY the internal-friction
+        // term of the decay law
+        //   T60(f) = 1 / (eta*f/2.2 + beta_air*f^2 + gamma_radiation*f + bridgeLoss);
         // the beta_air*f^2 and gamma_radiation*f terms always stay
         // material-driven (see StringModel::decayTimeForFrequency). It is
         // NOT a scale factor on the whole damping. Sentinel -1 = no
-        // override (pure material damping).
-        const float alphaOverride = params.dampingOverride >= 0.0
+        // override (pure material damping). bridgeLoss (2026-08-16 B1) is
+        // likewise always additive and never affected by this override --
+        // see StringModel::bridgeLossRate().
+        // The score-facing NUMBER is unchanged by the 2026-08-10 broadbanding:
+        // it still means "internal-friction decay rate at the MIDI 60 anchor"
+        // (the old alpha scale), and is converted to an equivalent eta inside
+        // decayTimeForFrequency() -- so the 32 authored scores using it keep
+        // their intent exactly at the anchor and broadband elsewhere like the
+        // material path. See MaterialDB::etaFromAnchoredDamping().
+        const float dampingOverride = params.dampingOverride >= 0.0
             ? (float) params.dampingOverride : -1.0f;
 
         // ── 跨音域響度補償 —— 與 startNote() 相同（見該處註解，含 τc 用
@@ -381,7 +439,8 @@ public:
                 juce::MathConstants<float>::twoPi * m.frequency, tauCRef);
             attackE += ModalResonator::modeAttackEnergy (
                 m.frequency, a,
-                StringModel::decayTimeForFrequency (m.frequency, mat, alphaOverride),
+                StringModel::decayTimeForFrequency (
+                    m.frequency, mat, dampingOverride, bridgeLoss),
                 sr);
         }
         const float noteComp = ModalResonator::loudnessCompensationGain (
@@ -405,7 +464,7 @@ public:
             {
                 m.frequency *= freqMul;
                 m.decayTime = StringModel::decayTimeForFrequency (
-                    m.frequency, mat, alphaOverride);
+                    m.frequency, mat, dampingOverride, bridgeLoss);
                 m.amplitude *= HammerImpulse::forceSpectrumMagnitude (
                     juce::MathConstants<float>::twoPi * m.frequency, tauC);
                 m.amplitude *= gain;

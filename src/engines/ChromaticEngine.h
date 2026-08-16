@@ -23,10 +23,12 @@ enum class ChromaticSubEngine { TongueDrum = 0, WaterGong = 1, CustomHarmonics =
 
 // 跨音域響度補償錨點（[0]=TongueDrum aluminum、[1]=WaterGong bronze，皆為
 // A4 / strike 0.3 / 預設幾何下、以 velocity=0.5 Hertz 錨 τc 預估的攻擊窗
-// 能量 Σ modeAttackEnergy()，2026-08-06 引擎內實測值）。gain(A4) = 1，維持
+// 能量 Σ modeAttackEnergy()，2026-08-10 引擎內實測值，阻尼寬頻化後重量：
+// A4 在舊 MIDI 60 錨點之上，T60 縮短使攻擊能量下降，TongueDrum
+// 0.009852→0.009504、WaterGong 0.1182→0.07770）。gain(A4) = 1，維持
 // 既有 subEngineOutputGain 校準；Custom Harmonics 是使用者自填振幅的加法
 // 合成，與槌頭頻譜同理不做補償。見 ModalResonator::loudnessCompensationGain()。
-static constexpr float kChromaticAttackEnergyRefA4[2] = { 0.009852f, 0.1182f };
+static constexpr float kChromaticAttackEnergyRefA4[2] = { 0.009504f, 0.07770f };
 
 struct ChromaticParams
 {

@@ -35,10 +35,23 @@ public:
         Boundary boundary = Boundary::Cantilever;
     };
 
+    /** T60(f) = 1 / (2·eta·f/2.2 + beta_air·f² + gamma_radiation·f)
+     *
+     * 內部摩擦項自 2026-08-10 起寬頻化（見 MaterialDB.h 頂端註解）。
+     *
+     * **`*2` 加權的現況必須誠實標註**：這是既有、刻意的每引擎經驗加權
+     * （「梁比弦衰減快」，見 Params 上方原註解），本次寬頻化刻意**不動**它，
+     * 以免和阻尼律改動混在一起、破壞前後對照的可歸因性。但語意有變：
+     * 寬頻化前，單一 alpha 配 `*2` 等於「梁在 MIDI 72 與文獻一致」
+     * （提案 §1.3 記載）；寬頻化後內部摩擦在全音域都與文獻對齊，`*2`
+     * 因此變成**全音域一律 2 倍過阻尼、不再有任何錨點理由**的純經驗係數。
+     * 去留為月月裁決項（已登記 TODO.md），不在本輪自行變更。
+     */
     static float decayTimeForFrequency (
         float frequency, const MaterialDB::Material& material)
     {
-        const float denominator = material.damping.alpha * 2.0f
+        const float denominator = MaterialDB::internalFrictionRate (
+                material.damping.eta, frequency) * 2.0f
             + material.damping.beta_air * frequency * frequency
             + material.damping.gamma_radiation * frequency;
         return denominator > 0.0f ? 1.0f / denominator : 5.0f;

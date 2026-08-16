@@ -1,0 +1,6 @@
+warning: in the working copy of 'src/engines/ChromaticEngine.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/physics/BeamModel.h', LF will be replaced by CRLF the next time Git touches it
+ src/engines/ChromaticEngine.h |  6 ++++--
+ src/physics/BeamModel.h       | 15 ++++++++++++++-
+ src/physics/PlateModel.h      |  6 +++++-
+ 3 files changed, 23 insertions(+), 4 deletions(-)

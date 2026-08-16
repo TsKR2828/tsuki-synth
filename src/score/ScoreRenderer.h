@@ -176,6 +176,12 @@ public:
                 const Material* mat = materialDB->getMaterial (juce::String (ev.material));
                 if (mat == nullptr) mat = materialDB->getMaterial ("steel");
                 if (mat == nullptr) continue;
+                // Bridge/soundboard coupling material (2026-08-16 B1). Failure
+                // handling mirrors the mat lookup immediately above: skip this
+                // event rather than silently rendering with no bridge coupling.
+                const Material* soundboardMat =
+                    materialDB->getMaterial (kBridgeSoundboardMaterialKey);
+                if (soundboardMat == nullptr) continue;
                 // 2026-07 (--amps GATE fix): mirror renderEvent()'s piano
                 // branch EXACTLY -- piano's actual render overrides
                 // strikePosition/exciter (wood_mallet+0.3 -> felt+0.125)
@@ -206,7 +212,7 @@ public:
                 cp.eventIndex = eventIdentities[(size_t) sourceIndex];
                 auto voice = std::make_shared<CimbalomVoice>();
                 voice->prepare (score.global.sampleRate);
-                voice->noteOn (midiNote, ev.velocity, *mat, cp);
+                voice->noteOn (midiNote, ev.velocity, *mat, *soundboardMat, cp);
                 allStrings = voice->getAllStringModes();
                 bodyMagFn = [voice] (float f) { return voice->getBodyMagnitudeAt (f); };
             }
@@ -691,6 +697,13 @@ private:
     {
         if (mat == nullptr) return false;
 
+        // Bridge/soundboard coupling material (2026-08-16 B1). Failure
+        // handling mirrors the mat guard immediately above (return false /
+        // skip this event) -- theoretically unreachable since wood_spruce is
+        // always present in materials.json, but written anyway (fail-closed).
+        const Material* soundboardMat = materialDB->getMaterial (kBridgeSoundboardMaterialKey);
+        if (soundboardMat == nullptr) return false;
+
         CimbalomParams cp;
         cp.materialKey = ev.material;
         cp.strikePosition = ev.strikePosition;
@@ -706,7 +719,7 @@ private:
 
         CimbalomVoice voice;
         voice.prepare (sr);
-        voice.noteOn (midiNote, ev.velocity, *mat, cp);
+        voice.noteOn (midiNote, ev.velocity, *mat, *soundboardMat, cp);
         if (! hasRenderableModalEnergy (voice.getAllStringModes(), sr))
         {
             renderWarnings.push_back (
@@ -980,6 +993,11 @@ private:
         const Material* mat = materialDB != nullptr
             ? materialDB->getMaterial (juce::String (ev.material)) : nullptr;
         if (mat == nullptr) return 0.0;
+        // Bridge/soundboard coupling material (2026-08-16 B1). Failure
+        // handling mirrors the mat guard immediately above.
+        const Material* soundboardMat = materialDB != nullptr
+            ? materialDB->getMaterial (kBridgeSoundboardMaterialKey) : nullptr;
+        if (soundboardMat == nullptr) return 0.0;
 
         std::vector<std::vector<ModalResonator::Mode>> modeSets;
         if (ev.engine == "string" || ev.engine == "cimbalom" || ev.engine == "piano")
@@ -1004,7 +1022,8 @@ private:
             cp.eventIndex = eventIdentity;
             CimbalomVoice voice;
             voice.prepare (sr);
-            voice.noteOn (noteNameToMidi (effective.note), effective.velocity, *mat, cp);
+            voice.noteOn (noteNameToMidi (effective.note), effective.velocity,
+                         *mat, *soundboardMat, cp);
             modeSets = voice.getAllStringModes();
         }
         else

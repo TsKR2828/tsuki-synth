@@ -24,13 +24,38 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 - [ ] **A8 外部資料集要不要下載** — CC BY-SA 4.0 與「保留商業」的相容性。**推薦：只當外部參照，repo 內只留 DOI + SHA256 + 比對數字，資料檔不進版控。**
 - [ ] **A9 Cubase 四步人工驗證**（M8-8a 剩餘）— host 掃描／MIDI 實彈／automation lane 畫曲線回放／專案存讀 state。AI 無法代做。
 - [ ] **A10 Score 控制台實操驗收** — Standalone 頂列 [Score] 鈕的實際操作。
+- [ ] **A11 共鳴板厚度 h 與材質選定（B1 琴橋導納）** —— 目前實作用
+      `h = 9mm`（文獻「鋼琴音板 8–10mm」範圍中點）、材質 = `wood_spruce`
+      （`materials.json` 既有項，鋼琴/揚琴音板慣用雲杉的類比選擇）。
+      兩者皆非 TsukiSynth cimbalom 的實測值，是暫定的文獻類比預設值
+      （`docs/BRIDGE_ADMITTANCE_SOURCES.md` §5）。需月月確認是否合理，
+      或改用其他材質/厚度。
+      **2026-08-16 對抗驗證額外指出的流程問題（月月請一併裁決）**：這兩個未確認的
+      常數目前是**無條件生效**於所有 Cimbalom/Piano 預設渲染路徑，沒有旗標可關。
+      這與 repo 既有慣例不一致——M5 的 `damping.alpha` 文獻值是「月月核准後才更新
+      `materials.json`」，響度補償 `amount=0.78` 是「三輪審聽定案」後才落地。
+      本輪則是先落地、確認延後到 A11。緩解因素：值本身可溯源（滿足 Rule 4）、
+      查表失敗 fail-closed、且**未 commit**，月月保有完整否決權。
+      選項：(i) 維持現況、由月月直接確認數值；(ii) 加旗標預設關閉、確認後才開；
+      (iii) 改用其他厚度/材質重跑。
 
 ## B. 資料齊、可以開工（**依此順序**，理由見 `RESEARCH_INDEX.md` §4）
 
-- [ ] **B1 琴橋導納／共鳴板耦合**（前置：無）
+- [ ] **B1 琴橋導納／共鳴板耦合**（前置：無）——**2026-08-16 實作完成，但 Rule 10 未滿足，維持未勾**。
       `Y∞ = 1/(8√(D·ρs))` → `α = (T/L)·Re Y` → `1/T60_bridge = T·G/(ln1000·L)`。
       新增參數只有音板厚度 `h`。刻意不加耦合折減係數（Rule 4）。
-      → 依據 `docs/BRIDGE_ADMITTANCE_SOURCES.md`
+      → 依據 `docs/BRIDGE_ADMITTANCE_SOURCES.md`；工作卡 `docs/workcards/B1.md`。
+      **已完成**：`StringModel::decayTimeForFrequency` 加第四項 + `bridgeLossRate()`；
+      只接 Cimbalom/Piano，Chromatic 零改動（`git diff --stat` 核實）；
+      `ScoreRenderer.h` 三處呼叫點跟進；新增 15 條 CHECK 含哨兵反例。
+      **GATE**：三 target build exit 0、ctest 全過、`--full` `NO CHECKED FAILURES`、
+      `tools/` 零 diff（R2 未動容差）、未 commit（R7）。證據 `reports/gate_outputs/b1_*.txt`。
+      **驗收交叉檢查（2026-08-16，由我獨立執行）**：cimbalom/steel/MIDI 60 的
+      `T60(model) = 4.299 s`，與 `BRIDGE_ADMITTANCE_SOURCES.md` §3 事前獨立算出的
+      並聯預測 **4.18 s 相差 3%**；舊值 26.86 s。tongue_drum steel 仍 16.39 s，
+      確認 Chromatic 未被誤動。公式鏈判定為忠實實作。
+      **剩餘（屬 B2 範圍，齊備前不得標完成）**：Rule 10 前後對照報告
+      `reports/b1_b2_bridge_damping_before_after.md`（**目前不存在**）+ corpus 73 檔重驗。
 - [ ] **B2 阻尼寬頻化收尾**（前置：B1）
       程式已寫好在工作樹，B1 落地後低音發散問題自動消失，重跑 GATE + corpus 即可收。
 - [ ] **B3 弦阻尼律換第一原理**（前置：建議排在 B2 之後，避免歸因混淆）

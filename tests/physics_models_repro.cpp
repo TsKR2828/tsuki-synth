@@ -28,7 +28,7 @@ MaterialDB::Material steel()
     material.density = 7800.0f;
     material.youngsModulus = 200.0e9f;
     material.poissonRatio = 0.29f;
-    material.damping.alpha = 0.0238f;
+    material.damping.eta = 2.0e-4f;   // steel loss factor (materials.json)
     material.damping.beta_air = 1.2e-7f;
     material.damping.gamma_radiation = 2.0e-5f;
     return material;
@@ -140,7 +140,193 @@ void testGeometryFrequencyModeAndDamping()
 
     const float overrideDecay = StringModel::decayTimeForFrequency (440.0f, material, 1.0e-6f);
     CHECK (overrideDecay > 1.0f && overrideDecay < 100.0f,
-           "Damping alpha override retains air and radiation losses");
+           "Damping override retains air and radiation losses");
+
+    // Broadband internal friction (2026-08-10): the eta term's decay-rate
+    // contribution is proportional to frequency, so doubling f must double it.
+    // Verified against the isolated term (beta/gamma zeroed) so the f^2 and f
+    // terms cannot mask a wrong exponent.
+    MaterialDB::Material etaOnly = material;
+    etaOnly.damping.beta_air = 0.0f;
+    etaOnly.damping.gamma_radiation = 0.0f;
+    const float t60At220 = StringModel::decayTimeForFrequency (220.0f, etaOnly);
+    const float t60At440 = StringModel::decayTimeForFrequency (440.0f, etaOnly);
+    CHECK (std::abs (t60At220 / t60At440 - 2.0f) < 1.0e-3f,
+           "Internal friction is broadband: T60 halves per octave (rate ~ eta*f)");
+
+    // Literature anchor: T60 = 2.2/(f*eta) must hold at ANY frequency now,
+    // not just at the retired MIDI 60 anchor (materials_physicalization_proposal §1.2).
+    for (const float probe : { 82.4f, 261.6256f, 1046.5f, 3520.0f })
+    {
+        const float predicted = 2.2f / (probe * etaOnly.damping.eta);
+        const float actual = StringModel::decayTimeForFrequency (probe, etaOnly);
+        CHECK (std::abs (actual / predicted - 1.0f) < 1.0e-4f,
+               "T60 = 2.2/(f*eta) holds across the whole range, not one anchor");
+    }
+
+    // damping_override keeps its authored MIDI-60-anchor meaning: an override
+    // numerically equal to the old alpha must reproduce the old T60 at MIDI 60.
+    const float legacyAlpha = 0.4f;              // value used by 32 authored scores
+    const float atAnchor = StringModel::decayTimeForFrequency (
+        261.6256f, etaOnly, legacyAlpha);
+    CHECK (std::abs (atAnchor - 1.0f / legacyAlpha) < 1.0e-3f,
+           "damping_override still means the internal-friction rate at MIDI 60");
+}
+
+// ── Bridge/soundboard admittance coupling loss (2026-08-16 B1) ────────────
+// docs/workcards/B1.md §7. Reference numbers are copied from
+// docs/BRIDGE_ADMITTANCE_SOURCES.md §2.1 (Y_inf self-check table) and §3
+// (T60_bridge literature table), NOT derived independently here.
+
+void testBridgeAdmittanceLoss()
+{
+    // §7-1: Y_inf formula vs. the literature self-check table
+    // (BRIDGE_ADMITTANCE_SOURCES.md §2.1), using ITS synthetic material
+    // (E=11.5 GPa, rho=400 kg/m^3, nu=0.30) -- NOT materials.json's
+    // wood_spruce, which has different numbers.
+    MaterialDB::Material soundboardStub;
+    soundboardStub.displayName = "Bridge admittance self-check stub";
+    soundboardStub.youngsModulus = 11.5e9f;
+    soundboardStub.density = 400.0f;
+    soundboardStub.poissonRatio = 0.30f;
+
+    // bridgeLossRate(tension, length, ...) = tension*G/(ln1000*length); with
+    // tension=ln(1000) and length=1, this collapses to exactly G = Y_inf, so
+    // we can read Y_inf straight off the public function without a private
+    // hook.
+    const float kLn1000Probe = 6.907755278982137f;
+    const float yInf8mm  = StringModel::bridgeLossRate (kLn1000Probe, 1.0f, soundboardStub, 0.008f);
+    const float yInf10mm = StringModel::bridgeLossRate (kLn1000Probe, 1.0f, soundboardStub, 0.010f);
+    CHECK (std::abs (yInf8mm / 3.01e-3f - 1.0f) < 0.005f,
+           "Y_inf at h=8mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (3.01e-3 s/kg, +-0.5%)");
+    CHECK (std::abs (yInf10mm / 1.93e-3f - 1.0f) < 0.005f,
+           "Y_inf at h=10mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (1.93e-3 s/kg, +-0.5%)");
+
+    // §7-2: T60_bridge vs. the literature table (BRIDGE_ADMITTANCE_SOURCES.md
+    // Sec3), cross-checking the alpha->T60 algebra chain directly (bypasses
+    // bridgeLossRate's internal Y_inf calculation on purpose -- this test is
+    // about decayTimeForFrequency's denominator wiring, not the Y_inf formula
+    // that test §7-1 already covers). G = 1.3e-3 s/kg is the literature
+    // upright-piano average admittance (Sec2.1).
+    const float G = 1.3e-3f;
+    MaterialDB::Material noOtherDamping = steel();
+    noOtherDamping.damping.eta = 0.0f;
+    noOtherDamping.damping.beta_air = 0.0f;
+    noOtherDamping.damping.gamma_radiation = 0.0f;
+
+    auto t60BridgeFor = [&] (float tensionOverLength)
+    {
+        const float bridgeLoss = tensionOverLength * G / kLn1000Probe;
+        return StringModel::decayTimeForFrequency (
+            261.6256f /* any freq: other 3 terms are zero */,
+            noOtherDamping, -1.0f, bridgeLoss);
+    };
+    CHECK (std::abs (t60BridgeFor (1250.0f) / 4.25f - 1.0f) < 0.01f,
+           "T60_bridge at C2 (T/L=1250.0 N/m) matches literature table (4.25s, +-1%)");
+    CHECK (std::abs (t60BridgeFor (1073.3f) / 4.95f - 1.0f) < 0.01f,
+           "T60_bridge at C4 (T/L=1073.3 N/m) matches literature table (4.95s, +-1%)");
+    CHECK (std::abs (t60BridgeFor (12650.0f) / 0.42f - 1.0f) < 0.01f,
+           "T60_bridge at C8 (T/L=12650.0 N/m) matches literature table (0.42s, +-1%)");
+
+    // §7-3: frequency independence. eta=beta_air=gamma_radiation=0, only the
+    // bridge term is nonzero -- decayTimeForFrequency must return the exact
+    // same value at a low and a high frequency, because bridgeLoss does not
+    // depend on `frequency` at all.
+    const float bridgeLossConst = 0.235270f;   // arbitrary nonzero constant
+    const float t60At55   = StringModel::decayTimeForFrequency (
+        55.0f, noOtherDamping, -1.0f, bridgeLossConst);
+    const float t60At4000 = StringModel::decayTimeForFrequency (
+        4000.0f, noOtherDamping, -1.0f, bridgeLossConst);
+    CHECK (std::abs (t60At55 - t60At4000) < 1.0e-4f,
+           "Bridge coupling loss term is frequency-independent (55Hz T60 == 4000Hz T60)");
+
+    // §7-5: damping_override coexists with bridgeLoss -- the override only
+    // replaces the internal-friction term; bridgeLoss must still change the
+    // result when added.
+    const float withOverrideNoBridge = StringModel::decayTimeForFrequency (
+        261.6256f, steel(), 0.4f, 0.0f);
+    const float withOverrideAndBridge = StringModel::decayTimeForFrequency (
+        261.6256f, steel(), 0.4f, bridgeLossConst);
+    CHECK (std::abs (withOverrideAndBridge - withOverrideNoBridge) > 1.0e-3f,
+           "damping_override does not swallow the bridge coupling term");
+
+    // §7-6: backward compatibility -- omitting the 4th argument must be
+    // byte-for-byte identical to passing bridgeLoss=0.0f explicitly.
+    const float threeArgCall = StringModel::decayTimeForFrequency (440.0f, steel());
+    const float fourArgZero  = StringModel::decayTimeForFrequency (440.0f, steel(), -1.0f, 0.0f);
+    CHECK (threeArgCall == fourArgZero,
+           "Omitting bridgeLoss is identical to passing bridgeLoss=0.0f (existing callers unaffected)");
+
+    // §7-7: bridgeLossRate() fail-closed reprs -- non-finite/non-positive
+    // inputs must return 0.0f, never NaN/Inf/negative.
+    CHECK (StringModel::bridgeLossRate (1000.0f, 1.0f, soundboardStub, 0.0f) == 0.0f,
+           "bridgeLossRate fail-closed: soundboardThicknessM=0 -> 0.0f");
+    CHECK (StringModel::bridgeLossRate (1000.0f, 1.0f, soundboardStub, -0.005f) == 0.0f,
+           "bridgeLossRate fail-closed: negative soundboardThicknessM -> 0.0f");
+    CHECK (StringModel::bridgeLossRate (1000.0f, 0.0f, soundboardStub, 0.009f) == 0.0f,
+           "bridgeLossRate fail-closed: length=0 -> 0.0f");
+    CHECK (StringModel::bridgeLossRate (1000.0f, -1.0f, soundboardStub, 0.009f) == 0.0f,
+           "bridgeLossRate fail-closed: negative length -> 0.0f");
+    CHECK (StringModel::bridgeLossRate (0.0f, 1.0f, soundboardStub, 0.009f) == 0.0f,
+           "bridgeLossRate fail-closed: tension=0 -> 0.0f");
+    CHECK (StringModel::bridgeLossRate (
+               std::numeric_limits<float>::quiet_NaN(), 1.0f, soundboardStub, 0.009f) == 0.0f,
+           "bridgeLossRate fail-closed: non-finite tension -> 0.0f");
+}
+
+// §7-4 sentinel/mutant test: proves the §7-3 equality check has real
+// detection power (would actually flag a regression), not a tautology that
+// passes for any implementation. Full write-up + this test's own console
+// output are archived verbatim at reports/gate_outputs/b1_selftest_sentinel.txt
+// (docs/workcards/B1.md §8 GATE row 3). Deliberately does NOT touch
+// StringModel.h -- the "broken" version is simulated inline, entirely inside
+// this test function, so the suite's overall PASS/FAIL count stays honest
+// (a real production-code mutation would need its own separate build+run,
+// which is out of scope for a single ctest invocation).
+void testBridgeLossSentinel()
+{
+    const float bridgeLoss = 0.235270f;   // representative nonzero constant
+
+    // "Broken" mutant: bridgeLoss deliberately scaled by frequency, exactly
+    // the shape of regression this sentinel guards against (someone
+    // accidentally routing the 4th term through a frequency-dependent
+    // expression instead of a constant).
+    auto brokenT60 = [&] (float freq)
+    {
+        const float brokenBridgeLoss = bridgeLoss * (freq / 261.6256f);
+        return 1.0f / brokenBridgeLoss;
+    };
+    const float brokenAt55   = brokenT60 (55.0f);
+    const float brokenAt4000 = brokenT60 (4000.0f);
+    const bool brokenWouldPassEqualityCheck =
+        std::abs (brokenAt55 - brokenAt4000) < 1.0e-4f;
+    std::cout << "[SENTINEL 1/2] mutant (frequency-scaled bridgeLoss): T60(55Hz)="
+              << brokenAt55 << "s  T60(4000Hz)=" << brokenAt4000
+              << "s -- same equality check as the real test would report: "
+              << (brokenWouldPassEqualityCheck ? "[PASS] (BAD -- no detection power)"
+                                                : "[FAIL] (GOOD -- regression caught)")
+              << '\n';
+    CHECK (! brokenWouldPassEqualityCheck,
+           "SENTINEL: mutant frequency-dependent bridgeLoss is distinguishable "
+           "at 55Hz vs 4000Hz (proves the Sec7-3 equality check has detection power)");
+
+    MaterialDB::Material noOtherDamping = steel();
+    noOtherDamping.damping.eta = 0.0f;
+    noOtherDamping.damping.beta_air = 0.0f;
+    noOtherDamping.damping.gamma_radiation = 0.0f;
+    const float correctAt55 = StringModel::decayTimeForFrequency (
+        55.0f, noOtherDamping, -1.0f, bridgeLoss);
+    const float correctAt4000 = StringModel::decayTimeForFrequency (
+        4000.0f, noOtherDamping, -1.0f, bridgeLoss);
+    const bool correctPassesEqualityCheck =
+        std::abs (correctAt55 - correctAt4000) < 1.0e-4f;
+    std::cout << "[SENTINEL 2/2] real StringModel::decayTimeForFrequency: T60(55Hz)="
+              << correctAt55 << "s  T60(4000Hz)=" << correctAt4000
+              << "s -- verdict: " << (correctPassesEqualityCheck ? "[PASS]" : "[FAIL]")
+              << '\n';
+    CHECK (correctPassesEqualityCheck,
+           "SENTINEL: real bridgeLoss term passes the same equality check "
+           "(frequency-independent, as required)");
 }
 
 void testDimensionalScalingLaws()
@@ -438,6 +624,8 @@ int main()
     testBeamBoundaryAndGeometry();
     testPlateModesAndPoisson();
     testGeometryFrequencyModeAndDamping();
+    testBridgeAdmittanceLoss();
+    testBridgeLossSentinel();
     testDimensionalScalingLaws();
     testPassivityAndInvalidNumericRefusal();
     testHammerSpectrum();

@@ -52,7 +52,7 @@ bool readAudioFile (const juce::File& file, juce::AudioBuffer<float>& audio,
 
 void loadTestMaterial (MaterialDB& materials)
 {
-    const auto json = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"alpha":0.0238,"beta_air":0.00000012,"gamma_radiation":0.00002}}}})json";
+    const auto json = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"eta":0.0002,"beta_air":0.00000012,"gamma_radiation":0.00002}}}})json";
     CHECK (materials.loadFromString (json), "Test material database loads");
 }
 
@@ -61,12 +61,25 @@ void testMaterialDatabaseIsTransactional()
     MaterialDB materials;
     loadTestMaterial (materials);
     const int originalSize = materials.size();
-    const auto invalid = R"json({"materials":{"bad":{"display_name":"Bad","density":0,"youngs_modulus":1,"poisson_ratio":0.6,"damping":{"alpha":-1,"beta_air":0,"gamma_radiation":0}}}})json";
+    const auto invalid = R"json({"materials":{"bad":{"display_name":"Bad","density":0,"youngs_modulus":1,"poisson_ratio":0.6,"damping":{"eta":-1,"beta_air":0,"gamma_radiation":0}}}})json";
     CHECK (! materials.loadFromString (invalid),
            "MaterialDB rejects non-physical material constants");
     CHECK (materials.size() == originalSize
            && materials.getMaterial ("steel") != nullptr,
            "Failed material reload preserves the last known-good database");
+
+    // Pre-2026-08-10 schema must FAIL CLOSED, not be reinterpreted: alpha and eta
+    // differ by the 118.921 MIDI-60 anchor factor, so silently reading an alpha as
+    // an eta would under-damp every material by ~5 orders of magnitude.
+    const auto legacy = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"alpha":0.0238,"beta_air":0.00000012,"gamma_radiation":0.00002}}}})json";
+    CHECK (! materials.loadFromString (legacy),
+           "MaterialDB refuses the retired frequency-independent alpha schema");
+
+    // Belt-and-braces: a file carrying BOTH keys is also refused, so a partially
+    // migrated database can never render with an ambiguous damping source.
+    const auto both = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"alpha":0.0238,"eta":0.0002,"beta_air":0.00000012,"gamma_radiation":0.00002}}}})json";
+    CHECK (! materials.loadFromString (both),
+           "MaterialDB refuses a damping block carrying both alpha and eta");
 }
 
 void testEnvelopeRelease()
