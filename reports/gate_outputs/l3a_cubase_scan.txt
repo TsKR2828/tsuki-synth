@@ -1,0 +1,8 @@
+cache dir: C:\Users\admin\AppData\Roaming\Steinberg\Cubase LE AI Elements 12_64\Cubase AI VST3 Cache
+[PASS] S1.scanned: 1 TsukiSynth.vst3 entry(ies) in vst3plugins.xml
+[PASS] S2.not_blacklisted: 0 entries in vst3blacklist.xml
+[PASS] S3.instrument_class: Audio Module Class present, subCategories=['Instrument|Synth'], version=['0.2.0']
+[PASS] S4.controller_class: Component Controller Class present
+[PASS] S5.cache_matches_disk: cache 2026-07-12T08:20:05+00:00 vs disk 2026-07-12T08:20:05.555420+00:00 (|delta| = 0.6 s)
+[INFO] S6.deploy_lag: installed binary != repo build artefact (expected on an uncommitted working tree; redeploy to update the host)
+RESULT: PASS (S1-S5)

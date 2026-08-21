@@ -1,0 +1,65 @@
+=== X1 GATE evidence (2026-08-16) ===
+裁決: (a) 測試 DB 補 wood_spruce
+
+--- git diff --stat ---
+warning: in the working copy of 'HANDOVER.md', LF will be replaced by CRLF the next time Git touches it
+ HANDOVER.md           | 57 +++++++++++++++++++++++++++------------------------
+ TODO.md               | 28 +++++++++++++++++++------
+ tests/audit_repro.cpp | 26 ++++++++++++++++++++++-
+ 3 files changed, 77 insertions(+), 34 deletions(-)
+
+--- 三 target 重建 (X4 規約) ---
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthAuditTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthAuditTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthTunerTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthTunerTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthPhysicsModelsTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthPhysicsModelsTest.exe
+build exit=0
+
+--- ctest ---
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build
+    Start 1: audit_repro
+1/3 Test #1: audit_repro ......................   Passed    1.08 sec
+    Start 2: tuner_repro
+2/3 Test #2: tuner_repro ......................   Passed    0.62 sec
+    Start 3: physics_models_repro
+3/3 Test #3: physics_models_repro .............   Passed    0.08 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   1.79 sec
+
+--- TsukiSynthAuditTest.exe 具名三項 ---
+[PASS] Semantic-order regression fixtures render successfully
+[PASS] Permuting simultaneous events preserves the exact WAV bytes
+[PASS] Inserting a zero-velocity event preserves the exact WAV bytes
+PASS (0 failures)
+
+--- physics_verify.py --full (sanity check; src/ 零改動故結果應與 447faea 相同) ---
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -62.6 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+
+======================================================================
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+[exited with code 0]

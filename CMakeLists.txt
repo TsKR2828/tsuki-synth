@@ -218,4 +218,31 @@ if(TSUKI_BUILD_TESTS)
     )
     tsuki_enable_test_sanitizers(TsukiSynthPhysicsModelsTest)
     add_test(NAME physics_models_repro COMMAND TsukiSynthPhysicsModelsTest)
+
+    # --- L2 host-integration probe (EARFREE_MELODY_GATE_DESIGN L2) ---
+    # Loads the BUILT TsukiSynth.vst3 bundle from disk through
+    # juce::VST3PluginFormat (the binary a DAW loads, not linked-in source)
+    # and turns A9's four manual Cubase steps into command-output checks.
+    # Deliberately NOT registered with add_test: it depends on the VST3
+    # artefact being built first, and its melody-position verdict is issued
+    # by tools/melody_verify.py on the WAV it writes. Run manually:
+    #   cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynthHostProbe
+    #   build/Release/TsukiSynthHostProbe.exe     #       build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <out-dir>
+    #   python tools/melody_verify.py scores/tests/melody_sentinel.score.json     #       --wav <out-dir>/hostprobe_render.wav
+    add_executable(TsukiSynthHostProbe tests/host_probe.cpp)
+    target_include_directories(TsukiSynthHostProbe PRIVATE src)
+    target_compile_definitions(TsukiSynthHostProbe PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_PLUGINHOST_VST3=1
+    )
+    target_link_libraries(TsukiSynthHostProbe
+        PRIVATE
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+            juce::juce_audio_utils
+            juce::juce_dsp
+        PUBLIC
+            juce::juce_recommended_config_flags
+    )
 endif()

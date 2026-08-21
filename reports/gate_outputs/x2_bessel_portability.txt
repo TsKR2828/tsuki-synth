@@ -1,0 +1,51 @@
+=== X2 macOS Bessel portability fix GATE evidence (2026-08-20) ===
+授權：月月 2026-08-20 全權委託（TODO.md C3-b 委託記錄）；不縮小 GATE 範圍（R3），保留 macos 矩陣腿，改為自實作級數
+
+--- 修法 ---
+src/physics/BesselPortable.h 新增：A&S 9.1.10/9.6.10 升冪級數，驗證域 order 0..8 / x 0..16，域外 fail-closed NaN
+src/physics/PlateModel.h besselJ/besselI 以 __cpp_lib_math_special_functions 特性巨集切換：
+  有 std 實作的平台（MSVC 已實測巨集=201603、libstdc++）繼續走 std:: → 位元零改變
+  libc++ (Apple) 走 tsuki::besselJPortable/besselIPortable
+
+--- 驗證 1：級數 vs 獨立錨點（scipy.special.jv/iv；J0(1),J1(1) 對 A&S Table 9.1 全印刷位數一致）---
+[PASS] Portable Bessel matches independent scipy/A&S anchors (mixed 1e-11)
+       (portable-vs-std worst mixed deviation over 9 orders x 321 args: 2.09744e-11)
+[PASS] Portable Bessel agrees with std::cyl_bessel_j/_i on the full validated grid (mixed 1e-10)
+[PASS] Portable Bessel fail-closed: order 9 (outside validated domain) -> NaN
+[PASS] Portable Bessel fail-closed: negative order -> NaN
+[PASS] Portable Bessel fail-closed: x > 16 (outside validated domain) -> NaN
+[PASS] Portable Bessel fail-closed: negative x -> NaN
+[PASS] Portable Bessel fail-closed: NaN x -> NaN
+[PASS] Portable Bessel positive control: in-domain evaluation is finite
+
+--- 驗證 2：三 target 全重建 + ctest（X4 規約）---
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   1.30 sec
+
+--- 驗證 3：Windows 渲染位元零改變（Rule 10 不觸發之證明）---
+water_gong_clamped + water_gong_free，重建前後 CLI 各渲染一次：
+SHA256 全部一致（diff 無輸出）
+00764a8d8eda215e5a6d46971f51778b2527e0a10926ed76320a1f106b3b8199 *water_gong_clamped.wav
+31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9 *water_gong_free.wav
+
+--- 驗證 4：physics_verify --full (R6) ---
+
+======================================================================
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+--- 未了 ---
+macos-14 實際建置成功需 push 後由 CI 證明（A5 待月月）；本機無法交叉編譯 libc++。
+但 fallback 程式碼路徑本身已在 Windows 全域驗證（驗證 1 的錨點測試在所有平台都會跑）。

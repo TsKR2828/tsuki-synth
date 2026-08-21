@@ -1,0 +1,22 @@
+=== L1 melody_verify 證據 v3（2026-08-21：+Rd 床能量拒答/Re 低頻精修極限/Rc' course 自拍）===
+[PASS] sentinel A: unmodified fixture verifies clean (max |onset err| = 0.27 ms, tol 10 ms)
+[PASS] sentinel B: +100 ms time shift is caught -> 1 FAIL as required
+[PASS] sentinel C: +1 semitone transposition is caught -> 1 FAIL as required
+[PASS] sentinel D: undeclared (extra) note is caught -> 1 FAIL as required
+[PASS] sentinel E: declared-but-absent (phantom) note is caught -> 1 FAIL as required
+SELFTEST PASS (5/5)
+
+=== water_gong_clamped（CLI 路徑對照組）===
+  [PASS] ev0 t=0.000 note=C4 onset_err=-2.15ms pitch=+0.03c
+  [PASS] ev1 t=3.000 note=G4 onset_err=-0.04ms pitch=+0.11c
+  [extra-scan] PASS
+  summary: 2 PASS / 0 FAIL / 0 UNVERIFIED
+
+=== plugin 即時路徑（L2 渲染）===
+  [PASS] ev0 t=0.000 note=60 onset_err=+1.31ms pitch=+1.31c
+  [PASS] ev1 t=0.600 note=64 onset_err=+1.17ms pitch=+0.24c
+  [PASS] ev2 t=1.200 note=67 onset_err=+1.08ms pitch=+0.98c
+  [PASS] ev3 t=1.800 note=71 onset_err=+0.90ms pitch=+1.14c
+  [PASS] ev4 t=2.400 note=74 onset_err=+0.58ms pitch=-0.54c
+  [extra-scan] PASS
+  summary: 5 PASS / 0 FAIL / 0 UNVERIFIED

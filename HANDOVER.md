@@ -7,39 +7,47 @@
 
 ## 0. 一句話現況
 
-**現在是紅燈狀態。** B1 琴橋導納已實作並 push，但引入了一個回歸讓 `audit_repro`
-三個測試失敗，CI 全紅。根因已定位（見 §1），修法明確，尚未動手。
+**兩盞紅燈（X1/X2）都已修，本機全綠，全部未 commit（R7）。**
+X1（audit_repro 回歸）2026-08-16 修畢；X2（macOS Bessel）2026-08-20 修畢
+（特性巨集切換 + 可攜級數，Windows 位元零改變，macos leg 轉綠需 push 後 CI 證明）。
+另外 2026-08-20 月月**全權委託**建置「免耳免人工驗證三層 GATE」（TODO.md C3-b）：
+L1 旋律位置驗證器 + L2 HostProbe + L3a Cubase 掃描驗證**已完工全綠**，
+並首次驗證 plugin 即時路徑的旋律位置（5/5 PASS）；副產品：抓到 A12
+（參數 set/restore 量化不對稱，DAW 存讀專案前後渲染位元不一致——誠實 FAIL 留檔）。
+證據：`reports/gate_outputs/{x1_regression_fix,x2_bessel_portability,l1_l2_l3a_melody_gate,l3a_cubase_scan}.txt`。
 
 ---
 
 ## 1. 🔴 最優先：現在就壞著的東西
 
-### 1.1 B1 引入的回歸（本機 + CI 都 FAIL）
+### 1.1 ~~B1 引入的回歸~~ ✅ 已修（2026-08-16，未 commit）
 
-CI run `31933324875` 紅燈。`ctest` 的 `audit_repro` 三項失敗：
+原症狀：CI run `31933324875` 紅燈，`ctest` 的 `audit_repro` 三項失敗
+（`Semantic-order regression fixtures render successfully`／
+`Permuting simultaneous events preserves the exact WAV bytes`／
+`Inserting a zero-velocity event preserves the exact WAV bytes`）。
 
-```
-[FAIL] Semantic-order regression fixtures render successfully
-[FAIL] Permuting simultaneous events preserves the exact WAV bytes
-[FAIL] Inserting a zero-velocity event preserves the exact WAV bytes
-```
-
-**根因（已定位，2026-08-16）**：
-B1 在 `src/engines/CimbalomEngine.h` 寫死
+**根因**：B1 在 `src/engines/CimbalomEngine.h` 寫死
 `kBridgeSoundboardMaterialKey = "wood_spruce"` 當共鳴板材質，且查表失敗時
-**fail-closed**（`ScoreRenderer.h` 三處呼叫點分別 `continue` / `return false` /
-`return 0.0`）。但 `tests/audit_repro.cpp` 用的是**測試專用的精簡材質 DB，
-裡面沒有 `wood_spruce`** → 查表必定失敗 → 渲染直接放棄 → 三個依賴渲染的測試連鎖失敗。
+**fail-closed**。呼叫點實為**四處**（原記三處，漏了引擎本身）：
+`CimbalomEngine.h:133` → `return`、`ScoreRenderer.h:183` → `continue`、
+`:704` → `return false`、`:999` → `return 0.0`。
+而 `tests/audit_repro.cpp` 的測試專用精簡 DB 只有 `steel`
+→ 查表必定失敗 → 渲染直接放棄 → 三個依賴渲染的測試連鎖失敗。
 
-**驗證方式**：`grep -n "wood_spruce" tests/audit_repro.cpp` → 無結果。
+**月月裁決：(a)**——`tests/audit_repro.cpp::loadTestMaterial` 補進 `wood_spruce`。
+理由：fail-closed 守衛本身是對的，「沒有共鳴板材質的 DB」本來就是不完整的 DB；
+這是**測試 fixture 的缺口**，不是設計缺陷。數值逐字照抄 `data/materials.json`
+（Rule 4 可溯源，不製造第二份會漂移的常數來源）。
 
-**修法方向（尚未裁決，不要自己選）**：
-- (a) 測試材質 DB 補進 `wood_spruce`——最小改動，但等於讓測試遷就實作
-- (b) 共鳴板材質改成可注入參數而非寫死，測試傳入自己的材質
-- (c) 查不到共鳴板材質時退回「不加 bridgeLoss」而非放棄整個渲染——
-      但這會讓 fail-closed 變成 fail-open，違反 repo 一貫原則，**不建議**
+**GATE**：三 target 全重建（§1.2 規約）exit 0 → `ctest` 3/3 Passed →
+`TsukiSynthAuditTest.exe` 直接跑，三項具名 CHECK 皆 `[PASS]`、`PASS (0 failures)`。
+`git diff --stat` 單檔 `tests/audit_repro.cpp`，**未動 `src/`**
+→ R6 未觸發、**Rule 10 未觸發（無任何渲染輸出改變）**、R2 未動容差。
 
-這一項與 `TODO.md` **A11**（共鳴板 `h`／材質待月月確認）是同一個結構問題的兩面。
+**未了**：這只解紅燈。「共鳴板材質該不該從寫死改成可注入」的結構問題
+**併入 `TODO.md` A11 一起裁決**（A11 若選「加旗標預設關閉」或「換材質」，
+需要的 plumbing 比單純注入更多，屆時一次做完；若選「確認現值」則維持寫死即可）。
 
 ### 1.2 ⚠️ 為什麼本機沒抓到——這是必須記住的教訓
 
@@ -58,7 +66,17 @@ cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTune
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-### 1.3 macOS 可攜性 bug（跨平台 CI 第一次跑就抓到）
+### 1.3 ~~macOS 可攜性 bug~~ ✅ 已修（2026-08-20，未 commit）
+
+**修法**：`src/physics/BesselPortable.h`（A&S 9.1.10/9.6.10 升冪級數，驗證域
+order 0..8 / x 0..16，域外 fail-closed NaN）+ `PlateModel::besselJ/besselI`
+以 `__cpp_lib_math_special_functions` 特性巨集切換——有 std 的平台（MSVC 實測
+巨集=201603、libstdc++）照走 std::，**Windows 前後渲染 SHA256 全等（Rule 10
+不觸發）**；僅 libc++（Apple）走 fallback。錨點測試（scipy 獨立值）所有平台都跑；
+Windows 上 grid 對照 std:: 最大偏差 2.1e-11。證據 `x2_bessel_portability.txt`。
+**macos-14 leg 實際轉綠需 push 後 CI 證明（= A5）。** 以下為原始記錄：
+
+#### 原症狀（跨平台 CI 第一次跑就抓到）
 
 `cross-platform-emit (macos-14)` 建置失敗：
 
@@ -136,9 +154,14 @@ corpus 基準：73 檔，上一次全綠是 2026-08-06（`af849ec`）。
 
 ## 5. 接下來的順序（建議）
 
-1. **修 §1.1 的回歸**——這是紅燈，優先於一切。修法要月月選 (a)/(b)/(c)。
-2. **修 §1.3 的 macOS Bessel**——或裁決不支援 macOS。
-3. 重跑三個測試 target + `--full` + 三 target build，確認回綠。
+1. ~~修 §1.1 的回歸~~ ✅ **2026-08-16 完成**（裁決 (a)，ctest 3/3，未 commit）。
+2. ~~修 §1.3 的 macOS Bessel（X2）~~ ✅ **2026-08-20 完成**（`BesselPortable.h` A&S 級數 +
+   `__cpp_lib_math_special_functions` 特性巨集切換；Windows 前後渲染 SHA256 全等 → Rule 10 未觸發；
+   grid 對照 std 最大偏差 2.1e-11；macos leg 實際轉綠等 push/CI = A5）。
+3. ~~重跑三 target + `--full`~~ ✅ 全綠（`x2_bessel_portability.txt`）。
+   **新增（2026-08-20 委託線）**：L1/L2/L3a 三層免耳驗證完工（TODO C3-b 進度區），
+   剩 piano-roll 報告層 + L3b（等 computer-use 連接器）+ corpus 掃描（排 B2 後）。
+   A12 為新發現待裁決。
 4. **發 B2 卡**（`docs/workcards/B2.md`）：Rule 10 前後對照報告 +
    corpus 73 檔四分片重驗 + 響度錨點常數重測。**這是唯一能讓 M10 收尾的路。**
 5. 之後才輪到 B3（弦阻尼律）→ B4（槌頭）→ B5（木材）→ B6（輻射）。

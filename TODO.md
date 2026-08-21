@@ -15,17 +15,35 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 
 ## 🔴 0. 紅燈（優先於一切，2026-08-16）
 
-- [ ] **X1 修 B1 引入的 `audit_repro` 回歸** — CI run `31933324875` 紅燈，本機重建測試 target 後同樣三項 FAIL：
+- [x] **X1 修 B1 引入的 `audit_repro` 回歸** — **2026-08-16 月月裁決 (a)，已修，本機回綠（未 commit，R7）**。
+      原症狀：CI run `31933324875` 紅燈，本機重建測試 target 後同樣三項 FAIL：
       `Semantic-order regression fixtures render successfully`／`Permuting simultaneous events preserves the exact WAV bytes`／`Inserting a zero-velocity event preserves the exact WAV bytes`。
-      **根因已定位**：B1 在 `CimbalomEngine.h` 寫死 `kBridgeSoundboardMaterialKey="wood_spruce"` 且查表 fail-closed，
-      但 `tests/audit_repro.cpp` 的測試專用材質 DB 沒有 `wood_spruce`（`grep` 確認無此鍵）→ 渲染放棄 → 連鎖失敗。
-      修法三選一**待月月裁決**：(a) 測試 DB 補 `wood_spruce`（讓測試遷就實作）；
-      (b) 共鳴板材質改成可注入參數不寫死；(c) 查不到就不加 bridgeLoss（**不建議**，fail-closed 變 fail-open）。
-      與 A11 是同一個結構問題的兩面。
-- [ ] **X2 修 macOS 建置失敗（可攜性）** — `std::cyl_bessel_j`／`std::cyl_bessel_i`（`src/physics/PlateModel.h:265,270`）
-      是 C++17 數學特殊函式，**libstdc++ 有、libc++（Apple）沒有**。ubuntu-24.04 與 windows-2022 皆建置成功，僅 macos-14 失敗。
-      修法：自實作或引入 Bessel（Boost.Math／級數實作）；若決定不支援 macOS 就拿掉該矩陣腿——**但那是縮小 GATE 範圍，需月月裁決（R3）**。
-- [ ] **X3 跨平台實測數字仍未取得** — `cross-platform-compare` 因 macos 腿失敗而 skipped。X2 修好後才拿得到，C3 才能往下走。
+      **根因**：B1 在 `CimbalomEngine.h` 寫死 `kBridgeSoundboardMaterialKey="wood_spruce"` 且查表 fail-closed
+      （**四處**呼叫點，非三處：`CimbalomEngine.h:133` → `return`、`ScoreRenderer.h:183` → `continue`、
+      `:704` → `return false`、`:999` → `return 0.0`），
+      但 `tests/audit_repro.cpp` 的測試專用材質 DB 只有 `steel` → 渲染放棄 → 連鎖失敗。
+      **裁決理由**：fail-closed 守衛本身是對的——「沒有共鳴板材質的 DB」本來就是不完整的 DB，
+      守衛正確地把它擋下來。這是**測試 fixture 的缺口**，不是設計缺陷。
+      **修法**：`tests/audit_repro.cpp::loadTestMaterial` 補進 `wood_spruce`，數值逐字照抄
+      `data/materials.json`（Rule 4 可溯源，且不製造第二份會漂移的物理常數來源）。
+      **GATE**：三 target 全重建（X4 規約）exit 0 → `ctest` 3/3 Passed → `TsukiSynthAuditTest.exe`
+      直接執行確認三項具名 CHECK 皆 `[PASS]`、`PASS (0 failures)`。
+      `git diff --stat` = `tests/audit_repro.cpp | 26 +++-` 單檔，**未動 `src/`**
+      → R6 未觸發、**Rule 10 未觸發（無任何渲染輸出改變）**、R2 未動容差。
+      **未了**：本項只解紅燈，不解「共鳴板材質該不該可注入」的結構問題——那併入 A11 一起裁決（見 A11）。
+- [x] **X2 修 macOS 建置失敗（可攜性）** — **2026-08-20 已修（委託授權，見 C3-b），本機全綠，未 commit（R7）**。
+      原因：`std::cyl_bessel_j`／`_i` 是 C++17 數學特殊函式，libstdc++/MSVC 有、libc++（Apple）沒有。
+      **修法（不縮小 GATE 範圍，R3）**：新增 `src/physics/BesselPortable.h`（A&S 9.1.10/9.6.10 升冪級數，
+      驗證域 order 0..8 / x 0..16 依 PlateModel 實際使用域推導，域外 fail-closed NaN）；
+      `PlateModel::besselJ/besselI` 以標準特性巨集 `__cpp_lib_math_special_functions` 切換——
+      有 std 的平台照走 std::（**Windows 渲染位元零改變已用前後 SHA256 證明 → Rule 10 不觸發**），
+      僅 libc++ 走 fallback。
+      **GATE**：錨點測試（scipy 獨立值 + A&S 對照，所有平台都跑）PASS；
+      Windows 全域 grid 對照 std:: 最大偏差 2.1e-11（界 1e-10，一階原理推導）PASS；
+      域外 5 哨兵 NaN + 正控制 PASS；三 target 重建 + ctest 3/3 + `--full` NO CHECKED FAILURES。
+      證據 `reports/gate_outputs/x2_bessel_portability.txt`。
+      **未了**：macos-14 leg 實際轉綠需 push 後 CI 證明（併入 A5）。
+- [ ] **X3 跨平台實測數字仍未取得** — `cross-platform-compare` 因 macos 腿失敗而 skipped。X2 已修（本機），**push（A5）→ CI macos 轉綠後**才拿得到，C3 才能往下走。
 - [ ] **X4 施工卡與流程補上「跑 ctest 前必先重建三個測試 target」** — 本輪 B1 的 `b1_ctest_all.txt`「3/3 passed」
       是**測到未重建的舊 binary**，對抗驗證的 GATE 視角「獨立重跑」也踩同一個坑。
       規約：`cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest` 之後才跑 `ctest`。
@@ -57,6 +75,21 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
       查表失敗 fail-closed、且**未 commit**，月月保有完整否決權。
       選項：(i) 維持現況、由月月直接確認數值；(ii) 加旗標預設關閉、確認後才開；
       (iii) 改用其他厚度/材質重跑。
+      **2026-08-16 X1 併入本項的第四個子問題**：X1 裁決走 (a)（測試 DB 補 `wood_spruce`），
+      只解了紅燈，**沒解**「共鳴板材質是否該從寫死改成可注入」。目前 4 處呼叫點各自
+      `materialDB->getMaterial(kBridgeSoundboardMaterialKey)`。若 A11 選 (ii)（加旗標預設關閉）
+      或 (iii)（換材質），需要的 plumbing 比單純注入更多，屆時一次做完；若 A11 選 (i)（確認現值），
+      維持寫死即可，不必另外改。**故本子問題刻意不獨立行動，綁在 A11 一起裁決。**
+      註：物理層 `StringModel::bridgeLossRate()` 本來就已收 `const Material&` + `thicknessM` 兩個參數，
+      是可注入的；寫死只發生在引擎／renderer 層。
+- [ ] **A12 plugin 參數 set/restore 量化不對稱（L2 HostProbe 2026-08-20 首捕）** —
+      host `setValue(0.42)` 後 live 讀回 0.42（plain 0.428，**未量化**），但 state 存讀後變
+      0.422222（plain 0.43，**量化到 0.01 步進**）→ **DAW 專案存檔重開後的渲染與存檔前位元不一致**
+      （HostProbe H5 兩項誠實 FAIL，`reports/gate_outputs/l1_l2_l3a_melody_gate.txt`）。
+      不對稱在 JUCE APVTS 層（setValue 不 snap、replaceState snap）。聽感差異極微（≤半步進），
+      但違反位元精確還原主張。**不影響 CLI corpus**（CLI 不走 APVTS）→ 修正屬 Rule 10 免touch。
+      修法選項：(a) 參數 interval 改 0（連續，round-trip 無損，編輯器旋鈕變平滑）；
+      (b) 自訂參數類別讓 setValue 也 snap（live 聽感微變）；(c) 接受現狀、文件標註。需月月裁決。
 
 ## B. 資料齊、可以開工（**依此順序**，理由見 `RESEARCH_INDEX.md` §4）
 
@@ -99,6 +132,51 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 
 - [ ] **C1 rubber 短瞬態 T60 估計器** — 現行「不足八週期即 N/A」太粗，改用 EDT／Schroeder 反向積分 + 明確拒答條件，把三個 `UNVERIFIED/N/A` 轉成可判定。**需月月裁決可信門檻（幾個週期算數）**。
 - [ ] **C2 多音／缺基頻調音器模式** — 只在能可靠拒答模稜兩可的情況下才做。工作量最大、對物理驗證主張價值最小。
+- [ ] **C3-b 免耳三層驗證（旋律位置 GATE）** — 設計提案 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md`（2026-08-20，未實作）：
+      L1 `melody_verify.py`（score↔WAV 逐事件 onset+pitch 正向驗證，補上「休止安靜≠音在對的位置」的缺口，含五件哨兵）＋
+      L2 `TsukiSynthHostProbe`（JUCE host 載磁碟上的 .vst3，A9 四步全自動化，順帶首次驗 plugin 即時路徑的音訊內容）＋
+      L3 Cubase 本尊（3a 掃描快取 XML 解析——**已核實 TsukiSynth 在 vst3plugins.xml、blacklist 零筆**；3b AI 開 Cubase 匯出、L1 判定）。
+      **2026-08-20 月月裁決：三項全權委託 AI**（原話「你自己想辦法，然後照順序把缺口都補上，我最後再拿去給專業人士聽」）。
+      委託範圍與界線：(1) 容差由 AI 依推導自定，**R2 仍然有效——定案後不得為了讓測試通過而調寬**；
+      (2) A9 走自動化重定義；(3) 順序 = X2 → L1 → 3a → L2 → piano-roll 報告層 → 3b；
+      (4) R7 仍然有效（不 commit）；(5) **最終美學驗收改為外部專業人士試聽**（月月安排），
+      物理/位置正確性由 GATE 鏈負責，兩者主張分開。
+      **進度（2026-08-20，證據 `reports/gate_outputs/l1_l2_l3a_melody_gate.txt`）**：
+      ✅ **L1** `tools/melody_verify.py` 完工——哨兵五件組 PASS（unmodified 全綠 max |onset err| 0.27ms／
+      時移+100ms／移調+1半音／刪音／幻音四種竄改全數被抓）；粗偵測(STFT rise、median 床壓拍頻空點)→
+      零相位包絡 50% 交越精修（無偏估計）雙段式；onset 容差 ±10ms 定案（實測餘裕 >30×）；
+      pitch 沿用已批准 5-cent course-centroid；複音帶碰撞/delay/fm_ratio≠1 一律 fail-closed 拒答。
+      fixture `scores/tests/melody_sentinel.score.json`。
+      ✅ **L2** `TsukiSynthHostProbe`（CMake target，載磁碟 .vst3）完工——H1 掃描/H2 實體化/
+      H3 MIDI 串流渲染+跨實例位元決定性/H4 automation ramp 位元決定性+3-12kHz +8.6dB/
+      H5 state round-trip。**plugin 即時路徑旋律位置首次被驗：5/5 PASS（onset ≤1.31ms、pitch ≤1.31c）**。
+      H5 兩項誠實 FAIL = A12。
+      ✅ **L3a** `tools/cubase_scan_verify.py` 完工——真實 Cubase LE AI Elements 12 掃描快取 S1-S5 全 PASS
+      （雙 class、Instrument 分類、無 blacklist、快取↔磁碟時戳一致）；S6 誠實揭露部署落差（裝的是 0.2.0）。
+      ✅ **報告層** `melody_verify.py --html`——piano-roll 疊圖（頻譜圖底 + 期望音符框
+      綠/紅/灰 + 多餘音菱形），獨立頁面、不動已過 M4 目視驗收的主報告。
+      ✅ **複音拒答三規則（2026-08-20 夜，moonlight 全曲 1141 事件試跑揭露）**：
+      Ra 同音重擊遮蔽（用 dump-modes T60 預測前擊殘響，衰減 < RISE_DB+6dB → 拒答）、
+      Rb 並發泛音入帶污染音高（僅拒 pitch、onset 照判）、
+      Rc 多重長尾拍頻假 rise（≥2 同帶殘響重疊 → 該 rise 歸因拍頻、拒答列名）。
+      全部以 dump-modes 物理資料計算，非啟發式。哨兵 5/5 重驗綠
+      （E 幻音改 +2 半音——原 +7 與 Ra 正確衝突，哨兵抓到了設計互動）。
+      **2026-08-21 追加三條（moonlight v3 迭代揭露，全部可推導非啟發式）**：
+      Rd 床能量拒答（無 rise 只在「前置床近靜音」時才是缺席證明；密集織體+混響墊高的床 → 拒答）、
+      Re 低頻精修極限（誤差 ≈10% 包絡上升時間 → f0 < 167 Hz 拒 onset、pitch 照判——連純靜音前置的
+      首音都 −17.9ms，證明是估計器解析度不是污染）、
+      Rc' 單一 detune course 自拍（三弦 ±5c 在低頻拍週期秒級，深 null 回升 ≠ onset）；
+      Ra/Rb/Rc 改用 **有效殘響 = max(乾聲 T60, reverb decay)**（5.8s 混響下乾聲預測失效的修正）。
+      哨兵 B 的抓法自動轉移到 extra-scan（Rd 誠實拒答「被錯位音自己弄熱的床」，錯位仍被抓，設計自洽）。
+      證據 v3：`reports/gate_outputs/l1_selftest_v2.txt`（12 PASS / 0 FAIL）。
+      **月光四輪收斂（v1→v4：1043→651→322→38 FAIL）**；v4 殘餘 38 個 = 低音帶
+      Hann 裙擺滲入的確定性量測偏差（非渲染錯誤，physics_verify 單音 0.05c 佐證）——
+      **R2 判斷：回報數字停手，不為單曲過擬合**。主張域定案見設計文件 §7：
+      強域（單音/稀疏/HostProbe）全綠；弱域（密集低音複音+長混響）誠實拒答 96.6%，
+      位置保證由 verify_score 2e 位元決定性承擔。
+      ⏳ 待做：L3b（AI 開 Cubase 匯出，等 computer-use 連接器）；
+      corpus 73 檔 melody_verify 掃描（等 B2 一起，避免歸因混淆；moonlight 複音試跑
+      v2 結果出爐後先看拒答率是否合理）。
 - [ ] **C3 跨平台容差登記** — 工具與 CI 已就位（`tools/crossplatform_verify.py`，本機 GATE 全過）。**等 A5 push → CI 產出實測數字 → 月月把數字登記進 `ROADMAP_PHYSICS.md` §6「決定性」列**，該檢查即由 informational 轉為阻斷式 GATE。
 
 ## D. 還要補搜的資料（阻擋上面某些項）
