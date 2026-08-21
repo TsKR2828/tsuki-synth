@@ -618,10 +618,95 @@ void testLongDelayAndSharedEffects()
 }
 }
 
+
+void testBesselPortable()
+{
+    // X2 (2026-08-20): the portable ascending-series Bessel fallback that
+    // libc++ (Apple) platforms use in PlateModel::besselJ/besselI. Verified
+    // two independent ways so the macos leg is covered even though this
+    // machine's std library also has the functions:
+    //
+    // (1) Literature/scipy anchors -- run on EVERY platform. Values from
+    //     scipy.special.jv/iv 1.x (independent implementation; J0(1) and
+    //     J1(1) also cross-checked against Abramowitz & Stegun Table 9.1 to
+    //     all printed digits). Chosen to span the actual plate usage domain:
+    //     orders 0..6, arguments up to sqrt(120.08) = 10.958 (largest
+    //     clamped eigenvalue) plus the free-edge moment order m+1 = 6.
+    struct Anchor { int m; double x; double j; double i; };
+    static constexpr Anchor anchors[] = {
+        { 0,  1.0,     7.6519768655796661e-01, 1.2660658777520084e+00 },
+        { 1,  1.0,     4.4005058574493355e-01, 5.6515910399248503e-01 },
+        { 0,  2.0,     2.2389077914123562e-01, 2.2795853023360673e+00 },
+        { 2,  5.0,     4.6565116277752290e-02, 1.7505614966624236e+01 },
+        { 3, 10.0,     5.8379379305186670e-02, 1.7583807166108531e+03 },
+        { 5,  9.5,    -1.6132126019962670e-01, 4.5213152819727270e+02 },
+        { 6, 11.0,    -2.0158400087404349e-01, 1.3720929647738608e+03 },
+        { 0, 10.958,  -1.7847614684721927e-01, 7.0024303045643919e+03 },
+    };
+    // Tolerance derivation (BesselPortable.h header): |error| bounded by
+    // (largest series term) * eps; over the anchor range the largest term is
+    // I_0(10.958) ~ 7.0e3, so absolute error <~ 1.6e-12. Judge with a mixed
+    // absolute/relative criterion at 1e-11 (6x margin over the bound; R2
+    // note: this is a first-principles error bound, not a fitted number).
+    bool anchorsOk = true;
+    for (const auto& a : anchors)
+    {
+        const double j = tsuki::besselJPortable (a.m, a.x);
+        const double i = tsuki::besselIPortable (a.m, a.x);
+        if (std::abs (j - a.j) > 1e-11 * (1.0 + std::abs (a.j))) anchorsOk = false;
+        if (std::abs (i - a.i) > 1e-11 * (1.0 + std::abs (a.i))) anchorsOk = false;
+    }
+    CHECK (anchorsOk,
+           "Portable Bessel matches independent scipy/A&S anchors (mixed 1e-11)");
+
+    // (2) Dense grid against the std implementation -- runs on platforms
+    //     that have it (Windows/Linux, i.e. the ones whose production path
+    //     still uses std::), proving fallback and production agree
+    //     everywhere PlateModel can evaluate them.
+   #if defined(__cpp_lib_math_special_functions)
+    bool gridOk = true;
+    double worst = 0.0;
+    for (int m = 0; m <= 8; ++m)
+        for (double x = 0.0; x <= 16.0 + 1e-9; x += 0.05)
+        {
+            const double dj = std::abs (tsuki::besselJPortable (m, x)
+                                        - std::cyl_bessel_j ((double) m, x))
+                            / (1.0 + std::abs (std::cyl_bessel_j ((double) m, x)));
+            const double di = std::abs (tsuki::besselIPortable (m, x)
+                                        - std::cyl_bessel_i ((double) m, x))
+                            / (1.0 + std::abs (std::cyl_bessel_i ((double) m, x)));
+            worst = std::max ({ worst, dj, di });
+            if (dj > 1e-10 || di > 1e-10) gridOk = false;
+        }
+    std::cout << "       (portable-vs-std worst mixed deviation over "
+                 "9 orders x 321 args: " << worst << ")\n";
+    CHECK (gridOk,
+           "Portable Bessel agrees with std::cyl_bessel_j/_i on the full validated grid (mixed 1e-10)");
+   #endif
+
+    // Fail-closed domain sentinels: outside the validated domain the
+    // fallback must refuse (NaN), never extrapolate.
+    CHECK (std::isnan (tsuki::besselJPortable (9, 1.0)),
+           "Portable Bessel fail-closed: order 9 (outside validated domain) -> NaN");
+    CHECK (std::isnan (tsuki::besselJPortable (-1, 1.0)),
+           "Portable Bessel fail-closed: negative order -> NaN");
+    CHECK (std::isnan (tsuki::besselIPortable (0, 16.5)),
+           "Portable Bessel fail-closed: x > 16 (outside validated domain) -> NaN");
+    CHECK (std::isnan (tsuki::besselJPortable (0, -0.5)),
+           "Portable Bessel fail-closed: negative x -> NaN");
+    CHECK (std::isnan (tsuki::besselJPortable (0,
+               std::numeric_limits<double>::quiet_NaN())),
+           "Portable Bessel fail-closed: NaN x -> NaN");
+    // In-domain positive control so the sentinels cannot pass vacuously.
+    CHECK (std::isfinite (tsuki::besselJPortable (6, 11.0)),
+           "Portable Bessel positive control: in-domain evaluation is finite");
+}
+
 int main()
 {
     std::cout << "TsukiSynth physical-model regression tests\n";
     testBeamBoundaryAndGeometry();
+    testBesselPortable();
     testPlateModesAndPoisson();
     testGeometryFrequencyModeAndDamping();
     testBridgeAdmittanceLoss();

@@ -1,5 +1,6 @@
 #pragma once
 #include "MaterialDB.h"
+#include "BesselPortable.h"
 #include "../dsp/ModalResonator.h"
 #include <vector>
 #include <cmath>
@@ -260,14 +261,30 @@ private:
         return rows[13].omega[index];
     }
 
+    // X2 (2026-08-20): libc++ (Apple) never implemented the C++17 special
+    // math functions, so the std:: names below don't exist there and the
+    // macos CI leg could not build. Switch on the standard feature-test
+    // macro: platforms WITH the std implementation keep it bit-for-bit
+    // (Windows/Linux rendered output unchanged -- Rule 10 not triggered);
+    // only libc++ takes the portable ascending-series fallback, which is
+    // anchor-verified on every platform (see BesselPortable.h header
+    // comment and tests/physics_models_repro.cpp).
     static double besselJ (int order, double x)
     {
+       #if defined(__cpp_lib_math_special_functions)
         return std::cyl_bessel_j ((double) order, x);
+       #else
+        return tsuki::besselJPortable (order, x);
+       #endif
     }
 
     static double besselI (int order, double x)
     {
+       #if defined(__cpp_lib_math_special_functions)
         return std::cyl_bessel_i ((double) order, x);
+       #else
+        return tsuki::besselIPortable (order, x);
+       #endif
     }
 
     static float radialModeShape (bool freeEdge, int tableIndex, int m,
