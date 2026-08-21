@@ -7,6 +7,14 @@
 
 ## 0. 一句話現況
 
+**（2026-08-21 夜更新）**：X1/X2/三層驗證已 commit+push（49c22f5/b5ccb9b/26a0129），
+**CI 三平台首次全綠**（macos = X2 實戰成功），X3 跨平台數字已得（提案待 C3 登記）。
+**B2 施工卡完整執行完畢**：corpus 73/73、summer_m2 回綠、C2 發散收斂 128.75s→17.66s、
+錨點 0.1497→0.0874、M10 標 Done，Rule 10 報告 `reports/b1_b2_bridge_damping_before_after.md`
+——**月月已裁決 A1' 接受，本批隨後 commit**。corpus melody 掃描（informational）完成。
+以下為 2026-08-16/20 的歷史現況記錄：
+
+
 **兩盞紅燈（X1/X2）都已修，本機全綠，全部未 commit（R7）。**
 X1（audit_repro 回歸）2026-08-16 修畢；X2（macOS Bessel）2026-08-20 修畢
 （特性巨集切換 + 可攜級數，Windows 位元零改變，macos leg 轉綠需 push 後 CI 證明）。

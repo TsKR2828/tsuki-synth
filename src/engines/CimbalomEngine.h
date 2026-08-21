@@ -26,11 +26,14 @@ static constexpr int kMaxStringsPerCourse = 5;
 
 // 跨音域響度補償錨點：A4、預設參數（steel / strike 0.3 / Ø0.8mm / Wood 槌）
 // 下、以 velocity=0.5 Hertz 錨 τc 預估的攻擊窗能量 Σ modeAttackEnergy()
-// （2026-08-10 引擎內實測值，阻尼寬頻化後重量：A4=440Hz 在舊 MIDI 60 錨點
-// 之上，寬頻化使該處內部摩擦增加、T60 縮短，攻擊能量由 0.1609 降為 0.1497）。
+// （2026-08-21 B2 收尾重測值〔量測，非文獻/推導〕：B1 琴橋導納落地後
+// A4 的 T60 因新增第四項損耗再次縮短，攻擊能量由 0.1497 降為 0.0874。
+// 量測方法＝中央弦反解法，逐步數字與一次性腳本見
+// reports/gate_outputs/b2_attack_energy_remeasure.txt；歷史：0.1609 →
+// 0.1497〔2026-08-10 寬頻化〕→ 0.0874〔B1〕）。
 // gain(A4) = 1，中音域維持既有 equal-RMS 校準；
 // 見 ModalResonator::loudnessCompensationGain() 與 noteOn() 內 tauCRef 註解。
-static constexpr float kCimbalomAttackEnergyRefA4 = 0.1497f;
+static constexpr float kCimbalomAttackEnergyRefA4 = 0.0874f;
 
 // ── 琴橋導納／共鳴板耦合（2026-08-16 B1，見 StringModel::bridgeLossRate()
 // 與 docs/BRIDGE_ADMITTANCE_SOURCES.md）──

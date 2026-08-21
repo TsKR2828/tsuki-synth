@@ -43,7 +43,12 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
       域外 5 哨兵 NaN + 正控制 PASS；三 target 重建 + ctest 3/3 + `--full` NO CHECKED FAILURES。
       證據 `reports/gate_outputs/x2_bessel_portability.txt`。
       **未了**：macos-14 leg 實際轉綠需 push 後 CI 證明（併入 A5）。
-- [ ] **X3 跨平台實測數字仍未取得** — `cross-platform-compare` 因 macos 腿失敗而 skipped。X2 已修（本機），**push（A5）→ CI macos 轉綠後**才拿得到，C3 才能往下走。
+- [x] **X3 跨平台實測數字已取得** — **2026-08-21 push 後 CI run 32446987833 三平台全綠**（macos leg
+      = X2 的 BesselPortable 首次實戰成功）。實測：max |delta| ≤ 5 LSB @24-bit、delta RMS ≤ −125.8 dB
+      re signal、spectral ≤ 0.0019 dB、pitch 全部 +0.0000 cents。
+      證據 + **容差登記提案**（8 LSB / −120 dB / 0.01 dB / 0.01 cents，留餘裕防 runner 世代差）：
+      `reports/gate_outputs/x3_crossplatform_first_numbers.txt`。→ **C3 只剩月月確認提案數字**，
+      確認後寫進 ROADMAP §6 決定性列、informational 轉阻斷。
 - [ ] **X4 施工卡與流程補上「跑 ctest 前必先重建三個測試 target」** — 本輪 B1 的 `b1_ctest_all.txt`「3/3 passed」
       是**測到未重建的舊 binary**，對抗驗證的 GATE 視角「獨立重跑」也踩同一個坑。
       規約：`cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest` 之後才跑 `ctest`。
@@ -52,10 +57,13 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 ## A. 等月月決定（AI 不能自己動）
 
 - [ ] **A1 Rule 10 前後對照裁決** — 讀 `reports/deep_fix_before_after.md` §00 白話導讀後，決定「整批接受」或「指名回退某一項」。這是 7/22 那六項物理修正的最終放行。
-- [ ] **A2 阻尼寬頻化那批 unstaged 怎麼處理** — 三選一：(a) 先回退、等 B1 做完再重來；(b) 保留在工作樹、B1 落地後一起收；(c) 現況接受（**不建議**，C2 的 T60 會是 129 s、corpus 掉到 72/73）。**推薦 (b)**。
-- [ ] **A3 琴橋導納要不要開工**（= B1）。資料齊、只需新增一個參數、能解鎖 A2 與另外兩個缺口。**推薦做**。
+- [ ] **A1' B1+B2 Rule 10 裁決（2026-08-21 新增）** — 讀 `reports/b1_b2_bridge_damping_before_after.md` §0 白話導讀後，
+      決定「接受琴橋導納+寬頻化+錨點重測整批」或「指名回退」。聽感重點：低音尾巴明顯變短（C2 128.75s→17.66s，
+      更接近真實揚琴），整曲響度/亮度幾乎不動（六曲 ΔRMS ≤0.6 dB）。**接受後才輪到 commit 這批 B2 改動。**
+- [x] **A2 阻尼寬頻化那批 unstaged 怎麼處理** — **已依 (b) 方案收斂完成**（事實路徑：該批與 B1 一起進了 447faea，B2 於 2026-08-21 完成收尾驗證，見 B2 條目）。
+- [x] **A3 琴橋導納要不要開工**（= B1）— 已開工並完成（見 B1/B2 條目）。
 - [ ] **A4 亮度 EQ 應急層去留** — 8/6 激發端修正落地後，`global.effects.eq` 高頻 shelf 的補償需求可能已部分消失，需審聽後決定是否調整建議值／文件。
-- [ ] **A5 push 到 GitHub** — 跨平台 CI（C3）的第一輪實測數字非 push 不可得。
+- [x] **A5 push 到 GitHub** — 2026-08-21 月月授權 push（49c22f5/b5ccb9b/26a0129），CI 全綠，X3 數字已得。
 - [ ] **A6 merge → `main` 時機** — M8-8b，分支 `fix/deep-physics-audit-20260716` 至今未併。
 - [ ] **A7 repo License 定案** — 已決定「保留商業」。要寫 `LICENSE` + 更新 `README.md:349` 的 `TBD`。JUCE 8 走 Starter 層（免費、營收 $20,000 以下、允許閉源商業散布），發行前要讀一次 JUCE 8 EULA 的署名條款。VST3 SDK 在 JUCE 8 內是 MIT，無虞。
 - [ ] **A8 外部資料集要不要下載** — CC BY-SA 4.0 與「保留商業」的相容性。**推薦：只當外部參照，repo 內只留 DOI + SHA256 + 比對數字，資料檔不進版控。**
@@ -93,7 +101,7 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 
 ## B. 資料齊、可以開工（**依此順序**，理由見 `RESEARCH_INDEX.md` §4）
 
-- [ ] **B1 琴橋導納／共鳴板耦合**（前置：無）——**2026-08-16 實作完成，但 Rule 10 未滿足，維持未勾**。
+- [x] **B1 琴橋導納／共鳴板耦合**——**2026-08-21 由 B2 收尾補齊 Rule 10 報告 + corpus 73/73 後轉完成**（M10 已標 Done，見 ROADMAP §2）。
       `Y∞ = 1/(8√(D·ρs))` → `α = (T/L)·Re Y` → `1/T60_bridge = T·G/(ln1000·L)`。
       新增參數只有音板厚度 `h`。刻意不加耦合折減係數（Rule 4）。
       → 依據 `docs/BRIDGE_ADMITTANCE_SOURCES.md`；工作卡 `docs/workcards/B1.md`。
@@ -108,8 +116,16 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
       確認 Chromatic 未被誤動。公式鏈判定為忠實實作。
       **剩餘（屬 B2 範圍，齊備前不得標完成）**：Rule 10 前後對照報告
       `reports/b1_b2_bridge_damping_before_after.md`（**目前不存在**）+ corpus 73 檔重驗。
-- [ ] **B2 阻尼寬頻化收尾**（前置：B1）
-      程式已寫好在工作樹，B1 落地後低音發散問題自動消失，重跑 GATE + corpus 即可收。
+- [x] **B2 阻尼寬頻化收尾** — **2026-08-21 完成（委託授權；改動未 commit，待月月讀 Rule 10 報告裁決）**。
+      施工卡 11 條 GATE 全過：t60 ALL WITHIN TOLERANCE、--full NO CHECKED FAILURES、
+      三 build exit 0、ctest 3/3、pytest 121/121、**corpus 73/73 PASS 零新增豁免**
+      （`b2_*.txt` 全套證據）。寬頻化低音發散被 B1 封頂證實（C2 128.75s→17.66s）；
+      `summer_m2` 自動回綠（−46.8 FAIL → −52.2 PASS，未動容差/score/豁免）。
+      錨點重測：Cimbalom 0.1497→0.0874（中央弦反解法，`b2_attack_energy_remeasure.txt`）、
+      Chromatic 兩值不變（noteComp≈1 雙 null 自驗）。
+      **Rule 10 報告：`reports/b1_b2_bridge_damping_before_after.md`（§9 七項全含）——
+      月月請讀 §0 白話導讀後裁決「接受」或「指名回退」（= 新 A1' 裁決項）。**
+      施工卡 §7 哨兵測試未實作，理由記載於報告附錄（測試端重算=第二份會漂移的複本）。
 - [ ] **B3 弦阻尼律換第一原理**（前置：建議排在 B2 之後，避免歸因混淆）
       Cuesta & Valette 三機制，零自由參數。**注意這是改阻尼律的形狀（`f²` → `f^0.5`+常數），不是換數字。**
       需依 Rule 9 標註「同一份 materials.json 對不同引擎語意不同」。
@@ -174,9 +190,16 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
       **R2 判斷：回報數字停手，不為單曲過擬合**。主張域定案見設計文件 §7：
       強域（單音/稀疏/HostProbe）全綠；弱域（密集低音複音+長混響）誠實拒答 96.6%，
       位置保證由 verify_score 2e 位元決定性承擔。
-      ⏳ 待做：L3b（AI 開 Cubase 匯出，等 computer-use 連接器）；
-      corpus 73 檔 melody_verify 掃描（等 B2 一起，避免歸因混淆；moonlight 複音試跑
-      v2 結果出爐後先看拒答率是否合理）。
+      ⏳ **L3b**：2026-08-21 connector 恢復後嘗試執行，**Cubase 控制權被月月即時拒絕**（尊重、未重試）。
+      素材已備妥：哨兵 MIDI（100 BPM 對拍，5 音對應 melody_sentinel fixture）在 scratchpad，
+      流程 = 開 Cubase → TsukiSynth 音軌 → 匯入 MIDI → Export Audio Mixdown → melody_verify --wav 判定。
+      月月方便讓 AI 接管螢幕時再說一聲即可。註：系統裝的仍是 0.2.0（部署到 Program Files 需管理員權限，
+      AI 依政策不碰 UAC）；位置主張對版本穩健（B1/B2 不動頻率/onset），但若要 host 測最新版，
+      月月需先手動以管理員權限覆蓋 Common Files\VST3 的 TsukiSynth.vst3。
+      ✅ corpus 81 檔 melody_verify 掃描完成（informational，`reports/gate_outputs/melody_corpus_sweep_informational.txt`）：
+      30 檔全綠（強域實證）+ 48 檔含 FAIL（§7 弱域：密集複音/混響/delay，位置保證由 2e 位元決定性承擔）
+      + 3 檔 layered 整檔拒答（上游 CLI 無 layer 展開的 --dump-modes；工具已補優雅拒答 exit 3）。
+      事件層級 473 PASS / 854 FAIL / 38633 UNVERIFIED（拒答率 96.7% = 域界定的 corpus 級實測）。
 - [ ] **C3 跨平台容差登記** — 工具與 CI 已就位（`tools/crossplatform_verify.py`，本機 GATE 全過）。**等 A5 push → CI 產出實測數字 → 月月把數字登記進 `ROADMAP_PHYSICS.md` §6「決定性」列**，該檢查即由 informational 轉為阻斷式 GATE。
 
 ## D. 還要補搜的資料（阻擋上面某些項）
