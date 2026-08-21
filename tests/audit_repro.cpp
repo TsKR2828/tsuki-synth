@@ -50,9 +50,33 @@ bool readAudioFile (const juce::File& file, juce::AudioBuffer<float>& audio,
     return reader->read (&audio, 0, audio.getNumSamples(), 0, true, true);
 }
 
+// The minimal database these repro tests render against. It carries TWO
+// materials, for two different reasons:
+//
+//   steel        -- the string material every cimbalom/string event below
+//                   names explicitly.
+//   wood_spruce  -- the bridge/soundboard reference material that
+//                   CimbalomEngine.h::kBridgeSoundboardMaterialKey looks up
+//                   for StringModel::bridgeLossRate() (2026-08-16 B1). That
+//                   lookup is fail-closed at four call sites
+//                   (CimbalomEngine.h:133 -> return, ScoreRenderer.h:183 ->
+//                   continue, :704 -> return false, :999 -> return 0.0), so a
+//                   database WITHOUT it makes every string render abort --
+//                   which is exactly what it should do, because a database
+//                   with no soundboard material is an incomplete database.
+//                   Production data/materials.json always contains it; this
+//                   fixture simply had not caught up (TODO.md X1).
+//
+// Both entries are verbatim copies of their data/materials.json values so the
+// fixture stays traceable (Rule 4) and cannot drift into a second, divergent
+// source of physical constants. display_name is ASCII here only to keep this
+// source file free of non-ASCII literals; it is not read by the physics.
 void loadTestMaterial (MaterialDB& materials)
 {
-    const auto json = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"eta":0.0002,"beta_air":0.00000012,"gamma_radiation":0.00002}}}})json";
+    const auto json = R"json({"materials":{)json"
+        R"json("steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"eta":0.0002,"beta_air":0.00000012,"gamma_radiation":0.00002}},)json"
+        R"json("wood_spruce":{"display_name":"Spruce","density":450,"youngs_modulus":12000000000,"poisson_ratio":0.37,"damping":{"eta":0.007,"beta_air":0.0000003,"gamma_radiation":0.00005}})json"
+        R"json(}})json";
     CHECK (materials.loadFromString (json), "Test material database loads");
 }
 
