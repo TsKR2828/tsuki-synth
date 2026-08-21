@@ -1,0 +1,52 @@
+=== X3 跨平台實測數字（CI run 32446987833，2026-08-21，第一次三平台全綠）===
+拉取指令：gh run view 32446987833 --log --job 96669300352
+比對基準：windows-2022/MSVC；比對對象：ubuntu-24.04/clang + macos-14/appleclang
+（macos leg 是 X2 修復後第一次建置成功——BesselPortable fallback 首次實戰）
+
+    max |delta|            : -124.49 dBFS (5.000 LSB at 24-bit)
+    delta RMS              : -145.34 dBFS (-126.09 dB re signal)
+    max spectral deviation : 0.0005 dB over 36689 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (816.000 -> 816.000 Hz)
+    max |delta|            : -132.45 dBFS (2.000 LSB at 24-bit)
+    delta RMS              : -157.99 dBFS (-135.59 dB re signal)
+    max spectral deviation : 0.0002 dB over 30460 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (681.605 -> 681.605 Hz)
+    max |delta|            : -132.45 dBFS (2.000 LSB at 24-bit)
+    delta RMS              : -155.31 dBFS (-137.04 dB re signal)
+    max spectral deviation : 0.0004 dB over 43896 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (521.601 -> 521.601 Hz)
+    max |delta|            : -132.45 dBFS (2.000 LSB at 24-bit)
+    delta RMS              : -155.55 dBFS (-131.21 dB re signal)
+    max spectral deviation : 0.0011 dB over 38551 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (909.270 -> 909.270 Hz)
+    max |delta|            : -132.45 dBFS (2.000 LSB at 24-bit)
+    delta RMS              : -151.90 dBFS (-135.86 dB re signal)
+    max spectral deviation : 0.0007 dB over 71514 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (440.134 -> 440.134 Hz)
+    max |delta|            : -124.49 dBFS (5.000 LSB at 24-bit)
+    delta RMS              : -145.05 dBFS (-125.81 dB re signal)
+    max spectral deviation : 0.0006 dB over 36689 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (816.000 -> 816.000 Hz)
+    max |delta|            : -128.93 dBFS (3.000 LSB at 24-bit)
+    delta RMS              : -151.97 dBFS (-129.57 dB re signal)
+    max spectral deviation : 0.0005 dB over 30460 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (681.605 -> 681.605 Hz)
+    max |delta|            : -132.45 dBFS (2.000 LSB at 24-bit)
+    delta RMS              : -149.83 dBFS (-131.56 dB re signal)
+    max spectral deviation : 0.0012 dB over 43896 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (521.601 -> 521.601 Hz)
+    max |delta|            : -128.93 dBFS (3.000 LSB at 24-bit)
+    delta RMS              : -151.84 dBFS (-127.50 dB re signal)
+    max spectral deviation : 0.0019 dB over 38551 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (909.270 -> 909.270 Hz)
+    max |delta|            : -128.93 dBFS (3.000 LSB at 24-bit)
+    delta RMS              : -147.37 dBFS (-131.34 dB re signal)
+    max spectral deviation : 0.0009 dB over 71514 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (440.134 -> 440.134 Hz)
+
+=== 摘要（供 C3 容差登記提案）===
+全部 probe：max |delta| ≤ 5 LSB @24-bit（-124.49 dBFS）；delta RMS ≤ -125.81 dB re signal；
+max spectral deviation ≤ 0.0019 dB；peak-bin pitch 偏差全部 +0.0000 cents。
+登記提案（月月確認後寫進 ROADMAP_PHYSICS.md §6「決定性」列，informational→阻斷）：
+  max |delta| ≤ 8 LSB @24-bit、delta RMS ≤ -120 dB re signal、spectral ≤ 0.01 dB、pitch ≤ 0.01 cents
+（比實測留 ~1.6x/6dB/5x 餘裕，防 runner 硬體世代差；不是調寬——這條 GATE 目前根本還沒有容差）

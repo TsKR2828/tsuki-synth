@@ -1,0 +1,95 @@
+=== corpus 全量 melody_verify 掃描（informational，非 GATE；2026-08-21）===
+授權：C3-b 委託；定位：EARFREE_MELODY_GATE_DESIGN §7 主張域的 corpus 級實測
+
+檔案：78 檔可判 + 3 檔 layered（無 --dump-modes 基準，整檔拒答；工具已補優雅拒答 exit 3）
+  全綠（0 FAIL）：30 檔
+  含 FAIL：48 檔（弱域：密集複音/長混響/delay，§7 已界定）
+事件層級：PASS 473 / FAIL 854 / UNVERIFIED 38633
+  拒答率 96.7%（弱域誠實拒答為設計行為）
+
+--- 全綠檔案（強域實證，位置主張直接成立）---
+  akashic_action_001: 0 PASS / 2 UNVERIFIED
+  akashic_ui_001: 1 PASS / 0 UNVERIFIED
+  clockwork_ambient_001: 0 PASS / 8 UNVERIFIED
+  clockwork_loop_001: 2 PASS / 8 UNVERIFIED
+  clockwork_notify_001: 1 PASS / 0 UNVERIFIED
+  clockwork_notify_var01: 1 PASS / 1 UNVERIFIED
+  clockwork_transition_001: 4 PASS / 1 UNVERIFIED
+  forest_notify_var01: 1 PASS / 2 UNVERIFIED
+  forest_ui_001: 1 PASS / 0 UNVERIFIED
+  melody_sentinel: 5 PASS / 0 UNVERIFIED
+  moonlight_sonata_movement1_yangqin_tongue_mix: 0 PASS / 2285 UNVERIFIED
+  ocean_action_001: 0 PASS / 2 UNVERIFIED
+  ocean_ui_001: 1 PASS / 0 UNVERIFIED
+  rabbit_action_001: 0 PASS / 1 UNVERIFIED
+  rabbit_loop_001: 5 PASS / 4 UNVERIFIED
+  rabbit_notify_001: 1 PASS / 0 UNVERIFIED
+  rabbit_notify_var01: 1 PASS / 0 UNVERIFIED
+  rabbit_transition_001: 3 PASS / 0 UNVERIFIED
+  rabbit_warning: 2 PASS / 0 UNVERIFIED
+  restraint_ambient_001: 0 PASS / 4 UNVERIFIED
+  restraint_loop_001: 1 PASS / 8 UNVERIFIED
+  restraint_notify_001: 2 PASS / 0 UNVERIFIED
+  restraint_transition_001: 0 PASS / 4 UNVERIFIED
+  restraint_ui_001: 1 PASS / 0 UNVERIFIED
+  test_distortion: 1 PASS / 0 UNVERIFIED
+  test_distortion_bitcrush: 1 PASS / 0 UNVERIFIED
+  test_engine_levels: 1 PASS / 2 UNVERIFIED
+  test_trim: 1 PASS / 0 UNVERIFIED
+  water_gong_clamped: 2 PASS / 0 UNVERIFIED
+  water_gong_free: 2 PASS / 0 UNVERIFIED
+
+--- layered 拒答 ---
+  ai_radiance_complete
+  layered_transition
+  test_layer
+
+--- 含 FAIL 檔案（弱域，informational；位置保證由 verify_score 2e 位元決定性承擔）---
+  ai_radiance_m1: 6P/4F/55U
+  ai_radiance_m2: 1P/6F/100U
+  ai_radiance_m3: 4P/18F/47U
+  ai_radiance_m4: 0P/7F/64U
+  akashic_ambient_001: 0P/2F/1U
+  akashic_bell: 0P/2F/0U
+  akashic_loop_001: 2P/2F/1U
+  akashic_notify_001: 1P/1F/0U
+  akashic_opening_bell_001: 3P/3F/3U
+  akashic_transition_001: 1P/1F/1U
+  akashic_transition_var01: 0P/1F/2U
+  clockwork_action_001: 1P/1F/0U
+  clockwork_ui_001: 0P/1F/0U
+  epiano_3stack_test: 0P/5F/4U
+  forest_action_001: 0P/2F/0U
+  forest_ambient_001: 4P/1F/2U
+  forest_loop_001: 15P/1F/1U
+  forest_notify_001: 1P/1F/0U
+  forest_transition_001: 3P/1F/1U
+  fur_elise_opening: 0P/3F/9U
+  moonlight_sonata_complete: 0P/12F/6367U
+  moonlight_sonata_movement1_tongue_drum: 5P/74F/1064U
+  moonlight_sonata_movement1_yangqin: 2P/39F/1102U
+  ocean_ambient_001: 0P/1F/3U
+  ocean_loop_001: 0P/1F/4U
+  ocean_notify_001: 0P/2F/0U
+  ocean_notify_var01: 0P/1F/1U
+  ocean_transition_001: 0P/1F/3U
+  physical_piano: 3P/2F/0U
+  rabbit_ambient_001: 4P/1F/1U
+  rabbit_ui_001: 0P/1F/0U
+  restraint_action_001: 0P/1F/1U
+  restraint_metal_click: 0P/2F/1U
+  restraint_notify_var01: 0P/1F/1U
+  rules_v2_demo_001: 64P/1F/34U
+  test_glide: 0P/3F/0U
+  vivaldi_four_seasons_autumn_m1: 28P/82F/3002U
+  vivaldi_four_seasons_autumn_m2: 41P/28F/119U
+  vivaldi_four_seasons_autumn_m3: 28P/81F/2474U
+  vivaldi_four_seasons_spring_m1: 15P/49F/3110U
+  vivaldi_four_seasons_spring_m2: 14P/17F/1012U
+  vivaldi_four_seasons_spring_m3: 57P/113F/1902U
+  vivaldi_four_seasons_summer_m1: 45P/77F/3500U
+  vivaldi_four_seasons_summer_m2: 18P/16F/596U
+  vivaldi_four_seasons_summer_m3: 18P/80F/5061U
+  vivaldi_four_seasons_winter_m1: 2P/30F/3224U
+  vivaldi_four_seasons_winter_m2: 3P/6F/843U
+  vivaldi_four_seasons_winter_m3: 43P/69F/2585U

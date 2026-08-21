@@ -219,7 +219,17 @@ def expected_f0s(cli, score_path, events):
     centroid (physically true, incl. inharmonicity + detuning). FM with
     default ratio: equal temperament. f0s[i] None => refusal reason in
     refusals[i]."""
-    dumped = vs.dump_modes(cli, str(score_path)).get("events", [])
+    try:
+        dumped = vs.dump_modes(cli, str(score_path)).get("events", [])
+    except vs.CliError as e:
+        if "layer expansion is not implemented" in str(e):
+            # Layered scores have no --dump-modes (upstream CLI limitation,
+            # 2026-08-21 corpus sweep) -> the whole file is a refusal, not a
+            # crash: no expected-f0 ground truth exists to judge against.
+            print("  [UNVERIFIED] whole file: layered score has no --dump-modes"
+                  " ground truth (CLI: layer expansion not implemented)")
+            sys.exit(3)
+        raise
     by_src = {d.get("source_index"): d for d in dumped}
     f0s, partials, refusals, decays = [], [], [], []
     for i, ev in enumerate(events):
