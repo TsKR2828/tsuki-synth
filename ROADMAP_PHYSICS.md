@@ -435,7 +435,7 @@ python tools/physics_verify.py --t60
 | 殘差頻譜能量 | 判定制 −60.0 dB re total（2026-07-23 月月批准並完成實作/GATE） | −60.0 dB re total 判定制（M2/F5） | round-2/round-3 實測基線 −74.7～−83.1 dB re total，距門檻留有 ≥14.7 dB 邊際；實作與證據見 `tools/physics_verify.py`、`reports/gate_outputs/deepfix4_*` |
 | 休止區 RMS | 無 | ≤ −50 dBFS（M3，含殘響衰減窗） | 待 M3 實測後檢討；2026-07-18 量測法改為逐聲道 RMS 取最大（門檻 −50 dBFS 不變；量測方法變更，非容差變更） |
 | 跨引擎等 RMS | 0.2 dB（已達） | 維持 | 2026-06 校準 |
-| 決定性 | SHA256 一致（同機） | 維持；跨機另訂（NTH-4） | 2026-08-15：跨機量測工具已就位（`tools/crossplatform_verify.py` + CI `cross-platform-emit`/`cross-platform-compare` 三平台矩陣），**但本列的跨機容差數值仍待月月登記**。工具在無登記容差時輸出 exit 3 `UNREGISTERED`、只印實測數字不判定（Rule 2）。可登記的量：`max_abs_delta_dbfs` / `delta_rms_re_signal_db` / `max_spectral_deviation_db` / `max_peak_pitch_deviation_cents`，寫進 `scores/crossplatform_tolerance.json` 後該檢查即轉為阻斷式 |
+| 決定性 | SHA256 一致（同機） | 跨機：max abs delta ≤ −120 dBFS、delta RMS ≤ −120 dB re signal、spectral ≤ 0.01 dB、peak pitch ≤ 0.01 cents | **2026-08-22 月月登記完成**（`scores/crossplatform_tolerance.json`，裁決「照提案登記」）：依 CI run 32446987833 第一次三平台實測（最差 5 LSB@24bit／−125.8 dB／0.0019 dB／+0.0000c）留餘裕訂定，`cross-platform-compare` 自此轉**阻斷式 GATE**（超標 exit 1）。2026-08-15 工具就位記錄：`tools/crossplatform_verify.py` + CI 三平台矩陣，無登記時 exit 3 UNREGISTERED 只印不判（Rule 2） |
 
 ## 7. 狀態更新規則
 

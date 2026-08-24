@@ -1,0 +1,9 @@
+{
+  "_approved_by": "月月",
+  "_approved_date": "2026-08-22",
+  "_basis": "CI run 32446987833（第一次三平台全綠：windows-2022/MSVC 基準 vs ubuntu-24.04/clang + macos-14/appleclang，macos leg 為 X2 BesselPortable 首戰）。實測全 probe 最差值：max |delta| 5 LSB @24-bit（-124.49 dBFS）、delta RMS -125.81 dB re signal、spectral deviation 0.0019 dB、peak pitch +0.0000 cents。門檻取實測值留餘裕（約 1.6x 振幅／6 dB／5x／絕對 0.01c）防 runner 硬體世代差，非放寬既有容差——本列此前無任何登記值（exit 3 UNREGISTERED）。提案 reports/gate_outputs/x3_crossplatform_first_numbers.txt，月月 2026-08-22 裁決「照提案登記」。",
+  "max_abs_delta_dbfs": -120.0,
+  "delta_rms_re_signal_db": -120.0,
+  "max_spectral_deviation_db": 0.01,
+  "max_peak_pitch_deviation_cents": 0.01
+}
