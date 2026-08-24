@@ -2,6 +2,50 @@
 
 ---
 
+## 2026-08-20 ~ 08-22 — 紅燈清零、免耳三層驗證鏈、M10 收官、A9 關閉（三夜連戰）
+
+**授權框架**：月月 2026-08-20 全權委託（原話「我沒有樂理基礎也沒有程式基礎…你自己想辦法，
+照順序把缺口都補上，我最後再拿去給專業人士聽」）；期間月月共裁決七次
+（X1=(a)、委託三項、A1' 接受、C3 照提案、A12=(a)）並三度授權 commit+push。
+
+**修復線**：
+- X1 audit_repro 回歸：測試 DB 補 `wood_spruce`（fail-closed 守衛正確、fixture 缺口）。
+- X2 macOS Bessel：`BesselPortable.h` A&S 級數 + `__cpp_lib_math_special_functions` 特性巨集切換，
+  Windows 位元零改變；CI macos-14 leg 首次建置成功。
+- X3：CI run 32446987833 三平台首次全綠，跨平台差異 max 5 LSB@24bit / pitch +0.0000c
+  → C3 容差登記（`scores/crossplatform_tolerance.json`），`cross-platform-compare` 轉阻斷式。
+- A12：HostProbe 首捕「set 不量化/restore 量化」不對稱 → 36 個 float 參數轉連續，
+  round-trip 位元精確；H5 主張修正為 fresh-vs-fresh（DAW 重開語意）。
+
+**免耳三層驗證鏈**（設計 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md`）：
+- L1 `melody_verify.py`：onset±10ms/pitch 5c 正向驗證 + extra-scan + 哨兵五件組 + piano-roll HTML。
+  月光 1141 事件四輪迭代（1043→651→322→38 FAIL）長出 8 條可推導的 fail-closed 拒答規則
+  （重擊遮蔽/泛音污染/course 自拍/床能量/低頻精修極限…，有效殘響=max(乾T60, reverb decay)）；
+  殘餘 38 = 低音 Hann 裙擺確定性量測偏差 → R2 停手、主張域寫死在設計文件 §7
+  （強域全綠 ~1ms/1c；弱域誠實拒答、位置保證由 verify_score 2e 位元決定性承擔）。
+  corpus 81 檔掃描：30 全綠/48 弱域/3 layered 整檔拒答（拒答率 96.7% 如設計）。
+- L2 `TsukiSynthHostProbe`：載磁碟 .vst3，A9 四步自動化 16/16；plugin 即時路徑旋律位置首驗 5/5。
+- L3a `cubase_scan_verify.py`：真 Cubase 掃描快取 XML S1-S5 全 PASS（零 GUI 零人工）。
+- L3b（月月授權螢幕控制）：AI 全程操作真 Cubase——建軌/匯入哨兵 MIDI/tempo 對齊/GUI 上
+  Reverb 歸零/匯出 → melody_verify 5/5（onset ≤2.5ms）；存檔重開再匯出音訊 SHA256 位元全等。
+  **A9 就此關閉**（殘留僅 GUI 畫 automation lane，L2 合約層已蓋）。
+
+**B2 收官（M10 Done）**：corpus 73/73 零新增豁免；`summer_m2` 自動回綠（−46.8 FAIL→−52.2 PASS）；
+寬頻化低音發散被 B1 封頂證實（C2 128.75s→17.66s）；錨點 `kCimbalomAttackEnergyRefA4`
+0.1497→0.0874（中央弦反解法：velocity=0.5 令 τc 相消、中央弦 freqMul=1 使 dump 與引擎
+baseModes 位元一致；Chromatic 兩值不變=雙 null 自驗）。Rule 10 報告
+`reports/b1_b2_bridge_damping_before_after.md`（§9 七項全含），月月 A1' 接受。
+六曲對照 ΔRMS ≤0.6 dB——T60 結構性大改下整曲平衡不動，校準鏈成立。
+
+**方法論沉澱**：哨兵反例三度立功（抓出窗心偏移 21ms、拍頻假 rise、E 幻音與 Ra 規則衝突）；
+「驗證器的最後一個 FAIL 常是在教你主張措辭錯了」（月光低音偏差 → 量測極限；H5 live-vs-fresh
+→ DAW 語意）；誠實拒答優於硬判（fail-closed 96.7% 不是失敗是域界定）。
+
+**commit**：`49c22f5`（X1）/`b5ccb9b`（X2）/`26a0129`（三層驗證）/`4ef2c50`（B2）/`bef60fc`
+（掃描+X3）+ 本輪文件收尾 commit。
+
+---
+
 ## 2026-08-06（夜）— 跨音域響度失衡：激發端物理修正 + 響度校準層（unstaged 待審）
 
 月月再次反映「高音變小聲、低音變大聲」（同題三線的第三線：亮度 EQ＝頻譜補償應急、

@@ -1,239 +1,121 @@
 # TsukiSynth 交接文件
 
-> 建立：2026-08-16　分支：`fix/deep-physics-audit-20260716`　最新 commit：`447faea`（已 push）
-> **新 session 請先讀完這一頁再動手。** 詳細待辦在 `TODO.md` 開頭的「待辦總表」。
+> 重寫：2026-08-22　分支：`fix/deep-physics-audit-20260716`
+> **新 session 請先讀完這一頁再動手。** 待辦細節在 `TODO.md` 開頭「待辦總表」；歷史決策在 `DEVLOG.md`；
+> 2026-08-16 版交接的歷史內容已由 git 歷史保存（`d46cd84` 前後），本檔只寫現況。
 
 ---
 
 ## 0. 一句話現況
 
-**（2026-08-21 夜更新）**：X1/X2/三層驗證已 commit+push（49c22f5/b5ccb9b/26a0129），
-**CI 三平台首次全綠**（macos = X2 實戰成功），X3 跨平台數字已得（提案待 C3 登記）。
-**B2 施工卡完整執行完畢**：corpus 73/73、summer_m2 回綠、C2 發散收斂 128.75s→17.66s、
-錨點 0.1497→0.0874、M10 標 Done，Rule 10 報告 `reports/b1_b2_bridge_damping_before_after.md`
-——**月月已裁決 A1' 接受，本批隨後 commit**。corpus melody 掃描（informational）完成。
-以下為 2026-08-16/20 的歷史現況記錄：
+**全綠。** 紅燈清零、CI 三平台全綠、M10 收官、A9 關閉、免耳三層驗證鏈（L1/L2/L3a/L3b）
+全線閉環。工程樹乾淨（本輪文件更新後全數 commit）。**下一步是 B3（弦阻尼律第一原理）
+或先做 X4（施工卡規約補寫），由月月起手。**
 
+## 1. 2026-08-20 ~ 08-22 這三天發生了什麼（新 session 必讀）
 
-**兩盞紅燈（X1/X2）都已修，本機全綠，全部未 commit（R7）。**
-X1（audit_repro 回歸）2026-08-16 修畢；X2（macOS Bessel）2026-08-20 修畢
-（特性巨集切換 + 可攜級數，Windows 位元零改變，macos leg 轉綠需 push 後 CI 證明）。
-另外 2026-08-20 月月**全權委託**建置「免耳免人工驗證三層 GATE」（TODO.md C3-b）：
-L1 旋律位置驗證器 + L2 HostProbe + L3a Cubase 掃描驗證**已完工全綠**，
-並首次驗證 plugin 即時路徑的旋律位置（5/5 PASS）；副產品：抓到 A12
-（參數 set/restore 量化不對稱，DAW 存讀專案前後渲染位元不一致——誠實 FAIL 留檔）。
-證據：`reports/gate_outputs/{x1_regression_fix,x2_bessel_portability,l1_l2_l3a_melody_gate,l3a_cubase_scan}.txt`。
-
----
-
-## 1. 🔴 最優先：現在就壞著的東西
-
-### 1.1 ~~B1 引入的回歸~~ ✅ 已修（2026-08-16，未 commit）
-
-原症狀：CI run `31933324875` 紅燈，`ctest` 的 `audit_repro` 三項失敗
-（`Semantic-order regression fixtures render successfully`／
-`Permuting simultaneous events preserves the exact WAV bytes`／
-`Inserting a zero-velocity event preserves the exact WAV bytes`）。
-
-**根因**：B1 在 `src/engines/CimbalomEngine.h` 寫死
-`kBridgeSoundboardMaterialKey = "wood_spruce"` 當共鳴板材質，且查表失敗時
-**fail-closed**。呼叫點實為**四處**（原記三處，漏了引擎本身）：
-`CimbalomEngine.h:133` → `return`、`ScoreRenderer.h:183` → `continue`、
-`:704` → `return false`、`:999` → `return 0.0`。
-而 `tests/audit_repro.cpp` 的測試專用精簡 DB 只有 `steel`
-→ 查表必定失敗 → 渲染直接放棄 → 三個依賴渲染的測試連鎖失敗。
-
-**月月裁決：(a)**——`tests/audit_repro.cpp::loadTestMaterial` 補進 `wood_spruce`。
-理由：fail-closed 守衛本身是對的，「沒有共鳴板材質的 DB」本來就是不完整的 DB；
-這是**測試 fixture 的缺口**，不是設計缺陷。數值逐字照抄 `data/materials.json`
-（Rule 4 可溯源，不製造第二份會漂移的常數來源）。
-
-**GATE**：三 target 全重建（§1.2 規約）exit 0 → `ctest` 3/3 Passed →
-`TsukiSynthAuditTest.exe` 直接跑，三項具名 CHECK 皆 `[PASS]`、`PASS (0 failures)`。
-`git diff --stat` 單檔 `tests/audit_repro.cpp`，**未動 `src/`**
-→ R6 未觸發、**Rule 10 未觸發（無任何渲染輸出改變）**、R2 未動容差。
-
-**未了**：這只解紅燈。「共鳴板材質該不該從寫死改成可注入」的結構問題
-**併入 `TODO.md` A11 一起裁決**（A11 若選「加旗標預設關閉」或「換材質」，
-需要的 plumbing 比單純注入更多，屆時一次做完；若選「確認現值」則維持寫死即可）。
-
-### 1.2 ⚠️ 為什麼本機沒抓到——這是必須記住的教訓
-
-B1 實作 agent 產出的 `reports/gate_outputs/b1_ctest_all.txt` 寫著「3/3 passed」，
-對抗驗證的 GATE 視角也「獨立重跑」確認過——**但兩者跑的都是沒重建的舊 binary**。
-
-`cmake --build build --config Release --target TsukiSynthPhysicsModelsTest` 只重建了
-**一個**測試 target，`TsukiSynthAuditTest` 沒跟著重建，所以 `ctest` 測到的是 B1 之前的
-`audit_repro.exe`。手動 `--target TsukiSynthAuditTest` 重建後，本機立刻重現與 CI
-完全相同的三個 FAIL。
-
-**規約（請寫進任何未來的施工卡）**：
-```bash
-# 跑 ctest 前一定要先把三個測試 target 全部重建，否則會測到舊 binary
-cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
-ctest --test-dir build -C Release --output-on-failure
-```
-
-### 1.3 ~~macOS 可攜性 bug~~ ✅ 已修（2026-08-20，未 commit）
-
-**修法**：`src/physics/BesselPortable.h`（A&S 9.1.10/9.6.10 升冪級數，驗證域
-order 0..8 / x 0..16，域外 fail-closed NaN）+ `PlateModel::besselJ/besselI`
-以 `__cpp_lib_math_special_functions` 特性巨集切換——有 std 的平台（MSVC 實測
-巨集=201603、libstdc++）照走 std::，**Windows 前後渲染 SHA256 全等（Rule 10
-不觸發）**；僅 libc++（Apple）走 fallback。錨點測試（scipy 獨立值）所有平台都跑；
-Windows 上 grid 對照 std:: 最大偏差 2.1e-11。證據 `x2_bessel_portability.txt`。
-**macos-14 leg 實際轉綠需 push 後 CI 證明（= A5）。** 以下為原始記錄：
-
-#### 原症狀（跨平台 CI 第一次跑就抓到）
-
-`cross-platform-emit (macos-14)` 建置失敗：
-
-```
-src/physics/PlateModel.h:265: error: no member named 'cyl_bessel_j' in namespace 'std'
-src/physics/PlateModel.h:270: error: no member named 'cyl_bessel_i' in namespace 'std'
-```
-
-`std::cyl_bessel_j` / `std::cyl_bessel_i` 是 C++17 的數學特殊函式，**libstdc++（Linux）
-有實作，libc++（Apple）沒有**。這是已知的標準庫落差，不是本專案的錯誤用法。
-
-- ✅ ubuntu-24.04 建置成功（Linux/JUCE 依賴清單是對的）
-- ✅ windows-2022 成功
-- ❌ macos-14 失敗
-- ⏭️ `cross-platform-compare` 因此 skipped——**跨平台實測數字這輪還是沒拿到**
-
-**修法**：需自己實作或引入 Bessel 函式（Boost.Math、或自己寫級數/遞迴實作）。
-若決定不支援 macOS，就把 macos 那條矩陣腿拿掉並在文件說明——**但那是縮小 GATE
-範圍，需月月裁決**。
-
----
+1. **X1/X2 紅燈修畢**：audit_repro 回歸（測試 DB 補 `wood_spruce`，月月裁決 (a)）；
+   macOS Bessel（`src/physics/BesselPortable.h` A&S 級數 + `__cpp_lib_math_special_functions`
+   特性巨集切換，Windows 位元零改變）。
+2. **月月重大委託（2026-08-20）**：「我沒有樂理基礎也沒有程式基礎…你自己想辦法，照順序把
+   缺口都補上，我最後再拿去給專業人士聽」——免耳免人工驗證全權委託 AI，容差 AI 自定但
+   **R2 仍禁事後調寬**；最終**美學**驗收 = 外部專業人士試聽（月月安排）；物理/位置正確性
+   由 GATE 鏈負責，兩者主張分開。
+3. **免耳三層驗證建成**（設計 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md`）：
+   - **L1 `tools/melody_verify.py`**：score↔WAV 逐事件 onset(±10ms)/pitch(5c 已批准) 正向驗證
+     + extra-scan；8 條 fail-closed 拒答規則（重擊遮蔽/泛音污染/course 自拍/床能量/低頻<167Hz
+     精修極限/帶碰撞/delay/fm_ratio≠1），有效殘響 = max(乾 T60, reverb decay)；哨兵五件組
+     （時移/移調/刪音/幻音必 FAIL + 原封必 PASS）；`--html` piano-roll 疊圖（聾人可視驗收）。
+     **主張域**（設計文件 §7，月光 1141 事件四輪迭代定案）：強域=單音/稀疏/host 渲染；
+     弱域=密集低音複音+長混響 → 誠實拒答，位置保證改由 verify_score 2e 位元決定性承擔。
+   - **L2 `TsukiSynthHostProbe`**（`tests/host_probe.cpp`，CMake target）：載磁碟上的 .vst3，
+     A9 四步自動化，**16/16 全 PASS**；plugin 即時路徑旋律位置史上首驗 5/5。
+   - **L3a `tools/cubase_scan_verify.py`**：解析真 Cubase 掃描快取 XML，S1-S5 全 PASS。
+   - **L3b（2026-08-22 凌晨，月月授權螢幕控制）**：AI 全程操作真 Cubase——建軌/匯入哨兵
+     MIDI/tempo 100 對齊/plugin GUI 上 Reverb 歸零/匯出 Wave 48k24bit → **melody_verify 5/5**
+     （onset ≤2.5ms、pitch ≤0.4c）；存檔→關閉→重開→再匯出 → **音訊 SHA256 位元全等**。
+     專案留檔 `Documents\Cubase LE AI Elements Projects\无标题-06\l3b_tsukisynth_verify.cpr`。
+4. **B2 施工卡完整執行**（M10 收官）：corpus **73/73 PASS 零新增豁免**、`summer_m2` 自動回綠
+   （−46.8 FAIL → −52.2 PASS）、寬頻化低音發散被 B1 封頂證實（**C2 128.75s → 17.66s**）、
+   響度錨點重測 `kCimbalomAttackEnergyRefA4` 0.1497→**0.0874**（中央弦反解法；Chromatic 兩值
+   不變 = 雙 null 自驗）。**Rule 10 報告 `reports/b1_b2_bridge_damping_before_after.md`**，
+   月月裁決 **A1' 接受**。
+5. **CI 三平台首次全綠**（run 32446987833）+ **X3 跨平台數字**：max delta 5 LSB@24bit、
+   pitch +0.0000c → **C3 容差已登記**（`scores/crossplatform_tolerance.json`，月月裁決照提案）
+   → `cross-platform-compare` 自此為**阻斷式 GATE**。
+6. **A12 修畢**（月月裁決 (a)）：36 個 float 參數轉連續（interval 0），state round-trip 位元精確；
+   H5 主張修正為 fresh-vs-fresh（DAW「重開專案每次播放一致」語意——噪音事件計數器刻意隨敲擊
+   遞增且不入 state）。
+7. **A9 關閉**：四步全數以自動化+真 host 證據取代人工（唯一殘留 = Cubase GUI 畫 automation
+   lane，L2 合約層已蓋，非位置主張必需）。
 
 ## 2. 這個專案是什麼
 
 聾人使用者（月月）+ AI 不靠聽感、靠物理理論精確模擬聲音的 JUCE 8 VST3 合成器。
-
-**唯一驗收依據是 `ROADMAP_PHYSICS.md`**，其 §1 有十條強制規則，開工前必讀全文。
-最常踩到的：
+**唯一驗收依據 `ROADMAP_PHYSICS.md`**，§1 十條強制規則開工前必讀。最常踩的：
 
 | Rule | 內容 |
 |---|---|
 | R1 | 驗收只認 GATE 命令輸出，不認敘述 |
-| R2 | **禁止調寬任何容差**。達不到門檻 → 回報數字 + 停下 |
+| R2 | **禁止調寬任何容差**。達不到 → 回報數字 + 停下 |
 | R3 | 禁止縮小 GATE 範圍 |
 | R4 | 禁止 hardcode 無法溯源的物理常數 |
 | R5 | Milestone 不可部分標記 Done |
 | R6 | 改 `src/physics|engines|dsp|score` 後必跑 `--full` + 三 target build |
-| R7 | **不 commit、不 push**（月月明示才做） |
+| R7 | **不 commit、不 push**（月月明示才做；本輪月月已三度授權為例） |
 | R10 | 任何讓既有 score 渲染結果改變的修正，必須產出前後對照報告 |
 
-四個引擎：Cimbalom/Piano（弦，域內）、Tongue Drum（梁，域內）、
-Water Gong（板，域內）、FM Piano（**域外**，已誠實標註）。
+**X4 規約（必遵守，2026-08-16 教訓）**：跑 `ctest` 前必先重建三個測試 target
+（`TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest`），否則測到舊 binary。
 
----
+四個引擎：Cimbalom/Piano（弦，域內，**含 B1 琴橋耦合**）、Tongue Drum（梁，域內）、
+Water Gong（板，域內）、FM Piano（域外，已誠實標註）。
 
 ## 3. 檔案地圖
 
 | 要找什麼 | 去哪 |
 |---|---|
-| **當前待辦（26 項，分 A/B/C/D 四類）** | `TODO.md` 開頭「待辦總表」 |
-| 驗收規則與 Milestone 狀態 | `ROADMAP_PHYSICS.md` §1、§2、§6 容差表 |
-| **文獻線總覽（誰是誰的前置）** | `docs/RESEARCH_INDEX.md` |
-| 六張施工卡（B1–B6 規格） | `docs/workcards/B*.md` |
+| 當前待辦 | `TODO.md` 開頭「待辦總表」（X/A/B/C/D 分段） |
+| 驗收規則、Milestone、容差表 | `ROADMAP_PHYSICS.md` §1 / §2 / §6 |
+| **免耳三層驗證設計 + 主張域** | `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md`（§7 = 方法極限） |
+| B1+B2 的 Rule 10 前後對照（月月已接受） | `reports/b1_b2_bridge_damping_before_after.md` |
+| 文獻線總覽 | `docs/RESEARCH_INDEX.md` |
+| 施工卡（B3-B6 待做） | `docs/workcards/B*.md` |
 | 溯源文件 | `docs/{BRIDGE_ADMITTANCE,STRING_DAMPING,HAMMER_CONTACT,WOOD_ANISOTROPY,EXTERNAL_ANCHOR}_SOURCES.md` |
-| GATE 證據 | `reports/gate_outputs/` |
+| GATE 證據 | `reports/gate_outputs/`（x1/x2/x3/l1/l2/l3a/l3b/b2/a12_c3 前綴） |
 | 歷史決策 | `DEVLOG.md` |
-| AI 作曲用法 | `docs/AI_PERFORMANCE_PLAYBOOK.zh-TW.md`、`docs/AI_PHYSICAL_COMPOSITION_GUIDE.zh-TW.md` |
 
-`libs/JUCE` 是 submodule（JUCE 8.0.12，釘在 `501c0767`，從未動過）。
-新 clone 要 `git clone --recursive`，或事後 `git submodule update --init --recursive`。
+`libs/JUCE` 是 submodule（8.0.12，釘 `501c0767`，從未動過）；新 clone 用 `--recursive`。
 
----
+## 4. Milestone 狀態
 
-## 4. 已完成到哪
-
-- **M1–M7、M9 全部 Done**，GATE 全綠。
-- **M4** 2026-08-15 月月目視驗收通過轉 Done。
-- **M8 In progress**：剩 Cubase 四步人工驗證 + merge → `main` 時機。
-- **M10（琴橋導納）In progress**：實作完成但 §1.1 的回歸未修、Rule 10 報告未產出。
-
-corpus 基準：73 檔，上一次全綠是 2026-08-06（`af849ec`）。
-阻尼寬頻化 + B1 之後**尚未重驗**。
-
----
+- **M1–M7、M9、M10 全部 Done**（M10 = 2026-08-21 B2 收官 + 月月 A1' 接受）。
+- **M8 In progress**：8a 的 Cubase 驗證已由 L2/L3a/L3b 自動化完成（A9 關閉）；
+  **只剩 8b：merge → `main` 時機（= TODO A6，月月裁決）**。
+- corpus 基準：73 檔全綠（2026-08-21，B1+B2 疊加後，`b2_corpus_*.txt`）。
 
 ## 5. 接下來的順序（建議）
 
-1. ~~修 §1.1 的回歸~~ ✅ **2026-08-16 完成**（裁決 (a)，ctest 3/3，未 commit）。
-2. ~~修 §1.3 的 macOS Bessel（X2）~~ ✅ **2026-08-20 完成**（`BesselPortable.h` A&S 級數 +
-   `__cpp_lib_math_special_functions` 特性巨集切換；Windows 前後渲染 SHA256 全等 → Rule 10 未觸發；
-   grid 對照 std 最大偏差 2.1e-11；macos leg 實際轉綠等 push/CI = A5）。
-3. ~~重跑三 target + `--full`~~ ✅ 全綠（`x2_bessel_portability.txt`）。
-   **新增（2026-08-20 委託線）**：L1/L2/L3a 三層免耳驗證完工（TODO C3-b 進度區），
-   剩 piano-roll 報告層 + L3b（等 computer-use 連接器）+ corpus 掃描（排 B2 後）。
-   A12 為新發現待裁決。
-4. **發 B2 卡**（`docs/workcards/B2.md`）：Rule 10 前後對照報告 +
-   corpus 73 檔四分片重驗 + 響度錨點常數重測。**這是唯一能讓 M10 收尾的路。**
-5. 之後才輪到 B3（弦阻尼律）→ B4（槌頭）→ B5（木材）→ B6（輻射）。
+1. **月月裁決積壓**（都不擋工程線，見 TODO A 段）：A1（7/22 舊批 Rule 10 報告）、
+   A4（亮度 EQ 去留）、A10（Score 控制台實操）、A11（共鳴板 h/材質確認）、
+   A6（merge → main）、A7（License 檔）、A8（外部資料集）。
+2. **X4**：把「先重建三 target 再 ctest」規約補進六張施工卡（純文件，半天內）。
+3. **B3 弦阻尼律**（`docs/workcards/B3.md`，Cuesta & Valette 三機制、零自由參數）——
+   下一場物理戰役。**注意**：改的是阻尼律形狀，Rule 10 會再次觸發，比照 B1+B2 流程
+   （前後對照報告 + corpus 重驗）。B2 已收，歸因乾淨，可以開工。
+4. 之後 B4（槌頭）→ B5（木材）→ B6（輻射）。
 
-**不要跳過 B2 直接做 B3。** 兩者都改阻尼律，同時改會讓 Rule 10 無法歸因
-（`reports/deep_fix_before_after.md` §7 已經吃過一次這個虧）。
+## 6. 給下一個 session 的操作備忘
 
----
-
-## 6. 月月待裁決（AI 不能自己決定）
-
-完整清單見 `TODO.md` 的 A 段（A1–A11）。最擋路的四個：
-
-- **A1** Rule 10 前後對照裁決（`reports/deep_fix_before_after.md` §00 有白話導讀）
-- **A11** 共鳴板 `h=9mm` / `wood_spruce` 的確認，以及「未確認常數是否該無條件生效於預設路徑」的流程問題（三個選項已列）
-- **A7** repo License 定案（已決定「保留商業」，要寫 `LICENSE` + 改 `README.md:349` 的 `TBD`）
-- **A9** Cubase 四步人工驗證（AI 無法代做）
-
----
-
-## 7. 關於「要不要加濾波器」（2026-08-16 月月提問）
-
-要分成兩個完全不同的東西看：
-
-### 7.1 物理側：**需要，而且已經在路線圖上**
-
-`docs/BRIDGE_ADMITTANCE_SOURCES.md` §4 已列明侷限：目前用的是**平滑的**特徵導納
-`Y∞`（單一實數），它在原理上無法重現 Wogram 量到的「相鄰半音 F#4 3.5s vs G4 0.7s」
-這種 5:1 落差——那是共鳴板共振峰谷造成的。
-
-要重現峰谷，就是**把單一實數 G 換成一個頻率相依的複數導納 Y(f)**，
-而實作上那正是**一組並聯的共振器 = 濾波器組**。文獻做法明確：
-Chaigne (ICA 2010) 就是用約 100 個並聯機械振子建模琴橋導納，每個振子三個參數
-（質量／剛度／阻抗）。
-
-**基礎設施已經有了**：`src/dsp/BiquadFilter.h` 與 `src/dsp/BodyResonance.h`
-（兩個共振帶通 + 一個低通）就是小型的共振器組，`BodyResonance::totalResponse()`
-已經能算穩態傳遞函數，M2 的振幅驗證也已經在用它。
-
-**但這是「共鳴板耦合第二階段」，不是現在該做的**——目前連第一階段（B1）都還沒收尾。
-
-### 7.2 創作側：**目前沒有，加了會落在驗證域外**
-
-現在**沒有**使用者可見的濾波器區塊（`PluginProcessor.cpp` / `ScoreParser.h` 都查不到
-`cutoff` / `resonance` 之類參數）。現有的都是物理鏈內部的：
-`BiquadFilter`、`BodyResonance`、效果鏈的 Reverb/Delay/Comp/Dist、
-以及 2026-08-06 加的亮度補償 EQ（高頻 shelf）。
-
-如果要加一個傳統合成器的 VCF（cutoff + resonance），它**不是物理主張的一部分**，
-必須比照 `spectralTilt` 與亮度 EQ 的做法標註為 creative 層、劃出驗證域外（R9），
-且驗證時一律關閉。這是產品線的事，`ROADMAP.md` 的 v0.5「Advanced Sound Design」
-本來就寫著「creative features only with explicit out-of-physical-domain labels」。
-
-**建議**：物理側的濾波器組（7.1）是有價值的，但排在 B2 收尾之後；
-創作側的 VCF（7.2）現在不做，等 M8 merge 完、產品線啟動再說。
-
----
-
-## 8. 環境備忘
-
-- 主目錄 `C:\Users\admin\Desktop\Claude\tsuki-synth`
-- Windows / MSVC 19.50 / PowerShell 主、Bash 可用
 - 建置：`cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON`
-- CLI 產物：`build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe`
-- Python 需 numpy + scipy（`tools/requirements-physics.txt`）
-- GitHub：`TsKR2828/tsuki-synth`，CI workflow `.github/workflows/physics.yml`
-  （push 到 `main` 或 `fix/**` 觸發）
+- CLI：`build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe`
+- 全套 GATE：`--full`＋三 target build＋ctest（先重建三測試 target！）＋`pytest tests -q`＋
+  corpus 四分片 `verify_score.py --all --shard-index N --shard-count 4`
+- 旋律位置：`python tools/melody_verify.py <score> [--wav W] [--html H]`；`--selftest` 跑哨兵
+- HostProbe：`build/Release/TsukiSynthHostProbe.exe build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <outdir>`
+- 跨平台：CI 自動跑（現為阻斷式）；本機 `tools/crossplatform_verify.py --selftest`
+- Cubase 掃描：`python tools/cubase_scan_verify.py`
+- **系統部署的 VST3 是 0.2.0（7/12）**——要讓 Cubase 測最新版，月月需以管理員權限把
+  `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3` 覆蓋到 `C:\Program Files\Common Files\VST3\`
+- GitHub `TsKR2828/tsuki-synth`，CI `.github/workflows/physics.yml`（push `main`/`fix/**` 觸發）
+- Python 需 numpy+scipy+mido（`tools/requirements-physics.txt`）
