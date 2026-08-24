@@ -1,0 +1,34 @@
+=== A12 修復 + C3 登記 GATE 證據（2026-08-22，月月裁決：A12=(a)、C3=照提案登記）===
+
+--- A12 (a)：全部 36 個 float 參數 interval → 0（連續）---
+src/PluginProcessor.cpp createParameterLayout；IntParam/Choice 不動（整數 round-trip 本就無損）。
+CLI 不讀 APVTS → corpus 渲染零影響（Rule 10 不觸發）。
+
+--- HostProbe 重跑（含 H5 主張修正：fresh-vs-fresh = DAW「重開專案每次播放一致」語意；
+    live-vs-fresh 因噪音事件計數器刻意隨敲擊遞增且不入 state 而非有效主張）---
+[PASS] H1 scan: VST3 format finds the bundle (C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)
+[PASS] H1 scan: described as instrument named TsukiSynth (got 'TsukiSynth', isInstrument=1, version 0.3.0)
+[PASS] H2 instantiate: instance created
+[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.512059) -- melody-position verdict follows via melody_verify.py
+[PASS] H3 MIDI render: WAV written: C:\Users\admin\AppData\Local\Temp\claude\C--Users-admin-Desktop-Claude\01a7afd2-4a9f-4af1-bed8-ea3992d689d5\scratchpad\hostprobe_evidence2\hostprobe_render.wav
+[PASS] H3 determinism: second instance created
+[PASS] H3 determinism: fresh-instance re-render is byte-identical
+[PASS] H4 automation: instances created
+[PASS] H4 automation: 'EQ Shelf Gain (dB)' parameter exposed to host
+[PASS] H4 automation: identically-automated renders are byte-identical
+[PASS] H4 automation: +12 dB shelf ramp lifts 3-12 kHz band by 8.63 dB (require >= 6)
+[PASS] H5 state: 'Strike Position' parameter found
+[PASS] H5 state: non-empty state captured (3777 bytes)
+[PASS] H5 state: two fresh instances created
+[PASS] H5 state: parameter survives round-trip exactly (requested 0.42, settled 0.42, restored 0.42)
+[PASS] H5 state: two restores of the same state render byte-identically
+PASS (0 failures)
+
+--- ctest（三 target 重建後）---
+
+Total Test time (real) =   1.45 sec
+
+--- C3 登記生效驗證 ---
+scores/crossplatform_tolerance.json 已建（-120 dBFS / -120 dB / 0.01 dB / 0.01 c）
+RESULT: ALL SELF-TESTS PASSED
+同機 emit×2 --compare → exit 0 BIT_IDENTICAL（見上輪執行記錄）

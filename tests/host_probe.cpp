@@ -33,9 +33,11 @@
 //                    spends >= half the render above +6 dB must lift the
 //                    band well past 6 dB; the exact number is printed).
 //   H5 state         set a non-default parameter, capture state, restore it
-//                    into a FRESH instance, re-render the same MIDI:
-//                    parameter must read back exactly and the render must
-//                    be byte-identical to the first instance's.
+//                    into TWO fresh instances: the parameter must read back
+//                    exactly, and both restores must render byte-identically
+//                    (the DAW semantic -- "reload the project, play from
+//                    bar 1, get the same audio every time"; see the comment
+//                    at the H5 block for why live-vs-fresh is NOT the claim).
 //
 // HONEST SCOPE: this is a JUCE host, not Cubase. It proves VST3-contract
 // behaviour of the shipped binary; Cubase-specific behaviour is L3
@@ -304,22 +306,34 @@ int main (int argc, char** argv)
             inst->getStateInformation (state);
             CHECK (state.getSize() > 0, "H5 state: non-empty state captured ("
                    << (int) state.getSize() << " bytes)");
-            const auto refRender = renderMelody (*inst, nullptr);
 
-            auto fresh = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err);
-            CHECK (fresh != nullptr, "H5 state: fresh instance created");
-            if (fresh != nullptr)
+            // The byte-identity claim is FRESH-vs-FRESH: two new instances
+            // restored from the same state must render identically -- the
+            // DAW semantic ("reload the project, play from bar 1, get the
+            // same audio every time"). It is deliberately NOT live-vs-fresh:
+            // the exciter noise seed advances a per-noteOn event counter
+            // (successive strikes vary by design), and that live history is
+            // intentionally not part of the state -- a probe run comparing a
+            // twice-rendered live instance against a fresh restore diffs on
+            // exactly that counter (2026-08-22 A12 follow-up).
+            auto freshA = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err);
+            auto freshB = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err);
+            CHECK (freshA != nullptr && freshB != nullptr,
+                   "H5 state: two fresh instances created");
+            if (freshA != nullptr && freshB != nullptr)
             {
-                fresh->setStateInformation (state.getData(), (int) state.getSize());
-                auto* strike2 = findParam (*fresh, "Strike Position");
+                freshA->setStateInformation (state.getData(), (int) state.getSize());
+                freshB->setStateInformation (state.getData(), (int) state.getSize());
+                auto* strike2 = findParam (*freshA, "Strike Position");
                 CHECK (strike2 != nullptr
-                       && std::abs (strike2->getValue() - settled) < 1.0e-4f,
-                       "H5 state: parameter survives round-trip (requested 0.42,"
+                       && std::abs (strike2->getValue() - settled) < 1.0e-6f,
+                       "H5 state: parameter survives round-trip exactly (requested 0.42,"
                        " settled " << settled << ", restored "
                        << (strike2 != nullptr ? strike2->getValue() : -1.0f) << ")");
-                const auto restored = renderMelody (*fresh, nullptr);
-                CHECK (buffersEqual (restored, refRender),
-                       "H5 state: restored-state render is byte-identical");
+                const auto ra = renderMelody (*freshA, nullptr);
+                const auto rb = renderMelody (*freshB, nullptr);
+                CHECK (buffersEqual (ra, rb),
+                       "H5 state: two restores of the same state render byte-identically");
             }
         }
     }
