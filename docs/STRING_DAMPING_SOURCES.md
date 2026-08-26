@@ -214,8 +214,13 @@ C2 並聯後約 4.1 s。**兩份文件互相一致，不衝突。**
 - [x] 數值核對通過：重現原文的「Q 在 1–4 kHz 有極大值」特徵（§4.1）
 - [x] 確認與 `damping_broadband_findings.md` 的低音發散結論**不衝突**（§4.3）
 - [x] **發現現行 `beta_air·f²` 的頻率次方與物理推導不符**（§3）
-- [ ] `gamma_radiation` 的**真實**物理來源仍未溯源（§5.2）——現行那一項對弦
-      而言在形式上等價於位錯損耗，但物理標籤（聲輻射）很可能是錯的
+- [x] `gamma_radiation` 的**真實**物理來源（§5.2）——**已於 B3（2026-08-24）處理**：
+      弦不再讀此欄；欄位在 schema 改名為 `beam_plate_gamma_radiation` 並在
+      `MaterialDB.h`/`materials.json` 註解誠實標示「只給 Beam/Plate、未溯源」
+      （Beam/Plate 側的物理溯源仍屬 D1，未關）
 - [ ] 梁／板的空氣與輻射阻尼**未搜尋**，不得假設同樣查得到（§5.1）
-- [ ] **實作**——未動任何程式碼。屬於改阻尼律形狀，觸發 Rule 10 + Rule 6 +
-      corpus 重驗 + schema 遷移。**待月月裁決。**
+- [x] **實作**——**B3 完成（2026-08-24，unstaged 待月月審）**。GATE 證據：
+      `reports/gate_outputs/b3_gate_full.txt`（NO CHECKED FAILURES）、`b3_t60.txt`、
+      `b3_ctest.txt`、`b3_pytest.txt`、`b3_corpus_{A,B,C,D}.txt`（73/73 PASS 零新增豁免）、
+      三 build `b3_build_{cli,standalone,vst3}.txt` exit 0、反例哨兵 `b3_selftest_sentinel.txt`；
+      Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md`。

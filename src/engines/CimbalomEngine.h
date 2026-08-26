@@ -237,7 +237,8 @@ public:
         {
             m.frequency *= tScale * tuneScale;
             m.decayTime = StringModel::decayTimeForFrequency (
-                              m.frequency, *mat, -1.0f, bridgeLoss)
+                              m.frequency, *mat, -1.0f, bridgeLoss,
+                              sp.diameter * 0.5f, sp.tension)
                         * matScale * dmpScale;
         }
 
@@ -286,7 +287,8 @@ public:
             {
                 m.frequency *= freqMul;
                 m.decayTime = StringModel::decayTimeForFrequency (
-                                  m.frequency, *mat, -1.0f, bridgeLoss)
+                                  m.frequency, *mat, -1.0f, bridgeLoss,
+                                  sp.diameter * 0.5f, sp.tension)
                             * matScale * dmpScale;
                 m.amplitude *= HammerImpulse::forceSpectrumMagnitude (
                     juce::MathConstants<float>::twoPi * m.frequency, tauC);
@@ -412,20 +414,30 @@ public:
         const float tauC = HammerImpulse::tauCForNote ((float) hammerIdx, velocity,
                                                        midiNote);
         // dampingOverride semantics: >= 0 replaces ONLY the internal-friction
-        // term of the decay law
-        //   T60(f) = 1 / (eta*f/2.2 + beta_air*f^2 + gamma_radiation*f + bridgeLoss);
-        // the beta_air*f^2 and gamma_radiation*f terms always stay
-        // material-driven (see StringModel::decayTimeForFrequency). It is
+        // term of the decay law (2026-08-24 B3 first-principles form)
+        //   T60(f) = 1 / ((eta + Qinv_air + Qinv_visc + Qinv_disl)*f/2.2 + bridgeLoss);
+        // the air-viscosity + viscoelastic + dislocation terms are the
+        // Cuesta & Valette (1988) zero-free-parameter mechanisms computed
+        // from frequency / string radius / tension / material (rho, E) --
+        // see StringModel::stringAirViscDislQInv() and
+        // docs/STRING_DAMPING_SOURCES.md Sec 2. They are always
+        // physics-driven and never affected by this override; the retired
+        // materials.json fields (now beam_plate_beta_air /
+        // beam_plate_gamma_radiation) no longer feed this path at all. It is
         // NOT a scale factor on the whole damping. Sentinel -1 = no
         // override (pure material damping). bridgeLoss (2026-08-16 B1) is
         // likewise always additive and never affected by this override --
         // see StringModel::bridgeLossRate().
-        // The score-facing NUMBER is unchanged by the 2026-08-10 broadbanding:
-        // it still means "internal-friction decay rate at the MIDI 60 anchor"
-        // (the old alpha scale), and is converted to an equivalent eta inside
-        // decayTimeForFrequency() -- so the 32 authored scores using it keep
-        // their intent exactly at the anchor and broadband elsewhere like the
-        // material path. See MaterialDB::etaFromAnchoredDamping().
+        // The score-facing NUMBER is unchanged: it still means
+        // "internal-friction decay rate at the MIDI 60 anchor" (the old
+        // alpha scale), converted to an equivalent eta inside
+        // decayTimeForFrequency() (MaterialDB::etaFromAnchoredDamping()).
+        // HONEST CHANGE NOTE (B3): the pre-B3 guarantee that the 32 authored
+        // scores using damping_override keep their MIDI 60 anchor T60
+        // bit-for-bit no longer holds -- the frequency-dependent
+        // Qinv_air+Qinv_visc+Qinv_disl sum now also contributes at the
+        // anchor, so anchor T60 shifts slightly (quantified in the B3
+        // Rule 10 before/after report).
         const float dampingOverride = params.dampingOverride >= 0.0
             ? (float) params.dampingOverride : -1.0f;
 
@@ -443,7 +455,8 @@ public:
             attackE += ModalResonator::modeAttackEnergy (
                 m.frequency, a,
                 StringModel::decayTimeForFrequency (
-                    m.frequency, mat, dampingOverride, bridgeLoss),
+                    m.frequency, mat, dampingOverride, bridgeLoss,
+                    sp.diameter * 0.5f, sp.tension),
                 sr);
         }
         const float noteComp = ModalResonator::loudnessCompensationGain (
@@ -467,7 +480,8 @@ public:
             {
                 m.frequency *= freqMul;
                 m.decayTime = StringModel::decayTimeForFrequency (
-                    m.frequency, mat, dampingOverride, bridgeLoss);
+                    m.frequency, mat, dampingOverride, bridgeLoss,
+                    sp.diameter * 0.5f, sp.tension);
                 m.amplitude *= HammerImpulse::forceSpectrumMagnitude (
                     juce::MathConstants<float>::twoPi * m.frequency, tauC);
                 m.amplitude *= gain;

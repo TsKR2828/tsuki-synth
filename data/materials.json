@@ -1,103 +1,103 @@
 {
-  "$schema": "TsukiSynth Material Database v1",
+  "$schema": "TsukiSynth Material Database v2 (string damping first-principles, 2026-08-24)",
   "materials": {
     "steel": {
       "display_name": "鋼 Steel",
       "density": 7800,
       "youngs_modulus": 200e9,
       "poisson_ratio": 0.29,
-      "damping": { "eta": 2.0e-4, "beta_air": 1.2e-7, "gamma_radiation": 2e-5 }
+      "damping": { "eta": 2.0e-4, "beam_plate_beta_air": 1.2e-7, "beam_plate_gamma_radiation": 2e-5 }
     },
     "copper": {
       "display_name": "銅 Copper",
       "density": 8900,
       "youngs_modulus": 120e9,
       "poisson_ratio": 0.34,
-      "damping": { "eta": 2.0e-3, "beta_air": 1.5e-7, "gamma_radiation": 2.5e-5 }
+      "damping": { "eta": 2.0e-3, "beam_plate_beta_air": 1.5e-7, "beam_plate_gamma_radiation": 2.5e-5 }
     },
     "bronze": {
       "display_name": "青銅 Bronze",
       "density": 8800,
       "youngs_modulus": 110e9,
       "poisson_ratio": 0.34,
-      "damping": { "eta": 1.0e-3, "beta_air": 1.3e-7, "gamma_radiation": 2.2e-5 }
+      "damping": { "eta": 1.0e-3, "beam_plate_beta_air": 1.3e-7, "beam_plate_gamma_radiation": 2.2e-5 }
     },
     "aluminum": {
       "display_name": "鋁 Aluminum",
       "density": 2700,
       "youngs_modulus": 70e9,
       "poisson_ratio": 0.33,
-      "damping": { "eta": 1.0e-4, "beta_air": 0.8e-7, "gamma_radiation": 1.5e-5 }
+      "damping": { "eta": 1.0e-4, "beam_plate_beta_air": 0.8e-7, "beam_plate_gamma_radiation": 1.5e-5 }
     },
     "brass": {
       "display_name": "黃銅 Brass",
       "density": 8500,
       "youngs_modulus": 100e9,
       "poisson_ratio": 0.34,
-      "damping": { "eta": 1.5e-3, "beta_air": 1.4e-7, "gamma_radiation": 2.3e-5 }
+      "damping": { "eta": 1.5e-3, "beam_plate_beta_air": 1.4e-7, "beam_plate_gamma_radiation": 2.3e-5 }
     },
     "wood_spruce": {
       "display_name": "雲杉 Spruce",
       "density": 450,
       "youngs_modulus": 12e9,
       "poisson_ratio": 0.37,
-      "damping": { "eta": 7.0e-3, "beta_air": 3e-7, "gamma_radiation": 5e-5 }
+      "damping": { "eta": 7.0e-3, "beam_plate_beta_air": 3e-7, "beam_plate_gamma_radiation": 5e-5 }
     },
     "wood_maple": {
       "display_name": "楓木 Maple",
       "density": 650,
       "youngs_modulus": 12.5e9,
       "poisson_ratio": 0.38,
-      "damping": { "eta": 1.2e-2, "beta_air": 2.5e-7, "gamma_radiation": 4.5e-5 }
+      "damping": { "eta": 1.2e-2, "beam_plate_beta_air": 2.5e-7, "beam_plate_gamma_radiation": 4.5e-5 }
     },
     "rubber": {
       "display_name": "橡膠 Rubber",
       "density": 1100,
       "youngs_modulus": 5e6,
       "poisson_ratio": 0.49,
-      "damping": { "eta": 3.0e-1, "beta_air": 1e-6, "gamma_radiation": 1e-4 }
+      "damping": { "eta": 3.0e-1, "beam_plate_beta_air": 1e-6, "beam_plate_gamma_radiation": 1e-4 }
     },
     "glass": {
       "display_name": "玻璃 Glass",
       "density": 2500,
       "youngs_modulus": 70e9,
       "poisson_ratio": 0.22,
-      "damping": { "eta": 1.5e-3, "beta_air": 0.5e-7, "gamma_radiation": 1e-5 }
+      "damping": { "eta": 1.5e-3, "beam_plate_beta_air": 0.5e-7, "beam_plate_gamma_radiation": 1e-5 }
     },
     "iron": {
       "display_name": "鐵 Iron (Cast)",
       "density": 7200,
       "youngs_modulus": 170e9,
       "poisson_ratio": 0.26,
-      "damping": { "eta": 1.0e-2, "beta_air": 1.8e-7, "gamma_radiation": 3e-5 }
+      "damping": { "eta": 1.0e-2, "beam_plate_beta_air": 1.8e-7, "beam_plate_gamma_radiation": 3e-5 }
     },
     "nylon": {
       "display_name": "尼龍 Nylon",
       "density": 1150,
       "youngs_modulus": 3e9,
       "poisson_ratio": 0.4,
-      "damping": { "eta": 3.5e-2, "beta_air": 5e-7, "gamma_radiation": 3e-5 }
+      "damping": { "eta": 3.5e-2, "beam_plate_beta_air": 5e-7, "beam_plate_gamma_radiation": 3e-5 }
     },
     "bamboo": {
       "display_name": "竹 Bamboo",
       "density": 700,
       "youngs_modulus": 18e9,
       "poisson_ratio": 0.3,
-      "damping": { "eta": 1.0e-2, "beta_air": 2e-7, "gamma_radiation": 3.5e-5 }
+      "damping": { "eta": 1.0e-2, "beam_plate_beta_air": 2e-7, "beam_plate_gamma_radiation": 3.5e-5 }
     },
     "wood_birch": {
       "display_name": "樺木 Birch",
       "density": 650,
       "youngs_modulus": 15e9,
       "poisson_ratio": 0.35,
-      "damping": { "eta": 1.4e-2, "beta_air": 2.8e-7, "gamma_radiation": 4.2e-5 }
+      "damping": { "eta": 1.4e-2, "beam_plate_beta_air": 2.8e-7, "beam_plate_gamma_radiation": 4.2e-5 }
     },
     "wood_oak": {
       "display_name": "橡木 Oak",
       "density": 720,
       "youngs_modulus": 12e9,
       "poisson_ratio": 0.35,
-      "damping": { "eta": 1.6e-2, "beta_air": 3e-7, "gamma_radiation": 4.8e-5 }
+      "damping": { "eta": 1.6e-2, "beam_plate_beta_air": 3e-7, "beam_plate_gamma_radiation": 4.8e-5 }
     }
   }
 }

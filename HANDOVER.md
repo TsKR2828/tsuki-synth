@@ -8,9 +8,12 @@
 
 ## 0. 一句話現況
 
-**全綠。** 紅燈清零、CI 三平台全綠、M10 收官、A9 關閉、免耳三層驗證鏈（L1/L2/L3a/L3b）
-全線閉環。工程樹乾淨（本輪文件更新後全數 commit）。**下一步是 B3（弦阻尼律第一原理）
-或先做 X4（施工卡規約補寫），由月月起手。**
+**B3 完工並已併入 main。** 紅燈清零、CI 三平台全綠、M10 收官、免耳三層驗證鏈全線閉環之後，
+**B3（弦阻尼律換第一原理）已於 2026-08-24 完成**：GATE 12 條全過、corpus 73/73 零新增豁免，
+Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 已產出。
+**2026-08-26 月月三裁決**：A1 舊批 Rule 10 放行（整批接受）+ 授權本批 commit 併入 `main`
+（A6 完成，M8-8b 關閉）+ A7 LICENSE 已寫入。A4（亮度 EQ）/A11（共鳴板 h/材質）兩份
+免耳裁決包已備（`reports/decision_packets/`），仍待月月選項。**下一步 = B4（槌頭接觸）。**
 
 ## 1. 2026-08-20 ~ 08-22 這三天發生了什麼（新 session 必讀）
 
@@ -96,13 +99,15 @@ Water Gong（板，域內）、FM Piano（域外，已誠實標註）。
 
 ## 5. 接下來的順序（建議）
 
-1. **月月裁決積壓**（都不擋工程線，見 TODO A 段）：A1（7/22 舊批 Rule 10 報告）、
-   A4（亮度 EQ 去留）、A10（Score 控制台實操）、A11（共鳴板 h/材質確認）、
-   A6（merge → main）、A7（License 檔）、A8（外部資料集）。
-2. **X4**：把「先重建三 target 再 ctest」規約補進六張施工卡（純文件，半天內）。
-3. **B3 弦阻尼律**（`docs/workcards/B3.md`，Cuesta & Valette 三機制、零自由參數）——
-   下一場物理戰役。**注意**：改的是阻尼律形狀，Rule 10 會再次觸發，比照 B1+B2 流程
-   （前後對照報告 + corpus 重驗）。B2 已收，歸因乾淨，可以開工。
+1. **月月讀 B3 Rule 10 報告並裁決**（最優先）：
+   `reports/string_damping_firstprinciples_before_after.md`——先讀最前面的白話導讀卡，
+   特別看 `Q⁻¹_disl`/`eta` 佔比表（steel/aluminum 受影響最大）與 `damping_override`
+   錨點保證變化聲明，裁決「接受」或「指名回退」。改動全數 unstaged。
+2. **月月裁決積壓**（都不擋工程線，見 TODO A 段）：A1（7/22 舊批 Rule 10 報告）、
+   **A4（亮度 EQ 去留）與 A11（共鳴板 h/材質確認）——裁決包已備妥
+   `reports/decision_packets/A4_brightness_eq.md`／`A11_soundboard_sensitivity.md`**、
+   A10（Score 控制台實操）、A6（merge → main）、A7（License 檔）、A8（外部資料集）。
+3. ~~B3 弦阻尼律~~ **已完成（2026-08-24，見上）**；X4 規約已補進六張施工卡。
 4. 之後 B4（槌頭）→ B5（木材）→ B6（輻射）。
 
 ## 6. 給下一個 session 的操作備忘

@@ -1,0 +1,159 @@
+{
+    "$schema": "TsukiSynth Material Database v2 (string damping first-principles, 2026-08-24)",
+    "materials": {
+        "steel": {
+            "display_name": "\u92fc Steel",
+            "density": 7800,
+            "youngs_modulus": 200000000000.0,
+            "poisson_ratio": 0.29,
+            "damping": {
+                "eta": 0.0002,
+                "beam_plate_beta_air": 1.2e-07,
+                "beam_plate_gamma_radiation": 2e-05
+            }
+        },
+        "copper": {
+            "display_name": "\u9285 Copper",
+            "density": 8900,
+            "youngs_modulus": 120000000000.0,
+            "poisson_ratio": 0.34,
+            "damping": {
+                "eta": 0.002,
+                "beam_plate_beta_air": 1.5e-07,
+                "beam_plate_gamma_radiation": 2.5e-05
+            }
+        },
+        "bronze": {
+            "display_name": "\u9752\u9285 Bronze",
+            "density": 8800,
+            "youngs_modulus": 110000000000.0,
+            "poisson_ratio": 0.34,
+            "damping": {
+                "eta": 0.001,
+                "beam_plate_beta_air": 1.3e-07,
+                "beam_plate_gamma_radiation": 2.2e-05
+            }
+        },
+        "aluminum": {
+            "display_name": "\u92c1 Aluminum",
+            "density": 2700,
+            "youngs_modulus": 70000000000.0,
+            "poisson_ratio": 0.33,
+            "damping": {
+                "eta": 0.0001,
+                "beam_plate_beta_air": 8e-08,
+                "beam_plate_gamma_radiation": 1.5e-05
+            }
+        },
+        "brass": {
+            "display_name": "\u9ec3\u9285 Brass",
+            "density": 8500,
+            "youngs_modulus": 100000000000.0,
+            "poisson_ratio": 0.34,
+            "damping": {
+                "eta": 0.0015,
+                "beam_plate_beta_air": 1.4e-07,
+                "beam_plate_gamma_radiation": 2.3e-05
+            }
+        },
+        "wood_spruce": {
+            "display_name": "\u96f2\u6749 Spruce",
+            "density": 450,
+            "youngs_modulus": 12000000000.0,
+            "poisson_ratio": 0.37,
+            "damping": {
+                "eta": 0.007,
+                "beam_plate_beta_air": 3e-07,
+                "beam_plate_gamma_radiation": 5e-05
+            }
+        },
+        "wood_maple": {
+            "display_name": "\u6953\u6728 Maple",
+            "density": 650,
+            "youngs_modulus": 12500000000.0,
+            "poisson_ratio": 0.38,
+            "damping": {
+                "eta": 0.012,
+                "beam_plate_beta_air": 2.5e-07,
+                "beam_plate_gamma_radiation": 4.5e-05
+            }
+        },
+        "rubber": {
+            "display_name": "\u6a61\u81a0 Rubber",
+            "density": 1100,
+            "youngs_modulus": 5000000.0,
+            "poisson_ratio": 0.49,
+            "damping": {
+                "eta": 0.3,
+                "beam_plate_beta_air": 1e-06,
+                "beam_plate_gamma_radiation": 0.0001
+            }
+        },
+        "glass": {
+            "display_name": "\u73bb\u7483 Glass",
+            "density": 2500,
+            "youngs_modulus": 70000000000.0,
+            "poisson_ratio": 0.22,
+            "damping": {
+                "eta": 0.0015,
+                "beam_plate_beta_air": 5e-08,
+                "beam_plate_gamma_radiation": 1e-05
+            }
+        },
+        "iron": {
+            "display_name": "\u9435 Iron (Cast)",
+            "density": 7200,
+            "youngs_modulus": 170000000000.0,
+            "poisson_ratio": 0.26,
+            "damping": {
+                "eta": 0.01,
+                "beam_plate_beta_air": 1.8e-07,
+                "beam_plate_gamma_radiation": 3e-05
+            }
+        },
+        "nylon": {
+            "display_name": "\u5c3c\u9f8d Nylon",
+            "density": 1150,
+            "youngs_modulus": 3000000000.0,
+            "poisson_ratio": 0.4,
+            "damping": {
+                "eta": 0.035,
+                "beam_plate_beta_air": 5e-07,
+                "beam_plate_gamma_radiation": 3e-05
+            }
+        },
+        "bamboo": {
+            "display_name": "\u7af9 Bamboo",
+            "density": 700,
+            "youngs_modulus": 18000000000.0,
+            "poisson_ratio": 0.3,
+            "damping": {
+                "eta": 0.01,
+                "beam_plate_beta_air": 2e-07,
+                "beam_plate_gamma_radiation": 3.5e-05
+            }
+        },
+        "wood_birch": {
+            "display_name": "\u6a3a\u6728 Birch",
+            "density": 650,
+            "youngs_modulus": 15000000000.0,
+            "poisson_ratio": 0.35,
+            "damping": {
+                "eta": 0.014,
+                "beam_plate_beta_air": 2.8e-07,
+                "beam_plate_gamma_radiation": 4.2e-05
+            }
+        },
+        "wood_oak": {
+            "display_name": "\u6a61\u6728 Oak",
+            "density": 720,
+            "youngs_modulus": 12000000000.0,
+            "poisson_ratio": 0.35,
+            "damping": {
+                "eta": 0.016,
+                "beam_plate_beta_air": 3e-07,
+                "beam_plate_gamma_radiation": 4.8e-05
+            }
+        }
+    }
+}

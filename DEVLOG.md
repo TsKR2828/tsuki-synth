@@ -2,6 +2,31 @@
 
 ---
 
+## 2026-08-24 ~ 08-26 — B3 弦阻尼律第一原理（Dynamic Workflow 發包）、X4、A1/A6/A7 裁決、首度併入 main
+
+**授權框架**：月月延續 2026-08-20 全權委託，指示「開 Dynamic Workflow 把剩下的工程發包做完，
+需要人類裁決的部分設計免人類驗證方式」。本輪以 15 工兵 8 階段 Workflow 執行
+（基線→實作→GATE 獨立存證→corpus 四分片→Rule 10 報告→文件同步→對抗驗證兩路），
+全程免耳、對抗驗證未抓到違規。
+
+- **X4**：「ctest 前必先重建三測試 target」規約補進六張施工卡（B1/B2 事後補記、B3-B6 融入 GATE 段）。
+- **B3 完工**：`StringModel::decayTimeForFrequency()` 的 `beta_air·f²`/`gamma_radiation·f` 換成
+  Cuesta & Valette (1988) 零自由參數三機制；materials.json schema v2（`beam_plate_*` 改名，
+  fail-closed 拒載舊鍵）；Beam/Plate 純改名零物理變動（對抗稽核逐字核實）。
+  GATE 12 條全過、corpus 73/73 零新增豁免、Cuesta 大提琴 D 弦參照誤差 <0.08%、
+  r⁶→r² mutant 哨兵兩輪存證。Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md`：
+  `Q⁻¹_disl`/eta 佔比 steel 27.78%/aluminum 55.56%（與卡 §11 估算 1.00×，>2× 停工條款未觸發）；
+  錨點保證打破如預期（最大 restraint_ambient_001 −36.4%，其餘 33 組 −3.81%~+2.28%）。
+- **免耳裁決包**：A4 亮度 EQ（repo 內零 score 使用 EQ；+6dB@2kHz 實測整曲 RMS 僅 −0.02~−0.19 dB）、
+  A11 共鳴板敏感度（h 8→10mm → T60 +27.9%~+47.0%；橋項佔 1/T60 C2 86.3%）→
+  `reports/decision_packets/`，待月月選項。
+- **月月裁決（2026-08-26）**：A1 舊批 Rule 10「放行」（整批接受）；A6「下一批 Commit+merge 進去」；
+  A7 LICENSE 已寫入（All rights reserved，商業保留）。
+- **落地**：本批 commit 後 `fix/deep-physics-audit-20260716` 首度併入 `main` 並 push
+  （M8-8b 關閉；阻斷式跨平台 GATE 交由 CI 三平台驗證）。
+
+---
+
 ## 2026-08-20 ~ 08-22 — 紅燈清零、免耳三層驗證鏈、M10 收官、A9 關閉（三夜連戰）
 
 **授權框架**：月月 2026-08-20 全權委託（原話「我沒有樂理基礎也沒有程式基礎…你自己想辦法，

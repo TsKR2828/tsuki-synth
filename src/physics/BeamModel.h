@@ -35,7 +35,7 @@ public:
         Boundary boundary = Boundary::Cantilever;
     };
 
-    /** T60(f) = 1 / (2·eta·f/2.2 + beta_air·f² + gamma_radiation·f)
+    /** T60(f) = 1 / (2·eta·f/2.2 + beam_plate_beta_air·f² + beam_plate_gamma_radiation·f)
      *
      * 內部摩擦項自 2026-08-10 起寬頻化（見 MaterialDB.h 頂端註解）。
      *
@@ -52,8 +52,8 @@ public:
     {
         const float denominator = MaterialDB::internalFrictionRate (
                 material.damping.eta, frequency) * 2.0f
-            + material.damping.beta_air * frequency * frequency
-            + material.damping.gamma_radiation * frequency;
+            + material.damping.beam_plate_beta_air * frequency * frequency
+            + material.damping.beam_plate_gamma_radiation * frequency;
         return denominator > 0.0f ? 1.0f / denominator : 5.0f;
     }
 

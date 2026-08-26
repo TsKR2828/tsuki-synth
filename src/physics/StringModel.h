@@ -10,7 +10,8 @@
  *
  * 模態頻率：  f(n) = (n / 2L) × √(T / μ) × √(1 + B × n²)
  * 非諧性：    B = (π³ × E × d⁴) / (64 × T × L²)
- * 衰減時間：  τ(n) = 1 / (α + β_air × f(n)² + γ_radiation × f(n))
+ * 衰減時間：  T60(n) = 1 / ((eta + Q⁻¹_air + Q⁻¹_visc + Q⁻¹_disl)·f(n)/2.2 + bridgeLoss)
+ *             （見 decayTimeForFrequency() 的完整推導註解）
  * 激發振幅：  a(n) = sin(n × π × x_hit / L)
  *
  * 其中：
@@ -30,43 +31,110 @@ public:
         int   numModes       = 40;       // 模態數
     };
 
-    /** T60(f) = 1 / (eta·f/2.2 + beta_air·f² + gamma_radiation·f + bridgeLoss)
+    // ── Cuesta & Valette (1988) 弦阻尼三機制的物理常數 ──
+    // 來源：docs/STRING_DAMPING_SOURCES.md §2（逐字轉錄自引用該研究的開放全文，
+    // Improved frequency-dependent damping for time domain modelling of linear
+    // string vibration, ICA 2016, NESS 專案）。
+
+    // 空氣密度，標準大氣（ISA，海平面，15°C）。文獻表列常數，非量測、非推導。
+    static constexpr float kAirDensity = 1.225f;               // kg/m^3
+
+    // 空氣運動黏度。docs/STRING_DAMPING_SOURCES.md §2 表列「論文用 1.619e-5」，
+    // 逐字轉錄自 Cuesta & Valette (1988)（經 ICA 2016 全文引用）。
+    static constexpr float kAirKinematicViscosity = 1.619e-5f; // m^2/s
+
+    // 位錯（dislocation）損耗，頻率無關的擬合 Q^-1。docs/STRING_DAMPING_SOURCES.md
+    // §2：原文無法從量測資料區分位錯損耗與熱傳導損耗，兩者擬合同樣好，取此值。
+    // 這是原始文獻的擬合常數本身（不是本專案自己擬合的），故仍符合 Rule 4
+    // 「文獻」類來源，但注意它是單一數字、不隨材質變化（見 docs/workcards/B3.md §11 風險）。
+    static constexpr float kDislocationQInv = 1.0f / 18000.0f; // 無量綱
+
+    /** Cuesta & Valette (1988) 弦阻尼空氣黏滯＋黏彈性＋位錯三機制，零自由參數。
+     *  見 docs/STRING_DAMPING_SOURCES.md §2。只適用圓截面弦（r^6/r^2 幾何內建），
+     *  不適用 Beam/Plate。回傳值是三項相加的 Q^-1（無量綱），與 eta 同一把尺，
+     *  呼叫端把它跟 eta 加在一起再乘 f/kEtaToDecayRate（見本檔 decayTimeForFrequency）。
      *
-     * 內部摩擦項自 2026-08-10 起是**寬頻**的（eta·f/2.2，見 MaterialDB.h
-     * 頂端註解）：損耗因子 eta 為頻率無關的材質常數，其衰減率貢獻與頻率
-     * 成正比，這正是當初 alpha 的推導式本身（T60 = 2.2/(f·eta)）所要求的。
-     * 舊實作把該項凍結在 MIDI 60 錨點，只有那一個音高與文獻一致。
+     *    M         = (r/2)·√(ω/μa)                        ω = 2πf
+     *    Q⁻¹_air   = (ρa/ρ)·[√2/M + 1/(2M²)]              ρ = 弦材料密度
+     *    Q⁻¹_visc  = 0.003·E·ρ·π²·r⁶·ω²/(4T²)             E = 楊氏模數, T = 張力
+     *    Q⁻¹_disl  = 1/18000
      *
-     * 第四項（`bridgeLoss`，2026-08-16 B1）是**頻率無關**的琴橋/共鳴板耦合
-     * 損耗——弦端能量經琴橋流向共鳴板，見 `bridgeLossRate()` 上方的完整
-     * 溯源註解與 `docs/BRIDGE_ADMITTANCE_SOURCES.md` §2.1–§2.3。舊三項在
-     * f→0 時全部趨近 0，導致低音 T60 發散（`reports/damping_broadband_findings.md`
-     * §3.1：C2 從 39s 拉長到 129s）；這第四項正是缺掉的低音端損耗通道。
+     *  無效輸入（頻率/半徑/張力非正或非有限）時回傳 0 = 不貢獻，交由呼叫端
+     *  既有的 denominator>0 保護接手（fail-closed：不產生 NaN/Inf/負 T60）。
+     */
+    static float stringAirViscDislQInv (float frequency, float radius, float tension,
+                                        const MaterialDB::Material& material)
+    {
+        if (! std::isfinite (frequency) || frequency <= 0.0f
+            || ! std::isfinite (radius) || radius <= 0.0f
+            || ! std::isfinite (tension) || tension <= 0.0f)
+            return 0.0f; // 無效輸入時不貢獻，交由既有 denominator>0 保護接手
+
+        const float omega = juce::MathConstants<float>::twoPi * frequency;
+        const float M = (radius * 0.5f) * std::sqrt (omega / kAirKinematicViscosity);
+        const float qInvAir = (kAirDensity / material.density)
+            * (std::sqrt (2.0f) / M + 1.0f / (2.0f * M * M));
+        const float qInvVisc = 0.003f * material.youngsModulus * material.density
+            * juce::MathConstants<float>::pi * juce::MathConstants<float>::pi
+            * std::pow (radius, 6.0f) * omega * omega
+            / (4.0f * tension * tension);
+        const float qInv = qInvAir + qInvVisc + kDislocationQInv;
+        return std::isfinite (qInv) && qInv > 0.0f ? qInv : 0.0f;
+    }
+
+    /** T60(f) = 1 / ((eta + Q⁻¹_air + Q⁻¹_visc + Q⁻¹_disl)·f/2.2 + bridgeLoss)
+     *
+     * 分母四個損耗通道（docs/STRING_DAMPING_SOURCES.md §2/§2.1/§4.1）：
+     *
+     *   1. 內部摩擦 eta·f/2.2 —— 自 2026-08-10 起寬頻（見 MaterialDB.h 頂端
+     *      註解）：損耗因子 eta 為頻率無關的材質常數，衰減率貢獻與頻率成正比。
+     *   2.-3.-4. 空氣黏滯＋黏彈性＋位錯 —— 2026-08-24 B3 起換成 Cuesta &
+     *      Valette (1988) 的零自由參數三機制（stringAirViscDislQInv()），由
+     *      頻率/弦半徑/張力/材質 (rho, E) 直接算出，取代舊的
+     *      beta_air·f²＋gamma_radiation·f 兩個查無出處的擬合項；materials.json
+     *      改名後的 beam_plate_beta_air/beam_plate_gamma_radiation 只給
+     *      Beam/Plate 用，本函式**不讀**。代數化簡（B3 卡 §4.1）：因
+     *      kEtaToDecayRate = 2.2 = ln(1000)/π 且 1/T60 = π·f·Q⁻¹/ln(1000)
+     *      = Q⁻¹·f/2.2，三機制 Q⁻¹ 與 eta 同一把尺，先加總再統一乘
+     *      f/kEtaToDecayRate（即 internalFrictionRate()），不另引入 π 或
+     *      ln(1000) 字面值。
+     *   5. 琴橋/共鳴板耦合 bridgeLoss（2026-08-16 B1）——**頻率無關**，見
+     *      `bridgeLossRate()` 與 `docs/BRIDGE_ADMITTANCE_SOURCES.md` §2.1–§2.3。
+     *      弦端其餘各項在 f→0 時趨近 0，導致低音 T60 發散
+     *      （`reports/damping_broadband_findings.md` §3.1）；此項是缺掉的
+     *      低音端損耗通道。
      *
      * @param frequency        模態頻率 (Hz)
-     * @param material         弦材質（提供 eta/beta_air/gamma_radiation）
+     * @param material         弦材質（提供 eta 與三機制用的 density/youngsModulus）
      * @param dampingOverride  >=0 覆寫內部摩擦項；數字語意是「MIDI 60 錨點
      *                         上的衰減率」（舊 alpha 尺度，既有樂譜不需改），
      *                         內部經 MaterialDB::etaFromAnchoredDamping()
-     *                         轉成 eta 後同樣寬頻求值。beta_air/gamma_radiation
-     *                         永遠維持材質驅動，不受覆寫影響；bridgeLoss 同理，
-     *                         永遠疊加、不受 damping_override 影響。
+     *                         轉成 eta 後同樣寬頻求值。三機制項與 bridgeLoss
+     *                         永遠疊加、不受覆寫影響。**注意（B3）**：因三機制
+     *                         項頻率相依且不可覆寫，damping_override 在 MIDI 60
+     *                         錨點「逐位元保留舊 T60」的保證自 B3 起不再成立。
      * @param bridgeLoss       頻率無關的橋耦合損耗率貢獻 (1/s)，來自
-     *                         `bridgeLossRate()`。預設 0.0f = 不加這項，保證
-     *                         既有呼叫端（不傳這個參數）行為位元不變；正式
+     *                         `bridgeLossRate()`。傳 0.0f = 不加這項；正式
      *                         Cimbalom/Piano 渲染路徑一定要傳非零值
      *                         （`CimbalomEngine.h`）。
+     * @param radius           弦半徑 r (m)（= diameter/2；B3 新增）。<=0 或非
+     *                         有限值時三機制項不貢獻（fail-closed）。
+     * @param tension          弦張力 T (N)（B3 新增）。<=0 或非有限值時同上。
+     *                         （兩個新參數刻意**無預設值**：漏改的呼叫端要在
+     *                         編譯期爆掉，不准悄悄退回沒有三機制項的物理。）
      */
     static float decayTimeForFrequency (
         float frequency, const MaterialDB::Material& material,
-        float dampingOverride = -1.0f, float bridgeLoss = 0.0f)
+        float dampingOverride, float bridgeLoss,
+        float radius, float tension)
     {
         const float eta = dampingOverride >= 0.0f
             ? MaterialDB::etaFromAnchoredDamping (dampingOverride)
             : material.damping.eta;
-        const float denominator = MaterialDB::internalFrictionRate (eta, frequency)
-            + material.damping.beta_air * frequency * frequency
-            + material.damping.gamma_radiation * frequency
+        const float qInvTotal = eta
+            + stringAirViscDislQInv (frequency, radius, tension, material);
+        const float denominator =
+            MaterialDB::internalFrictionRate (qInvTotal, frequency)
             + bridgeLoss;
         return denominator > 0.0f ? 1.0f / denominator : 10.0f;
     }
@@ -198,8 +266,10 @@ public:
             if (freq > 20000.0f)
                 break;
 
-            // 衰減時間
-            float decay = decayTimeForFrequency (freq, material);
+            // 衰減時間（無 override、無橋耦合——與 B3 前的預設引數行為一致；
+            // CimbalomEngine 的兩條渲染路徑都會用含 bridgeLoss 的呼叫重算）
+            float decay = decayTimeForFrequency (freq, material,
+                                                 -1.0f, 0.0f, r, T);
 
             // 擊打位置影響振幅
             //

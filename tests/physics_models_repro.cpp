@@ -29,8 +29,8 @@ MaterialDB::Material steel()
     material.youngsModulus = 200.0e9f;
     material.poissonRatio = 0.29f;
     material.damping.eta = 2.0e-4f;   // steel loss factor (materials.json)
-    material.damping.beta_air = 1.2e-7f;
-    material.damping.gamma_radiation = 2.0e-5f;
+    material.damping.beam_plate_beta_air = 1.2e-7f;        // Beam/Plate-only (B3)
+    material.damping.beam_plate_gamma_radiation = 2.0e-5f; // Beam/Plate-only (B3)
     return material;
 }
 
@@ -138,19 +138,33 @@ void testGeometryFrequencyModeAndDamping()
            - BeamModel::decayTimeForFrequency (midiModes[0].frequency, material)) < 1.0e-5f,
            "Damping is recomputed from the final sounding frequency");
 
-    const float overrideDecay = StringModel::decayTimeForFrequency (440.0f, material, 1.0e-6f);
+    // String-test geometry: the StringModel::Params struct defaults
+    // (diameter 0.8 mm -> r = 4.0e-4 m, tension 800 N), so these literals stay
+    // traceable to an existing in-repo source rather than being new free values.
+    constexpr float kTestRadius  = 4.0e-4f;
+    constexpr float kTestTension = 800.0f;
+
+    // A near-zero override wipes the internal-friction term; the T60 that
+    // remains is set by the B3 air+viscoelastic+dislocation mechanisms (real
+    // geometry passed), which for steel at 440 Hz lands in the tens of
+    // seconds -- far from both 0 and the 10 s zero-denominator fallback... so
+    // bound it well above 1 s and below 100 s exactly as before B3.
+    const float overrideDecay = StringModel::decayTimeForFrequency (
+        440.0f, material, 1.0e-6f, 0.0f, kTestRadius, kTestTension);
     CHECK (overrideDecay > 1.0f && overrideDecay < 100.0f,
-           "Damping override retains air and radiation losses");
+           "Damping override retains the air/viscoelastic/dislocation losses");
 
     // Broadband internal friction (2026-08-10): the eta term's decay-rate
     // contribution is proportional to frequency, so doubling f must double it.
-    // Verified against the isolated term (beta/gamma zeroed) so the f^2 and f
-    // terms cannot mask a wrong exponent.
+    // B3 note: the old isolation trick (zeroing beta_air/gamma_radiation on a
+    // Material) no longer exists -- the string law does not read those fields
+    // any more -- so the eta term is now isolated by calling
+    // MaterialDB::internalFrictionRate() directly (docs/workcards/B3.md §6 8b).
     MaterialDB::Material etaOnly = material;
-    etaOnly.damping.beta_air = 0.0f;
-    etaOnly.damping.gamma_radiation = 0.0f;
-    const float t60At220 = StringModel::decayTimeForFrequency (220.0f, etaOnly);
-    const float t60At440 = StringModel::decayTimeForFrequency (440.0f, etaOnly);
+    const float t60At220 = 1.0f / MaterialDB::internalFrictionRate (
+        etaOnly.damping.eta, 220.0f);
+    const float t60At440 = 1.0f / MaterialDB::internalFrictionRate (
+        etaOnly.damping.eta, 440.0f);
     CHECK (std::abs (t60At220 / t60At440 - 2.0f) < 1.0e-3f,
            "Internal friction is broadband: T60 halves per octave (rate ~ eta*f)");
 
@@ -159,18 +173,39 @@ void testGeometryFrequencyModeAndDamping()
     for (const float probe : { 82.4f, 261.6256f, 1046.5f, 3520.0f })
     {
         const float predicted = 2.2f / (probe * etaOnly.damping.eta);
-        const float actual = StringModel::decayTimeForFrequency (probe, etaOnly);
+        const float actual = 1.0f / MaterialDB::internalFrictionRate (
+            etaOnly.damping.eta, probe);
         CHECK (std::abs (actual / predicted - 1.0f) < 1.0e-4f,
                "T60 = 2.2/(f*eta) holds across the whole range, not one anchor");
     }
 
-    // damping_override keeps its authored MIDI-60-anchor meaning: an override
-    // numerically equal to the old alpha must reproduce the old T60 at MIDI 60.
+    // damping_override keeps its authored MIDI-60-anchor meaning for the
+    // internal-friction term it replaces: with the B3 three-mechanism sum
+    // disabled (radius/tension = 0 -> stringAirViscDislQInv contributes 0)
+    // and no bridge loss, T60 at the anchor is exactly 1/alpha.
     const float legacyAlpha = 0.4f;              // value used by 32 authored scores
-    const float atAnchor = StringModel::decayTimeForFrequency (
-        261.6256f, etaOnly, legacyAlpha);
-    CHECK (std::abs (atAnchor - 1.0f / legacyAlpha) < 1.0e-3f,
+    const float atAnchorIsolated = StringModel::decayTimeForFrequency (
+        261.6256f, material, legacyAlpha, 0.0f, 0.0f, 0.0f);
+    CHECK (std::abs (atAnchorIsolated - 1.0f / legacyAlpha) < 1.0e-3f,
            "damping_override still means the internal-friction rate at MIDI 60");
+
+    // B3 HONEST CHANGE: with real geometry the anchor T60 now ALSO carries the
+    // frequency-dependent air+visc+dislocation sum, so the pre-B3 "bit-exact
+    // 1/alpha at MIDI 60" guarantee is deliberately retired (B3 card §11).
+    // Expected value re-derived from the §4.1 algebra: the override-eta and the
+    // three-mechanism Q^-1 share one scale, T60 = 1/(alpha + qInv*f/2.2).
+    // (Wiring test: the helper's own VALUES are pinned separately against the
+    // Cuesta & Valette reference table in testStringDampingFirstPrinciples.)
+    const float qInvAtAnchor = StringModel::stringAirViscDislQInv (
+        261.6256f, kTestRadius, kTestTension, material);
+    const float expectedAtAnchor = 1.0f
+        / (legacyAlpha + qInvAtAnchor * 261.6256f / MaterialDB::kEtaToDecayRate);
+    const float atAnchorReal = StringModel::decayTimeForFrequency (
+        261.6256f, material, legacyAlpha, 0.0f, kTestRadius, kTestTension);
+    CHECK (std::abs (atAnchorReal / expectedAtAnchor - 1.0f) < 1.0e-4f,
+           "Anchor T60 with real geometry = 1/(alpha + qInv*f/2.2) per B3 Sec4.1 algebra");
+    CHECK (atAnchorReal < atAnchorIsolated,
+           "B3 retires the bit-exact anchor guarantee: three-mechanism sum shortens anchor T60");
 }
 
 // ── Bridge/soundboard admittance coupling loss (2026-08-16 B1) ────────────
@@ -209,17 +244,20 @@ void testBridgeAdmittanceLoss()
     // that test §7-1 already covers). G = 1.3e-3 s/kg is the literature
     // upright-piano average admittance (Sec2.1).
     const float G = 1.3e-3f;
+    // B3 isolation: eta = 0 kills the internal-friction term; radius/tension
+    // = 0 makes stringAirViscDislQInv() contribute 0 (its documented
+    // fail-closed behavior), so ONLY the bridge term remains -- the old trick
+    // of zeroing beta_air/gamma_radiation no longer applies (the string law
+    // does not read those Beam/Plate-only fields any more).
     MaterialDB::Material noOtherDamping = steel();
     noOtherDamping.damping.eta = 0.0f;
-    noOtherDamping.damping.beta_air = 0.0f;
-    noOtherDamping.damping.gamma_radiation = 0.0f;
 
     auto t60BridgeFor = [&] (float tensionOverLength)
     {
         const float bridgeLoss = tensionOverLength * G / kLn1000Probe;
         return StringModel::decayTimeForFrequency (
-            261.6256f /* any freq: other 3 terms are zero */,
-            noOtherDamping, -1.0f, bridgeLoss);
+            261.6256f /* any freq: other terms are zero */,
+            noOtherDamping, -1.0f, bridgeLoss, 0.0f, 0.0f);
     };
     CHECK (std::abs (t60BridgeFor (1250.0f) / 4.25f - 1.0f) < 0.01f,
            "T60_bridge at C2 (T/L=1250.0 N/m) matches literature table (4.25s, +-1%)");
@@ -228,34 +266,43 @@ void testBridgeAdmittanceLoss()
     CHECK (std::abs (t60BridgeFor (12650.0f) / 0.42f - 1.0f) < 0.01f,
            "T60_bridge at C8 (T/L=12650.0 N/m) matches literature table (0.42s, +-1%)");
 
-    // §7-3: frequency independence. eta=beta_air=gamma_radiation=0, only the
-    // bridge term is nonzero -- decayTimeForFrequency must return the exact
-    // same value at a low and a high frequency, because bridgeLoss does not
-    // depend on `frequency` at all.
+    // §7-3: frequency independence. eta = 0 and radius/tension = 0 (three-
+    // mechanism sum disabled), only the bridge term is nonzero --
+    // decayTimeForFrequency must return the exact same value at a low and a
+    // high frequency, because bridgeLoss does not depend on `frequency` at all.
     const float bridgeLossConst = 0.235270f;   // arbitrary nonzero constant
     const float t60At55   = StringModel::decayTimeForFrequency (
-        55.0f, noOtherDamping, -1.0f, bridgeLossConst);
+        55.0f, noOtherDamping, -1.0f, bridgeLossConst, 0.0f, 0.0f);
     const float t60At4000 = StringModel::decayTimeForFrequency (
-        4000.0f, noOtherDamping, -1.0f, bridgeLossConst);
+        4000.0f, noOtherDamping, -1.0f, bridgeLossConst, 0.0f, 0.0f);
     CHECK (std::abs (t60At55 - t60At4000) < 1.0e-4f,
            "Bridge coupling loss term is frequency-independent (55Hz T60 == 4000Hz T60)");
 
     // §7-5: damping_override coexists with bridgeLoss -- the override only
     // replaces the internal-friction term; bridgeLoss must still change the
-    // result when added.
+    // result when added. (Real string geometry: StringModel::Params defaults,
+    // r = 0.8 mm / 2, T = 800 N -- same literals as the anchor tests above.)
     const float withOverrideNoBridge = StringModel::decayTimeForFrequency (
-        261.6256f, steel(), 0.4f, 0.0f);
+        261.6256f, steel(), 0.4f, 0.0f, 4.0e-4f, 800.0f);
     const float withOverrideAndBridge = StringModel::decayTimeForFrequency (
-        261.6256f, steel(), 0.4f, bridgeLossConst);
+        261.6256f, steel(), 0.4f, bridgeLossConst, 4.0e-4f, 800.0f);
     CHECK (std::abs (withOverrideAndBridge - withOverrideNoBridge) > 1.0e-3f,
            "damping_override does not swallow the bridge coupling term");
 
-    // §7-6: backward compatibility -- omitting the 4th argument must be
-    // byte-for-byte identical to passing bridgeLoss=0.0f explicitly.
-    const float threeArgCall = StringModel::decayTimeForFrequency (440.0f, steel());
-    const float fourArgZero  = StringModel::decayTimeForFrequency (440.0f, steel(), -1.0f, 0.0f);
-    CHECK (threeArgCall == fourArgZero,
-           "Omitting bridgeLoss is identical to passing bridgeLoss=0.0f (existing callers unaffected)");
+    // §7-6 (reworked for B3): the B1-era default-argument compatibility
+    // guarantee is deliberately retired -- decayTimeForFrequency now has NO
+    // default arguments, precisely so that any stale call site fails to
+    // compile instead of silently rendering without the three-mechanism
+    // physics. The surviving reduction property: with every optional loss
+    // channel off (no override, bridgeLoss = 0, radius/tension = 0), the law
+    // must collapse to EXACTLY the pure internal-friction term 2.2/(f*eta)
+    // -- nothing else may leak into the denominator.
+    const float allChannelsOff = StringModel::decayTimeForFrequency (
+        440.0f, steel(), -1.0f, 0.0f, 0.0f, 0.0f);
+    const float pureEta = 1.0f / MaterialDB::internalFrictionRate (
+        steel().damping.eta, 440.0f);
+    CHECK (allChannelsOff == pureEta,
+           "With override/bridge/three-mechanism channels all off, the law reduces bit-exactly to 2.2/(f*eta)");
 
     // §7-7: bridgeLossRate() fail-closed reprs -- non-finite/non-positive
     // inputs must return 0.0f, never NaN/Inf/negative.
@@ -310,14 +357,14 @@ void testBridgeLossSentinel()
            "SENTINEL: mutant frequency-dependent bridgeLoss is distinguishable "
            "at 55Hz vs 4000Hz (proves the Sec7-3 equality check has detection power)");
 
+    // B3 isolation: eta = 0 + radius/tension = 0 (three-mechanism sum off);
+    // see the matching comment in testBridgeAdmittanceLoss().
     MaterialDB::Material noOtherDamping = steel();
     noOtherDamping.damping.eta = 0.0f;
-    noOtherDamping.damping.beta_air = 0.0f;
-    noOtherDamping.damping.gamma_radiation = 0.0f;
     const float correctAt55 = StringModel::decayTimeForFrequency (
-        55.0f, noOtherDamping, -1.0f, bridgeLoss);
+        55.0f, noOtherDamping, -1.0f, bridgeLoss, 0.0f, 0.0f);
     const float correctAt4000 = StringModel::decayTimeForFrequency (
-        4000.0f, noOtherDamping, -1.0f, bridgeLoss);
+        4000.0f, noOtherDamping, -1.0f, bridgeLoss, 0.0f, 0.0f);
     const bool correctPassesEqualityCheck =
         std::abs (correctAt55 - correctAt4000) < 1.0e-4f;
     std::cout << "[SENTINEL 2/2] real StringModel::decayTimeForFrequency: T60(55Hz)="
@@ -327,6 +374,118 @@ void testBridgeLossSentinel()
     CHECK (correctPassesEqualityCheck,
            "SENTINEL: real bridgeLoss term passes the same equality check "
            "(frequency-independent, as required)");
+}
+
+// ── String damping first principles (2026-08-24 B3) ───────────────────────
+// docs/workcards/B3.md §7. Reference numbers are copied from
+// docs/STRING_DAMPING_SOURCES.md §4.1 (Cuesta & Valette cello D-string,
+// rigid-mount measurement reproduced by that document), NOT derived
+// independently here.
+
+void testStringDampingFirstPrinciples()
+{
+    // §7-2: Cuesta & Valette cello D-string reference. Parameters verbatim
+    // from STRING_DAMPING_SOURCES.md §4.1: rho=5535, r=4.55e-4, T=147.7,
+    // E=2.5e10. Q = 1/(Qinv_air+Qinv_visc+Qinv_disl) must match the table's
+    // Q column at all four frequencies within 1% relative.
+    MaterialDB::Material cello;
+    cello.displayName = "Cuesta-Valette cello D-string stub";
+    cello.density = 5535.0f;
+    cello.youngsModulus = 2.5e10f;
+    cello.poissonRatio = 0.30f;   // not read by stringAirViscDislQInv
+    const float rCello = 4.55e-4f;
+    const float tCello = 147.7f;
+
+    struct QRef { float f; float q; };
+    static constexpr QRef refs[] = {
+        { 147.0f,   3629.0f },
+        { 1000.0f,  6787.0f },
+        { 4000.0f,  2817.0f },
+        { 10000.0f, 580.0f },
+    };
+    for (const auto& ref : refs)
+    {
+        const float qInv = StringModel::stringAirViscDislQInv (
+            ref.f, rCello, tCello, cello);
+        const float q = 1.0f / qInv;
+        std::cout << "       (Cuesta ref f=" << ref.f << "Hz: Q=" << q
+                  << " vs table " << ref.q << ")\n";
+        CHECK (qInv > 0.0f && std::abs (q / ref.q - 1.0f) < 0.01f,
+               "String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference");
+    }
+
+    // §7-2 counter-example (sentinel/mutant): the SAME reference values must
+    // NOT be reproduced when the viscoelastic term's r^6 is miscopied as r^2
+    // -- proving the 1% check above really pins the power law, not just the
+    // order of magnitude. The broken version is simulated inline (same
+    // pattern as testBridgeLossSentinel: production code is NOT mutated, so
+    // the suite's PASS/FAIL count stays honest). Console output is archived
+    // at reports/gate_outputs/b3_selftest_sentinel.txt together with a real
+    // two-run mutation demonstration (docs/workcards/B3.md §7).
+    auto mutantQInvR2 = [&] (float frequency)
+    {
+        const float omega = juce::MathConstants<float>::twoPi * frequency;
+        const float M = (rCello * 0.5f)
+            * std::sqrt (omega / StringModel::kAirKinematicViscosity);
+        const float qInvAir = (StringModel::kAirDensity / cello.density)
+            * (std::sqrt (2.0f) / M + 1.0f / (2.0f * M * M));
+        const float qInvViscBroken = 0.003f * cello.youngsModulus * cello.density
+            * juce::MathConstants<float>::pi * juce::MathConstants<float>::pi
+            * std::pow (rCello, 2.0f)   // DELIBERATE mutant: r^2 instead of r^6
+            * omega * omega / (4.0f * tCello * tCello);
+        return qInvAir + qInvViscBroken + StringModel::kDislocationQInv;
+    };
+    for (const auto& ref : refs)
+    {
+        const float qBroken = 1.0f / mutantQInvR2 (ref.f);
+        const float deviation = std::abs (qBroken / ref.q - 1.0f);
+        std::cout << "[SENTINEL r^6->r^2 mutant] f=" << ref.f << "Hz: Q="
+                  << qBroken << " vs table " << ref.q << " (deviation "
+                  << deviation * 100.0f << "% -- same 1% criterion would report: "
+                  << (deviation < 0.01f ? "[PASS] (BAD -- no detection power)"
+                                        : "[FAIL] (GOOD -- power law checked)")
+                  << ")\n";
+        CHECK (deviation > 0.10f,
+               "SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% "
+               "(the 1% reference test really checks the r^6 power law)");
+    }
+
+    // §7-3: regression guard against the retired beta_air*f^2 shape. Compare
+    // the 1/T60 contribution (= qInv*f/2.2) at f and 2f in the air-dominated
+    // low band: the OLD beta_air*f^2 term would scale by exactly 4; the new
+    // first-principles sum must land near the sqrt(2)..2 band instead
+    // (air sqrt(2)/M part -> sqrt(2), air 1/(2M^2) part -> 1, dislocation
+    // -> 2, viscoelastic negligible at 100 Hz; STRING_DAMPING_SOURCES.md §3).
+    const float rate100 = StringModel::stringAirViscDislQInv (
+                              100.0f, rCello, tCello, cello)
+                          * 100.0f / MaterialDB::kEtaToDecayRate;
+    const float rate200 = StringModel::stringAirViscDislQInv (
+                              200.0f, rCello, tCello, cello)
+                          * 200.0f / MaterialDB::kEtaToDecayRate;
+    const float octaveRatio = rate200 / rate100;
+    std::cout << "       (air-band 1/T60 octave ratio: " << octaveRatio
+              << "; old f^2 shape would give 4.0)\n";
+    CHECK (std::abs (octaveRatio - 4.0f) > 1.5f,
+           "Air term is not proportional to f^2 (regression guard against the old shape)");
+    CHECK (octaveRatio > 1.40f && octaveRatio < 2.0f,
+           "Low-band 1/T60 octave ratio sits in the physical sqrt(2)..2 band");
+
+    // Fail-closed behavior: invalid geometry/tension contributes 0, never
+    // NaN/Inf/negative (mirrors bridgeLossRate's convention).
+    CHECK (StringModel::stringAirViscDislQInv (440.0f, 0.0f, tCello, cello) == 0.0f,
+           "stringAirViscDislQInv fail-closed: radius=0 -> 0.0f");
+    CHECK (StringModel::stringAirViscDislQInv (440.0f, -1.0e-4f, tCello, cello) == 0.0f,
+           "stringAirViscDislQInv fail-closed: negative radius -> 0.0f");
+    CHECK (StringModel::stringAirViscDislQInv (440.0f, rCello, 0.0f, cello) == 0.0f,
+           "stringAirViscDislQInv fail-closed: tension=0 -> 0.0f");
+    CHECK (StringModel::stringAirViscDislQInv (
+               440.0f, rCello, std::numeric_limits<float>::quiet_NaN(), cello) == 0.0f,
+           "stringAirViscDislQInv fail-closed: non-finite tension -> 0.0f");
+    CHECK (StringModel::stringAirViscDislQInv (0.0f, rCello, tCello, cello) == 0.0f,
+           "stringAirViscDislQInv fail-closed: frequency=0 -> 0.0f");
+    // Positive control so the fail-closed checks cannot pass vacuously.
+    CHECK (StringModel::stringAirViscDislQInv (440.0f, rCello, tCello, cello) > 0.0f,
+           "stringAirViscDislQInv positive control: valid inputs give a positive Q^-1");
 }
 
 void testDimensionalScalingLaws()
@@ -711,6 +870,7 @@ int main()
     testGeometryFrequencyModeAndDamping();
     testBridgeAdmittanceLoss();
     testBridgeLossSentinel();
+    testStringDampingFirstPrinciples();
     testDimensionalScalingLaws();
     testPassivityAndInvalidNumericRefusal();
     testHammerSpectrum();

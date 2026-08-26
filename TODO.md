@@ -1,6 +1,6 @@
 # TsukiSynth — Current TODO
 
-> Last updated: 2026-08-22
+> Last updated: 2026-08-24
 > Branch: `fix/deep-physics-audit-20260716`
 
 The deep-audit implementation fixes are on the branch. Historical Phase D–I decisions remain in `DEVLOG.md`; this file lists only current work and scientific gaps.
@@ -8,6 +8,8 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 **2026-08-22 快照**：紅燈清零（X1/X2/X3 done，X 段只剩 X4 文件規約）；M10 收官（A1' 接受）；
 A9 關閉（L3b 真 Cubase 實測）；C3 容差登記完成（跨平台檢查轉阻斷式）；A12 修畢。
 下一步 = X4 或 B3（見 HANDOVER §5）。
+**2026-08-24 快照**：B3 完工（GATE 12 條全過、corpus 73/73 零新增豁免、D3 關閉），
+Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月月裁決；改動 unstaged。
 
 ---
 
@@ -54,22 +56,29 @@ A9 關閉（L3b 真 Cubase 實測）；C3 容差登記完成（跨平台檢查�
       → **C3 完成（2026-08-22 月月裁決「照提案登記」）**：`scores/crossplatform_tolerance.json` 已建
       （−120 dBFS / −120 dB re signal / 0.01 dB / 0.01 c）+ ROADMAP §6 決定性列已更新，
       `cross-platform-compare` 自此為**阻斷式 GATE**。selftest 全過 + 同機 compare exit 0 驗證生效。
-- [ ] **X4 施工卡與流程補上「跑 ctest 前必先重建三個測試 target」** — 本輪 B1 的 `b1_ctest_all.txt`「3/3 passed」
+- [x] **X4 施工卡與流程補上「跑 ctest 前必先重建三個測試 target」** — **2026-08-24 完成**。本輪 B1 的 `b1_ctest_all.txt`「3/3 passed」
       是**測到未重建的舊 binary**，對抗驗證的 GATE 視角「獨立重跑」也踩同一個坑。
       規約：`cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest` 之後才跑 `ctest`。
-      要加進 `docs/workcards/` 六張卡的 GATE 段與未來所有卡。
+      已加進 `docs/workcards/` 六張卡（B1–B6）的 GATE 段：已完工的 B1/B2 用「2026-08-24 事後補記」註記形式，
+      未施工的 B3–B6 直接融入 GATE 清單表格前的強制說明。未來所有新卡沿用同一段規約文字。
 
 ## A. 等月月決定（AI 不能自己動）
 
-- [ ] **A1 Rule 10 前後對照裁決** — 讀 `reports/deep_fix_before_after.md` §00 白話導讀後，決定「整批接受」或「指名回退某一項」。這是 7/22 那六項物理修正的最終放行。
+- [x] **A1 Rule 10 前後對照裁決** — **2026-08-26 月月裁決「放行」（整批接受）**。7/22 那六項物理修正
+      （`reports/deep_fix_before_after.md`）最終放行，無指名回退項。同一句裁決一併授權「下一批
+      commit + merge 進 main」（= A6 執行、B3 批次落地）。
 - [x] **A1' B1+B2 Rule 10 裁決** — **2026-08-22 月月裁決「接受」**，B2 批次已 commit+push
       （`4ef2c50`/`bef60fc`）。報告 `reports/b1_b2_bridge_damping_before_after.md`。
 - [x] **A2 阻尼寬頻化那批 unstaged 怎麼處理** — **已依 (b) 方案收斂完成**（事實路徑：該批與 B1 一起進了 447faea，B2 於 2026-08-21 完成收尾驗證，見 B2 條目）。
 - [x] **A3 琴橋導納要不要開工**（= B1）— 已開工並完成（見 B1/B2 條目）。
 - [ ] **A4 亮度 EQ 應急層去留** — 8/6 激發端修正落地後，`global.effects.eq` 高頻 shelf 的補償需求可能已部分消失，需審聽後決定是否調整建議值／文件。
 - [x] **A5 push 到 GitHub** — 2026-08-21 月月授權 push（49c22f5/b5ccb9b/26a0129），CI 全綠，X3 數字已得。
-- [ ] **A6 merge → `main` 時機** — M8-8b，分支 `fix/deep-physics-audit-20260716` 至今未併。
-- [ ] **A7 repo License 定案** — 已決定「保留商業」。要寫 `LICENSE` + 更新 `README.md:349` 的 `TBD`。JUCE 8 走 Starter 層（免費、營收 $20,000 以下、允許閉源商業散布），發行前要讀一次 JUCE 8 EULA 的署名條款。VST3 SDK 在 JUCE 8 內是 MIT，無虞。
+- [x] **A6 merge → `main` 時機** — **2026-08-26 月月裁決「下一批 Commit+merge 進去」，已執行**：
+      B3 批次（X4+B3+Rule 10 報告+裁決包+LICENSE）commit 後併入 `main` 並 push（M8-8b 完成，
+      阻斷式跨平台 GATE 由 CI 驗證）。
+- [x] **A7 repo License 定案** — **2026-08-26 完成**：依「保留商業」決定寫入 `LICENSE`
+      （All rights reserved 專有授權 + 中文摘要 + 第三方元件條款）、`README.md` License 段 TBD 已更新。
+      **殘留提醒**：正式發行前仍要讀一次 JUCE 8 EULA 的署名條款（LICENSE 檔內已註記）。VST3 SDK 在 JUCE 8 內是 MIT，無虞。
 - [ ] **A8 外部資料集要不要下載** — CC BY-SA 4.0 與「保留商業」的相容性。**推薦：只當外部參照，repo 內只留 DOI + SHA256 + 比對數字，資料檔不進版控。**
 - [x] **A9 Cubase 四步驗證** — **已由自動化取代人工並於真 Cubase 實測完成**（月月 2026-08-20 委託重定義 + 2026-08-22 L3b 實測）：
       掃描（L3a 快取 XML + GUI 建軌）／MIDI 實彈（Cubase 匯出經 melody_verify 5/5）／
@@ -138,9 +147,17 @@ A9 關閉（L3b 真 Cubase 實測）；C3 容差登記完成（跨平台檢查�
       **Rule 10 報告：`reports/b1_b2_bridge_damping_before_after.md`（§9 七項全含）——
       月月請讀 §0 白話導讀後裁決「接受」或「指名回退」（= 新 A1' 裁決項）。**
       施工卡 §7 哨兵測試未實作，理由記載於報告附錄（測試端重算=第二份會漂移的複本）。
-- [ ] **B3 弦阻尼律換第一原理**（前置：建議排在 B2 之後，避免歸因混淆）
-      Cuesta & Valette 三機制，零自由參數。**注意這是改阻尼律的形狀（`f²` → `f^0.5`+常數），不是換數字。**
-      需依 Rule 9 標註「同一份 materials.json 對不同引擎語意不同」。
+- [x] **B3 弦阻尼律換第一原理** — **2026-08-24 完成（改動未 commit，待月月讀 Rule 10 報告裁決）**
+      Cuesta & Valette 三機制，零自由參數（`Q⁻¹_air+Q⁻¹_visc+Q⁻¹_disl`），阻尼律形狀已換
+      （`f²` → `f^0.5`+常數 / `f³` / `f¹`）；materials.json schema 遷移
+      `beta_air`→`beam_plate_beta_air`、`gamma_radiation`→`beam_plate_gamma_radiation`
+      （fail-closed 拒載舊鍵名，數值不變、只給 Beam/Plate），Rule 9 標註已補進
+      `ROADMAP_PHYSICS.md` §0 驗證域表。
+      施工卡 §8 GATE 12 條全過：`b3_gate_full.txt`（NO CHECKED FAILURES）、`b3_t60.txt`、
+      三 build exit 0、`b3_ctest.txt`、`b3_pytest.txt`、**corpus 73/73 PASS 零新增豁免**
+      （`reports/gate_outputs/b3_corpus_{A,B,C,D}.txt`）；反例哨兵 `b3_selftest_sentinel.txt`。
+      **Rule 10 報告：`reports/string_damping_firstprinciples_before_after.md`（§9 八項全含，
+      尤其 `Q⁻¹_disl`/`eta` 佔比表與 `damping_override` 錨點保證變化聲明）——月月請讀後裁決。**
       → 依據 `docs/STRING_DAMPING_SOURCES.md`
 - [ ] **B4 槌頭非線性接觸求解器**（前置：無，但風險最集中）
       `F = K·δ^α` 逐音實測值 + 槌質量表 + Stulov 遲滯參數。
@@ -219,7 +236,7 @@ A9 關閉（L3b 真 Cubase 實測）；C3 容差登記完成（跨平台檢查�
 
 - [ ] **D1 梁／板的空氣與輻射阻尼** — **未搜尋，狀態未知**。弦的公式內建圓截面幾何不適用。**這一項擋住 B3 對 Chromatic 引擎的適用性。**
 - [ ] **D2 舌鼓／鑼的槌具接觸參數** — **未搜尋，狀態未知**。**擋住 B4 對 Chromatic 引擎的適用性。**
-- [ ] **D3 `gamma_radiation` 的真實物理來源** — 弦的文獻明指細弦輻射可忽略，故現行那一項對弦而言的物理標籤可能就是錯的。
+- [x] **D3 `gamma_radiation` 的真實物理來源** — **2026-08-24 由 B3 關閉**：弦不再讀此欄（改用零自由參數三機制公式）；欄位已在 schema 改名為 `beam_plate_gamma_radiation` 並在程式註解誠實標示「只給 Beam/Plate、未溯源」（Beam/Plate 側的溯源仍是 D1 範圍）。
 - [ ] **D4 舌鼓 ICSV27 2021 全文** — 機構庫 403，可試作者自存版／ResearchGate。
 - [ ] **D5 銅鑼 JCIE 2005 全文** — 付費牆。
 - [ ] **D6 Wood Handbook Table 5–15（溫度係數）** — 簡單，同一份 PDF 的後續頁面。
@@ -337,9 +354,10 @@ see "2026-07-23 round-4 裁決落地" below.**
 > 找到文獻就刪除——缺口關閉的條件是 GATE 通過，不是資料到手）。
 
 - [ ] Obtain citable or measured values for every material's `beta_air` and `gamma_radiation`.
-      **弦：已找到零自由參數的第一原理式**（Cuesta & Valette）→ `docs/STRING_DAMPING_SOURCES.md`。
-      同時發現現行 `beta_air·f²` 的頻率次方與物理推導對不上（推導是 `f^0.5`+常數 / `f³` / `f¹`）。
-      **梁／板未搜尋、`gamma_radiation` 真實來源未溯源。** 工作項 B3 / D1 / D3。
+      **弦：已用零自由參數第一原理公式關閉**（Cuesta & Valette 三機制，B3，2026-08-24）→
+      `docs/STRING_DAMPING_SOURCES.md`；弦不再讀這兩欄，欄位改名
+      `beam_plate_beta_air`/`beam_plate_gamma_radiation` 只給 Beam/Plate。
+      **Beam/Plate 仍未溯源（D1）**——本缺口對 Chromatic 引擎維持開放。工作項 D1（B3/D3 已關）。
 - [ ] Replace single-frequency damping anchors with broadband/specimen measurements and uncertainty intervals. **2026-08-06 月月裁決升級**：Rule 10 審聽確認材質物理化後全體音色「低音變大聲、高音變超小聲」（`phase_h_before_after.md` §3 已記錄的機制——單頻 η 錨高估高頻衰減是主因之一），本項定為該問題的**長期物理修法**；短期先以 `global.effects.eq` 亮度補償 creative 層應急（同日已落地，見下）。
       **2026-08-10 實作完成但卡住**（程式仍 unstaged）：寬頻化揭露模型缺頻率無關的損耗通道，C2 的 T60 由 39 s 變 129 s、corpus 掉到 72/73 → `reports/damping_broadband_findings.md`。
       該缺口的閉式解已找到（琴橋導納），**本項的前置是 B1**。工作項 A2 / B2。

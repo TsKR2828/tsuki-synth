@@ -1,0 +1,56 @@
+B3 independent anti-fake-green recheck (X4 adversarial re-run)
+Date: 2026-08-26
+Branch: fix/deep-physics-audit-20260716
+Working dir: C:\Users\admin\Desktop\Claude\tsuki-synth
+
+[1] Rebuild three test targets (X4 rule: rebuild before ctest)
+Command: cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+Result: all three linked OK
+  TsukiSynthAuditTest.vcxproj -> build\Release\TsukiSynthAuditTest.exe
+  TsukiSynthTunerTest.vcxproj -> build\Release\TsukiSynthTunerTest.exe
+  TsukiSynthPhysicsModelsTest.vcxproj -> build\Release\TsukiSynthPhysicsModelsTest.exe
+
+Command: ctest --test-dir build -C Release --output-on-failure
+Result: 100% tests passed, 0 tests failed out of 3
+  1/3 audit_repro ............... Passed  1.03 sec
+  2/3 tuner_repro ............... Passed  0.60 sec
+  3/3 physics_models_repro ...... Passed  0.12 sec
+  Total Test time (real) = 1.91 sec
+STATUS: PASS
+
+[2] melody_verify sentinel selftest
+Command: python tools/melody_verify.py --selftest
+Result: SELFTEST PASS (5/5)
+  [PASS] sentinel A: unmodified fixture verifies clean (max |onset err| = 0.33 ms, tol 10 ms)
+  [PASS] sentinel B: +100 ms time shift is caught -> 1 FAIL as required
+  [PASS] sentinel C: +1 semitone transposition is caught -> 1 FAIL as required
+  [PASS] sentinel D: undeclared (extra) note is caught -> 1 FAIL as required
+  [PASS] sentinel E: declared-but-absent (phantom) note is caught -> 1 FAIL as required
+STATUS: PASS
+
+[3] Determinism spot-check (Cimbalom score, double render, SHA256 bit-exact)
+Score: scores/originals/ai_radiance/ai_radiance_m1.score.json
+  (64 events; "cimbalom" appears 33x in the score; materials bronze/glass/steel)
+CLI: build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+Render 1 -> scratchpad/det_r1/Original_AI_Radiance_Movement1.wav
+Render 2 -> scratchpad/det_r2/Original_AI_Radiance_Movement1.wav
+SHA256 render 1: 74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d
+SHA256 render 2: 74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d
+Bit-exact: YES (hashes identical)
+STATUS: PASS
+
+[4] crossplatform_verify selftest
+Command: python tools/crossplatform_verify.py --selftest
+Result: RESULT: ALL SELF-TESTS PASSED (11/11 checks OK)
+  identical signals -> -inf max delta / no differing frame / 0.000 dB spectral deviation
+  -100 dBFS perturbation measured -100.00 dBFS at frame 1234
+  +0.5 dB gain error detected as 0.5000 dB spectral deviation
+  +50 cent shift reported as 50.409 cents (within one FFT bin)
+  judge rejects -60 dBFS vs -90 limit; accepts -120 dBFS vs -90 limit
+  judge uses magnitude for negative cent deviation
+  empty tolerance file judges nothing (no silent PASS)
+STATUS: PASS
+
+OVERALL: 4/4 PASS
+No tolerances relaxed, no GATE narrowed, no exemptions added, no score JSON modified.
+Nothing staged or committed (R7).

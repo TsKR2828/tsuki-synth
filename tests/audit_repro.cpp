@@ -74,8 +74,8 @@ bool readAudioFile (const juce::File& file, juce::AudioBuffer<float>& audio,
 void loadTestMaterial (MaterialDB& materials)
 {
     const auto json = R"json({"materials":{)json"
-        R"json("steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"eta":0.0002,"beta_air":0.00000012,"gamma_radiation":0.00002}},)json"
-        R"json("wood_spruce":{"display_name":"Spruce","density":450,"youngs_modulus":12000000000,"poisson_ratio":0.37,"damping":{"eta":0.007,"beta_air":0.0000003,"gamma_radiation":0.00005}})json"
+        R"json("steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"eta":0.0002,"beam_plate_beta_air":0.00000012,"beam_plate_gamma_radiation":0.00002}},)json"
+        R"json("wood_spruce":{"display_name":"Spruce","density":450,"youngs_modulus":12000000000,"poisson_ratio":0.37,"damping":{"eta":0.007,"beam_plate_beta_air":0.0000003,"beam_plate_gamma_radiation":0.00005}})json"
         R"json(}})json";
     CHECK (materials.loadFromString (json), "Test material database loads");
 }
@@ -85,7 +85,7 @@ void testMaterialDatabaseIsTransactional()
     MaterialDB materials;
     loadTestMaterial (materials);
     const int originalSize = materials.size();
-    const auto invalid = R"json({"materials":{"bad":{"display_name":"Bad","density":0,"youngs_modulus":1,"poisson_ratio":0.6,"damping":{"eta":-1,"beta_air":0,"gamma_radiation":0}}}})json";
+    const auto invalid = R"json({"materials":{"bad":{"display_name":"Bad","density":0,"youngs_modulus":1,"poisson_ratio":0.6,"damping":{"eta":-1,"beam_plate_beta_air":0,"beam_plate_gamma_radiation":0}}}})json";
     CHECK (! materials.loadFromString (invalid),
            "MaterialDB rejects non-physical material constants");
     CHECK (materials.size() == originalSize
@@ -95,15 +95,41 @@ void testMaterialDatabaseIsTransactional()
     // Pre-2026-08-10 schema must FAIL CLOSED, not be reinterpreted: alpha and eta
     // differ by the 118.921 MIDI-60 anchor factor, so silently reading an alpha as
     // an eta would under-damp every material by ~5 orders of magnitude.
-    const auto legacy = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"alpha":0.0238,"beta_air":0.00000012,"gamma_radiation":0.00002}}}})json";
+    const auto legacy = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"alpha":0.0238,"beam_plate_beta_air":0.00000012,"beam_plate_gamma_radiation":0.00002}}}})json";
     CHECK (! materials.loadFromString (legacy),
            "MaterialDB refuses the retired frequency-independent alpha schema");
 
     // Belt-and-braces: a file carrying BOTH keys is also refused, so a partially
     // migrated database can never render with an ambiguous damping source.
-    const auto both = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"alpha":0.0238,"eta":0.0002,"beta_air":0.00000012,"gamma_radiation":0.00002}}}})json";
+    const auto both = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"alpha":0.0238,"eta":0.0002,"beam_plate_beta_air":0.00000012,"beam_plate_gamma_radiation":0.00002}}}})json";
     CHECK (! materials.loadFromString (both),
            "MaterialDB refuses a damping block carrying both alpha and eta");
+
+    // Pre-B3 (2026-08-24) schema must also FAIL CLOSED: bare
+    // beta_air/gamma_radiation were renamed to beam_plate_* because they no
+    // longer feed StringModel at all (Beam/Plate-only) -- a file written for
+    // the old schema must not silently load with the new semantics.
+    // Positive control FIRST (required by docs/workcards/B3.md §7-1): the very
+    // same material block with the NEW key names must load, proving the two
+    // rejection checks below discriminate old vs new schema rather than
+    // rejecting everything.
+    MaterialDB b3Schema;
+    const auto newKeys = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"eta":0.0002,"beam_plate_beta_air":0.00000012,"beam_plate_gamma_radiation":0.00002}}}})json";
+    CHECK (b3Schema.loadFromString (newKeys),
+           "MaterialDB accepts the renamed beam_plate_* schema (positive control)");
+    // Each rejection case carries the COMPLETE new schema PLUS one retired
+    // key, so the ONLY possible failure trigger is the retired key itself
+    // (not a missing beam_plate_* field) -- same isolation discipline as the
+    // alpha "both" case above. A file with only the old keys (missing the
+    // new ones) is rejected a fortiori by the finiteNumber() reads.
+    const auto bareBeta = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"eta":0.0002,"beta_air":0.00000012,"beam_plate_beta_air":0.00000012,"beam_plate_gamma_radiation":0.00002}}}})json";
+    CHECK (! b3Schema.loadFromString (bareBeta),
+           "MaterialDB refuses the retired bare beta_air/gamma_radiation schema (beta_air)");
+    const auto bareGamma = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"eta":0.0002,"gamma_radiation":0.00002,"beam_plate_beta_air":0.00000012,"beam_plate_gamma_radiation":0.00002}}}})json";
+    CHECK (! b3Schema.loadFromString (bareGamma),
+           "MaterialDB refuses the retired bare beta_air/gamma_radiation schema (gamma_radiation)");
+    CHECK (b3Schema.getMaterial ("steel") != nullptr,
+           "Rejected legacy reloads keep the last known-good beam_plate_* database");
 }
 
 void testEnvelopeRelease()

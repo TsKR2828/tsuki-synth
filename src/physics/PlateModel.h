@@ -36,7 +36,7 @@ public:
         bool  freeEdge    = false;    // low-level default; score water_gong explicitly supplies true
     };
 
-    /// T60(f) = 1 / (eta·f/2.2 + beta_air·f² + gamma_radiation·f)
+    /// T60(f) = 1 / (eta·f/2.2 + beam_plate_beta_air·f² + beam_plate_gamma_radiation·f)
     /// 內部摩擦項自 2026-08-10 起寬頻化，與 StringModel 同一條律
     /// （推導與理由見 MaterialDB.h 頂端註解）。
     static float decayTimeForFrequency (
@@ -44,8 +44,8 @@ public:
     {
         const float denominator = MaterialDB::internalFrictionRate (
                 material.damping.eta, frequency)
-            + material.damping.beta_air * frequency * frequency
-            + material.damping.gamma_radiation * frequency;
+            + material.damping.beam_plate_beta_air * frequency * frequency
+            + material.damping.beam_plate_gamma_radiation * frequency;
         return denominator > 0.0f ? 1.0f / denominator : 8.0f;
     }
 

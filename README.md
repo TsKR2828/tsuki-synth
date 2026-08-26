@@ -348,7 +348,10 @@ The binaries already present in a checkout may predate the current source. Rebui
 
 ## License
 
-TBD (personal use / MIT / commercial evaluation in progress)
+Proprietary — all rights reserved (commercial rights retained). See [LICENSE](LICENSE).
+JUCE 8 is used under the Starter tier (free, revenue < USD 20k, closed-source
+distribution permitted); review the JUCE 8 EULA attribution clause before any
+public release. The VST3 SDK inside JUCE 8 is MIT.
 
 ## Links
 

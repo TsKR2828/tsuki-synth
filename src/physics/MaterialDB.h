@@ -11,8 +11,24 @@
  *   youngs_modulus  (Pa)      — 材質剛性
  *   poisson_ratio   (無量綱)  — 橫向變形
  *   damping.eta               — 材質內部阻尼「損耗因子」(loss factor，無量綱)
- *   damping.beta_air          — 空氣黏滯阻尼
- *   damping.gamma_radiation   — 聲輻射損耗
+ *   damping.beam_plate_beta_air          — 空氣黏滯阻尼（**只給 Beam/Plate**）
+ *   damping.beam_plate_gamma_radiation   — 「聲輻射」損耗（**只給 Beam/Plate**）
+ *
+ * ── 三個 damping 欄位各自的引擎適用範圍（2026-08-24 B3）──
+ *
+ *   eta                        ： 所有引擎（String/Beam/Plate）。Phase H 已溯源
+ *                                的材質損耗因子（文獻表）。
+ *   beam_plate_beta_air        ： **只有 Beam/Plate（Chromatic 引擎）讀取**。
+ *   beam_plate_gamma_radiation ： 同上。兩者仍是「查無出處」的擬合值
+ *                                （TODO.md D1，Beam/Plate 的阻尼溯源未搜尋）。
+ *
+ * 弦（StringModel，Cimbalom/Piano）自 B3 起**完全不讀**這兩個欄位：弦的
+ * 空氣黏滯＋黏彈性＋位錯損耗改用 Cuesta & Valette (1988) 的零自由參數
+ * 三機制公式，由頻率/弦半徑/張力/材質 (rho, E) 直接算出
+ * （StringModel::stringAirViscDislQInv()，docs/STRING_DAMPING_SOURCES.md §2）。
+ * 欄位名帶 beam_plate_ 前綴正是為了讓「改這兩個數字不會影響弦音色」這件事
+ * 從名字上就看得出來。舊 schema（bare beta_air/gamma_radiation）fail-closed
+ * 拒載，見 parseJson()。
  *
  * ── eta 取代舊 alpha 的理由（2026-08-10 阻尼寬頻化）──
  *
@@ -47,8 +63,10 @@ public:
     {
         /// 損耗因子 eta（Q = 1/eta）。內部摩擦對衰減率的貢獻 = eta·f/2.2。
         float eta             = 2.0e-4f;
-        float beta_air        = 1.2e-7f;
-        float gamma_radiation = 2e-5f;
+        /// 只給 Beam/Plate 用（B3 改名，見類別頂端註解）；StringModel 不讀。
+        float beam_plate_beta_air        = 1.2e-7f;
+        /// 只給 Beam/Plate 用（B3 改名，見類別頂端註解）；StringModel 不讀。
+        float beam_plate_gamma_radiation = 2e-5f;
     };
 
     /// T60 = 2.2/(f·eta) 推導出的內部摩擦係數（見上方註解與提案 §1.2）。
@@ -68,12 +86,13 @@ public:
     /** score 的 `damping_override` 數字語意不變：它一直是、現在仍是
         「**MIDI 60 錨點上**的內部摩擦衰減率」（即舊 alpha 的尺度，
         32 首既有樂譜的授權值落在 0.28~1.15）。寬頻化後把它換算成等效
-        eta，使既有樂譜在錨點上的作者意圖逐位元保留，其他音高則與材質
-        路徑一致地隨頻率變化——而不是把樂譜裡的數字重新解釋成 eta
-        （那會讓 0.4 之類的值變成橡膠等級的阻尼）。beta_air/gamma_radiation
-        永遠維持材質驅動、不受覆寫影響；橋耦合項（bridgeLoss，2026-08-16 B1，
-        見 StringModel::bridgeLossRate()）同理，永遠疊加、不受 damping_override
-        影響。 */
+        eta——而不是把樂譜裡的數字重新解釋成 eta（那會讓 0.4 之類的值變成
+        橡膠等級的阻尼）。覆寫只換掉內部摩擦項；弦的空氣黏滯＋黏彈＋位錯
+        三機制（B3，StringModel::stringAirViscDislQInv()）與橋耦合項
+        （bridgeLoss，2026-08-16 B1，見 StringModel::bridgeLossRate()）永遠
+        疊加、不受 damping_override 影響。注意 B3 之後「錨點 T60 逐位元保留」
+        的保證不再成立：MIDI 60 上除了被覆寫的內部摩擦項，還會疊加頻率相依的
+        三機制項（見 CimbalomEngine.h 的 dampingOverride 註解區塊）。 */
     static float etaFromAnchoredDamping (float anchoredRate)
     {
         return anchoredRate * kEtaToDecayRate / kLegacyAnchorHz;
@@ -180,13 +199,21 @@ private:
             // frequency-independent `alpha` is REJECTED rather than silently reinterpreted
             // — the two fields differ by the 118.921 anchor factor, so accepting an alpha
             // as an eta would under-damp every material by ~5 orders of magnitude.
+            //
+            // Fail-closed on the pre-B3 schema too: a file that still carries the bare
+            // `beta_air`/`gamma_radiation` keys is REJECTED rather than silently
+            // reinterpreted as the renamed beam_plate_* fields — those two names now
+            // mean "Beam/Plate-only" and no longer feed StringModel at all, so a file
+            // written for the old schema must not load until it is explicitly migrated.
             auto* dampObj = matObj->getProperty ("damping").getDynamicObject();
             double eta = 0.0, betaAir = 0.0, gammaRadiation = 0.0;
             if (dampObj == nullptr
                 || dampObj->hasProperty ("alpha")
+                || dampObj->hasProperty ("beta_air")
+                || dampObj->hasProperty ("gamma_radiation")
                 || ! finiteNumber (dampObj->getProperty ("eta"), eta)
-                || ! finiteNumber (dampObj->getProperty ("beta_air"), betaAir)
-                || ! finiteNumber (dampObj->getProperty ("gamma_radiation"), gammaRadiation)
+                || ! finiteNumber (dampObj->getProperty ("beam_plate_beta_air"), betaAir)
+                || ! finiteNumber (dampObj->getProperty ("beam_plate_gamma_radiation"), gammaRadiation)
                 || eta < 0.0 || betaAir < 0.0 || gammaRadiation < 0.0)
                 return false;
 
@@ -196,8 +223,8 @@ private:
             mat.youngsModulus = (float) youngsModulus;
             mat.poissonRatio = (float) poissonRatio;
             mat.damping.eta = (float) eta;
-            mat.damping.beta_air = (float) betaAir;
-            mat.damping.gamma_radiation = (float) gammaRadiation;
+            mat.damping.beam_plate_beta_air = (float) betaAir;
+            mat.damping.beam_plate_gamma_radiation = (float) gammaRadiation;
             parsedMaterials.emplace (key, mat);
         }
 
