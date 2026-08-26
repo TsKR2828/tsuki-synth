@@ -54,10 +54,6 @@
       "params": {
         "material": "bronze",
         "thickness_mm": 2.5,
-        "width_mm": 150,
-        "height_mm": 150,
-        "strike_position_x": 0.4,
-        "strike_position_y": 0.4,
         "exciter": "cotton_mallet",
         "radius_mm": 150
       }
@@ -71,10 +67,6 @@
       "params": {
         "material": "bronze",
         "thickness_mm": 2.0,
-        "width_mm": 120,
-        "height_mm": 120,
-        "strike_position_x": 0.5,
-        "strike_position_y": 0.5,
         "exciter": "cotton_mallet",
         "radius_mm": 150
       }
@@ -88,10 +80,6 @@
       "params": {
         "material": "bronze",
         "thickness_mm": 2.2,
-        "width_mm": 130,
-        "height_mm": 130,
-        "strike_position_x": 0.45,
-        "strike_position_y": 0.55,
         "exciter": "cotton_mallet",
         "radius_mm": 150
       }
@@ -105,10 +93,6 @@
       "params": {
         "material": "bronze",
         "thickness_mm": 2.3,
-        "width_mm": 140,
-        "height_mm": 140,
-        "strike_position_x": 0.5,
-        "strike_position_y": 0.4,
         "exciter": "cotton_mallet",
         "radius_mm": 150
       }

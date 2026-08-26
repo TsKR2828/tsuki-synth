@@ -1,0 +1,59 @@
+=== L1+L2+L3a ear-free melody GATE evidence (2026-08-20) ===
+授權：月月 2026-08-20 全權委託（TODO.md C3-b）。R7 有效：全部未 commit。
+
+───────────── L1: tools/melody_verify.py 哨兵五件組 ─────────────
+[PASS] sentinel A: unmodified fixture verifies clean (max |onset err| = 0.27 ms, tol 10 ms)
+[PASS] sentinel B: +100 ms time shift is caught -> 2 FAIL as required
+[PASS] sentinel C: +1 semitone transposition is caught -> 1 FAIL as required
+[PASS] sentinel D: undeclared (extra) note is caught -> 1 FAIL as required
+[PASS] sentinel E: declared-but-absent (phantom) note is caught -> 1 FAIL as required
+SELFTEST PASS (5/5)
+
+追加真曲驗證（CLI 渲染路徑）:
+- water_gong_clamped (reverb 3.0):
+  [PASS] ev0 t=0.000 note=C4 onset_err=-2.15ms pitch=+0.03c
+  [PASS] ev1 t=3.000 note=G4 onset_err=-0.04ms pitch=+0.11c
+  [extra-scan] PASS
+  summary: 2 PASS / 0 FAIL / 0 UNVERIFIED
+
+───────────── L2: TsukiSynthHostProbe（載入磁碟上的 .vst3）─────────────
+[PASS] H1 scan: VST3 format finds the bundle (C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)
+[PASS] H1 scan: described as instrument named TsukiSynth (got 'TsukiSynth', isInstrument=1, version 0.3.0)
+[PASS] H2 instantiate: instance created
+[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.631638) -- melody-position verdict follows via melody_verify.py
+[PASS] H3 MIDI render: WAV written: C:\Users\admin\AppData\Local\Temp\claude\C--Users-admin-Desktop-Claude\01a7afd2-4a9f-4af1-bed8-ea3992d689d5\scratchpad\hostprobe_evidence\hostprobe_render.wav
+[PASS] H3 determinism: second instance created
+[PASS] H3 determinism: fresh-instance re-render is byte-identical
+[PASS] H4 automation: instances created
+[PASS] H4 automation: 'EQ Shelf Gain (dB)' parameter exposed to host
+[PASS] H4 automation: identically-automated renders are byte-identical
+[PASS] H4 automation: +12 dB shelf ramp lifts 3-12 kHz band by 8.62 dB (require >= 6)
+[PASS] H5 state: 'Strike Position' parameter found
+[PASS] H5 state: non-empty state captured (3745 bytes)
+[PASS] H5 state: fresh instance created
+[FAIL] H5 state: parameter survives round-trip (requested 0.42, settled 0.42, restored 0.422222)
+[FAIL] H5 state: restored-state render is byte-identical
+FAIL (2 failures)
+
+L2 渲染交 L1 判定（plugin 即時路徑的旋律位置，首次驗證）:
+  [PASS] ev0 t=0.000 note=60 onset_err=+1.31ms pitch=+1.31c
+  [PASS] ev1 t=0.600 note=64 onset_err=+1.17ms pitch=+0.24c
+  [PASS] ev2 t=1.200 note=67 onset_err=+1.08ms pitch=+0.98c
+  [PASS] ev3 t=1.800 note=71 onset_err=+0.90ms pitch=+1.14c
+  [PASS] ev4 t=2.400 note=74 onset_err=+0.58ms pitch=-0.54c
+  [extra-scan] PASS
+  summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+
+H5 兩項 FAIL = 誠實發現（登記 TODO A12）：JUCE APVTS 參數 set(0.42)→settled 0.42（plain 0.428 未量化）
+但 state 存讀後 restored 0.422222（plain 0.43 量化）→ 專案存讀前後渲染位元不一致。
+量化不對稱在 JUCE 層；修法選項與影響見 TODO A12。不影響 CLI corpus（CLI 不走 APVTS）。
+
+───────────── L3a: tools/cubase_scan_verify.py（真實 Cubase 掃描證據）─────────────
+cache dir: C:\Users\admin\AppData\Roaming\Steinberg\Cubase LE AI Elements 12_64\Cubase AI VST3 Cache
+[PASS] S1.scanned: 1 TsukiSynth.vst3 entry(ies) in vst3plugins.xml
+[PASS] S2.not_blacklisted: 0 entries in vst3blacklist.xml
+[PASS] S3.instrument_class: Audio Module Class present, subCategories=['Instrument|Synth'], version=['0.2.0']
+[PASS] S4.controller_class: Component Controller Class present
+[PASS] S5.cache_matches_disk: cache 2026-07-12T08:20:05+00:00 vs disk 2026-07-12T08:20:05.555420+00:00 (|delta| = 0.6 s)
+[INFO] S6.deploy_lag: installed binary != repo build artefact (expected on an uncommitted working tree; redeploy to update the host)
+RESULT: PASS (S1-S5)

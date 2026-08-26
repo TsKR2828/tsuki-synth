@@ -37,7 +37,6 @@
       "params": {
         "material": "brass",
         "diameter_mm": 0.4,
-        "length_mm": 200,
         "tension_n": 400,
         "strike_position": 0.7,
         "exciter": "finger"

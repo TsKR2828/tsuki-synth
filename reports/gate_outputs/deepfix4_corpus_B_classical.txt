@@ -1,0 +1,51 @@
+Shard B_classical corpus re-verification -- vivaldi_four_seasons (12/12 files)
+Date: 2026-07-23
+Branch: fix/deep-physics-audit-20260716
+CLI: build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+Command: python tools/verify_score.py <file> --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+
+Context: this re-verify validates the two tightened constants applied this round
+(both approved by 月月, chat, 2026-07-23, both TIGHTENING, not loosened):
+  - modes.f0_deviation now judges the --dump-modes course-centroid fundamental
+    (tools/verify_score.py, see 2026-07-23 comment block above MODE_F0_TOL_CENTS)
+    against equal temperament, tolerance tightened MODE_F0_TOL_CENTS 12.0 -> 5.0 cents.
+  - F5 residual-spectral-energy check (tools/physics_verify.py) converted from
+    informational-only to a judged gate at RESIDUAL_ENERGY_LIMIT_DB = -60.0 dB.
+    (Not exercised by this shard: F5 runs under the physics harness, not
+    tools/verify_score.py per-score checks -- listed here for context only.)
+
+Per-file results (all checks: schema, modal data, rests, peak/clipping, determinism):
+
+  [PASS] autumn/vivaldi_four_seasons_autumn_m1.score.json   -- 3111 modal events, f0 max 3.275 cents
+  [PASS] autumn/vivaldi_four_seasons_autumn_m2.score.json   -- 187 modal events, f0 max 2.356 cents
+  [PASS] autumn/vivaldi_four_seasons_autumn_m3.score.json   -- 2582 modal events, f0 max 2.356 cents
+  [PASS] spring/vivaldi_four_seasons_spring_m1.score.json   -- 3173 modal events, f0 max 3.275 cents
+  [PASS] spring/vivaldi_four_seasons_spring_m2.score.json   -- 1042 modal events, f0 max 2.914 cents
+  [PASS] spring/vivaldi_four_seasons_spring_m3.score.json   -- 2071 modal events, f0 max 3.275 cents
+  [PASS] summer/vivaldi_four_seasons_summer_m1.score.json   -- 3621 modal events, f0 max 3.032 cents
+  [PASS] summer/vivaldi_four_seasons_summer_m2.score.json   -- 629 modal events, f0 max 2.648 cents
+  [PASS] summer/vivaldi_four_seasons_summer_m3.score.json   -- 5158 modal events, f0 max 3.057 cents
+  [PASS] winter/vivaldi_four_seasons_winter_m1.score.json   -- 3255 modal events, f0 max 3.275 cents
+  [PASS] winter/vivaldi_four_seasons_winter_m2.score.json   -- 851 modal events, f0 max 2.702 cents
+  [PASS] winter/vivaldi_four_seasons_winter_m3.score.json   -- 2696 modal events, f0 max 3.275 cents
+
+Each file: RESULT: ALL CHECKS PASSED (schema.*, modes.*, render.ran, render.pre_normalize_manifest,
+rests.checked, audio.not_all_zero, audio.peak_below_limit, audio.no_consecutive_clipping,
+determinism.sha256_match all [OK]). No launch failures (0xC0000142 or similar) encountered;
+no retries were needed.
+
+Statistics:
+  Files verified : 12
+  PASS           : 12
+  FAIL           : 0
+  Modal events   : 28376 total across 12 files
+  Max f0 deviation observed (shard-wide): 3.275 cents (well within the tightened
+    +/-5.0 cent limit; multiple files/events tie at this value -- see per-file list above)
+  Min of per-file maxima                : 2.356 cents (autumn m2, autumn m3)
+
+Exemptions: none applicable to this shard (moonlight exemption is scoped to a different
+score outside scores/classical/vivaldi_four_seasons; not encountered here).
+
+Conclusion: the course-centroid f0 measurement + tightened 5.0-cent tolerance holds across
+the full B_classical corpus (12/12 vivaldi_four_seasons files) with no failures and
+comfortable headroom (worst-case 3.275c vs 5.0c limit).

@@ -298,10 +298,10 @@ public:
                                             juce::Point<int> screenPos,
                                             juce::Rectangle<int> parentArea) override
     {
-        auto font = scaledFont (12.0f);
+        auto font = scaledFont (14.0f);
         int textW = (int) juce::GlyphArrangement::getStringWidth (font, tipText) + 1;
-        int w = juce::jmin (400, juce::jmax (80, textW + 28));
-        int h = 34;
+        int w = juce::jmin (460, juce::jmax (80, textW + 28));
+        int h = 38;
 
         int x = screenPos.x > parentArea.getCentreX()
                     ? screenPos.x - w - 8
@@ -325,7 +325,7 @@ public:
         g.drawRoundedRectangle (bounds.reduced (0.5f), 5.0f, 1.0f);
 
         g.setColour (juce::Colour (0xff1a1a2e));
-        g.setFont (scaledFont (12.0f));
+        g.setFont (scaledFont (14.0f));
         g.drawText (text, bounds.toNearestInt().reduced (12, 0),
                     juce::Justification::centred, true);
     }

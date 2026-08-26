@@ -1,5 +1,10 @@
 # TsukiSynth《月亮旋律》FM Piano 調整補強書
 
+> **2026-07-17 domain note:** this remains a historical FM sound-design document. FM Piano is
+> deliberately outside TsukiSynth's physical-instrument verification domain and must never be
+> used as evidence for “樂器物理正確”. Current parameter/schema/preset behavior is defined by
+> `FMPianoEngine.h`, `ScoreParser.h`, `score.schema.json`, and stable-ID `PresetManager.h`.
+
 版本：v1.0  
 用途：給開發者、Claude Code、Codex 審查與後續音色調整使用  
 目標：把目前的 FM Piano 從「憑感覺亂轉參數」改成「有參考母本、有一致預設、有可調方向」的樂器引擎。

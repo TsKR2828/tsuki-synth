@@ -52,10 +52,6 @@
       "params": {
         "material": "iron",
         "thickness_mm": 5.0,
-        "width_mm": 120,
-        "height_mm": 120,
-        "strike_position_x": 0.5,
-        "strike_position_y": 0.5,
         "exciter": "metal_hammer",
         "radius_mm": 150
       },
@@ -70,7 +66,6 @@
       "params": {
         "material": "steel",
         "diameter_mm": 2.5,
-        "length_mm": 150,
         "tension_n": 800,
         "strike_position": 0.1,
         "exciter": "metal_hammer",

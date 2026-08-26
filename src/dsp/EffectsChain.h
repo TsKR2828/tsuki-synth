@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Reverb.h"
-#include "DelayLine.h"
-#include "Compressor.h"
-#include "Distortion.h"
+#include "../effects/SimpleReverb.h"
+#include "../effects/StereoDelay.h"
+#include "../effects/Compressor.h"
 #include "BiquadFilter.h"
+#include "Distortion.h"
 
 struct EffectsParams
 {
     bool   reverbEnabled    = true;
     float  reverbRoomSize   = 0.5f;
+    float  reverbDecaySeconds = -1.0f; // >=0 selects measurable T60
     float  reverbDamping    = 0.3f;
     float  reverbWet        = 0.25f;
 
@@ -29,6 +30,12 @@ struct EffectsParams
     float          distortionInstability = 0.0f;
     float          distortionWet        = 0.5f;
 
+    // Brightness-compensation high shelf (documented creative layer,
+    // 2026-08-06). gain 0 dB = hard bypass: the filter is skipped entirely
+    // so scores without an eq block render bit-identically.
+    float  eqHighShelfFreqHz = 2000.0f;
+    float  eqHighShelfGainDb = 0.0f;
+
     float  masterVolume      = 1.0f;
 };
 
@@ -39,14 +46,14 @@ public:
     {
         distortionL.prepare (sampleRate);
         distortionR.prepare (sampleRate);
-        reverbL.prepare (sampleRate);
-        reverbR.prepare (sampleRate);
-        delayL.prepare (sampleRate, 6.0);
-        delayR.prepare (sampleRate, 6.0);
-        compL.prepare (sampleRate);
-        compR.prepare (sampleRate);
-        hiCut.setSampleRate (sampleRate);
-        hiCut.setParams (BiquadFilter::Type::LowPass, 16000.0f, 0.707f);
+        compressor.prepare (sampleRate);
+        delay.prepare (sampleRate);
+        reverb.prepare (sampleRate);
+        eqL.setSampleRate (sampleRate);
+        eqR.setSampleRate (sampleRate);
+        eqL.reset();
+        eqR.reset();
+        applyEqParams();
     }
 
     void setParameters (const EffectsParams& p)
@@ -62,16 +69,18 @@ public:
         distortionL.setParameters (dp);
         distortionR.setParameters (dp);
 
-        reverbL.setParameters (p.reverbRoomSize, p.reverbDamping, p.reverbWet);
-        reverbR.setParameters (p.reverbRoomSize, p.reverbDamping, p.reverbWet);
-        delayL.setDelay (p.delayTime);
-        delayL.setFeedback (p.delayFeedback);
-        delayL.setWetDry (p.delayWet);
-        delayR.setDelay (p.delayTime * 1.12);
-        delayR.setFeedback (p.delayFeedback);
-        delayR.setWetDry (p.delayWet);
-        compL.setParameters (p.compThreshold, p.compRatio, 5.0f, 50.0f, p.compMakeup);
-        compR.setParameters (p.compThreshold, p.compRatio, 5.0f, 50.0f, p.compMakeup);
+        if (p.reverbDecaySeconds >= 0.0f)
+            reverb.setDecayTime (p.reverbDecaySeconds);
+        else
+            reverb.setRoomSize (p.reverbRoomSize);
+        reverb.setDamping (p.reverbDamping);
+        reverb.setMix (p.reverbEnabled ? p.reverbWet : 0.0f);
+        delay.setTime ((float) (p.delayTime * 1000.0));
+        delay.setFeedback (p.delayFeedback);
+        delay.setMix (p.delayEnabled ? p.delayWet : 0.0f);
+        compressor.setThreshold (p.compThreshold);
+        compressor.setRatio (p.compressorEnabled ? p.compRatio : 1.0f);
+        applyEqParams();
     }
 
     void processStereo (float& left, float& right)
@@ -83,22 +92,16 @@ public:
             right = distortionR.processSample (right);
         }
 
-        if (params.compressorEnabled)
-        {
-            left  = compL.processSample (left);
-            right = compR.processSample (right);
-        }
+        compressor.processStereo (left, right);
+        // Keep both stateful effects advancing at wet=0, matching the plugin.
+        delay.processStereo (left, right);
+        reverb.processStereo (left, right);
 
-        if (params.delayEnabled)
+        // Hard bypass at 0 dB: existing scores must stay bit-identical.
+        if (std::abs (params.eqHighShelfGainDb) >= 0.005f)
         {
-            left  = delayL.processSample (left);
-            right = delayR.processSample (right);
-        }
-
-        if (params.reverbEnabled)
-        {
-            left  = reverbL.processSample (left);
-            right = reverbR.processSample (right);
+            left  = eqL.processSample (left);
+            right = eqR.processSample (right);
         }
 
         left  *= params.masterVolume;
@@ -109,19 +112,26 @@ public:
     {
         distortionL.reset();
         distortionR.reset();
-        reverbL.reset();
-        reverbR.reset();
-        delayL.reset();
-        delayR.reset();
-        compL.reset();
-        compR.reset();
+        compressor.reset();
+        delay.reset();
+        reverb.reset();
+        eqL.reset();
+        eqR.reset();
     }
 
 private:
+    void applyEqParams()
+    {
+        eqL.setParams (BiquadFilter::Type::HighShelf, params.eqHighShelfFreqHz,
+                       0.707f, params.eqHighShelfGainDb);
+        eqR.setParams (BiquadFilter::Type::HighShelf, params.eqHighShelfFreqHz,
+                       0.707f, params.eqHighShelfGainDb);
+    }
+
     EffectsParams params;
     Distortion distortionL, distortionR;
-    SchroederReverb reverbL, reverbR;
-    DelayLine delayL, delayR;
-    SimpleCompressor compL, compR;
-    BiquadFilter hiCut;
+    Compressor compressor;
+    StereoDelay delay;
+    SimpleReverb reverb;
+    BiquadFilter eqL, eqR;
 };

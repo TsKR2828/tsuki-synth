@@ -1,0 +1,207 @@
+# B3 selftest sentinel -- proves the new Cuesta & Valette reference test has detection power
+# (docs/workcards/B3.md §7-2 counter-example requirement, same discipline as physics_verify.py --selftest:
+#  first prove the test CATCHES the error, then prove it does not false-alarm on the correct code)
+# Date: 2026-08-24   Target: build/Release/TsukiSynthPhysicsModelsTest.exe
+#
+# RUN 1/2 -- DELIBERATE MUTANT: src/physics/StringModel.h stringAirViscDislQInv()
+#   viscoelastic term's std::pow(radius, 6.0f) temporarily changed to std::pow(radius, 2.0f)
+#   (simulating a miscopied power law), test target rebuilt, run once.
+#   EXPECTED: the 1%-relative Cuesta reference test FAILS on all four frequencies.
+#   ACTUAL: exit code 1, 7 [FAIL] lines (4x Cuesta reference + 3 collateral bound checks).
+#   The inline r^6->r^2 sentinel CHECKs still PASS because they recompute the mutant
+#   independently inside the test -- they assert the mutant deviates >10%, which it does (100%).
+# ------------------------------------------------------------------------------
+TsukiSynth physical-model regression tests
+[PASS] Cantilever analytic mode shapes have a node at the fixed end
+[PASS] Tongue default uses fixed-free eigenvalue ratios
+[PASS] Cantilever free endpoint is not incorrectly forced to zero
+[PASS] Explicit free-free beam retains its distinct modal ratios
+[PASS] Ideal beam width correctly cancels from eigenfrequency
+[PASS] Beam width remains observable through modal mass
+[PASS] Portable Bessel matches independent scipy/A&S anchors (mixed 1e-11)
+       (portable-vs-std worst mixed deviation over 9 orders x 321 args: 2.09744e-11)
+[PASS] Portable Bessel agrees with std::cyl_bessel_j/_i on the full validated grid (mixed 1e-10)
+[PASS] Portable Bessel fail-closed: order 9 (outside validated domain) -> NaN
+[PASS] Portable Bessel fail-closed: negative order -> NaN
+[PASS] Portable Bessel fail-closed: x > 16 (outside validated domain) -> NaN
+[PASS] Portable Bessel fail-closed: negative x -> NaN
+[PASS] Portable Bessel fail-closed: NaN x -> NaN
+[PASS] Portable Bessel positive control: in-domain evaluation is finite
+[PASS] Circular-plate centre strike suppresses m>0 modes without a floor
+[PASS] Clamped plate eigenfunctions vanish at the edge
+[PASS] Free plate preserves centre nodes and the axisymmetric branch
+[PASS] Free-edge eigenvalues depend on the material Poisson ratio
+[PASS] frequency_mode separates MIDI pitch lock from absolute geometry physics
+[PASS] Damping is recomputed from the final sounding frequency
+[FAIL] Damping override retains the air/viscoelastic/dislocation losses
+[PASS] Internal friction is broadband: T60 halves per octave (rate ~ eta*f)
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] damping_override still means the internal-friction rate at MIDI 60
+[PASS] Anchor T60 with real geometry = 1/(alpha + qInv*f/2.2) per B3 Sec4.1 algebra
+[PASS] B3 retires the bit-exact anchor guarantee: three-mechanism sum shortens anchor T60
+[PASS] Y_inf at h=8mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (3.01e-3 s/kg, +-0.5%)
+[PASS] Y_inf at h=10mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (1.93e-3 s/kg, +-0.5%)
+[PASS] T60_bridge at C2 (T/L=1250.0 N/m) matches literature table (4.25s, +-1%)
+[PASS] T60_bridge at C4 (T/L=1073.3 N/m) matches literature table (4.95s, +-1%)
+[PASS] T60_bridge at C8 (T/L=12650.0 N/m) matches literature table (0.42s, +-1%)
+[PASS] Bridge coupling loss term is frequency-independent (55Hz T60 == 4000Hz T60)
+[FAIL] damping_override does not swallow the bridge coupling term
+[PASS] With override/bridge/three-mechanism channels all off, the law reduces bit-exactly to 2.2/(f*eta)
+[PASS] bridgeLossRate fail-closed: soundboardThicknessM=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: negative soundboardThicknessM -> 0.0f
+[PASS] bridgeLossRate fail-closed: length=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: negative length -> 0.0f
+[PASS] bridgeLossRate fail-closed: tension=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: non-finite tension -> 0.0f
+[SENTINEL 1/2] mutant (frequency-scaled bridgeLoss): T60(55Hz)=20.2186s  T60(4000Hz)=0.278006s -- same equality check as the real test would report: [FAIL] (GOOD -- regression caught)
+[PASS] SENTINEL: mutant frequency-dependent bridgeLoss is distinguishable at 55Hz vs 4000Hz (proves the Sec7-3 equality check has detection power)
+[SENTINEL 2/2] real StringModel::decayTimeForFrequency: T60(55Hz)=4.25044s  T60(4000Hz)=4.25044s -- verdict: [PASS]
+[PASS] SENTINEL: real bridgeLoss term passes the same equality check (frequency-independent, as required)
+       (Cuesta ref f=147Hz: Q=1.20594e-07 vs table 3629)
+[FAIL] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+       (Cuesta ref f=1000Hz: Q=2.60591e-09 vs table 6787)
+[FAIL] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+       (Cuesta ref f=4000Hz: Q=1.62869e-10 vs table 2817)
+[FAIL] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+       (Cuesta ref f=10000Hz: Q=2.60591e-11 vs table 580)
+[FAIL] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+[SENTINEL r^6->r^2 mutant] f=147Hz: Q=1.20594e-07 vs table 3629 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=1000Hz: Q=2.60591e-09 vs table 6787 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=4000Hz: Q=1.62869e-10 vs table 2817 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=10000Hz: Q=2.60591e-11 vs table 580 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+       (air-band 1/T60 octave ratio: 8; old f^2 shape would give 4.0)
+[PASS] Air term is not proportional to f^2 (regression guard against the old shape)
+[FAIL] Low-band 1/T60 octave ratio sits in the physical sqrt(2)..2 band
+[PASS] stringAirViscDislQInv fail-closed: radius=0 -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: negative radius -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: tension=0 -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: non-finite tension -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: frequency=0 -> 0.0f
+[PASS] stringAirViscDislQInv positive control: valid inputs give a positive Q^-1
+[PASS] Beam frequencies obey L^-2, thickness, sqrt(E), and rho^-1/2 scaling
+[PASS] Plate frequencies obey R^-2, thickness, sqrt(E), and rho^-1/2 scaling
+[PASS] Unforced modal energy decays monotonically cycle by cycle
+[PASS] Invalid modal numbers fail closed without NaN output or a live voice
+[PASS] Invalid modes cannot poison a simultaneously active valid mode
+[PASS] 1/(2*tau) is the removable pi/4 point, not a false spectral null
+[PASS] Half-sine impulse first true null is 3/(2*tau)
+[PASS] Hertz strike-speed law shortens contact at higher velocity
+[PASS] Modal frequency gate exactly matches the DSP renderable band
+[PASS] Geometry modes below 20 Hz are rejected instead of becoming attack-only audio
+[PASS] Weak modes use a relative -60 dB lifetime instead of an absolute cutoff
+[PASS] Modal resonator stops after each mode reaches its T60
+[PASS] Specified PCG noise is exactly reproducible for the same event seed
+[PASS] Distinct semantic event identities prevent coherent repeated-note noise streams
+[PASS] StereoDelay honours the full 5000 ms score contract including 1.10x right spread
+[PASS] Zero-time delay keeps history moving instead of replaying frozen stale audio
+[PASS] Authored reverb T60 reaches approximately -60 dB after one second
+[PASS] Plugin and CLI share the same static FX signal path
+FAIL (7 failures)
+
+# ------------------------------------------------------------------------------
+# RUN 2/2 -- CORRECT IMPLEMENTATION RESTORED: std::pow(radius, 6.0f) reverted verbatim,
+#   test target rebuilt, run once.
+#   EXPECTED: full suite PASS, Cuesta reference within 1% at all four frequencies.
+#   ACTUAL: exit code 0, 0 failures. Q = 3629.26 / 6786.62 / 2816.88 / 580.421
+#   vs table 3629 / 6787 / 2817 / 580 (worst relative error < 0.08%).
+# ------------------------------------------------------------------------------
+TsukiSynth physical-model regression tests
+[PASS] Cantilever analytic mode shapes have a node at the fixed end
+[PASS] Tongue default uses fixed-free eigenvalue ratios
+[PASS] Cantilever free endpoint is not incorrectly forced to zero
+[PASS] Explicit free-free beam retains its distinct modal ratios
+[PASS] Ideal beam width correctly cancels from eigenfrequency
+[PASS] Beam width remains observable through modal mass
+[PASS] Portable Bessel matches independent scipy/A&S anchors (mixed 1e-11)
+       (portable-vs-std worst mixed deviation over 9 orders x 321 args: 2.09744e-11)
+[PASS] Portable Bessel agrees with std::cyl_bessel_j/_i on the full validated grid (mixed 1e-10)
+[PASS] Portable Bessel fail-closed: order 9 (outside validated domain) -> NaN
+[PASS] Portable Bessel fail-closed: negative order -> NaN
+[PASS] Portable Bessel fail-closed: x > 16 (outside validated domain) -> NaN
+[PASS] Portable Bessel fail-closed: negative x -> NaN
+[PASS] Portable Bessel fail-closed: NaN x -> NaN
+[PASS] Portable Bessel positive control: in-domain evaluation is finite
+[PASS] Circular-plate centre strike suppresses m>0 modes without a floor
+[PASS] Clamped plate eigenfunctions vanish at the edge
+[PASS] Free plate preserves centre nodes and the axisymmetric branch
+[PASS] Free-edge eigenvalues depend on the material Poisson ratio
+[PASS] frequency_mode separates MIDI pitch lock from absolute geometry physics
+[PASS] Damping is recomputed from the final sounding frequency
+[PASS] Damping override retains the air/viscoelastic/dislocation losses
+[PASS] Internal friction is broadband: T60 halves per octave (rate ~ eta*f)
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] damping_override still means the internal-friction rate at MIDI 60
+[PASS] Anchor T60 with real geometry = 1/(alpha + qInv*f/2.2) per B3 Sec4.1 algebra
+[PASS] B3 retires the bit-exact anchor guarantee: three-mechanism sum shortens anchor T60
+[PASS] Y_inf at h=8mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (3.01e-3 s/kg, +-0.5%)
+[PASS] Y_inf at h=10mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (1.93e-3 s/kg, +-0.5%)
+[PASS] T60_bridge at C2 (T/L=1250.0 N/m) matches literature table (4.25s, +-1%)
+[PASS] T60_bridge at C4 (T/L=1073.3 N/m) matches literature table (4.95s, +-1%)
+[PASS] T60_bridge at C8 (T/L=12650.0 N/m) matches literature table (0.42s, +-1%)
+[PASS] Bridge coupling loss term is frequency-independent (55Hz T60 == 4000Hz T60)
+[PASS] damping_override does not swallow the bridge coupling term
+[PASS] With override/bridge/three-mechanism channels all off, the law reduces bit-exactly to 2.2/(f*eta)
+[PASS] bridgeLossRate fail-closed: soundboardThicknessM=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: negative soundboardThicknessM -> 0.0f
+[PASS] bridgeLossRate fail-closed: length=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: negative length -> 0.0f
+[PASS] bridgeLossRate fail-closed: tension=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: non-finite tension -> 0.0f
+[SENTINEL 1/2] mutant (frequency-scaled bridgeLoss): T60(55Hz)=20.2186s  T60(4000Hz)=0.278006s -- same equality check as the real test would report: [FAIL] (GOOD -- regression caught)
+[PASS] SENTINEL: mutant frequency-dependent bridgeLoss is distinguishable at 55Hz vs 4000Hz (proves the Sec7-3 equality check has detection power)
+[SENTINEL 2/2] real StringModel::decayTimeForFrequency: T60(55Hz)=4.25044s  T60(4000Hz)=4.25044s -- verdict: [PASS]
+[PASS] SENTINEL: real bridgeLoss term passes the same equality check (frequency-independent, as required)
+       (Cuesta ref f=147Hz: Q=3629.26 vs table 3629)
+[PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+       (Cuesta ref f=1000Hz: Q=6786.62 vs table 6787)
+[PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+       (Cuesta ref f=4000Hz: Q=2816.88 vs table 2817)
+[PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+       (Cuesta ref f=10000Hz: Q=580.421 vs table 580)
+[PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+[SENTINEL r^6->r^2 mutant] f=147Hz: Q=1.20594e-07 vs table 3629 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=1000Hz: Q=2.60591e-09 vs table 6787 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=4000Hz: Q=1.62869e-10 vs table 2817 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=10000Hz: Q=2.60591e-11 vs table 580 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+       (air-band 1/T60 octave ratio: 1.4468; old f^2 shape would give 4.0)
+[PASS] Air term is not proportional to f^2 (regression guard against the old shape)
+[PASS] Low-band 1/T60 octave ratio sits in the physical sqrt(2)..2 band
+[PASS] stringAirViscDislQInv fail-closed: radius=0 -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: negative radius -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: tension=0 -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: non-finite tension -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: frequency=0 -> 0.0f
+[PASS] stringAirViscDislQInv positive control: valid inputs give a positive Q^-1
+[PASS] Beam frequencies obey L^-2, thickness, sqrt(E), and rho^-1/2 scaling
+[PASS] Plate frequencies obey R^-2, thickness, sqrt(E), and rho^-1/2 scaling
+[PASS] Unforced modal energy decays monotonically cycle by cycle
+[PASS] Invalid modal numbers fail closed without NaN output or a live voice
+[PASS] Invalid modes cannot poison a simultaneously active valid mode
+[PASS] 1/(2*tau) is the removable pi/4 point, not a false spectral null
+[PASS] Half-sine impulse first true null is 3/(2*tau)
+[PASS] Hertz strike-speed law shortens contact at higher velocity
+[PASS] Modal frequency gate exactly matches the DSP renderable band
+[PASS] Geometry modes below 20 Hz are rejected instead of becoming attack-only audio
+[PASS] Weak modes use a relative -60 dB lifetime instead of an absolute cutoff
+[PASS] Modal resonator stops after each mode reaches its T60
+[PASS] Specified PCG noise is exactly reproducible for the same event seed
+[PASS] Distinct semantic event identities prevent coherent repeated-note noise streams
+[PASS] StereoDelay honours the full 5000 ms score contract including 1.10x right spread
+[PASS] Zero-time delay keeps history moving instead of replaying frozen stale audio
+[PASS] Authored reverb T60 reaches approximately -60 dB after one second
+[PASS] Plugin and CLI share the same static FX signal path
+PASS (0 failures)

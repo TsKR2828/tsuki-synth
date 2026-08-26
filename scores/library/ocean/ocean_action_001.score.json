@@ -52,10 +52,6 @@
       "params": {
         "material": "bronze",
         "thickness_mm": 6.0,
-        "width_mm": 180,
-        "height_mm": 180,
-        "strike_position_x": 0.5,
-        "strike_position_y": 0.5,
         "exciter": "rubber_mallet",
         "radius_mm": 150
       },
@@ -70,7 +66,6 @@
       "params": {
         "material": "nylon",
         "diameter_mm": 3.0,
-        "length_mm": 180,
         "tension_n": 500,
         "strike_position": 0.15,
         "exciter": "rubber_mallet",

@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "Presets.h"
+#include <atomic>
 
 class PresetManager : private juce::ValueTree::Listener
 {
@@ -27,7 +28,11 @@ public:
         return c;
     }
 
-    int getNumUserPresets() const { return userPresets.size(); }
+    int getNumUserPresets() const
+    {
+        const juce::ScopedLock lock (presetLock);
+        return userPresets.size();
+    }
     int getNumPresets() const     { return getNumFactoryPresets() + getNumUserPresets(); }
 
     // ── Naming ──────────────────────────────────────────────────
@@ -41,6 +46,7 @@ public:
             auto* list = getFactoryPresetList (c);
             return list[index].name;
         }
+        const juce::ScopedLock lock (presetLock);
         int ui = index - nFactory;
         if (ui >= 0 && ui < userPresets.size())
             return userPresets[ui].name;
@@ -51,7 +57,7 @@ public:
 
     // ── Load ────────────────────────────────────────────────────
 
-    void loadPreset (int index)
+    bool loadPreset (int index)
     {
         int nFactory = getNumFactoryPresets();
         bool loaded = false;
@@ -63,15 +69,22 @@ public:
         else
         {
             int ui = index - nFactory;
-            if (ui >= 0 && ui < userPresets.size())
-                loaded = loadUserFile (userPresets[ui].file);
+            juce::ValueTree cachedState;
+            {
+                const juce::ScopedLock lock (presetLock);
+                if (ui >= 0 && ui < userPresets.size())
+                    cachedState = userPresets[ui].state.createCopy();
+            }
+            if (cachedState.isValid())
+                loaded = loadUserState (cachedState);
         }
 
         if (! loaded)
-            return;
+            return false;
 
-        currentIndex = index;
-        dirty = false;
+        currentIndex.store (index, std::memory_order_release);
+        dirty.store (false, std::memory_order_release);
+        return true;
     }
 
     // ── Init (reset all params to defaults) ─────────────────────
@@ -82,8 +95,8 @@ public:
         apvts.replaceState (defaultState.createCopy());
         reattachListener();
         loading = false;
-        currentIndex = -1;
-        dirty = false;
+        currentIndex.store (-1, std::memory_order_release);
+        dirty.store (false, std::memory_order_release);
     }
 
     /** Re-subscribe to the (potentially new) ValueTree after replaceState(). */
@@ -125,26 +138,40 @@ public:
         if (stateXml == nullptr)
             return false;
 
+        juce::String presetId;
+        if (file.existsAsFile())
+            if (auto existing = juce::XmlDocument::parse (file))
+                presetId = existing->getStringAttribute ("id");
+        if (presetId.isEmpty())
+            presetId = juce::Uuid().toString();
+
         juce::XmlElement root ("TsukiSynthPreset");
         root.setAttribute ("name", name);
-        root.setAttribute ("version", 1);
+        root.setAttribute ("id", presetId);
+        root.setAttribute ("version", 2);
         root.addChildElement (stateXml.release());
 
-        if (! root.writeTo (file))
+        auto tempFile = file.getSiblingFile (file.getFileName() + ".tmp-"
+                                              + juce::Uuid().toString());
+        if (! root.writeTo (tempFile) || ! tempFile.replaceFileIn (file))
+        {
+            tempFile.deleteFile();
             return false;
+        }
 
         scanUserPresets();
 
         int nFactory = getNumFactoryPresets();
+        const juce::ScopedLock lock (presetLock);
         for (int i = 0; i < userPresets.size(); ++i)
         {
-            if (userPresets[i].name == name)
+            if (userPresets[i].id == presetId)
             {
-                currentIndex = nFactory + i;
+                currentIndex.store (nFactory + i, std::memory_order_release);
                 break;
             }
         }
-        dirty = false;
+        dirty.store (false, std::memory_order_release);
         return true;
     }
 
@@ -153,42 +180,97 @@ public:
     bool deleteUserPreset (int index)
     {
         int ui = index - getNumFactoryPresets();
-        if (ui < 0 || ui >= userPresets.size())
-            return false;
+        juce::File file;
+        juce::String deletedId;
+        juce::String activeId = getCurrentPresetId();
+        {
+            const juce::ScopedLock lock (presetLock);
+            if (ui < 0 || ui >= userPresets.size())
+                return false;
+            file = userPresets[ui].file;
+            deletedId = userPresets[ui].id;
+        }
 
-        userPresets[ui].file.deleteFile();
+        if (! file.deleteFile())
+            return false;
         scanUserPresets();
 
-        if (currentIndex == index)
+        if (activeId == deletedId)
         {
-            currentIndex = 0;
-            dirty = false;
+            // Do not claim that factory program 0 is loaded while retaining
+            // the deleted preset's parameters.
+            initPreset();
+        }
+        else if (activeId.isNotEmpty())
+        {
+            currentIndex.store (findPresetById (activeId), std::memory_order_release);
         }
         return true;
     }
 
     // ── State ───────────────────────────────────────────────────
 
-    int  getCurrentIndex() const { return currentIndex; }
-    bool isDirty()         const { return dirty; }
-    void setDirty()              { dirty = true; }
+    int  getCurrentIndex() const { return currentIndex.load (std::memory_order_acquire); }
+    bool isDirty()         const { return dirty.load (std::memory_order_acquire); }
+    void setDirty()              { dirty.store (true, std::memory_order_release); }
+    void restoreDirty (bool value) { dirty.store (value, std::memory_order_release); }
 
     void setCurrentIndex (int i)
     {
-        currentIndex = juce::jlimit (-1, getNumPresets() - 1, i);
-        dirty = false;
+        currentIndex.store (juce::jlimit (-1, getNumPresets() - 1, i),
+                            std::memory_order_release);
+        dirty.store (false, std::memory_order_release);
     }
 
     void restoreIndex (int i)
     {
-        currentIndex = juce::jlimit (-1, getNumPresets() - 1, i);
+        currentIndex.store (juce::jlimit (-1, getNumPresets() - 1, i),
+                            std::memory_order_release);
+    }
+
+    juce::String getPresetId (int index) const
+    {
+        const int nFactory = getNumFactoryPresets();
+        if (index >= 0 && index < nFactory)
+        {
+            int count = 0;
+            auto* list = getFactoryPresetList (count);
+            return "factory:" + juce::String (list[index].name);
+        }
+
+        const juce::ScopedLock lock (presetLock);
+        const int ui = index - nFactory;
+        return (ui >= 0 && ui < userPresets.size()) ? userPresets[ui].id
+                                                    : juce::String();
+    }
+
+    juce::String getCurrentPresetId() const { return getPresetId (getCurrentIndex()); }
+
+    int findPresetById (const juce::String& id) const
+    {
+        if (id.startsWith ("factory:"))
+        {
+            const auto wanted = id.fromFirstOccurrenceOf ("factory:", false, false);
+            const int nFactory = getNumFactoryPresets();
+            for (int i = 0; i < nFactory; ++i)
+                if (getPresetName (i) == wanted)
+                    return i;
+            return -1;
+        }
+
+        const int nFactory = getNumFactoryPresets();
+        const juce::ScopedLock lock (presetLock);
+        for (int i = 0; i < userPresets.size(); ++i)
+            if (userPresets[i].id == id)
+                return nFactory + i;
+        return -1;
     }
 
     // ── Scan disk ───────────────────────────────────────────────
 
     void scanUserPresets()
     {
-        userPresets.clear();
+        juce::Array<UserPreset> scanned;
         auto dir = getPresetDirectory();
 
         for (const auto& entry :
@@ -202,7 +284,18 @@ public:
 
             juce::String name = xml->getStringAttribute ("name",
                                     file.getFileNameWithoutExtension());
-            userPresets.add ({ name, file });
+            juce::String id = xml->getStringAttribute ("id");
+            // Legacy v1 presets did not carry an ID.  A namespaced filename is
+            // deterministic when the same preset file is copied to a machine.
+            if (id.isEmpty())
+                id = "legacy:" + file.getFileNameWithoutExtension();
+            auto* paramsXml = xml->getChildByName (apvts.state.getType());
+            if (paramsXml == nullptr)
+                continue;
+            auto state = juce::ValueTree::fromXml (*paramsXml);
+            if (! state.isValid())
+                continue;
+            scanned.add ({ name, id, file, state });
         }
 
         struct NameCmp
@@ -213,21 +306,26 @@ public:
             }
         };
         NameCmp cmp;
-        userPresets.sort (cmp);
+        scanned.sort (cmp);
+        const juce::ScopedLock lock (presetLock);
+        userPresets = std::move (scanned);
     }
 
 private:
     struct UserPreset
     {
         juce::String name;
+        juce::String id;
         juce::File   file;
+        juce::ValueTree state;
     };
 
     juce::AudioProcessorValueTreeState& apvts;
     juce::ValueTree defaultState;
     juce::ValueTree listenedState;
     juce::Array<UserPreset> userPresets;
-    int  currentIndex = -1;
+    mutable juce::CriticalSection presetLock;
+    std::atomic<int> currentIndex { -1 };
     std::atomic<bool> dirty   { false };
     std::atomic<bool> loading { false };
 
@@ -273,18 +371,13 @@ private:
 
     // ── User preset file loader ─────────────────────────────────
 
-    bool loadUserFile (const juce::File& file)
+    bool loadUserState (const juce::ValueTree& state)
     {
-        auto xml = juce::XmlDocument::parse (file);
-        if (xml == nullptr)
-            return false;
-
-        auto* paramsXml = xml->getChildByName (apvts.state.getType());
-        if (paramsXml == nullptr)
+        if (! state.isValid() || state.getType() != apvts.state.getType())
             return false;
 
         loading = true;
-        apvts.replaceState (juce::ValueTree::fromXml (*paramsXml));
+        apvts.replaceState (state.createCopy());
         reattachListener();
         loading = false;
         return true;

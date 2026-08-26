@@ -1,0 +1,45 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+======================================================================
+TsukiSynth physics verification — measured spectrum vs theory
+======================================================================
+Modal decay T60 - measured (audio) vs model ground truth (--dump-modes):
+   engine      MIDI    model     meas  ratio
+   cimbalom      21   42.23s   49.08s   1.16  (beat 0.16 Hz)  (span 31.9dB, probe 21.4s)
+   cimbalom      33   21.03s   24.42s   1.16  (beat 0.32 Hz)  (span 31.5dB, probe 10.9s)
+   cimbalom      45   10.44s   11.90s   1.14  (beat 0.63 Hz)  (span 32.1dB, probe 5.7s)
+   cimbalom      57    5.14s    5.18s   1.01  (beat 1.27 Hz)  (span 47.1dB, probe 5.0s)
+   cimbalom      69    2.50s    2.63s   1.05  (beat 2.54 Hz)  (span 53.4dB, probe 5.0s)
+   cimbalom      81    1.18s    1.16s   0.98  (beat 5.08 Hz)  (span 46.1dB, probe 5.0s)
+   tongue_drum   21  336.36s  341.21s  1.01 << FAIL (span < 8.0 dB)  (span 5.1dB, probe 30.0s)
+   tongue_drum   33  164.83s  160.79s   0.98  (span 10.1dB, probe 30.0s)
+   tongue_drum   45   79.25s   80.53s   1.02  (span 19.7dB, probe 30.0s)
+   tongue_drum   57   36.80s   36.59s   0.99  (span 26.3dB, probe 18.4s)
+   tongue_drum   69   16.11s   16.10s   1.00  (span 25.4dB, probe 8.1s)
+   tongue_drum   81    6.45s    6.44s   1.00  (span 38.0dB, probe 5.0s)
+   water_gong    21   75.74s   75.48s   1.00  (span 21.2dB, probe 30.0s)
+   water_gong    33   37.59s   37.73s   1.00  (span 26.2dB, probe 18.8s)
+   water_gong    45   18.52s   18.58s   1.00  (span 25.3dB, probe 9.3s)
+   water_gong    57    9.00s    9.01s   1.00  (span 26.7dB, probe 5.0s)
+   water_gong    69    4.26s    4.26s   1.00  (span 56.8dB, probe 5.0s)
+   water_gong    81    1.92s    1.92s   1.00  (span 56.3dB, probe 5.0s)
+   water_gong_free   21   75.74s   75.45s   1.00  (span 21.4dB, probe 30.0s)
+   water_gong_free   33   37.59s   37.73s   1.00  (span 26.6dB, probe 18.8s)
+   water_gong_free   45   18.52s   18.59s   1.00  (span 25.5dB, probe 9.3s)
+   water_gong_free   57    9.00s    9.01s   1.00  (span 26.7dB, probe 5.0s)
+   water_gong_free   69    4.26s    4.26s   1.00  (span 56.8dB, probe 5.0s)
+   water_gong_free   81    1.92s    1.92s   1.00  (span 56.2dB, probe 5.0s)
+   piano         21   42.23s   48.93s   1.16  (beat 0.16 Hz)  (span 32.0dB, probe 21.4s)
+   piano         33   21.03s   24.41s   1.16  (beat 0.32 Hz)  (span 31.6dB, probe 10.9s)
+   piano         45   10.44s   11.90s   1.14  (beat 0.63 Hz)  (span 32.1dB, probe 5.7s)
+   piano         57    5.14s    5.18s   1.01  (beat 1.27 Hz)  (span 47.1dB, probe 5.0s)
+   piano         69    2.50s    2.63s   1.05  (beat 2.54 Hz)  (span 53.4dB, probe 5.0s)
+   piano         81    1.18s    1.16s   0.98  (beat 5.08 Hz)  (span 46.2dB, probe 5.0s)
+
+(model = fundamental decayTime straight from the C++ model;
+ measured = narrowband (+/-3% of measured f0) Hilbert-envelope
+ log-slope fit, beat-period-averaged for multi-string courses;
+ see measure_t60()'s docstring for the exact method, ROADMAP_PHYSICS.md M5-5a.)
+
+======================================================================
+RESULT: SOME CHECKS FAILED
+EXIT: 1

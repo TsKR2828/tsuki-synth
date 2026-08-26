@@ -12,6 +12,14 @@
 juce::AudioProcessorValueTreeState::ParameterLayout
 TsukiSynthProcessor::createParameterLayout()
 {
+    // A12 (2026-08-22, 月月裁決選 (a)): every float parameter is CONTINUOUS
+    // (interval 0). The former 0.01/0.1/1.0 steps made setValue (no snap)
+    // and state save/restore (snap) disagree by up to half a step, so a DAW
+    // project reload rendered differently from the pre-save live state
+    // (HostProbe H5 catch, reports/gate_outputs/l1_l2_l3a_melody_gate.txt).
+    // With interval 0 the normalised<->plain mapping is lossless both ways
+    // and the state round-trip is bit-exact. CLI rendering never reads
+    // APVTS, so corpus output is untouched (Rule 10 not triggered).
     using FloatParam  = juce::AudioParameterFloat;
     using ChoiceParam = juce::AudioParameterChoice;
     using IntParam    = juce::AudioParameterInt;
@@ -27,28 +35,28 @@ TsukiSynthProcessor::createParameterLayout()
     auto macro = std::make_unique<Group> ("macro", "Macro", "|");
     macro->addChild (std::make_unique<FloatParam> (
         PID { "macro_material", 1 }, "Material",
-        Range (0.0f, 1.0f, 0.01f), 0.5f));
+        Range (0.0f, 1.0f, 0.0f), 0.5f));
     macro->addChild (std::make_unique<FloatParam> (
         PID { "macro_tension", 1 }, "Tension",
-        Range (0.0f, 1.0f, 0.01f), 0.5f));
+        Range (0.0f, 1.0f, 0.0f), 0.5f));
     macro->addChild (std::make_unique<FloatParam> (
         PID { "macro_damping", 1 }, "Damping",
-        Range (0.0f, 1.0f, 0.01f), 0.5f));
+        Range (0.0f, 1.0f, 0.0f), 0.5f));
     macro->addChild (std::make_unique<FloatParam> (
         PID { "macro_strike", 1 }, "Strike",
-        Range (0.0f, 1.0f, 0.01f), 0.5f));
+        Range (0.0f, 1.0f, 0.0f), 0.5f));
     macro->addChild (std::make_unique<FloatParam> (
         PID { "macro_brightness", 1 }, "Brightness",
-        Range (0.0f, 1.0f, 0.01f), 0.5f));
+        Range (0.0f, 1.0f, 0.0f), 0.5f));
     macro->addChild (std::make_unique<FloatParam> (
         PID { "macro_body", 1 }, "Body",
-        Range (0.0f, 1.0f, 0.01f), 0.5f));
+        Range (0.0f, 1.0f, 0.0f), 0.5f));
     macro->addChild (std::make_unique<FloatParam> (
         PID { "macro_noise", 1 }, "Noise",
-        Range (0.0f, 1.0f, 0.01f), 0.0f));
+        Range (0.0f, 1.0f, 0.0f), 0.0f));
     macro->addChild (std::make_unique<FloatParam> (
         PID { "macro_output", 1 }, "Output",
-        Range (0.0f, 1.0f, 0.01f), 1.0f));
+        Range (0.0f, 1.0f, 0.0f), 1.0f));
 
     auto cim = std::make_unique<Group> ("cimbalom", "Cimbalom", "|");
     cim->addChild (std::make_unique<ChoiceParam> (
@@ -60,15 +68,15 @@ TsukiSynthProcessor::createParameterLayout()
         juce::StringArray { "Cotton", "Felt", "Wood", "Metal" }, 2));
     cim->addChild (std::make_unique<FloatParam> (
         PID { "cim_strike_pos", 1 }, "Strike Position",
-        Range (0.05f, 0.95f, 0.01f), 0.3f));
+        Range (0.05f, 0.95f, 0.0f), 0.3f));
     cim->addChild (std::make_unique<FloatParam> (
         PID { "cim_diameter", 1 }, "String Diameter (mm)",
-        Range (0.3f, 2.0f, 0.01f), 0.8f));
+        Range (0.3f, 2.0f, 0.0f), 0.8f));
     cim->addChild (std::make_unique<IntParam> (
         PID { "cim_num_strings", 1 }, "Strings / Course", 1, 5, 3));
     cim->addChild (std::make_unique<FloatParam> (
         PID { "cim_detuning", 1 }, "Detuning (cents)",
-        Range (0.0f, 15.0f, 0.1f), 5.0f));
+        Range (0.0f, 15.0f, 0.0f), 5.0f));
 
     auto chr = std::make_unique<Group> ("chromatic", "Chromatic", "|");
     chr->addChild (std::make_unique<ChoiceParam> (
@@ -83,16 +91,16 @@ TsukiSynthProcessor::createParameterLayout()
         juce::StringArray { "Soft", "Medium", "Hard", "Sharp" }, 1));
     chr->addChild (std::make_unique<FloatParam> (
         PID { "chr_strike_pos", 1 }, "Strike Position",
-        Range (0.0f, 1.0f, 0.01f), 0.35f));
+        Range (0.0f, 1.0f, 0.0f), 0.35f));
     chr->addChild (std::make_unique<FloatParam> (
         PID { "chr_thickness", 1 }, "Thickness (mm)",
-        Range (0.5f, 10.0f, 0.1f), 3.0f));
+        Range (0.5f, 10.0f, 0.0f), 3.0f));
     chr->addChild (std::make_unique<FloatParam> (
         PID { "chr_size", 1 }, "Size (mm)",
-        Range (10.0f, 100.0f, 1.0f), 20.0f));
+        Range (10.0f, 100.0f, 0.0f), 20.0f));
     chr->addChild (std::make_unique<FloatParam> (
         PID { "chr_pitch_glide", 1 }, "Pitch Glide",
-        Range (0.0f, 1.0f, 0.01f), 0.0f));
+        Range (0.0f, 1.0f, 0.0f), 0.0f));
 
     {
         static constexpr float defRatios[] = { 1.0f, 2.0f, 3.0f, 4.16f, 5.43f, 6.98f, 8.21f, 10.0f };
@@ -102,11 +110,11 @@ TsukiSynthProcessor::createParameterLayout()
             chr->addChild (std::make_unique<FloatParam> (
                 PID { "chr_ratio_" + juce::String (i), 1 },
                 "Harmonic " + juce::String (i + 1) + " Ratio",
-                Range (0.25f, 20.0f, 0.01f, 0.4f), defRatios[i]));
+                Range (0.25f, 20.0f, 0.0f, 0.4f), defRatios[i]));
             chr->addChild (std::make_unique<FloatParam> (
                 PID { "chr_amp_" + juce::String (i), 1 },
                 "Harmonic " + juce::String (i + 1) + " Amp",
-                Range (0.0f, 1.0f, 0.01f), defAmps[i]));
+                Range (0.0f, 1.0f, 0.0f), defAmps[i]));
         }
     }
 
@@ -117,49 +125,57 @@ TsukiSynthProcessor::createParameterLayout()
                             "Organ", "Pad", "Bass", "Brass" }, 0));
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_ratio", 1 }, "FM Ratio",
-        Range (0.5f, 16.0f, 0.01f, 0.4f), 1.0f));           // Piano: 1:1
+        Range (0.5f, 16.0f, 0.0f, 0.4f), 1.0f));           // Piano: 1:1
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_index", 1 }, "Mod Index",
-        Range (0.0f, 25.0f, 0.1f), 4.5f));                   // was 5.0 → Acoustic Piano direction
+        Range (0.0f, 25.0f, 0.0f), 4.5f));                   // was 5.0 → Acoustic Piano direction
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_brightness", 1 }, "Tone Decay",
-        Range (0.0f, 1.0f, 0.01f), 0.6f));                   // label: body modulation decay speed
+        Range (0.0f, 1.0f, 0.0f), 0.6f));                   // label: body modulation decay speed
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_feedback", 1 }, "Feedback",
-        Range (0.0f, 1.0f, 0.01f), 0.02f));                  // was 0.0 → subtle odd harmonics
+        Range (0.0f, 1.0f, 0.0f), 0.02f));                  // was 0.0 → subtle odd harmonics
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_attack", 1 }, "FM Attack (ms)",
-        Range (1.0f, 2000.0f, 1.0f, 0.4f), 5.0f));           // was 10 → quick hammer
+        Range (1.0f, 2000.0f, 0.0f, 0.4f), 5.0f));           // was 10 → quick hammer
     fm->addChild (std::make_unique<FloatParam> (
         PID { "fm_release", 1 }, "FM Release (ms)",
-        Range (10.0f, 5000.0f, 1.0f, 0.4f), 500.0f));
+        Range (10.0f, 5000.0f, 0.0f, 0.4f), 500.0f));
 
     auto rev = std::make_unique<Group> ("reverb", "Reverb", "|");
     rev->addChild (std::make_unique<FloatParam> (
         PID { "fx_reverb_mix", 1 }, "Reverb Mix",
-        Range (0.0f, 1.0f, 0.01f), 0.2f));
+        Range (0.0f, 1.0f, 0.0f), 0.2f));
     rev->addChild (std::make_unique<FloatParam> (
         PID { "fx_reverb_size", 1 }, "Room Size",
-        Range (0.0f, 1.0f, 0.01f), 0.5f));
+        Range (0.0f, 1.0f, 0.0f), 0.5f));
+    // Authored T60 in seconds; below 0.01 the room-size knob stays in
+    // control. Range mirrors the score schema's reverb.decay [0, 30].
+    rev->addChild (std::make_unique<FloatParam> (
+        PID { "fx_reverb_decay", 1 }, "Reverb T60 (s)",
+        Range (0.0f, 30.0f, 0.0f, 0.35f), 0.0f));
+    rev->addChild (std::make_unique<ChoiceParam> (
+        PID { "fx_reverb_mode", 1 }, "Reverb Mode",
+        juce::StringArray { "Algorithmic", "Impulse Response" }, 0));
 
     auto dly = std::make_unique<Group> ("delay", "Delay", "|");
     dly->addChild (std::make_unique<FloatParam> (
         PID { "fx_delay_time", 1 }, "Delay Time (ms)",
-        Range (50.0f, 2000.0f, 1.0f, 0.4f), 300.0f));
+        Range (50.0f, 2000.0f, 0.0f, 0.4f), 300.0f));
     dly->addChild (std::make_unique<FloatParam> (
         PID { "fx_delay_feedback", 1 }, "Delay Feedback",
-        Range (0.0f, 0.95f, 0.01f), 0.3f));
+        Range (0.0f, 0.95f, 0.0f), 0.3f));
     dly->addChild (std::make_unique<FloatParam> (
         PID { "fx_delay_mix", 1 }, "Delay Mix",
-        Range (0.0f, 1.0f, 0.01f), 0.0f));
+        Range (0.0f, 1.0f, 0.0f), 0.0f));
 
     auto comp = std::make_unique<Group> ("comp", "Compressor", "|");
     comp->addChild (std::make_unique<FloatParam> (
         PID { "fx_comp_threshold", 1 }, "Threshold (dB)",
-        Range (-40.0f, 0.0f, 0.1f), -12.0f));
+        Range (-40.0f, 0.0f, 0.0f), -12.0f));
     comp->addChild (std::make_unique<FloatParam> (
         PID { "fx_comp_ratio", 1 }, "Ratio",
-        Range (1.0f, 20.0f, 0.1f, 0.5f), 4.0f));
+        Range (1.0f, 20.0f, 0.0f, 0.5f), 4.0f));
 
     auto dist = std::make_unique<Group> ("dist", "Distortion", "|");
     dist->addChild (std::make_unique<ChoiceParam> (
@@ -167,18 +183,29 @@ TsukiSynthProcessor::createParameterLayout()
         juce::StringArray { "Overdrive", "Bitcrush", "Wavefold" }, 0));
     dist->addChild (std::make_unique<FloatParam> (
         PID { "fx_dist_drive", 1 }, "Drive",
-        Range (0.0f, 1.0f, 0.01f), 0.0f));
+        Range (0.0f, 1.0f, 0.0f), 0.0f));
     dist->addChild (std::make_unique<FloatParam> (
         PID { "fx_dist_instability", 1 }, "Instability",
-        Range (0.0f, 1.0f, 0.01f), 0.0f));
+        Range (0.0f, 1.0f, 0.0f), 0.0f));
     dist->addChild (std::make_unique<FloatParam> (
         PID { "fx_dist_mix", 1 }, "Mix",
-        Range (0.0f, 1.0f, 0.01f), 0.5f));
+        Range (0.0f, 1.0f, 0.0f), 0.5f));
+
+    // Brightness-compensation high shelf (documented creative layer,
+    // 2026-08-06 月月 ruling) -- gain 0 dB bypasses the filter entirely.
+    auto eqg = std::make_unique<Group> ("eqfx", "EQ", "|");
+    eqg->addChild (std::make_unique<FloatParam> (
+        PID { "fx_eq_freq", 1 }, "EQ Shelf Freq (Hz)",
+        Range (100.0f, 16000.0f, 0.0f, 0.3f), 2000.0f));
+    eqg->addChild (std::make_unique<FloatParam> (
+        PID { "fx_eq_gain", 1 }, "EQ Shelf Gain (dB)",
+        Range (-24.0f, 24.0f, 0.0f), 0.0f));
 
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
     layout.add (std::move (global), std::move (macro), std::move (cim),
                 std::move (chr), std::move (fm), std::move (rev),
-                std::move (dly), std::move (comp), std::move (dist));
+                std::move (dly), std::move (comp), std::move (dist),
+                std::move (eqg));
     return layout;
 }
 
@@ -210,6 +237,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         {
             auto* voice = new CimbalomVoice();
             voice->setMaterialDB (&materialDB);
+            voice->setNoiseIdentity ((uint64_t) i);
             voice->pMaterial       = pMaterial;
             voice->pStrikePos      = pStrike;
             voice->pDiameter       = pDiameter;
@@ -244,6 +272,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         {
             auto* voice = new ChromaticVoice();
             voice->setMaterialDB (&materialDB);
+            voice->setNoiseIdentity ((uint64_t) i);
             voice->pSubEngine  = pSubEngine;
             voice->pMaterial   = pMaterial;
             voice->pStrikePos  = pStrike;
@@ -276,6 +305,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
         for (int i = 0; i < 16; ++i)
         {
             auto* voice = new FMPianoVoice();
+            voice->setNoiseIdentity ((uint64_t) i);
             voice->pType       = pType;
             voice->pRatio      = pRatio;
             voice->pIndex      = pIndex;
@@ -326,6 +356,8 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     // ---- Effect chain ----
     effectChain.pReverbMix     = apvts.getRawParameterValue ("fx_reverb_mix");
     effectChain.pReverbSize    = apvts.getRawParameterValue ("fx_reverb_size");
+    effectChain.pReverbDecay   = apvts.getRawParameterValue ("fx_reverb_decay");
+    effectChain.pReverbMode    = apvts.getRawParameterValue ("fx_reverb_mode");
     effectChain.pDelayTime     = apvts.getRawParameterValue ("fx_delay_time");
     effectChain.pDelayFeedback = apvts.getRawParameterValue ("fx_delay_feedback");
     effectChain.pDelayMix      = apvts.getRawParameterValue ("fx_delay_mix");
@@ -338,6 +370,10 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     effectChain.pDistInstability = apvts.getRawParameterValue ("fx_dist_instability");
     effectChain.pDistMix         = apvts.getRawParameterValue ("fx_dist_mix");
 
+    // ---- Brightness EQ ----
+    effectChain.pEqFreq = apvts.getRawParameterValue ("fx_eq_freq");
+    effectChain.pEqGain = apvts.getRawParameterValue ("fx_eq_gain");
+
     recordingThread.startThread();
 }
 
@@ -348,13 +384,13 @@ TsukiSynthProcessor::~TsukiSynthProcessor()
 }
 
 // == Audio ==
-void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
+void TsukiSynthProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     currentSampleRate = sampleRate;
     cimbalomSynth.setCurrentPlaybackSampleRate (sampleRate);
     chromaticSynth.setCurrentPlaybackSampleRate (sampleRate);
     fmPianoSynth.setCurrentPlaybackSampleRate (sampleRate);
-    effectChain.prepare (sampleRate);
+    effectChain.prepare (sampleRate, samplesPerBlock);
     smoothedOutput.reset (sampleRate, 0.02);
 }
 
@@ -392,13 +428,32 @@ double TsukiSynthProcessor::getTailLengthSeconds() const
     if (effectChain.pReverbMix != nullptr
         && effectChain.pReverbMix->load() > 0.001f)
     {
-        const double roomSize = effectChain.pReverbSize != nullptr
-            ? effectChain.pReverbSize->load()
-            : 0.5;
-        const double feedback = roomSize * 0.28 + 0.7;
-        const double longestCombSeconds = 1617.0 / 44100.0;
-        const double repeats = std::log (0.001) / std::log (feedback);
-        tailSeconds += longestCombSeconds * repeats;
+        const bool irMode = effectChain.pReverbMode != nullptr
+                         && effectChain.pReverbMode->load() >= 0.5f
+                         && effectChain.hasImpulseResponse();
+        const double decay = effectChain.pReverbDecay != nullptr
+            ? effectChain.pReverbDecay->load()
+            : 0.0;
+
+        if (irMode)
+        {
+            tailSeconds += reverbIRSeconds;
+        }
+        else if (decay >= 0.01)
+        {
+            // Authored T60 mode: the tail is the T60 itself.
+            tailSeconds += decay;
+        }
+        else
+        {
+            const double roomSize = effectChain.pReverbSize != nullptr
+                ? effectChain.pReverbSize->load()
+                : 0.5;
+            const double feedback = roomSize * 0.28 + 0.7;
+            const double longestCombSeconds = 1617.0 / 44100.0;
+            const double repeats = std::log (0.001) / std::log (feedback);
+            tailSeconds += longestCombSeconds * repeats;
+        }
     }
 
     return std::clamp (tailSeconds, 0.0, 300.0);
@@ -422,24 +477,35 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         if (lastEngine == 0 || lastEngine == 3) cimbalomSynth.allNotesOff (0, true);
         else if (lastEngine == 1) chromaticSynth.allNotesOff (0, true);
         else if (lastEngine == 2) fmPianoSynth.allNotesOff (0, true);
-        // Drop stale noteOn so the new engine's tuner starts on "Awaiting note"
+        // Drop stale targets so the new engine starts with a clean tuner state.
+        tunerNoteTracker.clear();
         lastNoteOnMidi.store (-1, std::memory_order_release);
         lastEngine = currentEngine;
     }
 
-    // Track most recent noteOn (any source) for synth-aware tuner display.
-    // Scan after engine switch so a noteOn in the same block as a switch survives.
+    // Track the most recently struck note that is still held or sustained.
+    // State is per channel/per note, retrigger-aware, and follows CC64/120/121/123.
     for (const auto meta : midiMessages)
     {
         const auto msg = meta.getMessage();
+        const int channel = msg.getChannel() - 1;
         if (msg.isNoteOn())
-            lastNoteOnMidi.store (msg.getNoteNumber(), std::memory_order_release);
-        else if (msg.isNoteOff()
-                 && msg.getNoteNumber() == lastNoteOnMidi.load (std::memory_order_acquire))
-            lastNoteOnMidi.store (-1, std::memory_order_release);
+            tunerNoteTracker.noteOn (channel, msg.getNoteNumber());
+        else if (msg.isNoteOff())
+            tunerNoteTracker.noteOff (channel, msg.getNoteNumber());
+        else if (msg.isSustainPedalOn())
+            tunerNoteTracker.sustainPedal (channel, true);
+        else if (msg.isSustainPedalOff())
+            tunerNoteTracker.sustainPedal (channel, false);
+        else if (msg.isAllSoundOff())
+            tunerNoteTracker.allSoundOff (channel);
         else if (msg.isAllNotesOff())
-            lastNoteOnMidi.store (-1, std::memory_order_release);
+            tunerNoteTracker.allNotesOff (channel);
+        else if (msg.isResetAllControllers())
+            tunerNoteTracker.resetControllers (channel);
     }
+    lastNoteOnMidi.store (tunerNoteTracker.selectedNote(),
+                          std::memory_order_release);
 
     // Render every engine each block so tails from ANY previously-played engine
     // ring out naturally (idle synths early-return). Only the current engine
@@ -617,22 +683,12 @@ juce::File TsukiSynthProcessor::getLastRecordingFile() const
 }
 
 // == Logging (Release-safe, writes to %APPDATA%/TsukiSynth/debug.log) ==
-static void tsukiLog (const juce::String& msg)
-{
-    static auto logFile = juce::File::getSpecialLocation (
-                              juce::File::userApplicationDataDirectory)
-                              .getChildFile ("TsukiSynth")
-                              .getChildFile ("debug.log");
-    logFile.getParentDirectory().createDirectory();
-    logFile.appendText (juce::Time::getCurrentTime().toString (true, true, true, true)
-                        + "  " + msg + "\n");
-}
-
 // == State ==
 void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     state.setProperty ("presetIndex", presetManager.getCurrentIndex(), nullptr);
+    state.setProperty ("presetId", presetManager.getCurrentPresetId(), nullptr);
     state.setProperty ("presetDirty", presetManager.isDirty() ? 1 : 0, nullptr);
 
     if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (apvts.getParameter ("engine")))
@@ -640,18 +696,12 @@ void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
     if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (apvts.getParameter ("chr_sub_engine")))
         state.setProperty ("chr_sub_engine_index", p->getIndex(), nullptr);
 
+    if (reverbIRPath.isNotEmpty())
+        state.setProperty ("reverb_ir_path", reverbIRPath, nullptr);
+
     auto xml = state.createXml();
     copyXmlToBinary (*xml, destData);
 
-    auto v = [&] (const char* id) -> juce::String {
-        if (auto* p = apvts.getParameter (id))
-            return juce::String (id) + "=" + juce::String (p->getValue(), 4);
-        return {};
-    };
-    tsukiLog ("SAVE  presetIdx=" + juce::String (presetManager.getCurrentIndex())
-              + "  " + v ("engine") + "  " + v ("chr_sub_engine")
-              + "  " + v ("chr_thickness") + "  " + v ("chr_size")
-              + "  " + v ("chr_pitch_glide") + "  " + v ("chr_strike_pos"));
 }
 
 void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes)
@@ -661,6 +711,7 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
     {
         auto tree = juce::ValueTree::fromXml (*xml);
         int presetIdx  = tree.getProperty ("presetIndex", -1);
+        const juce::String presetId = tree.getProperty ("presetId", juce::String()).toString();
         int engineIdx  = tree.hasProperty ("engine_index")
                              ? (int) tree.getProperty ("engine_index") : -1;
         int subEngIdx  = tree.hasProperty ("chr_sub_engine_index")
@@ -682,22 +733,125 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         restoreChoice (apvts, "engine",         engineIdx);
         restoreChoice (apvts, "chr_sub_engine", subEngIdx);
 
-        presetManager.reattachListener();
-        presetManager.restoreIndex (presetIdx);
-        if ((int) tree.getProperty ("presetDirty", 0) != 0)
-            presetManager.setDirty();
-        restoredProgramToIgnore.store (presetIdx, std::memory_order_release);
+        // Reload the saved reverb IR if its file still exists; a missing file
+        // silently degrades to the algorithmic reverb (EffectChain falls back
+        // whenever no IR is loaded).
+        const juce::String irPath = tree.getProperty ("reverb_ir_path",
+                                                      juce::String()).toString();
+        if (irPath.isNotEmpty())
+        {
+            juce::String irError;
+            loadReverbIRFile (juce::File (irPath), irError,
+                              /*switchModeToIR*/ false);
+        }
 
-        auto v = [&] (const char* id) -> juce::String {
-            if (auto* p = apvts.getParameter (id))
-                return juce::String (id) + "=" + juce::String (p->getValue(), 4);
-            return {};
-        };
-        tsukiLog ("RESTORE  presetIdx=" + juce::String (presetIdx)
-                  + "  " + v ("engine") + "  " + v ("chr_sub_engine")
-                  + "  " + v ("chr_thickness") + "  " + v ("chr_size")
-                  + "  " + v ("chr_pitch_glide") + "  " + v ("chr_strike_pos"));
+        presetManager.reattachListener();
+        const int resolvedPreset = presetId.isNotEmpty()
+            ? presetManager.findPresetById (presetId) : presetIdx;
+        presetManager.restoreIndex (resolvedPreset);
+        const bool missingSavedPreset = presetId.isNotEmpty() && resolvedPreset < 0;
+        presetManager.restoreDirty (
+            (int) tree.getProperty ("presetDirty", 0) != 0 || missingSavedPreset);
+        restoredProgramToIgnore.store (resolvedPreset, std::memory_order_release);
     }
+}
+
+// == Reverb profile / IR loading ==
+bool TsukiSynthProcessor::loadReverbIRFile (const juce::File& file,
+                                            juce::String& error,
+                                            bool switchModeToIR)
+{
+    if (! file.existsAsFile())
+    {
+        error = "File not found: " + file.getFullPathName();
+        return false;
+    }
+
+    juce::AudioFormatManager formats;
+    formats.registerBasicFormats();
+    std::unique_ptr<juce::AudioFormatReader> reader (
+        formats.createReaderFor (file));
+    if (reader == nullptr)
+    {
+        error = "Not a readable audio file: " + file.getFileName();
+        return false;
+    }
+    if (reader->lengthInSamples <= 0 || reader->sampleRate <= 0.0)
+    {
+        error = "Impulse response is empty: " + file.getFileName();
+        return false;
+    }
+
+    const double seconds = (double) reader->lengthInSamples
+                         / reader->sampleRate;
+    if (seconds > 30.0)   // matches the score schema's reverb.decay ceiling
+    {
+        error = "Impulse response longer than 30 s refused ("
+              + juce::String (seconds, 1) + " s)";
+        return false;
+    }
+    reader.reset();
+
+    effectChain.loadImpulseResponse (file);
+    reverbIRPath = file.getFullPathName();
+    reverbIRName = file.getFileName();
+    reverbIRSeconds = seconds;
+
+    if (switchModeToIR)
+        if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
+                apvts.getParameter ("fx_reverb_mode")))
+            *p = 1;
+
+    return true;
+}
+
+bool TsukiSynthProcessor::loadReverbProfileFile (const juce::File& file,
+                                                 juce::String& error)
+{
+    if (! file.existsAsFile())
+    {
+        error = "File not found: " + file.getFullPathName();
+        return false;
+    }
+
+    const auto parsed = juce::JSON::parse (file.loadFileAsString());
+
+    // Accept the scene_reverb.py output fragment {"reverb": {...}} or a full
+    // score whose global.effects.reverb carries the same keys.
+    auto rev = parsed.getProperty ("reverb", juce::var());
+    if (! rev.isObject())
+        rev = parsed.getProperty ("global", juce::var())
+                    .getProperty ("effects", juce::var())
+                    .getProperty ("reverb", juce::var());
+    if (! rev.isObject())
+    {
+        error = "No reverb object found (expected {\"reverb\":{\"decay\",\"wet\"}}"
+                " or a score with global.effects.reverb)";
+        return false;
+    }
+
+    const double decay = (double) rev.getProperty ("decay", -1.0);
+    const double wet   = (double) rev.getProperty ("wet",   -1.0);
+    if (decay < 0.0 || decay > 30.0 || wet < 0.0 || wet > 1.0)
+    {
+        error = "reverb.decay must be 0-30 and reverb.wet 0-1 (got decay="
+              + juce::String (decay) + ", wet=" + juce::String (wet) + ")";
+        return false;
+    }
+
+    auto setParam = [this] (const char* id, float value)
+    {
+        if (auto* p = apvts.getParameter (id))
+            p->setValueNotifyingHost (p->convertTo0to1 (value));
+    };
+    setParam ("fx_reverb_decay", (float) decay);
+    setParam ("fx_reverb_mix",   (float) wet);
+
+    if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
+            apvts.getParameter ("fx_reverb_mode")))
+        *p = 0;   // profile values drive the algorithmic engine
+
+    return true;
 }
 
 // == Programs (routed through PresetManager) ==
@@ -719,12 +873,9 @@ void TsukiSynthProcessor::setCurrentProgram (int index)
         && index == restoredIndex
         && presetManager.getCurrentIndex() == restoredIndex)
     {
-        tsukiLog ("setCurrentProgram(" + juce::String (index)
-                  + ")  SKIPPED (duplicate post-restore)");
         return;
     }
 
-    tsukiLog ("setCurrentProgram(" + juce::String (index) + ")  LOADING");
     presetManager.loadPreset (index);
 }
 

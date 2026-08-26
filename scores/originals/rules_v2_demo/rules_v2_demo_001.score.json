@@ -21,21 +21,19 @@
       "accessible-score",
       "rules-v2-demo"
     ],
-    "mood": "structural, ritual, gamelan-adjacent",
+    "mood": "neutral",
     "use_case": "M9 rules-v2 GATE demonstration piece",
     "category": "original_composition",
     "worldview": "Rules v2 Demo",
     "variation_of": null,
-    "primary_type": "concert",
-    "sound_type": "phrase",
+    "primary_type": "ambience",
+    "sound_type": "oneshot",
     "family_id": "rules_v2_demo",
     "character": [
-      "metallic",
-      "resonant",
-      "structural"
+      "metallic"
     ]
   },
-  "composition_thesis": "每一個同時發聲的音程都取自 tools/consonance.py 算出的 Sethares dissonance-curve 局部極小值（reports/consonance_tables.md）；每個引擎的同音再擊間隔都不小於該引擎/音域的 T60/3（reports/consonance_tables.md §4）。AABA 結構的每個 section 由一個『匯聚 cell』（cimbalom 持續音 + tongue_drum P5 標記 + water_gong 八度標記）開場，其餘時間 cimbalom 以單旋律琶音（不與其他引擎同時發聲）鋪陳，避免需要驗證的同時音程過度複雜——這是本曲刻意的範圍限制，寫在 README 裡，不是隱藏的簡化。",
+  "composition_thesis": "每一個同時發聲的音程都由 tools/check_piece_consonance.py 以該 event 的真實 C++ --dump-modes 頻譜建立 Sethares roughness curve，並落在局部極小值 ±10 cents；每個引擎的同音再擊間隔都不小於該引擎/音域的 T60/3（reports/consonance_tables.md §4）。AABA 結構的每個 section 由一個『匯聚 cell』（cimbalom 持續音 + tongue_drum M2 或 P5 標記 + water_gong 八度標記）開場，其餘時間 cimbalom 以單旋律琶音（不與其他引擎同時發聲）鋪陳，避免需要驗證的同時音程過度複雜——這是本曲刻意的範圍限制，寫在 README 裡，不是隱藏的簡化。",
   "global": {
     "bpm": 84,
     "sample_rate": 48000,
@@ -86,6 +84,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -105,7 +104,7 @@
       "time": 0.0,
       "duration": 0.35,
       "engine": "tongue_drum",
-      "note": "62",
+      "note": "57",
       "velocity": 0.3,
       "params": {
         "material": "aluminum",
@@ -116,8 +115,8 @@
       "performance": {
         "track": "tongue_drum_pulse",
         "role": "A_mark",
-        "midi_note": 62,
-        "frequency_hz": 293.665,
+        "midi_note": 57,
+        "frequency_hz": 220.0,
         "intended_release_time": 0.315,
         "articulation": "mark_pulse",
         "phrase_end": true,
@@ -157,6 +156,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -180,6 +180,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -203,6 +204,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -226,6 +228,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -249,6 +252,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -272,6 +276,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -295,6 +300,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -318,6 +324,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -341,6 +348,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -364,6 +372,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -387,6 +396,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -410,6 +420,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -433,6 +444,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -456,6 +468,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -479,6 +492,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -502,6 +516,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -525,6 +540,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -548,6 +564,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -571,6 +588,7 @@
       "velocity": 0.4,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -594,6 +612,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -613,7 +632,7 @@
       "time": 17.75,
       "duration": 0.35,
       "engine": "tongue_drum",
-      "note": "62",
+      "note": "57",
       "velocity": 0.45,
       "params": {
         "material": "aluminum",
@@ -624,8 +643,8 @@
       "performance": {
         "track": "tongue_drum_pulse",
         "role": "A2_mark",
-        "midi_note": 62,
-        "frequency_hz": 293.665,
+        "midi_note": 57,
+        "frequency_hz": 220.0,
         "intended_release_time": 18.065,
         "articulation": "mark_pulse",
         "phrase_end": true,
@@ -665,6 +684,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -688,6 +708,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -711,6 +732,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -734,6 +756,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -757,6 +780,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -780,6 +804,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -803,6 +828,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -826,6 +852,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -849,6 +876,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -872,6 +900,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -895,6 +924,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -918,6 +948,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -941,6 +972,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -964,6 +996,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -987,6 +1020,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1010,6 +1044,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1033,6 +1068,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1056,6 +1092,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1079,6 +1116,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1102,6 +1140,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1173,6 +1212,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1196,6 +1236,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1219,6 +1260,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1242,6 +1284,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1265,6 +1308,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1288,6 +1332,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1311,6 +1356,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1334,6 +1380,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1357,6 +1404,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1380,6 +1428,7 @@
       "velocity": 0.9,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1403,6 +1452,7 @@
       "velocity": 0.6,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1474,6 +1524,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1497,6 +1548,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1520,6 +1572,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1543,6 +1596,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1566,6 +1620,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1589,6 +1644,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1612,6 +1668,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1635,6 +1692,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1658,6 +1716,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1681,6 +1740,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1704,6 +1764,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1727,6 +1788,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1750,6 +1812,7 @@
       "velocity": 0.75,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1773,6 +1836,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1792,7 +1856,7 @@
       "time": 59.35,
       "duration": 0.35,
       "engine": "tongue_drum",
-      "note": "62",
+      "note": "57",
       "velocity": 0.3375,
       "params": {
         "material": "aluminum",
@@ -1803,8 +1867,8 @@
       "performance": {
         "track": "tongue_drum_pulse",
         "role": "A3_mark",
-        "midi_note": 62,
-        "frequency_hz": 293.665,
+        "midi_note": 57,
+        "frequency_hz": 220.0,
         "intended_release_time": 59.665,
         "articulation": "mark_pulse",
         "phrase_end": true,
@@ -1844,6 +1908,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1867,6 +1932,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1890,6 +1956,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1913,6 +1980,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1936,6 +2004,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1959,6 +2028,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -1982,6 +2052,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2005,6 +2076,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2028,6 +2100,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2051,6 +2124,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2074,6 +2148,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2097,6 +2172,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2120,6 +2196,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2143,6 +2220,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2166,6 +2244,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2189,6 +2268,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2212,6 +2292,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2235,6 +2316,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2258,6 +2340,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2281,6 +2364,7 @@
       "velocity": 0.45,
       "params": {
         "material": "steel",
+        "damping_override": 0.5,
         "strike_position": 0.27,
         "diameter_mm": 0.8,
         "exciter": "wood_mallet"
@@ -2300,7 +2384,7 @@
       "time": 77.3,
       "duration": 0.35,
       "engine": "tongue_drum",
-      "note": "62",
+      "note": "57",
       "velocity": 0.225,
       "params": {
         "material": "aluminum",
@@ -2311,8 +2395,8 @@
       "performance": {
         "track": "tongue_drum_pulse",
         "role": "final_mark",
-        "midi_note": 62,
-        "frequency_hz": 293.665,
+        "midi_note": 57,
+        "frequency_hz": 220.0,
         "intended_release_time": 77.615,
         "articulation": "mark_pulse",
         "phrase_end": true,

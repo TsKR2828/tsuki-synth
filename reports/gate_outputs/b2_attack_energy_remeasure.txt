@@ -1,0 +1,149 @@
+=== B2 步驟 8：攻擊能量錨點常數重測（2026-08-21）===
+方法：中央弦反解法（一次性腳本，見下方轉錄；不改 modeAttackEnergy 本身）
+
+原理：
+- 量測 score：A4 (MIDI 69)、velocity=0.5（Hertz 錨 → τc_actual = τcRef，兩者的槌頭頻譜項相等）
+- cimbalom 預設 3 弦 course 的中央弦 (s=1)：freqMul=1、macro 預設下 matScale=dmpScale=1
+  → dump 的 freq/decay 與引擎 attackE 迴圈用的 baseModes 完全一致（decay 含 bridgeLoss，
+  CimbalomEngine.h:236-239 在 attackE 之前重算）
+- dump amp = a_base·H(ω,τcRef)·g，g = noteComp/√N；attackE = Σ mAE(f, a_dump/g, d)
+  noteComp = clamp((ref_old/attackE)^0.39)，ref_old = 當前二進位裡的常數 → 定點迭代求解
+- 收斂性：指數 0.78 < 1 為壓縮映射
+
+自我驗證（方法正確性的內建證據）：
+- tongue_drum 反解 = 0.009504（噴出 noteComp=0.999997）、water_gong = 0.077701（0.999996）
+  —— 與現值到第 6 位一致。B1 刻意不接 Chromatic（bridgeLoss 只進 Cimbalom/Piano），
+  這兩個引擎的攻擊能量本來就不該變 → 兩個 null result 同時驗證了反解鏈與 B1 的範圍隔離。
+
+--- 完整量測轉錄 ---
+== cimbalom ==
+  modes used: 32 (center string of 3)
+    f=440.000 amp=0.550530 decay=2.4949 -> mAE(dump)=2.217e-02
+    f=881.148 amp=0.556580 decay=1.9243 -> mAE(dump)=1.907e-02
+    f=1324.587 amp=0.139460 decay=1.4572 -> mAE(dump)=9.660e-04
+    f=1771.451 amp=0.177740 decay=1.1089 -> mAE(dump)=1.238e-03
+    f=2222.858 amp=0.162870 decay=0.8560 -> mAE(dump)=8.153e-04
+    f=2679.907 amp=0.030980 decay=0.6721 -> mAE(dump)=2.330e-05
+    f=3143.676 amp=0.005210 decay=0.5367 -> mAE(dump)=5.270e-07
+    f=3615.213 amp=0.042900 decay=0.4351 -> mAE(dump)=2.898e-05
+    ... (+24 more)
+  E_dump(sum over dumped amps)   = 4.432861e-02
+  ref_old (compiled constant)     = 0.1497
+  noteComp(final)                 = 1.233523  (iterations converged)
+  attackE (engine-basis, SOLVED)  = 0.087400
+== tongue_drum ==
+  modes used: 4 (single set)
+    f=440.000 amp=0.265990 decay=16.1060 -> mAE(dump)=9.357e-03
+    f=2757.433 amp=0.060430 decay=1.1107 -> mAE(dump)=1.433e-04
+    f=7720.891 amp=0.023830 decay=0.1790 -> mAE(dump)=3.679e-06
+    f=15129.865 amp=0.000790 decay=0.0502 -> mAE(dump)=1.134e-09
+  E_dump(sum over dumped amps)   = 9.504015e-03
+  ref_old (compiled constant)     = 0.009504
+  noteComp(final)                 = 0.999997  (iterations converged)
+  attackE (engine-basis, SOLVED)  = 0.009504
+== water_gong ==
+  modes used: 7 (single set)
+    f=440.000 amp=0.152650 decay=4.2581 -> mAE(dump)=2.234e-03
+    f=764.908 amp=0.964250 decay=2.2698 -> mAE(dump)=6.408e-02
+    f=1024.602 amp=0.049330 decay=1.6007 -> mAE(dump)=1.304e-04
+    f=1727.123 amp=0.615570 decay=0.8259 -> mAE(dump)=1.125e-02
+    f=1802.423 amp=0.011040 decay=0.7805 -> mAE(dump)=3.426e-06
+    f=2964.953 amp=0.006400 decay=0.3913 -> mAE(dump)=5.800e-07
+    f=3241.904 amp=0.017390 decay=0.3435 -> mAE(dump)=3.759e-06
+  E_dump(sum over dumped amps)   = 7.770017e-02
+  ref_old (compiled constant)     = 0.0777
+  noteComp(final)                 = 0.999996  (iterations converged)
+  attackE (engine-basis, SOLVED)  = 0.077701
+
+== NEW CONSTANTS ==
+kCimbalomAttackEnergyRefA4       = 0.0874f   (old 0.1497)
+kChromaticAttackEnergyRefA4[0]   = 0.009504f (old 0.009504)
+kChromaticAttackEnergyRefA4[1]   = 0.07770f  (old 0.07770)
+
+--- 量測 score（保存於此供重跑）---
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {"title": "B2 attack-energy anchor remeasure", "id": "b2_anchor_remeasure", "author": "B2 workcard step 8",
+    "description": "A4 (MIDI 69) velocity 0.5 (Hertz-anchor tauC), default params per anchor convention: cimbalom steel / tongue_drum aluminum / water_gong bronze. Used only for --dump-modes; never rendered as a deliverable."},
+  "global": {"bpm": 100, "sample_rate": 48000, "master_volume": 0.8,
+    "effects": {"reverb": {"decay": 0, "wet": 0}, "delay": {"time_ms": 0, "feedback": 0, "wet": 0},
+                "distortion": {"type": "overdrive", "drive": 0, "instability": 0, "wet": 0}}},
+  "events": [
+    {"time": 0.0, "duration": 1.0, "engine": "cimbalom", "note": 69, "velocity": 0.5,
+     "params": {"material": "steel", "diameter_mm": 0.8, "strike_position": 0.3, "exciter": "wood_mallet"}},
+    {"time": 1.0, "duration": 1.0, "engine": "tongue_drum", "note": 69, "velocity": 0.5,
+     "params": {"material": "aluminum", "strike_position": 0.3}},
+    {"time": 2.0, "duration": 1.0, "engine": "water_gong", "note": 69, "velocity": 0.5,
+     "params": {"material": "bronze", "strike_position": 0.3}}
+  ],
+  "export": {"filename": "b2_anchor_remeasure", "format": "wav", "bit_depth": 24, "normalize": false, "tail_silence_ms": 200}
+}
+
+--- 一次性腳本 ---
+# -*- coding: utf-8 -*-
+"""B2 step 8: remeasure attack-energy anchor constants after B1 bridge loss.
+
+Method (inversion of the engine's own dump, no formula drift possible):
+  With velocity = 0.5 the actual tauC equals the Hertz-anchored tauCRef, so
+  each dumped mode amplitude is a_dump = a_base * H(2*pi*f, tauCRef) * g,
+  where the engine's attack energy input is exactly a_base * H. For the
+  cimbalom the CENTER string of the default 3-string course has freqMul = 1
+  and macro scales = 1, so its dumped freq/decay equal the engine's
+  baseModes values bit-for-bit. g = noteComp/sqrt(N) (cimbalom, N=3) or
+  noteComp (chromatic, N=1); noteComp = clamp((ref_old/attackE)^(0.78/2))
+  with ref_old = the constants compiled into the CURRENT binary. Solve
+  attackE by fixed-point iteration (contraction, exponent 0.78 < 1).
+"""
+import json, math, subprocess, sys
+
+CLI = r"build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe"
+SCORE = sys.argv[1]
+SR = 48000.0
+WINDOW = 0.3
+REF_OLD = {"cimbalom": 0.1497, "tongue_drum": 0.009504, "water_gong": 0.07770}
+
+def mAE(f, a, d):  # ModalResonator::modeAttackEnergy, windowSeconds=0.3
+    if not (20.0 <= f <= min(20000.0, SR*0.5*0.98)) or not math.isfinite(a) \
+       or not math.isfinite(d) or d <= 0:
+        return 0.0
+    two_lambda = 2.0 * 6.9078 / d
+    return a*a*0.5*(1.0 - math.exp(-two_lambda*WINDOW))/two_lambda
+
+def comp(aE, ref):  # loudnessCompensationGain, amount=0.78
+    if not (aE > 1e-12) or not (ref > 0): return 1.0
+    return min(4.0, max(0.25, (ref/aE)**(0.5*0.78)))
+
+r = subprocess.run([CLI, "--dump-modes", SCORE], capture_output=True, text=True)
+d = json.loads(r.stdout)
+out = {}
+for ev in d["events"]:
+    eng = ev["engine"]
+    if eng == "cimbalom":
+        strings = ev["strings"]; assert len(strings) == 3, "expected default 3-string course"
+        modes = strings[1]          # center string: freqMul = 1
+        N = 3
+    else:
+        modes = ev["partials"]; N = 1
+    ref_old = REF_OLD[eng]
+    E_dump = sum(mAE(m["freq"], m["amp"], m["decay"]) for m in modes)
+    aE = E_dump  # fixed-point solve: aE = E_dump / g^2, g = comp/sqrt(N) -> aE = E_dump*N/comp^2
+    for it in range(200):
+        g2 = comp(aE, ref_old)**2 / N
+        new = E_dump / g2
+        if abs(new - aE) <= 1e-12 * max(1.0, abs(aE)): aE = new; break
+        aE = new
+    print(f"== {eng} ==")
+    print(f"  modes used: {len(modes)} ({'center string of 3' if eng=='cimbalom' else 'single set'})")
+    for m in modes[:8]:
+        print(f"    f={m['freq']:.3f} amp={m['amp']:.6f} decay={m['decay']:.4f} -> mAE(dump)={mAE(m['freq'],m['amp'],m['decay']):.3e}")
+    if len(modes) > 8: print(f"    ... (+{len(modes)-8} more)")
+    print(f"  E_dump(sum over dumped amps)   = {E_dump:.6e}")
+    print(f"  ref_old (compiled constant)     = {ref_old}")
+    print(f"  noteComp(final)                 = {comp(aE, ref_old):.6f}  (iterations converged)")
+    print(f"  attackE (engine-basis, SOLVED)  = {aE:.6f}")
+    out[eng] = aE
+print()
+print("== NEW CONSTANTS ==")
+print(f"kCimbalomAttackEnergyRefA4       = {out['cimbalom']:.4f}f   (old 0.1497)")
+print(f"kChromaticAttackEnergyRefA4[0]   = {out['tongue_drum']:.6f}f (old 0.009504)")
+print(f"kChromaticAttackEnergyRefA4[1]   = {out['water_gong']:.5f}f  (old 0.07770)")

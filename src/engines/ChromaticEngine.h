@@ -15,11 +15,24 @@
 /**
  * Chromatic Synth 引擎 — 三合一
  *   0 = Tongue Drum（Euler-Bernoulli 梁）
- *   1 = Water Gong （Bessel 圓板/膜近似，非真 clamped 板，見 PlateModel.h）
+ *   1 = Water Gong （Kirchhoff 圓板；free/clamped 邊界見 PlateModel.h）
  *   2 = Custom     （使用者自填 ratio/amplitude）
  */
 
 enum class ChromaticSubEngine { TongueDrum = 0, WaterGong = 1, CustomHarmonics = 2 };
+
+// 跨音域響度補償錨點（[0]=TongueDrum aluminum、[1]=WaterGong bronze，皆為
+// A4 / strike 0.3 / 預設幾何下、以 velocity=0.5 Hertz 錨 τc 預估的攻擊窗
+// 能量 Σ modeAttackEnergy()，2026-08-10 引擎內實測值，阻尼寬頻化後重量：
+// A4 在舊 MIDI 60 錨點之上，T60 縮短使攻擊能量下降，TongueDrum
+// 0.009852→0.009504、WaterGong 0.1182→0.07770。**2026-08-21 B2 收尾重測：
+// 兩值到第 6 位不變（反解 noteComp=0.99999x），符合預期——B1 琴橋耦合
+// 刻意只接 Cimbalom/Piano，Chromatic 無 bridgeLoss 項；此 null result 同時
+// 驗證量測鏈，見 reports/gate_outputs/b2_attack_energy_remeasure.txt**）。
+// gain(A4) = 1，維持
+// 既有 subEngineOutputGain 校準；Custom Harmonics 是使用者自填振幅的加法
+// 合成，與槌頭頻譜同理不做補償。見 ModalResonator::loudnessCompensationGain()。
+static constexpr float kChromaticAttackEnergyRefA4[2] = { 0.009504f, 0.07770f };
 
 struct ChromaticParams
 {
@@ -31,12 +44,29 @@ struct ChromaticParams
     double tongueLength     = 0.1;
     double tongueWidth      = 0.025;
     double tongueThickness  = 0.003;
+    BeamModel::Boundary tongueBoundary = BeamModel::Boundary::Cantilever;
     float  exciterHardness  = 1.0f;
     bool   plateFreeEdge    = true;   // true = free-edge (physical water gong: hung, edges free)
+    bool   tuneToMidi       = true;   // false = retain geometry/material absolute frequencies
+    uint64_t randomSeed     = 0x5453554B4953594Eull; // "TSUKISYN"
+    uint64_t eventIndex     = 0;
 };
 
+inline void filterChromaticModesForSampleRate (
+    std::vector<ModalResonator::Mode>& modes, double sampleRate)
+{
+    modes.erase (
+        std::remove_if (modes.begin(), modes.end(), [sampleRate] (const auto& mode)
+        {
+            return ! ModalResonator::isRenderableFrequency (
+                mode.frequency, sampleRate);
+        }),
+        modes.end());
+}
+
 inline void tuneChromaticModesToMidi (
-    std::vector<ModalResonator::Mode>& modes, int midiNote)
+    std::vector<ModalResonator::Mode>& modes, int midiNote,
+    double sampleRate = 44100.0)
 {
     if (modes.empty()
         || ! std::isfinite (modes.front().frequency)
@@ -49,14 +79,7 @@ inline void tuneChromaticModesToMidi (
     for (auto& mode : modes)
         mode.frequency *= scale;
 
-    modes.erase (
-        std::remove_if (modes.begin(), modes.end(), [] (const auto& mode)
-        {
-            return ! std::isfinite (mode.frequency)
-                || mode.frequency <= 0.0f
-                || mode.frequency > 20000.0f;
-        }),
-        modes.end());
+    filterChromaticModesForSampleRate (modes, sampleRate);
 }
 
 class ChromaticSound : public juce::SynthesiserSound
@@ -69,7 +92,15 @@ public:
 class ChromaticVoice : public juce::SynthesiserVoice
 {
 public:
+    ChromaticVoice()
+    {
+        modeScratch.reserve (20);
+        baseModes.reserve (20);
+        resonator.reserveModes (20);
+    }
+
     void setMaterialDB (MaterialDB* db) { materialDB = db; }
+    void setNoiseIdentity (uint64_t identity) { noiseIdentity = identity; }
 
     // 參數指標（由 Processor 設定）
     std::atomic<float>* pSubEngine     = nullptr;  // 0=beam, 1=plate, 2=custom
@@ -103,7 +134,7 @@ public:
     {
         if (materialDB == nullptr) return;
 
-        auto keys = MaterialDB::getOrderedKeys();
+        const auto& keys = MaterialDB::getOrderedKeys();
         int matIdx = juce::jlimit (0, keys.size() - 1, (int) pMaterial->load());
         auto* mat = materialDB->getMaterial (keys[matIdx]);
         if (mat == nullptr) return;
@@ -136,7 +167,8 @@ public:
         bodyRes.setAmount (mBody);
         bodyRes.reset();
 
-        std::vector<ModalResonator::Mode> modes;
+        auto& modes = modeScratch;
+        modes.clear();
 
         if (subEngine == 0)  // Tongue Drum (beam)
         {
@@ -147,8 +179,8 @@ public:
             bp.thickness = thickness > 0.0001f ? thickness : 0.003f;
             bp.strikePosition = strikePos;
             bp.numModes  = 12;
-            modes = BeamModel::calculateModes (bp, *mat);
-            tuneChromaticModesToMidi (modes, midiNoteNumber);
+            BeamModel::calculateModes (bp, *mat, modes);
+            tuneChromaticModesToMidi (modes, midiNoteNumber, getSampleRate());
         }
         else if (subEngine == 1)  // Water Gong (plate)
         {
@@ -159,12 +191,12 @@ public:
             pp.strikePosition = strikePos;
             pp.numModes  = 20;
             pp.freeEdge  = true;
-            modes = PlateModel::calculateModes (pp, *mat);
-            tuneChromaticModesToMidi (modes, midiNoteNumber);
+            PlateModel::calculateModes (pp, *mat, modes);
+            tuneChromaticModesToMidi (modes, midiNoteNumber, getSampleRate());
         }
         else  // Custom harmonics
         {
-            modes = buildCustomModes (midiNoteNumber, *mat);
+            buildCustomModes (midiNoteNumber, *mat, modes);
         }
 
         // Macro: Tension → frequency, Material → sustain, Damping → decay
@@ -175,8 +207,11 @@ public:
         for (auto& m : modes)
         {
             m.frequency *= tScale;
-            m.decayTime *= matScale * dmpScale;
+            m.decayTime = decayTimeForMode (subEngine, m.frequency, *mat)
+                        * matScale * dmpScale;
         }
+
+        configureCreativeBodyLayer (modes);
 
         // Hammer force-impulse spectrum (M2 2a/2b). Beam (tongue drum) and
         // plate (water gong) are struck rigid bodies in the physics-verified
@@ -187,11 +222,31 @@ public:
         // for the half-sine contact-pulse derivation and tau_c sources.
         if (subEngine == 0 || subEngine == 1)
         {
-            float tauC = HammerImpulse::tauCForHardness (exciter);
+            float tauC = HammerImpulse::tauCForNote (exciter, velocity,
+                                                     midiNoteNumber);
+
+            // 跨音域響度補償（noteOn 時算好的決定性 scalar，模態間相對
+            // 振幅不變）— 見 ModalResonator::loudnessCompensationGain()。
+            // 能量預估用 velocity=0.5（Hertz 錨）的 τc 而非實際 τc(velocity)，
+            // 否則補償增益隨力度變動、把線性 velocity 律拉成次線性
+            // （F3 判定會破）；理由詳見 CimbalomEngine::startNote() 同段註解。
+            const float tauCRef = HammerImpulse::tauCForNote (exciter, 0.5f,
+                                                              midiNoteNumber);
+            float attackE = 0.0f;
+            for (const auto& m : modes)
+                attackE += ModalResonator::modeAttackEnergy (
+                    m.frequency,
+                    m.amplitude * HammerImpulse::forceSpectrumMagnitude (
+                        juce::MathConstants<float>::twoPi * m.frequency, tauCRef),
+                    m.decayTime, getSampleRate());
+            const float noteComp = ModalResonator::loudnessCompensationGain (
+                attackE, kChromaticAttackEnergyRefA4[subEngine]);
+
             for (auto& m : modes)
             {
                 float omega = juce::MathConstants<float>::twoPi * m.frequency;
-                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
+                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC)
+                             * noteComp;
             }
         }
 
@@ -204,7 +259,7 @@ public:
         resonator.excite (velocity);
 
         setupExciter (exciter, velocity, mBrightness, mNoise, getSampleRate());
-        noiseGen.setSeed ((uint32_t) (midiNoteNumber * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
+        seedNoise (0x504C5547494Eull, noiseEventCounter++, midiNoteNumber, velocity);
         damped = false;
     }
 
@@ -253,7 +308,8 @@ public:
 
         glideAmount = 0.0f;
 
-        std::vector<ModalResonator::Mode> modes;
+        auto& modes = modeScratch;
+        modes.clear();
 
         if (subEng == 0)
         {
@@ -261,10 +317,12 @@ public:
             bp.length    = static_cast<float> (params.tongueLength);
             bp.width     = static_cast<float> (params.tongueWidth);
             bp.thickness = static_cast<float> (params.tongueThickness);
+            bp.boundary   = params.tongueBoundary;
             bp.strikePosition = strikePos;
             bp.numModes  = 12;
-            modes = BeamModel::calculateModes (bp, mat);
-            tuneChromaticModesToMidi (modes, midiNote);
+            BeamModel::calculateModes (bp, mat, modes);
+            if (params.tuneToMidi)
+                tuneChromaticModesToMidi (modes, midiNote, sr);
         }
         else if (subEng == 1)
         {
@@ -274,13 +332,18 @@ public:
             pp.strikePosition = strikePos;
             pp.numModes  = 20;
             pp.freeEdge  = params.plateFreeEdge;
-            modes = PlateModel::calculateModes (pp, mat);
-            tuneChromaticModesToMidi (modes, midiNote);
+            PlateModel::calculateModes (pp, mat, modes);
+            if (params.tuneToMidi)
+                tuneChromaticModesToMidi (modes, midiNote, sr);
         }
         else
         {
-            modes = buildCustomModes (midiNote, mat);
+            buildCustomModes (midiNote, mat, modes);
         }
+
+        filterChromaticModesForSampleRate (modes, sr);
+        for (auto& mode : modes)
+            mode.decayTime = decayTimeForMode (subEng, mode.frequency, mat);
 
         // Hammer force-impulse spectrum (M2 2a/2b). Beam/plate only — see the
         // matching comment in startNote() above; Custom Harmonics (subEng==2)
@@ -290,11 +353,28 @@ public:
         // ROADMAP_PHYSICS.md §2c). See HammerImpulse.h for derivation/sources.
         if (subEng == 0 || subEng == 1)
         {
-            float tauC = HammerImpulse::tauCForHardness (params.exciterHardness);
+            float tauC = HammerImpulse::tauCForNote (params.exciterHardness, velocity,
+                                                     midiNote);
+
+            // 跨音域響度補償 — 與 startNote() 相同（見該處註解，含能量預估
+            // 用 velocity=0.5 Hertz 錨 τc 的理由）。
+            const float tauCRef = HammerImpulse::tauCForNote (params.exciterHardness,
+                                                              0.5f, midiNote);
+            float attackE = 0.0f;
+            for (const auto& m : modes)
+                attackE += ModalResonator::modeAttackEnergy (
+                    m.frequency,
+                    m.amplitude * HammerImpulse::forceSpectrumMagnitude (
+                        juce::MathConstants<float>::twoPi * m.frequency, tauCRef),
+                    m.decayTime, sr);
+            const float noteComp = ModalResonator::loudnessCompensationGain (
+                attackE, kChromaticAttackEnergyRefA4[subEng]);
+
             for (auto& m : modes)
             {
                 float omega = juce::MathConstants<float>::twoPi * m.frequency;
-                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC);
+                m.amplitude *= HammerImpulse::forceSpectrumMagnitude (omega, tauC)
+                             * noteComp;
             }
         }
 
@@ -306,14 +386,18 @@ public:
         resonator.excite (velocity);
 
         setupExciter (params.exciterHardness, velocity, 0.5f, 0.0f, sr);
-        noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
+        seedNoise (params.randomSeed, params.eventIndex, midiNote, velocity);
 
         bodyRes.prepare (sr);
-        // DIAGNOSTIC-ONLY: --body-amount overrides the hard-coded 0.5f mix
-        // (see DiagnosticOverrides.h). Sentinel < 0 -> unchanged behavior.
+        // DIAGNOSTIC-ONLY: --body-amount overrides the CLI default body mix
+        // of 0.0f, i.e. the body-resonance layer is OFF in this standalone /
+        // physics-verified path unless the flag is passed (the plugin's
+        // Macro Body knob is a separate path via startNote()). See
+        // DiagnosticOverrides.h. Sentinel < 0 -> unchanged 0.0f behavior.
         bodyRes.setAmount (DiagnosticOverrides::bodyAmountOverride >= 0.0f
                                 ? DiagnosticOverrides::bodyAmountOverride
-                                : 0.5f);
+                                : 0.0f);
+        configureCreativeBodyLayer (modes);
         bodyRes.reset();
         damped = false;
     }
@@ -376,10 +460,10 @@ public:
             if (glidePhase < 0.5f)
             {
                 float glideMul = 1.0f - glidePhase * 0.3f;  // max 15% pitch drop
-                auto glidedModes = baseModes;
-                for (auto& m : glidedModes)
-                    m.frequency *= glideMul;
-                resonator.updateFrequencies (glidedModes);
+                // ModalResonator retains each base frequency, so scaling the
+                // phase increments in place avoids a vector allocation/copy on
+                // every audio block while preserving phase continuity.
+                resonator.scaleFrequencies (glideMul);
             }
         }
 
@@ -424,7 +508,7 @@ private:
     {
         switch (subEngine)
         {
-            case 0:  return 0.196f;   // Tongue Drum (free-free beam)
+            case 0:  return 0.196f;   // Tongue Drum (cantilever beam)
             case 1:  return 0.151f;   // Water Gong (Kirchhoff plate; shared by
                                        // clamped + free-edge, same code path)
             default: return 0.180f;   // Custom harmonics (no BodyResonance probe
@@ -432,9 +516,41 @@ private:
         }
     }
 
+    static float decayTimeForMode (
+        int subEngine, float frequency, const MaterialDB::Material& material)
+    {
+        return subEngine == 0
+            ? BeamModel::decayTimeForFrequency (frequency, material)
+            : PlateModel::decayTimeForFrequency (frequency, material);
+    }
+
+    void configureCreativeBodyLayer (
+        const std::vector<ModalResonator::Mode>& modes)
+    {
+        if (modes.empty())
+            return;
+
+        const float first = juce::jlimit (40.0f, 4000.0f, modes[0].frequency);
+        const float second = juce::jlimit (40.0f, 4000.0f,
+            modes.size() > 1 ? modes[1].frequency : modes[0].frequency * 2.0f);
+        bodyRes.setFrequencies (first, second);
+        bodyRes.reset();
+    }
+
+    void seedNoise (uint64_t scoreSeed, uint64_t eventIndex,
+                    int midiNote, float velocity)
+    {
+        const uint32_t velocityCode = (uint32_t) std::lround (
+            juce::jlimit (0.0f, 1.0f, velocity) * 16777215.0f);
+        const uint64_t streamEvent = (eventIndex << 8) ^ noiseIdentity;
+        noiseGen.setSeed (NoiseGen::mixSeed (
+            scoreSeed, streamEvent, (uint32_t) midiNote, velocityCode));
+    }
+
     /// Custom harmonics mode: user-defined ratio/amplitude
-    std::vector<ModalResonator::Mode> buildCustomModes (
-        int midiNote, const MaterialDB::Material& mat)
+    void buildCustomModes (
+        int midiNote, const MaterialDB::Material& mat,
+        std::vector<ModalResonator::Mode>& modes)
     {
         float fundamental = 440.0f * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
 
@@ -442,11 +558,8 @@ private:
         static constexpr float defAmps[]   = { 1.0f, 0.7f, 0.5f, 0.35f, 0.25f, 0.18f, 0.12f, 0.08f };
         static constexpr int count = 8;
 
-        std::vector<ModalResonator::Mode> modes;
-        const float alpha = mat.damping.alpha;
-        const float beta  = mat.damping.beta_air;
-        const float gamma = mat.damping.gamma_radiation;
-
+        modes.clear();
+        modes.reserve (count);
         for (int i = 0; i < count; ++i)
         {
             float ratio = pRatio[i] ? pRatio[i]->load() : defRatios[i];
@@ -457,12 +570,10 @@ private:
             float freq = fundamental * ratio;
             if (freq > 20000.0f) continue;
 
-            float decayDenom = alpha + beta * freq * freq + gamma * freq;
-            float decay = (decayDenom > 0.0f) ? (1.0f / decayDenom) : 5.0f;
+            float decay = PlateModel::decayTimeForFrequency (freq, mat);
 
             modes.push_back ({ freq, amp, decay });
         }
-        return modes;
     }
 
     void setupExciter (float hardness, float velocity,
@@ -492,7 +603,10 @@ private:
     MaterialDB*    materialDB = nullptr;
     double         standaloneSR = 0.0;
     ModalResonator resonator;
+    std::vector<ModalResonator::Mode> modeScratch;
     bool           damped = false;
+    uint64_t       noiseIdentity = 0;
+    uint64_t       noiseEventCounter = 0;
 
     NoiseGen           noiseGen;
     BiquadFilter       exciterFilter;

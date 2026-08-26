@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include "Presets.h"
+#include "ScoreConsole.h"
 #include "BinaryData.h"
 
 #include <array>
@@ -141,6 +142,14 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     if (kStandaloneBuild)
         addAndMakeVisible (recordButton);
 
+    // -- Standalone score console (one-click render / report) ------------
+    scoreConsoleButton.setComponentID ("step");
+    scoreConsoleButton.setTooltip (UiLocale::tooltip ("ui_btn_score_console"));
+    scoreConsoleButton.onClick = [this] { openScoreConsole(); };
+    scoreConsoleButton.setVisible (kStandaloneBuild);
+    if (kStandaloneBuild)
+        addAndMakeVisible (scoreConsoleButton);
+
     // -- Preset ----------------------------------------------------------
     presetCombo.setColour (juce::ComboBox::backgroundColourId, Clr::comboBg);
     presetCombo.setColour (juce::ComboBox::outlineColourId,    Clr::comboBorder);
@@ -228,6 +237,7 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     // -- Effects ---------------------------------------------------------
     setupKnob (fxRevMix,      "fx_reverb_mix",      true);
     setupKnob (fxRevSize,     "fx_reverb_size",     true);
+    setupKnob (fxRevDecay,    "fx_reverb_decay",    true);
     setupKnob (fxDlyTime,     "fx_delay_time",      true);
     setupKnob (fxDlyFeedback, "fx_delay_feedback",  true);
     setupKnob (fxDlyMix,      "fx_delay_mix",       true);
@@ -239,6 +249,10 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     setupKnob  (distDrive,       "fx_dist_drive",        true);
     setupKnob  (distInstability, "fx_dist_instability",   true);
     setupKnob  (distMix,         "fx_dist_mix",           true);
+
+    // -- Brightness EQ ---------------------------------------------------
+    setupKnob (fxEqFreq, "fx_eq_freq", true);
+    setupKnob (fxEqGain, "fx_eq_gain", true);
 
     // -- Macro -----------------------------------------------------------
     setupKnob (macroMaterial,   "macro_material",   true);
@@ -260,9 +274,28 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     analyzerPanel.setSynthAwareSources (&proc.lastNoteOnMidi, proc.getEngineParam());
     analyzerPanel.refreshText();
 
+    // -- Reverb profile / IR loading -------------------------------------
+    addAndMakeVisible (revLoadButton);
+    revLoadButton.setTooltip (UiLocale::tooltip ("ui_tip_revload"));
+    revLoadButton.onClick = [this] { launchReverbFileChooser(); };
+    addAndMakeVisible (revModeButton);
+    revModeButton.onClick = [this]
+    {
+        if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
+                proc.apvts.getParameter ("fx_reverb_mode")))
+            *p = p->getIndex() == 0 ? 1 : 0;
+    };
+    refreshReverbModeButton();
+
+    // -- Hover magnifier (accessibility: repeats small text enlarged) ----
+    addAndMakeVisible (magnifier);
+    magnifier.setOwner (this);
+    addMouseListener (&magnifier, true);
+
     // -- Engine listener + initial state ---------------------------------
     proc.apvts.addParameterListener ("engine", this);
     proc.apvts.addParameterListener ("chr_sub_engine", this);
+    proc.apvts.addParameterListener ("fx_reverb_mode", this);
     updateEngine();
     refreshLocalizedText();
     updateDirtyIndicator();
@@ -277,9 +310,11 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
 TsukiSynthEditor::~TsukiSynthEditor()
 {
     stopTimer();
+    removeMouseListener (&magnifier);
     setLookAndFeel (nullptr);
     proc.apvts.removeParameterListener ("engine", this);
     proc.apvts.removeParameterListener ("chr_sub_engine", this);
+    proc.apvts.removeParameterListener ("fx_reverb_mode", this);
 }
 
 // ========================================================================
@@ -296,6 +331,18 @@ void TsukiSynthEditor::parameterChanged (const juce::String& id, float)
             {
                 safeThis->updateEngine();
                 safeThis->resized();
+                safeThis->repaint();
+            }
+        });
+    }
+    if (id == "fx_reverb_mode")
+    {
+        auto safeThis = juce::Component::SafePointer<TsukiSynthEditor> (this);
+        juce::MessageManager::callAsync ([safeThis]
+        {
+            if (safeThis != nullptr)
+            {
+                safeThis->refreshReverbModeButton();
                 safeThis->repaint();
             }
         });
@@ -552,9 +599,15 @@ void TsukiSynthEditor::refreshLocalizedText()
     // -- Effects --
     refreshKnobLabel (fxRevMix);
     refreshKnobLabel (fxRevSize);
+    refreshKnobLabel (fxRevDecay);
+    revLoadButton.setButtonText (UiLocale::label ("ui_btn_revload"));
+    revLoadButton.setTooltip (UiLocale::tooltip ("ui_tip_revload"));
+    refreshReverbModeButton();
     refreshKnobLabel (fxDlyTime);
     refreshKnobLabel (fxDlyFeedback);
     refreshKnobLabel (fxDlyMix);
+    refreshKnobLabel (fxEqFreq);
+    refreshKnobLabel (fxEqGain);
     refreshKnobLabel (fxCompThresh);
     refreshKnobLabel (fxCompRatio);
 
@@ -584,6 +637,79 @@ void TsukiSynthEditor::refreshLocalizedText()
     keyboard.repaint();
 
     repaint();
+}
+
+void TsukiSynthEditor::refreshReverbModeButton()
+{
+    const bool irMode = [this]
+    {
+        if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
+                proc.apvts.getParameter ("fx_reverb_mode")))
+            return p->getIndex() == 1;
+        return false;
+    }();
+    revModeButton.setButtonText (irMode ? "IR" : "ALGO");
+    revModeButton.setTooltip (UiLocale::tooltip (irMode ? "ui_btn_revmode_ir"
+                                                        : "ui_btn_revmode_algo"));
+}
+
+void TsukiSynthEditor::launchReverbFileChooser()
+{
+    revChooser = std::make_unique<juce::FileChooser> (
+        UiLocale::label ("ui_dlg_revload"),
+        juce::File::getSpecialLocation (juce::File::userDocumentsDirectory),
+        "*.json;*.wav");
+
+    const auto chooserFlags = juce::FileBrowserComponent::openMode
+                            | juce::FileBrowserComponent::canSelectFiles;
+    revChooser->launchAsync (chooserFlags, [this] (const juce::FileChooser& fc)
+    {
+        const auto file = fc.getResult();
+        if (file == juce::File())
+            return;
+
+        juce::String error;
+        bool ok = false;
+        if (file.getFileExtension().equalsIgnoreCase (".wav"))
+            ok = proc.loadReverbIRFile (file, error);
+        else
+            ok = proc.loadReverbProfileFile (file, error);
+
+        if (! ok)
+            juce::NativeMessageBox::showMessageBoxAsync (
+                juce::MessageBoxIconType::WarningIcon,
+                UiLocale::label ("ui_dlg_revload"), error, this);
+
+        refreshReverbModeButton();
+        repaint();
+    });
+}
+
+void TsukiSynthEditor::openScoreConsole()
+{
+    if (scoreConsoleWindow == nullptr)
+    {
+        class ConsoleWindow : public juce::DocumentWindow
+        {
+        public:
+            ConsoleWindow()
+                : juce::DocumentWindow (
+                      juce::String::fromUTF8 ("Score 控制台 — 渲染 / 報告"),
+                      juce::Colour (0xff1a1a2e),
+                      juce::DocumentWindow::closeButton
+                          | juce::DocumentWindow::minimiseButton)
+            {
+                setUsingNativeTitleBar (true);
+                setContentOwned (new ScoreConsole(), true);
+                setResizable (true, true);
+                centreWithSize (660, 440);
+            }
+            void closeButtonPressed() override { setVisible (false); }
+        };
+        scoreConsoleWindow = std::make_unique<ConsoleWindow>();
+    }
+    scoreConsoleWindow->setVisible (true);
+    scoreConsoleWindow->toFront (true);
 }
 
 void TsukiSynthEditor::refreshRecorderText()
@@ -930,7 +1056,15 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.setColour (Clr::border.withAlpha (0.5f));
         g.fillRect (kSidePad + 104, y + 14, w - kSidePad * 2 - 104, 1);
 
-        paintPanel (g, reverbBounds_, UiLocale::label ("ui_panel_reverb"));
+        {
+            // Panel title carries the loaded-IR name so the state is visible
+            // without hovering anything.
+            auto revTitle = UiLocale::label ("ui_panel_reverb");
+            if (proc.hasReverbIR())
+                revTitle << " " << juce::String (juce::CharPointer_UTF8 ("\xc2\xb7"))
+                         << " " << proc.getReverbIRName();
+            paintPanel (g, reverbBounds_, revTitle);
+        }
         paintPanel (g, delayBounds_,  UiLocale::label ("ui_panel_delay"));
         paintPanel (g, compBounds_,   UiLocale::label ("ui_panel_compressor"));
     }
@@ -941,6 +1075,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.setColour (Clr::effectsBg);
         g.fillRect (0, y, w, distRow_.getHeight());
         paintPanel (g, distPanelBounds_, UiLocale::label ("ui_panel_distortion"));
+        paintPanel (g, eqPanelBounds_,   UiLocale::label ("ui_panel_eq"));
     }
 
     // -- analyzer row ----------------------------------------------------
@@ -974,7 +1109,10 @@ void TsukiSynthEditor::resized()
     area.removeFromTop (kTitleH);
     langToggle.setBounds (w - 72, 20, 56, 24);
     if (kStandaloneBuild)
+    {
         recordButton.setBounds (w - 136, 20, 56, 24);
+        scoreConsoleButton.setBounds (w - 200, 20, 56, 24);
+    }
 
     // -- preset row ------------------------------------------------------
     {
@@ -1030,7 +1168,10 @@ void TsukiSynthEditor::resized()
 
     distRow_ = area.removeFromBottom (kDistH);
     {
-        distPanelBounds_ = distRow_.reduced (kSidePad, 4);
+        auto row = distRow_.reduced (kSidePad, 4);
+        eqPanelBounds_ = row.removeFromRight (row.getWidth() * 28 / 100);
+        row.removeFromRight (8);
+        distPanelBounds_ = row;
         auto inner = distPanelBounds_.reduced (8, 0).withTrimmedTop (28);
 
         auto typeArea = inner.removeFromLeft (inner.getWidth() * 2 / 7);
@@ -1043,6 +1184,11 @@ void TsukiSynthEditor::resized()
         layoutFxKnob (inner.removeFromLeft (knobW), distDrive);
         layoutFxKnob (inner.removeFromLeft (knobW), distInstability);
         layoutFxKnob (inner, distMix);
+
+        auto eqInner = eqPanelBounds_.reduced (8, 0).withTrimmedTop (28);
+        int eqKnobW = eqInner.getWidth() / 2;
+        layoutFxKnob (eqInner.removeFromLeft (eqKnobW), fxEqFreq);
+        layoutFxKnob (eqInner, fxEqGain);
     }
 
     effectsRow_ = area.removeFromBottom (kEffectsH);
@@ -1050,8 +1196,8 @@ void TsukiSynthEditor::resized()
         auto inner = effectsRow_.reduced (kSidePad, 0).withTrimmedTop (30);
         int gap   = 8;
         int avail = inner.getWidth() - gap * 2;
-        int revW  = avail * 29 / 100;
-        int dlyW  = avail * 40 / 100;
+        int revW  = avail * 37 / 100;
+        int dlyW  = avail * 35 / 100;
         int cmpW  = avail - revW - dlyW;
 
         reverbBounds_ = inner.removeFromLeft (revW);
@@ -1060,12 +1206,19 @@ void TsukiSynthEditor::resized()
         inner.removeFromLeft (gap);
         compBounds_ = inner.withWidth (cmpW);
 
-        // reverb knobs
+        // reverb knobs + profile/IR buttons in the title strip
         {
+            auto titleStrip = reverbBounds_.reduced (6, 0).removeFromTop (24);
+            auto btns = titleStrip.removeFromRight (92);
+            revModeButton.setBounds (btns.removeFromRight (42).reduced (0, 2));
+            btns.removeFromRight (4);
+            revLoadButton.setBounds (btns.reduced (0, 2));
+
             auto p = reverbBounds_.reduced (6, 0).withTrimmedTop (28);
-            int kw = p.getWidth() / 2;
+            int kw = p.getWidth() / 3;
             layoutFxKnob (p.removeFromLeft (kw), fxRevMix);
-            layoutFxKnob (p, fxRevSize);
+            layoutFxKnob (p.removeFromLeft (kw), fxRevSize);
+            layoutFxKnob (p, fxRevDecay);
         }
         // delay knobs
         {

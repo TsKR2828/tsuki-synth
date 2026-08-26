@@ -1,0 +1,819 @@
+=== deepfix2 corpus re-verify shard C_library_1 ===
+date: 2026-07-18T12:36:40Z
+scope: scores/library first 21 files (sorted by filename)
+cli: build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+
+===== FILE: scores/library/akashic/akashic_action_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_action_001.score.json
+==============================================================================
+  rendered: 3.31s @ 48000 Hz, peak -0.45 dBFS, RMS -21.93 dBFS
+  loudness (info only, no registered tolerance): integrated -20.84 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   1.00s: -16.8 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (24 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 24 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 24 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 4.999 cents).
+  [OK    ] render.ran: Score rendered successfully to Foley_Soft_OneShot_D5.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.00531959, gain=178.585, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (8ace9d93047a...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 8ace9d93047a8d72...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/akashic/akashic_action_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/akashic/akashic_ambient_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_ambient_001.score.json
+==============================================================================
+  rendered: 33.50s @ 48000 Hz, peak -0.45 dBFS, RMS -28.83 dBFS
+  loudness (info only, no registered tolerance): integrated -21.52 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-  15.00s: -25.3 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (14 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 14 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 14 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.003 cents).
+  [OK    ] render.ran: Score rendered successfully to Ambience_Dark_OneShot_C3.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.00887496, gain=107.043, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (b35d234c36fe...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 b35d234c36fe0923...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/akashic/akashic_ambient_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/akashic/akashic_loop_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_loop_001.score.json
+==============================================================================
+  rendered: 24.32s @ 48000 Hz, peak -0.45 dBFS, RMS -25.87 dBFS
+  loudness (info only, no registered tolerance): integrated -21.84 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (4 segment(s)):
+      [          events] segment 1         0.00s-   3.50s: -19.0 dBFS
+      [          events] segment 2         4.00s-   7.50s: -33.7 dBFS
+      [          events] segment 3         8.00s-  11.50s: -23.6 dBFS
+      [          events] segment 4        12.00s-  15.50s: -31.6 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 4 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 4 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=4, modal=4, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 4 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (4 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (28 partials checked across 4 events).
+  [OK    ] modes.frequency_range: All 28 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 28 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 4 modal events (max observed: 0.003 cents).
+  [OK    ] render.ran: Score rendered successfully to Ambience_Airy_Loop_C4.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.00353611, gain=268.657, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (c83ebc587c67...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 c83ebc587c673f86...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/akashic/akashic_loop_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/akashic/akashic_notify_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_notify_001.score.json
+==============================================================================
+  rendered: 4.43s @ 48000 Hz, peak -0.45 dBFS, RMS -22.32 dBFS
+  loudness (info only, no registered tolerance): integrated -15.07 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   1.62s: -18.0 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (4 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 4 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 4 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Bright_OneShot_E6.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.286732, gain=3.3132, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (33b87171304b...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 33b87171304b02a5...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/akashic/akashic_notify_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/akashic/akashic_opening_bell_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_opening_bell_001.score.json
+==============================================================================
+  rendered: 28.67s @ 48000 Hz, peak -0.45 dBFS, RMS -22.54 dBFS
+  loudness (info only, no registered tolerance): integrated -20.39 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-  20.00s: -21.0 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 8 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 8 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=8, modal=8, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 8 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (8 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (37 partials checked across 8 events).
+  [OK    ] modes.frequency_range: All 37 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 37 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 8 modal events (max observed: 0.005 cents).
+  [OK    ] render.ran: Score rendered successfully to akashic_opening_bell_001.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.0678165, gain=14.0084, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (01a89fc80b29...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 01a89fc80b29d687...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/akashic/akashic_opening_bell_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/akashic/akashic_transition_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_transition_001.score.json
+==============================================================================
+  rendered: 17.57s @ 48000 Hz, peak -0.45 dBFS, RMS -28.32 dBFS
+  loudness (info only, no registered tolerance): integrated -18.60 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   7.15s: -24.4 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (14 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 14 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 14 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.003 cents).
+  [OK    ] render.ran: Score rendered successfully to Magic_Metallic_OneShot_C4.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.506873, gain=1.87424, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (fc79855cb696...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 fc79855cb696eb11...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/akashic/akashic_transition_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/akashic/akashic_transition_var01.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_transition_var01.score.json
+==============================================================================
+  rendered: 21.97s @ 48000 Hz, peak -0.45 dBFS, RMS -27.16 dBFS
+  loudness (info only, no registered tolerance): integrated -18.85 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   8.20s: -22.9 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (14 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 14 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 14 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.003 cents).
+  [OK    ] render.ran: Score rendered successfully to Magic_Dark_OneShot_C4.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=1.78857, gain=0.531149, samples >= 0 dBFS=3746; wav_sha256 verified against WAV bytes (63a651de1ef5...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 63a651de1ef5f4bc...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/akashic/akashic_transition_var01.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/akashic/akashic_ui_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_ui_001.score.json
+==============================================================================
+  rendered: 1.31s @ 48000 Hz, peak -0.45 dBFS, RMS -18.44 dBFS
+  loudness (info only, no registered tolerance): integrated -13.96 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.30s: -12.1 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=1, modal=1, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (2 partials checked across 1 events).
+  [OK    ] modes.frequency_range: All 2 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 2 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 1 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Bright_OneShot_C7.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.0149929, gain=63.3632, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (a7ad6eeec99a...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 a7ad6eeec99a951b...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/akashic/akashic_ui_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/clockwork/clockwork_action_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\clockwork\clockwork_action_001.score.json
+==============================================================================
+  rendered: 1.37s @ 48000 Hz, peak -0.45 dBFS, RMS -30.43 dBFS
+  loudness (info only, no registered tolerance): integrated -27.99 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.40s: -25.1 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (45 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 45 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 45 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 4.996 cents).
+  [OK    ] render.ran: Score rendered successfully to Mechanical_Punch_OneShot_A3.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.252432, gain=3.76339, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (2488b22f70ec...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 2488b22f70ecf330...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/clockwork/clockwork_action_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/clockwork/clockwork_ambient_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\clockwork\clockwork_ambient_001.score.json
+==============================================================================
+  rendered: 7.57s @ 48000 Hz, peak -0.45 dBFS, RMS -20.03 dBFS
+  loudness (info only, no registered tolerance): integrated -14.24 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (3 segment(s)):
+      [          events] segment 1         0.00s-   0.05s: -12.0 dBFS
+      [          events] segment 2         0.50s-   0.55s: -13.9 dBFS
+      [          events] segment 3         1.00s-   4.00s: -17.7 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 7 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 7 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=7, modal=7, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 7 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (7 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (25 partials checked across 7 events).
+  [OK    ] modes.frequency_range: All 25 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 25 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 7 modal events (max observed: 0.003 cents).
+  [OK    ] render.ran: Score rendered successfully to Ambience_Pulse_OneShot_F5.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.00916679, gain=103.635, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (018c37546ae9...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 018c37546ae98439...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/clockwork/clockwork_ambient_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/clockwork/clockwork_loop_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\clockwork\clockwork_loop_001.score.json
+==============================================================================
+  rendered: 5.23s @ 48000 Hz, peak -0.45 dBFS, RMS -17.86 dBFS
+  loudness (info only, no registered tolerance): integrated -14.98 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (10 segment(s)):
+      [          events] segment 1         0.00s-   0.05s: -9.6 dBFS
+      [          events] segment 2         0.50s-   0.55s: -12.8 dBFS
+      [          events] segment 3         1.00s-   1.05s: -9.5 dBFS
+      [          events] segment 4         1.25s-   1.33s: -10.7 dBFS
+      [          events] segment 5         1.50s-   1.55s: -12.7 dBFS
+      [          events] segment 6         2.00s-   2.05s: -9.5 dBFS
+      [          events] segment 7         2.50s-   2.55s: -12.7 dBFS
+      [          events] segment 8         3.00s-   3.05s: -9.5 dBFS
+      [          events] segment 9         3.25s-   3.33s: -12.4 dBFS
+      [          events] segment 10        3.50s-   3.55s: -12.3 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 10 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 10 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=10, modal=10, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 10 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (10 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (29 partials checked across 10 events).
+  [OK    ] modes.frequency_range: All 29 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 29 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 10 modal events (max observed: 0.001 cents).
+  [OK    ] render.ran: Score rendered successfully to Mechanical_Pulse_Loop_F5.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.0157991, gain=60.13, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (456dd5195134...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 456dd5195134f5ae...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/clockwork/clockwork_loop_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/clockwork/clockwork_notify_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\clockwork\clockwork_notify_001.score.json
+==============================================================================
+  rendered: 2.72s @ 48000 Hz, peak -0.45 dBFS, RMS -22.19 dBFS
+  loudness (info only, no registered tolerance): integrated -18.31 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   1.00s: -17.8 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=1, modal=1, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (3 partials checked across 1 events).
+  [OK    ] modes.frequency_range: All 3 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 3 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 1 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Metallic_OneShot_E5.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.0448888, gain=21.1634, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (578779515b89...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 578779515b894d1d...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/clockwork/clockwork_notify_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/clockwork/clockwork_notify_var01.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\clockwork\clockwork_notify_var01.score.json
+==============================================================================
+  rendered: 3.13s @ 48000 Hz, peak -0.45 dBFS, RMS -22.45 dBFS
+  loudness (info only, no registered tolerance): integrated -18.15 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   1.00s: -17.5 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=1, modal=1, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (3 partials checked across 1 events).
+  [OK    ] modes.frequency_range: All 3 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 3 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 1 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Glitch_OneShot_E5.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.37261, gain=2.54958, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (7a940f9bb29d...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 7a940f9bb29d181d...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/clockwork/clockwork_notify_var01.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/clockwork/clockwork_transition_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\clockwork\clockwork_transition_001.score.json
+==============================================================================
+  rendered: 2.99s @ 48000 Hz, peak -0.45 dBFS, RMS -21.67 dBFS
+  loudness (info only, no registered tolerance): integrated -14.09 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.76s: -15.7 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 4 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 4 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=4, modal=4, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 4 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (4 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (18 partials checked across 4 events).
+  [OK    ] modes.frequency_range: All 18 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 18 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 4 modal events (max observed: 0.003 cents).
+  [OK    ] render.ran: Score rendered successfully to Mechanical_Metallic_OneShot_C4.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.0553499, gain=17.1635, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (7d6296d719ca...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 7d6296d719ca39cf...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/clockwork/clockwork_transition_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/clockwork/clockwork_ui_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\clockwork\clockwork_ui_001.score.json
+==============================================================================
+  rendered: 0.58s @ 48000 Hz, peak -0.45 dBFS, RMS -19.07 dBFS
+  loudness (info only, no registered tolerance): integrated -14.66 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.06s: -9.5 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=1, modal=1, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (3 partials checked across 1 events).
+  [OK    ] modes.frequency_range: All 3 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 3 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 1 modal events (max observed: 0.001 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Metallic_OneShot_D5.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.0256208, gain=37.0793, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (68ff9bea2e55...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 68ff9bea2e552a4a...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/clockwork/clockwork_ui_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/forest/forest_action_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\forest\forest_action_001.score.json
+==============================================================================
+  rendered: 0.87s @ 48000 Hz, peak -0.45 dBFS, RMS -20.71 dBFS
+  loudness (info only, no registered tolerance): integrated -18.50 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.12s: -12.4 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (9 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 9 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 9 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.003 cents).
+  [OK    ] render.ran: Score rendered successfully to Impact_Punch_OneShot_C4.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.0584819, gain=16.2443, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (361fc481b4f8...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 361fc481b4f814e3...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/forest/forest_action_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/forest/forest_ambient_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\forest\forest_ambient_001.score.json
+==============================================================================
+  rendered: 10.62s @ 48000 Hz, peak -0.45 dBFS, RMS -24.40 dBFS
+  loudness (info only, no registered tolerance): integrated -20.70 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   4.80s: -21.0 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 6 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 6 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=6, modal=6, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 6 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (6 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (15 partials checked across 6 events).
+  [OK    ] modes.frequency_range: All 15 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 15 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 6 modal events (max observed: 0.001 cents).
+  [OK    ] render.ran: Score rendered successfully to Ambience_Soft_OneShot_G5.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.000270705, gain=3509.36, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (298707f157ba...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 298707f157bada55...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/forest/forest_ambient_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/forest/forest_loop_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\forest\forest_loop_001.score.json
+==============================================================================
+  rendered: 16.69s @ 48000 Hz, peak -0.45 dBFS, RMS -24.74 dBFS
+  loudness (info only, no registered tolerance): integrated -22.93 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-  12.05s: -23.3 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 16 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 16 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=16, modal=16, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 16 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (16 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (42 partials checked across 16 events).
+  [OK    ] modes.frequency_range: All 42 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 42 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 16 modal events (max observed: 0.001 cents).
+  [OK    ] render.ran: Score rendered successfully to Ambience_Soft_Loop_G5.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.000523163, gain=1815.88, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (8df25c1cda04...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 8df25c1cda04ff16...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/forest/forest_loop_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/forest/forest_notify_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\forest\forest_notify_001.score.json
+==============================================================================
+  rendered: 2.04s @ 48000 Hz, peak -0.45 dBFS, RMS -22.10 dBFS
+  loudness (info only, no registered tolerance): integrated -17.16 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.62s: -16.9 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (4 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 4 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 4 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 2 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Bright_OneShot_B6.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.0283202, gain=33.545, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (07c53c35e6dd...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 07c53c35e6dd6c6c...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/forest/forest_notify_001.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/forest/forest_notify_var01.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\forest\forest_notify_var01.score.json
+==============================================================================
+  rendered: 1.43s @ 48000 Hz, peak -0.45 dBFS, RMS -21.18 dBFS
+  loudness (info only, no registered tolerance): integrated -15.79 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.46s: -16.2 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 3 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 3 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=3, modal=3, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 3 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (3 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (5 partials checked across 3 events).
+  [OK    ] modes.frequency_range: All 5 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 5 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 3 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Bright_OneShot_E7.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.0195646, gain=48.5572, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (bc05aceb429a...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 bc05aceb429aa3c2...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/forest/forest_notify_var01.score.json -> PASS (exit=0) -----
+
+===== FILE: scores/library/forest/forest_transition_001.score.json =====
+CLI: build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\library\forest\forest_transition_001.score.json
+==============================================================================
+  rendered: 5.23s @ 48000 Hz, peak -0.45 dBFS, RMS -23.22 dBFS
+  loudness (info only, no registered tolerance): integrated -19.95 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   2.20s: -19.5 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 4 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 4 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=4, modal=4, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 4 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (4 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (12 partials checked across 4 events).
+  [OK    ] modes.frequency_range: All 12 partial frequencies are within (0, 20000] Hz.
+  [OK    ] modes.decay_positive_finite: All 12 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-12.0 cents for all 4 modal events (max observed: 0.001 cents).
+  [OK    ] render.ran: Score rendered successfully to Whoosh_Airy_OneShot_D5.wav.
+  [OK    ] render.pre_normalize_manifest: Pre-normalize manifest (v2): peak=0.000976037, gain=973.324, samples >= 0 dBFS=0; wav_sha256 verified against WAV bytes (67d6135c9076...).
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 67d6135c90767c49...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+----- RESULT: scores/library/forest/forest_transition_001.score.json -> PASS (exit=0) -----
+
+===== SHARD SUMMARY (C_library_1) =====
+scores/library/akashic/akashic_action_001.score.json -> PASS (exit=0)
+scores/library/akashic/akashic_ambient_001.score.json -> PASS (exit=0)
+scores/library/akashic/akashic_loop_001.score.json -> PASS (exit=0)
+scores/library/akashic/akashic_notify_001.score.json -> PASS (exit=0)
+scores/library/akashic/akashic_opening_bell_001.score.json -> PASS (exit=0)
+scores/library/akashic/akashic_transition_001.score.json -> PASS (exit=0)
+scores/library/akashic/akashic_transition_var01.score.json -> PASS (exit=0)
+scores/library/akashic/akashic_ui_001.score.json -> PASS (exit=0)
+scores/library/clockwork/clockwork_action_001.score.json -> PASS (exit=0)
+scores/library/clockwork/clockwork_ambient_001.score.json -> PASS (exit=0)
+scores/library/clockwork/clockwork_loop_001.score.json -> PASS (exit=0)
+scores/library/clockwork/clockwork_notify_001.score.json -> PASS (exit=0)
+scores/library/clockwork/clockwork_notify_var01.score.json -> PASS (exit=0)
+scores/library/clockwork/clockwork_transition_001.score.json -> PASS (exit=0)
+scores/library/clockwork/clockwork_ui_001.score.json -> PASS (exit=0)
+scores/library/forest/forest_action_001.score.json -> PASS (exit=0)
+scores/library/forest/forest_ambient_001.score.json -> PASS (exit=0)
+scores/library/forest/forest_loop_001.score.json -> PASS (exit=0)
+scores/library/forest/forest_notify_001.score.json -> PASS (exit=0)
+scores/library/forest/forest_notify_var01.score.json -> PASS (exit=0)
+scores/library/forest/forest_transition_001.score.json -> PASS (exit=0)
+TOTAL: 21  PASS: 21  FAIL: 0

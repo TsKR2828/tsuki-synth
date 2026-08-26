@@ -1,0 +1,37 @@
+TsukiSynth — Proprietary License (All Rights Reserved)
+
+Copyright (c) 2026 TsKR2828 (月月). All rights reserved.
+
+This software and its source code, documentation, physics models, material
+databases, scores, and all associated assets (the "Software") are the
+exclusive property of the copyright holder.
+
+No permission is granted to any person to use, copy, modify, merge, publish,
+distribute, sublicense, or sell copies of the Software, in whole or in part,
+for any purpose, commercial or non-commercial, without prior written
+permission from the copyright holder.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+Third-party components:
+- JUCE 8 (submodule, libs/JUCE): licensed separately under the JUCE 8
+  license terms. This project currently qualifies for the JUCE Starter tier
+  (free; revenue below USD 20,000; closed-source commercial distribution
+  permitted). Before any public release, review the JUCE 8 EULA attribution
+  requirements.
+- VST3 SDK (bundled within JUCE 8): MIT licensed.
+- "VST" is a trademark of Steinberg Media Technologies GmbH.
+
+────────────────────────────────────────────────────────────
+
+中文摘要（非正式，以上方英文條款為準）：
+
+本專案版權為 TsKR2828（月月）所有，保留一切權利（含商業權利）。
+未經書面同意，任何人不得使用、複製、修改、散布或販售本軟體的
+任何部分。第三方元件（JUCE 8 / VST3 SDK）依其各自授權條款處理；
+正式發行前需複查 JUCE 8 EULA 的署名條款（TODO A7 註記）。

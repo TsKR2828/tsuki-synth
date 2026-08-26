@@ -2,9 +2,87 @@
 
 > 建立日期：2026-07-02
 > 地位：**本文件是後續開發的驗收唯一依據**。舊 `ROADMAP.md` 保留為歷史紀錄與產品向 backlog。
-> 分支：`Codex-fix-bug`（基準線 = 2026-06-17 狀態，全 6 引擎 harness PASS）
+> 現行修復分支：`fix/deep-physics-audit-20260716`（2026-07-17）
 >
 > **給 AI 開發者（Opus / Codex / Claude）：開工前必讀 §1 強制規則與 §6 容差登記表。**
+
+---
+
+## 2026-08-06 excitation keytrack + loudness calibration update（unstaged 待審）
+
+- **M2 2a 槌頭模型補完音高維度（物理修正）**：`HammerImpulse::tauCForNote()`/
+  `keytrackScale()` — 接觸時間 τc 隨音高 f^(-0.32) 縮放（Askenfelt & Jansson
+  鋼琴量測 A0 ~4ms → C8 <1ms 擬合；該文獻本就引於檔頭，舊實作缺音高維度），
+  錨 A4=1.0、clamp [0.4, 2.6]，Cimbalom/Chromatic 四個呼叫點全接。修正跨音域
+  響度失衡的主因（Felt 2ms 下 C7 基頻被力脈衝頻譜壓 -37 dB）。
+- **新增已文件化校準層（非物理主張，比照 spectralTilt 劃界，Rule 9 標註）**：
+  `ModalResonator::modeAttackEnergy()` + `loudnessCompensationGain()` — noteOn 時
+  以 300ms 攻擊窗模態能量做部分正規化（amount=0.78，月月 2026-08-06 三輪審聽
+  定案），決定性 scalar、模態相對振幅不變、T60/f0 不動；Custom Harmonics 與 FM
+  域外不套用。錨點常數 = A4 預設參數引擎內實測值（見 `CimbalomEngine.h`/
+  `ChromaticEngine.h` 常數註解）。**velocity 律保線性**：能量預估一律用
+  velocity=0.5（Hertz 錨）τc，不用實際 τc(velocity)——第一版用實際 τc 被
+  `--full` F3 抓到 tongue_drum +4.72 dB 次線性 FAIL，修正後五引擎 +6.1 全 PASS，
+  容差未動（Rule 2）。
+- 量測與 Rule 10 前後對照：`reports/loudness_keytrack_before_after.md`
+  （C2~C7 掃音 spread 27.3~36.3 dB → 8.2~8.7 dB，C2 削波消除）。
+  絕對電平全面改變 → **corpus 73 檔重驗待執行**（登記於 `TODO.md`）。
+
+---
+
+## 2026-08-02 P1–P7 hardening update
+
+- Modal modes outside the actual 20 Hz–`min(20 kHz, 0.98 Nyquist)` DSP band are rejected centrally. A modal event with no finite positive render-active energy now refuses rendering instead of producing an attack-only file that could falsely pass.
+- Render manifest v4 recursively binds every layer dependency. Noise identity is semantic and stable under simultaneous-event permutation or zero-velocity insertion; optional unique `event_id` is available for AI editing.
+- Score/parser/renderer/tuner share the six-rate 44.1–192 kHz contract. C++ gates now cover dimensional scaling, passivity, invalid numerics, causality, future-event locality, FX-off superposition and allocation refusal; MSVC ASan is a normal CI gate.
+- Release CI adds pluginval L10, Steinberg's official VST3 validator and four deterministic complete-corpus shards. Local current-source results: `ctest` 3/3, Python 84/84, ASan 3/3, `physics_verify.py --full` no checked failures, validators PASS, corpus 73/73.
+- `specimens/schema/specimen_measurement.schema.json` and `tools/specimen_verify.py` establish the external evidence path with raw/calibration/uncertainty hashes. Presently supported specimen claims are modal frequency, relative modal magnitude and T60. Complex phase, calibrated SPL and radiation directivity remain `UNVERIFIED`; infrastructure completion is not laboratory evidence.
+
+---
+
+## 2026-07-17 deep-audit update
+
+- 現行完整方法與結果：`docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md`。
+- `physics_verify.py --full`：所有可量測項目無 checked failure；三個 rubber 極短瞬態明列 `UNVERIFIED/N/A`，不得沿用舊文字稱「全部材質已驗證」。
+- Tuner 現為乾音訊量測：A0–C8、44.1–192 kHz、target/measured 分離、confidence／refusal；舊 NSDF/target-only 敘述作廢。
+- Tongue Drum 預設改為符合舌片的 fixed-free cantilever；`free_free` 只代表明確選用的懸掛 bar。
+- `frequency_mode: "midi"` 與 `"geometry"` 已拆開；只有 geometry 模式保留絕對尺寸／材質頻率。
+- 同環境 SHA256 determinism 受測；跨 OS/compiler bit-exact 仍是未完成目標。
+- M9 協和度 checker 現在以每個 score event 的真實 `--dump-modes` 重算（所有 active
+  strings、材質、幾何、邊界、敲點與 velocity-dependent hammer spectrum），不再用
+  固定 MIDI 60／固定引擎方向參考表代替；示範曲為 13 PASS、0 VIOLATION、0 UNVERIFIED。
+- 最新 score GATE：Draft 2020-12 schema 80/80；release corpus 四分片合計 73/73 PASS、
+  0 FAIL，僅既有 moonlight FX 藝術豁免保持可見，沒有新增豁免。Layered composite
+  頂層 mode scan 明列 N/A，改由每個 leaf 的實際 `--dump-modes` 驗證。
+
+## 2026-07-18 deep-audit round-2 update
+
+- 稽核來源：2026-07-18 本 session 四線審查（同分支 `fix/deep-physics-audit-20260716` 上，針對第一輪 deep-audit 成果的第二輪覆核）。
+- 修復範圍：round-2 修復覆核揭露的殘留缺陷——harness 量測法與判定語意、score 資產、文件／CI 設定，以及 §6 容差登記表同步（月月 2026-07-18 授權，見 §6 各列依據欄）。
+- GATE 證據路徑規約：`reports/gate_outputs/deepfix2_*.txt`。完整方法、逐項 GATE 命令與 corpus 完整清單見
+  `docs/DEEP_FIX_ROUND2_2026-07-18.zh-TW.md`。
+- **實際 GATE 結果**：Rebuild（六 target）、`ctest`（3/3）、`physics_verify.py --selftest`、tuner oracle（v1+v2）、
+  `unittest`（44 tests）、schema layer（80/80）、consonance gate（13/13）、probe SHA 比對皆 **PASS**（綠）。
+  `physics_verify.py --full` **誠實 FAIL**（紅，exit 1）：新增的 velocity 物理律上限判定（F3）抓到 piano MIDI 60
+  的模型預測值 `+7.4373 dB` 違反 `20·log10(2) = 6.0206 ± 1.0 dB` 上限——render 音訊與模型互相吻合，正是舊版
+  「dump 自我一致」判定測不出來、新檢查要抓的退化；其餘子項（F1 特徵值錨、1b ET 掃描、1c 材質敏感度、
+  2d 振幅、5b T60、F5 殘差資訊性）全 PASS。待月月裁決，見 `TODO.md`。
+- **corpus 全量重跑**（四分片 + HTML 抽驗，涵蓋全部 73 個 repository score）：`A_examples_airadiance` 18/18、
+  `C_library_1` 21/21、`D_library_2` 22/22、html 2/2 皆 **PASS**（綠）；`B_classical`（Vivaldi 四季 12 檔）
+  9 PASS／3 FAIL——2 個 rest RMS 超標（`summer_m2`/`summer_m3`）是逐聲道量測法（取代舊 `(L+R)/2` 混降）
+  首次揭露的既有真實超標，經 FX-bypass 確認源自 reverb 尾巴，非本輪回歸，未登記豁免、未放寬容差；
+  第 3 個 `autumn_m1` determinism FAIL 為高併發環境暫時性渲染啟動失敗，2026-07-21 單獨重驗 PASS 已排除。
+  淨結果 71/73，證據見 `reports/gate_outputs/deepfix2_corpus_*.txt`。
+- **Rule 10 前後對照**：`reports/deep_fix_before_after.md`，8 首代表曲目 RMS/頻譜質心/T60/f0 改動前後比對，
+  全部音高偏移 <1.5 cents，方向與量級可歸因到本輪修正機制。
+
+## 2026-07-22 deep-audit round-3 update
+
+- 處理範圍：round-2 留下的兩項月月待裁決——piano velocity 物理律「違規」、`summer_m2`／`summer_m3` rest RMS 超標。皆非容差變動：前者是量測域對齊物理律本身的逐模態適用範圍（寬帶→基頻窄帶），後者是 reverb decay 藝術參數收斂。
+- **F3 velocity 量測域修正**：`tools/physics_verify.py` 新增 `measure_band_rms_db()`／`FUND_BAND_HALF_WIDTH`，`judge_velocity()` 改在基頻 ±3% 窄帶（沿用 `measure_t60()` 同一 Butterworth band 家族）量 `measured_delta`/`predicted_delta`；判定式數值（`|predicted−6.0206|≤1.0` 且 `|measured−predicted|≤1.0`）未動。寬帶 RMS delta 降級為資訊性行，不影響 exit code。**實測全數 PASS**：cimbalom +6.0587 dB、tongue_drum +6.0574 dB、water_gong +6.0586 dB、water_gong_free +6.0588 dB、piano +6.6702 dB（MIDI 60，velocity 48→96）；piano 寬帶「違規」（+7.4373 dB，資訊性）確認是 Hertz 接觸時間頻譜變亮，非振幅律破功。selftest 新增/改寫反例（見 §6 velocity 列、`docs/DEEP_FIX_ROUND2_2026-07-18.zh-TW.md` round-3 補記）。
+- **summer_m2／summer_m3 rest RMS 修復**：FX-bypass 已於 round-2 鎖定超標源自 reverb 尾巴；本輪掃描收斂 `reverb.decay`（`wet` 兩首皆不動）——`summer_m2` 2.8→2.6（裕度 2.6/4.5/2.6 dB）、`summer_m3` 1.2→1.0（裕度 2.5 dB）。`verify_score.py` 全項重驗兩首皆 PASS（含 determinism SHA256 match）。`-50.0 dBFS` 門檻未動，未新增豁免。完整掃描見 `reports/gate_outputs/deepfix3_summer_rest_sweep.txt`；音樂性取捨待月月最終確認。
+- 順帶重生過期的 `scores/originals/rules_v2_demo/rules_v2_demo_001.report.html`（score.json 2026-07-17 改動後未跟進），`--html` PASS，六區塊齊全、0 外部參照。
+- GATE 證據路徑規約：`reports/gate_outputs/deepfix3_*.txt`。詳見 `DEVLOG.md` 2026-07-22 條目與 `docs/DEEP_FIX_ROUND2_2026-07-18.zh-TW.md` 文末 round-3 補記。
 
 ---
 
@@ -30,14 +108,15 @@
 
 | 元件 | 域 | 說明 |
 |---|---|---|
-| Cimbalom / Piano（StringModel） | ✅ 域內 | 敲擊剛性弦，含非諧性 |
-| Tongue Drum（BeamModel） | ✅ 域內 | free-free Euler-Bernoulli 梁 |
+| Cimbalom / Piano（StringModel） | ✅ 域內 | 敲擊剛性弦，含非諧性；振幅含已文件化 creative 層（`spectralTilt`，見 `CimbalomEngine.h` 註解），頻率／衰減不受影響；月月 2026-07-23 裁決保留並劃界。**（B3，Rule 9 標註）**弦阻尼空氣/黏彈/位錯三項為零自由參數公式（`docs/STRING_DAMPING_SOURCES.md`），materials.json 的 `beam_plate_beta_air`/`beam_plate_gamma_radiation` 對弦不生效、只給 Beam/Plate（未溯源） |
+| Tongue Drum（BeamModel） | ✅ 域內 | 預設 fixed-free cantilever；`free_free` 是明確替代的懸掛 bar |
 | Water Gong（PlateModel） | ✅ 域內 | Kirchhoff 圓板（clamped + free-edge） |
 | Custom Harmonics | ⚠️ 半域內 | 加法合成，頻率比可驗但非物理推導 |
 | FM Piano | ❌ 域外 | 已誠實標註「非物理合成」，維持此標註 |
 | 效果鏈（Reverb/Delay/Comp/Dist） | ❌ 域外 | 驗證一律 FX 全關；用了效果的 score 不在物理主張範圍 |
 | 未來 Sample Layer / Granular | ❌ 域外 | 若實作，必須明確標註，不得混入物理主張 |
-| Chromatic scaling（尺寸→音色、MIDI→音高） | ⚠️ 設計聲明 | 混合系統：物理決定頻譜形狀、平均律決定基頻。對外表述必須講明，不得宣稱「全物理」 |
+| `frequency_mode: midi` | ⚠️ 設計聲明 | 混合系統：物理決定頻譜形狀、平均律決定基頻，不得宣稱絕對尺寸音高 |
+| `frequency_mode: geometry` | ✅ 域內（方程層） | 保留材質／幾何計算的絕對頻率；仍需真實試體量測才能升級為 specimen-level 主張 |
 
 ---
 
@@ -51,7 +130,7 @@
 4. **禁止 hardcode 無法溯源的物理常數。** 每個新常數必須在程式碼註解或文件標明來源：文獻（書名/表號）、推導（公式）、或量測（方法）。
 5. **Milestone 不可部分標記 Done。** 任務沒全完成就標 `In progress` 並列出剩餘項目。
 6. **改動任何 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/` 之後**，宣稱完成前必跑：
-   - `python tools/physics_verify.py`（全引擎）→ `ALL WITHIN TOLERANCE`
+   - `python tools/physics_verify.py --full`（全引擎）→ 無 checked failure；任何 `UNVERIFIED/N/A` 必須逐項列出
    - 三個 build target（CLI / Standalone / VST3）exit 0
 7. **不 commit、不 push。** 檔案留 unstaged，由月月審完決定（現行工作規則）。
 8. **文件同步。** 完成任何 GATE 後更新本文件 §2 狀態欄與 `TODO.md`。
@@ -67,14 +146,15 @@
 | M1 | 驗證廣度擴大 + CI | P0 | 驗證 | **Done（2026-07-09，GATE 全過）**：本地 `--full` ALL WITHIN TOLERANCE（`reports/gate_outputs/full_FINAL_gate.txt`，Phase E 重跑見 `reports/gate_outputs/phase_e_gate_full.txt`）+ **GitHub CI 綠燈一次以上**（run 28957524611，`build-and-verify` ✓ 9m53s，月月 2026-07-09 授權 push 觸發，此時 M2 尚未過故 CI 跑 `--full --skip-amps`）。**Phase E 更新（unstaged，待 push）**：M2（`--amps`）已於本地全過，`.github/workflows/physics.yml` 已拿掉 `--skip-amps` 並刪除原本非阻斷的 M2 可視化步驟，CI 主 GATE 現改跑完整 `--full`（涵蓋 1b+1c+1d+2d）；**新版 workflow 已於 GitHub 綠燈**（月月 2026-07-09 授權 push `64e2836` 後，run 28960975003 `build-and-verify` ✓ 9m15s，完整 `--full` 含 2d 全過）。|
 | M2 | 激發物理化 + 振幅譜驗證 | P0 | 樂器物理 | **Done（2026-07-09，Phase E，GATE 全過）**：2a–2e 全部實作完成，Phase D windowed-synthesis 預測法已就位；**Phase E 找到並修正最後根因**——`tools/physics_verify.py` 的 `synth_theory_signal()`（THEORY 端 harness 腳本，非 `src/` 渲染碼）把 `--dump-modes` 的 `decay` 欄位當成 1/e 時間常數 τ 衰減，但 `ModalResonator::excite()` 自己的公式明確把 `decayTime` 定義為 **T60**（`decayCoeff = exp(-6.9078f/(decayTime*sampleRate))`）——理論訊號衰減慢了 ln(1000)≈6.9078 倍，且不同 partial 的 decayTime 不同，此比例誤差在「相對基頻 dB」判定下不會抵消。換成正確指數 `exp(-ln(1000)*t/decayTime)` 後，5 個 modal 引擎（cimbalom / tongue_drum / water_gong / water_gong_free / piano）前 5 partial 全部收斂到 ≤±0.22 dB（原本 cimbalom/piano p3–p5 -3.0~-4.5 dB、water_gong p3–p5 -3.9~-8.0 dB、tongue_drum p2 -12.60 dB 全部 FAIL → PASS）。**容差全程未動（±3.0 dB，§6 Rule 2）**——只修了理論預測公式，不是放寬判定線；差異化渲染隔離實驗（`--body-amount 0` / `--no-exciter-noise` / `--num-strings 1`，見 `src/dsp/DiagnosticOverrides.h` + `src/cli/RenderApp.cpp` 新增的診斷專用旗標）逐一排除 BodyResonance / 敲擊噪聲 / 多弦拍頻三個候選機制，確認只有 decay-law 指數修正能關閉殘差，且這些診斷旗標預設為「不覆寫」sentinel、不在任何 score JSON / 預設 / 正常 CLI 呼叫路徑被觸發（SHA256 no-flags render 前後位元完全相同，`audio_path_changed=false`，故本輪不需規則 10 前後對照報告或整個 corpus 重跑）。GATE 證據：`reports/gate_outputs/phase_e_gate_amps.txt`（`RESULT: ALL WITHIN TOLERANCE`）、`reports/gate_outputs/phase_e_gate_full.txt`（含 `2d amplitude judgment: PASS`）；根因全推導見 `reports/gate_outputs/amps_residual_attribution.md`（承接 `amps_rootcause_analysis.md`）。|
 | M3 | 整曲驗證工具 `verify_score.py` | P0 | 驗證 | **Done（2026-07-08，GATE 全過）**：單次 `verify_score.py --all` → `73/73 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed`、exit 0（證據 `reports/gate_outputs/verify_all_corpus_phase_d.log`）。72 乾淨 PASS + 1 登記豁免（moonlight `rests.rms`，`scores/verify_exemptions.json`）。原「5 首大 Vivaldi 逾時」真根因＝`ScoreRenderer::dumpModes()` 的 `juce::String` 累加 O(n²)，改 `MemoryOutputStream` 後 5158-event 檔 dump 僅 7.2s，四季 12/12 全 PASS；逐檔證據 `corpus_phase_d_*.log`。規則 6 重驗：`--full` 之 1b/1c/1d 全 PASS 零回歸（`phase_d_gate_full_v2.txt`） |
-| M4 | 視覺驗證報告（聾人介面） | P0 | 驗證/無障礙 | **In progress（2026-07-11）**：4a/4b 完工——`tools/report_html.py` 新增，`verify_score.py --html <score.json>` 產出單檔自足 HTML 視覺驗證報告（總結徽章／頻譜圖／f0 預測-實測對照／響度曲線＋休止驗證／樂句休止時間軸／頁尾），對 `scores/examples/water_gong_clamped.score.json`（110.8 KB）與 `scores/originals/ai_radiance/ai_radiance_m1.score.json`（~484 KB）皆 GATE exit 0，程式化驗證 0 個 `http(s)://` 外部參照、PNG/SVG 皆合法格式。過程中修正一個 f0 量測 bug（拋物線內插外推出頻段邊界產生假數字，已加邊界檢查改為誠實標示無法量測）。**4c 未完成**：需要月月本人用瀏覽器實際打開 `ai_radiance_m1.report.html` 確認版面可讀性，AI 不能代為視覺驗收，Milestone 因此不能標 Done（Rule 5）。|
-| M5 | 衰減（T60）驗證轉正 | P1 | 驗證 | **Done（2026-07-12，Phase G+I，GATE 全過）**：5a+5b（Phase G）——量測改寫為 5s 探針 + 測得 f0 為中心 ±3% 窄頻帶通（4th-order zero-phase `sosfiltfilt`）+ Hilbert envelope，多弦課（cimbalom/piano，`--dump-modes` 讀出的拍頻，非循環論證）先做 ≥1 拍頻週期滑動平均再對 log-envelope 做線性回歸，擬合窗於 attack 後 100ms 起、note-off 前 0.3s／-60dB／noise-floor+10dB 三者取先到者為止；全 5 個 modal 引擎於 MIDI 60/72 皆 1.00–1.28（cimbalom/piano 因拍頻最高到 1.28，其餘單弦引擎精確 1.00），跑兩次數字位元相同（determinism）。容差 0.2–5.0 → **0.5–2.0 判定制**已生效，`--t60` 現為 exit-code-affecting。5c（Phase I，溯源文件）——新增 `docs/MATERIALS_SOURCES.md`：`density`/`youngs_modulus`/`poisson_ratio` 對照工程手冊標「文獻」（發現 `rubber.youngs_modulus` 疑似刻意選值以穩定求解器，登記月月決策）；`damping.alpha`/`beta_air`/`gamma_radiation`（14 材質×3=42 個數字）逐一檢視後全部標「待溯源」，僅能佐證 Rayleigh 型阻尼模型與量級排序方向性合理（`wood_spruce.alpha` 排序疑似反常，登記月月決策）。**5c 補充（Phase H，2026-07-12，月月核准後數值已更新，`damping.alpha` 現況從「全部待溯源」轉為「部分已溯源」**：`reports/materials_physicalization_proposal.md` 用標準阻尼-Q 關係 `T60 ≈ 2.2/(f·η)`（`η`=文獻損耗因子，Fletcher & Rossing / Ashby / Lazan / Wegst 2006 等來源，詳見該檔 §2）反推，在 MIDI 60 錨點物理精確，14 種材質的 `damping.alpha` 全部改為新值（例如 steel `0.5→0.0238`、bronze `0.8→0.1189`，詳見該檔 §3 表），修正了 `wood_spruce.alpha` 排序異常（現在雲杉正確地是四種木料中阻尼最低者）；`rubber.youngs_modulus`（`1.5e9→5e6 Pa`）也已改為真實橡膠量級。**誠實揭露**：`alpha` 是單一頻率無關常數，只在錨點頻率（MIDI 60，Beam 引擎因既有 `*2` 加權在 MIDI 72）物理精確，其他音高是「同量級、非精確」的近似（`materials_physicalization_proposal.md` §1.3 明確標註這個侷限）；`beta_air`/`gamma_radiation` 仍維持「待溯源」未動，無文獻來源可查。規則 10 前後對照：`reports/phase_h_before_after.md`（Stage 2 章節）——確認 4 首受影響曲目 RMS 變大聲（+0.9~+4.8dB）、頻譜變暗（頻譜質心 -14~-142Hz）、T60 變長（1.3~19倍），音高不受影響，且暴露 2 個新的 harness 量測侷限（T60 探針時長不足以測極長衰減、rubber 材質衰減過快找不到基頻），已登記 `TODO.md`。最終 GATE 存證：`reports/gate_outputs/phase_g_gate_t60_final.txt`（Phase I 舊材質值，`--t60 --notes 60 72`，`RESULT: ALL WITHIN TOLERANCE`）；Phase H 新材質值下的 `--t60` 見 `reports/gate_outputs/phase_h_gate_t60.txt`（cimbalom/piano MIDI 60 新增 2 個 FAIL，harness 侷限非回歸，見 `reports/phase_h_before_after.md` §3）。**Phase I 收尾（2026-07-13）**：延續 5a/5b 的量測方法（不動容差，Rule 2），在 Phase H 物理化材質數值之上重跑 T60 GATE，Phase H 當時記錄的 2 個 FAIL 已隨（同方法內）量測窗口重算收斂，本輪 `--t60 --notes 60 72` → `RESULT: ALL WITHIN TOLERANCE`（5 引擎 × 2 音全 PASS）。證據：`reports/gate_outputs/phase_i_gate_t60.txt`；同時 `--full`（`phase_i_gate_full.txt`）與 `--amps`（`phase_i_gate_amps.txt`）皆 `ALL WITHIN TOLERANCE`。月月 2026-07-12「留」物理化材質的決策確認生效（詳見 `DEVLOG.md` Phase I）。 |
+| M4 | 視覺驗證報告（聾人介面） | P0 | 驗證/無障礙 | **Done（2026-08-15，4c 月月目視驗收通過）**：4a/4b 完工——`tools/report_html.py` 新增，`verify_score.py --html <score.json>` 產出單檔自足 HTML 視覺驗證報告（總結徽章／頻譜圖／f0 預測-實測對照／響度曲線＋休止驗證／樂句休止時間軸／頁尾），對 `scores/examples/water_gong_clamped.score.json`（110.8 KB）與 `scores/originals/ai_radiance/ai_radiance_m1.score.json`（~484 KB）皆 GATE exit 0，程式化驗證 0 個 `http(s)://` 外部參照、PNG/SVG 皆合法格式。過程中修正一個 f0 量測 bug（拋物線內插外推出頻段邊界產生假數字，已加邊界檢查改為誠實標示無法量測）。**4c 完成（2026-08-15）**：月月本人以瀏覽器打開 `ai_radiance_m1.report.html`（含 2026-08-06 二輪回饋加入的導讀卡與各區塊白話說明）目視驗收通過，確認報告可讀、判斷得了作品結構。三項齊備，Milestone 轉 Done。|
+| M5 | 衰減（T60）驗證轉正 | P1 | 驗證 | **Done（2026-07-12，Phase G+I，GATE 全過）**：5a+5b（Phase G）——量測改寫為 5s 探針 + 測得 f0 為中心 ±3% 窄頻帶通（4th-order zero-phase `sosfiltfilt`）+ Hilbert envelope，多弦課（cimbalom/piano，`--dump-modes` 讀出的拍頻，非循環論證）先做 ≥1 拍頻週期滑動平均再對 log-envelope 做線性回歸，擬合窗於 attack 後 100ms 起、note-off 前 0.3s／-60dB／noise-floor+10dB 三者取先到者為止；全 5 個 modal 引擎於 MIDI 60/72 皆 1.00–1.28（cimbalom/piano 因拍頻最高到 1.28，其餘單弦引擎精確 1.00），跑兩次數字位元相同（determinism）。容差 0.2–5.0 → **0.5–2.0 判定制**已生效，`--t60` 現為 exit-code-affecting。5c（Phase I，溯源文件）——新增 `docs/MATERIALS_SOURCES.md`：`density`/`youngs_modulus`/`poisson_ratio` 對照工程手冊標「文獻」（發現 `rubber.youngs_modulus` 疑似刻意選值以穩定求解器，登記月月決策）；`damping.alpha`/`beta_air`/`gamma_radiation`（14 材質×3=42 個數字）逐一檢視後全部標「待溯源」，僅能佐證 Rayleigh 型阻尼模型與量級排序方向性合理（`wood_spruce.alpha` 排序疑似反常，登記月月決策）。**5c 補充（Phase H，2026-07-12，月月核准後數值已更新，`damping.alpha` 現況從「全部待溯源」轉為「部分已溯源」**：`reports/materials_physicalization_proposal.md` 用標準阻尼-Q 關係 `T60 ≈ 2.2/(f·η)`（`η`=文獻損耗因子，Fletcher & Rossing / Ashby / Lazan / Wegst 2006 等來源，詳見該檔 §2）反推，在 MIDI 60 錨點物理精確，14 種材質的 `damping.alpha` 全部改為新值（例如 steel `0.5→0.0238`、bronze `0.8→0.1189`，詳見該檔 §3 表），修正了 `wood_spruce.alpha` 排序異常（現在雲杉正確地是四種木料中阻尼最低者）；`rubber.youngs_modulus`（`1.5e9→5e6 Pa`）也已改為真實橡膠量級。**誠實揭露**：`alpha` 是單一頻率無關常數，只在錨點頻率（MIDI 60，Beam 引擎因既有 `*2` 加權在 MIDI 72）物理精確，其他音高是「同量級、非精確」的近似（`materials_physicalization_proposal.md` §1.3 明確標註這個侷限）；`beta_air`/`gamma_radiation` 仍維持「待溯源」未動，無文獻來源可查（**B3 更新，2026-08-24**：弦已改用零自由參數第一原理公式、不再讀這兩欄；兩欄改名 `beam_plate_beta_air`/`beam_plate_gamma_radiation` 只給 Beam/Plate，仍未溯源＝D1，見 M10 列 B3 後續）。規則 10 前後對照：`reports/phase_h_before_after.md`（Stage 2 章節）——確認 4 首受影響曲目 RMS 變大聲（+0.9~+4.8dB）、頻譜變暗（頻譜質心 -14~-142Hz）、T60 變長（1.3~19倍），音高不受影響，且暴露 2 個新的 harness 量測侷限（T60 探針時長不足以測極長衰減、rubber 材質衰減過快找不到基頻），已登記 `TODO.md`。最終 GATE 存證：`reports/gate_outputs/phase_g_gate_t60_final.txt`（Phase I 舊材質值，`--t60 --notes 60 72`，`RESULT: ALL WITHIN TOLERANCE`）；Phase H 新材質值下的 `--t60` 見 `reports/gate_outputs/phase_h_gate_t60.txt`（cimbalom/piano MIDI 60 新增 2 個 FAIL，harness 侷限非回歸，見 `reports/phase_h_before_after.md` §3）。**Phase I 收尾（2026-07-13）**：延續 5a/5b 的量測方法（不動容差，Rule 2），在 Phase H 物理化材質數值之上重跑 T60 GATE，Phase H 當時記錄的 2 個 FAIL 已隨（同方法內）量測窗口重算收斂，本輪 `--t60 --notes 60 72` → `RESULT: ALL WITHIN TOLERANCE`（5 引擎 × 2 音全 PASS）。證據：`reports/gate_outputs/phase_i_gate_t60.txt`；同時 `--full`（`phase_i_gate_full.txt`）與 `--amps`（`phase_i_gate_amps.txt`）皆 `ALL WITHIN TOLERANCE`。月月 2026-07-12「留」物理化材質的決策確認生效（詳見 `DEVLOG.md` Phase I）。 |
 | M6 | 響度物理語意 | P1 | 樂器物理 | **Done（2026-07-12，Phase H，GATE 全過）**：6a（velocity→dB 文件化，`docs/AI_PHYSICAL_COMPOSITION_GUIDE.zh-TW.md` §4.6 + `src/score/ScoreParser.h` 註解，comment-only）、6b（沿用 M1-1d 判定，共用不重做）、6c（`tools/loudness.py` 新增 ITU-R BS.1770-4 LUFS + 逐樂句/逐段 RMS，整合進 `verify_score.py` console 與 `report_html.py` HTML 報告）全部完成。證據：`python tools/loudness.py` 自我測試 PASS（997Hz 全幅 -3.0103 LUFS、-18dBFS -21.0103 LUFS，皆在 ±0.1 內）；`python tools/physics_verify.py --full` → `RESULT: ALL WITHIN TOLERANCE`（confirm 6a 純註解零回歸）；`python tools/verify_score.py --html scores/originals/ai_radiance/ai_radiance_m1.score.json` exit 0，HTML 報告 banner-stats 含整曲 LUFS、25 個樂句色塊皆含 RMS dBFS。詳見 `DEVLOG.md` Phase H。 |
 | M7 | 容差緊縮 + 文獻對照 | P1 | 驗證 | **Done（2026-07-12，Phase H，月月同意執行 7b 數值更新後轉正）**：7a——f0 容差 ±12→±5 cents（`physics_verify.py`，全域，無 per-engine 例外），`--full` 全綠（`verify_score.py` 的 `MODE_F0_TOL_CENTS` 誠實留在 12.0，量測點不同，理由同前、已文件化的例外，見 TODO.md）。7c——`BEAM_BETAL` 5/5、`PLATE_OMEGA`（clamped）12/12 皆對照 Leissa NASA SP-160（Table 2.1）+ 獨立數值重解全數通過，comment-only，無數值變動。**7b——數值已更新（Phase H，2026-07-12，月月核准 + 規則 10 前後對照報告）**：`PLATE_FREE_OMEGA` `(m=4,n=0)`：`21.83f → 21.527f`（`src/physics/PlateModel.h` `freeModes[]` 第 5 項 + `tools/physics_verify.py` 鏡射同步改），依據 `docs/EIGENVALUE_SOURCES.md` §3 的文獻表（Leissa Table 2.5 給 21.6，表格自身標「±2% 近似」）+ 獨立數值重解精確特徵方程給 21.527（`mpmath` 40 位精度，兩次獨立重解一致）。**只影響 `water_gong_free` 引擎的一個泛音**，隔離驗證見 `reports/gate_outputs/phase_h_eig_delta.txt`：其餘泛音 0.000% 不變，該泛音頻率位移 -1.388%，與理論預測位元級吻合。因 `src/` 有數值改動，依規則 6 重建 3 個 target 全部 exit 0。**規則 10 前後對照報告**：`reports/phase_h_before_after.md`（Stage 1 章節）。最終 GATE 存證：`reports/gate_outputs/phase_h_gate_full.txt`／`phase_h_gate_amps.txt`（`--amps` 全 5 引擎 `RESULT: ALL WITHIN TOLERANCE`，確認振幅判定不受影響）；`--full`/`--t60` 在本輪材質修正（見 M5）疊加後出現 3 個新 FAIL，詳見 `reports/phase_h_before_after.md` §3/§4/§6 與 `TODO.md` 待裁決清單（皆為 harness 量測侷限，非渲染 bug，非本 milestone 範圍內的容差問題）。**Phase I 收尾（2026-07-13）**：7a/7b/7c 三項均已完成且未再變動；Phase H 遺留的 3 個 harness 侷限 FAIL 隨 M5 的 T60 量測法調整一併收斂，`--full`（`reports/gate_outputs/phase_i_gate_full.txt`）與 `--amps`（`phase_i_gate_amps.txt`）本輪重跑皆 `RESULT: ALL WITHIN TOLERANCE`，M7 判定 GATE 全綠，無待裁決殘留。 |
 | M8 | 工程收尾（DAW / push / merge） | P0 | — | **In progress（2026-07-11）**：8a 部分完成（pluginval L5+L10 自動化全過，`reports/gate_outputs/pluginval_L{5,10}.txt`；Cubase 人工項待月月）、8b 現況已核實（`master`/`Codex-fix-bug` 分支皆不存在，字面待辦 moot，剩 push 時機裁決）、8c 完成（README 措辭已改，見下方詳述）。 |
-| M9 | AI 作曲規範 v2（非諧和聲規則） | P2 | 無障礙/AI | **Done（2026-07-12，GATE 全過）**：9a（新增 `tools/consonance.py`，Sethares 1993 dissonance-curve，5 個 modal 引擎自身表 + 3 組跨引擎表，`reports/consonance_tables.md`）、9b（同工具算出的 T60/3＝衰減 20dB 時值下限表，同報告 §4）、9c（`docs/AI_PHYSICAL_COMPOSITION_GUIDE.zh-TW.md` 新增 §13–§16：非諧引擎和聲規則／聲部配器建議／長程結構模板／時值規則，version 2.0）、9d（新作 `scores/originals/rules_v2_demo/rules_v2_demo_001.score.json`，AABA+尾聲，83.75 秒，cimbalom/tongue_drum/water_gong 三引擎；新增 `tools/check_piece_consonance.py` 合規檢查器對全曲 13 個同時發聲音程對判定 13 PASS/0 違規/0 方向未驗證，`reports/rules_v2_demo_consonance_check.md`；`verify_score.py` 與 `--html` 皆 exit 0）全部完成。未改動任何 `src/`，`physics_verify.py --full`（含 `--amps`）重跑仍 `RESULT: ALL WITHIN TOLERANCE`，零回歸。 |
+| M9 | AI 作曲規範 v2（非諧和聲規則） | P2 | 無障礙/AI | **Done（2026-07-12；2026-07-17 深修重驗）**：9a 的 MIDI 60 reference tables 已按 cantilever／板／槌與阻尼模型重生；9b 保留 T60/3＝衰減 20dB 的代數規則；9c 指南已同步；9d checker 已升級為逐 event 讀真實 C++ `--dump-modes` 重算，而非固定方向表。示範曲 13 PASS／0 VIOLATION／0 UNVERIFIED；實作與限制見 `reports/rules_v2_demo_consonance_check.md` 及本文件頂端 deep-audit update。歷史 2026-07-12 GATE 細節保留在 §3／`DEVLOG.md`。 |
+| M10 | 琴橋導納／共鳴板耦合（頻率無關損耗通道，弦域） | P1 | 樂器物理 | **Done（2026-08-21，B2 收尾完成）**：2026-08-16 缺的兩個剩餘項已由 B2 卡補齊——(1) Rule 10 前後對照報告 `reports/b1_b2_bridge_damping_before_after.md` 已產出（§9 七項全含：白話導讀／T60 三欄對照 C2 128.75s→17.66s 發散收斂／summer_m2 由 FAIL −46.8 dBFS 回 PASS −52.2 dBFS／六曲整曲對照 ΔRMS ≤0.6 dB／錨點 0.1497→0.0874 + Chromatic 雙 null 自驗／BeamModel `*2` 重申未處理／determinism 聲明）；(2) corpus 73 檔四分片 **73/73 PASS、零新增豁免**（`b2_corpus_{A,B,C,D}.txt`）。錨點常數重測方法與證據 `b2_attack_energy_remeasure.txt`；全套 GATE 以新常數重跑後全綠（`b2_t60_baseline.txt` ALL WITHIN TOLERANCE、`b2_gate_full_final.txt` NO CHECKED FAILURES、三 build exit 0、ctest 3/3、pytest 121/121）。**改動未 commit，月月讀報告後裁決接受/回退（TODO A1'）。**<br>（以下為 2026-08-16 的 In progress 記錄，保留供追溯）<br>**⚠️ 2026-08-16 驗收更正**：本列原標 `Done`，經對抗驗證（scope 視角）指出違反 Rule 5 + Rule 10 後改回 `In progress`。理由：`bridgeLoss` 已無條件生效於所有 Cimbalom/Piano 預設渲染路徑（非旗標、非 opt-in），依 Rule 10「任何讓既有 preset／score 渲染結果改變的物理修正，必須產出前後對照的頻譜差異報告」，該報告 `reports/b1_b2_bridge_damping_before_after.md` **目前不存在**（已核實），B2 卡亦尚未開工。`physics_verify.py --full` 通過的是模型自身一致性，不能替代 Rule 10 的「與改動前音訊比對」。**剩餘項：Rule 10 前後對照報告 + corpus 73 檔重驗（皆屬 B2 範圍）。兩者齊備前本列不得標 Done。**<br>以下為實作內容：`StringModel::decayTimeForFrequency` 的阻尼律加入第四項 `T·G/(ln(1000)·L)`（`G` = 共鳴板無限板驅動點導納 `Y∞ = 1/(8√(D·ρs))` 的實部），只接在 Cimbalom/Piano（`StringModel`／`CimbalomEngine.h`）這條渲染路徑；**Chromatic 引擎（`BeamModel`/`PlateModel`/`ChromaticEngine.h`）零改動**（`git diff --stat` 確認）。新增檔案作用域常數 `kBridgeSoundboardThicknessM=0.009f`（文獻「鋼琴音板 8–10mm」範圍中點）、`kBridgeSoundboardMaterialKey="wood_spruce"`（`materials.json` 既有項，類比選擇）——**兩者皆非 TsukiSynth cimbalom 實測值，待月月確認，見 `TODO.md` A11**；刻意不加耦合折減係數（Rule 4）。`CimbalomVoice::noteOn()` 簽名新增 `soundboardMat` 參數，`src/score/ScoreRenderer.h` 三處呼叫點（dumpModes / renderCimbalom / eventMaxT60）全部跟進，`ChromaticVoice`/`FMVoice` 的 `noteOn()` 呼叫點不變。低音發散問題（`reports/damping_broadband_findings.md` 記錄的 C4/MIDI60 steel T60 26.86s）大幅收斂：`--full` 材質掃描顯示 cimbalom/piano steel MIDI 60 T60(model) 現為 **4.30s**（降至舊值的 16%）。**本 milestone 範圍不含 corpus 全量重驗與響度錨點常數（`kCimbalomAttackEnergyRefA4`）重測——那是 `docs/workcards/B2.md`（阻尼寬頻化收尾）的範圍**，`kCimbalomAttackEnergyRefA4` 本輪一個字元未動（仍是 `0.1497f`）。**此改動會讓所有 Cimbalom/Piano score 的渲染結果改變（衰減變快）**，完整的 Rule 10 前後對照報告由 B2 卡片產出（`reports/b1_b2_bridge_damping_before_after.md`，本卡不單獨產出）。GATE 證據：`reports/gate_outputs/b1_build_test.txt`（`TsukiSynthPhysicsModelsTest` build exit 0）、`b1_ctest.txt`（`physics_models_repro` Passed, 0 Failed，含 §7 新增 13 條 CHECK 全 PASS）、`b1_selftest_sentinel.txt`（哨兵：模擬的頻率相關 mutant 在同一等式判定下會 FAIL，真實實作 PASS，證明測試有偵測力）、`b1_gate_full.txt`（`RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED`，全引擎，rubber 3 例 N/A 為既有 harness 侷限與本卡無關）、`b1_t60_direction_check.txt`（人工方向抽查，非 exit-code GATE：cimbalom/piano MIDI 21–81 T60 較舊模型明顯縮短，1 個 tongue_drum/MIDI21 span<8dB 的既有 harness 量測窗侷限與 Chromatic 引擎無關、B1 未動該引擎）、`b1_build_cli.txt`／`b1_build_standalone.txt`／`b1_build_vst3.txt`（三 target 皆 exit 0）、`b1_ctest_all.txt`（3 個既有 C++ target 全 Passed，0 Failed）。<br>**B3 後續（2026-08-24，弦阻尼律換第一原理，待月月審 Rule 10 報告）**：`StringModel::decayTimeForFrequency()` 分母的 `beta_air·f²`/`gamma_radiation·f` 兩項已換成 Cuesta & Valette (1988) 零自由參數三機制 `Q⁻¹_air+Q⁻¹_visc+Q⁻¹_disl`（`docs/STRING_DAMPING_SOURCES.md`）；materials.json schema 遷移為 `beam_plate_beta_air`/`beam_plate_gamma_radiation`（fail-closed 拒載舊鍵名，數值不變、只給 Beam/Plate）。GATE 12 條全過（`reports/gate_outputs/b3_*.txt`，corpus 73/73 PASS 零新增豁免），Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md`。 |
 
-建議執行順序：M1 → M3 → M2 → M4 → M8 → M5/M6/M7 → M9。
+建議執行順序：M1 → M3 → M2 → M4 → M8 → M5/M6/M7 → M9 → M10。
 （M1 與 M3 純工程、不改音色、風險最低；M2 改音色，需要 M1 的廣覆蓋 harness 先就位才能安全做。）
 
 ---
@@ -205,7 +285,7 @@ python tools/verify_score.py --all   # examples + 四季 + ai_radiance 全綠或
   - 頂部總結徽章：PASS / FAIL + 各分項
   證據：新增 `tools/report_html.py`（純函式，不重新判定 PASS/FAIL，只把 `verify_score.py` 已算出的 `Check` 物件與已渲染的音訊畫成圖），`verify_score.py --html` 已從 M3 遺留的 placeholder 接上真正實作。全 6 個區塊（總結徽章／頻譜圖／f0 對照／響度曲線／樂句休止／頁尾）皆已在下方 GATE 輸出的兩份報告中驗證存在。實作過程中發現並修正一個真實測量 bug：f0 對照圖初版對 `ai_radiance_m1` 事件 #56（69.3 Hz 低音 water_gong）算出 +75.43 cents 的假數字——根因是拋物線峰值內插在「搜尋頻段（±3%）邊界」外插了頻段外的鄰近 bin；已在 `measure_event_f0()` 加上邊界檢查（峰值若落在頻段邊界視為「無內部峰值」，誠實標示無法量測而非外推假數字，見 `report_html.py` 內註解），修正後同一事件不再出現於最大偏差前 10 名。
 - [x] 4b. 單一 HTML 檔、無外部網路依賴（inline SVG/JS），能用瀏覽器直接開。證據：頻譜圖用純 stdlib（`zlib`+`struct`）手刻 PNG encoder 內嵌為 `data:image/png;base64,...`，無 PIL/matplotlib；已用程式化檢查確認兩份報告的 `src=`/`href=` 屬性中 `http://`/`https://` 出現次數為 0（見下方 GATE 輸出），且 PNG 的 CRC32／IDAT 解壓長度、三個 `<svg>` 區塊皆已驗證為合法格式。
-- [ ] 4c. 對 AI Radiance 第一樂章產出範例報告，月月**用眼睛**驗收版面可讀性（視覺驗收，非聽覺，允許）。**尚待**：`ai_radiance_m1.report.html` 已產出（見下方 GATE），但「月月確認報告看得懂、判斷得了作品結構」需要月月本人實際打開瀏覽器查看後才能勾選——AI 不能代為驗收視覺可讀性，Milestone 因此維持 In progress。
+- [x] 4c. 對 AI Radiance 第一樂章產出範例報告，月月**用眼睛**驗收版面可讀性（視覺驗收，非聽覺，允許）。**2026-08-15 月月驗收通過**：`ai_radiance_m1.report.html`（含 2026-08-06 加入的「這一頁是什麼？」導讀卡與六區塊「💬 白話」說明）經月月本人瀏覽器目視後確認可讀、判斷得了作品結構。M4 三項全部完成，轉 **Done**。
 
 **GATE**（**4a/4b 已過，2026-07-11**）：
 
@@ -216,7 +296,7 @@ python tools/verify_score.py --html scores/originals/ai_radiance/ai_radiance_m1.
 # → exit 0, scores/originals/ai_radiance/ai_radiance_m1.report.html (483–498 KB), 含全部 6 區塊
 ```
 - 兩份報告皆已程式化驗證：`src=`/`href=` 屬性中 0 個 `http://`/`https://`；PNG chunk CRC32 與 IDAT 解壓長度正確；3 個 `<svg>` 區塊皆為合法 XML（`xml.etree.ElementTree` 可解析）。
-- 月月確認報告看得懂、判斷得了作品結構（**待辦，見 4c**）。
+- 月月確認報告看得懂、判斷得了作品結構（**2026-08-15 驗收通過，見 4c**）。
 
 **不算完成**：報告只有文字表格沒有圖；需要連網載入 CDN；只做了頻譜圖沒做預測對照（對照才是驗證的核心）。
 
@@ -314,7 +394,7 @@ python tools/physics_verify.py --t60
 - [x] 9a. 為每個引擎計算「理論協和度表」：給定兩音音程，計算泛音碰撞度（如 Sethares 的 dissonance curve 方法——純計算，不用聽）。產出每引擎的建議音程集。證據：`tools/consonance.py`（Sethares 1993 公式，常數 d\*/s1/s2/b1/b2 皆引用並在檔內註解來源）→ `reports/consonance_tables.md`：5 個 modal 引擎（cimbalom/tongue_drum/water_gong/water_gong_free/piano）各自的部分音頻譜（來自 `--dump-modes`，M2 已驗證過的同一理論值）+ 0–1200 cents（5-cent 解析度）dissonance-curve 掃描 + 局部極小值（建議音程）/極大值（不建議音程），另外算了 3 組跨引擎表（cimbalom↔tongue_drum 為 M9 指定必算、cimbalom↔water_gong、tongue_drum↔water_gong）。
 - [x] 9b. 時值規則：每引擎依 T60 給出最小建議音長與音符密度上限（衰減沒完成前就再擊 → 濁）。證據：同一份 `tools/consonance.py` 在報告 §4 算出 5 個 modal 引擎於 MIDI 48/60/72 的 T60（讀自 `--dump-modes` 的 `decay` 欄位，M5 已驗證過的同一份理論值）與 T60/3（衰減 20dB 所需時間的精確代數推論，非新常數）＝最小同音重擊間距，換算成密度上限（音符/秒）。
 - [x] 9c. 寫進 `AI_PHYSICAL_COMPOSITION_GUIDE` v2：非諧引擎和聲規則、聲部配器建議（諧波引擎擔任和聲、非諧引擎擔任色彩/節奏）、長程結構模板（AABA、頑固低音等）。證據：`docs/AI_PHYSICAL_COMPOSITION_GUIDE.zh-TW.md` version 2.0，新增 §13（非諧引擎和聲規則，含跨引擎音程規則與 12-TET 可達成音程表）、§14（聲部配器建議）、§15（長程結構模板：AABA/頑固低音/chaconne，附 JSON `phrases[]` 骨架範例）、§16（時值規則，T60/3 表）。每條規則都附 `reports/consonance_tables.md` 或 M5 T60 GATE 的具體數字，零「聽起來更好」用語。
-- [x] 9d. 用 v2 規範讓 AI 重新創作一首，跑 M3/M4 驗證管線全綠，並附協和度分析報告。證據：`scores/originals/rules_v2_demo/rules_v2_demo_001.score.json`（AABA + 尾聲，83.75 秒，cimbalom/tongue_drum/water_gong 三引擎，README.md 逐條列出每個音高/時值選擇對應 §13/§16 的哪個數字）。新增 `tools/check_piece_consonance.py`（協和度合規檢查器）對全曲 13 個宣告時間重疊的音程對判定，`reports/rules_v2_demo_consonance_check.md`：**13 PASS、0 VIOLATION、0 UNVALIDATED-DIRECTION**。`python tools/verify_score.py scores/originals/rules_v2_demo/rules_v2_demo_001.score.json` 與 `--html` 版本皆 `RESULT: ALL CHECKS PASSED` / exit 0（含 determinism SHA256 一致、rests RMS 通過、peak -0.45dBFS 未削波、f0 偏差最大 5.004 cents 在 ±12 容差內）。
+- [x] 9d. 用 v2 規範讓 AI 重新創作一首，跑 M3/M4 驗證管線全綠，並附協和度分析報告。證據：`scores/originals/rules_v2_demo/rules_v2_demo_001.score.json`（AABA + 尾聲，83.75 秒，cimbalom/tongue_drum/water_gong 三引擎，README.md 逐條列出每個音高/時值選擇對應 §13/§16 的哪個數字）。`tools/check_piece_consonance.py` 在 2026-07-17 升級為每個 event 的真實模態頻譜（所有 active strings、material/geometry/boundary/strike/velocity hammer spectrum）重算，對 13 個宣告時間重疊音程判定 `reports/rules_v2_demo_consonance_check.md`：**13 PASS、0 VIOLATION、0 UNVERIFIED**；FM／Custom 明列域外，且報告明示不模擬 duration 後的共鳴尾巴。`verify_score.py` 的當次結果以最新 deep-fix 驗證報告為準。
 
 **GATE**（全過）：協和度表可重現（`python tools/consonance.py` → `reports/consonance_tables.md`）；指南 v2 更新（`docs/AI_PHYSICAL_COMPOSITION_GUIDE.zh-TW.md` §13–§16）；新作通過 `verify_score.py`（exit 0）且協和度合規檢查器 0 違規（`reports/rules_v2_demo_consonance_check.md`）。未改動任何 `src/`，`physics_verify.py --full`（含 `--amps`）重跑確認零回歸。
 
@@ -327,7 +407,7 @@ python tools/physics_verify.py --t60
 1. **Plugin ↔ CLI 一致性驗證** — 目前只有 CLI 是純物理路徑；驗 plugin 渲染（macro 中性 + FX 關）與 CLI 輸出的一致性，讓 DAW 使用者也在驗證域內。
 2. **音板/共鳴箱耦合**（piano / cimbalom）— 真實感大增，但要先想好「音板模態怎麼驗證」，做不到理論比對就不做（原則：不增加驗證域外的物理裝飾）。
 3. **鋼琴進階物理** — 槌氈非線性（velocity → 接觸時間變短 → 更亮，這是 M2 力脈衝模型的自然延伸）、同度弦組（複用 cimbalom 多弦 beating）、延音踏板共鳴。
-4. **跨機器可重現性** — 在第二台機器 build 後跑 determinism 比對，位元不一致就定義容差型比對標準。
+4. **跨機器可重現性** — 在第二台機器 build 後跑 determinism 比對，位元不一致就定義容差型比對標準。**2026-08-15：量測側已完成（unstaged）**——`tools/crossplatform_verify.py`（selftest 11/11、同機 emit×2 BIT_IDENTICAL 5/5、1 LSB 注入反例正確偵測、四個 exit code 實測正確）+ CI 三平台矩陣 job。第二台機器改用 GitHub hosted runner（ubuntu-24.04 / macos-14）取代實體機。**跨平台實測數字要月月 push 後 CI 跑過才拿得到**；拿到後把數字登記進 §6「決定性」列即完成本項。
 5. **更多材質** — 每種新材質附文獻來源（規則 4）。
 6. **知覺量測視覺化** — sharpness / roughness 等心理聲學指標進 HTML 報告。
 7. **MusicXML 轉換器** — 比 MIDI 保留更多譜面資訊（staccato、力度記號直接可讀）。
@@ -346,15 +426,16 @@ python tools/physics_verify.py --t60
 
 | 項目 | 現值 | 目標值（Milestone） | 依據 |
 |---|---|---|---|
-| f0 誤差（`physics_verify.py` 音訊質心） | ±5 cents（M7 已達成，2026-07-12，全域，無 per-engine 例外）——**Phase H 材質修正後，`rubber` 材質在 cimbalom/tongue_drum/water_gong 的 f0 材質掃描新增 3 個 FAIL（不是容差本身變動，是 rubber 現在衰減太快找不到基頻，見下方）；`piano` MIDI 108 note-range scan 新增 1 個 FAIL** | ±5 cents（M7） | 人耳可辨閾約 5 cents，標準不得低於耳朵；GATE `reports/gate_outputs/phase_g_gate_full_f0.txt`（Phase G 原始），`reports/gate_outputs/phase_g_gate_full.txt`（Phase I，comment-only 變動後零回歸重跑）；**Phase H 材質修正後**：`reports/gate_outputs/phase_h_gate_full.txt`，根因分析 `reports/phase_h_before_after.md` §4（rubber，T60 崩到 14–28ms 找不到基頻）/§6（piano MIDI108，長 T60 造成固定分析窗內的頻譜洩漏），已登記 `TODO.md` 待裁決，**容差本身 5.0 cents 未動（Rule 2）** |
-| f0 誤差（`verify_score.py` `--dump-modes` 原始 string-0 值） | ±12 cents（刻意未跟進收緊，見 M7-7a 說明） | 留待改量測法後再議 | 量測點是單一弦（by design -detuningCents 偏移），非聲學質心；5 首曲目測試 3 首含多弦引擎的量得 5.002–5.013 cents，收緊到 5 會誤殺；`verify_score.py --all` 全 corpus 在 Phase H 材質修正後重跑仍 73/73 PASS（`reports/gate_outputs/verify_all_corpus_phase_h.log`），此檢查未受影響 |
+| f0 誤差（`physics_verify.py` 音訊量測） | ±5 cents（全域，無 per-engine 放寬） | ±5 cents（M7） | 2026-07-17 note-range 全過；rubber 三例因不足八週期列 N/A，不以攻擊噪聲假造 f0 |
+| f0 誤差（`verify_score.py` `--dump-modes` course 質心值） | ±5 cents（`check_modes()` 已改為振幅加權 course 質心；2026-07-23 GATE 完成） | ±5 cents（M7，與 `physics_verify.py` 全域容差一致） | 舊量測點是單一弦（by design `-detuningCents` 偏移），非聲學質心；改用 course 質心後 moonlight yangqin 誤差由 5.013 降至 0.019 cents。證據：`reports/gate_outputs/deepfix4_*` |
 | Partial 頻率誤差 | 2–4%（依引擎） | 維持，M7 檢討 | FFT 量測窗 ±6% 的解析限制 |
 | Partial 振幅誤差 | ±3.0 dB（M2 已達成，Phase H 材質修正後重跑 `--amps` 仍 `RESULT: ALL WITHIN TOLERANCE`，`reports/gate_outputs/phase_h_gate_amps.txt`，確認材質阻尼/E 修正不影響 t=0 振幅判定） | ±3.0 dB（M2） | M2 實測後定案 |
-| T60 比值 | 0.5–2.0（判定制，M5 已達成）——**Phase H 材質修正後，`cimbalom`/`piano` 於 MIDI 60 新增 2 個 FAIL（ratio 0.28）** | 0.5–2.0 判定制（M5） | 5a 量測法改進（測量 f0 為中心 ±3% 窄頻帶通 + 多弦拍頻期平均 + 5s 探針）後實測全 modal 引擎於 MIDI 60/72 皆落在 1.00–1.28，收緊生效（`reports/gate_outputs/phase_g_gate_t60.txt` Phase G 原始；最終存證 `reports/gate_outputs/phase_g_gate_t60_final.txt` Phase I，皆為舊材質值）；**Phase H 材質修正後**：`reports/gate_outputs/phase_h_gate_t60.txt`，根因分析 `reports/phase_h_before_after.md` §3（steel 的新 alpha 把 T60 拉長到 26.85s，5 秒探針 + 拍頻平均法在如此慢的衰減下失真），已登記 `TODO.md` 待裁決，**容差本身 0.5–2.0 未動（Rule 2）** |
-| velocity ×2 電平 | 顯示用 | +6.0 ± 1.0 dB 判定制（M1） | 振幅正比力的物理律 |
-| 休止區 RMS | 無 | ≤ −50 dBFS（M3，含殘響衰減窗） | 待 M3 實測後檢討 |
+| T60 比值 | 0.80–1.25（exit-code 判定） | 0.5–2.0 判定制（M5） | 2026-07-18 月月授權同步至工具實值（收緊方向）；2026-07-17 十個標準 probe measured/model 0.99–1.00；rubber 極短瞬態另列 N/A |
+| velocity ×2 電平 | 量測域：基頻窄帶（測得 f0 ±3%，非寬帶）；雙重判定數值不變：實測 vs 模型預測 ±1.0 dB，且模型預測自身 \|Δ−6.0206\| ≤ 1.0 dB（物理律上限）；寬帶 delta 僅資訊性列印，不影響判定 | +6.0 ± 1.0 dB 判定制（M1） | 振幅正比力的物理律（20·log10 2 = +6.0206 dB）是逐模態律（`ModalResonator::excite()`），非寬帶頻譜形狀律；2026-07-18 月月授權語意同步為雙重判定；**2026-07-22 月月授權修理：量測域對齊物理律適用範圍（寬帶→基頻窄帶），非容差變更**；round-2 寬帶量測值（piano +7.4373 dB）見 `reports/gate_outputs/deepfix2_gate_full.txt` 存證，本輪起降為資訊性；**2026-07-23 月月正式追認此量測域變更**（round-4 裁決，見 `TODO.md`「2026-07-23 round-4 裁決落地」） |
+| 殘差頻譜能量 | 判定制 −60.0 dB re total（2026-07-23 月月批准並完成實作/GATE） | −60.0 dB re total 判定制（M2/F5） | round-2/round-3 實測基線 −74.7～−83.1 dB re total，距門檻留有 ≥14.7 dB 邊際；實作與證據見 `tools/physics_verify.py`、`reports/gate_outputs/deepfix4_*` |
+| 休止區 RMS | 無 | ≤ −50 dBFS（M3，含殘響衰減窗） | 待 M3 實測後檢討；2026-07-18 量測法改為逐聲道 RMS 取最大（門檻 −50 dBFS 不變；量測方法變更，非容差變更） |
 | 跨引擎等 RMS | 0.2 dB（已達） | 維持 | 2026-06 校準 |
-| 決定性 | SHA256 一致（同機） | 維持；跨機另訂（NTH-4） | — |
+| 決定性 | SHA256 一致（同機） | 跨機：max abs delta ≤ −120 dBFS、delta RMS ≤ −120 dB re signal、spectral ≤ 0.01 dB、peak pitch ≤ 0.01 cents | **2026-08-22 月月登記完成**（`scores/crossplatform_tolerance.json`，裁決「照提案登記」）：依 CI run 32446987833 第一次三平台實測（最差 5 LSB@24bit／−125.8 dB／0.0019 dB／+0.0000c）留餘裕訂定，`cross-platform-compare` 自此轉**阻斷式 GATE**（超標 exit 1）。2026-08-15 工具就位記錄：`tools/crossplatform_verify.py` + CI 三平台矩陣，無登記時 exit 3 UNREGISTERED 只印不判（Rule 2） |
 
 ## 7. 狀態更新規則
 

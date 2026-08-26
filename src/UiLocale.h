@@ -208,11 +208,14 @@ private:
             // -- Effects --
             { "fx_reverb_mix",     "MIX",         "混合"       },
             { "fx_reverb_size",    "SIZE",        "空間大小"   },
+            { "fx_reverb_decay",   "T60 (s)",     "殘響秒數"   },
             { "fx_delay_time",     "TIME",        "時間"       },
             { "fx_delay_feedback", "FB",          "回授"       },
             { "fx_delay_mix",      "MIX",         "混合"       },
             { "fx_comp_threshold", "THRESH",      "閾值"       },
             { "fx_comp_ratio",     "RATIO",       "比率"       },
+            { "fx_eq_freq",        "FREQ",        "轉折頻率"   },
+            { "fx_eq_gain",        "GAIN",        "高頻增益"   },
 
             // -- Distortion --
             { "fx_dist_type",      "TYPE",        "類型"       },
@@ -230,6 +233,7 @@ private:
             { "ui_panel_delay",      "DELAY",      "延遲"       },
             { "ui_panel_compressor", "COMPRESSOR", "壓縮器"     },
             { "ui_panel_distortion", "DISTORTION", "失真"       },
+            { "ui_panel_eq",         "BRIGHTNESS", "亮度補償"   },
 
             // -- Engine tabs --
             { "ui_tab_cimbalom",     "Cimbalom",   "揚琴"       },
@@ -242,6 +246,17 @@ private:
             { "ui_btn_init",         "Init",       "初始化"     },
             { "ui_btn_rec",          "REC",        "REC"        },
             { "ui_btn_stop",         "STOP",       "STOP"       },
+            { "ui_btn_revload",      "Load",       "載入"       },
+            { "ui_tip_revload",      "Load reverb profile (.json) or impulse response (.wav)",
+                                                   "載入殘響設定檔(.json)或脈衝響應(.wav)" },
+            { "ui_btn_revmode_algo", "Algorithmic reverb (click to switch to IR)",
+                                                   "演算法殘響（點擊切換為 IR 卷積）" },
+            { "ui_btn_revmode_ir",   "IR convolution reverb (click to switch to algorithmic)",
+                                                   "IR 卷積殘響（點擊切換為演算法）" },
+            { "ui_dlg_revload",      "Load reverb profile or impulse response",
+                                                   "載入殘響設定檔或脈衝響應" },
+            { "ui_btn_score_console", "Render a score.json to WAV / open its verification report without a DAW",
+                                                   "不開 DAW 直接把 score.json 渲染成 WAV／開驗證報告" },
 
             // -- Analyzer --
             { "ui_scope",            "SCOPE",      "示波器"     },

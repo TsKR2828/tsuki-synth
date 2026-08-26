@@ -1,0 +1,621 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+======================================================================
+--full: implementation gate (eigenvalue anchors + range + material sensitivity + velocity) + M2 amplitude judgment + measured T60 + residual energy
+======================================================================
+
+----------------------------------------------------------------------
+Eigenvalue-ratio anchors (MIDI 60, --dump-modes ratios vs literature beam/plate eigenvalues; independent of the C++ tables):
+
+# tongue_drum cantilever (default)
+    n anchor_ratio  dump_ratio     err%  verdict   (tol +/-0.10%)
+    1     1.000000    1.000000  +0.0000  PASS
+    2     6.266893    6.266881  -0.0002  PASS
+    3    17.547481   17.547453  -0.0002  PASS
+    4    34.386060   34.385998  -0.0002  PASS
+    5    56.842621   56.842516  -0.0002  PASS
+   -> PASS
+
+# tongue_drum free_free (explicit)
+    n anchor_ratio  dump_ratio     err%  verdict   (tol +/-0.10%)
+    1     1.000000    1.000000  +0.0000  PASS
+    2     2.756538    2.756580  +0.0015  PASS
+    3     5.403917    5.403993  +0.0014  PASS
+    4     8.932949    8.933134  +0.0021  PASS
+    5    13.344286   13.344553  +0.0020  PASS
+   -> PASS
+
+# water_gong clamped
+    n anchor_ratio  dump_ratio     err%  verdict   (tol +/-0.10%)
+    1     1.000000    1.000000  +0.0000  PASS
+    2     2.081090    2.081085  -0.0002  PASS
+    3     3.414025    3.414018  -0.0002  PASS
+    4     3.893087    3.893080  -0.0002  PASS
+    5     4.995204    4.995195  -0.0002  PASS
+    6     5.954404    5.954393  -0.0002  PASS
+    7     6.819437    6.819425  -0.0002  PASS
+    8     8.279626    8.279613  -0.0002  PASS
+   -> PASS
+
+# water_gong_free free-edge (nu-dependent) [nu=0.34 from data/materials.json, roots re-solved from the free-plate characteristic equation]
+    n anchor_ratio  dump_ratio     err%  verdict   (tol +/-0.50%)
+    1     1.000000    1.000000  +0.0000  PASS
+    2     1.738427    1.738424  -0.0001  PASS
+    3     2.328640    2.328637  -0.0001  PASS
+    4     3.925280    3.925271  -0.0002  PASS
+    5     4.096416    4.096409  -0.0002  PASS
+    6     6.738528    6.738516  -0.0002  PASS
+    7     7.367962    7.367949  -0.0002  PASS
+   -> PASS
+
+----------------------------------------------------------------------
+Note-range scan (6 notes per engine, spanning each engine's declared valid range):
+
+### cimbalom: valid range MIDI 36-96 -> probing [36, 48, 60, 72, 84, 96]
+
+# cimbalom    MIDI 36  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0006% [OK]
+   f0 ET anchor: expected 65.406 Hz (12-TET MIDI 36), measured 65.406 Hz (-0.004 cents, tol +/-5.0); dump-conformance -0.011 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      65.407      65.406   -0.00    +0.0   84.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     130.817     130.816   -0.00    +1.3  121.7  PASS model=+1.3dB raw=+2.3dB isolated=+1.3dB
+    3     196.235     196.235   +0.00    -5.6   80.3  PASS model=-5.6dB raw=-2.9dB isolated=-5.6dB
+    4     261.664     261.662   -0.00   -15.4   73.2  PASS model=-15.4dB raw=-10.2dB isolated=-15.4dB
+    5     327.108     327.089   -0.01    -8.0   83.2  PASS model=-8.0dB raw=+0.6dB isolated=-8.0dB
+    6     392.571     390.986   -0.40   -11.2   71.7  PASS model=-11.2dB raw=+0.6dB isolated=-11.2dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 48  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0004% [OK]
+   f0 ET anchor: expected 130.813 Hz (12-TET MIDI 48), measured 130.813 Hz (+0.003 cents, tol +/-5.0); dump-conformance -0.004 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     130.813     130.813   -0.00    +0.0  129.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     261.657     261.655   -0.00    -1.9   98.7  PASS model=-1.9dB raw=+2.2dB isolated=-1.9dB
+    3     392.560     391.012   -0.39   -13.7   86.1  PASS model=-13.7dB raw=-3.2dB isolated=-13.7dB
+    4     523.553     521.350   -0.42   -23.5   84.0  PASS model=-23.5dB raw=-10.8dB isolated=-23.5dB
+    5     654.667     651.807   -0.44   -14.2   88.9  PASS model=-14.2dB raw=-0.4dB isolated=-14.2dB
+    6     785.931     782.839   -0.39   -14.1   93.6  PASS model=-14.1dB raw=-0.8dB isolated=-14.1dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 60  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 261.626 Hz (12-TET MIDI 60), measured 261.626 Hz (+0.004 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     261.626     261.626   -0.00    +0.0  137.6  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     523.493     521.296   -0.42    -6.8  105.6  PASS model=-6.8dB raw=+1.9dB isolated=-6.8dB
+    3     785.842     782.720   -0.40   -13.5  102.2  PASS model=-13.5dB raw=-4.0dB isolated=-13.5dB
+    4    1048.912    1045.868   -0.29   -20.9  100.0  PASS model=-20.9dB raw=-12.3dB isolated=-20.9dB
+    5    1312.940    1309.777   -0.24   -12.1  110.2  PASS model=-12.1dB raw=-2.9dB isolated=-12.1dB
+    6    1578.164    1573.870   -0.27   -15.7  101.8  PASS model=-15.7dB raw=-4.8dB isolated=-15.7dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 72  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 523.251 Hz (12-TET MIDI 72), measured 523.252 Hz (+0.004 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     523.252     523.252   +0.00    +0.0  119.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1048.430    1045.186   -0.31    +0.3  138.9  PASS model=+0.3dB raw=+1.1dB isolated=+0.3dB
+    3    1577.447    1573.167   -0.27    -8.8  114.9  PASS model=-8.8dB raw=-6.2dB isolated=-8.8dB
+    4    2112.190    2106.271   -0.28   -22.9  115.7  PASS model=-22.9dB raw=-16.9dB isolated=-22.9dB
+    5    2654.491    2654.599   +0.00   -21.7    8.7  PASS model=-21.7dB raw=-11.5dB isolated=-21.7dB
+    6    3205.984    3206.386   +0.01   -36.7   10.0  PASS model=-36.7dB raw=-22.0dB isolated=-36.7dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 84  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 1046.502 Hz (12-TET MIDI 84), measured 1046.502 Hz (+0.000 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1046.502    1046.502   +0.00    +0.0  134.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    2108.322    2102.430   -0.28    -4.9  129.5  PASS model=-4.9dB raw=-1.1dB isolated=-4.9dB
+    3    3200.374    3200.488   +0.00   -25.1    7.2  PASS model=-25.1dB raw=-13.5dB isolated=-25.1dB
+    4    4333.984          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-49.7dB isolated=-70.0dB
+    5    5531.855          --      --      --     --  MODEL-WEAK (not required) model=-50.0dB raw=-20.8dB isolated=-50.0dB
+    6    6795.507          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-29.0dB isolated=-66.3dB
+   coverage: 3/3 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 96  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 2093.005 Hz (12-TET MIDI 96), measured 2092.992 Hz (-0.011 cents, tol +/-5.0); dump-conformance -0.002 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    2092.994    2092.992   -0.00    +0.0  131.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    4305.454    4293.811   -0.27   -16.5  114.9  PASS model=-16.5dB raw=-9.4dB isolated=-16.5dB
+    3    6747.136    6728.478   -0.28   -43.1   88.3  PASS model=-43.0dB raw=-23.0dB isolated=-43.0dB
+    4    9511.164          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-46.0dB isolated=-80.2dB
+    5   12650.849          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-46.7dB isolated=-94.8dB
+    6   16247.379          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-48.0dB isolated=-111.9dB
+   coverage: 3/3 required (100%), 6 model modes listed
+   -> PASS
+
+### tongue_drum: valid range MIDI 48-84 -> probing [48, 55, 62, 70, 77, 84]
+
+# tongue_drum MIDI 48  (expectation=--dump-modes)
+   f0 ET anchor: expected 130.813 Hz (12-TET MIDI 48), measured 130.813 Hz (-0.002 cents, tol +/-5.0); dump-conformance -0.005 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     130.813     130.813   -0.00    +0.0  134.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     819.790     819.790   +0.00    +8.0  158.6  PASS model=+7.9dB raw=+9.9dB isolated=+7.9dB
+    3    2295.435    2295.435   -0.00   -34.3  116.3  PASS model=-34.3dB raw=-25.1dB isolated=-34.3dB
+    4    4498.136    4498.137   +0.00   -41.0  109.6  PASS model=-41.0dB raw=-16.1dB isolated=-41.0dB
+    5    7435.740          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-41.9dB isolated=-87.6dB
+   coverage: 4/4 required (100%), 5 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 55  (expectation=--dump-modes)
+   f0 ET anchor: expected 195.998 Hz (12-TET MIDI 55), measured 195.998 Hz (+0.003 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     195.998     195.998   +0.00    +0.0  149.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1228.297    1228.297   -0.00    +4.6  154.7  PASS model=+4.6dB raw=+7.9dB isolated=+4.6dB
+    3    3439.267    3439.267   +0.00   -23.9  126.3  PASS model=-23.9dB raw=-7.0dB isolated=-23.9dB
+    4    6739.589          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-21.2dB isolated=-62.2dB
+    5   11141.023          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-76.8dB isolated=-143.1dB
+   coverage: 3/3 required (100%), 5 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 62  (expectation=--dump-modes)
+   f0 ET anchor: expected 293.665 Hz (12-TET MIDI 62), measured 293.665 Hz (+0.002 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     293.665     293.665   +0.00    +0.0  152.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1840.366    1840.366   -0.00    -2.0  150.7  PASS model=-2.0dB raw=+4.2dB isolated=-2.0dB
+    3    5153.077          --      --      --     --  MODEL-WEAK (not required) model=-49.0dB raw=-19.5dB isolated=-49.0dB
+    4   10097.975          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-27.0dB isolated=-87.8dB
+    5   16692.674          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-68.9dB isolated=-158.9dB
+   coverage: 2/2 required (100%), 5 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 70  (expectation=--dump-modes)
+   f0 ET anchor: expected 466.164 Hz (12-TET MIDI 70), measured 466.164 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     466.164     466.164   +0.00    +0.0  155.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    2921.399    2921.398   -0.00   -19.2  136.5  PASS model=-19.2dB raw=-6.6dB isolated=-19.2dB
+    3    8180.000          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-26.7dB isolated=-76.2dB
+    4   16029.536          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-31.3dB isolated=-118.2dB
+   coverage: 2/2 required (100%), 4 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 77  (expectation=--dump-modes)
+   f0 ET anchor: expected 698.456 Hz (12-TET MIDI 77), measured 698.457 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.002 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     698.456     698.457   +0.00    +0.0  156.6  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    4377.152    4377.152   +0.00   -34.8  121.8  PASS model=-34.8dB raw=-12.3dB isolated=-34.8dB
+    3   12256.152          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-24.9dB isolated=-95.1dB
+   coverage: 2/2 required (100%), 3 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 84  (expectation=--dump-modes)
+   f0 ET anchor: expected 1046.502 Hz (12-TET MIDI 84), measured 1046.502 Hz (-0.001 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1046.502    1046.502   -0.00    +0.0  147.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    6558.317          --      --      --     --  MODEL-WEAK (not required) model=-52.0dB raw=-14.8dB isolated=-52.0dB
+    3   18363.479          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-29.5dB isolated=-123.3dB
+   coverage: 1/1 required (100%), 3 model modes listed
+   -> PASS
+
+### water_gong: valid range MIDI 48-84 -> probing [48, 55, 62, 70, 77, 84]
+
+# water_gong  MIDI 48  (expectation=--dump-modes)
+   f0 ET anchor: expected 130.813 Hz (12-TET MIDI 48), measured 130.813 Hz (-0.002 cents, tol +/-5.0); dump-conformance -0.005 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     130.813     130.813   -0.00    +0.0  161.3  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     272.233     272.233   +0.00    -0.2  125.9  PASS model=-0.3dB raw=+0.9dB isolated=-0.3dB
+    3     446.598     446.599   +0.00    -5.8  115.4  PASS model=-5.8dB raw=-3.2dB isolated=-5.8dB
+    4     509.266     509.267   +0.00   -13.2   81.0  PASS model=-13.2dB raw=-10.0dB isolated=-13.2dB
+    5     653.436     653.435   -0.00   -13.3   93.1  PASS model=-13.3dB raw=-8.9dB isolated=-13.3dB
+    6     778.912     778.912   -0.00    -6.7  112.5  PASS model=-6.7dB raw=-1.1dB isolated=-6.7dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 55  (expectation=--dump-modes)
+   f0 ET anchor: expected 195.998 Hz (12-TET MIDI 55), measured 195.998 Hz (+0.003 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     195.998     195.998   +0.00    +0.0  145.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     407.889     407.889   +0.00    -1.0  139.5  PASS model=-1.0dB raw=+0.7dB isolated=-1.0dB
+    3     669.141     669.140   -0.00    -7.7  115.3  PASS model=-7.7dB raw=-3.7dB isolated=-7.7dB
+    4     763.036     763.036   +0.00   -15.6   84.6  PASS model=-15.6dB raw=-10.7dB isolated=-15.6dB
+    5     979.048     979.048   +0.00   -17.0  112.7  PASS model=-17.0dB raw=-10.0dB isolated=-17.0dB
+    6    1167.049    1167.050   +0.00   -11.6  129.4  PASS model=-11.6dB raw=-2.8dB isolated=-11.6dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 62  (expectation=--dump-modes)
+   f0 ET anchor: expected 293.665 Hz (12-TET MIDI 62), measured 293.665 Hz (+0.002 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     293.665     293.665   +0.00    +0.0  151.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     611.143     611.144   +0.00    -2.3  124.1  PASS model=-2.3dB raw=+0.5dB isolated=-2.3dB
+    3    1002.579    1002.579   -0.00   -11.0  146.0  PASS model=-11.0dB raw=-4.5dB isolated=-11.0dB
+    4    1143.262    1143.262   +0.00   -19.7   90.9  PASS model=-19.7dB raw=-11.9dB isolated=-19.7dB
+    5    1466.915    1466.916   +0.00   -23.3  105.6  PASS model=-23.3dB raw=-12.1dB isolated=-23.3dB
+    6    1748.599    1748.598   -0.00   -20.1  117.1  PASS model=-20.1dB raw=-6.1dB isolated=-20.1dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 70  (expectation=--dump-modes)
+   f0 ET anchor: expected 466.164 Hz (12-TET MIDI 70), measured 466.164 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     466.164     466.164   +0.00    +0.0  153.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     970.129     970.128   -0.00    -4.7  132.1  PASS model=-4.7dB raw=-0.1dB isolated=-4.7dB
+    3    1591.495    1591.496   +0.00   -17.4  135.7  PASS model=-17.4dB raw=-6.5dB isolated=-17.4dB
+    4    1814.816    1814.817   +0.00   -27.8  104.7  PASS model=-27.8dB raw=-14.5dB isolated=-27.8dB
+    5    2328.583    2328.584   +0.00   -36.0  117.0  PASS model=-36.0dB raw=-17.2dB isolated=-36.0dB
+    6    2775.727    2775.727   +0.00   -38.4  114.6  PASS model=-38.4dB raw=-14.9dB isolated=-38.4dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 77  (expectation=--dump-modes)
+   f0 ET anchor: expected 698.456 Hz (12-TET MIDI 77), measured 698.457 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.002 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     698.456     698.457   +0.00    +0.0  153.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1453.551    1453.551   -0.00    -8.4  145.3  PASS model=-8.4dB raw=-1.0dB isolated=-8.4dB
+    3    2384.548    2384.548   -0.00   -27.1  126.6  PASS model=-27.1dB raw=-9.8dB isolated=-27.1dB
+    4    2719.152    2719.151   -0.00   -40.2  113.5  PASS model=-40.2dB raw=-19.4dB isolated=-40.2dB
+    5    3488.932          --      --      --     --  MODEL-WEAK (not required) model=-58.4dB raw=-29.8dB isolated=-58.4dB
+    6    4158.892          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-27.0dB isolated=-61.9dB
+   coverage: 4/4 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 84  (expectation=--dump-modes)
+   f0 ET anchor: expected 1046.502 Hz (12-TET MIDI 84), measured 1046.502 Hz (-0.001 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1046.502    1046.502   -0.00    +0.0  145.0  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    2177.865    2177.865   +0.00   -14.5  130.5  PASS model=-14.5dB raw=-2.7dB isolated=-14.5dB
+    3    3572.785    3572.785   +0.00   -43.7  101.3  PASS model=-43.6dB raw=-17.5dB isolated=-43.6dB
+    4    4074.124          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-33.9dB isolated=-64.7dB
+    5    5227.491          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-29.9dB isolated=-70.6dB
+    6    6231.296          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-23.2dB isolated=-71.5dB
+   coverage: 3/3 required (100%), 6 model modes listed
+   -> PASS
+
+### water_gong_free: valid range MIDI 48-84 -> probing [48, 55, 62, 70, 77, 84]
+
+# water_gong_free MIDI 48  (expectation=--dump-modes)
+   f0 ET anchor: expected 130.813 Hz (12-TET MIDI 48), measured 130.813 Hz (-0.002 cents, tol +/-5.0); dump-conformance -0.005 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     130.813     130.813   -0.00    +0.0   88.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     227.408     227.408   +0.00   +16.0  139.5  PASS model=+16.0dB raw=+16.7dB isolated=+16.0dB
+    3     304.616     304.616   +0.00    -9.7   74.6  PASS model=-9.7dB raw=-8.3dB isolated=-9.7dB
+    4     513.477     513.477   -0.00   +14.4  131.9  PASS model=+14.4dB raw=+17.6dB isolated=+14.4dB
+    5     535.864     535.833   -0.01   -20.1   41.1  PASS model=-20.1dB raw=-16.7dB isolated=-20.1dB
+   coverage: 5/5 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 55  (expectation=--dump-modes)
+   f0 ET anchor: expected 195.998 Hz (12-TET MIDI 55), measured 195.998 Hz (+0.003 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     195.998     195.998   +0.00    +0.0   97.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     340.728     340.727   -0.00   +15.4  162.2  PASS model=+15.4dB raw=+16.6dB isolated=+15.4dB
+    3     456.408     456.408   +0.00   -10.6   85.4  PASS model=-10.6dB raw=-8.5dB isolated=-10.6dB
+    4     769.346     769.346   -0.00   +12.0  139.1  PASS model=+12.0dB raw=+16.9dB isolated=+12.0dB
+    5     802.888     802.874   -0.00   -22.7   45.1  PASS model=-22.7dB raw=-17.5dB isolated=-22.8dB
+   coverage: 5/5 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 62  (expectation=--dump-modes)
+   f0 ET anchor: expected 293.665 Hz (12-TET MIDI 62), measured 293.665 Hz (+0.002 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     293.665     293.665   +0.00    +0.0  130.0  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     510.515     510.515   -0.00   +14.6  151.3  PASS model=+14.6dB raw=+16.4dB isolated=+14.6dB
+    3     683.839     683.839   -0.00   -12.2  106.5  PASS model=-12.2dB raw=-8.8dB isolated=-12.2dB
+    4    1152.716    1152.718   +0.00    +7.8  136.8  PASS model=+7.8dB raw=+15.7dB isolated=+7.8dB
+    5    1202.973    1202.973   +0.00   -27.2   48.6  PASS model=-27.2dB raw=-18.8dB isolated=-27.2dB
+   coverage: 5/5 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 70  (expectation=--dump-modes)
+   f0 ET anchor: expected 466.164 Hz (12-TET MIDI 70), measured 466.164 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     466.164     466.164   +0.00    +0.0  118.3  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     810.392     810.392   +0.00   +13.0  157.9  PASS model=+13.0dB raw=+16.1dB isolated=+13.0dB
+    3    1085.528    1085.527   -0.00   -15.4   97.9  PASS model=-15.4dB raw=-9.6dB isolated=-15.4dB
+    4    1829.823    1829.824   +0.00    -0.5  144.4  PASS model=-0.5dB raw=+13.0dB isolated=-0.5dB
+    5    1909.601    1909.604   +0.00   -36.2   49.5  PASS model=-36.2dB raw=-21.8dB isolated=-36.2dB
+   coverage: 5/5 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 77  (expectation=--dump-modes)
+   f0 ET anchor: expected 698.456 Hz (12-TET MIDI 77), measured 698.457 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.002 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     698.456     698.457   +0.00    +0.0  132.9  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1214.215    1214.215   +0.00   +10.6  147.6  PASS model=+10.6dB raw=+15.6dB isolated=+10.6dB
+    3    1626.454    1626.452   -0.00   -20.1  117.0  PASS model=-20.1dB raw=-10.8dB isolated=-20.1dB
+    4    2741.637    2741.638   +0.00   -13.1  123.9  PASS model=-13.1dB raw=+8.0dB isolated=-13.1dB
+    5    2861.168          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-27.6dB isolated=-49.8dB
+   coverage: 4/4 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 84  (expectation=--dump-modes)
+   f0 ET anchor: expected 1046.502 Hz (12-TET MIDI 84), measured 1046.502 Hz (-0.001 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1046.502    1046.502   -0.00    +0.0  140.6  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1819.267    1819.268   +0.00    +6.6  147.3  PASS model=+6.6dB raw=+14.6dB isolated=+6.6dB
+    3    2436.927    2436.927   +0.00   -27.7  112.9  PASS model=-27.7dB raw=-13.1dB isolated=-27.7dB
+    4    4107.814    4107.814   -0.00   -38.6  102.1  PASS model=-38.4dB raw=-7.4dB isolated=-38.4dB
+    5    4286.908          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-50.5dB isolated=-83.2dB
+   coverage: 4/4 required (100%), 5 model modes listed
+   -> PASS
+
+### fm: valid range MIDI 24-96 -> probing [24, 38, 53, 67, 82, 96]
+
+# fm          MIDI 24  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 32.703 Hz (12-TET MIDI 24), measured 32.703 Hz (-0.000 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      32.703      32.703   -0.00    +0.0   56.4  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 38  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 73.416 Hz (12-TET MIDI 38), measured 73.416 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      73.416      73.416   +0.00    +0.0   59.6  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 53  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 174.614 Hz (12-TET MIDI 53), measured 174.615 Hz (+0.008 cents, tol +/-5.0); dump-conformance +0.008 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     174.614     174.615   +0.00    +0.0  116.0  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 67  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 391.995 Hz (12-TET MIDI 67), measured 391.995 Hz (+0.000 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     391.995     391.995   +0.00    +0.0  139.2  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 82  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 932.328 Hz (12-TET MIDI 82), measured 932.328 Hz (+0.000 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     932.328     932.328   +0.00    +0.0  155.9  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 96  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 2093.005 Hz (12-TET MIDI 96), measured 2093.004 Hz (-0.000 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    2093.005    2093.004   -0.00    +0.0  156.6  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+### piano: valid range MIDI 21-108 -> probing [21, 38, 56, 73, 91, 108]
+
+# piano       MIDI 21  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0014% [OK]
+   f0 ET anchor: expected 27.500 Hz (12-TET MIDI 21), measured 27.500 Hz (-0.020 cents, tol +/-5.0); dump-conformance -0.040 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      27.500      27.500   -0.00    +0.0   76.9  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2      55.000      55.000   -0.00    +4.7   75.9  PASS model=+4.7dB raw=+4.9dB isolated=+4.7dB
+    3      82.501      82.501   -0.00    +6.0  127.7  PASS model=+6.0dB raw=+6.5dB isolated=+6.0dB
+    4     110.003     110.002   -0.00    +5.3   75.0  PASS model=+5.3dB raw=+6.3dB isolated=+5.3dB
+    5     137.505     137.505   +0.00    +2.8   70.1  PASS model=+2.8dB raw=+4.3dB isolated=+2.8dB
+    6     165.008     165.009   +0.00    -1.7   67.9  PASS model=-1.7dB raw=+0.5dB isolated=-1.7dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 38  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0008% [OK]
+   f0 ET anchor: expected 73.416 Hz (12-TET MIDI 38), measured 73.416 Hz (+0.006 cents, tol +/-5.0); dump-conformance +0.005 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      73.416      73.416   +0.00    +0.0   86.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     146.837     146.837   +0.00    +2.6  129.3  PASS model=+2.6dB raw=+3.9dB isolated=+2.6dB
+    3     220.268     220.267   -0.00    +0.2   83.8  PASS model=+0.2dB raw=+3.6dB isolated=+0.2dB
+    4     293.712     293.701   -0.00    -6.2   78.3  PASS model=-6.2dB raw=+0.4dB isolated=-6.2dB
+    5     367.170     365.984   -0.32   -17.3   71.6  PASS model=-17.3dB raw=-6.6dB isolated=-17.3dB
+    6     440.603     438.803   -0.41   -34.2   65.9  PASS model=-34.2dB raw=-22.1dB isolated=-34.2dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 56  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0003% [OK]
+   f0 ET anchor: expected 207.652 Hz (12-TET MIDI 56), measured 207.653 Hz (+0.002 cents, tol +/-5.0); dump-conformance +0.008 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     207.652     207.653   +0.00    +0.0  126.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     415.416     413.708   -0.41   -10.2  121.6  PASS model=-10.2dB raw=-1.3dB isolated=-10.2dB
+    3     623.295     620.776   -0.40   -31.5  107.3  PASS model=-31.5dB raw=-20.4dB isolated=-31.5dB
+    4     831.817     828.697   -0.38   -24.1  124.7  PASS model=-24.1dB raw=-13.0dB isolated=-24.1dB
+    5    1040.437    1037.641   -0.27   -36.1  114.9  PASS model=-36.2dB raw=-26.2dB isolated=-36.2dB
+    6    1250.171    1253.145   +0.24   -34.9  120.1  PASS model=-34.9dB raw=-24.1dB isolated=-34.9dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 73  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0001% [OK]
+   f0 ET anchor: expected 554.365 Hz (12-TET MIDI 73), measured 554.359 Hz (-0.018 cents, tol +/-5.0); dump-conformance +0.018 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     554.354     554.359   +0.00    +0.0  140.3  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1111.036    1114.297   +0.29   -10.3  120.2  PASS model=-10.3dB raw=-9.9dB isolated=-10.3dB
+    3    1672.347    1676.899   +0.27   -18.8  121.5  PASS model=-18.8dB raw=-16.2dB isolated=-18.8dB
+    4    2240.571    2240.315   -0.01   -28.7    6.2  PASS model=-28.7dB raw=-22.0dB isolated=-28.7dB
+    5    2817.939    2817.390   -0.02   -39.1    9.0  PASS model=-39.1dB raw=-28.0dB isolated=-39.1dB
+    6    3406.550          --      --      --     --  MODEL-WEAK (not required) model=-50.2dB raw=-34.4dB isolated=-50.2dB
+   coverage: 5/5 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 91  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 1567.982 Hz (12-TET MIDI 91), measured 1567.986 Hz (+0.004 cents, tol +/-5.0); dump-conformance -0.005 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1567.990    1567.986   -0.00    +0.0    7.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    3187.225    3195.899   +0.27   -13.8  102.9  PASS model=-13.8dB raw=-8.4dB isolated=-13.8dB
+    3    4905.806    4919.367   +0.28   -28.5   88.2  PASS model=-28.5dB raw=-13.0dB isolated=-28.5dB
+    4    6766.253    6748.267   -0.27   -44.7   72.1  PASS model=-44.5dB raw=-17.8dB isolated=-44.5dB
+    5    8825.565          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-37.8dB isolated=-73.8dB
+    6   11058.224          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-32.1dB isolated=-81.8dB
+   coverage: 4/4 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 108  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 4186.009 Hz (12-TET MIDI 108), measured 4187.485 Hz (+0.610 cents, tol +/-5.0); dump-conformance +0.247 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    4186.888    4187.485   +0.01    +0.0   93.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    9243.379    9220.003   -0.25   -17.8   75.3  PASS model=-17.7dB raw=-2.7dB isolated=-17.7dB
+    3   15812.553          --      --      --     --  MODEL-WEAK (not required) model=-51.9dB raw=-10.9dB isolated=-51.9dB
+   coverage: 2/2 required (100%), 3 model modes listed
+   -> PASS
+
+----------------------------------------------------------------------
+Material implementation-sensitivity scan (NOT real-material validation; MIDI 60, 9 materials x 3 modal engines):
+   cimbalom    material=steel        T60(model)=   4.299s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0000%]
+   cimbalom    material=copper       T60(model)=   2.097s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=bronze       T60(model)=   2.827s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=aluminum     T60(model)=  11.250s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=brass        T60(model)=   2.460s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=wood_spruce  T60(model)=   1.143s freq=4/4 amp=3 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=wood_maple   T60(model)=   0.681s freq=4/4 amp=3 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=glass        T60(model)=   4.056s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0000%]
+   cimbalom    material=rubber       T60(model)=   0.028s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+   cimbalom    material T60 sensitivity spread=401.57x -> PASS (no-op threshold 1.10x)
+   tongue_drum material=steel        T60(model)=  16.390s freq=2/2 amp=1 PASS
+   tongue_drum material=copper       T60(model)=   2.030s freq=2/2 amp=1 PASS
+   tongue_drum material=bronze       T60(model)=   3.961s freq=2/2 amp=1 PASS
+   tongue_drum material=aluminum     T60(model)=  30.135s freq=2/2 amp=1 PASS
+   tongue_drum material=brass        T60(model)=   2.686s freq=2/2 amp=1 PASS
+   tongue_drum material=wood_spruce  T60(model)=   0.589s freq=2/2 amp=1 PASS
+   tongue_drum material=wood_maple   T60(model)=   0.347s freq=2/2 amp=1 PASS
+   tongue_drum material=glass        T60(model)=   2.756s freq=2/2 amp=1 PASS
+   tongue_drum material=rubber       T60(model)=   0.014s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+   tongue_drum material T60 sensitivity spread=2153.12x -> PASS (no-op threshold 1.10x)
+   water_gong  material=steel        T60(model)=  26.860s freq=6/6 amp=5 PASS
+   water_gong  material=copper       T60(model)=   3.927s freq=6/6 amp=5 PASS
+   water_gong  material=bronze       T60(model)=   7.486s freq=6/6 amp=5 PASS
+   water_gong  material=aluminum     T60(model)=  46.965s freq=6/6 amp=5 PASS
+   water_gong  material=brass        T60(model)=   5.155s freq=6/6 amp=5 PASS
+   water_gong  material=wood_spruce  T60(model)=   1.155s freq=6/6 amp=5 PASS
+   water_gong  material=wood_maple   T60(model)=   0.687s freq=6/6 amp=5 PASS
+   water_gong  material=glass        T60(model)=   5.422s freq=6/6 amp=5 PASS
+   water_gong  material=rubber       T60(model)=   0.028s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+   water_gong  material T60 sensitivity spread=1679.96x -> PASS (no-op threshold 1.10x)
+   Scope note: this is an implementation/no-op gate. It does not prove that JSON material constants match a measured specimen.
+   UNVERIFIED/N/A: 3 case(s): cimbalom/rubber, tongue_drum/rubber, water_gong/rubber
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band -- render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law, tol +/-1.0 dB. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   cimbalom      60    -44.8    -38.8      +6.1      +6.1  PASS
+      broadband RMS delta = +6.35 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band -- render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law, tol +/-1.0 dB. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   tongue_drum   60    -42.3    -36.2      +6.1      +6.1  PASS
+      broadband RMS delta = +6.88 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band -- render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law, tol +/-1.0 dB. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   water_gong    60    -37.0    -31.0      +6.1      +6.1  PASS
+      broadband RMS delta = +6.23 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band -- render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law, tol +/-1.0 dB. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   water_gong_free   60    -51.8    -45.7      +6.1      +6.1  PASS
+      broadband RMS delta = +6.39 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band -- render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law, tol +/-1.0 dB. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   fm            60    -34.6    -29.0      +5.6        --  EXEMPT (FM index also scales with velocity)
+      broadband RMS delta = +5.92 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band -- render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law, tol +/-1.0 dB. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   piano         60    -44.0    -37.0      +7.0      +7.0  PASS
+      broadband RMS delta = +7.48 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Partial-amplitude judgment (MIDI 60, first 5 partials, rel-dB vs --dump-modes theory, tol +/-3.0 dB):
+
+# cimbalom    MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     521.296    -6.85    -6.84   +0.01  PASS
+    3     782.720   -13.45   -13.45   +0.00  PASS
+    4    1045.868   -20.92   -20.92   +0.01  PASS
+    5    1309.777   -12.11   -12.11   +0.00  PASS
+   -> PASS
+
+# tongue_drum MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2    1639.579    +0.39    +0.39   +0.00  PASS
+    3    4590.870   -50.09   -50.09      --  MODEL-WEAK (not required)
+    4    8996.271  -240.00       --      --  MODEL-WEAK (not required)
+    5   14871.480  -240.00       --      --  MODEL-WEAK (not required)
+   -> PASS
+
+# water_gong  MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     544.467    -1.81    -1.81   +0.01  PASS
+    3     893.196    -9.82    -9.81   +0.00  PASS
+    4    1018.531   -18.26   -18.26   +0.01  PASS
+    5    1306.873   -21.11   -21.11   +0.00  PASS
+   -> PASS
+
+# water_gong_free MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     454.817   +14.92   +14.93   +0.00  PASS
+    3     609.232   -11.67   -11.67   +0.01  PASS
+    4    1026.953    +9.24    +9.24   +0.00  PASS
+    5    1071.726   -25.68   -25.68   +0.00  PASS
+   -> PASS
+
+# piano       MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.625    +0.00    +0.00   +0.00  ref (0 dB)
+    2     521.302   -13.22   -13.21   +0.01  PASS
+    3     788.955   -25.23   -25.22   +0.00  PASS
+    4    1045.861   -25.67   -25.66   +0.01  PASS
+    5    1316.133   -30.86   -30.85   +0.00  PASS
+   -> PASS
+Modal decay T60 - measured (audio) vs model ground truth (--dump-modes):
+   engine      MIDI    model     meas  ratio
+   cimbalom      60    4.30s    4.56s   1.06  (beat 1.51 Hz)  (span 48.4dB, probe 5.0s)
+   cimbalom      72    2.08s    2.17s   1.04  (beat 3.02 Hz)  (span 51.8dB, probe 5.0s)
+   tongue_drum   60   30.14s   30.18s   1.00  (span 26.0dB, probe 15.1s)
+   tongue_drum   72   12.93s   12.91s   1.00  (span 25.0dB, probe 6.5s)
+   water_gong    60    7.49s    7.47s   1.00  (span 32.4dB, probe 5.0s)
+   water_gong    72    3.51s    3.51s   1.00  (span 57.7dB, probe 5.0s)
+   water_gong_free   60    7.49s    7.48s   1.00  (span 32.4dB, probe 5.0s)
+   water_gong_free   72    3.51s    3.51s   1.00  (span 57.6dB, probe 5.0s)
+   piano         60    4.30s    4.56s   1.06  (beat 1.51 Hz)  (span 48.4dB, probe 5.0s)
+   piano         72    2.08s    2.17s   1.04  (beat 3.02 Hz)  (span 51.8dB, probe 5.0s)
+
+(model = fundamental decayTime straight from the C++ model;
+ measured = narrowband (+/-3% of measured f0) Hilbert-envelope
+ log-slope fit, beat-period-averaged for multi-string courses;
+ see measure_t60()'s docstring for the exact method, ROADMAP_PHYSICS.md M5-5a.)
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -66.6 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -62.6 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+
+======================================================================
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED

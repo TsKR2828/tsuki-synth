@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "TsukiLookAndFeel.h"
 #include "UiLocale.h"
+#include "HoverMagnifier.h"
 #include "analyzer/AnalyzerPanel.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 
@@ -138,6 +139,11 @@ private:
     // Standalone recorder
     juce::TextButton recordButton { "REC" };
 
+    // Standalone score console (one-click render / report without Cubase)
+    juce::TextButton scoreConsoleButton { "Score" };
+    std::unique_ptr<juce::DocumentWindow> scoreConsoleWindow;
+    void openScoreConsole();
+
     // Preset
     juce::ComboBox   presetCombo;
     juce::TextButton presetPrev, presetNext;
@@ -167,16 +173,29 @@ private:
     KnobParam macroBrightness, macroBody, macroNoise, macroOutput;
 
     // Effects
-    KnobParam fxRevMix, fxRevSize;
+    KnobParam fxRevMix, fxRevSize, fxRevDecay;
     KnobParam fxDlyTime, fxDlyFeedback, fxDlyMix;
     KnobParam fxCompThresh, fxCompRatio;
+
+    // Reverb profile / IR loading
+    juce::TextButton revLoadButton { "Load" };
+    juce::TextButton revModeButton { "ALGO" };
+    std::unique_ptr<juce::FileChooser> revChooser;
+    void launchReverbFileChooser();
+    void refreshReverbModeButton();
 
     // Distortion
     ComboParam  distType;
     KnobParam   distDrive, distInstability, distMix;
 
+    // Brightness EQ (documented creative layer)
+    KnobParam   fxEqFreq, fxEqGain;
+
     // Analyzer
     AnalyzerPanel analyzerPanel;
+
+    // Accessibility hover magnifier (must outlive nothing -- plain member)
+    HoverMagnifier magnifier;
 
     // Brand assets
     juce::Path moonPath;
@@ -185,6 +204,7 @@ private:
     // Layout bounds (stored in resized, used in paint)
     juce::Rectangle<int> macroArea_, engineArea_, effectsRow_, distRow_, analyzerRow_;
     juce::Rectangle<int> reverbBounds_, delayBounds_, compBounds_, distPanelBounds_;
+    juce::Rectangle<int> eqPanelBounds_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthEditor)
 };

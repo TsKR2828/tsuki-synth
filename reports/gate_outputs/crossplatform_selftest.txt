@@ -1,0 +1,81 @@
+# GATE: crossplatform_verify.py (2026-08-15, unstaged)
+
+## 1. python tools/crossplatform_verify.py --selftest
+crossplatform_verify self-test
+------------------------------------------------------------
+  [OK] identical signals -> -inf max delta
+  [OK] identical signals -> no differing frame
+  [OK] identical signals -> 0.000 dB spectral deviation -- 0.0
+  [OK] single -100 dBFS perturbation measured as -100.00 dBFS -- -100.000000
+  [OK] perturbation located at the right frame -- 1234
+  [OK] +0.5 dB gain error detected as ~0.5 dB spectral deviation -- 0.5000
+  [OK] +50 cent shift reported within one FFT bin of +50 cents -- 50.409
+  [OK] judge rejects -60 dBFS against a -90 dBFS limit
+  [OK] judge accepts -120 dBFS against a -90 dBFS limit
+  [OK] judge uses magnitude for a negative cent deviation
+  [OK] empty tolerance file judges nothing (no silent PASS)
+------------------------------------------------------------
+RESULT: ALL SELF-TESTS PASSED
+
+EXIT: 0
+
+## 2. same-machine emit x2 -> compare (Windows/MSVC 19.50.35730.0)
+==========================================================================
+TsukiSynth cross-platform render reproducibility
+==========================================================================
+reference : windows-msvc-runA  (Windows AMD64)
+candidate : windows-msvc-runB  (Windows AMD64)
+tolerance : NONE REGISTERED
+
+--------------------------------------------------------------------------
+### windows-msvc-runA  vs  windows-msvc-runB
+    compiler: MSVC 19.50.35730.0  vs  MSVC 19.50.35730.0
+--------------------------------------------------------------------------
+[BIT-IDENTICAL] scores/examples/water_gong_clamped.score.json
+[BIT-IDENTICAL] scores/examples/water_gong_free.score.json
+[BIT-IDENTICAL] scores/examples/physical_piano.score.json
+[BIT-IDENTICAL] scores/examples/akashic_bell.score.json
+[BIT-IDENTICAL] scores/examples/fur_elise_opening.score.json
+
+==========================================================================
+RESULT: BIT_IDENTICAL -- every platform matched byte-for-byte.
+No cross-platform tolerance is needed.
+EXIT: 0
+
+## 3. counterexample: 1 LSB perturbation injected into water_gong_clamped
+==========================================================================
+TsukiSynth cross-platform render reproducibility
+==========================================================================
+reference : windows-msvc-runA  (Windows AMD64)
+candidate : synthetic-1LSB-perturbed  (Windows AMD64)
+tolerance : NONE REGISTERED
+
+--------------------------------------------------------------------------
+### windows-msvc-runA  vs  synthetic-1LSB-perturbed
+    compiler: MSVC 19.50.35730.0  vs  MSVC 19.50.35730.0
+--------------------------------------------------------------------------
+[DIFFERS] scores/examples/water_gong_clamped.score.json
+    max |delta|            : -138.47 dBFS (1.000 LSB at 24-bit)
+    delta RMS              : -198.33 dBFS (-179.08 dB re signal)
+    first differing frame  : 50000 (t = 1.041667 s)
+    differing frames       : 0.0002 %
+    max spectral deviation : 0.0000 dB over 36689 bin(s) above -80 dB re peak
+    peak-bin pitch         : +0.0000 cents (816.000 -> 816.000 Hz)
+[BIT-IDENTICAL] scores/examples/water_gong_free.score.json
+[BIT-IDENTICAL] scores/examples/physical_piano.score.json
+[BIT-IDENTICAL] scores/examples/akashic_bell.score.json
+[BIT-IDENTICAL] scores/examples/fur_elise_opening.score.json
+
+==========================================================================
+RESULT: UNREGISTERED -- renders differ numerically across platforms.
+The measured deviations above are printed for registration in
+ROADMAP_PHYSICS.md section 6.  This tool must not invent a
+tolerance (Rule 2), so no pass/fail verdict is issued.
+To enable judgement, create C:\Users\admin\Desktop\Claude\tsuki-synth\scores\crossplatform_tolerance.json with approved limits.
+EXIT: 3
+
+## 4. exit-code matrix (stdout suppressed)
+  within registered tolerance -> exit 0 (expected 0)
+  out of registered tolerance -> exit 1 (expected 1)
+  no tolerance file registered -> exit 3 (expected 3)
+  identical directories -> exit 0 (expected 0)

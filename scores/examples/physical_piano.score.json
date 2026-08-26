@@ -37,8 +37,6 @@
       "velocity": 0.8,
       "params": {
         "material": "steel",
-        "length_mm": 330,
-        "tension_n": 0,
         "diameter_mm": 1.0
       }
     },
@@ -50,8 +48,6 @@
       "velocity": 0.8,
       "params": {
         "material": "steel",
-        "length_mm": 330,
-        "tension_n": 0,
         "diameter_mm": 1.0
       }
     },
@@ -63,8 +59,6 @@
       "velocity": 0.8,
       "params": {
         "material": "steel",
-        "length_mm": 330,
-        "tension_n": 0,
         "diameter_mm": 1.0
       }
     },
@@ -76,8 +70,6 @@
       "velocity": 0.85,
       "params": {
         "material": "steel",
-        "length_mm": 330,
-        "tension_n": 0,
         "diameter_mm": 1.0
       }
     }

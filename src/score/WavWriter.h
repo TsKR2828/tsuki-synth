@@ -1,32 +1,48 @@
 #pragma once
 
 #include <juce_audio_formats/juce_audio_formats.h>
+#include <cmath>
+#include <cstdint>
 
 class WavWriter
 {
 public:
+    struct Report
+    {
+        float preNormalizePeak = 0.0f;
+        float appliedGain = 1.0f;
+        int64_t samplesAtOrAboveFullScale = 0;
+    };
+
     static bool write (const juce::File& file,
-                       const juce::AudioBuffer<float>& buffer,
+                       juce::AudioBuffer<float>& buffer,
                        double sampleRate,
                        int bitDepth = 24,
-                       bool normalize = true)
+                       bool normalize = true,
+                       Report* report = nullptr)
     {
-        juce::AudioBuffer<float> outBuf;
-        outBuf.makeCopyOf (buffer);
+        Report measured;
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            measured.preNormalizePeak = juce::jmax (
+                measured.preNormalizePeak,
+                buffer.getMagnitude (ch, 0, buffer.getNumSamples()));
+            const float* samples = buffer.getReadPointer (ch);
+            for (int i = 0; i < buffer.getNumSamples(); ++i)
+                if (std::abs (samples[i]) >= 1.0f)
+                    ++measured.samplesAtOrAboveFullScale;
+        }
 
         if (normalize)
         {
-            float peak = 0.0f;
-            for (int ch = 0; ch < outBuf.getNumChannels(); ++ch)
-                peak = juce::jmax (peak, outBuf.getMagnitude (ch, 0, outBuf.getNumSamples()));
-
-            if (peak > 0.0001f)
+            if (measured.preNormalizePeak > 0.0001f)
             {
-                float gain = 0.95f / peak;
-                for (int ch = 0; ch < outBuf.getNumChannels(); ++ch)
-                    outBuf.applyGain (ch, 0, outBuf.getNumSamples(), gain);
+                measured.appliedGain = 0.95f / measured.preNormalizePeak;
+                for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+                    buffer.applyGain (ch, 0, buffer.getNumSamples(), measured.appliedGain);
             }
         }
+        if (report != nullptr) *report = measured;
 
         const bool writeFlac = file.hasFileExtension ("flac");
         int safeBitDepth = writeFlac
@@ -47,7 +63,7 @@ public:
 
         const auto options = juce::AudioFormatWriterOptions()
             .withSampleRate (sampleRate)
-            .withNumChannels (outBuf.getNumChannels())
+            .withNumChannels (buffer.getNumChannels())
             .withBitsPerSample (safeBitDepth)
             .withQualityOptionIndex (writeFlac ? 5 : 0);
         auto writer = format->createWriterFor (stream, options);
@@ -58,7 +74,7 @@ public:
             return false;
         }
 
-        bool wrote = writer->writeFromAudioSampleBuffer (outBuf, 0, outBuf.getNumSamples());
+        bool wrote = writer->writeFromAudioSampleBuffer (buffer, 0, buffer.getNumSamples());
         writer.reset();
 
         if (! wrote)

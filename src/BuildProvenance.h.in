@@ -1,0 +1,12 @@
+#pragma once
+
+namespace TsukiBuildProvenance
+{
+inline constexpr const char* projectVersion = "@PROJECT_VERSION@";
+inline constexpr const char* sourceCommit = "@TSUKI_GIT_COMMIT@";
+inline constexpr bool sourceDirty = @TSUKI_GIT_DIRTY_BOOL@;
+inline constexpr const char* compilerId = "@CMAKE_CXX_COMPILER_ID@";
+inline constexpr const char* compilerVersion = "@CMAKE_CXX_COMPILER_VERSION@";
+inline constexpr const char* targetSystem = "@CMAKE_SYSTEM_NAME@";
+inline constexpr const char* targetProcessor = "@CMAKE_SYSTEM_PROCESSOR@";
+}

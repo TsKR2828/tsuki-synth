@@ -1,8 +1,68 @@
 cmake_minimum_required(VERSION 3.22)
-project(TsukiSynth VERSION 0.2.0)
+project(TsukiSynth VERSION 0.3.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+option(TSUKI_ENABLE_SANITIZERS
+       "Enable AddressSanitizer (and UndefinedBehaviorSanitizer where supported) on regression tests"
+       OFF)
+
+function(tsuki_enable_test_sanitizers target_name)
+    if(NOT TSUKI_ENABLE_SANITIZERS)
+        return()
+    endif()
+
+    if(MSVC)
+        target_compile_options(${target_name} PRIVATE /fsanitize=address /Zi)
+        target_link_options(${target_name} PRIVATE /INCREMENTAL:NO)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(${target_name} PRIVATE
+            -fsanitize=address,undefined -fno-omit-frame-pointer)
+        target_link_options(${target_name} PRIVATE -fsanitize=address,undefined)
+    else()
+        message(FATAL_ERROR
+            "TSUKI_ENABLE_SANITIZERS is not supported by ${CMAKE_CXX_COMPILER_ID}")
+    endif()
+endfunction()
+
+# Build provenance for the CLI render manifest.  The executable hashes itself
+# at runtime; these configure-time fields explain which source/toolchain
+# produced those exact bytes.  A dirty flag prevents an uncommitted build from
+# being mistaken for the named commit.
+set(TSUKI_GIT_COMMIT "unknown")
+set(TSUKI_GIT_DIRTY_BOOL true)
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --verify HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE TSUKI_GIT_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE TSUKI_GIT_REV_RESULT
+    )
+    if(NOT TSUKI_GIT_REV_RESULT EQUAL 0)
+        set(TSUKI_GIT_COMMIT "unknown")
+    endif()
+
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" status --porcelain
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        OUTPUT_VARIABLE TSUKI_GIT_STATUS
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(TSUKI_GIT_STATUS STREQUAL "")
+        set(TSUKI_GIT_DIRTY_BOOL false)
+    endif()
+endif()
+
+configure_file(
+    src/BuildProvenance.h.in
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/BuildProvenance.h"
+    @ONLY
+)
 
 if(MSVC)
     add_compile_options(/utf-8)
@@ -81,7 +141,10 @@ target_sources(TsukiSynthCLI PRIVATE
     src/cli/RenderApp.cpp
 )
 
-target_include_directories(TsukiSynthCLI PRIVATE src)
+target_include_directories(TsukiSynthCLI PRIVATE
+    src
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
 
 target_compile_definitions(TsukiSynthCLI PRIVATE
     JUCE_WEB_BROWSER=0
@@ -116,5 +179,70 @@ if(TSUKI_BUILD_TESTS)
         PUBLIC
             juce::juce_recommended_config_flags
     )
+    tsuki_enable_test_sanitizers(TsukiSynthAuditTest)
     add_test(NAME audit_repro COMMAND TsukiSynthAuditTest)
+
+    add_executable(TsukiSynthTunerTest tests/tuner_repro.cpp)
+    target_include_directories(TsukiSynthTunerTest PRIVATE src)
+    # Kept consistent with the other two test targets. tuner_repro.cpp's
+    # current includes (PitchDetector/AudioFIFO/MidiNoteTracker) are std-only,
+    # but parity here means a future JUCE-touching include cannot silently
+    # build this target with different definitions/flags than its siblings.
+    target_compile_definitions(TsukiSynthTunerTest PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+    )
+    target_link_libraries(TsukiSynthTunerTest
+        PRIVATE
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+        PUBLIC
+            juce::juce_recommended_config_flags
+    )
+    tsuki_enable_test_sanitizers(TsukiSynthTunerTest)
+    add_test(NAME tuner_repro COMMAND TsukiSynthTunerTest)
+
+    add_executable(TsukiSynthPhysicsModelsTest tests/physics_models_repro.cpp)
+    target_include_directories(TsukiSynthPhysicsModelsTest PRIVATE src)
+    target_compile_definitions(TsukiSynthPhysicsModelsTest PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+    )
+    target_link_libraries(TsukiSynthPhysicsModelsTest
+        PRIVATE
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+            juce::juce_dsp
+        PUBLIC
+            juce::juce_recommended_config_flags
+    )
+    tsuki_enable_test_sanitizers(TsukiSynthPhysicsModelsTest)
+    add_test(NAME physics_models_repro COMMAND TsukiSynthPhysicsModelsTest)
+
+    # --- L2 host-integration probe (EARFREE_MELODY_GATE_DESIGN L2) ---
+    # Loads the BUILT TsukiSynth.vst3 bundle from disk through
+    # juce::VST3PluginFormat (the binary a DAW loads, not linked-in source)
+    # and turns A9's four manual Cubase steps into command-output checks.
+    # Deliberately NOT registered with add_test: it depends on the VST3
+    # artefact being built first, and its melody-position verdict is issued
+    # by tools/melody_verify.py on the WAV it writes. Run manually:
+    #   cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynthHostProbe
+    #   build/Release/TsukiSynthHostProbe.exe     #       build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <out-dir>
+    #   python tools/melody_verify.py scores/tests/melody_sentinel.score.json     #       --wav <out-dir>/hostprobe_render.wav
+    add_executable(TsukiSynthHostProbe tests/host_probe.cpp)
+    target_include_directories(TsukiSynthHostProbe PRIVATE src)
+    target_compile_definitions(TsukiSynthHostProbe PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_PLUGINHOST_VST3=1
+    )
+    target_link_libraries(TsukiSynthHostProbe
+        PRIVATE
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+            juce::juce_audio_utils
+            juce::juce_dsp
+        PUBLIC
+            juce::juce_recommended_config_flags
+    )
 endif()

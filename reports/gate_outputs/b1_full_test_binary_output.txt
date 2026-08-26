@@ -1,0 +1,57 @@
+TsukiSynth physical-model regression tests
+[PASS] Cantilever analytic mode shapes have a node at the fixed end
+[PASS] Tongue default uses fixed-free eigenvalue ratios
+[PASS] Cantilever free endpoint is not incorrectly forced to zero
+[PASS] Explicit free-free beam retains its distinct modal ratios
+[PASS] Ideal beam width correctly cancels from eigenfrequency
+[PASS] Beam width remains observable through modal mass
+[PASS] Circular-plate centre strike suppresses m>0 modes without a floor
+[PASS] Clamped plate eigenfunctions vanish at the edge
+[PASS] Free plate preserves centre nodes and the axisymmetric branch
+[PASS] Free-edge eigenvalues depend on the material Poisson ratio
+[PASS] frequency_mode separates MIDI pitch lock from absolute geometry physics
+[PASS] Damping is recomputed from the final sounding frequency
+[PASS] Damping override retains air and radiation losses
+[PASS] Internal friction is broadband: T60 halves per octave (rate ~ eta*f)
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] damping_override still means the internal-friction rate at MIDI 60
+[PASS] Y_inf at h=8mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (3.01e-3 s/kg, +-0.5%)
+[PASS] Y_inf at h=10mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (1.93e-3 s/kg, +-0.5%)
+[PASS] T60_bridge at C2 (T/L=1250.0 N/m) matches literature table (4.25s, +-1%)
+[PASS] T60_bridge at C4 (T/L=1073.3 N/m) matches literature table (4.95s, +-1%)
+[PASS] T60_bridge at C8 (T/L=12650.0 N/m) matches literature table (0.42s, +-1%)
+[PASS] Bridge coupling loss term is frequency-independent (55Hz T60 == 4000Hz T60)
+[PASS] damping_override does not swallow the bridge coupling term
+[PASS] Omitting bridgeLoss is identical to passing bridgeLoss=0.0f (existing callers unaffected)
+[PASS] bridgeLossRate fail-closed: soundboardThicknessM=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: negative soundboardThicknessM -> 0.0f
+[PASS] bridgeLossRate fail-closed: length=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: negative length -> 0.0f
+[PASS] bridgeLossRate fail-closed: tension=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: non-finite tension -> 0.0f
+[SENTINEL 1/2] mutant (frequency-scaled bridgeLoss): T60(55Hz)=20.2186s  T60(4000Hz)=0.278006s -- same equality check as the real test would report: [FAIL] (GOOD -- regression caught)
+[PASS] SENTINEL: mutant frequency-dependent bridgeLoss is distinguishable at 55Hz vs 4000Hz (proves the Sec7-3 equality check has detection power)
+[SENTINEL 2/2] real StringModel::decayTimeForFrequency: T60(55Hz)=4.25044s  T60(4000Hz)=4.25044s -- verdict: [PASS]
+[PASS] SENTINEL: real bridgeLoss term passes the same equality check (frequency-independent, as required)
+[PASS] Beam frequencies obey L^-2, thickness, sqrt(E), and rho^-1/2 scaling
+[PASS] Plate frequencies obey R^-2, thickness, sqrt(E), and rho^-1/2 scaling
+[PASS] Unforced modal energy decays monotonically cycle by cycle
+[PASS] Invalid modal numbers fail closed without NaN output or a live voice
+[PASS] Invalid modes cannot poison a simultaneously active valid mode
+[PASS] 1/(2*tau) is the removable pi/4 point, not a false spectral null
+[PASS] Half-sine impulse first true null is 3/(2*tau)
+[PASS] Hertz strike-speed law shortens contact at higher velocity
+[PASS] Modal frequency gate exactly matches the DSP renderable band
+[PASS] Geometry modes below 20 Hz are rejected instead of becoming attack-only audio
+[PASS] Weak modes use a relative -60 dB lifetime instead of an absolute cutoff
+[PASS] Modal resonator stops after each mode reaches its T60
+[PASS] Specified PCG noise is exactly reproducible for the same event seed
+[PASS] Distinct semantic event identities prevent coherent repeated-note noise streams
+[PASS] StereoDelay honours the full 5000 ms score contract including 1.10x right spread
+[PASS] Zero-time delay keeps history moving instead of replaying frozen stale audio
+[PASS] Authored reverb T60 reaches approximately -60 dB after one second
+[PASS] Plugin and CLI share the same static FX signal path
+PASS (0 failures)

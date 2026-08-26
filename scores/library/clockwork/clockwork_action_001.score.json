@@ -36,7 +36,6 @@
       "params": {
         "material": "steel",
         "diameter_mm": 0.5,
-        "length_mm": 40,
         "tension_n": 200,
         "strike_position": 0.05,
         "exciter": "pluck",

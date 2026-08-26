@@ -1,5 +1,8 @@
 # TsukiSynth — Development Roadmap
 
+> Historical product chronology. It is not the current physics acceptance contract.
+> For current scope, gates and gaps use `ROADMAP_PHYSICS.md` and `docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md` (branch `fix/deep-physics-audit-20260716`). Statements below marked with old dates describe their phase at that time.
+
 > **⚠️ 2026-07-02 起，物理精確化開發的驗收唯一依據是 [`ROADMAP_PHYSICS.md`](ROADMAP_PHYSICS.md)。**
 > **AI 開發者開工前必讀該文件 §1 強制規則。本檔保留為歷史紀錄與產品向 backlog。**
 >
@@ -51,7 +54,7 @@ instrument-physics correctness. Branch `Codex-fix-bug`.
 
 - **Code audit (8 bugs)** found + fixed (Codex `b5a370d` / PR #4 + this session);
   `tests/audit_repro.cpp` documents them.
-- **Determinism** — NoiseGen deterministic seeding → same score renders
+- **Determinism** — specified PCG32 + score/event seeds → same score renders identically in the tested build environment; cross-platform bit identity remains unproven
   byte-identical (prerequisite for ear-free verification).
 - **Verification harness** `tools/physics_verify.py` — render → FFT → compare to
   physics-model predictions (beam βL / plate Ω / harmonic), report f0 cents +
@@ -95,7 +98,7 @@ instrument-physics correctness. Branch `Codex-fix-bug`.
 
 **Physics modules (`src/physics/`):**
 - `StringModel` — string mode frequency with inharmonicity correction
-- `BeamModel` — Euler-Bernoulli free-free beam (20 eigenvalues)
+- `BeamModel` — Euler-Bernoulli fixed-free cantilever by default for a tongue; explicit free-free suspended-bar mode
 - `PlateModel` — Kirchhoff clamped circular plate (25 Bessel zeros)
 - `MaterialDB` — JSON loader, embedded via BinaryData
 
@@ -105,7 +108,7 @@ instrument-physics correctness. Branch `Codex-fix-bug`.
 - Modal Synthesis string model, 40 modes per voice
 - Multi-string beating (1-5 strings per course, adjustable detuning)
 - Material spectral tilt: log₁₀(E)-based overtone rolloff (stiff → bright, soft → warm)
-- Hammer force spectrum shaping: 2nd-order LP on mode amplitudes (cotton cutoff=3rd partial, metal=60th)
+- Hammer force spectrum shaping: normalized half-sine contact-force spectrum with velocity-dependent contact time (the old partial-count LP table was removed)
 - Exciter noise burst with material-dependent brightness and hammer-dependent amplitude
 - Damper via note-off + CC#64 sustain pedal
 - 6 parameters: Material, Strike Position, Diameter, Hammer, Strings, Detuning
@@ -276,7 +279,7 @@ The code was previously built and verified on a different machine:
 |---------|-----------|--------|
 | v0.1 | Playable Build — 3 engines, effects, presets, analyzer, CLI | **Done** |
 | v0.2 | Polish — DAW validation, listening test, factory preset tuning | Next |
-| v0.3 | Sonic Identity — Sample Layer v0, world-themed preset library | Planned |
+| v0.3 | Physics hardening — external data, calibrated amplitude, coupled bodies | Current direction |
 | v0.4 | AI Sound Library — CLI batch export, metadata, AI workflow docs | Planned |
 | v0.5 | Advanced Sound Design — Granular mode, mod matrix lite, preset tags | Planned |
 | v1.0 | Product Release — Installer, manual, demo videos, licensing | Planned |
@@ -371,9 +374,9 @@ The code was previously built and verified on a different machine:
 
 ## TODO: v0.3 — Sonic Identity
 
-### Sample Layer v0
+### Sample Layer v0 (superseded / outside physical domain)
 - Single-shot WAV playback layer alongside modal engines
-- Use case: attack transients (hammer impact, pick noise) that physical modeling handles poorly
+- A sample layer may be a labelled creative feature, but it cannot be used as evidence for a physical-model claim. Physical transient work now uses `HammerImpulse` and deterministic exciter noise.
 - Implementation: JUCE `AudioFormatReader` + ADSR envelope, triggered alongside engine voice
 - One sample slot per engine, velocity-mapped amplitude
 

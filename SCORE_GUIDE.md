@@ -2,6 +2,8 @@
 
 > A physics-based music synthesizer where you compose by writing JSON.
 > No audio knowledge required — describe physical objects, and the engine simulates how they sound.
+>
+> Current contract: 2026-07-17. The parser and Draft 2020-12 schema are strict: unknown fields, wrong types, unsupported engines and parameters that do nothing are errors, not warnings.
 
 ## Quick Start — Minimal Score
 
@@ -15,7 +17,8 @@
   "global": {
     "bpm": 120,
     "sample_rate": 48000,
-    "master_volume": 0.8
+    "master_volume": 0.8,
+    "random_seed": 20260717
   },
   "events": [
     {
@@ -111,6 +114,7 @@ The synthesizer solves the physics equations and produces the audio. Pitch comes
 | `bpm` | 1–999 | **Informational only.** The renderer uses absolute seconds. |
 | `sample_rate` | 44100 / 48000 / 88200 / 96000 | Only these 4 values are valid. |
 | `master_volume` | 0–1 | Overall output gain. |
+| `random_seed` | integer 0–2^53−1 | Optional explicit deterministic seed; omitted scores use the fixed `TSUKISYN` default. Event index derives independent streams. |
 
 ---
 
@@ -158,15 +162,17 @@ Multiple events can share the same `time` — they play simultaneously. This is 
 | Engine | Aliases | What It Is | Required Params |
 |--------|---------|------------|-----------------|
 | `string` | `cimbalom` | Vibrating wire/string | `material`, `diameter_mm` |
-| `beam` | `tongue_drum` | Vibrating bar/rod | `material`, `thickness_mm`, `length_mm`, `width_mm` |
-| `plate` | `water_gong`, `membrane` | Vibrating disc/sheet | `material`, `radius_mm`, `thickness_mm` |
+| `beam` | `tongue_drum` | Fixed-free tongue by default; explicit suspended bar | `material`, `thickness_mm`, `length_mm`, `width_mm` |
+| `plate` | `water_gong` | Kirchhoff circular plate | `material`, `radius_mm`, `thickness_mm` |
+| `piano` | — | Struck stiff-string physical piano | `material`, `diameter_mm` |
 
 ### FM Engine (classic FM synthesis)
 
 | Engine | What It Is | Key Param |
 |--------|------------|-----------|
 | `fm` | 2-operator FM synthesizer | `fm_preset` (0–7) |
-| `piano` | Piano variant of string engine | `material`, `diameter_mm` |
+
+`membrane` is deliberately rejected: a plate is not silently accepted as a membrane model.
 
 ### Custom Engine
 
@@ -186,7 +192,8 @@ Multiple events can share the same `time` — they play simultaneously. This is 
   "diameter_mm": 0.8,         // Wire diameter: 0.1–50 mm
   "strike_position": 0.3,     // 0=edge, 0.5=center, 1=far edge
   "exciter": "pluck",         // See Exciters table
-  "damping_override": -1      // -1 = use material default
+  "damping_override": null,   // null/omitted = use material default
+  "frequency_mode": "midi"   // "geometry" keeps absolute physical f0
 }
 ```
 
@@ -200,6 +207,8 @@ Thin strings (0.1–0.5mm) → bright, high. Thick strings (2–5mm) → deep, b
   "thickness_mm": 2,           // 0.1–1000
   "length_mm": 100,            // 1–10000
   "width_mm": 25,              // 1–10000
+  "beam_boundary": "cantilever", // or "free_free" for a suspended bar
+  "frequency_mode": "midi",
   "strike_position": 0.4,
   "exciter": "wood_mallet"
 }
@@ -207,7 +216,7 @@ Thin strings (0.1–0.5mm) → bright, high. Thick strings (2–5mm) → deep, b
 
 Long thin beams → low pitch. Short thick beams → high pitch, percussive.
 
-> **Note:** Modal engines compute natural frequencies from physical dimensions, then retune all modes to the MIDI note pitch via chromatic scaling. Dimensions primarily affect **timbre** (harmonic ratios, decay rates) rather than fundamental pitch. The score's `note` field determines the sounding pitch.
+> **Pitch contract:** `frequency_mode: "midi"` computes the modes and then pitch-locks them to the score note; dimensions mainly affect ratios, amplitudes and decay. `frequency_mode: "geometry"` does not retune and is the mode to use when validating absolute material/geometry frequency. Always state which mode supports a claim.
 
 ### Plate / Water Gong
 
@@ -217,12 +226,14 @@ Long thin beams → low pitch. Short thick beams → high pitch, percussive.
   "radius_mm": 120,            // 1–10000
   "thickness_mm": 2,           // 0.1–1000
   "plate_free_edge": true,     // true=hung gong, false=clamped
+  "frequency_mode": "geometry",
   "strike_position": 0.3,
   "exciter": "felt_mallet"
 }
 ```
 
-`plate_free_edge: true` → gong/cymbal (free to ring). `false` → clamped drum.
+`plate_free_edge: true` → free-edge gong/cymbal-like plate. `false` → clamped plate.
+Neither setting is a membrane drum model.
 
 ### FM Synthesis
 
@@ -324,7 +335,7 @@ All effects are in `global.effects` and apply to the entire score.
 | `decay` | 0–30 seconds | 2.0 |
 | `wet` | 0–1 | 0.3 |
 
-Small room: decay 0.5–1.5. Concert hall: 2–4. Cathedral: 5–8. Underwater: 10+.
+`decay` is the implemented comb-filter T60: each score-renderer comb reaches −60 dB after this time. Reverb is an artistic effect outside the instrument-physics verification domain.
 
 ### Delay
 ```json
@@ -353,7 +364,7 @@ Sync delay to tempo: `delay_ms = 60000 / bpm` (quarter note) or half/double.
 ```json
 "wall": { "distance_m": 5, "material": "stone" }
 ```
-Simulates sound bouncing off a wall. Materials: `stone`, `glass`, `metal`, `wood`, `fabric`.
+Simulates one wall reflection. Materials: `stone`, `concrete`, `glass`, `metal`, `wood`, `fabric`, `curtain`.
 
 ---
 
@@ -441,10 +452,10 @@ The note starts at `from_note` and glides to `note` over `duration_ms`, then hol
 
 | Field | Values | Default | Note |
 |-------|--------|---------|------|
-| `filename` | string | (required) | Output filename, no extension |
+| `filename` | safe string | (required) | Filename stem only; paths, separators and `..` are rejected |
 | `format` | `wav` / `flac` | `wav` | |
 | `bit_depth` | 16 / 24 / 32 | 24 | |
-| `normalize` | bool | true | Peak normalize to -3 dB |
+| `normalize` | bool | true | Peak normalize to 0.95 (about −0.45 dBFS); pre-normalize values remain in the render manifest |
 | `tail_silence_ms` | 0–60000 | 300 | Silence after last note |
 
 ---
@@ -455,7 +466,6 @@ Instead of `events`, you can composite multiple .score.json files:
 
 ```json
 {
-  "events": [],
   "layers": [
     { "source": "bell.score.json", "region": [0.0, 0.6], "gain": 1.0 },
     { "source": "drone.score.json", "region": [0.0, 1.0], "gain": 0.8 }
@@ -463,6 +473,8 @@ Instead of `events`, you can composite multiple .score.json files:
   "crossfade_ms": 80
 }
 ```
+
+A score must contain exactly one of non-empty `events` or non-empty `layers`. Layer sources must remain under the score tree, use the same sample rate, and cannot themselves be layered.
 
 `region` clips the source: `[0.0, 0.6]` = first 60% of the rendered audio.
 
@@ -495,9 +507,9 @@ Name your instruments for readability. The renderer ignores this — it's for hu
 
 ## Common Patterns & Recipes
 
-### Drum Kit
+### Percussion-like Palette (not a membrane drum model)
 ```json
-// Kick drum — large clamped plate
+// Low plate impact — a large clamped plate, not a physical kick membrane
 {"engine":"plate","note":"C2","params":{"material":"rubber","radius_mm":200,"thickness_mm":4,"plate_free_edge":false,"exciter":"felt_mallet"}}
 
 // Snare — wood beam
@@ -580,9 +592,11 @@ Before rendering, verify:
 | Forgetting `params` for physical engines | Every physical engine needs at least `material` + dimensions |
 | Omitting beam/plate dimensions | When a required dimension is omitted, the parser uses default values (e.g. length_mm=100, radius_mm=120). For reproducible physical verification, specify all dimensions explicitly. |
 | Setting `sample_rate` to 22050 or other values | Only 44100 / 48000 / 88200 / 96000 are valid |
+| Using `membrane` as a plate alias | Rejected. Use `plate`/`water_gong`, or implement a true membrane model first. |
+| Supplying a parameter from another engine | Rejected as a no-op; use only the engine-specific schema fields. |
 | Notes too short, no sound | Duration < 0.05 may be inaudible. 90% rule makes it even shorter. |
 | All notes at same velocity | Vary velocity 0.4–0.9 for natural feel |
-| No effects | Even minimal reverb (decay 1.5, wet 0.15) adds life |
+| Treating effects as physical evidence | Keep FX wet at 0 for instrument-physics verification; effects may be enabled only for an explicitly artistic render. |
 
 ---
 
@@ -598,7 +612,7 @@ TsukiSynthCLI.exe score.score.json --output ./output
 TsukiSynthCLI.exe --batch ./scores --output ./output
 ```
 
-Batch mode is non-recursive. It skips files whose WAV already exists in the output directory.
+Batch mode is non-recursive. Before rendering anything it parses/validates every file and rejects unsafe names, case-insensitive output collisions, existing audio/manifests and invalid layer references. It never overwrites an existing output.
 
 The CLI is at: `build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe`
 

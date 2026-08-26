@@ -1,0 +1,137 @@
+{
+  "$schema": "TsukiSynth Specimen Acquisition v1",
+  "measurement_template": "measurement.json",
+  "mode_dump": "modes.json",
+  "channels": {
+    "force": {
+      "column": "force_v",
+      "sensitivity_v_per_n": 0.0025,
+      "polarity": 1.0,
+      "delay_s": 0.0,
+      "full_scale_v": 10.0
+    },
+    "structural_response": {
+      "column": "response_v",
+      "sensitivity_v_per_si": 0.01,
+      "polarity": 1.0,
+      "delay_s": 0.0,
+      "full_scale_v": 10.0
+    },
+    "microphone": {
+      "column": "microphone_v",
+      "polarity": 1.0,
+      "delay_s": 0.0,
+      "full_scale_v": 10.0
+    }
+  },
+  "structural_records": [
+    { "path_glob": "raw/structural-*.csv" }
+  ],
+  "acoustic_records": [
+    {
+      "path_glob": "raw/acoustic-az000-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 0.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az030-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 30.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az060-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 60.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az090-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 90.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az120-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 120.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az150-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 150.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az180-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 180.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az210-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 210.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az240-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 240.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az270-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 270.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az300-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 300.0,
+      "elevation_deg": 0.0
+    },
+    {
+      "path_glob": "raw/acoustic-az330-*.csv",
+      "radius_m": 1.0,
+      "azimuth_deg": 330.0,
+      "elevation_deg": 0.0
+    }
+  ],
+  "calibrator": {
+    "before_path": "raw/calibrator-before.csv",
+    "after_path": "raw/calibrator-after.csv",
+    "microphone_column": "microphone_v",
+    "frequency_hz": 1000.0,
+    "level_db_re_20upa": 94.0,
+    "max_drift_db": 0.5
+  },
+  "evidence": [
+    { "role": "excitation_calibration", "path": "calibration/force-sensor.pdf" },
+    { "role": "response_calibration", "path": "calibration/response-sensor.pdf" },
+    { "role": "acoustic_calibration", "path": "calibration/microphone-and-calibrator.pdf" }
+  ],
+  "analysis": {
+    "model_partial_indices": [0, 1, 2, 3, 4],
+    "minimum_averages": 8,
+    "window": "boxcar",
+    "frequency_search_half_width_hz": 5.0,
+    "relative_search_half_width": 0.01,
+    "decay_bandwidth_hz": 20.0,
+    "decay_fit_upper_db": -5.0,
+    "decay_fit_lower_db": -35.0,
+    "min_decay_fit_r2": 0.9,
+    "reference_force_rms_n": 1.0,
+    "uncertainty_floor": {
+      "frequency_hz": 0.25,
+      "magnitude_db": 0.25,
+      "phase_deg": 1.0,
+      "t60_s": 0.01,
+      "acoustic_level_db": 0.5,
+      "acoustic_phase_deg": 2.0
+    }
+  }
+}

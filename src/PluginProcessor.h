@@ -4,6 +4,7 @@
 #include "physics/MaterialDB.h"
 #include "effects/EffectChain.h"
 #include "dsp/AudioFIFO.h"
+#include "dsp/MidiNoteTracker.h"
 #include "PresetManager.h"
 
 class TsukiSynthProcessor : public juce::AudioProcessor
@@ -46,18 +47,33 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presetManager { apvts };
-    AudioFIFO analyzerFifo { 4096 };
-    AudioFIFO analyzerDryFifo { 8192 };
+    AudioFIFO analyzerFifo { 16384 };
+    // At 192 kHz this retains >340 ms, enough for six cycles at the A0
+    // detector's lowest search frequency even
+    // across a delayed GUI timer tick. AudioFIFO always keeps newest history.
+    AudioFIFO analyzerDryFifo { 65536 };
     juce::MidiKeyboardState keyboardState;
     MaterialDB materialDB;
 
-    /** Most recent noteOn MIDI number across any source (-1 = none).
-     *  Used by TunerView for synth-aware display on the Chromatic engine,
-     *  where inharmonic modal stacks make NSDF detection unreliable. */
+    /** Most recent still-held or sustained MIDI note across all channels. */
     std::atomic<int> lastNoteOnMidi { -1 };
 
     /** Direct access to the engine choice param so analyzer/tuner can branch. */
     std::atomic<float>* getEngineParam() noexcept { return pEngine; }
+
+    // ---- Reverb profile / impulse-response loading (editor API) ----------
+    /** Load a convolution IR (.wav). Switches fx_reverb_mode to IR on
+        success unless switchModeToIR is false (state restore keeps the saved
+        mode). Returns false and fills `error` on failure. */
+    bool loadReverbIRFile (const juce::File& file, juce::String& error,
+                           bool switchModeToIR = true);
+    /** Load a reverb profile: either a scene_reverb JSON fragment
+        {"reverb":{"decay":..,"wet":..}} or a full score whose
+        global.effects.reverb carries the same keys. Sets fx_reverb_decay +
+        fx_reverb_mix and switches fx_reverb_mode to Algorithmic. */
+    bool loadReverbProfileFile (const juce::File& file, juce::String& error);
+    juce::String getReverbIRName() const { return reverbIRName; }
+    bool hasReverbIR() const { return reverbIRName.isNotEmpty(); }
 
 private:
     juce::Synthesiser cimbalomSynth;
@@ -72,6 +88,7 @@ private:
     std::atomic<float>* pFMRelease = nullptr;
     juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
+    MidiNoteTracker tunerNoteTracker;
     std::atomic<int> restoredProgramToIgnore { -1 };
     double currentSampleRate = 44100.0;
 
@@ -83,6 +100,11 @@ private:
     std::atomic<int> recordingDroppedBlocks { 0 };
     juce::File lastRecordingFile;
     juce::String recordingStatus;
+
+    // Reverb IR state (path persisted via getStateInformation)
+    juce::String reverbIRPath;
+    juce::String reverbIRName;
+    double reverbIRSeconds = 0.0;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout
         createParameterLayout();

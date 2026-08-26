@@ -37,7 +37,6 @@
       "params": {
         "material": "steel",
         "diameter_mm": 1.8,
-        "length_mm": 60,
         "tension_n": 1200,
         "strike_position": 0.05,
         "exciter": "metal_hammer",

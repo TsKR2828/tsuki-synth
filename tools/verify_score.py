@@ -23,6 +23,12 @@ Checks performed (see ROADMAP_PHYSICS.md Sec.3 M3):
   2c. Rest verification  -- render the full score, merge every event's
                             sounding interval (+ decay tail) into a single
                             timeline, and measure RMS in every leftover gap.
+                            RMS is measured PER CHANNEL and the loudest
+                            channel is judged (2026-07-18 measurement-method
+                            fix: a (L+R)/2 mixdown lets decorrelated stereo
+                            reverb tails partially cancel, under-measuring
+                            the rest level by several dB; the -50 dBFS limit
+                            itself is unchanged).
                             This is the core new capability of M3: proof
                             that a rest is actually quiet in the rendered
                             audio, not just "no event happens to start here".
@@ -74,6 +80,8 @@ import argparse
 import hashlib
 import json
 import math
+import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -81,57 +89,58 @@ import wave
 from pathlib import Path
 
 import numpy as np
+try:
+    from jsonschema import Draft202012Validator
+except ImportError:  # reported as a failed verification check; never silently bypassed
+    Draft202012Validator = None
 
 import loudness
 
 # ── tolerances (mirror physics_verify.py / ROADMAP_PHYSICS.md Sec.6) ───────
 F0_TOL_CENTS = 1.0            # frequency_hz vs equal temperament (task 2a)
-# M7-7a (2026-07-12): NOT tightened to 5.0 alongside physics_verify.py's
-# F0_TOL_CENTS, despite sharing a name and a nominal target -- the two
-# constants judge fundamentally different measurements, not the same
-# quantity at different confidence:
-#   * physics_verify.py's F0_TOL_CENTS judges measure_f0()'s power-weighted
-#     spectral CENTROID of the RENDERED AUDIO -- for a multi-string course
-#     (cimbalom/piano) that centroid averages every detuned string, so it
-#     lands within ~0.05 cents of the tuned pitch at the shipped default
-#     (detuningCents=5.0) and safely clears +/-5.
-#   * check_modes() here instead reads --dump-modes' "partials"[0].freq,
-#     which ScoreRenderer::dumpModes() builds from allStrings[0] ONLY (see
-#     src/score/ScoreRenderer.h, the `for (... allStrings[0].size() ...)`
-#     loop) -- i.e. ONE SPECIFIC STRING of the course, not a blend. For
-#     numStrings>1, CimbalomVoice::noteOn() (src/engines/CimbalomEngine.h)
-#     assigns string s a fixed offset
-#         centOffset = detCents * (2*s/(numStrings-1) - 1)
-#     so string 0 is DETERMINISTICALLY tuned to -detuningCents cents (the
-#     course's low edge, e.g. exactly -5.000 cents at the default
-#     detuningCents=5.0) -- this is a by-design measurement-point artifact
-#     of "which string does --dump-modes report", not an audio-perceivable
-#     mistuning and not "noise" in the usual sense.
-#   Tested before tightening (per M7-7a step 4): ran verify_score.py on 5
-#   diverse real corpus files. The 3 that contain cimbalom/piano events
-#   measured modes.f0_deviation max cents of 5.002 (ai_radiance_m1, 64
-#   events), 5.005 (vivaldi_four_seasons_autumn_m2, 187 events), and 5.013
-#   (moonlight_sonata_movement1_yangqin, 1142 events) -- all would FAIL a
-#   5.0-cent limit on this check, on the same by-design -detuningCents
-#   offset described above, even though the audio those scores actually
-#   render is physics_verify.py-verified within 0.05 cents of true pitch.
-#   The 2 modal-single-voice files (water_gong_clamped, akashic_ambient_001)
-#   measured 0.003 cents, consistent with beam/plate engines having no
-#   per-string detuning to begin with. Tightening this check would require
-#   changing WHAT it measures (e.g. a course-average or centroid over
-#   "strings", mirroring measure_f0()) -- a real code change to
-#   check_modes(), out of scope for a tolerance-only task and not attempted
-#   here. Left at 12.0 cents, honestly, per ROADMAP_PHYSICS.md Sec.1 Rule 2
-#   ("達不到門檻 -> 回報實測數字 + 原因分析，停下來等決定"); registered on
-#   TODO.md for 月月's decision (tighten the measurement itself in a future
-#   milestone, or accept 12.0 as this check's correct value going forward).
-MODE_F0_TOL_CENTS = 12.0      # --dump-modes fundamental vs equal temperament
-                              # (deliberately NOT the same number as
-                              # physics_verify.py's F0_TOL_CENTS=5.0 -- see
-                              # the comment block above; this reads raw
-                              # dumped string-0 data, not audio, and its
-                              # course-position offset is real and by design)
-FREQ_MIN_HZ = 0.0             # exclusive
+# M7-7a (2026-07-12): originally NOT tightened to 5.0 alongside
+# physics_verify.py's F0_TOL_CENTS -- check_modes() here read --dump-modes'
+# "partials"[0].freq, which ScoreRenderer::dumpModes() built from
+# allStrings[0] ONLY (see src/score/ScoreRenderer.h) -- i.e. ONE SPECIFIC
+# STRING of a multi-string course, not a blend. For numStrings>1,
+# CimbalomVoice::noteOn() (src/engines/CimbalomEngine.h) assigns string s a
+# fixed offset
+#     centOffset = detCents * (2*s/(numStrings-1) - 1)
+# so string 0 was DETERMINISTICALLY tuned to -detuningCents cents (the
+# course's low edge, e.g. exactly -5.000 cents at the default
+# detuningCents=5.0) -- a by-design measurement-point artifact of "which
+# string does --dump-modes report", not an audio-perceivable mistuning.
+# Tested at the time (M7-7a step 4): 3 real corpus files containing
+# cimbalom/piano events measured modes.f0_deviation max cents of 5.002
+# (ai_radiance_m1), 5.005 (vivaldi_four_seasons_autumn_m2), and 5.013
+# (moonlight_sonata_movement1_yangqin) -- all would have FAILED a 5.0-cent
+# limit purely on this string-0 offset, even though the audio those scores
+# actually render is physics_verify.py-verified within 0.05 cents of true
+# pitch. Left at 12.0 cents at the time, pending a real fix to the
+# measurement itself (registered on TODO.md).
+#
+# 2026-07-23 (course-centroid remeasurement, 月月-authorized): the
+# measurement point above has now been fixed. check_modes() no longer
+# reads partials[0] (= allStrings[0] = string 0) for multi-string engines;
+# it reads --dump-modes' "strings" array (each event's full per-string
+# mode list, see ScoreRenderer::dumpModes()) and computes the COURSE's
+# fundamental as the amplitude-weighted mean of every active string's
+# fundamental -- mirroring what measure_f0()'s spectral centroid already
+# does on rendered audio. Single-string engines (strings absent, or length
+# <= 1) are unaffected and still read partials[0]/allStrings[0] exactly as
+# before. With this fix the string-0 -detuningCents offset cancels out (a
+# symmetric -5/0/+5 course averages to ~0 cents, not -5), so the tolerance
+# is tightened from 12.0 to 5.0 cents per 月月's 2026-07-23 approval of
+# this measurement-method change. Re-measured with the new course-centroid
+# formula on the same 3 cimbalom/piano files: all landed far under 5.0
+# cents (near 0, see verify_score.py run output) -- the old 5.00x-5.01x
+# readings were purely the string-0 artifact, not real mistuning.
+MODE_F0_TOL_CENTS = 5.0       # --dump-modes course-centroid fundamental vs
+                              # equal temperament (measurement changed
+                              # 2026-07-23, see comment block above; single-
+                              # string engines still read partials[0]/
+                              # allStrings[0] directly)
+FREQ_MIN_HZ = 20.0            # inclusive; mirrors ModalResonator
 FREQ_MAX_HZ = 20000.0         # inclusive
 REST_RMS_LIMIT_DBFS = -50.0   # ROADMAP_PHYSICS.md Sec.6 "休止區 RMS"
 REST_DECAY_ALLOWANCE_S = 0.5  # let the previous note's tail decay before
@@ -140,20 +149,33 @@ PEAK_LIMIT_DBFS = -0.3
 CLIP_THRESHOLD = 0.999        # |sample| >= this counts as "clipped"
 MAX_CONSECUTIVE_CLIPPED = 1   # no two clipped samples in a row allowed
 
+# Render-manifest contracts written by the CLI next to each output file
+# (src/cli/RenderApp.cpp, writeRenderManifest()). v2 (2026-07-18) added
+# `wav_sha256`. v3 additionally binds the artifact to the exact root-score
+# bytes and renderer executable. v4 closes the layered-score provenance gap
+# by hashing the complete transitive score dependency tree. Older contracts
+# remain explicit legacy formats but are insufficient for layered scores.
+MANIFEST_CONTRACT_V1 = "TsukiSynth Render Manifest v1"
+MANIFEST_CONTRACT_V2 = "TsukiSynth Render Manifest v2"
+MANIFEST_CONTRACT_V3 = "TsukiSynth Render Manifest v3"
+MANIFEST_CONTRACT_V4 = "TsukiSynth Render Manifest v4"
+
 MIDI_NOTE_MIN, MIDI_NOTE_MAX = 0, 127
 
 # Engines dumpModes() actually reports partials for (see RenderApp.cpp /
 # ScoreRenderer::dumpModes -- fm is synthesised, not modal, and is skipped).
 MODAL_ENGINES = {"string", "cimbalom", "piano",
                   "beam", "tongue_drum", "plate", "water_gong",
-                  "membrane", "custom"}
+                  "custom"}
 
-REQUIRED_TOP_KEYS = ("meta", "global", "export")
+REQUIRED_TOP_KEYS = ("$schema", "meta", "global", "export")
 REQUIRED_EVENT_KEYS = ("time", "duration", "engine", "note", "velocity")
+SCHEMA_PATH = Path(__file__).resolve().parent.parent / "scores" / "schema" / "score.schema.json"
 
 
 # ── note-name <-> MIDI (mirrors ScoreParser.h noteNameToMidi) ──────────────
 _NOTE_BASE = {"A": 9, "B": 11, "C": 0, "D": 2, "E": 4, "F": 5, "G": 7}
+_NOTE_RE = re.compile(r"^([A-Ga-g])([#b]?)(-?[0-9]+)$")
 
 
 def note_to_midi(note):
@@ -163,35 +185,33 @@ def note_to_midi(note):
     to a default rather than fail, but a verifier should say so)."""
     if note is None:
         return None
+    if isinstance(note, bool):
+        return None
     if isinstance(note, (int, float)):
-        return int(round(note))
-    s = str(note).strip()
+        if not math.isfinite(note) or int(note) != note:
+            return None
+        midi = int(note)
+        return midi if MIDI_NOTE_MIN <= midi <= MIDI_NOTE_MAX else None
+    if not isinstance(note, str):
+        return None
+    s = note
     if not s:
         return None
-    if s[0].isdigit():
-        try:
-            return int(round(float(s)))
-        except ValueError:
-            return None
-    letter = s[0].upper()
-    if letter not in _NOTE_BASE:
+    if s.isdigit():
+        midi = int(s)
+        return midi if MIDI_NOTE_MIN <= midi <= MIDI_NOTE_MAX else None
+    match = _NOTE_RE.fullmatch(s)
+    if not match:
         return None
+    letter = match.group(1).upper()
     base = _NOTE_BASE[letter]
-    pos = 1
-    if pos < len(s) and s[pos] == "#":
+    if match.group(2) == "#":
         base += 1
-        pos += 1
-    elif pos < len(s) and s[pos] == "b":
+    elif match.group(2) == "b":
         base -= 1
-        pos += 1
-    octave_str = s[pos:]
-    octave = 4
-    if octave_str:
-        try:
-            octave = int(octave_str)
-        except ValueError:
-            return None
-    return (octave + 1) * 12 + base
+    octave = int(match.group(3))
+    midi = (octave + 1) * 12 + base
+    return midi if MIDI_NOTE_MIN <= midi <= MIDI_NOTE_MAX else None
 
 
 def midi_to_hz(midi):
@@ -202,6 +222,64 @@ def cents_between(f_measured, f_predicted):
     if f_measured is None or f_predicted is None or f_measured <= 0 or f_predicted <= 0:
         return None
     return 1200.0 * math.log2(f_measured / f_predicted)
+
+
+def course_f0(dumped_event):
+    """Returns the fundamental frequency to judge for MODE_F0_TOL_CENTS
+    (see the 2026-07-23 comment block above MODE_F0_TOL_CENTS).
+
+    For a multi-string course (--dump-modes "strings": [[mode,...], ...],
+    one inner list per active string, added for exactly this purpose by
+    ScoreRenderer::dumpModes()), returns the AMPLITUDE-WEIGHTED MEAN of
+    every active string's fundamental (partials[0] of each string) --
+    mirroring what physics_verify.py's measure_f0() spectral centroid
+    already does on the rendered audio, instead of the old string-0-only
+    reading. A weighted mean with equal (or missing) weights reduces to
+    the plain arithmetic mean, so no separate code path is needed for the
+    "amplitudes are equal" case; only genuinely missing/non-finite/
+    non-positive amplitudes are special-cased below (weighting by an
+    absent or nonsensical number would be worse than not weighting).
+
+    For a single-string engine ("strings" absent, empty, or length <= 1 --
+    e.g. beam/tongue_drum/plate, or an older dump without "strings" at
+    all), falls back to the original measurement: partials[0].freq
+    (== allStrings[0][0].freq), unchanged from before this function
+    existed.
+
+    Returns None if no usable fundamental can be found at all.
+    """
+    strings = dumped_event.get("strings")
+    if not strings or len(strings) <= 1:
+        partials = dumped_event.get("partials", [])
+        if not partials:
+            return None
+        f0 = partials[0].get("freq")
+        return f0 if (f0 is not None and math.isfinite(f0) and f0 > 0) else None
+
+    freqs = []
+    amps = []
+    for s in strings:
+        if not s:
+            continue
+        f0 = s[0].get("freq")
+        if f0 is None or not math.isfinite(f0) or f0 <= 0:
+            continue
+        a0 = s[0].get("amp")
+        amps.append(a0 if (a0 is not None and math.isfinite(a0) and a0 > 0) else None)
+        freqs.append(f0)
+
+    if not freqs:
+        return None
+    if any(a is None for a in amps):
+        # At least one active string's amplitude is missing/non-finite/
+        # non-positive -- degrade to the plain arithmetic mean rather than
+        # weight by a number that can't be trusted.
+        return sum(freqs) / len(freqs)
+
+    total_amp = sum(amps)
+    if total_amp <= 0:
+        return sum(freqs) / len(freqs)
+    return sum(f * a for f, a in zip(freqs, amps)) / total_amp
 
 
 # ── WAV reader (16 / 24 / 32-bit PCM -> mono float), same approach as
@@ -260,6 +338,29 @@ def rms_dbfs(samples):
         return -120.0
     rms = float(np.sqrt(np.mean(samples.astype(np.float64) ** 2)))
     return 20.0 * math.log10(rms) if rms > 1e-12 else -120.0
+
+
+def max_channel_rms_dbfs(channels):
+    """RMS of each channel measured separately; the loudest channel wins.
+
+    Measurement-method correction (2026-07-18): the rest-RMS check used to
+    measure a (L+R)/2 mono mixdown. Decorrelated stereo content -- exactly
+    what a stereo reverb tail is -- partially CANCELS in that sum, so the
+    mixdown understates the level actually present on disk by several dB
+    (fully anti-correlated content cancels completely). Measuring each
+    channel on its own and reporting the maximum judges what a listener's
+    worse ear would actually receive. The -50 dBFS limit itself
+    (REST_RMS_LIMIT_DBFS, ROADMAP_PHYSICS.md Sec.6 registered value) is
+    deliberately UNCHANGED: this fixes how the quantity is measured, it is
+    not a tolerance change.
+
+    Accepts a 2D [n_samples, n_channels] array (read_wav_all_channels());
+    a 1D array is treated as a single channel."""
+    if channels.ndim == 1:
+        channels = channels.reshape(-1, 1)
+    if channels.size == 0:
+        return -120.0
+    return max(rms_dbfs(channels[:, ch]) for ch in range(channels.shape[1]))
 
 
 def peak_dbfs(samples):
@@ -327,9 +428,13 @@ def score_has_nonzero_fx(score):
     rev = fx.get("reverb") or {}
     dly = fx.get("delay") or {}
     dist = fx.get("distortion") or {}
+    eq = fx.get("eq") or {}
     for v in (rev.get("wet"), dly.get("wet"), dist.get("wet"), dist.get("drive")):
         if isinstance(v, (int, float)) and v > 0.0:
             return True
+    g = eq.get("high_shelf_gain_db")
+    if isinstance(g, (int, float)) and abs(g) > 0.0:
+        return True
     return False
 
 
@@ -349,6 +454,8 @@ def make_fx_bypassed_copy(score):
     if "distortion" in fx and isinstance(fx["distortion"], dict):
         fx["distortion"]["wet"] = 0.0
         fx["distortion"]["drive"] = 0.0
+    if "eq" in fx and isinstance(fx["eq"], dict):
+        fx["eq"]["high_shelf_gain_db"] = 0.0
     return bypassed
 
 
@@ -394,6 +501,47 @@ class Check:
 def check_schema(score):
     checks = []
 
+    if Draft202012Validator is None:
+        checks.append(Check(
+            "schema.json_schema", False,
+            "SCHEMA CHECK FAILED: Python package 'jsonschema' is required; "
+            "validation is never downgraded to a partial fallback."))
+    else:
+        try:
+            schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+            Draft202012Validator.check_schema(schema)
+            errors = sorted(
+                Draft202012Validator(schema).iter_errors(score),
+                key=lambda error: tuple(str(part) for part in error.absolute_path),
+            )
+        except (OSError, json.JSONDecodeError) as exc:
+            errors = []
+            checks.append(Check(
+                "schema.json_schema", False,
+                f"SCHEMA CHECK FAILED: cannot load {SCHEMA_PATH}: {exc}"))
+        except Exception as exc:
+            errors = []
+            checks.append(Check(
+                "schema.json_schema", False,
+                f"SCHEMA CHECK FAILED: schema itself is invalid: {exc}"))
+        else:
+            if errors:
+                first = errors[0]
+                path = "$" + "".join(
+                    f"[{part}]" if isinstance(part, int) else f".{part}"
+                    for part in first.absolute_path
+                )
+                checks.append(Check(
+                    "schema.json_schema", False,
+                    f"SCHEMA CHECK FAILED at {path}: {first.message} "
+                    f"({len(errors)} violation(s) total).",
+                    {"count": len(errors), "path": path}))
+            else:
+                checks.append(Check(
+                    "schema.json_schema", True,
+                    "Draft 2020-12 schema validation passed with unknown fields, "
+                    "wrong types, out-of-range values, and extra fields rejected."))
+
     missing_top = [k for k in REQUIRED_TOP_KEYS if k not in score]
     if missing_top:
         checks.append(Check(
@@ -408,7 +556,7 @@ def check_schema(score):
     events = score.get("events")
     if events is None:
         # layers-based scores legitimately have no events array; that is
-        # covered by the schema (anyOf events/layers) and is not an error
+        # covered by the schema (exactly one of events/layers) and is not an error
         # here, but every per-event check below is then a no-op.
         checks.append(Check(
             "schema.events_present", True,
@@ -460,7 +608,8 @@ def check_schema(score):
 
         perf = ev.get("performance") or {}
         freq_hz = perf.get("frequency_hz")
-        if freq_hz is not None and midi is not None:
+        frequency_mode = (ev.get("params") or {}).get("frequency_mode", "midi")
+        if freq_hz is not None and midi is not None and frequency_mode == "midi":
             expected = midi_to_hz(midi)
             err_cents = cents_between(freq_hz, expected)
             if err_cents is not None:
@@ -516,7 +665,7 @@ def check_schema(score):
 
 
 # ── 2b. mode scanning (whole-score --dump-modes, see module docstring) ─────
-def check_modes(cli, score_path, events):
+def check_modes(cli, score_path, events, sample_rate=48000):
     """Returns (checks, dumped_events). `dumped_events` is the raw
     "events" array from --dump-modes's JSON (possibly []), returned
     alongside the Check objects so callers that need the underlying modal
@@ -532,6 +681,31 @@ def check_modes(cli, score_path, events):
         return checks, []
 
     dumped_events = dumped.get("events", [])
+    expected_modal_indices = [
+        i for i, event in enumerate(events)
+        if (isinstance(event, dict) and event.get("engine") in MODAL_ENGINES
+            and event.get("velocity", 0) > 0)
+    ]
+    actual_source_indices = [event.get("source_index") for event in dumped_events]
+    declared_input_count = dumped.get("input_event_count")
+    declared_dumped_count = dumped.get("dumped_event_count")
+    count_contract_ok = (
+        declared_input_count == len(events)
+        and declared_dumped_count == len(dumped_events)
+        and actual_source_indices == expected_modal_indices
+    )
+    checks.append(Check(
+        "modes.event_identity_contract", count_contract_ok,
+        (f"Mode dump preserved all event identities: input={len(events)}, "
+         f"modal={len(expected_modal_indices)}, source indices match."
+         if count_contract_ok else
+         "MODE SCAN FAILED: input/dumped event counts or source_index mapping "
+         f"do not match the score (declared input={declared_input_count}, "
+         f"declared dumped={declared_dumped_count}, actual dumped={len(dumped_events)}, "
+         f"expected modal indices={expected_modal_indices[:10]}, "
+         f"actual={actual_source_indices[:10]})."),
+        {"input_events": len(events), "expected_modal": len(expected_modal_indices),
+         "dumped": len(dumped_events)}))
 
     if not dumped_events:
         if not events:
@@ -539,6 +713,7 @@ def check_modes(cli, score_path, events):
             # events list for these, there is nothing per-event to dump.
             note = "This score has no \"events\" array (it uses \"layers\" instead)."
         elif not any(isinstance(ev, dict) and ev.get("engine") in MODAL_ENGINES
+                     and ev.get("velocity", 0) > 0
                      for ev in events):
             note = ("This score has no modal-engine events (e.g. it may be pure "
                      "FM, which ROADMAP_PHYSICS.md Sec.0 explicitly marks as "
@@ -546,7 +721,8 @@ def check_modes(cli, score_path, events):
                      "mode-scan.")
         else:
             note = "--dump-modes returned zero events even though modal events exist."
-        checks.append(Check("modes.dump_modes_ran", True,
+        zero_ok = not expected_modal_indices
+        checks.append(Check("modes.dump_modes_ran", zero_ok,
                              f"--dump-modes ran successfully. {note}",
                              {"modal_events": 0}))
         return checks, []
@@ -559,6 +735,7 @@ def check_modes(cli, score_path, events):
     nan_inf = []
     bad_freq_range = []
     bad_decay = []
+    no_render_active_energy = []
     f0_devs = []
 
     for i, ev in enumerate(dumped_events):
@@ -569,6 +746,8 @@ def check_modes(cli, score_path, events):
 
         midi = ev.get("midi")
         expected_f0 = midi_to_hz(midi) if isinstance(midi, (int, float)) else None
+        max_renderable_hz = min(FREQ_MAX_HZ, float(sample_rate) * 0.5 * 0.98)
+        has_render_active_energy = False
 
         for j, p in enumerate(partials):
             f = p.get("freq")
@@ -580,15 +759,24 @@ def check_modes(cli, score_path, events):
                     nan_inf.append((i, j, label, v))
 
             if f is not None and math.isfinite(f):
-                if not (FREQ_MIN_HZ < f <= FREQ_MAX_HZ):
+                if not (FREQ_MIN_HZ <= f <= max_renderable_hz):
                     bad_freq_range.append((i, j, f))
+
+            if (f is not None and math.isfinite(f)
+                    and FREQ_MIN_HZ <= f <= max_renderable_hz
+                    and a is not None and math.isfinite(a) and abs(a) > 1e-12
+                    and d is not None and math.isfinite(d) and d > 0.0):
+                has_render_active_energy = True
 
             if d is not None and math.isfinite(d):
                 if d <= 0.0:
                     bad_decay.append((i, j, d))
 
-        if expected_f0 is not None and partials:
-            f0 = partials[0].get("freq")
+        if not has_render_active_energy:
+            no_render_active_energy.append(i)
+
+        if expected_f0 is not None and partials and ev.get("frequency_mode", "midi") == "midi":
+            f0 = course_f0(ev)
             if f0 is not None and math.isfinite(f0) and f0 > 0:
                 c = cents_between(f0, expected_f0)
                 if c is not None:
@@ -627,13 +815,30 @@ def check_modes(cli, score_path, events):
             "modes.frequency_range", False,
             f"MODE SCAN FAILED: modal event {i0}, partial {j0} has "
             f"frequency {f0:.2f} Hz, outside the allowed range "
-            f"(0, {FREQ_MAX_HZ:.0f}] Hz. {len(bad_freq_range)} partial(s) "
+            f"[{FREQ_MIN_HZ:.0f}, {min(FREQ_MAX_HZ, float(sample_rate) * 0.5 * 0.98):.0f}] "
+            f"Hz. {len(bad_freq_range)} partial(s) "
             "affected total.",
             {"count": len(bad_freq_range)}))
     else:
         checks.append(Check("modes.frequency_range", True,
                              f"All {total_partials} partial frequencies are within "
-                             f"(0, {FREQ_MAX_HZ:.0f}] Hz."))
+                             f"[{FREQ_MIN_HZ:.0f}, "
+                             f"{min(FREQ_MAX_HZ, float(sample_rate) * 0.5 * 0.98):.0f}] Hz."))
+
+    if no_render_active_energy:
+        checks.append(Check(
+            "modes.render_active_energy", False,
+            f"MODE SCAN FAILED: {len(no_render_active_energy)} modal event(s) "
+            "have no finite, non-zero modal energy inside the DSP renderable "
+            f"band [{FREQ_MIN_HZ:.0f}, "
+            f"{min(FREQ_MAX_HZ, float(sample_rate) * 0.5 * 0.98):.0f}] Hz. "
+            "Attack noise alone is not a verified physical tone.",
+            {"count": len(no_render_active_energy)}))
+    else:
+        checks.append(Check(
+            "modes.render_active_energy", True,
+            f"Every modal event has render-active modal energy "
+            f"({len(dumped_events)} event(s) checked)."))
 
     if bad_decay:
         i0, j0, d0 = bad_decay[0]
@@ -671,11 +876,36 @@ def check_modes(cli, score_path, events):
                 f"{max_dev:.3f} cents).",
                 {"max_cents": max_dev, "checked": len(f0_devs)}))
     else:
-        checks.append(Check("modes.f0_deviation", True,
-                             "No fundamentals available to check (no modal events with "
-                             "a resolvable MIDI note)."))
+        checks.append(Check(
+            "modes.f0_deviation_not_applicable", True,
+            "MIDI-fundamental comparison is not applicable: no modal event "
+            "declares a resolvable MIDI-locked fundamental.",
+            {"status": "N/A", "checked": 0}))
 
     return checks, dumped_events
+
+
+def check_top_level_modes(cli, score_path, score, events):
+    """Route mode verification without asking the CLI to flatten layers.
+
+    ``TsukiSynthCLI --dump-modes`` deliberately accepts event scores only:
+    a composite's crossfades/regions are an audio-layer operation and do not
+    define one unambiguous top-level event identity list.  Layer leaves are
+    recursively schema-checked and mode-scanned by ``verify_one`` below, so
+    treating the expected top-level CLI refusal as a failure is a harness bug.
+    This N/A is explicit; it is not a claim that the composite itself has a
+    modal spectrum.
+    """
+    if score.get("layers"):
+        return [Check(
+            "modes.top_level_not_applicable", True,
+            "Top-level --dump-modes is N/A for a layered composite by CLI "
+            "contract; every recursively resolved leaf score is mode-scanned "
+            "below instead.",
+            {"status": "N/A", "reason": "layered_composite"},
+        )], []
+    sample_rate = (score.get("global") or {}).get("sample_rate", 48000)
+    return check_modes(cli, score_path, events, sample_rate)
 
 
 # ── 2c. rest verification ───────────────────────────────────────────────────
@@ -744,22 +974,33 @@ def fx_bypass_rest_rms(cli, score, rests, sr_hint=None):
         if wav_path.suffix.lower() != ".wav":
             return None
         try:
-            sr, mono_audio, _ = read_wav_mono(wav_path)
+            # Per-channel max, NOT a mono mixdown -- must match how
+            # check_rests() measures the FX-on render (see
+            # max_channel_rms_dbfs()), otherwise the FX-on vs FX-bypass
+            # comparison in the failure message would mix two different
+            # measurement methods.
+            sr, channels = read_wav_all_channels(wav_path)
         except Exception:
             return None
 
         result = {}
         for judged_start, gap_end, _raw_gap_start in rests:
             start_i = max(0, int(judged_start * sr))
-            end_i = min(len(mono_audio), int(gap_end * sr))
+            end_i = min(channels.shape[0], int(gap_end * sr))
             if end_i <= start_i:
                 continue
-            seg = mono_audio[start_i:end_i]
-            result[(judged_start, gap_end)] = rms_dbfs(seg)
+            seg = channels[start_i:end_i]
+            result[(judged_start, gap_end)] = max_channel_rms_dbfs(seg)
         return result
 
 
-def check_rests(events, sr, mono_audio, cli=None, score=None):
+def check_rests(events, sr, channels, cli=None, score=None):
+    """`channels` is the un-mixed [n_samples, n_channels] array from
+    read_wav_all_channels(). Each rest window is judged on the RMS of its
+    LOUDEST channel (max_channel_rms_dbfs()), not on a mono mixdown --
+    decorrelated stereo reverb tails partially cancel in a (L+R)/2 sum and
+    would be under-measured by several dB. Same -50 dBFS limit as before
+    (REST_RMS_LIMIT_DBFS); only the measurement method changed."""
     checks = []
     if not events:
         checks.append(Check("rests.checked", True,
@@ -776,7 +1017,7 @@ def check_rests(events, sr, mono_audio, cli=None, score=None):
                              "gaps, or is continuously sounding)."))
         return checks
 
-    duration_s = len(mono_audio) / sr if sr else 0.0
+    duration_s = channels.shape[0] / sr if sr else 0.0
     failures = []
     worst_margin = None
     checked = 0
@@ -786,12 +1027,12 @@ def check_rests(events, sr, mono_audio, cli=None, score=None):
     all_intervals = []
     for judged_start, gap_end, raw_gap_start in rests:
         start_i = max(0, int(judged_start * sr))
-        end_i = min(len(mono_audio), int(gap_end * sr))
+        end_i = min(channels.shape[0], int(gap_end * sr))
         if end_i <= start_i:
             continue
         checked += 1
-        seg = mono_audio[start_i:end_i]
-        level = rms_dbfs(seg)
+        seg = channels[start_i:end_i]
+        level = max_channel_rms_dbfs(seg)
         margin = REST_RMS_LIMIT_DBFS - level  # positive = passing headroom
         interval_pass = level <= REST_RMS_LIMIT_DBFS
         all_intervals.append({"start": judged_start, "end": gap_end,
@@ -939,6 +1180,275 @@ def check_peak_and_clipping(all_ch_audio):
     return checks
 
 
+# ── render-manifest contract check ──────────────────────────────────────────
+def collect_score_dependencies(score_path):
+    """Return the deterministic root/layer dependency list used by manifest v4.
+
+    Paths are relative to the root score's directory and use '/' separators,
+    matching RenderApp.cpp. Each score file appears once in depth-first order;
+    cycles and malformed/missing children fail closed.
+    """
+    root = Path(score_path).resolve()
+    dependencies = []
+    visiting = set()
+    visited = set()
+
+    def visit(path, role):
+        resolved = Path(path).resolve()
+        identity = str(resolved).casefold()
+        if identity in visiting:
+            raise ValueError(f"layer dependency cycle: {resolved}")
+        if identity in visited:
+            return
+        if not resolved.is_file():
+            raise ValueError(f"layer dependency is missing: {resolved}")
+
+        visiting.add(identity)
+        document = json.loads(resolved.read_text(encoding="utf-8"))
+        relative = os.path.relpath(resolved, root.parent).replace("\\", "/")
+        dependencies.append({
+            "role": role,
+            "path": relative,
+            "sha256": sha256_file(resolved),
+        })
+        layers = document.get("layers") or []
+        if not isinstance(layers, list):
+            raise ValueError(f"layers must be an array: {resolved}")
+        for index, layer in enumerate(layers):
+            if not isinstance(layer, dict) or not isinstance(layer.get("source"), str):
+                raise ValueError(
+                    f"layer {index} has no string source in {resolved}")
+            visit(resolved.parent / layer["source"], "layer_score")
+        visiting.remove(identity)
+        visited.add(identity)
+
+    visit(root, "root_score")
+    return dependencies
+
+
+def dependency_tree_sha256(dependencies):
+    material = "".join(
+        f"{item['role']}\t{item['path']}\t{item['sha256'].lower()}\n"
+        for item in dependencies)
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+
+def check_render_manifest(manifest_path, wav_path, events,
+                          score_path=None, cli_path=None):
+    """Validates the render manifest the CLI wrote next to `wav_path`
+    (src/cli/RenderApp.cpp, writeRenderManifest()).
+
+    Recognised contracts (see MANIFEST_CONTRACT_V1..V4 at the top):
+      * v4 (current): everything v3 had, plus the complete transitive score
+        dependency list and a deterministic digest over that tree.
+      * v3 (legacy): everything v2 had, plus root-score and renderer-binary
+        SHA256 values and configure-time source/toolchain provenance. The
+        hashes are compared with the exact score and CLI used by this run.
+      * v2 (legacy): everything v1 had, plus `wav_sha256` -- the SHA256 of
+        the output file's bytes. For v2 the hash MUST match the actual file
+        on disk: the artifact carries its own verifiability instead of
+        trusting that nothing touched the output directory.
+      * v1 (legacy, binaries built before 2026-07-18): pre-normalize stats
+        only. Still accepted so this tool works against an older binary; it
+        has no wav_sha256 field, and the pass message says so explicitly.
+
+    Returns (Check, measured_dict); measured_dict carries the pre-normalize
+    stats that print_report() / report_html.py read from `measured`."""
+    contract = None
+    manifest_sha = actual_sha = None
+    manifest_score_sha = actual_score_sha = None
+    manifest_renderer_sha = actual_renderer_sha = None
+    manifest_dependencies = actual_dependencies = None
+    manifest_tree_sha = actual_tree_sha = None
+    renderer_executable = renderer_version = source_commit = None
+    source_dirty = compiler = target = build_configuration = None
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        contract = manifest.get("contract")
+        pre_peak = float(manifest["pre_normalize_peak"])
+        applied_gain = float(manifest["applied_gain"])
+        full_scale_samples = int(manifest["samples_at_or_above_full_scale"])
+        problems = []
+        recognised = (MANIFEST_CONTRACT_V1, MANIFEST_CONTRACT_V2,
+                      MANIFEST_CONTRACT_V3, MANIFEST_CONTRACT_V4)
+        if contract not in recognised:
+            problems.append(f"unrecognised contract: {contract!r}")
+        if manifest.get("input_event_count") != len(events):
+            problems.append(
+                f"input_event_count={manifest.get('input_event_count')!r} "
+                f"does not match the parsed event count {len(events)}")
+        if not (math.isfinite(pre_peak) and pre_peak >= 0.0):
+            problems.append(f"pre_normalize_peak invalid: {pre_peak!r}")
+        if not (math.isfinite(applied_gain) and applied_gain >= 0.0):
+            problems.append(f"applied_gain invalid: {applied_gain!r}")
+        if full_scale_samples < 0:
+            problems.append(
+                f"samples_at_or_above_full_scale invalid: {full_scale_samples!r}")
+        if contract in (MANIFEST_CONTRACT_V2, MANIFEST_CONTRACT_V3,
+                        MANIFEST_CONTRACT_V4):
+            # v2+ contract: wav_sha256 is REQUIRED (KeyError -> invalid) and
+            # must match the bytes actually on disk.
+            manifest_sha = manifest["wav_sha256"]
+            actual_sha = sha256_file(wav_path)
+            if not (isinstance(manifest_sha, str)
+                    and manifest_sha.lower() == actual_sha):
+                problems.append(
+                    f"wav_sha256 mismatch: manifest says {manifest_sha!r}, "
+                    f"actual {wav_path.name} bytes hash to {actual_sha}")
+        if contract in (MANIFEST_CONTRACT_V3, MANIFEST_CONTRACT_V4):
+            manifest_score_sha = manifest["root_score_sha256"]
+            manifest_renderer_sha = manifest["renderer_executable_sha256"]
+            renderer_executable = manifest["renderer_executable"]
+            renderer_version = manifest["renderer_version"]
+            source_commit = manifest["configured_source_commit"]
+            source_dirty = manifest["configured_source_dirty"]
+            compiler = manifest["compiler"]
+            target = manifest["target"]
+            build_configuration = manifest["build_configuration"]
+
+            if score_path is None:
+                problems.append(
+                    f"{contract} verification requires the input score path")
+            else:
+                actual_score_sha = sha256_file(Path(score_path))
+                if not (isinstance(manifest_score_sha, str)
+                        and manifest_score_sha.lower() == actual_score_sha):
+                    problems.append(
+                        "root_score_sha256 mismatch: manifest says "
+                        f"{manifest_score_sha!r}, actual input score bytes hash "
+                        f"to {actual_score_sha}")
+
+                score_document = json.loads(
+                    Path(score_path).read_text(encoding="utf-8"))
+                actual_layer_count = len(score_document.get("layers") or [])
+                if manifest.get("input_layer_count") != actual_layer_count:
+                    problems.append(
+                        f"input_layer_count={manifest.get('input_layer_count')!r} "
+                        f"does not match parsed layer count {actual_layer_count}")
+                if actual_layer_count and contract != MANIFEST_CONTRACT_V4:
+                    problems.append(
+                        f"{contract} is incomplete provenance for a layered score; "
+                        "manifest v4 is required")
+
+            if cli_path is None:
+                problems.append("v3 verification requires the renderer CLI path")
+            else:
+                actual_renderer_sha = sha256_file(Path(cli_path))
+                if not (isinstance(manifest_renderer_sha, str)
+                        and manifest_renderer_sha.lower() == actual_renderer_sha):
+                    problems.append(
+                        "renderer_executable_sha256 mismatch: manifest says "
+                        f"{manifest_renderer_sha!r}, actual CLI bytes hash to "
+                        f"{actual_renderer_sha}")
+
+            text_fields = {
+                "renderer_executable": renderer_executable,
+                "renderer_version": renderer_version,
+                "configured_source_commit": source_commit,
+                "compiler": compiler,
+                "target": target,
+                "build_configuration": build_configuration,
+            }
+            for key, value in text_fields.items():
+                if not isinstance(value, str) or not value.strip():
+                    problems.append(f"{key} must be a non-empty string")
+            if not isinstance(source_dirty, bool):
+                problems.append("configured_source_dirty must be boolean")
+
+            if contract == MANIFEST_CONTRACT_V4:
+                manifest_dependencies = manifest["input_dependencies"]
+                manifest_tree_sha = manifest["dependency_tree_sha256"]
+                if score_path is None:
+                    problems.append("v4 dependency verification requires score_path")
+                else:
+                    actual_dependencies = collect_score_dependencies(score_path)
+                    actual_tree_sha = dependency_tree_sha256(actual_dependencies)
+                    if manifest_dependencies != actual_dependencies:
+                        problems.append(
+                            "input_dependencies do not match the current root/layer "
+                            f"files: manifest={manifest_dependencies!r}, "
+                            f"actual={actual_dependencies!r}")
+                    if not (isinstance(manifest_tree_sha, str)
+                            and manifest_tree_sha.lower() == actual_tree_sha):
+                        problems.append(
+                            "dependency_tree_sha256 mismatch: manifest says "
+                            f"{manifest_tree_sha!r}, actual tree hashes to "
+                            f"{actual_tree_sha}")
+        manifest_ok = not problems
+        manifest_error = "; ".join(problems)
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        pre_peak = applied_gain = float("nan")
+        full_scale_samples = -1
+        manifest_ok = False
+        manifest_error = str(exc)
+
+    if manifest_ok:
+        if contract == MANIFEST_CONTRACT_V4:
+            message = (
+                f"Render manifest v4 verified: WAV {actual_sha[:12]}..., "
+                f"{len(actual_dependencies)} score dependency file(s), tree "
+                f"{actual_tree_sha[:12]}..., renderer "
+                f"{actual_renderer_sha[:12]}...; version={renderer_version}, "
+                f"configured source={source_commit[:12]}"
+                f"{' dirty' if source_dirty else ' clean'}, "
+                f"{compiler}, {target}, {build_configuration}; "
+                f"peak={pre_peak:.6g}, gain={applied_gain:.6g}, "
+                f"samples >= 0 dBFS={full_scale_samples}.")
+        elif contract == MANIFEST_CONTRACT_V3:
+            message = (
+                f"Render manifest v3 verified: WAV {actual_sha[:12]}..., "
+                f"root score {actual_score_sha[:12]}..., renderer "
+                f"{actual_renderer_sha[:12]}...; version={renderer_version}, "
+                f"configured source={source_commit[:12]}"
+                f"{' dirty' if source_dirty else ' clean'}, "
+                f"{compiler}, {target}, {build_configuration}; "
+                f"peak={pre_peak:.6g}, gain={applied_gain:.6g}, "
+                f"samples >= 0 dBFS={full_scale_samples}.")
+        elif contract == MANIFEST_CONTRACT_V2:
+            message = (
+                f"Pre-normalize manifest (v2): peak={pre_peak:.6g}, "
+                f"gain={applied_gain:.6g}, "
+                f"samples >= 0 dBFS={full_scale_samples}; wav_sha256 "
+                f"verified against WAV bytes ({actual_sha[:12]}...).")
+        else:
+            message = (
+                f"Pre-normalize manifest (v1 legacy contract -- no "
+                f"wav_sha256 to verify): peak={pre_peak:.6g}, "
+                f"gain={applied_gain:.6g}, "
+                f"samples >= 0 dBFS={full_scale_samples}.")
+    else:
+        message = (
+            f"RENDER CONTRACT FAILED: missing or invalid render manifest "
+            f"{manifest_path.name}: {manifest_error}")
+
+    check = Check(
+        "render.pre_normalize_manifest", manifest_ok, message,
+        {"pre_normalize_peak": pre_peak, "applied_gain": applied_gain,
+         "samples_at_or_above_full_scale": full_scale_samples,
+         "manifest_contract": contract,
+         "manifest_wav_sha256": manifest_sha,
+         "actual_wav_sha256": actual_sha,
+         "manifest_root_score_sha256": manifest_score_sha,
+         "actual_root_score_sha256": actual_score_sha,
+         "manifest_renderer_sha256": manifest_renderer_sha,
+         "actual_renderer_sha256": actual_renderer_sha,
+         "manifest_input_dependencies": manifest_dependencies,
+         "actual_input_dependencies": actual_dependencies,
+         "manifest_dependency_tree_sha256": manifest_tree_sha,
+         "actual_dependency_tree_sha256": actual_tree_sha,
+         "renderer_executable": renderer_executable,
+         "renderer_version": renderer_version,
+         "configured_source_commit": source_commit,
+         "configured_source_dirty": source_dirty,
+         "compiler": compiler,
+         "target": target,
+         "build_configuration": build_configuration})
+    measured = {"pre_normalize_peak": pre_peak,
+                "normalization_gain": applied_gain,
+                "pre_normalize_full_scale_samples": full_scale_samples}
+    return check, measured
+
+
 # ── 2e. determinism check ───────────────────────────────────────────────────
 def sha256_file(path):
     h = hashlib.sha256()
@@ -1053,6 +1563,92 @@ def apply_exemptions(score_path, checks, exemptions):
     return exempted
 
 
+def inspect_layer_tree(score_path, score):
+    """Validate every referenced layer recursively and return leaf scores.
+
+    Layer references may use ``..`` only while remaining inside the nearest
+    ``scores`` directory (or the parent directory for standalone fixtures).
+    Cycles, missing files, sample-rate drift, invalid schemas and nested
+    contract failures are fatal rather than being treated as zero events.
+    """
+    score_path = Path(score_path).resolve()
+    allowed_root = score_path.parent
+    for parent in score_path.parents:
+        if parent.name.lower() == "scores":
+            allowed_root = parent
+            break
+
+    leaves = []
+    failures = []
+    validated_files = 0
+
+    def visit(path, document, parent_sr, stack):
+        nonlocal validated_files
+        resolved = Path(path).resolve()
+        if resolved in stack:
+            failures.append(f"layer cycle detected: {' -> '.join(str(p) for p in [*stack, resolved])}")
+            return
+        try:
+            resolved.relative_to(allowed_root)
+        except ValueError:
+            failures.append(f"layer source escapes allowed root {allowed_root}: {resolved}")
+            return
+        if resolved.suffixes[-2:] != [".score", ".json"]:
+            failures.append(f"layer source must end in .score.json: {resolved}")
+            return
+
+        checks, events = check_schema(document)
+        failed = [check for check in checks if not check.ok]
+        if failed:
+            failures.append(f"{resolved}: {failed[0].message}")
+            return
+        sr = (document.get("global") or {}).get("sample_rate")
+        if parent_sr is not None and sr != parent_sr:
+            failures.append(f"{resolved}: sample_rate {sr} differs from parent {parent_sr}")
+            return
+        validated_files += 1
+
+        layers = document.get("layers")
+        if not layers:
+            leaves.append((resolved, document, events))
+            return
+        for index, layer in enumerate(layers):
+            child = (resolved.parent / layer["source"]).resolve()
+            if not child.is_file():
+                failures.append(f"{resolved} layer {index}: source not found: {child}")
+                continue
+            try:
+                child_doc = json.loads(child.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                failures.append(f"{resolved} layer {index}: cannot read valid JSON {child}: {exc}")
+                continue
+            visit(child, child_doc, sr, (*stack, resolved))
+
+    parent_sr = (score.get("global") or {}).get("sample_rate")
+    for index, layer in enumerate(score.get("layers") or []):
+        child = (score_path.parent / layer["source"]).resolve()
+        if not child.is_file():
+            failures.append(f"root layer {index}: source not found: {child}")
+            continue
+        try:
+            child_doc = json.loads(child.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            failures.append(f"root layer {index}: cannot read valid JSON {child}: {exc}")
+            continue
+        visit(child, child_doc, parent_sr, (score_path,))
+
+    check = Check(
+        "layers.recursive_contract", not failures,
+        (f"Recursively validated {validated_files} layer score(s); "
+         f"{len(leaves)} leaf score(s) are eligible for mode verification."
+         if not failures else
+         f"LAYER CONTRACT FAILED: {failures[0]} ({len(failures)} failure(s) total)."),
+        {"validated_files": validated_files, "leaf_scores": len(leaves),
+         "failures": len(failures)},
+    )
+    return [check], leaves
+
+
 # ── main verification driver for a single score ────────────────────────────
 def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
     """Returns (overall_ok: bool, checks: list[Check], measured: dict).
@@ -1078,8 +1674,19 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
     schema_checks, events = check_schema(score)
     all_checks.extend(schema_checks)
 
-    mode_checks, dumped_events = check_modes(cli, score_path, events)
+    mode_checks, dumped_events = check_top_level_modes(
+        cli, score_path, score, events)
     all_checks.extend(mode_checks)
+
+    if score.get("layers"):
+        layer_checks, leaf_scores = inspect_layer_tree(score_path, score)
+        all_checks.extend(layer_checks)
+        for leaf_index, (leaf_path, _leaf_score, leaf_events) in enumerate(leaf_scores):
+            child_checks, _child_dump = check_modes(cli, leaf_path, leaf_events)
+            for check in child_checks:
+                check.name = f"layers.leaf_{leaf_index}.{check.name}"
+                check.message = f"{leaf_path.name}: {check.message}"
+            all_checks.extend(child_checks)
 
     # Stashed for tools/report_html.py (M4 --html mode): the parsed score,
     # its events, and the --dump-modes result are exactly what verify_one()
@@ -1113,6 +1720,15 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
         else:
             all_checks.append(Check("render.ran", True,
                                      f"Score rendered successfully to {wav_path.name}."))
+
+            # Manifest contract check (legacy v1/v2 or current v3 provenance)
+            # -- see check_render_manifest().
+            manifest_path = wav_path.with_name(wav_path.name + ".render.json")
+            manifest_check, manifest_measured = check_render_manifest(
+                manifest_path, wav_path, events, score_path=score_path,
+                cli_path=cli)
+            all_checks.append(manifest_check)
+            measured.update(manifest_measured)
 
             if wav_path.suffix.lower() != ".wav":
                 # SHA256 determinism (below) is format-agnostic and still runs;
@@ -1149,7 +1765,10 @@ def verify_one(cli, score_path, keep_render_dir=None, exemptions=None):
                 measured["_phrase_rms"] = loudness.compute_segment_rms_table(
                     score, events, mono_audio, sr)
 
-                all_checks.extend(check_rests(events, sr, mono_audio, cli=cli, score=score))
+                # Rest RMS is judged per channel (loudest channel wins), so
+                # the un-mixed array is passed -- see max_channel_rms_dbfs()
+                # for why a mono mixdown under-measures stereo reverb tails.
+                all_checks.extend(check_rests(events, sr, all_ch_audio, cli=cli, score=score))
                 all_checks.extend(check_peak_and_clipping(all_ch_audio))
     finally:
         if tmp_ctx is not None:
@@ -1265,6 +1884,10 @@ def main():
                      help="verify every .score.json under scores/examples, "
                           "scores/classical/vivaldi_four_seasons, "
                           "scores/originals/ai_radiance, and scores/library (recursive)")
+    ap.add_argument("--shard-index", type=int, default=None,
+                    help="with --all, verify only this zero-based deterministic shard")
+    ap.add_argument("--shard-count", type=int, default=None,
+                    help="with --all, split the sorted corpus into this many shards")
     ap.add_argument("--html", metavar="SCORE",
                      help="generate a single-file, self-contained HTML visual "
                           "verification report for SCORE (ROADMAP_PHYSICS.md M4)")
@@ -1280,6 +1903,15 @@ def main():
                      # score file, so it is handled before the CLI-discovery
                      # step below.
     args = ap.parse_args()
+
+    shard_args_present = args.shard_index is not None or args.shard_count is not None
+    if shard_args_present:
+        if not args.all or args.shard_index is None or args.shard_count is None:
+            ap.error("--shard-index and --shard-count must be supplied together with --all")
+        if args.shard_count <= 0:
+            ap.error("--shard-count must be greater than zero")
+        if args.shard_index < 0 or args.shard_index >= args.shard_count:
+            ap.error("--shard-index must satisfy 0 <= index < shard-count")
 
     if args.selftest_lufs:
         result = loudness._selftest()
@@ -1340,7 +1972,16 @@ def main():
                   "scores/originals/ai_radiance, scores/library.",
                   file=sys.stderr)
             return 2
-        print(f"Found {len(score_files)} score file(s) to verify.\n")
+        corpus_size = len(score_files)
+        if shard_args_present:
+            # Round-robin over the already sorted corpus.  This assignment is
+            # deterministic across hosts and keeps a few unusually long
+            # scores from all landing in one contiguous shard.
+            score_files = score_files[args.shard_index::args.shard_count]
+            print(f"Selected shard {args.shard_index}/{args.shard_count}: "
+                  f"{len(score_files)} of {corpus_size} score file(s).\n")
+        else:
+            print(f"Found {len(score_files)} score file(s) to verify.\n")
 
         results = []
         for sp in score_files:

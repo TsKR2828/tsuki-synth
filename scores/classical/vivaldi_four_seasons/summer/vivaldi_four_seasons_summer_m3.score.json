@@ -52,7 +52,7 @@
     "master_volume": 0.68,
     "effects": {
       "reverb": {
-        "decay": 2.1,
+        "decay": 1.0,
         "wet": 0.2
       },
       "delay": {

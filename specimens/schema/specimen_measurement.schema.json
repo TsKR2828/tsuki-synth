@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tsukisynth.local/schema/specimen-measurement-v1.json",
+  "title": "TsukiSynth Specimen Measurement v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "specimen", "environment", "acquisition", "artifacts",
+    "model", "claim_scope", "acceptance",
+    "relative_magnitude_reference_partial_index", "measured_modes"
+  ],
+  "properties": {
+    "$schema": { "const": "TsukiSynth Specimen Measurement v1" },
+    "specimen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "instrument_family", "serial_or_lot", "geometry", "material", "boundary_condition"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "instrument_family": { "type": "string", "minLength": 1 },
+        "serial_or_lot": { "type": "string", "minLength": 1 },
+        "geometry": { "type": "object", "minProperties": 1 },
+        "material": { "type": "object", "minProperties": 1 },
+        "boundary_condition": { "type": "string", "minLength": 1 }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["temperature_c", "relative_humidity_pct", "pressure_kpa"],
+      "properties": {
+        "temperature_c": { "type": "number", "minimum": -50, "maximum": 100 },
+        "relative_humidity_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "pressure_kpa": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "acquisition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "laboratory", "operator", "captured_at_utc", "method",
+        "sample_rate_hz", "averages", "frequency_resolution_hz",
+        "uncertainty_coverage_factor", "excitation_point_xyz_m",
+        "excitation_direction_xyz", "response_point_xyz_m", "response_quantity"
+      ],
+      "properties": {
+        "laboratory": { "type": "string", "minLength": 1 },
+        "operator": { "type": "string", "minLength": 1 },
+        "captured_at_utc": { "type": "string", "format": "date-time" },
+        "method": { "enum": ["impact_hammer_frf", "shaker_frf"] },
+        "sample_rate_hz": { "type": "integer", "minimum": 44100, "maximum": 768000 },
+        "averages": { "type": "integer", "minimum": 2 },
+        "frequency_resolution_hz": { "type": "number", "exclusiveMinimum": 0 },
+        "uncertainty_coverage_factor": { "type": "number", "minimum": 1 },
+        "excitation_point_xyz_m": { "$ref": "#/$defs/vector3" },
+        "excitation_direction_xyz": { "$ref": "#/$defs/vector3" },
+        "response_point_xyz_m": { "$ref": "#/$defs/vector3" },
+        "response_quantity": { "enum": ["acceleration_m_s2", "velocity_m_s", "displacement_m", "pressure_pa"] }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "path", "sha256"],
+        "properties": {
+          "role": {
+            "enum": [
+              "raw_excitation", "raw_response", "excitation_calibration",
+              "response_calibration", "uncertainty_analysis", "derived_frf"
+            ]
+          },
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_source_index", "mode_dump_sha256", "uncertainty"],
+      "properties": {
+        "event_source_index": { "type": "integer", "minimum": 0 },
+        "mode_dump_sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "uncertainty": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frequency_relative_pct", "relative_magnitude_db", "t60_relative_pct", "phase_deg"],
+          "properties": {
+            "frequency_relative_pct": { "type": "number", "minimum": 0 },
+            "relative_magnitude_db": { "type": "number", "minimum": 0 },
+            "t60_relative_pct": { "type": "number", "minimum": 0, "exclusiveMaximum": 100 },
+            "phase_deg": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "claim_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modal_frequencies", "relative_modal_magnitudes", "modal_t60",
+        "complex_phase", "absolute_spl", "radiation_directivity"
+      ],
+      "properties": {
+        "modal_frequencies": { "type": "boolean" },
+        "relative_modal_magnitudes": { "type": "boolean" },
+        "modal_t60": { "type": "boolean" },
+        "complex_phase": { "type": "boolean" },
+        "absolute_spl": { "type": "boolean" },
+        "radiation_directivity": { "type": "boolean" }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_mode_count", "min_coherence", "max_frequency_error_pct",
+        "max_relative_magnitude_error_db", "max_t60_ratio", "max_phase_error_deg"
+      ],
+      "properties": {
+        "min_mode_count": { "type": "integer", "minimum": 1 },
+        "min_coherence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "max_frequency_error_pct": { "type": "number", "exclusiveMinimum": 0 },
+        "max_relative_magnitude_error_db": { "type": "number", "exclusiveMinimum": 0 },
+        "max_t60_ratio": { "type": "number", "minimum": 1 },
+        "max_phase_error_deg": { "type": "number", "exclusiveMinimum": 0, "maximum": 180 }
+      }
+    },
+    "relative_magnitude_reference_partial_index": { "type": "integer", "minimum": 0 },
+    "measured_modes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model_partial_index", "frequency_hz", "frequency_u_hz",
+          "relative_magnitude_db", "magnitude_u_db", "t60_s", "t60_u_s", "coherence"
+        ],
+        "properties": {
+          "model_partial_index": { "type": "integer", "minimum": 0 },
+          "frequency_hz": { "type": "number", "exclusiveMinimum": 0 },
+          "frequency_u_hz": { "type": "number", "minimum": 0 },
+          "relative_magnitude_db": { "type": "number" },
+          "magnitude_u_db": { "type": "number", "minimum": 0 },
+          "t60_s": { "type": "number", "exclusiveMinimum": 0 },
+          "t60_u_s": { "type": "number", "minimum": 0 },
+          "coherence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "phase_deg": { "type": "number", "minimum": -180, "maximum": 180 },
+          "phase_u_deg": { "type": "number", "minimum": 0 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" }, { "type": "number" }, { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    }
+  }
+}

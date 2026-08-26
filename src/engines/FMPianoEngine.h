@@ -46,6 +46,8 @@ struct FMParams
     float    feedback  = 0.02f;      // must match APVTS default
     float    attackMs  = 5.0f;       // must match APVTS default
     float    releaseMs = 500.0f;     // must match APVTS default
+    uint64_t randomSeed = 0x5453554B4953594Eull;
+    uint64_t eventIndex = 0;
 };
 
 class FMPianoSound : public juce::SynthesiserSound
@@ -58,6 +60,7 @@ public:
 class FMPianoVoice : public juce::SynthesiserVoice
 {
 public:
+    void setNoiseIdentity (uint64_t identity) { noiseIdentity = identity; }
     // Parameter pointers (set by Processor)
     std::atomic<float>* pType       = nullptr;  // 0~7 sound type (ADSR shape)
     std::atomic<float>* pRatio      = nullptr;  // mod/carrier ratio (0.5~16)
@@ -123,7 +126,8 @@ public:
         releaseMs *= dmpScale;
 
         initVoice (midiNoteNumber, velocity, type, ratio, index,
-                   brightness, feedback, attackMs, releaseMs, sr);
+                   brightness, feedback, attackMs, releaseMs, sr,
+                   0x504C5547494Eull, noiseEventCounter++);
     }
 
     void stopNote (float, bool allowTailOff) override
@@ -155,7 +159,7 @@ public:
                    juce::jlimit (0, 7, static_cast<int> (params.preset)),
                    params.ratio, params.index, params.brightness,
                    params.feedback, params.attackMs, params.releaseMs,
-                   standaloneSR);
+                   standaloneSR, params.randomSeed, params.eventIndex);
     }
 
     void noteOff() { ampEnv.noteOff(); }
@@ -237,7 +241,7 @@ private:
     float    hammerHPCoeff    = 0.0f;
     float    hammerLPState    = 0.0f;   // one-pole LP filter state
     float    hammerLPCoeff    = 0.0f;
-    uint32_t hammerNoiseSeed  = 0;      // independent LCG noise
+    NoiseGen hammerNoiseGen;             // independent, specified PCG32 stream
 
     // ── Body resonance (2 soundboard modes) ──
     double bodyResPhase1   = 0.0;
@@ -275,6 +279,8 @@ private:
     Envelope ampEnv;
     NoiseGen noiseGen;
     float    noiseMacroLevel = 0.0f;
+    uint64_t noiseIdentity = 0;
+    uint64_t noiseEventCounter = 0;
 
     // ──────────────────────────────────────────────────────────
     //  initVoice — shared setup for DAW (startNote) & CLI (noteOn)
@@ -282,7 +288,7 @@ private:
     void initVoice (int midiNote, float velocity, int type,
                     float ratio, float index, float brightness,
                     float feedback, float attackMs, float releaseMs,
-                    double sr)
+                    double sr, uint64_t scoreSeed, uint64_t eventIndex)
     {
         float freq = 440.0f * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
 
@@ -351,7 +357,14 @@ private:
         hammerLPCoeff = (float) std::exp (-juce::MathConstants<double>::twoPi * 6000.0 / sr);
         hammerHPState = 0.0f;
         hammerLPState = 0.0f;
-        hammerNoiseSeed = static_cast<uint32_t> (midiNote * 17 + (int) (velocity * 1000.0f));
+        const uint32_t velocityCode = (uint32_t) std::lround (
+            juce::jlimit (0.0f, 1.0f, velocity) * 16777215.0f);
+        const uint64_t streamEvent = (eventIndex << 8) ^ noiseIdentity;
+        const uint64_t eventSeed = NoiseGen::mixSeed (
+            scoreSeed, streamEvent, (uint32_t) midiNote, velocityCode);
+        hammerNoiseGen.setType (NoiseGen::Type::White);
+        hammerNoiseGen.reset();
+        hammerNoiseGen.setSeed (eventSeed ^ 0x48414D4D4552ull);
 
         // ── P1-3: Per-type body resonance ──
         // Each sound type has different resonance character to reduce "same box" feel
@@ -390,7 +403,7 @@ private:
 
         noiseGen.setType (NoiseGen::Type::White);
         noiseGen.reset();
-        noiseGen.setSeed ((uint32_t) (midiNote * 2654435761u) ^ (uint32_t) (velocity * 9973.0f));
+        noiseGen.setSeed (eventSeed ^ 0x4D4143524F4Eull);
 
         // ── P2: E.Piano 3-stack mode ──
         // Only E.Piano (type 1) uses parallel stacks; all others single-stack.
@@ -500,9 +513,7 @@ private:
         // ── Hammer noise transient (bandpass 1.5–6 kHz) ──
         if (hammerLevel > 0.0001f)
         {
-            // Independent LCG noise (avoids shared state with macro noiseGen)
-            hammerNoiseSeed = hammerNoiseSeed * 1664525u + 1013904223u;
-            float noise = (float) ((int32_t) hammerNoiseSeed) * (1.0f / 2147483648.0f);
+            float noise = hammerNoiseGen.processSample();
 
             // HP ~1.5 kHz (one-pole)
             hammerHPState += hammerHPCoeff * (noise - hammerHPState);
