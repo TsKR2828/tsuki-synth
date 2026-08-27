@@ -71,7 +71,11 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
       （`4ef2c50`/`bef60fc`）。報告 `reports/b1_b2_bridge_damping_before_after.md`。
 - [x] **A2 阻尼寬頻化那批 unstaged 怎麼處理** — **已依 (b) 方案收斂完成**（事實路徑：該批與 B1 一起進了 447faea，B2 於 2026-08-21 完成收尾驗證，見 B2 條目）。
 - [x] **A3 琴橋導納要不要開工**（= B1）— 已開工並完成（見 B1/B2 條目）。
-- [ ] **A4 亮度 EQ 應急層去留** — 8/6 激發端修正落地後，`global.effects.eq` 高頻 shelf 的補償需求可能已部分消失，需審聽後決定是否調整建議值／文件。
+- [x] **A4 亮度 EQ 應急層去留** — **2026-08-27 月月裁決「調整文件建議值」，已落地（程式碼零改動）**：
+      `docs/AI_PERFORMANCE_PLAYBOOK.zh-TW.md` §5 eq 條目改為「預設不開」——8/6 激發端修正
+      （τc keytrack + 響度校準）落地後補償需求已消失，且 EQ 與 normalize 交互會把整曲電平
+      下拉（六首實測 −0.02~−0.19 dB，water_gong 低頻曲目 −0.33 dB）。eq 機制本身保留
+      （藝術用、域外）。依據裁決包 `reports/decision_packets/A4_brightness_eq.md`。
 - [x] **A5 push 到 GitHub** — 2026-08-21 月月授權 push（49c22f5/b5ccb9b/26a0129），CI 全綠，X3 數字已得。
 - [x] **A6 merge → `main` 時機** — **2026-08-26 月月裁決「下一批 Commit+merge 進去」，已執行**：
       B3 批次（X4+B3+Rule 10 報告+裁決包+LICENSE）commit 後併入 `main` 並 push（M8-8b 完成，
@@ -85,7 +89,12 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
       專案存讀（重開再匯出音訊位元全等）皆真 host 證據；automation 於 L2 HostProbe 合約層驗證
       （Cubase GUI 畫 lane 未做，唯一殘留人工項，非位置主張必需）。證據 `l3b_cubase_live.txt`。
 - [ ] **A10 Score 控制台實操驗收** — Standalone 頂列 [Score] 鈕的實際操作。
-- [ ] **A11 共鳴板厚度 h 與材質選定（B1 琴橋導納）** —— 目前實作用
+- [x] **A11 共鳴板厚度 h 與材質選定（B1 琴橋導納）** —— **2026-08-27 月月裁決 (i)「確認現值」，關閉**：
+      `h = 9mm`／`wood_spruce` 由月月確認維持（依據裁決包
+      `reports/decision_packets/A11_soundboard_sensitivity.md`；`docs/BRIDGE_ADMITTANCE_SOURCES.md`
+      §5 已補確認記錄），零程式碼改動。X1 併入的「可注入」子問題依裁決就地關閉——
+      選 (i) 即維持寫死，不做旗標/注入 plumbing（物理層 `bridgeLossRate()` 本就可注入，
+      引擎/renderer 層寫死維持現狀）。以下為原始待裁決記錄（保留供追溯）。目前實作用
       `h = 9mm`（文獻「鋼琴音板 8–10mm」範圍中點）、材質 = `wood_spruce`
       （`materials.json` 既有項，鋼琴/揚琴音板慣用雲杉的類比選擇）。
       兩者皆非 TsukiSynth cimbalom 的實測值，是暫定的文獻類比預設值
@@ -159,7 +168,27 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
       **Rule 10 報告：`reports/string_damping_firstprinciples_before_after.md`（§9 八項全含，
       尤其 `Q⁻¹_disl`/`eta` 佔比表與 `damping_override` 錨點保證變化聲明）——月月請讀後裁決。**
       → 依據 `docs/STRING_DAMPING_SOURCES.md`
-- [ ] **B4 槌頭非線性接觸求解器**（前置：無，但風險最集中）
+- [x] **B4 槌頭非線性接觸求解器**（前置：無，但風險最集中）— **Done（2026-08-27，
+      月月裁決 (b)「重定義 F3 velocity 主張域」後收尾完成；改動留 unstaged 待月月授權 commit，R7）**。
+      實作：HammerImpulse.h 三常數表+內插+pianoHammerTauC（錨定 kTauCFelt@A4/v=0.5）、
+      CimbalomEngine 4 呼叫點 Felt 分支、7 條新測試全 PASS、非 Felt/Chromatic 位元不變已證
+      （`b4_nonfelt_invariance.txt`）、ctest/pytest/selftest/三 build 全綠
+      （`b4_build_{cli,standalone,vst3}.txt`/`b4_ctest.txt`/`b4_pytest.txt`/`b4_selftest.txt`，
+      X4 規約先重建 `b4_x4_rebuild_tests.txt`/`b4_f3_redefine_x4_rebuild.txt`）。
+      **F3 撞牆與裁決**：--full F3 velocity 判定 piano 路徑 FAIL——predicted_delta C2 +6.3(PASS)/
+      C4 +7.79(dev +1.77 FAIL)/C7 +19.12(dev +13.10 FAIL)，偏差隨 α 嚴格單調（C7>C4>C2）、
+      渲染實測與模型預測吻合 <0.2 dB（match_ok 過、law_ok 破）＝本條目早就預告的
+      「撞 §6 velocity 判定」物理事實，非實作 bug（存證 `b4_gate_full_FAIL.txt`/
+      `b4_f3_alpha_monotonicity.txt`）→ 照卡 §12 停工出裁決包
+      `reports/decision_packets/B4_f3_velocity_ruling.md` → **2026-08-27 月月裁決 (b)**：
+      F3 主張域二分（固定 tau_c 路徑檢查一字不動；tau_c(v)/Felt 路徑改「實測 vs 模型自身預測
+      ±1.0 dB」自洽判定＋predicted_delta 誠實列印），match 容差數值未動、未放寬任何檢查
+      （R2 遵守，登記見 `ROADMAP_PHYSICS.md` §6 velocity 列）。
+      重定義後收尾證據：`b4_gate_full_after_f3_redefine.txt`（NO CHECKED FAILURES）、
+      主張域哨兵兩輪 `b4_f3_redefine_sentinel.txt`、`b4_f3_redefine_ctest.txt`/
+      `b4_f3_redefine_pytest.txt`/`b4_f3_redefine_alpha_recheck.txt`、
+      **corpus 73/73 PASS 零新增豁免**（`b4_corpus_all.txt`）、
+      **Rule 10 前後對照報告 `reports/b4_hammer_contact_before_after.md`**。
       `F = K·δ^α` 逐音實測值 + 槌質量表 + Stulov 遲滯參數。
       **只適用 Cimbalom/Piano**；Chromatic 在 D2 補搜完成前不得套用。
       **必須連同 noteOn 能量正規化層一起設計**，否則會撞 §6 velocity 判定。

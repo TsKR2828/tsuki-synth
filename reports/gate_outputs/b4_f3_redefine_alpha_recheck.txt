@@ -1,0 +1,17 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band. Fixed-tau_c paths: render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law. tau_c(v)/Felt paths [B4, 2026-08-27 ruling (b)]: render delta vs the model's own prediction; predicted delta reported honestly vs the fixed-tau_c reference, not judged against it. tol +/-1.0 dB throughout, unchanged. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   piano         36    -45.3    -39.1      +6.2      +6.3  PASS
+      tau_c(v) claim domain [2026-08-27 ruling (b), reports/decision_packets/B4_f3_velocity_ruling.md]: Felt-hammer contact time is velocity-solved (HammerImpulse::pianoHammerTauC), so the fixed-tau_c 6.0206 dB law is not asserted here; JUDGED claim = render matches the model's own prediction. Honest report: predicted f0-band delta +6.25 dB, deviation from the fixed-tau_c reference +0.23 dB (informational).
+      broadband RMS delta = +7.70 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+   piano         60    -44.6    -36.8      +7.8      +7.8  PASS
+      tau_c(v) claim domain [2026-08-27 ruling (b), reports/decision_packets/B4_f3_velocity_ruling.md]: Felt-hammer contact time is velocity-solved (HammerImpulse::pianoHammerTauC), so the fixed-tau_c 6.0206 dB law is not asserted here; JUDGED claim = render matches the model's own prediction. Honest report: predicted f0-band delta +7.79 dB, deviation from the fixed-tau_c reference +1.77 dB (informational).
+      broadband RMS delta = +9.13 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+   piano         96   -104.4    -85.5     +18.9     +19.1  PASS
+      tau_c(v) claim domain [2026-08-27 ruling (b), reports/decision_packets/B4_f3_velocity_ruling.md]: Felt-hammer contact time is velocity-solved (HammerImpulse::pianoHammerTauC), so the fixed-tau_c 6.0206 dB law is not asserted here; JUDGED claim = render matches the model's own prediction. Honest report: predicted f0-band delta +19.12 dB, deviation from the fixed-tau_c reference +13.10 dB (informational).
+      broadband RMS delta = +13.45 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+overall: PASS
+recheck_exit=0

@@ -1,0 +1,11 @@
+piece,sample,band_f0_hz,win_t0_s,win_t1_s,t60_before_s,t60_after_s,delta_pct,fit_span_before_db,fit_span_after_db,fit_len_before_s,fit_len_after_s
+physical_piano,C4 sustain,261.6260,0.00,1.00,2.5417,2.5537,0.473,8.3,8.2,0.85,0.85
+physical_piano,E4 sustain,329.6280,1.00,2.00,1.5735,1.5761,0.167,43.9,43.3,0.77,0.77
+physical_piano,G4 sustain,391.9950,2.00,3.00,2.6291,2.6344,0.202,11.1,10.9,0.85,0.85
+physical_piano,C5 sustain,523.2510,3.00,5.00,1.7746,1.7755,0.051,44.9,44.9,0.96,0.96
+physical_piano,C5 tail,523.2510,5.00,7.58,2.0427,2.0435,0.037,44.6,44.7,1.14,1.14
+ai_radiance_m3,F4 (last felt) decay,349.2280,21.30,22.84,5.1721,5.1729,0.017,28.4,28.5,1.38,1.38
+ai_radiance_m3,F4 band piece tail,349.2280,22.84,32.22,4.5974,4.5981,0.016,38.9,38.9,2.33,2.33
+akashic_action_001,D5 sustain (string+plate),587.3300,0.00,1.00,7.2247,10.2869,42.385,16.2,19.2,0.85,0.85
+akashic_action_001,D5 tail,587.3300,1.00,3.25,2.3030,2.1321,-7.420,40.6,42.9,1.25,1.26
+ocean_action_001,D1 band tail (plate-dominated),36.7080,0.90,6.00,4.7960,4.7657,-0.631,40.3,40.5,3.10,3.10

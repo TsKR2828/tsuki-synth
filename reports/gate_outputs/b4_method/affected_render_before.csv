@@ -1,0 +1,6 @@
+piece,score_path,wav,len_s,rms_dbfs,centroid_hz,sha256
+physical_piano,scores/examples/physical_piano.score.json,physical_piano.wav,7.575,-18.285,789.91,ace07c6bfc945c62754fc1507cf0625c4a25426754171b9ec50972804f137932
+ai_radiance_complete,scores/originals/ai_radiance/ai_radiance_complete.score.json,Original_AI_Radiance_Complete.wav,136.603,-25.741,2353.09,c4f8b1ce976b8803411d18058ee2c4cd629aadf243c8c2e39cada50668d6acf2
+ai_radiance_m3,scores/originals/ai_radiance/ai_radiance_m3.score.json,Original_AI_Radiance_Movement3.wav,32.222,-20.634,781.48,52fe55470336024f653245e5d120991121d898873c66dd5053c0f77dad6dd7f1
+akashic_action_001,scores/library/akashic/akashic_action_001.score.json,Foley_Soft_OneShot_D5.wav,3.248,-22.259,1094.64,533cacbe6075d96fe1e05970fde6d6f4cc284a933aaffbb7965d90332c1b94b4
+ocean_action_001,scores/library/ocean/ocean_action_001.score.json,Impact_Dark_OneShot_D1.wav,6.289,-23.156,196.27,3b36d07ed8cb6114c806592d4e2fc513659361e337f20ea73e41c90ada10bc2c

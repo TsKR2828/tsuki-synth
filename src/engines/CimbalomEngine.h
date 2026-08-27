@@ -242,8 +242,17 @@ public:
                         * matScale * dmpScale;
         }
 
-        const float tauC = HammerImpulse::tauCForNote (hammer, velocity,
-                                                       midiNoteNumber);
+        // B4（2026-08-27）：Felt（鋼琴氈槌）檔位的 tau_c 改由實測接觸律
+        // F=K·δ^α + 槌質量 + 撞速解出（HammerImpulse::pianoHammerTauC()，
+        // 錨定 A4/v=0.5 = kTauCFelt）。pHammerHardness 是連續 float 0~3，
+        // std::round(hammer)==1 = 落在 Felt 檔位 ±0.5 內。fail-closed：
+        // 非 Felt（Cotton/Wood/Metal）一律走原本 tauCForNote()，位元不變。
+        // 判斷語意與 noteOn() 的 hammerIdx == 1 一致（可重現性支柱：同一顆
+        // 音符 plugin 與 CLI 渲染必須一致）。
+        const bool feltHammer = (std::round (hammer) == 1.0f);
+        const float tauC = feltHammer
+            ? HammerImpulse::pianoHammerTauC (midiNoteNumber, velocity)
+            : HammerImpulse::tauCForNote (hammer, velocity, midiNoteNumber);
 
         // ── 跨音域響度補償（見 ModalResonator::loudnessCompensationGain）──
         // 攻擊能量用 baseModes（此時 freq/decay 已定案）+ 槌頭頻譜預估；
@@ -255,8 +264,11 @@ public:
         // 增益會隨力度變動、把 excite() 的線性 velocity 律拉成次線性
         // （F3 +6.0206±1.0 dB 判定會破——tongue_drum 實測 +4.72 dB FAIL 的
         // 教訓）。實際渲染振幅（下方弦迴圈）仍用實際 τc，物理不變。
-        const float tauCRef = HammerImpulse::tauCForNote (hammer, 0.5f,
-                                                          midiNoteNumber);
+        // B4：Felt 檔位的參考 τc 同樣換新求解器，但仍固定 velocity=0.5
+        // （錨點力度），理由同上——補償增益不得隨實際力度變動。
+        const float tauCRef = feltHammer
+            ? HammerImpulse::pianoHammerTauC (midiNoteNumber, 0.5f)
+            : HammerImpulse::tauCForNote (hammer, 0.5f, midiNoteNumber);
         float attackE = 0.0f;
         for (const auto& m : baseModes)
         {
@@ -411,8 +423,16 @@ public:
                 m.frequency *= tuneScale;
         }
 
-        const float tauC = HammerImpulse::tauCForNote ((float) hammerIdx, velocity,
-                                                       midiNote);
+        // B4（2026-08-27）：Felt（鋼琴氈槌）的 tau_c 改由實測接觸律解出
+        // （HammerImpulse::pianoHammerTauC()，錨定 A4/v=0.5 = kTauCFelt）。
+        // 這裡 hammerIdx 已是精確 int（cimbalomExciterFromString() 的 enum
+        // cast），直接 == 1（ExciterType::Felt）判斷，不需 round；判斷語意
+        // 與 startNote() 的 std::round(hammer)==1 一致（同一顆音符 plugin
+        // 與 CLI 渲染必須一致）。fail-closed：非 Felt 走原路徑，位元不變。
+        const bool feltHammer = (hammerIdx == 1);
+        const float tauC = feltHammer
+            ? HammerImpulse::pianoHammerTauC (midiNote, velocity)
+            : HammerImpulse::tauCForNote ((float) hammerIdx, velocity, midiNote);
         // dampingOverride semantics: >= 0 replaces ONLY the internal-friction
         // term of the decay law (2026-08-24 B3 first-principles form)
         //   T60(f) = 1 / ((eta + Qinv_air + Qinv_visc + Qinv_disl)*f/2.2 + bridgeLoss);
@@ -445,8 +465,10 @@ public:
         // velocity=0.5 Hertz 錨的理由）。此路徑的 baseModes 尚未設 decayTime，
         // 預估時套用與下方弦迴圈同一條衰減律（含 alphaOverride），確保預估
         // 與實際渲染一致。
-        const float tauCRef = HammerImpulse::tauCForNote ((float) hammerIdx, 0.5f,
-                                                          midiNote);
+        // B4：Felt 的參考 τc 同樣換新求解器，仍固定 velocity=0.5（錨點力度）。
+        const float tauCRef = feltHammer
+            ? HammerImpulse::pianoHammerTauC (midiNote, 0.5f)
+            : HammerImpulse::tauCForNote ((float) hammerIdx, 0.5f, midiNote);
         float attackE = 0.0f;
         for (const auto& m : baseModes)
         {

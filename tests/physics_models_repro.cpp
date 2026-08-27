@@ -610,6 +610,131 @@ void testHammerSpectrum()
            "Hertz strike-speed law shortens contact at higher velocity");
 }
 
+// B4 (2026-08-27): piano felt-hammer nonlinear contact solver
+// (docs/workcards/B4.md §7, sources docs/HAMMER_CONTACT_SOURCES.md §2-§3).
+void testPianoHammerContactSolver()
+{
+    // §6 step 1 hand-check, frozen as regression checks: the three K/alpha
+    // anchors (C2/C4/C7) reproduce the literature table exactly, and the
+    // out-of-range notes (C1/C8) flat-clamp to the nearest anchor.
+    CHECK (HammerImpulse::alphaForPianoNote (36) == 2.3f
+           && HammerImpulse::alphaForPianoNote (60) == 2.5f
+           && HammerImpulse::alphaForPianoNote (96) == 3.0f,
+           "alpha(C2/C4/C7) reproduce the Euphonics Table 2 anchors exactly");
+    CHECK (std::abs (HammerImpulse::logKForPianoNote (36) / 4.0e8f - 1.0f) < 1.0e-4f
+           && std::abs (HammerImpulse::logKForPianoNote (60) / 4.5e9f - 1.0f) < 1.0e-4f
+           && std::abs (HammerImpulse::logKForPianoNote (96) / 1.0e12f - 1.0f) < 1.0e-4f,
+           "K(C2/C4/C7) reproduce the Euphonics Table 2 anchors (rel < 1e-4)");
+    CHECK (HammerImpulse::hammerMassForPianoNote (24) == 0.012f
+           && HammerImpulse::hammerMassForPianoNote (60) == 0.009f
+           && HammerImpulse::hammerMassForPianoNote (108) == 0.005f,
+           "hammer mass reproduces the C1/C4/C8 Table 1 anchors exactly");
+
+    // §7.1 anchor reproduction: the solved tau_c is anchored at A4/v=0.5 to
+    // the existing Askenfelt & Jansson felt value, so it must reproduce it.
+    CHECK (std::abs (HammerImpulse::pianoHammerTauC (69, 0.5f)
+                     - HammerImpulse::kTauCFelt) < 1.0e-4f,
+           "pianoHammerTauC(A4, v=0.5) reproduces kTauCFelt (anchor point)");
+
+    // §7.2 velocity directionality: faster strike -> shorter contact.
+    CHECK (HammerImpulse::pianoHammerTauC (60, 0.9f)
+           < HammerImpulse::pianoHammerTauC (60, 0.1f),
+           "Solved contact time shortens at higher strike velocity");
+
+    // §7.3 velocity-exponent magnitude at the three anchors (pure algebra,
+    // no rendering): log(tau(v2)/tau(v1))/log(v2/v1) must approach the
+    // derived exponents 2/(alpha+1)-1 = -0.394 / -0.429 / -0.500
+    // (HAMMER_CONTACT_SOURCES.md §3 table) within 1e-3. v in [0.2, 0.8]
+    // keeps every tau inside the [0.3ms, 8ms] safety clamp (verified below)
+    // so the clamp cannot flatten the measured slope.
+    {
+        const int   anchorMidi[3]  = { 36, 60, 96 };
+        const float expectedExp[3] = { -0.394f, -0.429f, -0.500f };
+        bool slopesOk = true;
+        bool unclamped = true;
+        for (int i = 0; i < 3; ++i)
+        {
+            const float v1 = 0.2f, v2 = 0.8f;
+            const float t1 = HammerImpulse::pianoHammerTauC (anchorMidi[i], v1);
+            const float t2 = HammerImpulse::pianoHammerTauC (anchorMidi[i], v2);
+            unclamped = unclamped
+                && t1 > HammerImpulse::kPianoTauCMinS && t1 < HammerImpulse::kPianoTauCMaxS
+                && t2 > HammerImpulse::kPianoTauCMinS && t2 < HammerImpulse::kPianoTauCMaxS;
+            const double slope = std::log ((double) t2 / (double) t1)
+                               / std::log ((double) v2 / (double) v1);
+            slopesOk = slopesOk && std::abs (slope - (double) expectedExp[i]) < 1.0e-3;
+            std::cout << "       velocity exponent @ MIDI " << anchorMidi[i]
+                      << ": " << slope << " (expected " << expectedExp[i] << ")\n";
+        }
+        CHECK (unclamped,
+               "Anchor-note tau_c values stay strictly inside the safety clamp");
+        CHECK (slopesOk,
+               "Velocity exponents at C2/C4/C7 match -0.394/-0.429/-0.500 (< 1e-3)");
+    }
+
+    // §7.4 interpolation monotonicity: alpha(note) non-decreasing across the
+    // full anchored span (the documented physical ordering, sources §2.1).
+    {
+        bool monotone = true;
+        for (int midi = 36; midi < 96; ++midi)
+            monotone = monotone && HammerImpulse::alphaForPianoNote (midi + 1)
+                                   >= HammerImpulse::alphaForPianoNote (midi);
+        CHECK (monotone, "alphaForPianoNote is non-decreasing over MIDI 36..96");
+    }
+
+    // §7.5 flat extrapolation at the boundaries (no linear extrapolation
+    // beyond the measured anchors) for all three interpolated tables.
+    CHECK (HammerImpulse::alphaForPianoNote (24) == HammerImpulse::alphaForPianoNote (36)
+           && HammerImpulse::alphaForPianoNote (108) == HammerImpulse::alphaForPianoNote (96),
+           "alpha flat-clamps outside the C2..C7 anchor range");
+    CHECK (HammerImpulse::logKForPianoNote (24) == HammerImpulse::logKForPianoNote (36)
+           && HammerImpulse::logKForPianoNote (108) == HammerImpulse::logKForPianoNote (96),
+           "K flat-clamps outside the C2..C7 anchor range");
+    CHECK (HammerImpulse::hammerMassForPianoNote (12) == HammerImpulse::hammerMassForPianoNote (24)
+           && HammerImpulse::hammerMassForPianoNote (120) == HammerImpulse::hammerMassForPianoNote (108),
+           "hammer mass flat-clamps outside the C1..C8 anchor range");
+
+    // §7.6 counterexample (required): if the interpolation were miscoded as
+    // linear-in-K (instead of linear-in-log10(K)) the C2->C7 midpoint
+    // (MIDI 66, inside the C4->C7 segment) would land more than an order of
+    // magnitude away -- K spans 3 decades, so this regression pins the
+    // easiest-to-make mistake as a hard FAIL.
+    {
+        const float kCorrect = HammerImpulse::logKForPianoNote (66);
+        // wrong version: linear interpolation on K itself over the SAME
+        // containing segment (C4 = MIDI 60 -> C7 = MIDI 96) the correct
+        // implementation uses.
+        const float t = (66.0f - 60.0f) / (96.0f - 60.0f);
+        const float kWrongLinear = 4.5e9f + (1.0e12f - 4.5e9f) * t;
+        // correct value per §4.2: 10^(log10(4.5e9) + t*(12 - log10(4.5e9)))
+        const double kExpected = std::pow (10.0, std::log10 (4.5e9)
+                                     + (double) t * (12.0 - std::log10 (4.5e9)));
+        CHECK (std::abs (kCorrect / (float) kExpected - 1.0f) < 1.0e-3f,
+               "K(MIDI 66) matches the hand-computed log-domain interpolation");
+        CHECK (kWrongLinear / kCorrect > 10.0f,
+               "Linear-in-K miscoding differs from log-domain result by >1 order of magnitude");
+    }
+
+    // §7.7 Felt-branch predicate boundaries: exactly the expressions used in
+    // CimbalomEngine.h. startNote(): std::round(hammer) == 1.0f (continuous
+    // 0..3 knob, Felt detent +/-0.5); noteOn(): hammerIdx == 1 (exact enum
+    // int). Non-Felt detents (0/2/3 and fractional values rounding to them,
+    // e.g. 1.6) must NOT trigger the new solver.
+    {
+        auto feltPluginPath = [] (float hammer) { return std::round (hammer) == 1.0f; };
+        CHECK (! feltPluginPath (0.0f) && ! feltPluginPath (2.0f)
+               && ! feltPluginPath (3.0f) && ! feltPluginPath (1.6f)
+               && ! feltPluginPath (0.4f) && ! feltPluginPath (2.4f),
+               "Non-Felt hardness values (0/2/3, 1.6, 0.4, 2.4) do not select the solver");
+        CHECK (feltPluginPath (1.0f) && feltPluginPath (0.6f) && feltPluginPath (1.4f),
+               "Felt detent (1.0 and +/-0.4 neighbourhood) selects the solver");
+        auto feltScorePath = [] (int hammerIdx) { return hammerIdx == 1; };
+        CHECK (! feltScorePath (0) && feltScorePath (1)
+               && ! feltScorePath (2) && ! feltScorePath (3),
+               "Score-path exact enum: only ExciterType::Felt (1) selects the solver");
+    }
+}
+
 void testRelativeCutoffAndNoiseStreams()
 {
     ModalResonator frequencyGate;
@@ -874,6 +999,7 @@ int main()
     testDimensionalScalingLaws();
     testPassivityAndInvalidNumericRefusal();
     testHammerSpectrum();
+    testPianoHammerContactSolver();
     testRelativeCutoffAndNoiseStreams();
     testLongDelayAndSharedEffects();
     std::cout << (failures == 0 ? "PASS" : "FAIL")

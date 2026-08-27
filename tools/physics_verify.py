@@ -1185,6 +1185,26 @@ VELOCITY_EXEMPT_ENGINES = {"fm"}   # FM index also rises with velocity -> not a 
 # failing the amplitude~force law it never actually violated). No FAILs to
 # report at this MIDI/velocity pair; if a future run turns one up, record it
 # honestly here per Rule 2 -- do not widen the tolerance or add an exemption.
+#
+# CLAIM-DOMAIN SPLIT (2026-08-27 月月裁決 (b)，見 reports/decision_packets/
+# B4_f3_velocity_ruling.md；6.02 dB 律是固定 tau_c 假設的推論，tau_c(v) 路徑
+# 主張改為模型自洽): B4 (src/physics/HammerImpulse.h pianoHammerTauC(),
+# wired in src/engines/CimbalomEngine.h) replaced the Felt hammer's contact
+# time with the measured-contact-law solution tau_c(note, v) ~
+# v^(2/(alpha+1)-1) (alpha 2.3..3.0 -> exponent -0.394..-0.500). The fixed
+# 6.0206 dB bound below is itself a COROLLARY of "tau_c does not change with
+# velocity": with fixed tau_c, |H(2*pi*f0*tau_c)| cancels between the lo/hi
+# renders and the f0-band delta reduces to the pure amplitude~force multiply.
+# On the tau_c(v) path that cancellation no longer happens, so the fixed
+# number is not a valid physical claim there (recorded evidence: piano C2
+# +6.3 / C4 +7.79 / C7 +19.12 dB predicted, deviation strictly monotonic in
+# alpha, render agreeing with the model < 0.2 dB throughout -- see
+# reports/gate_outputs/b4_gate_full_FAIL.txt and b4_f3_alpha_monotonicity.txt).
+# judge_velocity() therefore judges that path with
+# assess_velocity_delta_tauc_v() below (model self-consistency, SAME
+# VELOCITY_DB_TOL, predicted_delta always reported honestly); every
+# fixed-tau_c path keeps assess_velocity_delta() -- law bound included --
+# character for character.
 VELOCITY_LAW_DB = 20.0 * math.log10(2.0)   # 6.020599913279624
 
 
@@ -1207,6 +1227,76 @@ def assess_velocity_delta(measured_delta, predicted_delta):
     return match_ok and law_ok, dict(match_ok=match_ok, law_ok=law_ok)
 
 
+# ── F3 claim-domain split: which probes render through tau_c(v)? ────────────
+# 2026-08-27 月月裁決 (b)，見 reports/decision_packets/B4_f3_velocity_ruling.md；
+# 6.02 dB 律是固定 tau_c 假設的推論，tau_c(v) 路徑主張改為模型自洽。
+# The split is a pure, parameter-free function of the probe score's own
+# engine/exciter -- the SAME dispatch the C++ performs -- mirrored here from
+# the documented sources (stiff_string_oracle() tradition: mirror the
+# published/C++ rule, never fit anything to rendered audio):
+#   * ScoreParser.h:   `std::string exciter = "wood_mallet";` (schema default);
+#   * ScoreRenderer.h renderEvent()/dumpModes(): the piano-engine-ONLY
+#     override `if (exciter == "wood_mallet") exciter = "felt";`;
+#   * ScoreRenderer.h cimbalomExciterFromString(): the exact exciter names
+#     that map to ExciterType::Felt (index 1);
+#   * CimbalomEngine.h noteOn()/startNote() (B4): Felt (hammerIdx == 1)
+#     selects HammerImpulse::pianoHammerTauC() -- the tau_c(v) solver; every
+#     other exciter keeps tauCForNote() bit-for-bit.
+# There is NO tunable parameter here: engine names, exciter names and the
+# default are fixed strings read off the C++ source. Chromatic engines
+# (tongue_drum/water_gong/beam/plate/custom) and FM never enter this set, so
+# their fixed-law judgment is untouched by construction.
+VELOCITY_CIMBALOM_FAMILY_ENGINES = frozenset({"string", "cimbalom", "piano"})
+VELOCITY_FELT_EXCITERS = frozenset({
+    "felt", "felt_mallet",     # cimbalomExciterFromString(): ExciterType::Felt
+    "finger", "finger_tap",    # mapped to Felt by the same function
+    "rubber_mallet",           # mapped to Felt by the same function
+})
+VELOCITY_SCORE_DEFAULT_EXCITER = "wood_mallet"   # ScoreParser.h default
+
+
+def probe_tauc_velocity_solved(score_path):
+    """True iff this probe score's (single-event) render goes through the B4
+    velocity-solved contact time tau_c(note, v) -- i.e. a CimbalomEngine-
+    family engine whose effective exciter is ExciterType::Felt, the one and
+    only path CimbalomEngine.h routes to HammerImpulse::pianoHammerTauC().
+    Fail-closed: any unreadable/unknown score classifies as False, which
+    routes the probe to the STRICTER fixed-tau_c law judgment (can only
+    produce an honest FAIL, never a silent pass)."""
+    try:
+        event, params = _score_probe_parameters(score_path)
+    except Exception:
+        return False
+    if event.get("engine") not in VELOCITY_CIMBALOM_FAMILY_ENGINES:
+        return False
+    exciter = params.get("exciter", VELOCITY_SCORE_DEFAULT_EXCITER)
+    if event.get("engine") == "piano" and exciter == VELOCITY_SCORE_DEFAULT_EXCITER:
+        exciter = "felt"   # ScoreRenderer.h piano-only documented override
+    return exciter in VELOCITY_FELT_EXCITERS
+
+
+def assess_velocity_delta_tauc_v(measured_delta, predicted_delta):
+    """Pure velocity judgment for the tau_c(v) (Felt-hammer) claim domain
+    (unit-testable, shared by judge_velocity() and --selftest 4c).
+    2026-08-27 月月裁決 (b)，見 reports/decision_packets/B4_f3_velocity_ruling.md；
+    6.02 dB 律是固定 tau_c 假設的推論，tau_c(v) 路徑主張改為模型自洽。
+    JUDGED condition (fail-closed; the SAME VELOCITY_DB_TOL value as the
+    fixed-tau_c domain -- NOT widened):
+      match_ok: |measured - predicted| <= VELOCITY_DB_TOL
+                (render conforms to the model's own dump-derived prediction)
+    REPORTED, never judged, on this path:
+      law_dev_db: predicted - VELOCITY_LAW_DB -- the deviation from the
+      fixed-tau_c reference. judge_velocity() prints it on every tau_c(v)
+      probe so the model's own prediction stays honestly on the record
+      (per the ruling: predicted_delta 本身誠實報告).
+    Returns (ok, {"match_ok": bool, "law_dev_db": float})."""
+    if not (math.isfinite(measured_delta) and math.isfinite(predicted_delta)):
+        return False, dict(match_ok=False, law_dev_db=float("nan"))
+    match_ok = abs(measured_delta - predicted_delta) <= VELOCITY_DB_TOL
+    return match_ok, dict(match_ok=match_ok,
+                          law_dev_db=predicted_delta - VELOCITY_LAW_DB)
+
+
 def judge_velocity(cli, engines, notes, outdir):
     # F3 domain fix (2026-07-22): judge on the FUNDAMENTAL'S OWN +/-3% band
     # (measure_band_rms_db(), same Butterworth family as measure_t60()) --
@@ -1217,11 +1307,26 @@ def judge_velocity(cli, engines, notes, outdir):
     # spectral brightening (HammerImpulse.h), which is real physics but a
     # different mechanism than the law being judged here, so it must not
     # drive the verdict.
+    #
+    # F3 claim-domain split (2026-08-27 月月裁決 (b)，見 reports/
+    # decision_packets/B4_f3_velocity_ruling.md；6.02 dB 律是固定 tau_c 假設
+    # 的推論，tau_c(v) 路徑主張改為模型自洽): probes classified by
+    # probe_tauc_velocity_solved() (Cimbalom-family engine x Felt exciter,
+    # the B4 pianoHammerTauC() path) are judged with
+    # assess_velocity_delta_tauc_v() -- render vs the model's OWN prediction
+    # at the unchanged +/-VELOCITY_DB_TOL, with predicted_delta and its
+    # deviation from the fixed-tau_c 6.0206 dB reference always printed
+    # honestly. Every other probe keeps the fixed-law double judgment
+    # (assess_velocity_delta()) character for character.
     print("\n" + "-" * 70)
     print(f"Velocity-response judgment (vel {VELOCITY_LO:.3f} -> {VELOCITY_HI:.3f}; "
           f"JUDGED in the fundamental's own +/-{FUND_BAND_HALF_WIDTH * 100:.0f}% "
-          f"band -- render delta vs dump-derived model AND model delta vs the "
-          f"{VELOCITY_LAW_DB:.4f} dB physical law, tol +/-{VELOCITY_DB_TOL:.1f} dB. "
+          f"band. Fixed-tau_c paths: render delta vs dump-derived model AND "
+          f"model delta vs the {VELOCITY_LAW_DB:.4f} dB physical law. "
+          f"tau_c(v)/Felt paths [B4, 2026-08-27 ruling (b)]: render delta vs "
+          f"the model's own prediction; predicted delta reported honestly vs "
+          f"the fixed-tau_c reference, not judged against it. "
+          f"tol +/-{VELOCITY_DB_TOL:.1f} dB throughout, unchanged. "
           f"Wideband RMS delta is printed below as INFORMATIONAL ONLY):")
     print(f"   {'engine':11} {'MIDI':>4} {'f0_lo':>8} {'f0_hi':>8} "
           f"{'f0_delta':>9} {'model_dB':>9}  verdict")
@@ -1253,6 +1358,8 @@ def judge_velocity(cli, engines, notes, outdir):
                           if band_lo is not None and band_hi is not None
                           else float("nan"))
 
+            tauc_v = False
+            vdetail = {}
             if exempt:
                 verdict = "EXEMPT (FM index also scales with velocity)"
                 predicted_delta = float("nan")
@@ -1270,21 +1377,43 @@ def judge_velocity(cli, engines, notes, outdir):
                                        if theory_lo_band is not None
                                        and theory_hi_band is not None
                                        else float("nan"))
-                ok, vdetail = assess_velocity_delta(fund_delta, predicted_delta)
-                verdict = "PASS" if ok else "FAIL"
-                if not ok:
-                    if not vdetail["law_ok"] and math.isfinite(predicted_delta):
-                        print(f"      model's own predicted f0-band delta="
-                              f"{predicted_delta:+.2f} dB violates the "
-                              f"amplitude~force law {VELOCITY_LAW_DB:+.4f} "
-                              f"+/-{VELOCITY_DB_TOL:.1f} dB (F3 physical-law "
-                              f"bound) -> FAIL.")
-                    if not vdetail["match_ok"] and math.isfinite(predicted_delta):
-                        print(f"      measured f0-band delta={fund_delta:+.2f} dB, "
-                              f"expected {predicted_delta:+.2f} "
-                              f"+/-{VELOCITY_DB_TOL:.1f} dB -> FAIL.")
-                    print(f"      Do NOT widen tolerance; record and investigate "
-                          f"the engine's velocity->amplitude law per ROADMAP_PHYSICS.md §1g.")
+                # 2026-08-27 月月裁決 (b)，見 reports/decision_packets/
+                # B4_f3_velocity_ruling.md；6.02 dB 律是固定 tau_c 假設的推論，
+                # tau_c(v) 路徑主張改為模型自洽。lo/hi probes differ only in
+                # velocity, so classifying the lo score classifies the pair.
+                tauc_v = probe_tauc_velocity_solved(lo_score)
+                if tauc_v:
+                    ok, vdetail = assess_velocity_delta_tauc_v(fund_delta,
+                                                               predicted_delta)
+                    verdict = "PASS" if ok else "FAIL"
+                    if not ok:
+                        if math.isfinite(predicted_delta) and math.isfinite(fund_delta):
+                            print(f"      measured f0-band delta={fund_delta:+.2f} dB, "
+                                  f"model's own prediction {predicted_delta:+.2f} "
+                                  f"+/-{VELOCITY_DB_TOL:.1f} dB (tau_c(v) model-"
+                                  f"self-consistency claim) -> FAIL.")
+                        else:
+                            print("      tau_c(v) claim domain: measured or "
+                                  "predicted f0-band delta unavailable -> "
+                                  "fail-closed FAIL.")
+                        print(f"      Do NOT widen tolerance; record and investigate "
+                              f"the engine's velocity->amplitude law per ROADMAP_PHYSICS.md §1g.")
+                else:
+                    ok, vdetail = assess_velocity_delta(fund_delta, predicted_delta)
+                    verdict = "PASS" if ok else "FAIL"
+                    if not ok:
+                        if not vdetail["law_ok"] and math.isfinite(predicted_delta):
+                            print(f"      model's own predicted f0-band delta="
+                                  f"{predicted_delta:+.2f} dB violates the "
+                                  f"amplitude~force law {VELOCITY_LAW_DB:+.4f} "
+                                  f"+/-{VELOCITY_DB_TOL:.1f} dB (F3 physical-law "
+                                  f"bound) -> FAIL.")
+                        if not vdetail["match_ok"] and math.isfinite(predicted_delta):
+                            print(f"      measured f0-band delta={fund_delta:+.2f} dB, "
+                                  f"expected {predicted_delta:+.2f} "
+                                  f"+/-{VELOCITY_DB_TOL:.1f} dB -> FAIL.")
+                        print(f"      Do NOT widen tolerance; record and investigate "
+                              f"the engine's velocity->amplitude law per ROADMAP_PHYSICS.md §1g.")
                 overall_ok = overall_ok and ok
             predicted_s = f"{predicted_delta:+9.1f}" if math.isfinite(predicted_delta) else f"{'--':>9}"
             fund_lo_s = f"{band_lo:8.1f}" if band_lo is not None else f"{'--':>8}"
@@ -1292,6 +1421,23 @@ def judge_velocity(cli, engines, notes, outdir):
             fund_delta_s = f"{fund_delta:+9.1f}" if math.isfinite(fund_delta) else f"{'--':>9}"
             print(f"   {eng:11} {midi:>4} {fund_lo_s} {fund_hi_s} "
                   f"{fund_delta_s} {predicted_s}  {verdict}")
+            if tauc_v:
+                # Honest report required by ruling (b): the model's own
+                # prediction and its deviation from the fixed-tau_c reference
+                # are printed on EVERY tau_c(v) probe, PASS or FAIL.
+                pred_rep = (f"{predicted_delta:+.2f} dB"
+                            if math.isfinite(predicted_delta) else "unavailable")
+                dev = vdetail.get("law_dev_db", float("nan"))
+                dev_rep = f"{dev:+.2f} dB" if math.isfinite(dev) else "--"
+                print(f"      tau_c(v) claim domain [2026-08-27 ruling (b), "
+                      f"reports/decision_packets/B4_f3_velocity_ruling.md]: "
+                      f"Felt-hammer contact time is velocity-solved "
+                      f"(HammerImpulse::pianoHammerTauC), so the fixed-tau_c "
+                      f"{VELOCITY_LAW_DB:.4f} dB law is not asserted here; "
+                      f"JUDGED claim = render matches the model's own "
+                      f"prediction. Honest report: predicted f0-band delta "
+                      f"{pred_rep}, deviation from the fixed-tau_c reference "
+                      f"{dev_rep} (informational).")
             print(f"      broadband RMS delta = {broadband_delta:+.2f} dB "
                   f"(informational -- includes Hertz contact-time spectral-"
                   f"brightening, physically real, see HammerImpulse.h)")
@@ -2235,6 +2381,89 @@ def selftest_velocity_law_negative_uniform_scale():
     return ok, f"uniform-scale f0-band delta {delta:+.2f} dB rejected both ways"
 
 
+def selftest_velocity_taucv_domain():
+    """4c (2026-08-27 月月裁決 (b)，見 reports/decision_packets/
+    B4_f3_velocity_ruling.md；6.02 dB 律是固定 tau_c 假設的推論，tau_c(v)
+    路徑主張改為模型自洽): proves the redefined tau_c(v)/Felt claim -- render
+    must match the model's OWN predicted delta at the unchanged
+    +/-VELOCITY_DB_TOL -- still has detection power, and that the domain
+    split lands exactly on the Felt path. Five assertions:
+      (1) positive control: a synthetic render whose f0-band delta equals the
+          model's own prediction (+19.12 dB -- the recorded B4 piano/C7
+          prediction, reports/gate_outputs/b4_f3_alpha_monotonicity.txt,
+          used here purely as an injected test vector) PASSes the tau_c(v)
+          judgment even though it is far outside the fixed-tau_c 6.0206 dB
+          law -- the point of ruling (b);
+      (2) injected fake mismatch: an engine that silently kept the OLD
+          fixed-tau_c behaviour (renders the lawful ~+6.02 dB) against the
+          same +19.12 dB model prediction must FAIL (match_ok broken,
+          fail-closed) -- the redefined claim's detection power;
+      (3) a non-finite prediction must FAIL (fail-closed);
+      (4) domain boundary: build_probe_score()'s piano probe (score default
+          exciter wood_mallet -> piano-only override -> felt) classifies as
+          tau_c(v)-solved; cimbalom (stays wood_mallet -> Wood), tongue_drum,
+          water_gong and fm do NOT; cimbalom with an explicit felt exciter
+          DOES -- so the fixed-law check is untouched outside the Felt path;
+      (5) regression guard for the untouched fixed-tau_c domain:
+          assess_velocity_delta() still REJECTS the same self-consistent
+          (+19.12, +19.12) pair via its law bound -- the 6.0206 dB law
+          remains fully armed everywhere else.
+    Deltas in (1)/(2) are measured through the SAME measure_band_rms_db()
+    f0-band pipeline judge_velocity() uses, not computed on paper."""
+    sr = 48000
+    f0, f1 = 440.0, 880.0
+    lo_amps = [0.05, 1.0]
+    predicted = 19.12          # recorded B4 piano/C7 model prediction (dB)
+    lawful_factor = 2.0        # fixed-tau_c reference, exactly +6.0206 dB
+
+    lo = _synthetic_modal_signal(sr, 0.7, [f0, f1], lo_amps)
+    hi_consistent = _synthetic_modal_signal(
+        sr, 0.7, [f0, f1],
+        [lo_amps[0] * 10.0 ** (predicted / 20.0), lo_amps[1] * lawful_factor])
+    hi_mutant = _synthetic_modal_signal(
+        sr, 0.7, [f0, f1], [a * lawful_factor for a in lo_amps])
+
+    band_lo = measure_band_rms_db(sr, lo, f0)
+    delta_consistent = measure_band_rms_db(sr, hi_consistent, f0) - band_lo
+    delta_mutant = measure_band_rms_db(sr, hi_mutant, f0) - band_lo
+
+    ok_pos, _ = assess_velocity_delta_tauc_v(delta_consistent, predicted)
+    ok_mut, mut_detail = assess_velocity_delta_tauc_v(delta_mutant, predicted)
+    ok_nan, _ = assess_velocity_delta_tauc_v(6.0, float("nan"))
+    old_domain_ok, old_detail = assess_velocity_delta(predicted, predicted)
+
+    with tempfile.TemporaryDirectory() as td:
+        tdp = Path(td)
+
+        def classify(eng, override=None):
+            sf, _ = build_probe_score(eng, 60, tdp, vel=0.5,
+                                       params_override=override)
+            return probe_tauc_velocity_solved(sf)
+
+        piano_in = classify("piano")
+        cim_out = classify("cimbalom")
+        tng_out = classify("tongue_drum")
+        wg_out = classify("water_gong")
+        fm_out = classify("fm")
+        cim_felt_in = classify("cimbalom", {"exciter": "felt"})
+
+    domain_ok = (piano_in and cim_felt_in
+                 and not (cim_out or tng_out or wg_out or fm_out))
+    ok = (ok_pos and (not ok_mut) and (not mut_detail["match_ok"])
+          and (not ok_nan) and (not old_domain_ok)
+          and (not old_detail["law_ok"]) and domain_ok)
+    return ok, (f"self-consistent {delta_consistent:+.2f} dB vs predicted "
+                f"{predicted:+.2f} dB {'PASS' if ok_pos else 'FAIL (bug)'}; "
+                f"injected fixed-tau_c mismatch {delta_mutant:+.2f} dB "
+                f"{'rejected' if not ok_mut else 'ACCEPTED (bug)'}; NaN "
+                f"{'fail-closed' if not ok_nan else 'ACCEPTED (bug)'}; domain "
+                f"= Felt path only (piano={piano_in}, cimbalom+felt="
+                f"{cim_felt_in}, cimbalom={cim_out}, tongue_drum={tng_out}, "
+                f"water_gong={wg_out}, fm={fm_out}); fixed-tau_c law bound "
+                f"{'still rejects' if not old_domain_ok else 'ACCEPTS (bug)'} "
+                f"self-consistent +19.12")
+
+
 def selftest_residual_energy_negative():
     """F5 (2026-07-23, judgment conversion): synthetic counterexample. Injects
     a strong peak at 3000 Hz -- OUTSIDE every predicted mode's ±3% band --
@@ -2277,6 +2506,7 @@ def run_internal_selftests():
     amps_ok, amps_detail = selftest_amps_wrong_amplitude()
     vel_ok, vel_detail = selftest_velocity_law_negative()
     vel_uniform_ok, vel_uniform_detail = selftest_velocity_law_negative_uniform_scale()
+    taucv_ok, taucv_detail = selftest_velocity_taucv_domain()
     residual_ok, residual_detail = selftest_residual_energy_negative()
     return {
         "short_t60_f0": (f0_ok, f"{f0_cents:+.3f} cents" if f0_cents is not None else "none"),
@@ -2288,6 +2518,7 @@ def run_internal_selftests():
         "amps_wrong_amplitude_rejected": (amps_ok, amps_detail),
         "velocity_law_violation_rejected": (vel_ok, vel_detail),
         "velocity_law_violation_rejected_uniform": (vel_uniform_ok, vel_uniform_detail),
+        "velocity_taucv_selfconsistency_sentinel": (taucv_ok, taucv_detail),
         "residual_energy_unmodeled_peak_rejected": (residual_ok, residual_detail),
     }
 
@@ -2562,9 +2793,13 @@ def main():
                          "+6dB wrong-amplitude partial (4a), a "
                          "fundamental-band velocity delta violating the "
                          "+6.02dB law plus a uniform-scale legacy variant (4b), "
-                         "and an unmodeled -40dB peak outside every predicted "
-                         "mode's band violating the F5 residual-energy "
-                         "threshold (RESIDUAL_ENERGY_LIMIT_DB)")
+                         "a tau_c(v)/Felt claim-domain sentinel (4c, 2026-08-27 "
+                         "ruling (b): injected render-vs-model mismatch "
+                         "rejected, self-consistent pair passes, domain "
+                         "boundary = Felt path only), and an unmodeled -40dB "
+                         "peak outside every predicted mode's band violating "
+                         "the F5 residual-energy threshold "
+                         "(RESIDUAL_ENERGY_LIMIT_DB)")
     args = ap.parse_args()
 
     if args.selftest:

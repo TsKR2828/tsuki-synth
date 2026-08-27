@@ -8,12 +8,18 @@
 
 ## 0. 一句話現況
 
-**B3 完工並已併入 main。** 紅燈清零、CI 三平台全綠、M10 收官、免耳三層驗證鏈全線閉環之後，
-**B3（弦阻尼律換第一原理）已於 2026-08-24 完成**：GATE 12 條全過、corpus 73/73 零新增豁免，
-Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 已產出。
-**2026-08-26 月月三裁決**：A1 舊批 Rule 10 放行（整批接受）+ 授權本批 commit 併入 `main`
-（A6 完成，M8-8b 關閉）+ A7 LICENSE 已寫入。A4（亮度 EQ）/A11（共鳴板 h/材質）兩份
-免耳裁決包已備（`reports/decision_packets/`），仍待月月選項。**下一步 = B4（槌頭接觸）。**
+**B4 完工（unstaged 待月月授權 commit）。** B3 已於 2026-08-26 隨月月裁決 commit 併入 `main`
+（A1 放行＋A6 完成＋A7 LICENSE）。**2026-08-27 月月三裁決全部落地**：
+- **B4（槌頭非線性接觸求解器）完工**——F3 velocity 撞牆（C4/C7 predicted_delta +7.79/+19.12 dB
+  超出 6.02±1.0 律、偏差隨 α 單調＝物理事實非 bug）經月月**裁決 (b) 重定義 F3 主張域**
+  （固定 tau_c 路徑一字不動；tau_c(v)/Felt 路徑改模型自洽判定，容差數值不變）後收尾：
+  重定義後 GATE 全綠（`b4_gate_full_after_f3_redefine.txt`）＋哨兵兩輪＋corpus 73/73 零新增豁免
+  （`b4_corpus_all.txt`）＋Rule 10 報告 `reports/b4_hammer_contact_before_after.md`。
+  裁決包 `reports/decision_packets/B4_f3_velocity_ruling.md`。
+- **A4 關閉**（裁決「調整文件建議值」）：Playbook 亮度 EQ 起手式降級為「預設不開」，程式碼零改動。
+- **A11 關閉**（裁決 (i) 確認現值 h=9mm/wood_spruce）：維持寫死，「可注入」子問題就地關閉。
+**下一步 = 月月審 B4 批次 unstaged 並授權 commit；之後 B5（木材正交異向，前置 B1 已完成）→ B6。**
+待月月的只剩 A8（外部資料集）/A10（Score 控制台實操）。
 
 ## 1. 2026-08-20 ~ 08-22 這三天發生了什麼（新 session 必讀）
 
@@ -99,16 +105,16 @@ Water Gong（板，域內）、FM Piano（域外，已誠實標註）。
 
 ## 5. 接下來的順序（建議）
 
-1. **月月讀 B3 Rule 10 報告並裁決**（最優先）：
-   `reports/string_damping_firstprinciples_before_after.md`——先讀最前面的白話導讀卡，
-   特別看 `Q⁻¹_disl`/`eta` 佔比表（steel/aluminum 受影響最大）與 `damping_override`
-   錨點保證變化聲明，裁決「接受」或「指名回退」。改動全數 unstaged。
-2. **月月裁決積壓**（都不擋工程線，見 TODO A 段）：A1（7/22 舊批 Rule 10 報告）、
-   **A4（亮度 EQ 去留）與 A11（共鳴板 h/材質確認）——裁決包已備妥
-   `reports/decision_packets/A4_brightness_eq.md`／`A11_soundboard_sensitivity.md`**、
-   A10（Score 控制台實操）、A6（merge → main）、A7（License 檔）、A8（外部資料集）。
-3. ~~B3 弦阻尼律~~ **已完成（2026-08-24，見上）**；X4 規約已補進六張施工卡。
-4. 之後 B4（槌頭）→ B5（木材）→ B6（輻射）。
+1. **月月審 B4 批次並授權 commit**（最優先）：Rule 10 報告
+   `reports/b4_hammer_contact_before_after.md`（先讀白話導讀卡）＋F3 主張域重定義登記
+   （`ROADMAP_PHYSICS.md` §6 velocity 列）。B4 全部改動 unstaged（R7），
+   裁決「接受 commit」或「指名回退」。
+2. **月月裁決積壓**（只剩兩項，見 TODO A 段）：A8（外部資料集要不要下載）、
+   A10（Score 控制台實操驗收）。
+3. ~~B3 弦阻尼律~~ **已完成並併入 main（2026-08-26）**；~~B4 槌頭~~ **已完成
+   （2026-08-27，F3 域依裁決 (b) 重定義，見 §0）**；A4/A11 已依 2026-08-27 裁決關閉。
+4. 之後 **B5（木材正交異向，前置 B1 已完成）** → B6（輻射，前置 B1+B5）。
+   注意：B5 開工前建議等 B4 批次 commit 落地，避免 unstaged 疊加毀 Rule 10 歸因。
 
 ## 6. 給下一個 session 的操作備忘
 

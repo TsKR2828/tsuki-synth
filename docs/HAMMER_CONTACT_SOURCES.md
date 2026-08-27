@@ -218,5 +218,15 @@ R(t) = (ε/τ₀)·exp(−t/τ₀)
 - [x] 指出現行 `v^-0.2` 對應 `α=1.5`（純赫茲）而非鋼琴氈 `α=2.3~3.0`（§4）
 - [x] 遲滯參數取得（§5，Stulov `F₀=8800 N/mm`、`p=3.95`、`ε=0.992`、`τ₀=2.0 µs`）
 - [ ] beam／plate 引擎的槌具接觸參數**未搜尋**，狀態未知（§6，**這是本項最大的阻擋**）
-- [ ] **實作**——未動任何程式碼。會同時改變音色與力度律 ⇒ Rule 10 +
-      Rule 6 + corpus 重驗 + §6 velocity 列的重新驗證。**待月月裁決。**
+- [x] **實作**——完成（2026-08-27，B4，月月裁決 (b) 重定義 F3 主張域後收尾）。
+      `src/physics/HammerImpulse.h`（§2 三常數表＋內插＋`pianoHammerTauC()`，錨定
+      `kTauCFelt`@A4/v=0.5）＋ `src/engines/CimbalomEngine.h` 4 呼叫點 Felt 分支；
+      非 Felt／Chromatic 位元不變已證（`reports/gate_outputs/b4_nonfelt_invariance.txt`）。
+      Rule 6 三 build＋ctest／pytest 全綠（`b4_build_{cli,standalone,vst3}.txt`、
+      `b4_ctest.txt`、`b4_pytest.txt`、`b4_selftest.txt`）；§6 velocity 列重新驗證＝
+      F3 主張域二分（固定 tau_c 路徑不動、tau_c(v) 路徑改模型自洽判定，容差數值不變）：
+      FAIL 存證 `b4_gate_full_FAIL.txt`＋`b4_f3_alpha_monotonicity.txt`、裁決包
+      `reports/decision_packets/B4_f3_velocity_ruling.md`、重定義後
+      `b4_gate_full_after_f3_redefine.txt`＋哨兵 `b4_f3_redefine_sentinel.txt`；
+      corpus 重驗 `b4_corpus_all.txt`；Rule 10 前後對照
+      `reports/b4_hammer_contact_before_after.md`。
