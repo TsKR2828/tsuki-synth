@@ -1,0 +1,8 @@
+B4 non-Felt bit-invariance verification (independent rerun 2026-08-27)
+command: python reports/gate_outputs/b4_method/nonfelt_invariance.py --label after
+diff nonfelt_invariance_before.txt nonfelt_invariance_after.txt ->
+1c1
+< B4 non-Felt bit-invariance reference (label=before)
+---
+> B4 non-Felt bit-invariance reference (label=after)
+diff exit code = 1 (only the label header line differs; all SHA256 and amp lines bit-identical)

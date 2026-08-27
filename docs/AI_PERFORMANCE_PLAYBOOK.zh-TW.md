@@ -136,7 +136,7 @@ build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --dump-modes my_piece.sc
 **glide 區塊**（事件層級）：`{ "glide": { "from_note": "C4", "duration_ms": 300, "curve": "..." } }`。
 
 **effects**（global 層級）：reverb / delay / distortion / wall / eq——**全部在物理驗證域外**。藝術用可以，驗證渲染時 wet 全設 0（eq 則 gain 設 0）。
-- `eq`（2026-08-06 新增，亮度補償 creative 層）：`{"eq": {"high_shelf_freq_hz": 2000, "high_shelf_gain_db": 6.0}}`——RBJ 高頻 shelf，freq 100–16000、gain −24~+24；**gain 0 = 硬 bypass（渲染位元與沒寫 eq 完全相同）**。用途：抵銷材質物理化後的整體變暗（低音大、高音小），長期物理修法（頻變阻尼）落地前的過渡工具。起手式：金屬打擊系 +4~+8 dB @ 2 kHz 自行審聽。
+- `eq`（2026-08-06 新增，亮度補償 creative 層）：`{"eq": {"high_shelf_freq_hz": 2000, "high_shelf_gain_db": 6.0}}`——RBJ 高頻 shelf，freq 100–16000、gain −24~+24；**gain 0 = 硬 bypass（渲染位元與沒寫 eq 完全相同）**。**建議值（2026-08-27 更新，月月 A4 裁決「調整文件建議值」，程式碼零改動）：預設不開（不寫 eq 區塊，或 gain 設 0 硬 bypass）**。原「金屬打擊系 +4~+8 dB @ 2 kHz」起手式作廢——該建議是 8/6 之前「材質物理化後整體變暗」的過渡補償，8/6 激發端修正（τc keytrack + 響度校準）落地後補償需求已消失；且 EQ 增益會被 normalize 吃回去、與正規化交互反而把整曲電平下拉（六首實測 −0.02~−0.19 dB，water_gong 低頻曲目 −0.33 dB）。實測與推導見 `reports/decision_packets/A4_brightness_eq.md`。eq 機制本身保留（藝術用、域外聲明不變）。
 - reverb 參數不用手拍：`python tools/scene_reverb.py --scene 場景.json --apply in.score.json --output out.score.json`——場景標籤（preset）或 尺寸+材質（space，Sabine/Eyring 推 T60）自動產 `reverb.{decay,wet}`，推導全程印在 report。設計文件 `docs/SCENE_REVERB_DESIGN.zh-TW.md`。
 - 不開 DAW 的人工聽審路徑：Standalone 頂列 [Score] 鈕 → 控制台一鍵渲染 score.json / 開 HTML 驗證報告（2026-08-06 起發佈包同捆 CLI）。
 

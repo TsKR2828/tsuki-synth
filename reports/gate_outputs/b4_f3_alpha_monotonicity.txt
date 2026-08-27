@@ -1,0 +1,17 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band -- render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law, tol +/-1.0 dB. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   piano         36    -45.3    -39.1      +6.2      +6.3  PASS
+      broadband RMS delta = +7.70 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+      model's own predicted f0-band delta=+7.79 dB violates the amplitude~force law +6.0206 +/-1.0 dB (F3 physical-law bound) -> FAIL.
+      Do NOT widen tolerance; record and investigate the engine's velocity->amplitude law per ROADMAP_PHYSICS.md ¡±1g.
+   piano         60    -44.6    -36.8      +7.8      +7.8  FAIL
+      broadband RMS delta = +9.13 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+      model's own predicted f0-band delta=+19.12 dB violates the amplitude~force law +6.0206 +/-1.0 dB (F3 physical-law bound) -> FAIL.
+      Do NOT widen tolerance; record and investigate the engine's velocity->amplitude law per ROADMAP_PHYSICS.md ¡±1g.
+   piano         96   -104.4    -85.5     +18.9     +19.1  FAIL
+      broadband RMS delta = +13.45 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+overall: FAIL

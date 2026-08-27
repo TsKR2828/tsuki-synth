@@ -168,4 +168,137 @@ public:
 
         return std::abs (std::cos (omegaRad * tauC * 0.5f) / denom);
     }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // B4（2026-08-27）：鋼琴槌氈非線性接觸求解器 —— Felt 檔位專用。
+    //
+    // 只有 Cimbalom/Piano 路徑的 ExciterType::Felt 用下面這組；Cotton/Wood/
+    // Metal 三檔與 Chromatic 引擎（tongue drum / water gong）完全不用——
+    // 這批 K/α/mass 是鋼琴專屬量測（docs/HAMMER_CONTACT_SOURCES.md §6），
+    // 搬去別的樂器就是把別的物體的常數安到另一個物體上（Rule 4 違規；
+    // Chromatic 的槌具接觸參數未搜尋 = TODO.md D2）。
+    // 上方既有 tauCForNote()/tauCForStrike()/keytrackScale()/tauCForHardness()
+    // 原封不動——ChromaticEngine.h 與非 Felt 檔位仍走那條路。
+    // ────────────────────────────────────────────────────────────────────────
+
+    /// 鋼琴槌氈非線性接觸律 F = K * delta^alpha 的逐音錨點。
+    /// 來源：Woodhouse, Euphonics §12.2.1 Table 2（經 Hall & Askenfelt 量測，
+    /// Chaigne & Askenfelt 用於模擬），轉引自 docs/HAMMER_CONTACT_SOURCES.md §2.1。
+    /// K 的單位是 N*m^-alpha —— 隨 alpha 而變，這是原表明載的性質不是筆誤。
+    /// （因此三個 K 錨點彼此量綱不同，絕不可對 K 本身做線性內插/數值比較，
+    /// 只能對 log10(K) 內插——見 logKForPianoNote()。）
+    /// 只有三個錨點（C2/C4/C7），中間音／範圍外音的內插與外推規則見
+    /// alphaForPianoNote()/logKForPianoNote() 的實作與註解。
+    static constexpr int   kPianoKAlphaAnchorMidi[3]  = { 36, 60, 96 }; // C2, C4, C7
+    static constexpr float kPianoHammerK[3]           = { 4.0e8f, 4.5e9f, 1.0e12f };
+    static constexpr float kPianoHammerAlpha[3]       = { 2.3f, 2.5f, 3.0f };
+
+    /// 槌質量 C1-C8，來源：Woodhouse Euphonics §12.2.1 Table 1（Conklin 與
+    /// Hall & Askenfelt 轉引），docs/HAMMER_CONTACT_SOURCES.md §2.2。單位 kg。
+    static constexpr int   kPianoMassAnchorMidi[8] = { 24, 36, 48, 60, 72, 84, 96, 108 };
+    static constexpr float kPianoHammerMassKg[8]   =
+        { 0.012f, 0.011f, 0.010f, 0.009f, 0.008f, 0.007f, 0.006f, 0.005f };
+
+    /// pianoHammerTauC() 輸出的安全 clamp（秒）。
+    /// **工程安全帶，非文獻值、非 §6 登記容差**：範圍取現有四檔查表
+    /// Cotton(6ms)~Metal(0.2ms) 涵蓋帶再留餘裕（0.3ms~8ms），只防內插/外推
+    /// 在極端音高×力度組合跑出病態值，正常音域（見單元測試）不會觸及。
+    /// 不得把它當成事實上的容差放寬來源（docs/workcards/B4.md §4.5）。
+    static constexpr float kPianoTauCMinS = 0.0003f;   // 0.3 ms
+    static constexpr float kPianoTauCMaxS = 0.0080f;   // 8.0 ms
+
+    /// 錨點表的分段線性內插（獨立變數 = MIDI note，等價 log2(frequency)；
+    /// 錨點間距不等不影響分段線性的正確性）。
+    /// 範圍外**不外插，flat 夾在最近錨點**——文件只保證錨點間的單調趨勢
+    /// （HAMMER_CONTACT_SOURCES.md §2.1「α 隨音高單調上升、log K 近似線性」），
+    /// flat 外推不會違反單調性，線性外推可能沖出已知範圍，不用。
+    /// **這條內插規則是 B4 卡新增的建模決策，不是文獻原文**
+    /// （docs/workcards/B4.md §4.2，登記供月月覆核）。
+    static float interpAnchorsFlat (const int* anchorMidi, const float* values,
+                                    int count, int midiNote)
+    {
+        if (midiNote <= anchorMidi[0])         return values[0];
+        if (midiNote >= anchorMidi[count - 1]) return values[count - 1];
+
+        int seg = 0;
+        while (seg + 2 < count && midiNote >= anchorMidi[seg + 1])
+            ++seg;
+
+        const float t = (float) (midiNote - anchorMidi[seg])
+                      / (float) (anchorMidi[seg + 1] - anchorMidi[seg]);
+        return values[seg] + (values[seg + 1] - values[seg]) * t;
+    }
+
+    /// α(note)：C2/C4/C7 三錨點間對 MIDI note 分段線性內插，範圍外 flat 夾住
+    /// （alpha(24)=alpha(36)=2.3、alpha(108)=alpha(96)=3.0）。
+    static float alphaForPianoNote (int midiNote)
+    {
+        return interpAnchorsFlat (kPianoKAlphaAnchorMidi, kPianoHammerAlpha,
+                                  3, midiNote);
+    }
+
+    /// K(note)：對 **log10(K)** 做與 α 相同的分段線性內插後還原，回傳 K
+    /// （單位 N*m^-alpha，隨該音的 α 而變）。不可對 K 本身線性內插——
+    /// 三錨點跨 3 個數量級且量綱互異（見常數表註解），線性內插會嚴重失真
+    /// （此錯誤已被單元測試的反例釘死）。範圍外 flat 夾住。
+    /// 函式名裡的 logK 指「內插發生在 log10 域」；回傳值是 K 本身。
+    static float logKForPianoNote (int midiNote)
+    {
+        const float log10K[3] = { std::log10 (kPianoHammerK[0]),
+                                  std::log10 (kPianoHammerK[1]),
+                                  std::log10 (kPianoHammerK[2]) };
+        return std::pow (10.0f, interpAnchorsFlat (kPianoKAlphaAnchorMidi,
+                                                   log10K, 3, midiNote));
+    }
+
+    /// m(note)：槌質量（kg），對質量本身（不取 log）分段線性內插，
+    /// C1-C8 八錨點，範圍外 flat 夾住。
+    static float hammerMassForPianoNote (int midiNote)
+    {
+        return interpAnchorsFlat (kPianoMassAnchorMidi, kPianoHammerMassKg,
+                                  8, midiNote);
+    }
+
+    /// 接觸時間比例核 g(note, v) = [m/K]^(1/(α+1)) * v^(2/(α+1) - 1)。
+    /// 推導（docs/HAMMER_CONTACT_SOURCES.md §3）：質量 m 的槌以速度 v 撞上
+    /// F = K·δ^α 的接觸彈簧，能量守恆給 δmax，τc ∝ δmax/v。文獻只推到
+    /// 比例關係，**沒有絕對前置係數**——絕對量級由 pianoHammerTauC() 錨定。
+    /// 力度指數 2/(α+1)-1 隨音高變化：C2 −0.394 / C4 −0.429 / C7 −0.500
+    /// （§3 表；現行 tauCForStrike() 的固定 −0.2 對應純赫茲 α=1.5，
+    /// 是金屬對金屬，不是鋼琴氈——§4 的具體發現）。
+    static float pianoHammerG (int midiNote, float velocityNorm)
+    {
+        const float alpha  = alphaForPianoNote (midiNote);
+        const float invAp1 = 1.0f / (alpha + 1.0f);
+        const float stiffnessTerm = std::pow (
+            hammerMassForPianoNote (midiNote) / logKForPianoNote (midiNote),
+            invAp1);
+        return stiffnessTerm * std::pow (velocityNorm, 2.0f * invAp1 - 1.0f);
+    }
+
+    /** Felt（鋼琴氈槌）專用：由 F=K·δ^α、槌質量、撞速解出的接觸時間（秒）。
+     *
+     *   tau_c_piano(note, v) = kTauCFelt * g(note, v) / g(69, 0.5)
+     *
+     * 錨定選擇（**B4 卡的設計決策，不是文獻數字**，登記供月月覆核）：
+     * 文獻只給比例關係（HAMMER_CONTACT_SOURCES.md §3），沒有給絕對前置
+     * 係數（那需要解 F=Kδ^α 運動方程的相位積分，文件未提供、Rule 4 禁止
+     * 編造）。因此把比例關係錨定在既有、已溯源的絕對量級上：kTauCFelt
+     * = 2.0 ms（Askenfelt & Jansson 量測，本檔頂端已引用）在 A4（MIDI 69）、
+     * velocity=0.5 這一點。新公式在該點與舊校準完全重合；其餘音高/力度的
+     * 「相對形狀」才是本函式真正換成物理推導的部分。
+     *
+     * velocity 的定義沿用既有 tauCForStrike() 的 jlimit(0.02, 1.0)
+     * （0-1 正規化 MIDI velocity proxy，不是真實 m/s——既有架構限制，
+     * B4 不解決，只沿用）。輸出經 kPianoTauCMinS/MaxS 工程安全 clamp
+     * （見該常數註解：非文獻值、非容差）。
+     */
+    static float pianoHammerTauC (int midiNote, float velocity)
+    {
+        const float v    = juce::jlimit (0.02f, 1.0f, velocity);
+        const float g    = pianoHammerG (midiNote, v);
+        const float gRef = pianoHammerG (69, 0.5f);   // A4 / v=0.5 錨點
+        return juce::jlimit (kPianoTauCMinS, kPianoTauCMaxS,
+                             kTauCFelt * (g / gRef));
+    }
 };

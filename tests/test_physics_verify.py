@@ -258,6 +258,79 @@ class VelocityLawTests(unittest.TestCase):
         self.assertTrue(ok, detail)
 
 
+class VelocityTaucVDomainTests(unittest.TestCase):
+    """F3 claim-domain split (2026-08-27 月月裁決 (b), see
+    reports/decision_packets/B4_f3_velocity_ruling.md): the tau_c(v)/Felt
+    path is judged for model self-consistency at the SAME +/-1.0 dB (never
+    widened) with predicted_delta honestly reported; the fixed-tau_c law
+    judgment stays untouched everywhere else."""
+
+    def test_selfconsistent_pair_passes_taucv_domain(self):
+        # +19.12 dB = the recorded B4 piano/C7 prediction
+        # (reports/gate_outputs/b4_f3_alpha_monotonicity.txt), far outside
+        # the fixed-tau_c law -- exactly what ruling (b) makes judgeable.
+        ok, detail = pv.assess_velocity_delta_tauc_v(19.12, 19.12)
+        self.assertTrue(ok)
+        self.assertTrue(detail["match_ok"])
+        self.assertAlmostEqual(19.12 - pv.VELOCITY_LAW_DB,
+                               detail["law_dev_db"], places=6)
+
+    def test_match_break_fails_taucv_domain(self):
+        # an engine silently still rendering the fixed-tau_c +6.02 dB against
+        # its own +19.12 dB prediction must FAIL (fail-closed).
+        ok, detail = pv.assess_velocity_delta_tauc_v(pv.VELOCITY_LAW_DB, 19.12)
+        self.assertFalse(ok)
+        self.assertFalse(detail["match_ok"])
+
+    def test_nan_fails_taucv_domain(self):
+        for pair in ((6.0, float("nan")), (float("nan"), 6.0)):
+            ok, detail = pv.assess_velocity_delta_tauc_v(*pair)
+            self.assertFalse(ok)
+            self.assertFalse(detail["match_ok"])
+
+    def test_tolerance_shared_not_widened(self):
+        # the tau_c(v) domain reuses VELOCITY_DB_TOL exactly: just inside
+        # passes, just outside fails.
+        ok_in, _ = pv.assess_velocity_delta_tauc_v(
+            19.12 + pv.VELOCITY_DB_TOL - 0.01, 19.12)
+        ok_out, _ = pv.assess_velocity_delta_tauc_v(
+            19.12 + pv.VELOCITY_DB_TOL + 0.01, 19.12)
+        self.assertTrue(ok_in)
+        self.assertFalse(ok_out)
+
+    def test_probe_domain_boundary(self):
+        # mirrors ScoreParser.h's wood_mallet default, ScoreRenderer.h's
+        # piano-only wood_mallet->felt override, and
+        # cimbalomExciterFromString()'s Felt arms.
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+
+            def classify(eng, override=None):
+                sf, _ = pv.build_probe_score(eng, 60, tdp, vel=0.5,
+                                             params_override=override)
+                return pv.probe_tauc_velocity_solved(sf)
+
+            self.assertTrue(classify("piano"))
+            self.assertTrue(classify("cimbalom", {"exciter": "felt"}))
+            self.assertFalse(classify("cimbalom"))
+            self.assertFalse(classify("tongue_drum"))
+            self.assertFalse(classify("water_gong"))
+            self.assertFalse(classify("water_gong_free"))
+            self.assertFalse(classify("fm"))
+
+    def test_fixed_tauc_law_still_armed(self):
+        # the untouched fixed-tau_c judgment must still reject the same
+        # self-consistent-but-unlawful pair via its law bound.
+        ok, detail = pv.assess_velocity_delta(19.12, 19.12)
+        self.assertFalse(ok)
+        self.assertTrue(detail["match_ok"])
+        self.assertFalse(detail["law_ok"])
+
+    def test_selftest_velocity_taucv_domain(self):
+        ok, detail = pv.selftest_velocity_taucv_domain()
+        self.assertTrue(ok, detail)
+
+
 class T60JudgmentTests(unittest.TestCase):
     """A good ratio alone must never pass an under-observed decay fit."""
 

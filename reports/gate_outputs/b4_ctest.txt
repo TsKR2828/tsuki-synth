@@ -1,0 +1,238 @@
+UpdateCTestConfiguration  from :C:/Users/admin/Desktop/Claude/tsuki-synth/build/DartConfiguration.tcl
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: audit_repro
+
+1: Test command: C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthAuditTest.exe
+1: Working Directory: C:/Users/admin/Desktop/Claude/tsuki-synth/build
+1: Test timeout computed to be: 10000000
+1: TsukiSynth regression tests
+1: [PASS] Envelope remains active before release time
+1: [PASS] Envelope ends at the configured release time
+1: [PASS] AudioFIFO reports the readable sample count
+1: [PASS] AudioFIFO overwrites stale samples and keeps newest history
+1: [PASS] Test material database loads
+1: [PASS] MaterialDB rejects non-physical material constants
+1: [PASS] Failed material reload preserves the last known-good database
+1: [PASS] MaterialDB refuses the retired frequency-independent alpha schema
+1: [PASS] MaterialDB refuses a damping block carrying both alpha and eta
+1: [PASS] MaterialDB accepts the renamed beam_plate_* schema (positive control)
+1: [PASS] MaterialDB refuses the retired bare beta_air/gamma_radiation schema (beta_air)
+1: [PASS] MaterialDB refuses the retired bare beta_air/gamma_radiation schema (gamma_radiation)
+1: [PASS] Rejected legacy reloads keep the last known-good beam_plate_* database
+1: [PASS] Chromatic fundamental is tuned to the requested MIDI note
+1: [PASS] Chromatic mode ratios are preserved and ultrasonic modes removed
+1: [PASS] Temporary score file is writable
+1: [PASS] ScoreParser accepts a valid score
+1: [PASS] ScoreParser reads export filename and format
+1: [PASS] ScoreParser reads wall reflection settings
+1: [PASS] ScoreParser reads an exact deterministic random seed
+1: [PASS] ScoreParser accepts the shared 192 kHz render contract
+1: [PASS] ScoreParser reads an optional stable event_id
+1: [PASS] Note names are exact and out-of-range notes are rejected
+1: [PASS] unknown engine
+1: [PASS] trailing note junk
+1: [PASS] fractional MIDI
+1: [PASS] out-of-range velocity
+1: [PASS] unknown event field
+1: [PASS] unimplemented membrane
+1: [PASS] rejected no-op parameter
+1: [PASS] wrong scalar type
+1: [PASS] irrelevant engine parameter
+1: [PASS] irrelevant frequency mode
+1: [PASS] unknown beam boundary
+1: [PASS] duplicate event_id
+1: [PASS] overlong event_id
+1: [PASS] Test material database loads
+1: [PASS] Custom score passes renderer preflight
+1: [PASS] Custom dump reports authored 1:1.5:2.25 ratios
+1: [PASS] Mode dump v2 carries explicit observable and event identity metadata
+1: [PASS] Test material database loads
+1: [PASS] Renderer refuses a modal event whose geometry is entirely below 20 Hz
+1: [PASS] Attack-only refusal reports the renderable-frequency reason
+1: [PASS] Test material database loads
+1: [PASS] Semantic-order regression fixtures render successfully
+1: [PASS] Permuting simultaneous events preserves the exact WAV bytes
+1: [PASS] Inserting a zero-velocity event preserves the exact WAV bytes
+1: [PASS] Test material database loads
+1: [PASS] Physical renderer writes valid audio at every shared sample rate through 192 kHz
+1: [PASS] Test material database loads
+1: [PASS] Renderer is causal: an event produces no samples before its authored time
+1: [PASS] Adding a future event leaves every earlier rendered sample bit-exact
+1: [PASS] FX-off renderer obeys linear superposition within PCM quantization error
+1: [PASS] Extreme valid-duration input is rejected by the 1 GiB buffer budget
+1: [PASS] Full-wet short reverb renders successfully
+1: [PASS] Full-wet reverb includes its delayed response instead of all-zero output
+1: [PASS] FLAC writer creates an output file
+1: [PASS] FLAC output can be read back with the requested format
+1: [PASS] ScoreRenderer renders an FM event with no material database entry
+1: [PASS] FM release and wall reflection are included in output duration
+1: [PASS] Temporary layer test directory is writable
+1: [PASS] Layer source score is writable
+1: [PASS] Layered renderer accepts a valid source score
+1: [PASS] Layer source trim controls the mixed region length
+1: [PASS] Layer source master volume is applied before mixing
+1: PASS (0 failures)
+1/3 Test #1: audit_repro ......................   Passed    0.67 sec
+test 2
+    Start 2: tuner_repro
+
+2: Test command: C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthTunerTest.exe
+2: Working Directory: C:/Users/admin/Desktop/Claude/tsuki-synth/build
+2: Test timeout computed to be: 10000000
+2: TsukiSynth tuner regression tests
+2: [PASS] AudioFIFO overwrites stale history and preserves newest order
+2: [PASS] AudioFIFO pullLatest discards older unread analyser data
+2: [PASS] AudioFIFO clear discards inactive analyser history
+2: [PASS] Releasing newest channel note selects the newest note still held
+2: [PASS] Retriggered note remains active until matching note-offs arrive
+2: [PASS] Matching retrigger note-offs fully release the note
+2: [PASS] Sustain pedal retains a released note on its MIDI channel
+2: [PASS] Most recent sustained note is selected
+2: [PASS] Sustain-off releases all unheld notes on that channel
+2: [PASS] CC123 respects an active sustain pedal
+2: [PASS] CC120 immediately clears held and sustained notes
+2: [PASS] CC121 resets sustain and releases unheld notes
+2: [PASS] PitchDetector measures every A0-C8 target at every supported sample rate
+2: [PASS] PitchDetector explicitly refuses every target outside A0-C8
+2: [INFO] pitch sweep worst error 0.0007 cents (528 measured, 240 refused)
+2: [PASS] PitchDetector refuses targets whose search window exceeds Nyquist
+2: [PASS] Audio estimator reports tension/glide offsets instead of MIDI target
+2: [PASS] Target-aware detector refuses octave substitutions
+2: [PASS] PitchDetector never reports silence as a measured note
+2: [PASS] Inharmonic tongue modes report the shifted audio fundamental
+2: [PASS] Inharmonic gong modes report combined tension/glide shift
+2: [PASS] Inharmonic tongue/gong fundamentals measure at A0 and C8 on all rates
+2: [INFO] modal boundary worst error 0.3965 cents
+2: [PASS] Broadband noise is reported uncertain instead of as a pitch
+2: PASS (0 failures)
+2/3 Test #2: tuner_repro ......................   Passed    0.51 sec
+test 3
+    Start 3: physics_models_repro
+
+3: Test command: C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthPhysicsModelsTest.exe
+3: Working Directory: C:/Users/admin/Desktop/Claude/tsuki-synth/build
+3: Test timeout computed to be: 10000000
+3: TsukiSynth physical-model regression tests
+3: [PASS] Cantilever analytic mode shapes have a node at the fixed end
+3: [PASS] Tongue default uses fixed-free eigenvalue ratios
+3: [PASS] Cantilever free endpoint is not incorrectly forced to zero
+3: [PASS] Explicit free-free beam retains its distinct modal ratios
+3: [PASS] Ideal beam width correctly cancels from eigenfrequency
+3: [PASS] Beam width remains observable through modal mass
+3: [PASS] Portable Bessel matches independent scipy/A&S anchors (mixed 1e-11)
+3:        (portable-vs-std worst mixed deviation over 9 orders x 321 args: 2.09744e-11)
+3: [PASS] Portable Bessel agrees with std::cyl_bessel_j/_i on the full validated grid (mixed 1e-10)
+3: [PASS] Portable Bessel fail-closed: order 9 (outside validated domain) -> NaN
+3: [PASS] Portable Bessel fail-closed: negative order -> NaN
+3: [PASS] Portable Bessel fail-closed: x > 16 (outside validated domain) -> NaN
+3: [PASS] Portable Bessel fail-closed: negative x -> NaN
+3: [PASS] Portable Bessel fail-closed: NaN x -> NaN
+3: [PASS] Portable Bessel positive control: in-domain evaluation is finite
+3: [PASS] Circular-plate centre strike suppresses m>0 modes without a floor
+3: [PASS] Clamped plate eigenfunctions vanish at the edge
+3: [PASS] Free plate preserves centre nodes and the axisymmetric branch
+3: [PASS] Free-edge eigenvalues depend on the material Poisson ratio
+3: [PASS] frequency_mode separates MIDI pitch lock from absolute geometry physics
+3: [PASS] Damping is recomputed from the final sounding frequency
+3: [PASS] Damping override retains the air/viscoelastic/dislocation losses
+3: [PASS] Internal friction is broadband: T60 halves per octave (rate ~ eta*f)
+3: [PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+3: [PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+3: [PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+3: [PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+3: [PASS] damping_override still means the internal-friction rate at MIDI 60
+3: [PASS] Anchor T60 with real geometry = 1/(alpha + qInv*f/2.2) per B3 Sec4.1 algebra
+3: [PASS] B3 retires the bit-exact anchor guarantee: three-mechanism sum shortens anchor T60
+3: [PASS] Y_inf at h=8mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (3.01e-3 s/kg, +-0.5%)
+3: [PASS] Y_inf at h=10mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (1.93e-3 s/kg, +-0.5%)
+3: [PASS] T60_bridge at C2 (T/L=1250.0 N/m) matches literature table (4.25s, +-1%)
+3: [PASS] T60_bridge at C4 (T/L=1073.3 N/m) matches literature table (4.95s, +-1%)
+3: [PASS] T60_bridge at C8 (T/L=12650.0 N/m) matches literature table (0.42s, +-1%)
+3: [PASS] Bridge coupling loss term is frequency-independent (55Hz T60 == 4000Hz T60)
+3: [PASS] damping_override does not swallow the bridge coupling term
+3: [PASS] With override/bridge/three-mechanism channels all off, the law reduces bit-exactly to 2.2/(f*eta)
+3: [PASS] bridgeLossRate fail-closed: soundboardThicknessM=0 -> 0.0f
+3: [PASS] bridgeLossRate fail-closed: negative soundboardThicknessM -> 0.0f
+3: [PASS] bridgeLossRate fail-closed: length=0 -> 0.0f
+3: [PASS] bridgeLossRate fail-closed: negative length -> 0.0f
+3: [PASS] bridgeLossRate fail-closed: tension=0 -> 0.0f
+3: [PASS] bridgeLossRate fail-closed: non-finite tension -> 0.0f
+3: [SENTINEL 1/2] mutant (frequency-scaled bridgeLoss): T60(55Hz)=20.2186s  T60(4000Hz)=0.278006s -- same equality check as the real test would report: [FAIL] (GOOD -- regression caught)
+3: [PASS] SENTINEL: mutant frequency-dependent bridgeLoss is distinguishable at 55Hz vs 4000Hz (proves the Sec7-3 equality check has detection power)
+3: [SENTINEL 2/2] real StringModel::decayTimeForFrequency: T60(55Hz)=4.25044s  T60(4000Hz)=4.25044s -- verdict: [PASS]
+3: [PASS] SENTINEL: real bridgeLoss term passes the same equality check (frequency-independent, as required)
+3:        (Cuesta ref f=147Hz: Q=3629.26 vs table 3629)
+3: [PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+3:        (Cuesta ref f=1000Hz: Q=6786.62 vs table 6787)
+3: [PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+3:        (Cuesta ref f=4000Hz: Q=2816.88 vs table 2817)
+3: [PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+3:        (Cuesta ref f=10000Hz: Q=580.421 vs table 580)
+3: [PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+3: [SENTINEL r^6->r^2 mutant] f=147Hz: Q=1.20594e-07 vs table 3629 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+3: [PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+3: [SENTINEL r^6->r^2 mutant] f=1000Hz: Q=2.60591e-09 vs table 6787 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+3: [PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+3: [SENTINEL r^6->r^2 mutant] f=4000Hz: Q=1.62869e-10 vs table 2817 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+3: [PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+3: [SENTINEL r^6->r^2 mutant] f=10000Hz: Q=2.60591e-11 vs table 580 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+3: [PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+3:        (air-band 1/T60 octave ratio: 1.4468; old f^2 shape would give 4.0)
+3: [PASS] Air term is not proportional to f^2 (regression guard against the old shape)
+3: [PASS] Low-band 1/T60 octave ratio sits in the physical sqrt(2)..2 band
+3: [PASS] stringAirViscDislQInv fail-closed: radius=0 -> 0.0f
+3: [PASS] stringAirViscDislQInv fail-closed: negative radius -> 0.0f
+3: [PASS] stringAirViscDislQInv fail-closed: tension=0 -> 0.0f
+3: [PASS] stringAirViscDislQInv fail-closed: non-finite tension -> 0.0f
+3: [PASS] stringAirViscDislQInv fail-closed: frequency=0 -> 0.0f
+3: [PASS] stringAirViscDislQInv positive control: valid inputs give a positive Q^-1
+3: [PASS] Beam frequencies obey L^-2, thickness, sqrt(E), and rho^-1/2 scaling
+3: [PASS] Plate frequencies obey R^-2, thickness, sqrt(E), and rho^-1/2 scaling
+3: [PASS] Unforced modal energy decays monotonically cycle by cycle
+3: [PASS] Invalid modal numbers fail closed without NaN output or a live voice
+3: [PASS] Invalid modes cannot poison a simultaneously active valid mode
+3: [PASS] 1/(2*tau) is the removable pi/4 point, not a false spectral null
+3: [PASS] Half-sine impulse first true null is 3/(2*tau)
+3: [PASS] Hertz strike-speed law shortens contact at higher velocity
+3: [PASS] alpha(C2/C4/C7) reproduce the Euphonics Table 2 anchors exactly
+3: [PASS] K(C2/C4/C7) reproduce the Euphonics Table 2 anchors (rel < 1e-4)
+3: [PASS] hammer mass reproduces the C1/C4/C8 Table 1 anchors exactly
+3: [PASS] pianoHammerTauC(A4, v=0.5) reproduces kTauCFelt (anchor point)
+3: [PASS] Solved contact time shortens at higher strike velocity
+3:        velocity exponent @ MIDI 36: -0.393939 (expected -0.394)
+3:        velocity exponent @ MIDI 60: -0.428571 (expected -0.429)
+3:        velocity exponent @ MIDI 96: -0.5 (expected -0.5)
+3: [PASS] Anchor-note tau_c values stay strictly inside the safety clamp
+3: [PASS] Velocity exponents at C2/C4/C7 match -0.394/-0.429/-0.500 (< 1e-3)
+3: [PASS] alphaForPianoNote is non-decreasing over MIDI 36..96
+3: [PASS] alpha flat-clamps outside the C2..C7 anchor range
+3: [PASS] K flat-clamps outside the C2..C7 anchor range
+3: [PASS] hammer mass flat-clamps outside the C1..C8 anchor range
+3: [PASS] K(MIDI 66) matches the hand-computed log-domain interpolation
+3: [PASS] Linear-in-K miscoding differs from log-domain result by >1 order of magnitude
+3: [PASS] Non-Felt hardness values (0/2/3, 1.6, 0.4, 2.4) do not select the solver
+3: [PASS] Felt detent (1.0 and +/-0.4 neighbourhood) selects the solver
+3: [PASS] Score-path exact enum: only ExciterType::Felt (1) selects the solver
+3: [PASS] Modal frequency gate exactly matches the DSP renderable band
+3: [PASS] Geometry modes below 20 Hz are rejected instead of becoming attack-only audio
+3: [PASS] Weak modes use a relative -60 dB lifetime instead of an absolute cutoff
+3: [PASS] Modal resonator stops after each mode reaches its T60
+3: [PASS] Specified PCG noise is exactly reproducible for the same event seed
+3: [PASS] Distinct semantic event identities prevent coherent repeated-note noise streams
+3: [PASS] StereoDelay honours the full 5000 ms score contract including 1.10x right spread
+3: [PASS] Zero-time delay keeps history moving instead of replaying frozen stale audio
+3: [PASS] Authored reverb T60 reaches approximately -60 dB after one second
+3: [PASS] Plugin and CLI share the same static FX signal path
+3: PASS (0 failures)
+3/3 Test #3: physics_models_repro .............   Passed    0.07 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   1.26 sec

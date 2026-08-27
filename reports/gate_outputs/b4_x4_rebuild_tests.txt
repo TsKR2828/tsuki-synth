@@ -1,0 +1,12 @@
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthAuditTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthAuditTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthTunerTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthTunerTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthPhysicsModelsTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthPhysicsModelsTest.exe

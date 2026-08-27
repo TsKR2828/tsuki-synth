@@ -1,0 +1,18 @@
+B4 unaffected-piece bit-invariance sentinels
+reference (B4-before) hashes: reports/gate_outputs/b3_method/rep_pieces_after.csv (B3-after tree = HEAD f67050b clean = B4-before state)
+render: current working tree (B4 landed), same CLI invocation as the reference run
+
+vivaldi_summer_m2      before=f57f7daaa8c1c31b5b980944898a1648604658554cc974d03486454c18b3e195
+                       after =f57f7daaa8c1c31b5b980944898a1648604658554cc974d03486454c18b3e195 -> IDENTICAL
+vivaldi_summer_m3      before=442b7ef4d7ed5b0f825545229129b00858daabdbe073c5b2dbed89f9ca1e2e19
+                       after =442b7ef4d7ed5b0f825545229129b00858daabdbe073c5b2dbed89f9ca1e2e19 -> IDENTICAL
+moonlight_yangqin      before=49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e
+                       after =49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e -> IDENTICAL
+akashic_opening_bell   before=c672c9415f57763e701445b88ac0d3aeb9383960c3211eb480bc5d73dc594683
+                       after =c672c9415f57763e701445b88ac0d3aeb9383960c3211eb480bc5d73dc594683 -> IDENTICAL
+ai_radiance_m1         before=74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d
+                       after =74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d -> IDENTICAL
+vivaldi_autumn_m2      before=18fb540f0194fddb6bc1651eb19358e55ef40580c1532b605ad91a683e3cf945
+                       after =18fb540f0194fddb6bc1651eb19358e55ef40580c1532b605ad91a683e3cf945 -> IDENTICAL
+
+overall: ALL 6 SENTINELS BIT-IDENTICAL
