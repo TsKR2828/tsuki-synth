@@ -1,0 +1,31 @@
+B5 draft-stage sentinel: deliberately break one negative case, confirm it flips
+to FAIL, then revert and confirm PASS again. This is a DRAFT sanity check, not
+a formal GATE artifact (no --full/corpus/SHA256 has been run for this card;
+see docs/workcards/B5.md §6 and reports/decision_packets/B5_species_selection.md
+for why: the three species-selection questions have not been answered yet).
+
+Method: in tests/audit_repro.cpp, testOrthotropicSchemaFailClosed(), Negative 1
+("ratio_ET_EL = 1.5, out of (0,1)") was temporarily edited to the legal value
+0.043 (ONLY the line-211 occurrence; the line-268 occurrence used by Negative 6
+"transactional" was left untouched), rebuilt, and run. Then reverted to 1.5,
+rebuilt, and run again.
+
+=== Step 1: sabotaged (ratio_ET_EL temporarily set to 0.043, a legal value) ===
+Command: cmake --build build --config Release --target TsukiSynthAuditTest
+          && ./build/Release/TsukiSynthAuditTest.exe
+Result: exit=1, 1 failure
+Relevant line:
+  [FAIL] Orthotropic: ratio_ET_EL = 1.5 (out of (0,1)) is rejected -- whole file fails closed
+Full run saved: reports/gate_outputs/b5_method/draft_sentinel_broken_run.txt
+
+=== Step 2: reverted (ratio_ET_EL restored to 1.5) ===
+Command: cmake --build build --config Release --target TsukiSynthAuditTest
+          && ./build/Release/TsukiSynthAuditTest.exe
+Result: exit=0, 0 failures
+Full run saved: reports/gate_outputs/b5_method/draft_sentinel_restored_run.txt
+
+Conclusion: the negative-control test correctly detects when its own
+underlying assertion is neutralized (test goes FAIL when the bad input is
+replaced with a legal one), and correctly returns to PASS once the bad input
+is restored. This is a draft sentinel, not a substitute for the formal GATE's
+own regression evidence.

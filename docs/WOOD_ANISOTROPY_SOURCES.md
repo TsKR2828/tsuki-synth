@@ -196,7 +196,10 @@ Beam/Plate 的既有 GATE 全部要重驗，換到的物理正確性有限。
 - [x] 含水率修正公式 Eq. 5–3 與 `Mp` 表取得
 - [x] 溫度相依的定性關係與適用上限（150 °C）取得
 - [ ] 溫度相依的逐項係數表（Table 5–15）未取得
-- [ ] `materials.json` 的 schema 若要容納 9 個獨立常數，需設計向後相容路徑
+- [x] `materials.json` 的 schema 若要容納 9 個獨立常數，需設計向後相容路徑
       （比照 `MaterialDB.h` 現行 `alpha`→`eta` 的 fail-closed 做法）
+      → **schema 遷移路徑已設計並落地**（2026-08-28，B5 卡）：orthotropic
+      schema 已備妥（目前零消費路徑，死資料），證據
+      `reports/b5_schema_noop_proof.md`
 - [ ] `PlateModel`／`BeamModel` 的正交異向版本＝**模型結構改動**，非換數字
 - [ ] **建議暫緩**，等共鳴板耦合定案後一併進場（§6）

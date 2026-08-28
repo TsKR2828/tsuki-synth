@@ -193,14 +193,51 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
       **只適用 Cimbalom/Piano**；Chromatic 在 D2 補搜完成前不得套用。
       **必須連同 noteOn 能量正規化層一起設計**，否則會撞 §6 velocity 判定。
       → 依據 `docs/HAMMER_CONTACT_SOURCES.md`
-- [ ] **B5 木材正交異向**（前置：B1，等音板需要 `D` 時一併進場）
-      24 樹種彈性比 + 25 樹種泊松比 + 含水率公式已備。
-      Kirchhoff 板改異向版是**模型結構改動**，不是換數字。
+- [x] **B5 木材正交異向 schema 入庫**（前置：B1，等音板需要 `D` 時一併進場）
+      2026-08-28 完成（月月裁決照建議值走；GATE 8 條全過；no-op 證明
+      `reports/b5_schema_noop_proof.md`）。orthotropic schema 已備妥
+      （目前零消費路徑，死資料）。
+      Kirchhoff 板改異向版仍是**模型結構改動**，不是換數字，未做。
       → 依據 `docs/WOOD_ANISOTROPY_SOURCES.md`
-- [ ] **B6 force → 輻射壓力／SPL 模型**（前置：B1 + B5）
+- [ ] **B6 force → 輻射壓力／SPL 模型**（前置：B1 + B5，皆已 Done）
+      **In progress（2026-08-28，Phase 0+1 完成，Phase 2 待月月裁決）**：
+      Phase 0（`docs/RADIATION_POWER_SOURCES.md`）查證結果——`fc` 公式的
+      `H` 是誤讀（更正為 `fc=ca²/(2π√(Dx/ρs))`，非 `Dx·H`）；
+      `W_rad=σρ₀c₀S⟨v²⟩`／`η_rad=ρ₀c₀σ/(ωρs)` 兩篇 Ege & Boutillon 論文
+      都沒有逐字給出，改用「標準定義代數推導」路線（非文獻逐字引用，程式
+      註解已標明溯源等級）；`σ(f)` 採用 §4.4 工程近似式（`(f/fc)²`
+      次臨界形狀，非 Ege & Boutillon 曲線）。Phase 1（`src/physics/
+      RadiationModel.h` 新檔＋`ScoreRenderer.h::dumpModes()` 加
+      `"radiated_power_relative"` 資訊性欄位，只對 string/cimbalom/piano
+      合格 partial 輸出、`f≥fga` 不輸出）已完成：單元測試
+      `testRadiationEfficiencyShape()`/`testRadiatedPowerChain()`（含反例，
+      `reports/gate_outputs/b6_selftest_sentinel.txt`）、Python 端真實
+      `--dump-modes` 哨兵測試（`tests/test_specimen_verify.py`
+      `RealDumpModesRadiationSentinelTests`）全過；GATE 全綠——三 build
+      target exit 0、ctest 3/3、pytest 131/131、`--full` 與 B5 基準
+      `b5_full.txt` 零差異（`b6_gate_full_phase1.txt`）、8 首代表曲目
+      SHA256 位元不變 8/8（`b6_bit_identity.txt`，render()/renderEvent()/
+      ModalResonator 皆未觸碰）、corpus `verify_score.py --all`
+      （`b6_corpus.txt`）、Vivaldi summer 樂章三（5158 事件，全 `string`
+      引擎、實際跑過輻射計算路徑）`--dump-modes` 4.5s 無逾時回歸
+      （`b6_perf_sentinel.txt`，M3 舊基準 7.2s）。
+      **剩餘＝Phase 2（月月裁決）**：模型目前完全沒有絕對物理單位錨點
+      （`ModalResonator::Mode::amplitude` 是 DC 正規化無量綱形狀值），要把
+      `"radiated_power_relative"` 這類相對量接成真實 Pa，需要月月從三個
+      候選校準方案中裁決一個（或要求拆卡）——**不是工兵能自己選的**：
+      - **方案 A**：貼在渲染輸出訊號本身（沿用外部資料庫「數位 1.0≡1 Pa」
+        慣例）——最簡單，但會把 `loudnessCompensationGain`（創作層）
+        一起算進物理主張，違反本 repo 一貫的創作/物理分離原則。
+      - **方案 B**：貼在 `ModalResonator` 加總、尚未經創作層修飾的訊號點
+        （較乾淨，但需要新增一個診斷用訊號分接點，工程量中等）。
+      - **方案 C**：完整第一原理力鏈（`HammerImpulse` 補牛頓量級力峰值 +
+        `S` 完整推導），最正確但工作量可能超出本卡範圍，可能需要拆卡。
+      裁決後才能做 Phase 3/4（`"absolute_pressure_per_force"` 觀測字串 +
+      `acoustic_transfer[]` 陣列，讓 `specimen_verify.py` 的 `absolute_spl`
+      真正脫離 `UNVERIFIED`）。
       量測面定義可沿用文獻慣例（1.05 m 球面、數位振幅 1.0 ≡ 1 Pa ≡ 94 dB）。
-      實作後 `specimen_verify.py` 的 SPL/指向性才可能脫離 `UNVERIFIED`。
-      → 依據 `docs/EXTERNAL_ANCHOR_SOURCES.md` §2–§3
+      → 依據 `docs/EXTERNAL_ANCHOR_SOURCES.md` §2–§3、
+      `docs/RADIATION_POWER_SOURCES.md`、`docs/workcards/B6.md`
 
 ## C. 不需要任何資料、純工程（可隨時插隊）
 
@@ -270,6 +307,15 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
 - [ ] **D5 銅鑼 JCIE 2005 全文** — 付費牆。
 - [ ] **D6 Wood Handbook Table 5–15（溫度係數）** — 簡單，同一份 PDF 的後續頁面。
 - [ ] **D7 揚琴／舌鼓／鑼的實體試體量測** — **文獻買不到，只能自己量**（`docs/SPECIMEN_VALIDATION_PROTOCOL.zh-TW.md`）。這是唯一能讓域內引擎升級到 specimen-level 主張的路。
+- [ ] **D8 tongue_drum 音高-響度斜率與缺泛音（2026-08-28 月光商品 QA 發現）** —
+      同 velocity 探針渲染實測：tongue_drum MIDI 37→87 RMS 從 −32.8 掉到 −73.1 dBFS
+      （**40.3 dB 斜率**；cimbalom 同域僅 4.4 dB），且輸出近純正弦（99.9% 能量在基頻，
+      無泛音列；真實鋼舌鼓應有豐富非諧泛音；cimbalom 為 79.5–94.0%）。後果：高音域
+      旋律實質不可用（月光空靈鼓版商品被 QA 判暫緩上架，見
+      `exports/products/moonlight_batch1/PRODUCT_SHEET.md`「已知缺陷」）。
+      **調查方向**：BeamModel 響度 keytrack／`modeAttackEnergy` 對 Beam 路徑的行為、
+      Beam 模態截斷；與 D1（梁/板阻尼未溯源）、D2（槌具接觸未溯源）可能同根。
+      屬引擎物理層調查，改動會觸發 Rule 10。
 
 ---
 

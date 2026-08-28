@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 from tools import specimen_verify
+from tools import verify_score
 
 
 def sha256(path):
@@ -273,6 +274,113 @@ class SpecimenVerificationTests(unittest.TestCase):
             bundle_path.write_text(json.dumps(bundle), encoding="utf-8")
             report = specimen_verify.verify_bundle(bundle_path)
             self.assertEqual("FAIL", report["status"])
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class RealDumpModesRadiationSentinelTests(unittest.TestCase):
+    """docs/workcards/B6.md §7 regression sentinel: reads a REAL C++
+    --dump-modes output (not a hand-built fixture) and asserts that B6's
+    Phase 1 informational field ("radiated_power_relative") shows up where
+    expected, and that the three fields B6 explicitly must NOT add
+    ("radiation_directivity", "complex_phase", "absolute_pressure_per_force")
+    never appear in model_observables. This guards against someone later
+    "helpfully" adding those alongside acoustic_transfer data, thinking
+    "the data's all there anyway" (docs/workcards/B6.md §11 second bullet).
+
+    Unlike every other test in this file, this one drives the real CLI
+    binary via subprocess (see tools/verify_score.py's dump_modes()) instead
+    of hand-crafting a Mode Dump v2 JSON fixture -- per B6.md §7's explicit
+    instruction to use "真實 dump" rather than another hand-built one for
+    this particular sentinel.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.cli = verify_score.find_cli()
+        if cls.cli is None:
+            raise unittest.SkipTest (
+                "TsukiSynthCLI not built -- run cmake --build build "
+                "--target TsukiSynthCLI first (X4 regulation)")
+
+    def _dump(self, score_rel_path):
+        score_path = ROOT / score_rel_path
+        self.assertTrue (score_path.exists(), f"missing score fixture: {score_path}")
+        return verify_score.dump_modes (self.cli, str (score_path))
+
+    def test_piano_path_gets_radiated_power_relative_not_forbidden_fields(self):
+        # physical_piano.score.json: 4 events, engine="piano" -- the B6
+        # string/cimbalom/piano path this diagnostic field is scoped to.
+        dump = self._dump ("scores/examples/physical_piano.score.json")
+        observables = dump["model_observables"]
+        self.assertIn ("radiated_power_relative", observables,
+                        "Phase 1 informational field must be present in "
+                        "model_observables for a real dump")
+        for forbidden in ("radiation_directivity", "complex_phase",
+                          "absolute_pressure_per_force"):
+            self.assertNotIn (forbidden, observables,
+                              f"B6 Phase 1 must never add {forbidden!r} to "
+                              "model_observables -- that needs a real phase/"
+                              "directivity model B6 does not build (see "
+                              "docs/workcards/B6.md §11)")
+        # unsupported_observables must still list all three -- B6 does not
+        # close any of these UNVERIFIED claims (only Phase 4's
+        # absolute_pressure_per_force could partly do so, and Phase 4 is not
+        # in scope here).
+        unsupported = dump["unsupported_observables"]
+        for still_unsupported in ("radiation_directivity", "complex_phase",
+                                  "absolute_spl"):
+            self.assertIn (still_unsupported, unsupported)
+        self.assertTrue (any ("radiated_power_relative" in p
+                              for event in dump["events"]
+                              for p in event["partials"]),
+                         "at least one piano partial should carry the "
+                         "per-partial radiated_power_relative diagnostic value")
+        # Every acoustic_transfer array in this dump (Phase 1 does not add
+        # this field, only Phase 4 would) must be absent entirely -- B6
+        # Phase 1 does not add acoustic_transfer.
+        for event in dump["events"]:
+            self.assertNotIn ("acoustic_transfer", event,
+                              "B6 Phase 1 must not add acoustic_transfer "
+                              "(that is Phase 4, gated on Phase 2's "
+                              "calibration decision)")
+
+    def test_fm_engine_produces_no_dump_events_at_all(self):
+        # fur_elise_opening.score.json: engine="fm" only. dumpModes() skips
+        # fm events entirely (pre-existing "fm = non-modal synthesis"
+        # behaviour in ScoreRenderer.h, not something B6 introduced) --
+        # confirm B6 did not accidentally change that: an all-fm score must
+        # still dump 0 events, not crash and not gain any B6 fields.
+        dump = self._dump ("scores/examples/fur_elise_opening.score.json")
+        self.assertEqual (len (dump["events"]), 0,
+                          "fm-only score must still dump 0 events (fm is "
+                          "non-modal synthesis, skipped before B6's "
+                          "radiation branch is ever reached)")
+        self.assertIn ("radiated_power_relative", dump["model_observables"],
+                       "the top-level model_observables string is added "
+                       "unconditionally (B6.md §5: \"固定加入\"), even for a "
+                       "score that ends up with zero dumped events")
+
+    def test_water_gong_path_never_gets_radiated_power_relative_per_partial(self):
+        # water_gong_free.score.json: engine="water_gong" -- a REAL modal
+        # engine that DOES appear in dumpModes() output (unlike fm), but is
+        # explicitly out of B6's string/cimbalom/piano scope (docs/workcards/
+        # B6.md §3/§11: beam/tongue_drum/plate/water_gong/custom never get
+        # the per-partial radiated_power_relative value, only string/
+        # cimbalom/piano do).
+        dump = self._dump ("scores/examples/water_gong_free.score.json")
+        self.assertGreater (len (dump["events"]), 0, "fixture should have events")
+        for event in dump["events"]:
+            self.assertEqual (event["engine"], "water_gong")
+            for p in event["partials"]:
+                self.assertNotIn ("radiated_power_relative", p,
+                                  "water_gong engine partials must never "
+                                  "carry radiated_power_relative (out of "
+                                  "B6 scope, docs/workcards/B6.md §3)")
+            self.assertNotIn ("acoustic_transfer", event,
+                              "B6 Phase 1 must not add acoustic_transfer "
+                              "for any engine (that is Phase 4)")
 
 
 if __name__ == "__main__":

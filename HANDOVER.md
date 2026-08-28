@@ -8,7 +8,28 @@
 
 ## 0. 一句話現況
 
-**B4 完工（unstaged 待月月授權 commit）。** B3 已於 2026-08-26 隨月月裁決 commit 併入 `main`
+**B6 Phase 1 完工（2026-08-28，輻射效率骨架、零音色影響，unstaged 待月月審 + Phase 2 裁決）。**
+Phase 0（`docs/RADIATION_POWER_SOURCES.md`）查證發現 Ege & Boutillon 兩篇論文都沒有
+逐字給出「模態能量→輻射瓦特」的功率鏈公式，改走「標準定義代數推導」路線，並更正
+`fc` 公式裡的符號誤讀（`fc=ca²/(2π√(Dx/ρs))`，不是 `Dx·H`）。Phase 1：新增
+`src/physics/RadiationModel.h`（純函式 σ(f)/η_rad(f)/fraction_radiated 骨架）+
+`ScoreRenderer.h::dumpModes()` 加 `"radiated_power_relative"` 資訊性欄位（只對
+string/cimbalom/piano 合格 partial、`f<fga` 才輸出，**只進 `--dump-modes` 診斷路徑，
+`render()`/`renderEvent()`/`ModalResonator` 一個位元未動**）。GATE 全綠：三 build
+target exit 0、ctest 3/3（新增 `testRadiationEfficiencyShape()`/
+`testRadiatedPowerChain()` 含反例哨兵）、pytest 131/131（含真實 `--dump-modes` 輸出
+的 Python 哨兵，確認 `radiation_directivity`/`complex_phase`/
+`absolute_pressure_per_force` 未被誤加）、`--full` 與 B5 基準零差異、8 首曲目 SHA256
+位元不變 8/8、Vivaldi summer 樂章三 `--dump-modes` 4.5s 無逾時回歸（`b6_*.txt`
+全套證據）。**剩餘＝Phase 2：月月要從三個候選校準方案（A 貼渲染輸出／B 貼純物理
+訊號點／C 完整第一原理力鏈）裁決一個，工兵不得自選，見 `TODO.md` B6 條目。**
+B5（木材正交異向 schema 入庫）已於同日完工：`data/materials.json` 四種木料新增可選
+`orthotropic` schema 資料塊 + `MaterialDB.h` fail-closed 解析，**目前零消費路徑**
+（`PlateModel`/`BeamModel` 仍是單一標量 `E`/`nu`，orthotropic 是死資料）；選種歧義
+月月 2026-08-28 裁決「照建議值走」（Spruce Sitka / Maple sugar / Oak red）；GATE 8
+條全過、no-op 證明 `reports/b5_schema_noop_proof.md`。**同時期夜間另有一批研究/口述
+筆記文件產出**（見 §5），與 B5/B6 程式碼無依賴關係，一併待月月審閱歸檔。
+B4 完工（unstaged 待月月授權 commit）。B3 已於 2026-08-26 隨月月裁決 commit 併入 `main`
 （A1 放行＋A6 完成＋A7 LICENSE）。**2026-08-27 月月三裁決全部落地**：
 - **B4（槌頭非線性接觸求解器）完工**——F3 velocity 撞牆（C4/C7 predicted_delta +7.79/+19.12 dB
   超出 6.02±1.0 律、偏差隨 α 單調＝物理事實非 bug）經月月**裁決 (b) 重定義 F3 主張域**
@@ -18,7 +39,13 @@
   裁決包 `reports/decision_packets/B4_f3_velocity_ruling.md`。
 - **A4 關閉**（裁決「調整文件建議值」）：Playbook 亮度 EQ 起手式降級為「預設不開」，程式碼零改動。
 - **A11 關閉**（裁決 (i) 確認現值 h=9mm/wood_spruce）：維持寫死，「可注入」子問題就地關閉。
-**下一步 = 月月審 B4 批次 unstaged 並授權 commit；之後 B5（木材正交異向，前置 B1 已完成）→ B6。**
+**下一步 = 月月審 B4+B5+B6 批次 unstaged 並授權 commit；B6 額外需要裁決 Phase 2 校準方案
+（A/B/C）才能繼續往 Phase 3/4 做。** B6 三方案的白話裁決包在
+`reports/decision_packets/B6_calibration_choice.md`。
+另外，**月光第一批商品已產出**在 `exports/products/moonlight_batch1/`
+（完整版 FM Piano + 揚琴版 + 空靈鼓版 + 混音版四支母帶＋商品表），
+**`PRODUCT_SHEET.md` 最上方有 CC BY-SA 2.5 授權風險待月月裁決**（音符來源
+MIDI 標示 Share-Alike，是否延伸到「重新合成演奏音檔」需月月自行判斷或找人確認）。
 待月月的只剩 A8（外部資料集）/A10（Score 控制台實操）。
 
 ## 1. 2026-08-20 ~ 08-22 這三天發生了什麼（新 session 必讀）
@@ -105,16 +132,34 @@ Water Gong（板，域內）、FM Piano（域外，已誠實標註）。
 
 ## 5. 接下來的順序（建議）
 
-1. **月月審 B4 批次並授權 commit**（最優先）：Rule 10 報告
-   `reports/b4_hammer_contact_before_after.md`（先讀白話導讀卡）＋F3 主張域重定義登記
-   （`ROADMAP_PHYSICS.md` §6 velocity 列）。B4 全部改動 unstaged（R7），
-   裁決「接受 commit」或「指名回退」。
-2. **月月裁決積壓**（只剩兩項，見 TODO A 段）：A8（外部資料集要不要下載）、
+1. **月月審 B4+B5+B6(Phase 1) 批次並授權 commit**（最優先）：
+   - B4：Rule 10 報告 `reports/b4_hammer_contact_before_after.md`（先讀白話導讀卡）
+     ＋F3 主張域重定義登記（`ROADMAP_PHYSICS.md` §6 velocity 列）。
+   - B5：no-op 證明報告 `reports/b5_schema_noop_proof.md`（schema 已備妥、
+     零消費路徑，13 首 SHA256 bit-exact + corpus 73/73 PASS）。
+   - B6 Phase 1：`docs/RADIATION_POWER_SOURCES.md`（Phase 0 溯源）+
+     `reports/gate_outputs/b6_*.txt`（8 首 SHA256 位元不變、GATE 全綠）。
+   B4/B5/B6 全部改動 unstaged（R7），裁決「接受 commit」或「指名回退」。
+2. **B6 Phase 2 裁決**（新增，`TODO.md` B6 條目有三方案摘要；白話裁決包
+   `reports/decision_packets/B6_calibration_choice.md`）：模型目前無任何
+   絕對物理單位錨點，要把 `"radiated_power_relative"` 接成真實 Pa 需要月月從
+   方案 A（貼渲染輸出）／B（貼純物理訊號點）／C（完整第一原理力鏈）三選一，
+   或要求拆卡——工兵不得自選。
+3. **月月裁決積壓**（見 TODO A 段）：A8（外部資料集要不要下載）、
    A10（Score 控制台實操驗收）。
-3. ~~B3 弦阻尼律~~ **已完成並併入 main（2026-08-26）**；~~B4 槌頭~~ **已完成
-   （2026-08-27，F3 域依裁決 (b) 重定義，見 §0）**；A4/A11 已依 2026-08-27 裁決關閉。
-4. 之後 **B5（木材正交異向，前置 B1 已完成）** → B6（輻射，前置 B1+B5）。
-   注意：B5 開工前建議等 B4 批次 commit 落地，避免 unstaged 疊加毀 Rule 10 歸因。
+4. ~~B3 弦阻尼律~~ **已完成並併入 main（2026-08-26）**；~~B4 槌頭~~ **已完成
+   （2026-08-27，F3 域依裁決 (b) 重定義，見 §0）**；~~B5 木材正交異向 schema~~
+   **已完成（2026-08-28，見 §0）**；~~B6 Phase 0+1（輻射效率骨架）~~
+   **已完成（2026-08-28，見 §0；Phase 2 待裁決）**；A4/A11 已依 2026-08-27 裁決關閉。
+5. Phase 2 裁決後：B6 Phase 3/4（`"absolute_pressure_per_force"` + `acoustic_transfer[]`）
+   → v0.4 產線（月光重渲產線，見 `docs/PRODUCT_MARKET_NOTES.zh-TW.md` §4）。
+6. **夜間產出的研究/口述筆記文件**（與 B5/B6 無程式碼依賴，待月月審閱歸檔）：
+   - `docs/PESTLE_MUSIC_FIELD_NOTES.zh-TW.md`——月月口述杵音知識記錄。
+   - `docs/TAIWAN_WOOD_SPECIES_SOURCES.zh-TW.md`、
+     `docs/D2_CHROMATIC_CONTACT_SEARCH.zh-TW.md`——研究草稿，已經 Opus 稽核、
+     殘留兩條已修。
+   - `docs/PRODUCT_MARKET_NOTES.zh-TW.md`——商品方向筆記：定位為完整樂曲的
+     多配器版本，不是音效包。
 
 ## 6. 給下一個 session 的操作備忘
 

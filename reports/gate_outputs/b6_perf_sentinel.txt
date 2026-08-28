@@ -1,0 +1,23 @@
+B6 Phase 1 performance sentinel (docs/workcards/B6.md §11)
+Generated: 2026-08-28
+Command: TsukiSynthCLI.exe --dump-modes <score>
+Score: scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m3.score.json
+(5158 events -- same file M3's milestone note in ROADMAP_PHYSICS.md
+references as taking 7.2s after the O(n^2) MemoryOutputStream fix)
+
+
+real	0m4.476s
+user	0m0.031s
+sys	0m0.000s
+
+exit code: 0
+output size: 61417153 bytes
+
+RESULT: 4.5s, no timeout/regression. This score's events are entirely
+engine="string" (docs/workcards/B6.md's in-scope path), so the radiation
+skeleton computation (StringModel::soundboardDynamics() +
+RadiationModel::criticalFrequency()/radiationEfficiency() per partial) IS
+exercised throughout this dump, not skipped. B6 Phase 1's added per-partial
+"radiated_power_relative" field did not reintroduce the M3 O(n^2)
+string-concatenation issue (previously fixed by switching to
+MemoryOutputStream, see ROADMAP_PHYSICS.md M3).

@@ -7,6 +7,7 @@
 #include "../engines/ChromaticEngine.h"
 #include "../engines/FMPianoEngine.h"
 #include "../physics/MaterialDB.h"
+#include "../physics/RadiationModel.h"
 #include "../dsp/EffectsChain.h"
 #include <algorithm>
 #include <cmath>
@@ -141,7 +142,8 @@ public:
         out << "{\n  \"contract\": \"TsukiSynth Mode Dump v2\","
             << "\n  \"sample_rate_hz\": " << score.global.sampleRate
             << ",\n  \"model_observables\": "
-               "[\"modal_frequency_hz\", \"relative_modal_amplitude\", \"modal_t60_s\"],"
+               "[\"modal_frequency_hz\", \"relative_modal_amplitude\", \"modal_t60_s\", "
+               "\"radiated_power_relative\"],"
             << "\n  \"unsupported_observables\": "
                "[\"complex_phase\", \"absolute_spl\", \"radiation_directivity\"],"
             << "\n  \"input_event_count\": " << static_cast<int> (score.events.size())
@@ -171,6 +173,19 @@ public:
             // self-contained (Python never has to know the filter's shape).
             std::function<float(float)> bodyMagFn = [] (float) { return 1.0f; };
 
+            // Radiation-efficiency skeleton inputs (B6 Phase 1, informational
+            // only -- docs/workcards/B6.md SS3/SS5/SS6 step 8). Stays invalid
+            // (radiationValid=false) for every engine other than
+            // string/cimbalom/piano below, so modeToJson() never emits the
+            // "radiated_power_relative" field for beam/tongue_drum/plate/
+            // water_gong/custom (fm never reaches this loop body at all --
+            // see the "else" branch further down). This --dump-modes-only
+            // computation does not touch render()/renderEvent()/
+            // ModalResonator -- see RadiationModel.h for the full derivation.
+            float radiationFc = -1.0f;
+            float radiationFga = -1.0f;
+            bool radiationValid = false;
+
             if (ev.engine == "string" || ev.engine == "cimbalom" || ev.engine == "piano")
             {
                 const Material* mat = materialDB->getMaterial (juce::String (ev.material));
@@ -182,6 +197,22 @@ public:
                 const Material* soundboardMat =
                     materialDB->getMaterial (kBridgeSoundboardMaterialKey);
                 if (soundboardMat == nullptr) continue;
+
+                // B6 Phase 1: expose the same D/rhoS this event's
+                // bridgeLossRate() call (inside CimbalomVoice::noteOn(),
+                // renderEvent()'s real bridge-loss path) already derives
+                // internally, purely to compute fc/fga for the
+                // "radiated_power_relative" diagnostic field below. Reads the
+                // same soundboardMat/kBridgeSoundboardThicknessM B1 already
+                // uses; does not change what noteOn()/bridgeLossRate() do.
+                const auto sbDyn = StringModel::soundboardDynamics (
+                    *soundboardMat, kBridgeSoundboardThicknessM);
+                if (sbDyn.valid)
+                {
+                    radiationFc = RadiationModel::criticalFrequency (sbDyn.D, sbDyn.rhoS);
+                    radiationFga = RadiationModel::acousticCutoffFrequency();
+                    radiationValid = radiationFc > 0.0f && radiationFga > 0.0f;
+                }
                 // 2026-07 (--amps GATE fix): mirror renderEvent()'s piano
                 // branch EXACTLY -- piano's actual render overrides
                 // strikePosition/exciter (wood_mallet+0.3 -> felt+0.125)
@@ -326,7 +357,26 @@ public:
                 s << "{\"freq\": " << juce::String (m.frequency, 3)
                   << ", \"amp\": " << juce::String (m.amplitude, 5)
                   << ", \"decay\": " << juce::String (m.decayTime, 4, true)
-                  << ", \"body_mag\": " << juce::String (bodyMagFn (m.frequency), 5) << "}";
+                  << ", \"body_mag\": " << juce::String (bodyMagFn (m.frequency), 5);
+                // B6 Phase 1 (docs/workcards/B6.md SS3/SS5): informational-only
+                // dimensionless radiation-efficiency skeleton value sigma(f),
+                // see RadiationModel::radiationEfficiency(). Omitted entirely
+                // (not written as a sentinel) when radiationValid is false
+                // (non string/cimbalom/piano engine, or this event's
+                // soundboard D/rhoS could not be derived) or when sigma's
+                // sentinel says f >= fga (model has no prediction there) --
+                // specimen_verify.py is not supposed to read this key at all
+                // (it is not in model_observables' companion
+                // unsupported_observables list either; it is purely for human/
+                // future-work inspection, see B6.md SS5).
+                if (radiationValid)
+                {
+                    const float sigma = RadiationModel::radiationEfficiency (
+                        m.frequency, radiationFc, radiationFga);
+                    if (sigma >= 0.0f)
+                        s << ", \"radiated_power_relative\": " << juce::String (sigma, 5);
+                }
+                s << "}";
                 return s;
             };
 

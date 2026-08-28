@@ -1,0 +1,20 @@
+B5 GATE 8: bit-exact SHA256 comparison, all 13 wood_ scores (before vs after)
+before = HEAD=53e6c76, pre-B5 (reports/gate_outputs/b5_method/sha256_before.txt)
+after  = post-B5 (R4 comment edit + orthotropic schema in materials.json/MaterialDB.h), rendered 2026-08-28
+
+#   file                                                                   before_sha256                                                      after_sha256                                                       same?
+1   moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav      49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e   49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e   IDENTICAL
+2   moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav 7b0413dd4f85807969242b831c512758834e18b878ec4181c67ad308e9b8b79b   7b0413dd4f85807969242b831c512758834e18b878ec4181c67ad308e9b8b79b   IDENTICAL
+3   akashic_notify_001/UI_Bright_OneShot_E6.wav                            ff3e3cf8f8c1974d8f45663fd99b49cb85e0e86baafd60a84048f90b1a0bb34a   ff3e3cf8f8c1974d8f45663fd99b49cb85e0e86baafd60a84048f90b1a0bb34a   IDENTICAL
+4   forest_action_001/Impact_Punch_OneShot_C4.wav                          4e621d8322db3d81e58063a4c98df732ea7eec7bdb994aa50e688310b451f5cb   4e621d8322db3d81e58063a4c98df732ea7eec7bdb994aa50e688310b451f5cb   IDENTICAL
+5   forest_notify_001/UI_Bright_OneShot_B6.wav                             e21a06f342a899cab84d9c07a8f7e64b9d2f77fe27c4e5cd9c200b844bdfa98c   e21a06f342a899cab84d9c07a8f7e64b9d2f77fe27c4e5cd9c200b844bdfa98c   IDENTICAL
+6   forest_transition_001/Whoosh_Airy_OneShot_D5.wav                       e3036f8feeaf083f2bd94450ff5cfbce880de631a5ab44745721008c66f3d4f6   e3036f8feeaf083f2bd94450ff5cfbce880de631a5ab44745721008c66f3d4f6   IDENTICAL
+7   forest_ui_001/UI_Soft_OneShot_F5.wav                                   e74063ba83c283c1eadde6b072552b2cb313e97576fadce9d34caf4ea3463fc8   e74063ba83c283c1eadde6b072552b2cb313e97576fadce9d34caf4ea3463fc8   IDENTICAL
+8   rabbit_notify_001/UI_Bright_OneShot_G6.wav                             e37d8e6ee2783c4988afe5fdb10bc6fbebfb2a03a868aea055911a7620cc7d61   e37d8e6ee2783c4988afe5fdb10bc6fbebfb2a03a868aea055911a7620cc7d61   IDENTICAL
+9   rabbit_ui_001/UI_Soft_OneShot_A5.wav                                   43fc77a782f063b9ce866dc248f0f9b8256a9e498d3a6d36129494a3ca02d226   43fc77a782f063b9ce866dc248f0f9b8256a9e498d3a6d36129494a3ca02d226   IDENTICAL
+10  ai_radiance_m1/Original_AI_Radiance_Movement1.wav                      74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d   74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d   IDENTICAL
+11  rules_v2_demo_001/TsukiSynth_Rules_v2_Demo.wav                         6b3ad2b68aed5f55c4e5138a5ba74272bf5e38d493805ff74277468faf8f49ee   6b3ad2b68aed5f55c4e5138a5ba74272bf5e38d493805ff74277468faf8f49ee   IDENTICAL
+12  melody_sentinel/melody_sentinel.wav                                    a16a797bce1beccc854cf6ca2bdb01fbb72badba6647ef4d09f5f25e238727bc   a16a797bce1beccc854cf6ca2bdb01fbb72badba6647ef4d09f5f25e238727bc   IDENTICAL
+13  test_glide/test_glide.wav                                              47774f4fa89cd85329395c0ccfab0354ba5885fcf1c8ecc0cd980e9ec31a6623   47774f4fa89cd85329395c0ccfab0354ba5885fcf1c8ecc0cd980e9ec31a6623   IDENTICAL
+
+RESULT: 13/13 IDENTICAL

@@ -1,0 +1,8 @@
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthData.lib
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  TsukiSynth_Standalone.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+EXIT=0

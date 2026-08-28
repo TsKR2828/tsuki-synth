@@ -1,0 +1,17 @@
+B6 Phase 1 corpus verification (docs/workcards/B6.md §8 row 9)
+Generated: 2026-08-28
+Run as 4 parallel shards (python tools/verify_score.py --all --shard-index N --shard-count 4)
+for wall-clock time, same method as B5 (reports/gate_outputs/b5_corpus_*.txt).
+
+=== shard 0 (see b6_corpus_shard0.txt for full detail) ===
+19/19 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.
+=== shard 1 (see b6_corpus_shard1.txt for full detail) ===
+18/18 score(s) passed all checks (0 check(s) covered by registered exemption(s)), 0 failed.
+=== shard 2 (see b6_corpus_shard2.txt for full detail) ===
+18/18 score(s) passed all checks (0 check(s) covered by registered exemption(s)), 0 failed.
+=== shard 3 (see b6_corpus_shard3.txt for full detail) ===
+18/18 score(s) passed all checks (0 check(s) covered by registered exemption(s)), 0 failed.
+
+TOTAL: 73/73 score(s) passed all checks (1 check(s) covered by registered
+exemption(s) -- moonlight_sonata_complete rests.rms_below_limit, pre-existing
+FX reverb-tail exemption, see scores/verify_exemptions.json), 0 failed.

@@ -132,6 +132,149 @@ void testMaterialDatabaseIsTransactional()
            "Rejected legacy reloads keep the last known-good beam_plate_* database");
 }
 
+// B5 (2026-08-28, draft stage): `orthotropic` is an OPTIONAL, wood-only,
+// fail-closed schema block. Nothing in the engine consumes it yet
+// (docs/workcards/B5.md §0) -- these tests only prove the schema parser is
+// correct, not that any audio changes. Positive cases first (present/absent/
+// non-wood-allowed), then the required negative controls (§7 of the
+// workcard), each isolating exactly one invalid field so the failure trigger
+// is unambiguous.
+void testOrthotropicSchemaFailClosed()
+{
+    // ---- Positive 1: full valid block, ratio_GRT_EL explicit null (wood_maple
+    // literature values -- Table 5-1 has no measured RT shear ratio for maple).
+    {
+        MaterialDB materials;
+        const auto json = R"json({"materials":{"wood_maple":{"display_name":"Maple","density":650,"youngs_modulus":12500000000,"poisson_ratio":0.38,"damping":{"eta":0.012,"beam_plate_beta_air":0.00000025,"beam_plate_gamma_radiation":0.000045},"orthotropic":{"source_species":"Maple, sugar","moisture_content_pct":12,"mp_percent":25,"ratio_ET_EL":0.065,"ratio_ER_EL":0.132,"ratio_GLR_EL":0.111,"ratio_GLT_EL":0.063,"ratio_GRT_EL":null,"poisson_LR":0.424,"poisson_LT":0.476,"poisson_RT":0.774,"poisson_TR":0.349,"poisson_RL":0.065,"poisson_TL":0.037}}}})json";
+        CHECK (materials.loadFromString (json),
+               "Orthotropic: full valid block with explicit-null ratio_GRT_EL loads");
+        auto* mat = materials.getMaterial ("wood_maple");
+        CHECK (mat != nullptr && mat->orthotropic.present,
+               "Orthotropic: present == true after a valid block loads");
+        CHECK (mat != nullptr && ! mat->orthotropic.hasGRT,
+               "Orthotropic: explicit null ratio_GRT_EL yields hasGRT == false");
+        CHECK (mat != nullptr && mat->orthotropic.sourceSpecies == juce::String ("Maple, sugar"),
+               "Orthotropic: source_species read back verbatim");
+        CHECK (mat != nullptr && std::abs ((double) mat->orthotropic.moistureContentPct - 12.0) < 1e-6,
+               "Orthotropic: moisture_content_pct read back (±1e-6)");
+        CHECK (mat != nullptr && std::abs ((double) mat->orthotropic.mpPercent - 25.0) < 1e-6,
+               "Orthotropic: mp_percent read back (±1e-6)");
+        CHECK (mat != nullptr && std::abs ((double) mat->orthotropic.ratioET_EL - 0.065) < 1e-6,
+               "Orthotropic: ratio_ET_EL read back (±1e-6)");
+        CHECK (mat != nullptr && std::abs ((double) mat->orthotropic.ratioER_EL - 0.132) < 1e-6,
+               "Orthotropic: ratio_ER_EL read back (±1e-6)");
+        CHECK (mat != nullptr && std::abs ((double) mat->orthotropic.ratioGLR_EL - 0.111) < 1e-6,
+               "Orthotropic: ratio_GLR_EL read back (±1e-6)");
+        CHECK (mat != nullptr && std::abs ((double) mat->orthotropic.ratioGLT_EL - 0.063) < 1e-6,
+               "Orthotropic: ratio_GLT_EL read back (±1e-6)");
+        CHECK (mat != nullptr && std::abs ((double) mat->orthotropic.poissonLR - 0.424) < 1e-6
+               && std::abs ((double) mat->orthotropic.poissonLT - 0.476) < 1e-6
+               && std::abs ((double) mat->orthotropic.poissonRT - 0.774) < 1e-6
+               && std::abs ((double) mat->orthotropic.poissonTR - 0.349) < 1e-6
+               && std::abs ((double) mat->orthotropic.poissonRL - 0.065) < 1e-6
+               && std::abs ((double) mat->orthotropic.poissonTL - 0.037) < 1e-6,
+               "Orthotropic: all 6 poisson ratios read back (±1e-6)");
+    }
+
+    // ---- Positive 2: a material with no "orthotropic" key at all -> present == false.
+    {
+        MaterialDB materials;
+        loadTestMaterial (materials);
+        auto* mat = materials.getMaterial ("steel");
+        CHECK (mat != nullptr && ! mat->orthotropic.present,
+               "Orthotropic: absent key yields present == false (legal, not an error)");
+    }
+
+    // ---- Positive 3: schema does not forbid a non-wood material from carrying
+    // an orthotropic block (docs/workcards/B5.md §7 point 3) -- not the core
+    // concern of this card, just confirming it is not accidentally rejected.
+    {
+        MaterialDB materials;
+        const auto json = R"json({"materials":{"steel":{"display_name":"Steel","density":7800,"youngs_modulus":200000000000,"poisson_ratio":0.29,"damping":{"eta":0.0002,"beam_plate_beta_air":0.00000012,"beam_plate_gamma_radiation":0.00002},"orthotropic":{"source_species":"Spruce, Sitka","moisture_content_pct":12,"mp_percent":27,"ratio_ET_EL":0.043,"ratio_ER_EL":0.078,"ratio_GLR_EL":0.064,"ratio_GLT_EL":0.061,"ratio_GRT_EL":0.003,"poisson_LR":0.372,"poisson_LT":0.467,"poisson_RT":0.435,"poisson_TR":0.245,"poisson_RL":0.040,"poisson_TL":0.025}}}})json";
+        CHECK (materials.loadFromString (json),
+               "Orthotropic: non-wood material (steel) with a valid block loads (schema allows it)");
+        auto* mat = materials.getMaterial ("steel");
+        CHECK (mat != nullptr && mat->orthotropic.present && mat->orthotropic.hasGRT
+               && std::abs ((double) mat->orthotropic.ratioGRT_EL - 0.003) < 1e-6,
+               "Orthotropic: non-null ratio_GRT_EL yields hasGRT == true with correct value");
+    }
+
+    // ---- Negative controls. Each swaps exactly ONE field of an otherwise-valid
+    // block, so the ONLY possible failure trigger is that field (same isolation
+    // discipline as the alpha/beta_air checks above).
+
+    // Negative 1: ratio_ET_EL = 1.5 (violates the open interval (0,1); cross-grain
+    // stiffness cannot exceed longitudinal stiffness for orthotropic wood).
+    // This line, if relaxed to accept ratios >= 1, should turn this test FAIL.
+    {
+        MaterialDB materials;
+        const auto bad = R"json({"materials":{"wood_spruce":{"display_name":"Spruce","density":450,"youngs_modulus":12000000000,"poisson_ratio":0.37,"damping":{"eta":0.007,"beam_plate_beta_air":0.0000003,"beam_plate_gamma_radiation":0.00005},"orthotropic":{"source_species":"Spruce, Sitka","moisture_content_pct":12,"mp_percent":27,"ratio_ET_EL":1.5,"ratio_ER_EL":0.078,"ratio_GLR_EL":0.064,"ratio_GLT_EL":0.061,"ratio_GRT_EL":0.003,"poisson_LR":0.372,"poisson_LT":0.467,"poisson_RT":0.435,"poisson_TR":0.245,"poisson_RL":0.040,"poisson_TL":0.025}}}})json";
+        CHECK (! materials.loadFromString (bad),
+               "Orthotropic: ratio_ET_EL = 1.5 (out of (0,1)) is rejected -- whole file fails closed");
+    }
+
+    // Negative 2: ratio_ET_EL = 0 (boundary itself excluded -- open interval, not [0,1)).
+    // This line, if relaxed to accept 0, should turn this test FAIL.
+    {
+        MaterialDB materials;
+        const auto bad = R"json({"materials":{"wood_spruce":{"display_name":"Spruce","density":450,"youngs_modulus":12000000000,"poisson_ratio":0.37,"damping":{"eta":0.007,"beam_plate_beta_air":0.0000003,"beam_plate_gamma_radiation":0.00005},"orthotropic":{"source_species":"Spruce, Sitka","moisture_content_pct":12,"mp_percent":27,"ratio_ET_EL":0,"ratio_ER_EL":0.078,"ratio_GLR_EL":0.064,"ratio_GLT_EL":0.061,"ratio_GRT_EL":0.003,"poisson_LR":0.372,"poisson_LT":0.467,"poisson_RT":0.435,"poisson_TR":0.245,"poisson_RL":0.040,"poisson_TL":0.025}}}})json";
+        CHECK (! materials.loadFromString (bad),
+               "Orthotropic: ratio_ET_EL = 0 (excluded boundary) is rejected -- whole file fails closed");
+    }
+
+    // Negative 3: poisson_LR = -0.1 (poisson ratios are [0,1), never negative).
+    // This line, if relaxed to accept negative values, should turn this test FAIL.
+    {
+        MaterialDB materials;
+        const auto bad = R"json({"materials":{"wood_spruce":{"display_name":"Spruce","density":450,"youngs_modulus":12000000000,"poisson_ratio":0.37,"damping":{"eta":0.007,"beam_plate_beta_air":0.0000003,"beam_plate_gamma_radiation":0.00005},"orthotropic":{"source_species":"Spruce, Sitka","moisture_content_pct":12,"mp_percent":27,"ratio_ET_EL":0.043,"ratio_ER_EL":0.078,"ratio_GLR_EL":0.064,"ratio_GLT_EL":0.061,"ratio_GRT_EL":0.003,"poisson_LR":-0.1,"poisson_LT":0.467,"poisson_RT":0.435,"poisson_TR":0.245,"poisson_RL":0.040,"poisson_TL":0.025}}}})json";
+        CHECK (! materials.loadFromString (bad),
+               "Orthotropic: poisson_LR = -0.1 (negative) is rejected -- whole file fails closed");
+    }
+
+    // Negative 4: ratio_GRT_EL given as the STRING "n/a" -- a type error, not the
+    // legal explicit-null representation of "literature table lists no value".
+    // This is the specific trap §11 of B5.md calls out: if this check is ever
+    // loosened to coerce non-null/non-number values into hasGRT=false, a future
+    // consumer could silently read a physically-nonsensical zero shear modulus.
+    // This line, if relaxed to accept non-null/non-number types, should turn
+    // this test FAIL.
+    {
+        MaterialDB materials;
+        const auto bad = R"json({"materials":{"wood_maple":{"display_name":"Maple","density":650,"youngs_modulus":12500000000,"poisson_ratio":0.38,"damping":{"eta":0.012,"beam_plate_beta_air":0.00000025,"beam_plate_gamma_radiation":0.000045},"orthotropic":{"source_species":"Maple, sugar","moisture_content_pct":12,"mp_percent":25,"ratio_ET_EL":0.065,"ratio_ER_EL":0.132,"ratio_GLR_EL":0.111,"ratio_GLT_EL":0.063,"ratio_GRT_EL":"n/a","poisson_LR":0.424,"poisson_LT":0.476,"poisson_RT":0.774,"poisson_TR":0.349,"poisson_RL":0.065,"poisson_TL":0.037}}}})json";
+        CHECK (! materials.loadFromString (bad),
+               "Orthotropic: ratio_GRT_EL = \"n/a\" (string, not a legal null) is rejected");
+    }
+
+    // Negative 5: source_species = "" (empty string; must be one of the four
+    // transcribed species names).
+    // This line, if relaxed to accept an empty/unlisted species, should turn
+    // this test FAIL.
+    {
+        MaterialDB materials;
+        const auto bad = R"json({"materials":{"wood_spruce":{"display_name":"Spruce","density":450,"youngs_modulus":12000000000,"poisson_ratio":0.37,"damping":{"eta":0.007,"beam_plate_beta_air":0.0000003,"beam_plate_gamma_radiation":0.00005},"orthotropic":{"source_species":"","moisture_content_pct":12,"mp_percent":27,"ratio_ET_EL":0.043,"ratio_ER_EL":0.078,"ratio_GLR_EL":0.064,"ratio_GLT_EL":0.061,"ratio_GRT_EL":0.003,"poisson_LR":0.372,"poisson_LT":0.467,"poisson_RT":0.435,"poisson_TR":0.245,"poisson_RL":0.040,"poisson_TL":0.025}}}})json";
+        CHECK (! materials.loadFromString (bad),
+               "Orthotropic: source_species = \"\" (empty) is rejected -- whole file fails closed");
+    }
+
+    // Negative 6 (transactional): a failed orthotropic block must NOT destroy an
+    // already-loaded, otherwise-good database -- same guarantee
+    // testMaterialDatabaseIsTransactional() proves for the existing fields.
+    // This line, if relaxed so a bad block partially commits or wipes the
+    // database, should turn this test FAIL.
+    {
+        MaterialDB materials;
+        loadTestMaterial (materials);
+        const int originalSize = materials.size();
+        const auto bad = R"json({"materials":{"wood_spruce":{"display_name":"Spruce","density":450,"youngs_modulus":12000000000,"poisson_ratio":0.37,"damping":{"eta":0.007,"beam_plate_beta_air":0.0000003,"beam_plate_gamma_radiation":0.00005},"orthotropic":{"source_species":"Spruce, Sitka","moisture_content_pct":12,"mp_percent":27,"ratio_ET_EL":1.5,"ratio_ER_EL":0.078,"ratio_GLR_EL":0.064,"ratio_GLT_EL":0.061,"ratio_GRT_EL":0.003,"poisson_LR":0.372,"poisson_LT":0.467,"poisson_RT":0.435,"poisson_TR":0.245,"poisson_RL":0.040,"poisson_TL":0.025}}}})json";
+        CHECK (! materials.loadFromString (bad),
+               "Orthotropic: (setup for transactional check) bad block is rejected");
+        CHECK (materials.size() == originalSize
+               && materials.getMaterial ("steel") != nullptr
+               && materials.getMaterial ("wood_spruce") != nullptr,
+               "Orthotropic: a failed reload preserves the last known-good database intact");
+    }
+}
+
 void testEnvelopeRelease()
 {
     Envelope env;
@@ -766,6 +909,7 @@ int main()
     testEnvelopeRelease();
     testAudioFifoKeepsNewestUnreadData();
     testMaterialDatabaseIsTransactional();
+    testOrthotropicSchemaFailClosed();
     testChromaticMidiTuning();
     testScoreParserFields();
     testScoreParserRejectsInvalidContract();

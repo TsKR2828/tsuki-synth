@@ -1,0 +1,723 @@
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+Selected shard 2/4: 18 of 73 score file(s).
+
+
+==============================================================================
+SCORE: scores\examples\fur_elise_opening.score.json
+==============================================================================
+  rendered: 6.78s @ 48000 Hz, peak -0.45 dBFS, RMS -17.55 dBFS
+  loudness (info only, no registered tolerance): integrated -14.28 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (9 segment(s)):
+      [          events] segment 1         0.00s-   0.22s: -18.6 dBFS
+      [          events] segment 2         0.25s-   0.47s: -14.6 dBFS
+      [          events] segment 3         0.50s-   0.72s: -10.7 dBFS
+      [          events] segment 4         0.75s-   0.97s: -11.5 dBFS
+      [          events] segment 5         1.00s-   1.22s: -10.0 dBFS
+      [          events] segment 6         1.25s-   1.47s: -12.9 dBFS
+      [          events] segment 7         1.50s-   1.72s: -18.2 dBFS
+      [          events] segment 8         1.75s-   1.97s: -17.4 dBFS
+      [          events] segment 9         2.00s-   3.15s: -17.3 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 12 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 12 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=12, modal=0, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully. This score has no modal-engine events (e.g. it may be pure FM, which ROADMAP_PHYSICS.md Sec.0 explicitly marks as outside the physics-verification domain) -- nothing to mode-scan.
+  [OK    ] render.ran: Score rendered successfully to fur_elise_opening.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV b0877774da9e..., 1 score dependency file(s), tree b62ac3534455..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.239541, gain=3.96592, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 b0877774da9e5fc5...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\examples\moonlight_sonata_movement1_yangqin.score.json
+==============================================================================
+  rendered: 317.49s @ 48000 Hz, peak -0.45 dBFS, RMS -23.91 dBFS
+  loudness (info only, no registered tolerance): integrated -24.62 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (8 segment(s)):
+      [          events] segment 1         0.00s-  29.12s: -23.9 dBFS
+      [          events] segment 2        29.12s-  58.24s: -24.2 dBFS
+      [          events] segment 3        58.24s-  85.12s: -24.4 dBFS
+      [          events] segment 4        85.12s-  91.84s: -23.6 dBFS
+      [          events] segment 5        91.84s- 109.76s: -22.7 dBFS
+      [          events] segment 6       109.76s- 143.36s: -23.6 dBFS
+      [          events] segment 7       143.36s- 300.16s: -23.8 dBFS
+      [          events] segment 8       300.16s- 309.12s: -23.0 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1142 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1142 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=1142, modal=1142, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1142 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1142 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (43416 partials checked across 1142 events).
+  [OK    ] modes.frequency_range: All 43416 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (1142 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 43416 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 1142 modal events (max observed: 0.019 cents).
+  [OK    ] render.ran: Score rendered successfully to moonlight_sonata_i_yangqin.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 49514b007e3e..., 1 score dependency file(s), tree b4dd16d76300..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.620733, gain=1.53045, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 49514b007e3e01fc...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\examples\restraint_metal_click.score.json
+==============================================================================
+  rendered: 4.93s @ 48000 Hz, peak -0.45 dBFS, RMS -32.15 dBFS
+  loudness (info only, no registered tolerance): integrated -27.57 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   1.52s: -27.0 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (47 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 47 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (2 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 47 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 2 modal events (max observed: 0.007 cents).
+  [OK    ] render.ran: Score rendered successfully to restraint_metal_click_001.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV be634798c4a0..., 1 score dependency file(s), tree 898c145c4f5c..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=1.26216, gain=0.752676, samples >= 0 dBFS=14.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 be634798c4a0bf71...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\classical\vivaldi_four_seasons\autumn\vivaldi_four_seasons_autumn_m2.score.json
+==============================================================================
+  rendered: 162.20s @ 48000 Hz, peak -0.45 dBFS, RMS -26.38 dBFS
+  loudness (info only, no registered tolerance): integrated -21.43 LUFS (ITU-R BS.1770-4)
+    per-phrase RMS (5 segment(s)):
+      [           cello] phrase #1         0.00s- 152.78s: -26.1 dBFS
+      [            solo] phrase #1        10.19s- 152.78s: -26.0 dBFS
+      [           viola] phrase #1         3.40s- 152.78s: -26.1 dBFS
+      [       violinone] phrase #1        10.19s- 152.78s: -26.0 dBFS
+      [       violintwo] phrase #1         6.79s- 152.78s: -26.1 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 187 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 187 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 187 performance.frequency_hz value(s) match equal temperament (max deviation 0.005 cents, limit +/-1.0).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=187, modal=187, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 187 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (187 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (4659 partials checked across 187 events).
+  [OK    ] modes.frequency_range: All 4659 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (187 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 4659 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 187 modal events (max observed: 3.208 cents).
+  [OK    ] render.ran: Score rendered successfully to Classical_Vivaldi_Autumn_Movement2.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 18fb540f0194..., 1 score dependency file(s), tree a8b40182c2ed..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.0555462, gain=17.1029, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 18fb540f0194fddb...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\classical\vivaldi_four_seasons\spring\vivaldi_four_seasons_spring_m3.score.json
+==============================================================================
+  rendered: 225.49s @ 48000 Hz, peak -0.45 dBFS, RMS -23.09 dBFS
+  loudness (info only, no registered tolerance): integrated -22.46 LUFS (ITU-R BS.1770-4)
+    per-phrase RMS (35 segment(s)):
+      [           cello] phrase #1         0.00s-  36.87s: -25.6 dBFS
+      [           cello] phrase #2        37.50s-  39.37s: -29.8 dBFS
+      [           cello] phrase #3        40.00s-  84.37s: -21.0 dBFS
+      [           cello] phrase #4        85.00s-  85.62s: -15.2 dBFS
+      [           cello] phrase #5        86.25s-  86.87s: -15.1 dBFS
+      [           cello] phrase #6        87.50s-  88.12s: -15.2 dBFS
+      [           cello] phrase #7        88.75s-  90.62s: -16.0 dBFS
+      [           cello] phrase #8        91.25s-  93.12s: -17.9 dBFS
+      [           cello] phrase #9        93.75s-  95.62s: -23.3 dBFS
+      [           cello] phrase #10       96.25s- 118.75s: -26.7 dBFS
+      [           cello] phrase #11      143.75s- 222.44s: -22.6 dBFS
+      [            solo] phrase #1         0.00s- 222.44s: -23.0 dBFS
+      [           viola] phrase #1         0.00s-  29.37s: -24.7 dBFS
+      [           viola] phrase #2        52.50s-  84.37s: -20.5 dBFS
+      [           viola] phrase #3       131.25s- 141.87s: -28.4 dBFS
+      [           viola] phrase #4       142.50s- 143.12s: -22.1 dBFS
+      [           viola] phrase #5       143.75s- 176.87s: -20.8 dBFS
+      [           viola] phrase #6       196.25s- 222.44s: -23.0 dBFS
+      [       violinone] phrase #1         0.00s-  29.37s: -24.7 dBFS
+      [       violinone] phrase #2        52.50s-  84.37s: -20.5 dBFS
+      [       violinone] phrase #3        88.75s-  90.62s: -16.0 dBFS
+      [       violinone] phrase #4        91.25s-  93.12s: -17.9 dBFS
+      [       violinone] phrase #5        93.75s-  95.62s: -23.3 dBFS
+      [       violinone] phrase #6        96.25s- 110.62s: -24.8 dBFS
+      [       violinone] phrase #7       113.12s- 115.62s: -42.2 dBFS
+      [       violinone] phrase #8       118.75s- 141.87s: -30.5 dBFS
+      [       violinone] phrase #9       142.50s- 143.12s: -22.1 dBFS
+      [       violinone] phrase #10      143.75s- 176.87s: -20.8 dBFS
+      [       violinone] phrase #11      196.25s- 222.44s: -23.0 dBFS
+      [       violintwo] phrase #1         0.00s-  29.37s: -24.7 dBFS
+      [       violintwo] phrase #2        52.50s-  84.37s: -20.5 dBFS
+      [       violintwo] phrase #3       118.75s- 141.87s: -30.5 dBFS
+      [       violintwo] phrase #4       142.50s- 143.12s: -22.1 dBFS
+      [       violintwo] phrase #5       143.75s- 176.87s: -20.8 dBFS
+      [       violintwo] phrase #6       196.25s- 222.44s: -23.0 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2071 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2071 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 2071 performance.frequency_hz value(s) match equal temperament (max deviation 0.005 cents, limit +/-1.0).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2071, modal=2071, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2071 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2071 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (48591 partials checked across 2071 events).
+  [OK    ] modes.frequency_range: All 48591 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (2071 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 48591 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 2071 modal events (max observed: 3.124 cents).
+  [OK    ] render.ran: Score rendered successfully to Classical_Vivaldi_Spring_Movement3.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 6a332e48c32b..., 1 score dependency file(s), tree 7d4df50f9bdd..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.0533597, gain=17.8037, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 6a332e48c32b085f...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\classical\vivaldi_four_seasons\winter\vivaldi_four_seasons_winter_m1.score.json
+==============================================================================
+  rendered: 110.90s @ 48000 Hz, peak -0.45 dBFS, RMS -20.31 dBFS
+  loudness (info only, no registered tolerance): integrated -20.79 LUFS (ITU-R BS.1770-4)
+    per-phrase RMS (67 segment(s)):
+      [           cello] phrase #1         0.00s-  19.29s: -23.9 dBFS
+      [           cello] phrase #2        21.43s-  23.57s: -18.6 dBFS
+      [           cello] phrase #3        25.71s-  27.86s: -18.5 dBFS
+      [           cello] phrase #4        32.57s-  37.29s: -16.1 dBFS
+      [           cello] phrase #5        37.71s-  39.00s: -17.5 dBFS
+      [           cello] phrase #6        39.43s-  40.71s: -18.4 dBFS
+      [           cello] phrase #7        41.14s-  42.43s: -17.0 dBFS
+      [           cello] phrase #8        42.86s-  57.00s: -21.8 dBFS
+      [           cello] phrase #9        57.43s-  58.71s: -22.1 dBFS
+      [           cello] phrase #10       59.14s-  60.43s: -24.2 dBFS
+      [           cello] phrase #11       60.86s-  62.14s: -12.5 dBFS
+      [           cello] phrase #12       62.57s-  74.14s: -16.8 dBFS
+      [           cello] phrase #13       74.57s-  75.86s: -24.1 dBFS
+      [           cello] phrase #14       76.29s-  77.57s: -24.0 dBFS
+      [           cello] phrase #15       78.00s-  79.29s: -25.4 dBFS
+      [           cello] phrase #16       94.29s-  94.71s: -21.1 dBFS
+      [           cello] phrase #17       95.14s-  96.43s: -17.5 dBFS
+      [           cello] phrase #18       96.86s-  98.14s: -18.4 dBFS
+      [           cello] phrase #19       98.57s-  99.86s: -17.0 dBFS
+      [           cello] phrase #20      100.29s- 107.94s: -16.6 dBFS
+      [            solo] phrase #1         5.14s-  22.29s: -23.3 dBFS
+      [            solo] phrase #2        23.14s-  26.57s: -22.6 dBFS
+      [            solo] phrase #3        27.43s-  30.43s: -28.5 dBFS
+      [            solo] phrase #4        30.86s-  56.14s: -19.7 dBFS
+      [            solo] phrase #5        56.62s-  64.71s: -15.9 dBFS
+      [            solo] phrase #6        66.86s- 107.94s: -20.2 dBFS
+      [           viola] phrase #1         1.71s-  19.29s: -23.7 dBFS
+      [           viola] phrase #2        21.43s-  23.57s: -18.6 dBFS
+      [           viola] phrase #3        25.71s-  27.86s: -18.5 dBFS
+      [           viola] phrase #4        33.43s-  37.29s: -15.8 dBFS
+      [           viola] phrase #5        37.71s-  39.00s: -17.5 dBFS
+      [           viola] phrase #6        39.43s-  40.71s: -18.4 dBFS
+      [           viola] phrase #7        41.14s-  42.43s: -17.0 dBFS
+      [           viola] phrase #8        42.86s-  44.14s: -17.2 dBFS
+      [           viola] phrase #9        55.71s-  57.00s: -17.3 dBFS
+      [           viola] phrase #10       57.43s-  58.71s: -22.1 dBFS
+      [           viola] phrase #11       59.14s-  60.43s: -24.2 dBFS
+      [           viola] phrase #12       60.86s-  62.14s: -12.5 dBFS
+      [           viola] phrase #13       62.57s-  64.71s: -12.7 dBFS
+      [           viola] phrase #14       65.14s-  74.14s: -18.7 dBFS
+      [           viola] phrase #15       78.86s-  94.71s: -28.4 dBFS
+      [           viola] phrase #16       95.14s-  96.43s: -17.5 dBFS
+      [           viola] phrase #17       96.86s-  98.14s: -18.4 dBFS
+      [           viola] phrase #18       98.57s-  99.86s: -17.0 dBFS
+      [           viola] phrase #19      100.29s- 107.94s: -16.6 dBFS
+      [       violinone] phrase #1         5.14s-  19.29s: -23.3 dBFS
+      [       violinone] phrase #2        21.43s-  23.57s: -18.6 dBFS
+      [       violinone] phrase #3        25.71s-  27.86s: -18.5 dBFS
+      [       violinone] phrase #4        30.86s-  44.14s: -17.9 dBFS
+      [       violinone] phrase #5        55.71s-  57.00s: -17.3 dBFS
+      [       violinone] phrase #6        57.43s-  58.71s: -22.1 dBFS
+      [       violinone] phrase #7        59.14s-  60.43s: -24.2 dBFS
+      [       violinone] phrase #8        60.86s-  62.14s: -12.5 dBFS
+      [       violinone] phrase #9        62.57s-  64.71s: -12.7 dBFS
+      [       violinone] phrase #10       66.86s-  74.14s: -18.1 dBFS
+      [       violinone] phrase #11       78.86s- 107.94s: -20.4 dBFS
+      [       violintwo] phrase #1         3.43s-  19.29s: -23.5 dBFS
+      [       violintwo] phrase #2        21.43s-  23.57s: -18.6 dBFS
+      [       violintwo] phrase #3        25.71s-  27.86s: -18.5 dBFS
+      [       violintwo] phrase #4        30.00s-  44.14s: -18.2 dBFS
+      [       violintwo] phrase #5        55.71s-  57.00s: -17.3 dBFS
+      [       violintwo] phrase #6        57.43s-  58.71s: -22.1 dBFS
+      [       violintwo] phrase #7        59.14s-  60.43s: -24.2 dBFS
+      [       violintwo] phrase #8        60.86s-  62.14s: -12.5 dBFS
+      [       violintwo] phrase #9        62.57s-  64.71s: -12.7 dBFS
+      [       violintwo] phrase #10       66.00s-  74.14s: -18.4 dBFS
+      [       violintwo] phrase #11       78.86s- 107.94s: -20.4 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 3255 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 3255 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 3255 performance.frequency_hz value(s) match equal temperament (max deviation 0.010 cents, limit +/-1.0).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=3255, modal=3255, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 3255 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (3255 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (94384 partials checked across 3255 events).
+  [OK    ] modes.frequency_range: All 94384 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (3255 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 94384 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 3255 modal events (max observed: 2.997 cents).
+  [OK    ] render.ran: Score rendered successfully to Classical_Vivaldi_Winter_Movement1.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV dccf23c1ec50..., 1 score dependency file(s), tree 37088283c174..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.0969132, gain=9.80259, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 dccf23c1ec50fafe...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\originals\ai_radiance\ai_radiance_m1.score.json
+==============================================================================
+  rendered: 35.93s @ 48000 Hz, peak -0.45 dBFS, RMS -22.38 dBFS
+  loudness (info only, no registered tolerance): integrated -18.88 LUFS (ITU-R BS.1770-4)
+    per-phrase RMS (25 segment(s)):
+      [  bronze_horizon] phrase #1         0.00s-   5.80s: -18.1 dBFS
+      [  bronze_horizon] phrase #2         6.67s-  12.47s: -18.2 dBFS
+      [  bronze_horizon] phrase #3        13.33s-  19.13s: -27.9 dBFS
+      [  bronze_horizon] phrase #4        20.00s-  25.80s: -32.0 dBFS
+      [   ethereal_echo] phrase #1         0.56s-   1.14s: -19.8 dBFS
+      [   ethereal_echo] phrase #2         1.39s-   1.98s: -17.2 dBFS
+      [   ethereal_echo] phrase #3         2.23s-   2.81s: -19.1 dBFS
+      [   ethereal_echo] phrase #4         3.06s-   3.64s: -16.8 dBFS
+      [   ethereal_echo] phrase #5         3.89s-   4.47s: -18.4 dBFS
+      [   ethereal_echo] phrase #6         4.72s-   5.31s: -17.0 dBFS
+      [   ethereal_echo] phrase #7         5.56s-   6.14s: -19.1 dBFS
+      [   ethereal_echo] phrase #8         6.39s-   6.97s: -19.0 dBFS
+      [   ethereal_echo] phrase #9         7.22s-   7.81s: -19.6 dBFS
+      [   ethereal_echo] phrase #10        8.06s-   8.64s: -17.0 dBFS
+      [   ethereal_echo] phrase #11        8.89s-   9.47s: -19.1 dBFS
+      [   ethereal_echo] phrase #12        9.72s-  10.31s: -17.6 dBFS
+      [   ethereal_echo] phrase #13       10.56s-  11.14s: -18.9 dBFS
+      [   ethereal_echo] phrase #14       11.39s-  11.97s: -17.0 dBFS
+      [   ethereal_echo] phrase #15       12.22s-  12.81s: -19.1 dBFS
+      [   ethereal_echo] phrase #16       13.06s-  13.64s: -21.7 dBFS
+      [glass_constellation] phrase #1         3.33s-   6.73s: -17.7 dBFS
+      [glass_constellation] phrase #2        10.00s-  13.40s: -18.2 dBFS
+      [glass_constellation] phrase #3        16.67s-  20.07s: -27.8 dBFS
+      [glass_constellation] phrase #4        23.33s-  26.73s: -29.8 dBFS
+      [ yangqin_lattice] phrase #1         0.00s-  13.23s: -18.3 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 64 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 64 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: All 64 performance.frequency_hz value(s) match equal temperament (max deviation 0.012 cents, limit +/-1.0).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=64, modal=64, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 64 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (64 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (1193 partials checked across 64 events).
+  [OK    ] modes.frequency_range: All 1193 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (64 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 1193 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 64 modal events (max observed: 0.012 cents).
+  [OK    ] render.ran: Score rendered successfully to Original_AI_Radiance_Movement1.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 74122637a0c7..., 1 score dependency file(s), tree 23935cc07bad..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.231872, gain=4.09709, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 74122637a0c71278...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_action_001.score.json
+==============================================================================
+  rendered: 3.25s @ 48000 Hz, peak -0.45 dBFS, RMS -22.25 dBFS
+  loudness (info only, no registered tolerance): integrated -19.91 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   1.00s: -17.2 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (24 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 24 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (2 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 24 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 2 modal events (max observed: 0.071 cents).
+  [OK    ] render.ran: Score rendered successfully to Foley_Soft_OneShot_D5.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV df03e3beb506..., 1 score dependency file(s), tree 701fa8606a23..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.0198554, gain=47.8459, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 df03e3beb5062ac4...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\akashic\akashic_opening_bell_001.score.json
+==============================================================================
+  rendered: 29.61s @ 48000 Hz, peak -0.45 dBFS, RMS -21.00 dBFS
+  loudness (info only, no registered tolerance): integrated -18.76 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-  20.00s: -19.3 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 8 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 8 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=8, modal=8, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 8 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (8 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (37 partials checked across 8 events).
+  [OK    ] modes.frequency_range: All 37 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (8 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 37 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 8 modal events (max observed: 0.005 cents).
+  [OK    ] render.ran: Score rendered successfully to akashic_opening_bell_001.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV c672c9415f57..., 1 score dependency file(s), tree a585d8cad6ba..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.0691373, gain=13.7408, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 c672c9415f57763e...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\clockwork\clockwork_action_001.score.json
+==============================================================================
+  rendered: 1.37s @ 48000 Hz, peak -0.45 dBFS, RMS -33.80 dBFS
+  loudness (info only, no registered tolerance): integrated -32.19 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.40s: -28.4 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (45 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 45 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (2 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 45 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 2 modal events (max observed: 0.005 cents).
+  [OK    ] render.ran: Score rendered successfully to Mechanical_Punch_OneShot_A3.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 22ae12c18ad2..., 1 score dependency file(s), tree b0538cee2a8d..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.711841, gain=1.33457, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 22ae12c18ad26eed...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\clockwork\clockwork_notify_var01.score.json
+==============================================================================
+  rendered: 3.13s @ 48000 Hz, peak -0.45 dBFS, RMS -23.26 dBFS
+  loudness (info only, no registered tolerance): integrated -18.92 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   1.00s: -18.3 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=1, modal=1, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (3 partials checked across 1 events).
+  [OK    ] modes.frequency_range: All 3 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (1 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 3 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 1 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Glitch_OneShot_E5.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV f5166e23ad7b..., 1 score dependency file(s), tree ac895944913b..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.544853, gain=1.74359, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 f5166e23ad7baaa7...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\forest\forest_ambient_001.score.json
+==============================================================================
+  rendered: 10.62s @ 48000 Hz, peak -0.45 dBFS, RMS -25.22 dBFS
+  loudness (info only, no registered tolerance): integrated -20.70 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   4.80s: -21.8 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 6 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 6 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=6, modal=6, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 6 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (6 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (15 partials checked across 6 events).
+  [OK    ] modes.frequency_range: All 15 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (6 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 15 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 6 modal events (max observed: 0.001 cents).
+  [OK    ] render.ran: Score rendered successfully to Ambience_Soft_OneShot_G5.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV b0163d24d3fa..., 1 score dependency file(s), tree cb6d86e4644a..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.00145555, gain=652.675, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 b0163d24d3fa0578...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\forest\forest_transition_001.score.json
+==============================================================================
+  rendered: 5.23s @ 48000 Hz, peak -0.45 dBFS, RMS -22.62 dBFS
+  loudness (info only, no registered tolerance): integrated -17.93 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   2.20s: -18.9 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 4 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 4 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=4, modal=4, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 4 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (4 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (12 partials checked across 4 events).
+  [OK    ] modes.frequency_range: All 12 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (4 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 12 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 4 modal events (max observed: 0.001 cents).
+  [OK    ] render.ran: Score rendered successfully to Whoosh_Airy_OneShot_D5.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV e3036f8feeaf..., 1 score dependency file(s), tree 4ade2698e8a5..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.00403333, gain=235.537, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 e3036f8feeaf083f...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\ocean\ocean_loop_001.score.json
+==============================================================================
+  rendered: 15.82s @ 48000 Hz, peak -0.45 dBFS, RMS -23.30 dBFS
+  loudness (info only, no registered tolerance): integrated -21.46 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   8.00s: -20.3 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 4 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 4 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=4, modal=4, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 4 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (4 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (86 partials checked across 4 events).
+  [OK    ] modes.frequency_range: All 86 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (4 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 86 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 4 modal events (max observed: 0.020 cents).
+  [OK    ] render.ran: Score rendered successfully to Ambience_Dark_Loop_C2.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV d08fa7ae8683..., 1 score dependency file(s), tree c4eeb7bcbd4a..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.0602716, gain=15.762, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 d08fa7ae8683a796...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\ocean\ocean_ui_001.score.json
+==============================================================================
+  rendered: 1.09s @ 48000 Hz, peak -0.45 dBFS, RMS -18.24 dBFS
+  loudness (info only, no registered tolerance): integrated -19.29 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.15s: -10.0 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=1, modal=1, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (3 partials checked across 1 events).
+  [OK    ] modes.frequency_range: All 3 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (1 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 3 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 1 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Bright_OneShot_A5.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV b4cde0cd2a7e..., 1 score dependency file(s), tree adb48442e240..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.00305369, gain=311.099, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 b4cde0cd2a7e218a...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\rabbit\rabbit_notify_001.score.json
+==============================================================================
+  rendered: 2.05s @ 48000 Hz, peak -0.45 dBFS, RMS -17.48 dBFS
+  loudness (info only, no registered tolerance): integrated -16.03 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.80s: -13.4 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=1, modal=1, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (2 partials checked across 1 events).
+  [OK    ] modes.frequency_range: All 2 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (1 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 2 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 1 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Bright_OneShot_G6.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV e37d8e6ee278..., 1 score dependency file(s), tree 10193519f8f3..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.0372083, gain=25.5319, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 e37d8e6ee2783c49...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\restraint\restraint_action_001.score.json
+==============================================================================
+  rendered: 2.70s @ 48000 Hz, peak -0.45 dBFS, RMS -32.55 dBFS
+  loudness (info only, no registered tolerance): integrated -31.87 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.60s: -26.1 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (47 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 47 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (2 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 47 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 2 modal events (max observed: 0.010 cents).
+  [OK    ] render.ran: Score rendered successfully to Impact_Dark_OneShot_C2.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 168230920528..., 1 score dependency file(s), tree ccfe09211328..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=1.1587, gain=0.819887, samples >= 0 dBFS=20.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 168230920528bdb0...).
+  -> PASS
+
+==============================================================================
+SCORE: scores\library\restraint\restraint_notify_var01.score.json
+==============================================================================
+  rendered: 1.86s @ 48000 Hz, peak -0.45 dBFS, RMS -20.65 dBFS
+  loudness (info only, no registered tolerance): integrated -18.80 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   0.30s: -12.8 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (9 partials checked across 2 events).
+  [OK    ] modes.frequency_range: All 9 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (2 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 9 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 2 modal events (max observed: 0.002 cents).
+  [OK    ] render.ran: Score rendered successfully to UI_Glitch_OneShot_E4.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 6d609feeca78..., 1 score dependency file(s), tree ae0b9d92f740..., renderer fa15495681f7...; version=0.3.0, configured source=f67050b04c10 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.0646793, gain=14.6879, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 6d609feeca78d61a...).
+  -> PASS
+
+==============================================================================
+SUMMARY
+==============================================================================
+  [PASS            ] scores\examples\fur_elise_opening.score.json
+  [PASS            ] scores\examples\moonlight_sonata_movement1_yangqin.score.json
+  [PASS            ] scores\examples\restraint_metal_click.score.json
+  [PASS            ] scores\classical\vivaldi_four_seasons\autumn\vivaldi_four_seasons_autumn_m2.score.json
+  [PASS            ] scores\classical\vivaldi_four_seasons\spring\vivaldi_four_seasons_spring_m3.score.json
+  [PASS            ] scores\classical\vivaldi_four_seasons\winter\vivaldi_four_seasons_winter_m1.score.json
+  [PASS            ] scores\originals\ai_radiance\ai_radiance_m1.score.json
+  [PASS            ] scores\library\akashic\akashic_action_001.score.json
+  [PASS            ] scores\library\akashic\akashic_opening_bell_001.score.json
+  [PASS            ] scores\library\clockwork\clockwork_action_001.score.json
+  [PASS            ] scores\library\clockwork\clockwork_notify_var01.score.json
+  [PASS            ] scores\library\forest\forest_ambient_001.score.json
+  [PASS            ] scores\library\forest\forest_transition_001.score.json
+  [PASS            ] scores\library\ocean\ocean_loop_001.score.json
+  [PASS            ] scores\library\ocean\ocean_ui_001.score.json
+  [PASS            ] scores\library\rabbit\rabbit_notify_001.score.json
+  [PASS            ] scores\library\restraint\restraint_action_001.score.json
+  [PASS            ] scores\library\restraint\restraint_notify_var01.score.json
+
+18/18 score(s) passed all checks (0 check(s) covered by registered exemption(s)), 0 failed.

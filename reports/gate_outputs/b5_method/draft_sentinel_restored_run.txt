@@ -1,0 +1,90 @@
+TsukiSynth regression tests
+[PASS] Envelope remains active before release time
+[PASS] Envelope ends at the configured release time
+[PASS] AudioFIFO reports the readable sample count
+[PASS] AudioFIFO overwrites stale samples and keeps newest history
+[PASS] Test material database loads
+[PASS] MaterialDB rejects non-physical material constants
+[PASS] Failed material reload preserves the last known-good database
+[PASS] MaterialDB refuses the retired frequency-independent alpha schema
+[PASS] MaterialDB refuses a damping block carrying both alpha and eta
+[PASS] MaterialDB accepts the renamed beam_plate_* schema (positive control)
+[PASS] MaterialDB refuses the retired bare beta_air/gamma_radiation schema (beta_air)
+[PASS] MaterialDB refuses the retired bare beta_air/gamma_radiation schema (gamma_radiation)
+[PASS] Rejected legacy reloads keep the last known-good beam_plate_* database
+[PASS] Orthotropic: full valid block with explicit-null ratio_GRT_EL loads
+[PASS] Orthotropic: present == true after a valid block loads
+[PASS] Orthotropic: explicit null ratio_GRT_EL yields hasGRT == false
+[PASS] Orthotropic: source_species read back verbatim
+[PASS] Orthotropic: moisture_content_pct read back (±1e-6)
+[PASS] Orthotropic: mp_percent read back (±1e-6)
+[PASS] Orthotropic: ratio_ET_EL read back (±1e-6)
+[PASS] Orthotropic: ratio_ER_EL read back (±1e-6)
+[PASS] Orthotropic: ratio_GLR_EL read back (±1e-6)
+[PASS] Orthotropic: ratio_GLT_EL read back (±1e-6)
+[PASS] Orthotropic: all 6 poisson ratios read back (±1e-6)
+[PASS] Test material database loads
+[PASS] Orthotropic: absent key yields present == false (legal, not an error)
+[PASS] Orthotropic: non-wood material (steel) with a valid block loads (schema allows it)
+[PASS] Orthotropic: non-null ratio_GRT_EL yields hasGRT == true with correct value
+[PASS] Orthotropic: ratio_ET_EL = 1.5 (out of (0,1)) is rejected -- whole file fails closed
+[PASS] Orthotropic: ratio_ET_EL = 0 (excluded boundary) is rejected -- whole file fails closed
+[PASS] Orthotropic: poisson_LR = -0.1 (negative) is rejected -- whole file fails closed
+[PASS] Orthotropic: ratio_GRT_EL = "n/a" (string, not a legal null) is rejected
+[PASS] Orthotropic: source_species = "" (empty) is rejected -- whole file fails closed
+[PASS] Test material database loads
+[PASS] Orthotropic: (setup for transactional check) bad block is rejected
+[PASS] Orthotropic: a failed reload preserves the last known-good database intact
+[PASS] Chromatic fundamental is tuned to the requested MIDI note
+[PASS] Chromatic mode ratios are preserved and ultrasonic modes removed
+[PASS] Temporary score file is writable
+[PASS] ScoreParser accepts a valid score
+[PASS] ScoreParser reads export filename and format
+[PASS] ScoreParser reads wall reflection settings
+[PASS] ScoreParser reads an exact deterministic random seed
+[PASS] ScoreParser accepts the shared 192 kHz render contract
+[PASS] ScoreParser reads an optional stable event_id
+[PASS] Note names are exact and out-of-range notes are rejected
+[PASS] unknown engine
+[PASS] trailing note junk
+[PASS] fractional MIDI
+[PASS] out-of-range velocity
+[PASS] unknown event field
+[PASS] unimplemented membrane
+[PASS] rejected no-op parameter
+[PASS] wrong scalar type
+[PASS] irrelevant engine parameter
+[PASS] irrelevant frequency mode
+[PASS] unknown beam boundary
+[PASS] duplicate event_id
+[PASS] overlong event_id
+[PASS] Test material database loads
+[PASS] Custom score passes renderer preflight
+[PASS] Custom dump reports authored 1:1.5:2.25 ratios
+[PASS] Mode dump v2 carries explicit observable and event identity metadata
+[PASS] Test material database loads
+[PASS] Renderer refuses a modal event whose geometry is entirely below 20 Hz
+[PASS] Attack-only refusal reports the renderable-frequency reason
+[PASS] Test material database loads
+[PASS] Semantic-order regression fixtures render successfully
+[PASS] Permuting simultaneous events preserves the exact WAV bytes
+[PASS] Inserting a zero-velocity event preserves the exact WAV bytes
+[PASS] Test material database loads
+[PASS] Physical renderer writes valid audio at every shared sample rate through 192 kHz
+[PASS] Test material database loads
+[PASS] Renderer is causal: an event produces no samples before its authored time
+[PASS] Adding a future event leaves every earlier rendered sample bit-exact
+[PASS] FX-off renderer obeys linear superposition within PCM quantization error
+[PASS] Extreme valid-duration input is rejected by the 1 GiB buffer budget
+[PASS] Full-wet short reverb renders successfully
+[PASS] Full-wet reverb includes its delayed response instead of all-zero output
+[PASS] FLAC writer creates an output file
+[PASS] FLAC output can be read back with the requested format
+[PASS] ScoreRenderer renders an FM event with no material database entry
+[PASS] FM release and wall reflection are included in output duration
+[PASS] Temporary layer test directory is writable
+[PASS] Layer source score is writable
+[PASS] Layered renderer accepts a valid source score
+[PASS] Layer source trim controls the mixed region length
+[PASS] Layer source master volume is applied before mixing
+PASS (0 failures)

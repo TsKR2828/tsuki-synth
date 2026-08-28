@@ -41,14 +41,46 @@
       "density": 450,
       "youngs_modulus": 12e9,
       "poisson_ratio": 0.37,
-      "damping": { "eta": 7.0e-3, "beam_plate_beta_air": 3e-7, "beam_plate_gamma_radiation": 5e-5 }
+      "damping": { "eta": 7.0e-3, "beam_plate_beta_air": 3e-7, "beam_plate_gamma_radiation": 5e-5 },
+      "orthotropic": {
+        "source_species": "Spruce, Sitka",
+        "moisture_content_pct": 12,
+        "mp_percent": 27,
+        "ratio_ET_EL": 0.043,
+        "ratio_ER_EL": 0.078,
+        "ratio_GLR_EL": 0.064,
+        "ratio_GLT_EL": 0.061,
+        "ratio_GRT_EL": 0.003,
+        "poisson_LR": 0.372,
+        "poisson_LT": 0.467,
+        "poisson_RT": 0.435,
+        "poisson_TR": 0.245,
+        "poisson_RL": 0.040,
+        "poisson_TL": 0.025
+      }
     },
     "wood_maple": {
       "display_name": "楓木 Maple",
       "density": 650,
       "youngs_modulus": 12.5e9,
       "poisson_ratio": 0.38,
-      "damping": { "eta": 1.2e-2, "beam_plate_beta_air": 2.5e-7, "beam_plate_gamma_radiation": 4.5e-5 }
+      "damping": { "eta": 1.2e-2, "beam_plate_beta_air": 2.5e-7, "beam_plate_gamma_radiation": 4.5e-5 },
+      "orthotropic": {
+        "source_species": "Maple, sugar",
+        "moisture_content_pct": 12,
+        "mp_percent": 25,
+        "ratio_ET_EL": 0.065,
+        "ratio_ER_EL": 0.132,
+        "ratio_GLR_EL": 0.111,
+        "ratio_GLT_EL": 0.063,
+        "ratio_GRT_EL": null,
+        "poisson_LR": 0.424,
+        "poisson_LT": 0.476,
+        "poisson_RT": 0.774,
+        "poisson_TR": 0.349,
+        "poisson_RL": 0.065,
+        "poisson_TL": 0.037
+      }
     },
     "rubber": {
       "display_name": "橡膠 Rubber",
@@ -90,14 +122,46 @@
       "density": 650,
       "youngs_modulus": 15e9,
       "poisson_ratio": 0.35,
-      "damping": { "eta": 1.4e-2, "beam_plate_beta_air": 2.8e-7, "beam_plate_gamma_radiation": 4.2e-5 }
+      "damping": { "eta": 1.4e-2, "beam_plate_beta_air": 2.8e-7, "beam_plate_gamma_radiation": 4.2e-5 },
+      "orthotropic": {
+        "source_species": "Birch, yellow",
+        "moisture_content_pct": 12,
+        "mp_percent": 27,
+        "ratio_ET_EL": 0.050,
+        "ratio_ER_EL": 0.078,
+        "ratio_GLR_EL": 0.074,
+        "ratio_GLT_EL": 0.068,
+        "ratio_GRT_EL": 0.017,
+        "poisson_LR": 0.426,
+        "poisson_LT": 0.451,
+        "poisson_RT": 0.697,
+        "poisson_TR": 0.426,
+        "poisson_RL": 0.043,
+        "poisson_TL": 0.024
+      }
     },
     "wood_oak": {
       "display_name": "橡木 Oak",
       "density": 720,
       "youngs_modulus": 12e9,
       "poisson_ratio": 0.35,
-      "damping": { "eta": 1.6e-2, "beam_plate_beta_air": 3e-7, "beam_plate_gamma_radiation": 4.8e-5 }
+      "damping": { "eta": 1.6e-2, "beam_plate_beta_air": 3e-7, "beam_plate_gamma_radiation": 4.8e-5 },
+      "orthotropic": {
+        "source_species": "Oak, red",
+        "moisture_content_pct": 12,
+        "mp_percent": 25,
+        "ratio_ET_EL": 0.082,
+        "ratio_ER_EL": 0.154,
+        "ratio_GLR_EL": 0.089,
+        "ratio_GLT_EL": 0.081,
+        "ratio_GRT_EL": null,
+        "poisson_LR": 0.350,
+        "poisson_LT": 0.448,
+        "poisson_RT": 0.560,
+        "poisson_TR": 0.292,
+        "poisson_RL": 0.064,
+        "poisson_TL": 0.033
+      }
     }
   }
 }
