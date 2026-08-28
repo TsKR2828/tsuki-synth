@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<title>TsukiSynth — 雙開門 UI 提案 Mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" />
+<style>
+  :root {
+    /* ── 色票直接照抄 src/TsukiLookAndFeel.h 的 Clr 命名空間，不新增顏色 ── */
+    --bg:            #07070d;
+    --plugin-top:    #1a1a2e;
+    --plugin-bot:    #16162a;
+    --preset-bg:     #14142a;
+    --engine-top:    #16162a;
+    --engine-bot:    #131326;
+    --effects-bg:    #11111e;
+    --panel-bg:      #1a1a30;
+    --kb-footer:     #0c0c18;
+
+    --border:        #2a2a4a;
+    --border-light:  #232340;
+    --border-focus:  #3a3a5a;
+    --effect-border: #232342;
+
+    --text:          #e0e0e0;
+    --text-dim:      #667788;
+    --text-mid:      #8899aa;
+    --label:         #8899aa;
+    --value-text:    #d4b896;
+    --fx-title:      #6a7a8a;
+    --div-label:     #556677;
+
+    --combo-bg:      #1e1e36;
+    --combo-border:  #333355;
+    --combo-text:    #cccccc;
+
+    --gold:          #c49a6c;
+    --gold-bright:   #d4b896;
+    --gold-light:    #e0d2b8;
+
+    --cimbalom:      #c49a6c;
+    --chromatic:     #8bb8a8;
+
+    --white-key:     #d8cdb6;
+    --black-key:     #2a2535;
+  }
+
+  * , *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "IBM Plex Sans", "Microsoft JhengHei", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 22px 16px 60px;
+  }
+
+  /* ── 提案示意橫幅 ── */
+  .banner {
+    width: 100%;
+    max-width: 1400px;
+    background: linear-gradient(90deg, rgba(196,154,108,0.16), rgba(196,154,108,0.03));
+    border: 0.5px solid var(--gold);
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    color: var(--gold-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .banner b { color: var(--gold-bright); font-weight: 700; }
+
+  /* ── 尺寸切換測試列 ── */
+  .size-controls {
+    width: 100%;
+    max-width: 1400px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .size-controls button {
+    background: var(--combo-bg);
+    border: 0.5px solid var(--combo-border);
+    color: var(--combo-text);
+    font-family: inherit;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .size-controls button:hover { border-color: var(--gold); color: var(--gold-light); }
+  .size-controls button.active { border-color: var(--gold); color: var(--gold-bright); background: rgba(196,154,108,0.10); }
+  .size-readout { font-family: "IBM Plex Mono", monospace; color: var(--value-text); }
+
+  /* ── 舞台：模擬螢幕邊界，讓「Mac 900px 高」有東西可以對照 ── */
+  .stage {
+    width: 100%;
+    max-width: 1500px;
+    display: flex;
+    justify-content: center;
+  }
+  .screen-frame {
+    position: relative;
+    border: 1px dashed rgba(196,154,108,0.35);
+    border-radius: 4px;
+    padding: 0;
+    overflow: auto;
+    background:
+      radial-gradient(ellipse at 30% 0%, #14131f 0%, #0a0a10 60%);
+    transition: width 0.28s ease, height 0.28s ease;
+  }
+  .screen-frame::before {
+    content: attr(data-frame-label);
+    position: absolute;
+    top: -20px; left: 0;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--div-label);
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  /* ═══════════════════════ 外掛視窗本體 ═══════════════════════ */
+  .plugin-window {
+    width: 960px;
+    height: 640px;
+    min-width: 0;
+    background: linear-gradient(180deg, var(--plugin-top) 0%, var(--plugin-bot) 100%);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.4),
+      0 24px 60px -16px rgba(0,0,0,0.7),
+      0 8px 28px -10px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.28s ease, height 0.28s ease;
+    resize: both;
+  }
+
+  /* ── 共用標題列 ── */
+  .title-bar {
+    flex: 0 0 auto;
+    height: 44px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 0.5px solid var(--border-light);
+    background: linear-gradient(180deg, rgba(255,255,255,0.015) 0%, transparent 100%);
+  }
+  .title-left { display: flex; align-items: baseline; gap: 8px; }
+  .wordmark {
+    margin: 0;
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 0.03em;
+    background: linear-gradient(180deg, #f0e8d8 0%, #c49a6c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .title-sub { font-size: 9.5px; letter-spacing: 0.1em; color: var(--text-dim); }
+  .title-right { display: flex; align-items: center; gap: 8px; }
+  .door-toggle {
+    display: none;
+    align-items: center; gap: 5px;
+    background: var(--combo-bg);
+    border: 0.5px solid var(--gold);
+    color: var(--gold-light);
+    font-family: inherit;
+    font-size: 10.5px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .door-toggle:hover { background: rgba(196,154,108,0.12); }
+  .lang-chip {
+    font-size: 10px;
+    color: var(--text-dim);
+    border: 0.5px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+  }
+
+  /* ── 共用 Preset 列 ── */
+  .preset-row {
+    flex: 0 0 auto;
+    height: 38px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--preset-bg);
+    border-bottom: 0.5px solid var(--border-light);
+    font-size: 11px;
+  }
+  .preset-step {
+    width: 18px; height: 18px;
+    border: 0.5px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-mid);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+  }
+  .preset-pill {
+    flex: 1;
+    height: 24px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 10px;
+    background: var(--combo-bg);
+    border: 0.5px solid var(--combo-border);
+    border-radius: 5px;
+    color: var(--gold-light);
+    min-width: 0;
+  }
+  .preset-key { font-size: 8.5px; color: var(--div-label); letter-spacing: 0.14em; }
+  .preset-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .preset-btn {
+    font-size: 10px;
+    color: var(--text-mid);
+    border: 0.5px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 9px;
+    white-space: nowrap;
+  }
+
+  /* ═══════════════════════ 雙開門 ═══════════════════════ */
+  .doors {
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+  }
+  .door-divider {
+    flex: 0 0 auto;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--border) 15%, var(--border) 85%, transparent);
+    position: relative;
+  }
+  .door-divider::before {
+    content: "";
+    position: absolute;
+    left: -3px; top: 50%; transform: translateY(-50%);
+    width: 7px; height: 34px;
+    border-radius: 4px;
+    background: var(--border);
+    box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.06);
+  }
+
+  .door {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  .door-left  { flex: 0 0 44%; background: linear-gradient(180deg, var(--engine-top), var(--engine-bot)); }
+  .door-right { flex: 1 1 56%; background: var(--effects-bg); }
+
+  .door-tabs {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 2px;
+    padding: 8px 10px 0;
+    border-bottom: 0.5px solid var(--border-light);
+  }
+  .door-tab {
+    flex: 1;
+    height: 28px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    font-size: 10.5px;
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+    background: transparent;
+    border: 0;
+    border-radius: 5px 5px 0 0;
+    cursor: pointer;
+  }
+  .door-tab.active {
+    color: var(--gold-bright);
+    background: rgba(196,154,108,0.14);
+    box-shadow: 0 -1px 0 var(--gold) inset;
+  }
+
+  .door-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 10px 14px 14px;
+  }
+
+  /* ── 左門：引擎分頁 + macro + 參數 ── */
+  .engine-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+  .engine-tab {
+    flex: 1;
+    height: 26px;
+    font-size: 10px;
+    color: var(--text-dim);
+    background: transparent;
+    border: 0.5px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .engine-tab.active { color: var(--cimbalom); border-color: var(--cimbalom); background: rgba(196,154,108,0.10); }
+
+  .section-label {
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--div-label);
+    margin: 10px 0 6px;
+  }
+
+  .knob-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .knob-mini { display: flex; flex-direction: column; align-items: center; width: 46px; }
+  .knob-mini .dial {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #2a2a44 0%, #1d1d33 55%, #11111e 100%);
+    border: 0.5px solid rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .knob-mini .dial::after {
+    content: "";
+    position: absolute; left: 50%; top: 50%;
+    width: 2px; height: 12px;
+    background: var(--gold);
+    transform-origin: bottom center;
+    transform: translate(-50%,-100%) rotate(var(--rot, 20deg));
+    border-radius: 1px;
+  }
+  .knob-mini .lbl { font-size: 7px; letter-spacing: 0.1em; color: var(--label); margin-top: 4px; text-align: center; }
+  .knob-mini .val { font-size: 8px; color: var(--value-text); font-family: "IBM Plex Mono", monospace; }
+
+  .param-grid-mock { display: flex; flex-direction: column; gap: 8px; }
+  .param-row-mock { display: flex; gap: 10px; }
+  .combo-mini {
+    flex: 1;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .combo-mini .lbl { font-size: 8px; letter-spacing: 0.12em; color: var(--label); }
+  .combo-mini .box {
+    height: 22px;
+    background: var(--combo-bg);
+    border: 0.5px solid var(--combo-border);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 8px;
+    font-size: 10px;
+    color: var(--combo-text);
+  }
+
+  .fx-panel {
+    background: var(--panel-bg);
+    border: 0.5px solid var(--effect-border);
+    border-radius: 5px;
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+  .fx-panel .fx-title { font-size: 8.5px; font-weight: 700; letter-spacing: 0.16em; color: var(--fx-title); margin-bottom: 6px; }
+  .fx-panel .knob-row { margin-bottom: 0; justify-content: space-around; }
+  .fx-panel .knob-mini { width: 40px; }
+  .fx-panel .knob-mini .dial { width: 26px; height: 26px; }
+
+  [data-left-tab-panel] { display: none; }
+  [data-left-tab-panel].active { display: block; }
+
+  /* ── 右門：樂器視圖切換 ── */
+  .instrument-view { display: none; flex-direction: column; align-items: center; gap: 8px; height: 100%; }
+  .instrument-view.active { display: flex; }
+  .view-caption {
+    font-size: 9.5px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .view-caption code {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--gold-light);
+    background: rgba(196,154,108,0.10);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  .flag-new {
+    font-size: 9px;
+    color: #cc7744;
+    border: 0.5px solid #cc7744;
+    border-radius: 3px;
+    padding: 2px 6px;
+  }
+
+  /* ── 琴鍵視圖 ── */
+  .keys-wrap { width: 100%; flex: 1; display: flex; align-items: flex-end; padding: 0 6px 6px; }
+  .midi-kb { position: relative; height: 96px; width: 100%; border-radius: 3px; background: #0a0a14; padding: 2px;
+             box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+  .midi-whites { display: flex; height: 100%; gap: 1px; }
+  .midi-white {
+    flex: 1;
+    background: linear-gradient(180deg, #d8cdb6 0%, #c4b89e 80%, #a89c82 100%);
+    border-radius: 0 0 2px 2px;
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.15);
+  }
+  .midi-blacks { position: absolute; top: 2px; left: 2px; right: 2px; height: 62%; pointer-events: none; }
+  .midi-black {
+    position: absolute; top: 0; height: 100%; width: 2.6%;
+    background: linear-gradient(180deg, #2a2535 0%, #14111e 100%);
+    border-radius: 0 0 2px 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+
+  /* ── 揚琴視圖 ── */
+  .yangqin-svg { width: 100%; max-width: 380px; }
+  .yangqin-string { stroke: url(#stringGrad); stroke-width: 1.4; }
+  .yangqin-strike-dot { fill: var(--gold-bright); filter: drop-shadow(0 0 4px var(--gold)); cursor: grab; }
+  .yangqin-bridge { fill: #2a2418; }
+  .hand-sliders { display: flex; gap: 14px; margin-top: 4px; }
+  .hand-slider { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .hand-slider .track { width: 60px; height: 6px; border-radius: 3px; background: #1e1e36; border: 0.5px solid var(--border); position: relative; }
+  .hand-slider .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: repeating-linear-gradient(45deg, #556677, #556677 3px, #3a4150 3px, #3a4150 6px); }
+  .hand-slider .lbl { font-size: 8px; color: var(--text-dim); }
+
+  /* ── 空靈鼓視圖 ── */
+  .handpan-svg { width: 100%; max-width: 300px; }
+  .tongue { fill: rgba(139,184,168,0.16); stroke: var(--chromatic); stroke-width: 1; cursor: pointer; transition: fill 0.15s; }
+  .tongue:hover { fill: rgba(139,184,168,0.4); }
+  .tongue-active { fill: rgba(139,184,168,0.55); filter: drop-shadow(0 0 5px var(--chromatic)); }
+  .ding { fill: #0f1512; stroke: var(--chromatic); stroke-width: 1.2; }
+  .tongue-popover {
+    position: absolute;
+    background: var(--panel-bg);
+    border: 0.5px solid var(--border-focus);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 9px;
+    color: var(--text-mid);
+    display: none;
+    pointer-events: none;
+  }
+
+  /* ── Analyzer 條 ── */
+  .analyzer-strip {
+    flex: 0 0 56px;
+    border-top: 0.5px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+  }
+  .analyzer-tab { font-size: 8.5px; letter-spacing: 0.08em; color: var(--text-dim); padding: 3px 7px; border: 0.5px solid var(--border); border-radius: 3px; }
+  .analyzer-tab.active { color: var(--gold-bright); border-color: var(--gold); }
+  .analyzer-wave { flex: 1; height: 28px; opacity: 0.6; }
+
+  /* ═══════════════════════ 響應式：單門模式 ═══════════════════════ */
+  .plugin-window.single-door .door-toggle { display: flex; }
+  .plugin-window.single-door .door-divider { display: none; }
+  .plugin-window.single-door .door { display: none; flex: 1 1 100%; }
+  .plugin-window.single-door[data-active-door="left"] .door-left { display: flex; }
+  .plugin-window.single-door[data-active-door="right"] .door-right { display: flex; }
+
+  .footnote {
+    width: 100%;
+    max-width: 1400px;
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    border-top: 0.5px solid var(--border);
+    padding-top: 10px;
+  }
+  .footnote b { color: var(--gold-light); }
+</style>
+</head>
+<body>
+
+  <div class="banner">
+    <span>⚠</span>
+    <span><b>提案示意，非最終樣式</b> —— 這是雙開門重排版的可視 mockup，不是最終畫面；顏色/字體/間距沿用現行 TsukiSynth 視覺語言（<code style="font-family:'IBM Plex Mono',monospace;color:#e0d2b8">TsukiLookAndFeel.h</code> 的 Clr 色票），不改任何 JUCE 程式碼。</span>
+  </div>
+
+  <div class="size-controls">
+    <span>視窗尺寸測試：</span>
+    <button data-size="620,560" class="active">最小 620×560</button>
+    <button data-size="960,640">預設 960×640</button>
+    <button data-size="1400,900">最大 1400×900</button>
+    <button data-size="mac">模擬 Mac 1440×900 螢幕（含選單列估算）</button>
+    <span class="size-readout" id="sizeReadout">620 × 560</span>
+  </div>
+
+  <div class="stage">
+    <div class="screen-frame" id="screenFrame" data-frame-label="" style="width: 700px; height: 620px;">
+      <div class="plugin-window" id="pluginWindow" style="width:620px;height:560px;">
+
+        <!-- 共用標題列 -->
+        <header class="title-bar">
+          <div class="title-left">
+            <span style="color:#d4b896;">☾</span>
+            <h1 class="wordmark">TsukiSynth</h1>
+            <span class="title-sub">CIMBALOM ENGINE</span>
+          </div>
+          <div class="title-right">
+            <button class="door-toggle" id="doorToggle">⇄ 開另一扇門</button>
+            <span class="lang-chip">中文</span>
+          </div>
+        </header>
+
+        <!-- 共用 Preset 列 -->
+        <div class="preset-row">
+          <div class="preset-step">‹</div>
+          <div class="preset-step">›</div>
+          <div class="preset-pill">
+            <span class="preset-key">PRESET</span>
+            <span class="preset-name">Moonlit Cimbalom</span>
+          </div>
+          <div class="preset-btn">Save</div>
+          <div class="preset-btn">Init</div>
+        </div>
+
+        <!-- 雙開門 -->
+        <div class="doors" id="doors" data-active-door="left">
+
+          <!-- 左門：參數調整 -->
+          <section class="door door-left">
+            <div class="door-tabs">
+              <button class="door-tab active" data-left-tab="engine">ENGINE</button>
+              <button class="door-tab" data-left-tab="fx">FX</button>
+            </div>
+            <div class="door-content">
+
+              <div data-left-tab-panel="engine" class="active">
+                <div class="engine-tabs">
+                  <button class="engine-tab active">揚琴</button>
+                  <button class="engine-tab">半音音源</button>
+                  <button class="engine-tab">FM Piano</button>
+                  <button class="engine-tab">Piano</button>
+                </div>
+
+                <div class="section-label">MACRO · 8 個參數</div>
+                <div class="knob-row">
+                  <div class="knob-mini"><div class="dial" style="--rot:-60deg"></div><div class="lbl">材質</div><div class="val">Bronze</div></div>
+                  <div class="knob-mini"><div class="dial" style="--rot:10deg"></div><div class="lbl">張力</div><div class="val">62%</div></div>
+                  <div class="knob-mini"><div class="dial" style="--rot:-20deg"></div><div class="lbl">阻尼</div><div class="val">34%</div></div>
+                  <div class="knob-mini"><div class="dial" style="--rot:40deg"></div><div class="lbl">敲擊位置</div><div class="val">42%</div></div>
+                  <div class="knob-mini"><div class="dial" style="--rot:70deg"></div><div class="lbl">亮度</div><div class="val">58%</div></div>
+                  <div class="knob-mini"><div class="dial" style="--rot:-5deg"></div><div class="lbl">共鳴體</div><div class="val">50%</div></div>
+                  <div class="knob-mini"><div class="dial" style="--rot:-80deg"></div><div class="lbl">雜質</div><div class="val">8%</div></div>
+                  <div class="knob-mini"><div class="dial" style="--rot:30deg"></div><div class="lbl">輸出</div><div class="val">0dB</div></div>
+                </div>
+
+                <div class="section-label">揚琴（Cimbalom）· 6 個參數</div>
+                <div class="param-grid-mock">
+                  <div class="param-row-mock">
+                    <div class="combo-mini"><span class="lbl">材質 cim_material</span><div class="box"><span>青銅</span><span>▾</span></div></div>
+                    <div class="combo-mini"><span class="lbl">槌頭 cim_hammer</span><div class="box"><span>氈槌</span><span>▾</span></div></div>
+                  </div>
+                  <div class="knob-row">
+                    <div class="knob-mini"><div class="dial" style="--rot:15deg"></div><div class="lbl">敲擊點</div><div class="val">42%</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:-30deg"></div><div class="lbl">直徑</div><div class="val">28mm</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:0deg"></div><div class="lbl">弦數</div><div class="val">3</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:55deg"></div><div class="lbl">解諧</div><div class="val">11¢</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div data-left-tab-panel="fx">
+                <div class="fx-panel">
+                  <div class="fx-title">殘響 REVERB</div>
+                  <div class="knob-row">
+                    <div class="knob-mini"><div class="dial" style="--rot:20deg"></div><div class="lbl">混合</div><div class="val">56%</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:-10deg"></div><div class="lbl">空間</div><div class="val">78%</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:40deg"></div><div class="lbl">T60</div><div class="val">2.4s</div></div>
+                  </div>
+                </div>
+                <div class="fx-panel">
+                  <div class="fx-title">延遲 DELAY</div>
+                  <div class="knob-row">
+                    <div class="knob-mini"><div class="dial" style="--rot:0deg"></div><div class="lbl">時間</div><div class="val">480</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:-25deg"></div><div class="lbl">回授</div><div class="val">42%</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:15deg"></div><div class="lbl">混合</div><div class="val">24%</div></div>
+                  </div>
+                </div>
+                <div class="fx-panel">
+                  <div class="fx-title">壓縮器 / 失真 / 亮度補償</div>
+                  <div class="knob-row">
+                    <div class="knob-mini"><div class="dial" style="--rot:-15deg"></div><div class="lbl">閾值</div><div class="val">-20</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:30deg"></div><div class="lbl">比率</div><div class="val">3.0:1</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:10deg"></div><div class="lbl">驅動</div><div class="val">18%</div></div>
+                    <div class="knob-mini"><div class="dial" style="--rot:-5deg"></div><div class="lbl">高頻增益</div><div class="val">2dB</div></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          <div class="door-divider"></div>
+
+          <!-- 右門：樂器模擬面 -->
+          <section class="door door-right">
+            <div class="door-tabs">
+              <button class="door-tab active" data-right-tab="keys">琴鍵</button>
+              <button class="door-tab" data-right-tab="yangqin">揚琴</button>
+              <button class="door-tab" data-right-tab="handpan">空靈鼓</button>
+            </div>
+            <div class="door-content" style="display:flex; flex-direction:column;">
+
+              <!-- 琴鍵視圖 -->
+              <div class="instrument-view active" data-view-panel="keys">
+                <div class="view-caption">MIDI 鍵盤（現行行為，全尺寸顯示）</div>
+                <div class="keys-wrap">
+                  <div class="midi-kb">
+                    <div class="midi-whites">
+                      <div class="midi-white"></div><div class="midi-white"></div><div class="midi-white"></div>
+                      <div class="midi-white"></div><div class="midi-white"></div><div class="midi-white"></div>
+                      <div class="midi-white"></div><div class="midi-white"></div><div class="midi-white"></div>
+                      <div class="midi-white"></div><div class="midi-white"></div><div class="midi-white"></div>
+                      <div class="midi-white"></div><div class="midi-white"></div><div class="midi-white"></div>
+                    </div>
+                    <div class="midi-blacks">
+                      <div class="midi-black" style="left:6%"></div>
+                      <div class="midi-black" style="left:13%"></div>
+                      <div class="midi-black" style="left:27%"></div>
+                      <div class="midi-black" style="left:34%"></div>
+                      <div class="midi-black" style="left:41%"></div>
+                      <div class="midi-black" style="left:54%"></div>
+                      <div class="midi-black" style="left:61%"></div>
+                      <div class="midi-black" style="left:74%"></div>
+                      <div class="midi-black" style="left:81%"></div>
+                      <div class="midi-black" style="left:88%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 揚琴視圖 -->
+              <div class="instrument-view" data-view-panel="yangqin">
+                <div class="view-caption">
+                  弦數→<code>cim_num_strings</code>　材質→<code>cim_material</code>　敲擊點光點→<code>cim_strike_pos</code>（可拖曳）
+                </div>
+                <svg class="yangqin-svg" viewBox="0 0 320 170">
+                  <defs>
+                    <linearGradient id="stringGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stop-color="#d8c9a0" />
+                      <stop offset="100%" stop-color="#8a7040" />
+                    </linearGradient>
+                  </defs>
+                  <!-- 梯形共鳴板 -->
+                  <polygon points="30,150 290,150 250,20 70,20" fill="#1a1512" stroke="#3a2f1e" stroke-width="1.5" />
+                  <!-- 琴橋 -->
+                  <rect class="yangqin-bridge" x="70" y="16" width="180" height="6" rx="2" />
+                  <rect class="yangqin-bridge" x="30" y="146" width="260" height="6" rx="2" />
+                  <!-- 弦 (依 cim_num_strings=3 畫 3 組，每組數條細弦示意) -->
+                  <g>
+                    <line class="yangqin-string" x1="90" y1="22" x2="55" y2="148" />
+                    <line class="yangqin-string" x1="105" y1="22" x2="72" y2="148" />
+                    <line class="yangqin-string" x1="120" y1="22" x2="89" y2="148" />
+                  </g>
+                  <g>
+                    <line class="yangqin-string" x1="155" y1="22" x2="150" y2="148" />
+                    <line class="yangqin-string" x1="170" y1="22" x2="167" y2="148" />
+                    <line class="yangqin-string" x1="185" y1="22" x2="184" y2="148" />
+                  </g>
+                  <g>
+                    <line class="yangqin-string" x1="205" y1="22" x2="228" y2="148" />
+                    <line class="yangqin-string" x1="220" y1="22" x2="245" y2="148" />
+                    <line class="yangqin-string" x1="235" y1="22" x2="262" y2="148" />
+                  </g>
+                  <!-- 敲擊點示意 -->
+                  <circle class="yangqin-strike-dot" cx="167" cy="70" r="5" />
+                  <!-- 槌頭示意 -->
+                  <line x1="167" y1="70" x2="190" y2="46" stroke="#8899aa" stroke-width="2.4" stroke-linecap="round" />
+                </svg>
+                <div class="hand-sliders">
+                  <div class="hand-slider">
+                    <div class="track"><div class="fill" style="width:64%"></div></div>
+                    <div class="lbl">左手強弱 <span class="flag-new">未溯源／無 DSP</span></div>
+                  </div>
+                  <div class="hand-slider">
+                    <div class="track"><div class="fill" style="width:38%"></div></div>
+                    <div class="lbl">右手強弱 <span class="flag-new">未溯源／無 DSP</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 空靈鼓視圖 -->
+              <div class="instrument-view" data-view-panel="handpan">
+                <div class="view-caption">
+                  子引擎＝自訂泛音時，8 片舌片＝<code>chr_ratio_0..7</code> ×<code>chr_amp_0..7</code>；點舌片開啟該片的比率／幅度面板
+                </div>
+                <div style="position:relative;">
+                  <svg class="handpan-svg" viewBox="0 0 240 240" id="handpanSvg">
+                    <circle cx="120" cy="120" r="108" fill="#101820" stroke="#2a2a4a" stroke-width="1.5" />
+                    <!-- 8 片舌片，放射狀 -->
+                    <g id="tongueGroup"></g>
+                    <circle class="ding" cx="120" cy="120" r="26" />
+                    <text x="120" y="124" text-anchor="middle" font-size="8" fill="#8bb8a8" font-family="IBM Plex Mono, monospace">DING</text>
+                  </svg>
+                  <div class="tongue-popover" id="tonguePopover"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 共用 Analyzer 條 -->
+            <div class="analyzer-strip">
+              <div class="analyzer-tab active">SCOPE</div>
+              <div class="analyzer-tab">SPECTRUM</div>
+              <div class="analyzer-tab">TUNER</div>
+              <svg class="analyzer-wave" viewBox="0 0 200 30" preserveAspectRatio="none">
+                <path d="M0,15 Q10,2 20,15 T40,15 T60,15 T80,15 T100,15 T120,15 T140,15 T160,15 T180,15 T200,15"
+                      fill="none" stroke="#c49a6c" stroke-width="1.2" />
+              </svg>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <b>提案文件</b>：<code style="font-family:'IBM Plex Mono',monospace">docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md</code>
+    <b>誠實揭露</b>：本 mockup 的「左手／右手強弱」滑桿是純視覺佔位，現行 APVTS 沒有對應參數、不會影響任何聲音；「揚琴」＝現有 Cimbalom 引擎、「空靈鼓」＝現有 Chromatic 引擎的 Tongue Drum／自訂泛音子引擎，其餘控制項全部對應真實既有參數，不是憑空畫的。把瀏覽器視窗縮到 900px 寬以下、或點上方「模擬 Mac 1440×900」試試響應式單門模式。
+  </div>
+
+<script>
+(function () {
+  var pluginWindow = document.getElementById('pluginWindow');
+  var screenFrame = document.getElementById('screenFrame');
+  var doors = document.getElementById('doors');
+  var doorToggle = document.getElementById('doorToggle');
+  var sizeReadout = document.getElementById('sizeReadout');
+
+  function setSize(w, h, frameW, frameH, label) {
+    pluginWindow.style.width = w + 'px';
+    pluginWindow.style.height = h + 'px';
+    screenFrame.style.width = (frameW || w + 40) + 'px';
+    screenFrame.style.height = (frameH || h + 40) + 'px';
+    screenFrame.setAttribute('data-frame-label', label || '');
+    sizeReadout.textContent = w + ' × ' + h;
+  }
+
+  document.querySelectorAll('.size-controls button[data-size]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.size-controls button').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var spec = btn.getAttribute('data-size');
+      if (spec === 'mac') {
+        // 1440x900 邏輯解析度，扣掉選單列(24)+視窗邊框估計(50) ≈ 826px 可用高度
+        setSize(1000, 780, 1440, 900, 'Mac 1440×900 邏輯解析度（虛線＝整台螢幕邊界）');
+      } else {
+        var parts = spec.split(',').map(Number);
+        setSize(parts[0], parts[1], parts[0] + 60, parts[1] + 60, '');
+      }
+    });
+  });
+
+  // ── 雙門 / 單門 響應式（依 plugin-window 實際寬度判斷）──
+  function updateDoorMode() {
+    var w = pluginWindow.getBoundingClientRect().width;
+    if (w < 900) {
+      pluginWindow.classList.add('single-door');
+    } else {
+      pluginWindow.classList.remove('single-door');
+    }
+  }
+  new ResizeObserver(updateDoorMode).observe(pluginWindow);
+  updateDoorMode();
+
+  doorToggle.addEventListener('click', function () {
+    var cur = doors.getAttribute('data-active-door');
+    var next = cur === 'left' ? 'right' : 'left';
+    doors.setAttribute('data-active-door', next);
+    pluginWindow.setAttribute('data-active-door', next);
+    doorToggle.textContent = next === 'left' ? '⇄ 開另一扇門（樂器）' : '⇄ 開另一扇門（參數）';
+  });
+  pluginWindow.setAttribute('data-active-door', 'left');
+
+  // ── 左門子分頁 ──
+  document.querySelectorAll('.door-tab[data-left-tab]').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.door-tab[data-left-tab]').forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var key = tab.getAttribute('data-left-tab');
+      document.querySelectorAll('[data-left-tab-panel]').forEach(function (p) {
+        p.classList.toggle('active', p.getAttribute('data-left-tab-panel') === key);
+      });
+    });
+  });
+
+  // ── 右門樂器視圖分頁 ──
+  document.querySelectorAll('.door-tab[data-right-tab]').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.door-tab[data-right-tab]').forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var key = tab.getAttribute('data-right-tab');
+      document.querySelectorAll('[data-view-panel]').forEach(function (p) {
+        p.classList.toggle('active', p.getAttribute('data-view-panel') === key);
+      });
+    });
+  });
+
+  // ── 空靈鼓：8 片舌片，對應 chr_ratio_0..7 / chr_amp_0..7 ──
+  var ratios = [1.00, 1.19, 1.51, 1.87, 2.14, 2.62, 3.01, 3.48];
+  var amps   = [1.00, 0.82, 0.71, 0.55, 0.63, 0.40, 0.35, 0.28];
+  var group = document.getElementById('tongueGroup');
+  var popover = document.getElementById('tonguePopover');
+  var cx = 120, cy = 120, rInner = 34, rOuter = 96;
+  for (var i = 0; i < 8; i++) {
+    var a0 = (i / 8) * Math.PI * 2 - Math.PI / 2;
+    var a1 = ((i + 0.82) / 8) * Math.PI * 2 - Math.PI / 2;
+    var amp = amps[i];
+    var rO = rInner + (rOuter - rInner) * (0.55 + amp * 0.45);
+    var p0x = cx + rInner * Math.cos(a0), p0y = cy + rInner * Math.sin(a0);
+    var p1x = cx + rO * Math.cos(a0),     p1y = cy + rO * Math.sin(a0);
+    var p2x = cx + rO * Math.cos(a1),     p2y = cy + rO * Math.sin(a1);
+    var p3x = cx + rInner * Math.cos(a1), p3y = cy + rInner * Math.sin(a1);
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M ' + p0x.toFixed(1) + ' ' + p0y.toFixed(1) +
+      ' L ' + p1x.toFixed(1) + ' ' + p1y.toFixed(1) +
+      ' A ' + rO.toFixed(1) + ' ' + rO.toFixed(1) + ' 0 0 1 ' + p2x.toFixed(1) + ' ' + p2y.toFixed(1) +
+      ' L ' + p3x.toFixed(1) + ' ' + p3y.toFixed(1) +
+      ' A ' + rInner + ' ' + rInner + ' 0 0 0 ' + p0x.toFixed(1) + ' ' + p0y.toFixed(1) + ' Z');
+    path.setAttribute('class', 'tongue');
+    path.dataset.index = i;
+    (function (idx, el) {
+      el.addEventListener('click', function () {
+        document.querySelectorAll('.tongue').forEach(function (t) { t.classList.remove('tongue-active'); });
+        el.classList.add('tongue-active');
+        popover.style.display = 'block';
+        popover.style.left = (cx + (rOuter + 14) * Math.cos((idx / 8) * Math.PI * 2 - Math.PI / 2) - 10) + 'px';
+        popover.style.top  = (cy + (rOuter + 14) * Math.sin((idx / 8) * Math.PI * 2 - Math.PI / 2) - 10) + 'px';
+        popover.innerHTML =
+          '舌片 ' + idx + '　<code style="color:#e0d2b8">chr_ratio_' + idx + '</code> = ' + ratios[idx].toFixed(2) + '<br>' +
+          '　　　<code style="color:#e0d2b8">chr_amp_' + idx + '</code> = ' + amps[idx].toFixed(2);
+      });
+    })(i, path);
+    group.appendChild(path);
+  }
+
+  // ── 揚琴敲擊點：拖曳示意（純視覺，對應 cim_strike_pos）──
+  var strikeDot = document.querySelector('.yangqin-strike-dot');
+  var dragging = false;
+  strikeDot.addEventListener('pointerdown', function (e) { dragging = true; strikeDot.setPointerCapture(e.pointerId); });
+  strikeDot.addEventListener('pointerup', function () { dragging = false; });
+  strikeDot.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    var svg = strikeDot.ownerSVGElement;
+    var pt = svg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    var loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+    var y = Math.max(24, Math.min(146, loc.y));
+    strikeDot.setAttribute('cy', y);
+  });
+})();
+</script>
+</body>
+</html>

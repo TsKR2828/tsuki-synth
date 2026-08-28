@@ -89,6 +89,23 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
       專案存讀（重開再匯出音訊位元全等）皆真 host 證據；automation 於 L2 HostProbe 合約層驗證
       （Cubase GUI 畫 lane 未做，唯一殘留人工項，非位置主張必需）。證據 `l3b_cubase_live.txt`。
 - [ ] **A10 Score 控制台實操驗收** — Standalone 頂列 [Score] 鈕的實際操作。
+- [x] **月光第一批商品 CC BY-SA 授權疑慮** — **2026-08-28 月月裁決「換乾淨公開來源」**：
+      本批四首（`exports/products/moonlight_batch1/PRODUCT_SHEET.md` /
+      `reports/product_sheets/moonlight_batch1_PRODUCT_SHEET.md`）在換源重製前不上架，
+      僅作內部 demo/引擎對照用。後續執行 = 新待辦「古典曲目換源重製」（見下）。
+- [ ] **古典曲目換源重製**（月月裁決 2026-08-28）— 計畫見
+      `reports/decision_packets/CLASSICAL_RELICENSE_PLAN.md`。
+      **2026-08-28 追加裁決「CC BY 可以（署名可接受）」，路線定案**：
+      - [x] 給愛麗絲（PD）— 先行已執行（`scores/classical/fur_elise/` +
+            `reports/gate_outputs/furelise_license_evidence.txt` /
+            `furelise_four_seasons_noop_proof.txt` /
+            `fur_elise_complete_melody_verify.json`）。
+      - [ ] Vivaldi 四季 — 待排程：走 IMSLP Schoonenbeek CC BY，需從譜面重新轉譜。
+      - [ ] 月光奏鳴曲 — 待排程：走 Kowalewski CC BY 4.0 或重轉譜，需從譜面重新轉譜。
+- [x] **IR 稽核** — 已完成，見 `docs/IR_REVERB_AUDIT.zh-TW.md`（unstaged 待審）。
+- [ ] **UI 雙開門**（提案 + mockup 完成，待月月視覺裁決）— 提案
+      `docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md`、互動 mockup
+      `uiux/double_door_mockup.html`；月月看過裁決後才開實作卡。
 - [x] **A11 共鳴板厚度 h 與材質選定（B1 琴橋導納）** —— **2026-08-27 月月裁決 (i)「確認現值」，關閉**：
       `h = 9mm`／`wood_spruce` 由月月確認維持（依據裁決包
       `reports/decision_packets/A11_soundboard_sensitivity.md`；`docs/BRIDGE_ADMITTANCE_SOURCES.md`
@@ -301,7 +318,7 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
 ## D. 還要補搜的資料（阻擋上面某些項）
 
 - [ ] **D1 梁／板的空氣與輻射阻尼** — **未搜尋，狀態未知**。弦的公式內建圓截面幾何不適用。**這一項擋住 B3 對 Chromatic 引擎的適用性。**
-- [ ] **D2 舌鼓／鑼的槌具接觸參數** — **未搜尋，狀態未知**。**擋住 B4 對 Chromatic 引擎的適用性。**
+- [ ] **D2 舌鼓／鑼的槌具接觸參數** — **未搜尋，狀態未知**。**擋住 B4 對 Chromatic 引擎的適用性。** 2026-08-28 進展（見 `docs/D2_CHROMATIC_CONTACT_SEARCH.zh-TW.md` §8）：通用板-槌 `K` 標定表（**Bruno L. Giordano 2005 博論，Padova/IRCAM——非 N. J. Giordano、非 McGill**）已由 Opus 打開本地 PDF 逐格核對通過（§8.3）；中國鑼/木魚/鼓棒三條**仍未核**（本輪未取得原文）。但 handpan/鋼舌鼓/tam-tam 自身成套接觸數據仍缺，且 Giordano 的 `α=3/2` 是採用而非量測、槌頭為硬木/Plexiglas，**缺口未閉合**。
 - [x] **D3 `gamma_radiation` 的真實物理來源** — **2026-08-24 由 B3 關閉**：弦不再讀此欄（改用零自由參數三機制公式）；欄位已在 schema 改名為 `beam_plate_gamma_radiation` 並在程式註解誠實標示「只給 Beam/Plate、未溯源」（Beam/Plate 側的溯源仍是 D1 範圍）。
 - [ ] **D4 舌鼓 ICSV27 2021 全文** — 機構庫 403，可試作者自存版／ResearchGate。
 - [ ] **D5 銅鑼 JCIE 2005 全文** — 付費牆。

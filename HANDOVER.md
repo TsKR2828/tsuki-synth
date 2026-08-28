@@ -39,14 +39,28 @@ B4 完工（unstaged 待月月授權 commit）。B3 已於 2026-08-26 隨月月�
   裁決包 `reports/decision_packets/B4_f3_velocity_ruling.md`。
 - **A4 關閉**（裁決「調整文件建議值」）：Playbook 亮度 EQ 起手式降級為「預設不開」，程式碼零改動。
 - **A11 關閉**（裁決 (i) 確認現值 h=9mm/wood_spruce）：維持寫死，「可注入」子問題就地關閉。
-**下一步 = 月月審 B4+B5+B6 批次 unstaged 並授權 commit；B6 額外需要裁決 Phase 2 校準方案
-（A/B/C）才能繼續往 Phase 3/4 做。** B6 三方案的白話裁決包在
-`reports/decision_packets/B6_calibration_choice.md`。
+**B5+B6 批次已 commit（`88bdfac`）並 push，未 merge main（月月僅授權 commit）。**
+新增產出：音效知識庫 `docs/SOUND_DESIGN_KNOWLEDGE.zh-TW.md`＋Codex 入庫（含正交異向
+導納公式命中＝B5 (a) 階段解鎖候選）／古典曲目換源計畫
+`reports/decision_packets/CLASSICAL_RELICENSE_PLAN.md`。
+**2026-08-28 月月裁決：換源計畫「CC BY 可以（署名可接受）」，路線定案**（給愛麗絲
+PD 先行已執行、四季走 IMSLP Schoonenbeek CC BY、月光走 Kowalewski CC BY 4.0 或
+重轉譜，皆待排程從譜面重新轉譜；見 `reports/decision_packets/CLASSICAL_RELICENSE_PLAN.md`）。
+**本輪另新增：UI 雙開門提案 + 互動 mockup（`docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md` /
+`uiux/double_door_mockup.html`，待月月視覺裁決後才開實作卡）＋ IR 殘響稽核完成
+（`docs/IR_REVERB_AUDIT.zh-TW.md`）。**
+**下一步 = 月月看 UI 雙開門 mockup 裁決 → 開實作卡；B6 校準 A/B/C 仍待裁決
+（白話：A＝直接貼「渲染出來的最終聲音」校正——最簡單但混進了藝術調整層；
+B＝貼「純物理訊號」上的某個點——乾淨但要多做一步驗證；C＝從頭端到尾端整條物理
+力鏈都推導——最嚴謹但工程量最大，可能要另開卡）；main merge 時機——等月月看完
+UI/UX 一併裁決。**
+B6 三方案的白話裁決包在 `reports/decision_packets/B6_calibration_choice.md`。
 另外，**月光第一批商品已產出**在 `exports/products/moonlight_batch1/`
 （完整版 FM Piano + 揚琴版 + 空靈鼓版 + 混音版四支母帶＋商品表），
-**`PRODUCT_SHEET.md` 最上方有 CC BY-SA 2.5 授權風險待月月裁決**（音符來源
-MIDI 標示 Share-Alike，是否延伸到「重新合成演奏音檔」需月月自行判斷或找人確認）。
-待月月的只剩 A8（外部資料集）/A10（Score 控制台實操）。
+**授權裁決已做**：2026-08-28 月月裁決「換乾淨公開來源」——本批四首在換源
+重製前不上架，僅作內部 demo/引擎對照用（見 `TODO.md`「月光第一批商品 CC BY-SA
+授權疑慮」條目、後續執行＝「古典曲目換源重製」）。
+待月月的只剩 A8（外部資料集）/A10（Score 控制台實操）＋B6 Phase 2 校準＋換源計畫執行。
 
 ## 1. 2026-08-20 ~ 08-22 這三天發生了什麼（新 session 必讀）
 
@@ -132,21 +146,29 @@ Water Gong（板，域內）、FM Piano（域外，已誠實標註）。
 
 ## 5. 接下來的順序（建議）
 
-1. **月月審 B4+B5+B6(Phase 1) 批次並授權 commit**（最優先）：
+1. **B4+B5+B6(Phase 1) 批次已 commit（`88bdfac`）並 push，未 merge main（月月僅授權 commit）**：
    - B4：Rule 10 報告 `reports/b4_hammer_contact_before_after.md`（先讀白話導讀卡）
      ＋F3 主張域重定義登記（`ROADMAP_PHYSICS.md` §6 velocity 列）。
    - B5：no-op 證明報告 `reports/b5_schema_noop_proof.md`（schema 已備妥、
      零消費路徑，13 首 SHA256 bit-exact + corpus 73/73 PASS）。
    - B6 Phase 1：`docs/RADIATION_POWER_SOURCES.md`（Phase 0 溯源）+
      `reports/gate_outputs/b6_*.txt`（8 首 SHA256 位元不變、GATE 全綠）。
-   B4/B5/B6 全部改動 unstaged（R7），裁決「接受 commit」或「指名回退」。
+   新增產出：音效知識庫 `docs/SOUND_DESIGN_KNOWLEDGE.zh-TW.md`＋Codex 入庫
+   （含正交異向導納公式命中＝B5 (a) 階段解鎖候選）；古典曲目換源計畫
+   `reports/decision_packets/CLASSICAL_RELICENSE_PLAN.md`。
+   下一步＝月月裁決 main merge 時機（**待月月看完 UI/UX 雙開門 mockup 後一併裁決**）。
 2. **B6 Phase 2 裁決**（新增，`TODO.md` B6 條目有三方案摘要；白話裁決包
    `reports/decision_packets/B6_calibration_choice.md`）：模型目前無任何
    絕對物理單位錨點，要把 `"radiated_power_relative"` 接成真實 Pa 需要月月從
-   方案 A（貼渲染輸出）／B（貼純物理訊號點）／C（完整第一原理力鏈）三選一，
-   或要求拆卡——工兵不得自選。
+   方案 A（貼渲染輸出，最簡單但混進藝術調整層）／B（貼純物理訊號點，乾淨但
+   要多做一步驗證）／C（完整第一原理力鏈，最嚴謹但工程量最大、可能另開卡）
+   三選一，或要求拆卡——工兵不得自選。**仍待裁決。**
+2.5. **UI 雙開門裁決**（新增，2026-08-28）：提案 `docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md`
+   + 互動 mockup `uiux/double_door_mockup.html` 已完成，**待月月看過視覺裁決後
+   才開實作卡**。
 3. **月月裁決積壓**（見 TODO A 段）：A8（外部資料集要不要下載）、
-   A10（Score 控制台實操驗收）。
+   A10（Score 控制台實操驗收）；古典曲目換源計畫（路線已裁決 CC BY 可以，
+   Vivaldi/月光轉譜排程未定）。
 4. ~~B3 弦阻尼律~~ **已完成並併入 main（2026-08-26）**；~~B4 槌頭~~ **已完成
    （2026-08-27，F3 域依裁決 (b) 重定義，見 §0）**；~~B5 木材正交異向 schema~~
    **已完成（2026-08-28，見 §0）**；~~B6 Phase 0+1（輻射效率骨架）~~

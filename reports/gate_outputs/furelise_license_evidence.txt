@@ -1,0 +1,46 @@
+Für Elise 授權證據（Mutopia Project piece-info id=931）
+=========================================================
+
+URL:      https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=931
+擷取日期:  2026-08-28
+擷取方式:  WebFetch（工具化 HTML->markdown 轉換 + 指令 prompt 要求逐欄位逐字引用，
+           不做摘要/意譯），比照 CLASSICAL_RELICENSE_PLAN.md §6 Opus 稽核同一方法論。
+月月裁決依據: CLASSICAL_RELICENSE_PLAN.md §5「換乾淨公開來源，不能賣的樂譜沒有用」
+           + 2026-08-28 追加裁決「CC BY 可以（署名可接受）；給愛麗絲本身是真 Public
+           Domain 更乾淨」——本曲選 Public Domain 路徑，非 CC BY 路徑。
+
+--- 頁面逐欄位原文引用（WebFetch 回傳，逐字未改寫）---------------------------
+
+Title:                "Für Elise"
+Composer:             "L. V. Beethoven (1770-1827)"
+Instrument:           "Piano"
+Style:                "Classical"
+Source (edition):     "Breitkopf & Härtel, 1888"
+Maintainer/editor:    "Stelios Samelis"
+Copyright/License:    "Public Domain" with "CC: No rights reserved"
+License link href:    http://creativecommons.org/licenses/publicdomain/
+                      （"Public Domain" 文字連結的實際 href，第二次 WebFetch 單獨
+                      核對 title="Public Domain"/"No rights reserved" 圖示旁連結）
+Piece ID number:      "Mutopia-2015/08/18-931"
+
+Download links (逐字):
+  LilyPond: https://www.mutopiaproject.org/ftp/BeethovenLv/WoO59/fur_Elise_WoO59/fur_Elise_WoO59.ly
+  MIDI:     https://www.mutopiaproject.org/ftp/BeethovenLv/WoO59/fur_Elise_WoO59/fur_Elise_WoO59.mid
+  A4 PDF:   https://www.mutopiaproject.org/ftp/BeethovenLv/WoO59/fur_Elise_WoO59/fur_Elise_WoO59-a4.pdf
+  Letter PDF: https://www.mutopiaproject.org/ftp/BeethovenLv/WoO59/fur_Elise_WoO59/fur_Elise_WoO59-let.pdf
+
+--- 判定 -----------------------------------------------------------------
+
+授權欄位原文為 "Public Domain"（CC: No rights reserved）。與
+CLASSICAL_RELICENSE_PLAN.md §2.3 / §6.2 先前稽核記錄的引用完全一致，本次為
+獨立重新開頁確認，非沿用舊稽核未查證的結論。
+
+判定：PD 確認通過。可下載 MIDI（.mid）與 LilyPond 原始檔（.ly）進 source/，
+可作為完整版 Für Elise 轉譜來源。
+
+已下載檔案（見 scores/classical/fur_elise/source/）：
+  fur_Elise_WoO59.mid  -- 來源 MIDI
+  fur_Elise_WoO59.ly   -- 來源 LilyPond 排版檔（供人工核對音符用；授權同頁 PD，
+                           排版本身理論上仍可能含編訂者著作權，但音符資料取自
+                           MIDI，不逐字複製 .ly 排版標記）
+  SHA256 見同目錄 source/CHECKSUMS.txt

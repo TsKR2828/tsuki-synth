@@ -1,0 +1,63 @@
+four-seasons 子命令零改變證明（Opus 稽核自行產生，2026-08-28）
+========================================================================
+
+背景：tools/midi_to_tsukisynth.py 的 docstring（TrackProfile / track_name /
+ARTICULATION_STYLE_LABELS 三處註解）宣稱 four-seasons 輸出 byte-for-byte 不變，
+並引用「CLASSICAL_RELICENSE_PLAN.md execution notes」為證。該節不存在，
+reports/ 下亦無對應證據檔（稽核 Finding F1）。本檔為稽核者補做的證明。
+
+障礙：Vivaldi 來源 MIDI 不在 repo 內（find . -iname '*.mid' 只有 fur_Elise_WoO59.mid），
+     無法用原始輸入重跑做 diff。
+方法：改用差分測試（differential test）——以合成的 Vivaldi 形狀 MIDI 當同一份輸入，
+     分別餵給 HEAD(88bdfac) 版與工作樹版，比對 13 個輸出檔的 byte/SHA256。
+     合成 MIDI 含：type-1、384 ticks/beat、control track + 5 條 TRACK_PROFILES
+     軌（solo/violinone/violintwo/viola/cello）各 40 音、曲中 set_tempo 變速、
+     零間隔音（觸發 articulation gap 分支）、外加一條不在 profile 內的
+     'continuo-organ' 軌（驗證兩版都忽略）。種子固定，兩版輸入完全同一批檔案。
+
+--- 執行 ---
+$ git show HEAD:tools/midi_to_tsukisynth.py > converter_old.py
+$ python converter_old.py four-seasons --source-dir <fake> --output-dir out_old
+  Generated 12 movements: 2400 events, 1038 explicit rests
+$ python tools/midi_to_tsukisynth.py four-seasons --source-dir <fake> --output-dir out_new
+  Generated 12 movements: 2400 events, 1038 explicit rests
+$ diff -r out_old out_new
+  （無輸出＝完全相同）
+
+--- 13 個輸出檔 SHA256（新舊完全一致）---
+4f897739f07b59a32a3a3fc50cfc9ee0e9f9f0bd1dfc4b0ad71de4fa9c9f3ded *./autumn/vivaldi_four_seasons_autumn_m1.score.json
+0aaedda9a289253239c6508324b8536a548258b4ac7d7a88b945bf28116baa57 *./autumn/vivaldi_four_seasons_autumn_m2.score.json
+dfe37864cc70ee1f75821c79b0a7cfe9e0dc02c8db62f6770d2823d18069111f *./autumn/vivaldi_four_seasons_autumn_m3.score.json
+d8309ae0c2a21ef1aef47d696459fff327ee28237d06b7986855a95d85577b3a *./spring/vivaldi_four_seasons_spring_m1.score.json
+16cf3d897eb3da6c79b0c0e5cbde89def5a7d37c0dac62557ee04b3fb74b98de *./spring/vivaldi_four_seasons_spring_m2.score.json
+94cac91478d09edc510e9a0de8bfb1af4e24ef4f428b61f2598b8bcc0615d40d *./spring/vivaldi_four_seasons_spring_m3.score.json
+39e0acbaa37bbc84dc5f5e544a0c731dc2df1763fb3889d0a0d74f952824d140 *./summer/vivaldi_four_seasons_summer_m1.score.json
+c38cb5a329db0f47e3ce3164039c42404d7f45fb77982e82e4ea459cfcf0acbb *./summer/vivaldi_four_seasons_summer_m2.score.json
+a23c66fa0529f8781e33da77b44391280da5457f893f5d731c574af6730568ef *./summer/vivaldi_four_seasons_summer_m3.score.json
+a8ba8bf1350add9ea9266d75271532c6987c939cd75cf5824266eba22cc94adb *./vivaldi_four_seasons.catalog.json
+f5073869fd16c3edb31c78650a62d87c05b88ab9aa78a73fbaef0e67212c23ce *./winter/vivaldi_four_seasons_winter_m1.score.json
+6ad147668be91a5e46df9a9647c7a87c0299be0b503a119e57c1da828f256ff7 *./winter/vivaldi_four_seasons_winter_m2.score.json
+a978859f718304a6d21c095e4c4e5817af611d2451ca524666449c0caedaecd7 *./winter/vivaldi_four_seasons_winter_m3.score.json
+
+--- 佐證 2：rstrip(':') 在既有輸出上確實是 no-op ---
+spring_m1 已提交檔的 performance.role 分佈涵蓋全部 5 個 TRACK_PROFILES：
+  solo_violin 820 / violin_1 705 / violin_2 697 / cello_continuo 501 / viola 450
+舊版 track_name() 無 rstrip，軌名必須與 TRACK_PROFILES 鍵「完全相等」才會被收，
+五條軌全部有事件 => 來源軌名本來就不帶結尾冒號 => rstrip(':') 對它們是恆等。
+（殘留未證：若 Vivaldi MIDI 另有帶冒號的重複軌，新版會多收——需原始 MIDI 才能排除。）
+
+--- 佐證 3：verify_score.py find_all_scores 擴大為嚴格超集 ---
+OLD(HEAD) 探索 73 檔 / NEW 探索 75 檔；set(old) ⊆ set(new) = True；REMOVED = 空。
+新增恰為 2 檔：
+  + scores/classical/fur_elise/fur_elise_complete.score.json
+  + scores/classical/fur_elise/fur_elise_complete_cimbalom.score.json
+
+--- 佐證 4：既有 73 檔結果不變（抽 3 檔對 b6_corpus_recheck 逐欄位比對）---
+score                              本輪 WAV SHA256   前次(b6)          tree hash      判定
+vivaldi_four_seasons_spring_m1     7a35e3290de2...   7a35e3290de2...   b59ae225076d   相同
+physical_piano                     607d0d3bc578...   607d0d3bc578...   53826bf5c91e   相同
+akashic_bell                       830d2089427a...   830d2089427a...   728dd914bbfe   相同
+三檔的 peak/gain/renderer hash 亦逐字相同，皆 RESULT: ALL CHECKS PASSED。
+
+判定：four-seasons 路徑在「與 Vivaldi 同形狀的輸入」上零改變，證明成立。
+      唯一殘留缺口＝無法用原始 Mutopia MIDI 重跑（檔案不在 repo）。
