@@ -102,6 +102,27 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
             `fur_elise_complete_melody_verify.json`）。
       - [ ] Vivaldi 四季 — 待排程：走 IMSLP Schoonenbeek CC BY，需從譜面重新轉譜。
       - [ ] 月光奏鳴曲 — 待排程：走 Kowalewski CC BY 4.0 或重轉譜，需從譜面重新轉譜。
+      **轉譜 GATE 工具（本輪新增，登記為 classical 產線標配，未來每次轉譜/換源皆須跑）**：
+      - `tools/score_vs_midi_verify.py`——來源 MIDI ↔ `.score.json` 全曲逐音比對
+        （note_pairing/counts/bidirectional match/pitch/onset/duration），
+        獨立實作 SMF parser（不共用 `mido`，避免與轉譜器共模失效）；給愛麗絲
+        兩份 score 已各自 11 PASS/0 FAIL、905/905 matched（`reports/gate_outputs/
+        furelise_midi_verify.txt`）。**現況誠實標註**：docstring 自稱
+        "full-corpus" 但 `scores/` 下僅 `fur_Elise_WoO59.mid` 一份來源 MIDI
+        入庫，14 份 classical score.json 目前只有 2 份（鋼琴/揚琴給愛麗絲）
+        被此 GATE 實際覆蓋；Vivaldi 四季來源 MIDI 尚未入庫。**尚未接進任何
+        GATE/CI/文件**（`.github/workflows`、README 快查表皆零命中）——四季/
+        月光換源排程執行時，此工具與其 pytest（`tests/test_score_vs_midi_
+        verify.py`，23 passed）須納入該次轉譜的驗收流程，不能只跑既有
+        render-audio 系 GATE（`verify_score.py`/`melody_verify.py`/
+        `physics_verify.py`）。
+      - `tools/melody_roll_video.py`——聾人可視旋律 shape 影片（piano-roll
+        滾動疊圖），重用 `melody_verify.py` 的偵測數學（zero 新增
+        pitch/onset 判定邏輯，僅新增繪圖/切窗）；給愛麗絲驗證影片
+        （`reports/gate_outputs/fur_elise_melody_roll_run.txt`）確認忠實
+        重用。**已知限制**：`DEFAULT_FFMPEG` 寫死月月本機絕對路徑（有
+        `--ffmpeg` 可覆蓋，換機/CI 無 PATH 後援）；同樣**尚未接進文件/CI**。
+        換源產線執行時可選配當人工複核輔助，非強制 GATE。
 - [x] **IR 稽核** — 已完成，見 `docs/IR_REVERB_AUDIT.zh-TW.md`（unstaged 待審）。
 - [ ] **UI 雙開門**（提案 + mockup 完成，待月月視覺裁決）— 提案
       `docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md`、互動 mockup
@@ -216,8 +237,8 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
       （目前零消費路徑，死資料）。
       Kirchhoff 板改異向版仍是**模型結構改動**，不是換數字，未做。
       → 依據 `docs/WOOD_ANISOTROPY_SOURCES.md`
-- [ ] **B6 force → 輻射壓力／SPL 模型**（前置：B1 + B5，皆已 Done）
-      **In progress（2026-08-28，Phase 0+1 完成，Phase 2 待月月裁決）**：
+- [x] **B6 force → 輻射壓力／SPL 模型**（前置：B1 + B5，皆已 Done）
+      **Done（2026-08-28，Phase 3/4 落地，unstaged 待月月審）**：
       Phase 0（`docs/RADIATION_POWER_SOURCES.md`）查證結果——`fc` 公式的
       `H` 是誤讀（更正為 `fc=ca²/(2π√(Dx/ρs))`，非 `Dx·H`）；
       `W_rad=σρ₀c₀S⟨v²⟩`／`η_rad=ρ₀c₀σ/(ωρs)` 兩篇 Ege & Boutillon 論文
@@ -225,36 +246,102 @@ Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月�
       註解已標明溯源等級）；`σ(f)` 採用 §4.4 工程近似式（`(f/fc)²`
       次臨界形狀，非 Ege & Boutillon 曲線）。Phase 1（`src/physics/
       RadiationModel.h` 新檔＋`ScoreRenderer.h::dumpModes()` 加
-      `"radiated_power_relative"` 資訊性欄位，只對 string/cimbalom/piano
-      合格 partial 輸出、`f≥fga` 不輸出）已完成：單元測試
-      `testRadiationEfficiencyShape()`/`testRadiatedPowerChain()`（含反例，
-      `reports/gate_outputs/b6_selftest_sentinel.txt`）、Python 端真實
-      `--dump-modes` 哨兵測試（`tests/test_specimen_verify.py`
-      `RealDumpModesRadiationSentinelTests`）全過；GATE 全綠——三 build
-      target exit 0、ctest 3/3、pytest 131/131、`--full` 與 B5 基準
-      `b5_full.txt` 零差異（`b6_gate_full_phase1.txt`）、8 首代表曲目
-      SHA256 位元不變 8/8（`b6_bit_identity.txt`，render()/renderEvent()/
-      ModalResonator 皆未觸碰）、corpus `verify_score.py --all`
-      （`b6_corpus.txt`）、Vivaldi summer 樂章三（5158 事件，全 `string`
-      引擎、實際跑過輻射計算路徑）`--dump-modes` 4.5s 無逾時回歸
-      （`b6_perf_sentinel.txt`，M3 舊基準 7.2s）。
-      **剩餘＝Phase 2（月月裁決）**：模型目前完全沒有絕對物理單位錨點
-      （`ModalResonator::Mode::amplitude` 是 DC 正規化無量綱形狀值），要把
-      `"radiated_power_relative"` 這類相對量接成真實 Pa，需要月月從三個
-      候選校準方案中裁決一個（或要求拆卡）——**不是工兵能自己選的**：
-      - **方案 A**：貼在渲染輸出訊號本身（沿用外部資料庫「數位 1.0≡1 Pa」
-        慣例）——最簡單，但會把 `loudnessCompensationGain`（創作層）
-        一起算進物理主張，違反本 repo 一貫的創作/物理分離原則。
-      - **方案 B**：貼在 `ModalResonator` 加總、尚未經創作層修飾的訊號點
-        （較乾淨，但需要新增一個診斷用訊號分接點，工程量中等）。
-      - **方案 C**：完整第一原理力鏈（`HammerImpulse` 補牛頓量級力峰值 +
-        `S` 完整推導），最正確但工作量可能超出本卡範圍，可能需要拆卡。
-      裁決後才能做 Phase 3/4（`"absolute_pressure_per_force"` 觀測字串 +
-      `acoustic_transfer[]` 陣列，讓 `specimen_verify.py` 的 `absolute_spl`
-      真正脫離 `UNVERIFIED`）。
-      量測面定義可沿用文獻慣例（1.05 m 球面、數位振幅 1.0 ≡ 1 Pa ≡ 94 dB）。
+      `"radiated_power_relative"` 資訊性欄位）先前已完成並驗收。
+      **Phase 2 裁決（2026-08-28，月月）**：「照建議走」——**方案 B 先行**
+      （純物理訊號點校準，本輪據此開工），**方案 C 立卡排隊**（`docs/
+      workcards/B7.md`，完整第一原理力鏈，另開工）。裁決記錄見
+      `reports/decision_packets/B6_calibration_choice.md`「裁決記錄」節。
+      **Phase 3/4（本輪，方案 B 落地）**：
+      - 新增純物理訊號分接點 `DiagnosticOverrides::capturePhysicsOnlyModes`
+        （`src/dsp/DiagnosticOverrides.h`，比照既有旗標模式）＋
+        `CimbalomVoice::getPhysicsOnlyModeAmplitudes()`（`src/engines/
+        CimbalomEngine.h`，CLI `noteOn()` 變體專用，`startNote()` 即時
+        播放路徑完全未動）——擷取每個 partial 在 `spectralTilt`（創作/
+        啟發式層）與 `loudnessCompensationGain`／多弦正規化增益（創作層）
+        之前、但 `HammerImpulse::forceSpectrumMagnitude()`（物理量）之後
+        的振幅。旗標只由 `dumpModes()` 設為 `true`，`render()`/
+        `renderEvent()` 從未觸碰。
+      - `RadiationModel::kPascalsPerUnitPhysicsAmplitude = 1.0f`（`src/
+        physics/RadiationModel.h`）＋ `pressurePerForce()`——沿用
+        `EXTERNAL_ANCHOR_SOURCES.md` §1「數位 1.0 ≡ 1 Pa ≡ 94 dB SPL
+        @1.05m」慣例，釘在上述純物理訊號點。**R4 明確標註：月月裁決的
+        方案 B 慣例錨定，不是實測值、也不是推導值**。刻意不消費
+        `radiationEfficiency()`/`radiationLossFactor()`（σ(f)/η_rad(f)
+        只當 fc/fga 閘門，不當乘數——理由見 `RADIATION_POWER_SOURCES.md`
+        §5 補記，避免把不同溯源等級的不確定度混進同一個絕對數字判定）。
+      - `dumpModes()` 加 `"absolute_pressure_per_force"` 至
+        `model_observables`；每個已 dump 事件加 `acoustic_transfer[]`
+        （`radius_m`/`azimuth_deg`/`elevation_deg` 寫死 1.05/0/0；
+        `pressure_per_force_imag_pa_n` 固定 0.0 且明確標註**非相位主張**
+        （程式碼註解＋`RADIATION_POWER_SOURCES.md` §5 補記皆已明寫）；
+        `f≥fga` 的 partial 不輸出；非 string/cimbalom/piano 引擎或缺
+        D/ρs 的事件輸出空陣列 `[]`，不是省略鍵）。**`radiation_directivity`／
+        `complex_phase` 確認未被加進 `model_observables`**（既有哨兵測試
+        持續守，三則既有測試同步更新以反映 Phase 3/4：`absolute_pressure_
+        per_force`/`acoustic_transfer` 從「禁止」改為「預期」）。
+      - 測試：C++ `testPressurePerForceCalibration()`（手算對照 1.0×
+        校準常數 + 反例：doubled-constant mutant／零/負/NaN/+Inf
+        fail-closed）、`testPhysicsOnlyCaptureDoesNotAffectRender()`（旗標
+        開關下 `getAllStringModes()` 位元相同的單元級證明 + 正控制：
+        physics-only 振幅確實不同於 render-path 振幅）；Python
+        `Phase4SelfConsistencyTests`（`tests/test_specimen_verify.py`）
+        對 A4/steel/velocity=0.5（`kCimbalomAttackEnergyRefA4` 同一錨點，
+        `strike_position` 微調 0.3→0.31 迴避既有模型/harness 交互作用——
+        0.3 的 `sin(n·π·0.3)` 模態公式在 n=10/20/30 給出真實振幅零點，
+        `specimen_verify.py` 對 dump 全部 partials 做無條件比對性檢查，
+        振幅零點會讓 bundle REFUSED，這是既有、與 B6 無關的問題，依規定
+        不修改 `specimen_verify.py`）跑真實 `--dump-modes`，原封複製成
+        `SYNTHETIC_TEST_ONLY` bundle，`absolute_spl` claim PASS；
+        反例（+10dB tamper）FAIL（誤差精確等於 10.0dB，見
+        `reports/gate_outputs/b6_specimen_selftest.txt`）。
+      **GATE 全綠**：三 build target exit 0、ctest 3/3、pytest 156/156、
+      `--full` 與 Phase 1 基準零差異（`b6_gate_full_phase34.txt` diff
+      `b6_gate_full_phase1.txt` 除末尾 `EXIT=0` 記帳行外零差異）、8 首
+      代表曲目 SHA256 位元不變 8/8（`b6_bit_identity_phase34.txt`，
+      `render()`/`renderEvent()`/`ModalResonator` 皆未觸碰）、corpus
+      `verify_score.py --all` **75/75 PASS**（corpus 由 73 增至 75——
+      其間 `fur_elise_complete`/`fur_elise_complete_cimbalom` 兩份 score
+      由無關工作新增，非 B6 改動；1 項既有 `moonlight_sonata_complete`
+      豁免延續、零新增豁免、零 FAIL，`b6_corpus_phase34.txt` 四分片）、
+      specimen selftest PASS/FAIL 各一（`b6_specimen_selftest.txt`）。
+      量測面：1.05 m 球面、正前方單點（無指向性模型）、數位振幅 1.0 ≡
+      1 Pa ≡ 94 dB。
       → 依據 `docs/EXTERNAL_ANCHOR_SOURCES.md` §2–§3、
       `docs/RADIATION_POWER_SOURCES.md`、`docs/workcards/B6.md`
+- [ ] **B7 完整第一原理力鏈校準（方案 C）**（前置：**B6 方案 B 落地**——
+      **2026-08-28 已滿足**，B6 Phase 3/4 皆 Done，見上一條目；本卡可以
+      開工，但仍待有人實際排入工作）
+      **2026-08-28 立卡（月月裁決：「C 立卡排隊」，`reports/decision_packets/
+      B6_calibration_choice.md`「裁決記錄」節）**：施工卡
+      `docs/workcards/B7.md`——從 MIDI velocity 一路換算真實物理單位
+      （槌速 m/s → Hertz 接觸峰值力 N → 音板真實振動功率 → 1.05m 處 Pa），
+      不靠任何「拿輸出訊號回推」的事後校準捷徑。三條驗收基準：
+      (a) 文獻 SPL 範圍 GATE（真實鋼琴 1m pp≈60dB／ff≈100dB SPL，**尚未
+      溯源到具體文獻，動工前必須先查到出處**）、(b) 與 B6 方案 B 錨點的
+      雙路徑一致性檢查（差異門檻待 B 落地後才定，不預先寫死）、
+      (c) 終極驗收＝D7 實體試體量測（本卡不涵蓋，另待月月安排）。
+      前置補搜三塊（本輪已用 WebSearch/WebFetch 做初步查證，見 B7.md §2.2）：
+      MIDI velocity→真實槌速 m/s 對應（Askenfelt & Jansson 方向——已直接
+      WebFetch 到 Woodhouse *Euphonics* §11.2 轉引 Boutillon「0.11–6.83
+      m/s（pp–ff）」與 Askenfelt KTH 講義頁「forte 槌速約 5 m/s、槌速≈
+      5×鍵速」兩條可信但**未給 MIDI velocity 顯式映射**的來源，映射函數
+      本身仍是缺口）、音板有效輻射面積 `S` 推導、`σ(f)` 信度（已知 `fc`/
+      `fga` 幾乎重合、飽和分支活動窗僅 2.6% 頻寬，繼承自 `RADIATION_POWER_
+      SOURCES.md` §3 補記）。
+      **商業物理建模公司公開驗證資料調查（B7 前置研究，已完成）**：
+      `docs/COMMERCIAL_PM_PUBLIC_DATA.zh-TW.md`——查 Modartt/Pianoteq、
+      Audio Modeling、AAS、Arturia 四家，**月月假說（商業公司會公開驗證
+      資料以取信消費者）本輪未被證實**：四家皆無可稽核的「模型輸出 vs.
+      真實樂器量測」比對數據/白皮書/學術論文（§0/§1 一句話結論）。
+      有用產出兩項：(1) §3 Askenfelt & Jansson KTH 講義的 MIDI velocity→
+      真實槌速 m/s 數字**可直接用**，餵入本卡 §1 的「映射函數仍是缺口」；
+      (2) §4 確認裁決包裡「pp≈60 dB / ff≈100 dB SPL @1m」這組數字**仍是
+      未溯源**——查無鋼琴專屬、標明 1m 距離的權威出處，本卡驗收基準 (a)
+      動工前仍須另尋文獻源（Chabassier et al. 2013 JASA、Roginska et al.
+      2013 POMA 近場量測為候選延伸讀物，見該文件 §0 表格）。
+      → 依據 `docs/workcards/B7.md`、`docs/workcards/B6.md` §6 Phase 2、
+      `reports/decision_packets/B6_calibration_choice.md`、
+      `docs/COMMERCIAL_PM_PUBLIC_DATA.zh-TW.md`
 
 ## C. 不需要任何資料、純工程（可隨時插隊）
 

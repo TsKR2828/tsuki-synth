@@ -3,15 +3,32 @@
 #include <juce_core/juce_core.h>
 
 /**
- * 音板輻射效率骨架 — B6 施工卡 Phase 1（`docs/workcards/B6.md`）
+ * 音板輻射效率骨架 + 絕對校準 — B6 施工卡 Phase 1（骨架）與 Phase 3/4
+ * （絕對校準，`docs/workcards/B6.md`）
  *
- * 這個檔案只做「輻射骨架」：`σ(f)`（無量綱輻射效率，0~1）與
- * `η_rad(f)`（輻射損耗因子）。**不**把它們接成絕對 Pa/瓦特——那條校準鏈
- * 需要 `docs/workcards/B6.md` §6 Phase 2 的月月裁決（見該卡 §4.3），本檔
- * 完全不碰。純函式、無副作用、不依賴任何 B1/B5 的具名 struct（呼叫端把
+ * Phase 1 做「輻射骨架」：`σ(f)`（無量綱輻射效率，0~1）與 `η_rad(f)`
+ * （輻射損耗因子）——純相對量，不含任何絕對物理單位錨點。
+ *
+ * Phase 3/4（2026-08-28，月月已就 §6 Phase 2 裁決方案 B——見
+ * `reports/decision_packets/B6_calibration_choice.md`「裁決記錄」節）在
+ * 這個骨架之外，另外加了一條**完全獨立**的絕對校準路徑：
+ * `kPascalsPerUnitPhysicsAmplitude` + `pressurePerForce()`，把
+ * `CimbalomVoice::getPhysicsOnlyModeAmplitudes()`（純物理、創作層之前的
+ * 訊號分接點，見 `DiagnosticOverrides::capturePhysicsOnlyModes`）換算成
+ * Pa/N。**這條路徑刻意不消費 `σ(f)`／`η_rad(f)`／`radiatedEnergyFraction()`
+ * 這三個 Phase 1 函式**——`absolute_pressure_per_force`／
+ * `acoustic_transfer[]` 只用 `criticalFrequency()`／`acousticCutoffFrequency()`
+ * 算出的 `fc`/`fga` 當作「這個 partial 在不在模型有效範圍內」的**閘門**，
+ * 不把 `σ(f)`（工程近似、非文獻曲線）這種尚有形狀不確定度的量疊乘進一個
+ * 要拿去跟真實試體 PASS/FAIL 比對的絕對數字——那樣會把兩種完全不同來源
+ * 的不確定度混在同一個 claim 裡，違反本檔案一貫的「溯源等級不可混為一談」
+ * 原則。詳細理由見 `pressurePerForce()`／`kPascalsPerUnitPhysicsAmplitude`
+ * 自己的文件與 `docs/RADIATION_POWER_SOURCES.md` §5 補記。
+ *
+ * 純函式、無副作用、不依賴任何 B1/B5 的具名 struct（呼叫端把
  * 數值抽出來傳進來，見 `StringModel::soundboardDynamics()`）。
  *
- * 溯源等級（三種，不可混為一談，見 `docs/RADIATION_POWER_SOURCES.md`）：
+ * 溯源等級（**四種**，不可混為一談，見 `docs/RADIATION_POWER_SOURCES.md`）：
  *   - `criticalFrequency()`／`acousticCutoffFrequency()`：**直接查到**，
  *     `docs/RADIATION_POWER_SOURCES.md` §2.1（`fc`，已更正原施工卡誤讀）
  *     與 §4.1（`fga`，原式無誤，B6.md 引用一致）。
@@ -31,6 +48,9 @@
  *     `η_i`）。這是 B6.md §4.2「能量守恆捷徑」的核心量，**不是**逐音準確值
  *     （音板被當成單一集總 SEA 子系統，丟失相鄰半音 T60 相差 5 倍的峰谷
  *     結構，`docs/RADIATION_POWER_SOURCES.md` §4 第 4 點已指出）。
+ *   - `kPascalsPerUnitPhysicsAmplitude`／`pressurePerForce()`：**裁決常數**
+ *     ——月月的 Option B 決定，既非查到也非推導，是**選定的慣例**，見這兩者
+ *     各自的文件與 `reports/decision_packets/B6_calibration_choice.md`。
  */
 class RadiationModel
 {
@@ -209,5 +229,108 @@ public:
             return -1.0f;
 
         return juce::jlimit (0.0f, 1.0f, etaRad / etaTotal);
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // B6 Phase 3/4 (2026-08-28) -- absolute calibration, independent of the
+    // sigma(f)/eta_rad(f)/radiatedEnergyFraction() skeleton above. See the
+    // class-level doc comment for why these two paths are deliberately kept
+    // separate.
+    // ────────────────────────────────────────────────────────────────────
+
+    /** B6 Phase 3/4 absolute calibration anchor (2026-08-28, 月月 Option B
+     *  decision -- see `reports/decision_packets/B6_calibration_choice.md`
+     *  「裁決記錄」section, and `docs/workcards/B6.md` §6 Phase 2 steps 10-11).
+     *
+     *  **R4 TRACEABILITY NOTE**: this is NOT a measured or independently
+     *  derived physical constant -- it is a DECIDED CONVENTION. It reuses
+     *  the SAME external-database calibration convention TsukiSynth already
+     *  documents for its final rendered output
+     *  (`docs/EXTERNAL_ANCHOR_SOURCES.md` §1: "digital amplitude 1.0
+     *  corresponds to 1 Pa at 1.05 m, i.e. 94 dB SPL"), but pins it instead
+     *  at the PURE-PHYSICS modal-synthesis signal point -- the per-partial
+     *  amplitude BEFORE spectralTilt / loudnessCompensationGain / any EQ
+     *  (see `DiagnosticOverrides::capturePhysicsOnlyModes` and
+     *  `CimbalomVoice::getPhysicsOnlyModeAmplitudes()`) -- rather than at
+     *  the final WAV output ("Option A", rejected; see the decision
+     *  packet §2 for why Option A would fold loudnessCompensationGain, a
+     *  creative/artistic value, into a claimed physical quantity).
+     *
+     *  The resulting quantity is reported as `pressure_per_force_*_pa_n` to
+     *  match `specimen_verify.py`'s real-world driving-point transfer-
+     *  function schema (Pa per Newton of driving force -- the standard
+     *  impact-hammer/shaker FRF measurement convention, see
+     *  `specimens/schema/specimen_measurement_v2.schema.json`). TsukiSynth
+     *  has NO independently-derived Newton-scale hammer force anywhere in
+     *  the engine (see `docs/RADIATION_POWER_SOURCES.md` and the decision
+     *  packet's "Option C" -- the full first-principles force chain, which
+     *  is `docs/workcards/B7.md`, not built here). This constant does not
+     *  supply one either: it defines the Pa numerator and the implicit
+     *  "1 N" denominator TOGETHER as a single decided ratio -- "1 N" means
+     *  "whatever drove this model's own dimensionless physics-only
+     *  amplitude to read 1.0 at this tap point", not an independently
+     *  measured or derived force. Do NOT read this value (or anything
+     *  computed from it) as "TsukiSynth's hammers strike with N newtons" --
+     *  it is a calibration convention for comparing orders of magnitude and
+     *  relative levels against real specimens, not a force measurement,
+     *  exactly as `docs/workcards/B6.md` §11's first bullet warns against
+     *  for §4.4's `sigma(f)` approximation.
+     *
+     *  Numeric value `1.0f` is not "no scaling" -- it IS the decided
+     *  Pa-per-unit-dimensionless-amplitude conversion factor.
+     */
+    static constexpr float kPascalsPerUnitPhysicsAmplitude = 1.0f;
+
+    /** Measurement radius (m) for the fixed `acoustic_transfer[]` observer
+     *  point -- `docs/EXTERNAL_ANCHOR_SOURCES.md` §1's 1.05 m anechoic-array
+     *  convention (the same radius `kPascalsPerUnitPhysicsAmplitude`
+     *  assumes), `docs/workcards/B6.md` §5. Not a score.json parameter
+     *  (Rule 4: no knob nobody asked for) -- v1 hardcodes a single forward
+     *  point; see `kMeasurementAzimuthDeg`/`kMeasurementElevationDeg`.
+     */
+    static constexpr float kMeasurementRadiusM = 1.05f;
+
+    /** Fixed observer azimuth (deg) for `acoustic_transfer[]` -- straight
+     *  ahead, `docs/workcards/B6.md` §5 ("正前方單點，因為沒有指向性模型").
+     *  Not a real directivity claim: there is no spatial radiation model
+     *  (see `radiation_directivity` staying out of `model_observables`).
+     */
+    static constexpr float kMeasurementAzimuthDeg = 0.0f;
+
+    /** Fixed observer elevation (deg) for `acoustic_transfer[]` -- see
+     *  `kMeasurementAzimuthDeg`.
+     */
+    static constexpr float kMeasurementElevationDeg = 0.0f;
+
+    /** B6 Phase 3/4: real component of the Pa/N transfer function at
+     *  `kMeasurementRadiusM`, from a physics-only (pre-creative-layer)
+     *  modal amplitude -- see `kPascalsPerUnitPhysicsAmplitude`'s doc for
+     *  the R4 convention caveat this inherits. Deliberately does NOT fold
+     *  in `radiationEfficiency()`/`radiationLossFactor()` -- see this
+     *  file's class-level doc comment for why.
+     *
+     *  @param physicsOnlyAmplitude  dimensionless per-partial amplitude
+     *         captured BEFORE spectralTilt/loudnessCompensationGain/EQ
+     *         (`CimbalomVoice::getPhysicsOnlyModeAmplitudes()`). By
+     *         construction (see that getter's doc) this is never negative
+     *         in normal operation; a value `<= 0` is treated as invalid
+     *         input regardless of cause.
+     *  @return Pa/N; fail-closed sentinel `-1.0f` (NOT a physical value,
+     *          and not the same thing as a genuine zero-pressure
+     *          prediction) when the input is non-finite or `<= 0` --
+     *          callers must omit that partial's `acoustic_transfer` entry
+     *          entirely. A Pa/N of exactly 0 also cannot be turned into a
+     *          finite dB level by `specimen_verify.py`'s
+     *          `_complex_level_db()` (magnitude 0 -> `log10(0)`), so
+     *          emitting it would make the whole bundle REFUSED rather than
+     *          cleanly leave one partial UNVERIFIED.
+     */
+    static float pressurePerForce (float physicsOnlyAmplitude)
+    {
+        if (! std::isfinite (physicsOnlyAmplitude) || physicsOnlyAmplitude <= 0.0f)
+            return -1.0f;
+
+        const float pa = kPascalsPerUnitPhysicsAmplitude * physicsOnlyAmplitude;
+        return (std::isfinite (pa) && pa > 0.0f) ? pa : -1.0f;
     }
 };

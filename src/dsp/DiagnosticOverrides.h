@@ -33,4 +33,33 @@ namespace DiagnosticOverrides
 
     // <= 0 = no override; Cimbalom/Piano use the score's own numStrings.
     inline int numStringsOverride = -1;
+
+    // B6 Phase 3 (2026-08-28, 月月-authorized Option B choice -- see
+    // reports/decision_packets/B6_calibration_choice.md "裁決記錄" and
+    // docs/workcards/B6.md SS6 step 12). When true, CimbalomVoice::noteOn()
+    // (the CLI/ScoreRenderer variant only -- NOT startNote(), the plugin's
+    // real-time entry point, which never reads this flag) additionally
+    // captures each partial's PURE-PHYSICS amplitude: the per-mode
+    // amplitude BEFORE spectralTilt and BEFORE the cross-register
+    // loudnessCompensationGain / multi-string gain are applied (both
+    // CREATIVE-layer multipliers -- see the "spectralTilt: CREATIVE /
+    // HEURISTIC LAYER" comment in CimbalomEngine.h), but AFTER the
+    // physics-driven HammerImpulse::forceSpectrumMagnitude() term. Read via
+    // CimbalomVoice::getPhysicsOnlyModeAmplitudes(), consumed only by
+    // ScoreRenderer::dumpModes() for the "acoustic_transfer" field (see
+    // RadiationModel::pressurePerForce()).
+    //
+    // Like every other flag in this file: no score JSON field, plugin
+    // parameter, or preset can reach this -- set ONLY by dumpModes()
+    // itself. Default false means a normal render()/renderEvent() call
+    // executes the exact pre-B6-Phase-3 instruction sequence for the
+    // audio-producing path (the new capture code is skipped entirely, not
+    // just numerically inert -- every site that reads this flag is an
+    // early-out "if" around the extra bookkeeping) -- proven via SHA256 of
+    // no-flags renders before/after, see reports/gate_outputs/
+    // b6_bit_identity_phase34.txt (8/8 identical to the pre-B6 baseline in
+    // reports/gate_outputs/b6_method/sha256_before.txt) and the unit-level
+    // check in tests/physics_models_repro.cpp's
+    // testPhysicsOnlyCaptureDoesNotAffectRender().
+    inline bool capturePhysicsOnlyModes = false;
 }

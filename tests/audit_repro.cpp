@@ -1,4 +1,5 @@
 #include "dsp/AudioFIFO.h"
+#include "dsp/DiagnosticOverrides.h"
 #include "dsp/Envelope.h"
 #include "engines/ChromaticEngine.h"
 #include "score/ScoreParser.h"
@@ -492,6 +493,87 @@ void testCustomDumpUsesEffectiveParameters()
            "Mode dump v2 carries explicit observable and event identity metadata");
 }
 
+// B6 Phase 3/4 audit fix (2026-08-28, adversarial-audit finding #1):
+// dumpModes() sets DiagnosticOverrides::capturePhysicsOnlyModes = true so it
+// can read CimbalomVoice's physics-only per-partial amplitudes. The
+// surrounding comment used to argue this could never leak into a render
+// because RenderApp.cpp's --dump-modes and normal-render CLI branches are
+// mutually exclusive within one process -- but THIS binary (audit_repro.cpp)
+// is exactly the counter-example that argument didn't cover: it calls
+// dumpModes() and then render() on the SAME process, sometimes the SAME
+// ScoreRenderer instance (see testCustomDumpUsesEffectiveParameters() just
+// above, which dumps a "custom" score without ever rendering it). Before the
+// fix, dumpModes() left the flag permanently true, so any render() call in
+// this binary AFTER a dumpModes() call would run noteOn() with the
+// physics-only capture bookkeeping still enabled -- not audible (the capture
+// is additive bookkeeping, per testPhysicsOnlyCaptureDoesNotAffectRender()),
+// but a violated invariant nonetheless (the doc comment's claim that
+// "render()/renderEvent() never set this" was contradicted by dumpModes()
+// leaving it set behind them). This test proves the ACTUAL enforced
+// invariant end-to-end: dump-then-render produces byte-identical WAV output
+// to a render that never called dumpModes() at all, and the flag reads back
+// false immediately after dumpModes() returns.
+void testDumpModesDoesNotLeakPhysicsOnlyFlagIntoRender()
+{
+    MaterialDB materials;
+    loadTestMaterial (materials);
+
+    Score score;
+    score.global.sampleRate = 48000;
+    score.global.masterVolume = 1.0;
+    score.global.randomSeed = 424242;
+    score.global.effects.reverbWet = 0.0;
+    score.global.effects.delayWet = 0.0;
+    score.global.effects.distortionWet = 0.0;
+    score.exportSettings.normalize = false;
+    score.exportSettings.tailSilenceMs = 0.0;
+
+    ScoreEvent cimbalom;
+    cimbalom.time = 0.0;
+    cimbalom.duration = 0.2;
+    cimbalom.engine = "cimbalom";
+    cimbalom.note = "C4";
+    cimbalom.velocity = 0.8f;
+    cimbalom.material = "steel";
+    score.events.push_back (cimbalom);
+
+    DiagnosticOverrides::capturePhysicsOnlyModes = false;   // clean starting
+        // state regardless of what earlier tests in this binary left behind
+
+    // Baseline: a renderer that NEVER calls dumpModes() at all.
+    const auto baselineFile = juce::File::createTempFile (".wav");
+    ScoreRenderer baselineRenderer;
+    baselineRenderer.setMaterialDB (&materials);
+    CHECK (baselineRenderer.render (score, baselineFile),
+           "Dump-leak repro: never-dumped baseline renders successfully");
+
+    // Same score, same ScoreRenderer instance, dumpModes() called FIRST --
+    // this is the exact sequence tests/audit_repro.cpp itself already
+    // exercises across different test functions in one process.
+    const auto dumpedThenRenderedFile = juce::File::createTempFile (".wav");
+    ScoreRenderer dumpingRenderer;
+    dumpingRenderer.setMaterialDB (&materials);
+    const auto dumpJson = dumpingRenderer.dumpModes (score);
+    CHECK (! dumpJson.isEmpty(), "Dump-leak repro: dumpModes() produced output");
+    CHECK (! DiagnosticOverrides::capturePhysicsOnlyModes,
+           "capturePhysicsOnlyModes reads back false immediately after "
+           "dumpModes() returns (RAII guard restored it, not left permanently true)");
+    CHECK (dumpingRenderer.render (score, dumpedThenRenderedFile),
+           "Dump-leak repro: post-dump render on the same instance succeeds");
+
+    juce::MemoryBlock baselineBytes, dumpedThenRenderedBytes;
+    const bool loaded = baselineFile.loadFileAsData (baselineBytes)
+        && dumpedThenRenderedFile.loadFileAsData (dumpedThenRenderedBytes);
+    CHECK (loaded && baselineBytes == dumpedThenRenderedBytes,
+           "Calling dumpModes() before render() produces byte-identical WAV "
+           "output to a render that never called dumpModes() at all -- "
+           "capturePhysicsOnlyModes does not leak from the diagnostic dump "
+           "path into a subsequent render in the same process");
+
+    baselineFile.deleteFile();
+    dumpedThenRenderedFile.deleteFile();
+}
+
 void testRendererRejectsAttackOnlyModalEvent()
 {
     MaterialDB materials;
@@ -914,6 +996,7 @@ int main()
     testScoreParserFields();
     testScoreParserRejectsInvalidContract();
     testCustomDumpUsesEffectiveParameters();
+    testDumpModesDoesNotLeakPhysicsOnlyFlagIntoRender();
     testRendererRejectsAttackOnlyModalEvent();
     testSemanticEventOrderIsBitExact();
     testRendererSupportsContractSampleRates();

@@ -321,6 +321,137 @@ fc = ca² / (2π · √(Dx / ρs))     // 不是 √(Dx · H)
 
 ---
 
+## §5 補記（2026-08-28，B6 Phase 3/4 落地）：絕對校準路徑，與 §5 原文的骨架建議完全獨立
+
+月月已就 §6 Phase 2 的三個候選方案裁決（見 `reports/decision_packets/
+B6_calibration_choice.md`「裁決記錄」節）：**方案 B 先行，方案 C 立卡排隊
+（`docs/workcards/B7.md`）**。本節記錄 Phase 3/4 依裁決落地後的實作細節。
+**這是全新、額外新增的絕對校準路徑，與 §5 原文（Phase 1 的 `σ(f)`/
+`η_rad(f)`/`η_i(f)` 建議）完全獨立、互不覆寫、互不消費彼此**——見下方
+「為什麼刻意不消費 §5 原文的骨架」一節。
+
+### 訊號分接點與校準常數
+
+- **訊號分接點**：新增 `DiagnosticOverrides::capturePhysicsOnlyModes` 旗標
+  （`src/dsp/DiagnosticOverrides.h`），比照既有 `bodyAmountOverride`／
+  `disableExciterNoise`／`numStringsOverride` 的「診斷旗標，正常渲染路徑
+  零影響」模式。旗標開啟時，`CimbalomVoice::noteOn()`（僅 CLI/
+  `ScoreRenderer` 變體，不是 `startNote()` 即時播放路徑）額外擷取每個
+  partial「創作層之前」的振幅——即 `spectralTilt`（程式碼明確標註為
+  CREATIVE/HEURISTIC LAYER）與 `loudnessCompensationGain`／多弦正規化增益
+  （`gain=noteComp/√N`）都尚未乘上去，但 `HammerImpulse::
+  forceSpectrumMagnitude()`（槌頭力頻譜，物理量）已經乘上去的中間值。
+  這個值只有 `ScoreRenderer::dumpModes()` 會讀取（透過
+  `CimbalomVoice::getPhysicsOnlyModeAmplitudes()`），也只有 `dumpModes()`
+  會把旗標設成 `true`；`render()`/`renderEvent()` 從未觸碰這個旗標，
+  維持預設 `false`，§9 位元不變性驗證即是證明這一點。
+- **校準常數**：`RadiationModel::kPascalsPerUnitPhysicsAmplitude = 1.0f`
+  ——沿用 `EXTERNAL_ANCHOR_SOURCES.md` §1「數位 1.0 ≡ 1 Pa ≡ 94 dB SPL
+  @1.05m」慣例，但釘在上述純物理訊號點，而不是最終渲染輸出（方案 A 會把
+  `loudnessCompensationGain` 這種創作層數值一起算進物理主張，違反本 repo
+  一貫的創作/物理分離原則，見裁決包 §2 對方案 A 風險的說明）。**這是
+  月月裁決的方案 B 慣例錨定，不是實測值，也不是從任何文獻/物理定律推導
+  出來的**——`RadiationModel::kPascalsPerUnitPhysicsAmplitude` 與
+  `pressurePerForce()` 自己的程式碼文件已完整記載這一點（R4 溯源等級：
+  「裁決常數」，見 `RadiationModel.h` class 文件新增的第四種溯源等級）。
+
+### 為什麼刻意不消費 §5 原文（Phase 1）的 `σ(f)`／`η_rad(f)` 骨架
+
+`acoustic_transfer[]`／`pressurePerForce()` **刻意不把 `radiationEfficiency()`
+（σ(f)）或 `radiationLossFactor()`（η_rad(f)）當成 Pa/N 計算裡的乘數**，
+只用 `criticalFrequency()`／`acousticCutoffFrequency()` 算出的 `fc`/`fga`
+當作「這個 partial 在不在模型有效範圍內」的**閘門**（f≥fga 就不輸出）。
+理由：
+
+1. `σ(f)` 是 §4.4 標註為「工程近似、非文獻曲線」的量，量級可信但形狀不保證
+   精確（§4 第 2 點）；`absolute_pressure_per_force` 是要拿去跟真實試體
+   PASS/FAIL 比對的量——把一個形狀不確定度未量化的近似式，乘進一個要做
+   絕對數字判定的 claim 裡，會讓 FAIL 的時候無法區分「校準常數錯了」還是
+   「σ(f) 形狀錯了」還是「基礎物理（弦模態/槌頭力鏈）錯了」，混淆了三種
+   完全不同來源的不確定度，違反本文件與 `RadiationModel.h` 一貫的
+   「溯源等級不可混為一談」原則。
+2. `σ(f)`（`radiated_power_relative`）本來就已經是獨立輸出的**資訊性**
+   欄位（Phase 1，不進 `model_observables` 的 specimen_verify.py 判定路徑），
+   讓它繼續獨立存在、不被下游任何判定消費，才符合它原本「僅供人工/未來
+   工作檢視趨勢」的定位（B6.md §5）。
+3. 這個設計選擇也是刻意在 Option B（校準捷徑）與 Option C（B7，完整第一
+   原理力鏈，會需要 `S`／真實輻射面積等才能正確接上 σ(f)/η_rad(f)）之間
+   劃清界線——Option B 不應該「半調子」地借用 Option C 才需要的物理骨架，
+   否則兩張卡的職責會混在一起，且會讓 Option B 的絕對數字看起來比它實際
+   站得住的證據更有把握。
+
+### `imag_pa_n = 0.0` 的明確聲明（非相位主張，R9 域外標註）
+
+`acoustic_transfer[].pressure_per_force_imag_pa_n` **固定寫 `0.0`**。
+**這不是相位主張**——本模型完全沒有相位模型（弦/槌頭時域波形相位、
+音板耦合相位、輻射傳播相位，一概沒有實作）。`imag=0.0` 純粹是 schema
+形狀佔位值，讓 `pressure_per_force_real_pa_n` 單獨承載一個「非負量級」
+主張（且 `pressurePerForce()` 對非正輸入 fail-closed 到 sentinel，保證
+輸出永遠 `>0`，不會用負號隱含 180° 相位）。`specimen_verify.py` 的
+`radiation_directivity` claim（會把 real/imag 一起讀成相位角）仍然被
+`"radiation_directivity"` 未加入 `model_observables` 這件事擋住，不會
+因為 `acoustic_transfer` 有了 real/imag 欄位就意外被解鎖。程式碼
+（`ScoreRenderer.h::dumpModes()`／`RadiationModel::pressurePerForce()`）
+的相關註解都已明寫這一點；`tests/test_specimen_verify.py` 的既有哨兵測試
+（`RealDumpModesRadiationSentinelTests`）持續驗證 `radiation_directivity`／
+`complex_phase` 不會被誤加進 `model_observables`（見 §7 補記）。
+
+---
+
+## §7 補記（2026-08-28，B6 Phase 3/4 狀態）
+
+- [x] 月月已就 Phase 2 裁決：**方案 B 先行**（本節記錄的落地內容），
+      **方案 C 立卡排隊**（`docs/workcards/B7.md`，`reports/decision_packets/
+      B6_calibration_choice.md`「裁決記錄」節）
+- [x] 新增純物理訊號分接點（`DiagnosticOverrides::capturePhysicsOnlyModes`
+      ＋ `CimbalomVoice::getPhysicsOnlyModeAmplitudes()`），
+      `render()`/`renderEvent()`/`ModalResonator` 零改動——單元級證明
+      （`testPhysicsOnlyCaptureDoesNotAffectRender()`，旗標開關下
+      `getAllStringModes()` 位元相同）與 corpus 級證明（§9 位元不變性，
+      8 首代表曲目 SHA256 前後全同）雙重驗證通過
+- [x] `RadiationModel::kPascalsPerUnitPhysicsAmplitude`／`pressurePerForce()`
+      落地，R4 註解明寫「月月裁決的方案 B 慣例錨定，非實測、非推導」；
+      刻意不消費 `σ(f)`／`η_rad(f)`（理由見上方新節）
+- [x] `dumpModes()` 加 `"absolute_pressure_per_force"` 至
+      `model_observables`；合格事件加 `acoustic_transfer[]`
+      （`radius_m`/`azimuth_deg`/`elevation_deg` 寫死 1.05/0/0；
+      `imag_pa_n` 固定 0.0 且明確非相位主張；`f≥fga` 的 partial 不輸出；
+      非合格引擎（beam/tongue_drum/plate/water_gong/custom/fm）或缺
+      D/ρs 的事件輸出空陣列 `[]`，不是省略整個鍵）
+- [x] `radiation_directivity`／`complex_phase` 確認仍未被誤加進
+      `model_observables`（既有哨兵測試 `RealDumpModesRadiationSentinelTests`
+      持續守；三則既有測試已同步更新以反映 Phase 3/4 現況——
+      `absolute_pressure_per_force`／`acoustic_transfer` 從「禁止出現」改為
+      「預期出現」，`radiation_directivity`／`complex_phase` 依舊禁止）
+- [x] C++ 單元測試：`testPressurePerForceCalibration()`（手算對照 + 反例：
+      doubled-calibration-constant mutant、零/負/NaN/+Inf 全部 fail-closed）、
+      `testPhysicsOnlyCaptureDoesNotAffectRender()`（旗標開關下渲染路徑
+      位元相同的單元級證明 + 正控制：physics-only 振幅確實不同於
+      render-path 振幅，證明創作層乘數真的被排除，不是複製貼上把兩者
+      混在一起）
+- [x] Python 端 `Phase4SelfConsistencyTests`（`tests/test_specimen_verify.py`）：
+      真實 CLI `--dump-modes` 輸出（A4/steel/velocity=0.5，
+      `kCimbalomAttackEnergyRefA4` 同一錨點，`strike_position` 從錨點的
+      0.3 微調到 0.31——理由：0.3 是低分母有理數，`StringModel::
+      calculateModes()` 的 `sin(n·π·strikePosition)` 模態形狀公式在
+      n=10/20/30 產生真實的物理振幅零點，`specimen_verify.py` 對
+      dump 全部 partials 做無條件的「必須可比對」檢查（`predicted_by_index`
+      構造階段，早於任何 claim 判定），振幅零點會讓整個 bundle
+      REFUSED——這是既有、與 B6 無關的模型/harness 交互作用，本卡依
+      B6.md §3 規定不得修改 `specimen_verify.py`，改用不撞到有理數重合的
+      鄰近撞針位置迴避，已於測試檔內完整記錄理由）原封不動複製成
+      `SYNTHETIC_TEST_ONLY` 標記的 v2 bundle，`absolute_spl` claim
+      判 **PASS**；反例（其中一個 measured 點 `transfer_level_db_re_20upa_per_n`
+      故意 +10dB）判 **FAIL**（實測誤差精確等於 10.0 dB，見
+      `reports/gate_outputs/b6_specimen_selftest.txt`）
+- [x] GATE 全套：三 build target exit 0、ctest 3/3、pytest 全數 passed、
+      `--full` 與 Phase 1 基準零差異、§9 位元不變 8/8、corpus
+      `verify_score.py --all`、specimen selftest（PASS/FAIL 各一）——
+      詳細數字見 `TODO.md`/`ROADMAP_PHYSICS.md` B6 條目與
+      `reports/gate_outputs/` 下對應檔案
+
+---
+
 ## §3 補記（2026-08-28 Opus 稽核實測）：fc 與 fga 幾乎重合，σ=1 分支的活動窗極窄
 
 以實際生效的引擎參數（wood_spruce：E=12 GPa、ν=0.37、ρ=450 kg/m³、h=9 mm →
@@ -332,8 +463,9 @@ D=844.63 N·m、ρs=4.05 kg/m²）代入 Phase 1 落地的公式：
   為 1300.97 Hz，恰落在此窄縫。
 - 換言之，**97%+ 的輸出值走的是 §4.4 的 (f/fc)² 工程近似**——整個欄位的
   可信度幾乎完全押在該近似上（其「保量級不保形狀」的侷限本文件 §4 已載明）。
-- 另一層意義：均質板模型在還沒走到重合頻率就先失效（fga 略小於 fc）。
-  此組實測數字供 Phase 2 校準裁決時參考。
+- 另一層意義：均質板模型撐過重合頻率沒多久就失效（fc 略小於 fga，
+  σ=1 飽和分支窗＝fga−fc＝33.7 Hz——模型還沒真正走遠就碰到 fga 這個
+  「無預測」邊界）。此組實測數字供 Phase 2 校準裁決時參考。
 
 （註：本文件 §3 原表用的骨架數字 fc≈1.8 kHz 來自 Ege & Boutillon 的鋼琴音板
 參數；上述 1274 Hz 是本引擎 wood_spruce/9mm 實際參數的結果，兩者不同屬正常，

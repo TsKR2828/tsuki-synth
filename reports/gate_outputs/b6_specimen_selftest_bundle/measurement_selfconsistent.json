@@ -1,0 +1,197 @@
+{
+  "$schema": "TsukiSynth Specimen Measurement v2",
+  "specimen": {
+    "id": "SYNTHETIC_TEST_ONLY-b6-phase4-selfcheck",
+    "instrument_family": "cimbalom",
+    "serial_or_lot": "SYNTHETIC_TEST_ONLY",
+    "geometry": {
+      "note": "SYNTHETIC_TEST_ONLY -- not a real specimen"
+    },
+    "material": {
+      "note": "SYNTHETIC_TEST_ONLY -- not a real specimen"
+    },
+    "boundary_condition": "SYNTHETIC_TEST_ONLY"
+  },
+  "environment": {
+    "temperature_c": 23.0,
+    "relative_humidity_pct": 50.0,
+    "pressure_kpa": 101.325
+  },
+  "acquisition": {
+    "laboratory": "SYNTHETIC_TEST_ONLY -- not a real lab, see docs/workcards/B6.md \u00a77 item 2",
+    "operator": "b6-phase4-self-consistency-test",
+    "captured_at_utc": "2026-08-28T00:00:00Z",
+    "method": "impact_hammer_frf",
+    "sample_rate_hz": 48000,
+    "averages": 8,
+    "frequency_resolution_hz": 0.25,
+    "uncertainty_coverage_factor": 2.0,
+    "excitation_point_xyz_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "excitation_direction_xyz": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "response_point_xyz_m": [
+      1.05,
+      0.0,
+      0.0
+    ],
+    "response_quantity": "pressure_pa"
+  },
+  "artifacts": [
+    {
+      "role": "acoustic_calibration",
+      "path": "acoustic_calibration.csv",
+      "sha256": "95603721ee56e5405e6d87ad687c29991c28ad3a3308b5a65a47561a574daa4c"
+    },
+    {
+      "role": "analysis_config",
+      "path": "analysis_config.csv",
+      "sha256": "5f709adc3c3e1b908c1d2de41be61bd9b1336de5ffab55e9f442e39fa0ef553e"
+    },
+    {
+      "role": "derived_acoustic_transfer",
+      "path": "derived_acoustic_transfer.csv",
+      "sha256": "a271423b80eb8549e305a03323b8d6e787929b22f2e9501d0b495674b1b71671"
+    },
+    {
+      "role": "derived_frf",
+      "path": "derived_frf.csv",
+      "sha256": "e0d7823ed60d1bf386922c29b9a5c2e742289afa54e4358a2b7733ddf6ab1162"
+    },
+    {
+      "role": "excitation_calibration",
+      "path": "excitation_calibration.csv",
+      "sha256": "58dbe9f5ecfbc1e83e7608154061c886cb429f2f40141dca93b59361cf9c32fa"
+    },
+    {
+      "role": "raw_acoustic_response",
+      "path": "raw_acoustic_response.csv",
+      "sha256": "101425782f44c545881a7bdf64f2acaad8ad19ba19eb0e68853e6d9ed7202dfa"
+    },
+    {
+      "role": "raw_excitation",
+      "path": "raw_excitation.csv",
+      "sha256": "dad0bf85a75d25dc316a2504c009e766743b5f32b3f7221e98ed24bddf2f6114"
+    },
+    {
+      "role": "raw_response",
+      "path": "raw_response.csv",
+      "sha256": "586c07b548057afaff8e543cbdb1f42025241b6dc1b81e6091b877d68a05e3a6"
+    },
+    {
+      "role": "response_calibration",
+      "path": "response_calibration.csv",
+      "sha256": "4d839e3b90e78c7463df251ae21927e253eb4dddbc9314f6f686fcfb59c7142d"
+    },
+    {
+      "role": "uncertainty_analysis",
+      "path": "uncertainty_analysis.csv",
+      "sha256": "183ef6acb7de59d0f51c315258aad2e59df0563ab57da5b04cb9f81e90758631"
+    }
+  ],
+  "model": {
+    "event_source_index": 0,
+    "mode_dump_path": "b6_phase4_probe.modes.json",
+    "mode_dump_sha256": "618f28a7c056c16eed3628ba5f53c98c22c5116747db225055724f5c8e1bc3bc",
+    "uncertainty": {
+      "frequency_relative_pct": 0.0,
+      "relative_magnitude_db": 0.0,
+      "t60_relative_pct": 0.0,
+      "phase_deg": 0.0,
+      "absolute_level_db": 0.0,
+      "directivity_db": 0.0,
+      "directivity_phase_deg": 0.0
+    }
+  },
+  "claim_scope": {
+    "modal_frequencies": false,
+    "relative_modal_magnitudes": false,
+    "modal_t60": false,
+    "complex_phase": false,
+    "absolute_spl": true,
+    "radiation_directivity": false
+  },
+  "acceptance": {
+    "min_mode_count": 1,
+    "min_coherence": 0.9,
+    "max_frequency_error_pct": 0.5,
+    "max_relative_magnitude_error_db": 0.2,
+    "max_t60_ratio": 1.02,
+    "max_phase_error_deg": 5.0,
+    "max_absolute_level_error_db": 0.01,
+    "min_directivity_points": 2,
+    "max_directivity_error_db": 0.1,
+    "max_directivity_phase_error_deg": 1.0
+  },
+  "relative_magnitude_reference_partial_index": 0,
+  "measured_modes": [
+    {
+      "model_partial_index": 0,
+      "frequency_hz": 438.731,
+      "frequency_u_hz": 0.01,
+      "relative_magnitude_db": 0.0,
+      "magnitude_u_db": 0.01,
+      "t60_s": 2.5029,
+      "t60_u_s": 0.025029,
+      "coherence": 0.999,
+      "phase_deg": 0.0,
+      "phase_u_deg": 1.0,
+      "frf_real_si_per_n": 1.0,
+      "frf_imag_si_per_n": 0.0,
+      "decay_fit_r2": 0.999
+    },
+    {
+      "model_partial_index": 1,
+      "frequency_hz": 878.607,
+      "frequency_u_hz": 0.01,
+      "relative_magnitude_db": 0.0,
+      "magnitude_u_db": 0.01,
+      "t60_s": 2.1677,
+      "t60_u_s": 0.021677,
+      "coherence": 0.999,
+      "phase_deg": 0.0,
+      "phase_u_deg": 1.0,
+      "frf_real_si_per_n": 1.0,
+      "frf_imag_si_per_n": 0.0,
+      "decay_fit_r2": 0.999
+    }
+  ],
+  "acoustic_measurements": [
+    {
+      "model_partial_index": 0,
+      "frequency_hz": 438.731,
+      "radius_m": 1.05,
+      "azimuth_deg": 0.0,
+      "elevation_deg": 0.0,
+      "pressure_per_force_real_pa_n": 0.790482,
+      "pressure_per_force_imag_pa_n": 0.0,
+      "transfer_level_db_re_20upa_per_n": 91.93723978866488,
+      "transfer_u_db": 0.0,
+      "phase_u_deg": 0.0,
+      "coherence": 0.999,
+      "reference_force_rms_n": 1.0,
+      "spl_db_re_20upa": 91.93723978866488
+    },
+    {
+      "model_partial_index": 1,
+      "frequency_hz": 878.607,
+      "radius_m": 1.05,
+      "azimuth_deg": 0.0,
+      "elevation_deg": 0.0,
+      "pressure_per_force_real_pa_n": 0.772729,
+      "pressure_per_force_imag_pa_n": 0.0,
+      "transfer_level_db_re_20upa_per_n": 91.73994431333804,
+      "transfer_u_db": 0.0,
+      "phase_u_deg": 0.0,
+      "coherence": 0.999,
+      "reference_force_rms_n": 1.0,
+      "spl_db_re_20upa": 91.73994431333804
+    }
+  ]
+}

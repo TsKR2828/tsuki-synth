@@ -4,7 +4,9 @@
 #include "physics/RadiationModel.h"
 #include "physics/HammerImpulse.h"
 #include "engines/ChromaticEngine.h"
+#include "engines/CimbalomEngine.h"
 #include "dsp/NoiseGen.h"
+#include "dsp/DiagnosticOverrides.h"
 #include "dsp/EffectsChain.h"
 #include "effects/EffectChain.h"
 #include "effects/StereoDelay.h"
@@ -510,6 +512,153 @@ void testRadiatedPowerChain()
            "radiatedEnergyFraction: sentinel etaRad (-1) propagates to sentinel output");
     CHECK (RadiationModel::radiatedEnergyFraction (etaRad, 0.0f) < 0.0f,
            "radiatedEnergyFraction: non-positive etaTotal is fail-closed (-1)");
+}
+
+// ── Absolute calibration (2026-08-28 B6 Phase 3/4) ─────────────────────────
+// docs/workcards/B6.md §7 / reports/decision_packets/B6_calibration_choice.md
+// "裁決記錄". RadiationModel::pressurePerForce() is a DECIDED CONVENTION
+// (kPascalsPerUnitPhysicsAmplitude), not a measured/derived physical law --
+// see that constant's doc comment. The "hand calculation" below is therefore
+// the definition itself (Pa/N = kPascalsPerUnitPhysicsAmplitude *
+// physicsOnlyAmplitude), which is exactly what makes this test meaningful:
+// it catches an accidental change to the constant's VALUE or a stray extra
+// multiplier creeping in, not a physics-derivation error (there is none to
+// check here -- that absence is the whole point of Option B being a
+// convention anchor rather than a first-principles chain).
+void testPressurePerForceCalibration()
+{
+    CHECK (std::abs (RadiationModel::kPascalsPerUnitPhysicsAmplitude - 1.0f) < 1.0e-9f,
+           "kPascalsPerUnitPhysicsAmplitude is the decided 1.0 Pa-per-unit-"
+           "amplitude convention (docs/EXTERNAL_ANCHOR_SOURCES.md §1), unchanged");
+    CHECK (std::abs (RadiationModel::kMeasurementRadiusM - 1.05f) < 1.0e-6f,
+           "kMeasurementRadiusM matches the 1.05 m anechoic-array convention "
+           "(docs/EXTERNAL_ANCHOR_SOURCES.md §1)");
+
+    const float amp = 0.42f;   // arbitrary representative dimensionless amplitude
+    const float expected = RadiationModel::kPascalsPerUnitPhysicsAmplitude * amp;
+    const float actual = RadiationModel::pressurePerForce (amp);
+    CHECK (std::abs (actual - expected) < 1.0e-4f,
+           "pressurePerForce: matches the hand-calculated "
+           "kPascalsPerUnitPhysicsAmplitude * physicsOnlyAmplitude definition");
+    CHECK (std::abs (actual - 0.42f) < 1.0e-4f,
+           "pressurePerForce: with the 1.0x convention constant, output equals "
+           "the input amplitude numerically (0.42 Pa/N for 0.42 amplitude)");
+
+    // ---- Counter-example (docs/workcards/B6.md §7, mandatory): a mutant
+    // that accidentally doubled the calibration constant (e.g. a stray
+    // copy-pasted "x2" gain) must be distinguishable from the real 1.0x
+    // convention.
+    const float mutantDoubledConstant = 2.0f * amp;
+    const float delta = std::abs (actual - mutantDoubledConstant);
+    std::cout << "[SENTINEL 1/2] mutant (2x calibration constant): "
+              << mutantDoubledConstant << " Pa/N -- if "
+              << "kPascalsPerUnitPhysicsAmplitude were silently doubled, this "
+              << "is what pressurePerForce(0.42) would return instead\n";
+    std::cout << "[SENTINEL 2/2] real pressurePerForce(0.42): " << actual << " Pa/N\n";
+    CHECK (delta > 0.3f,
+           "SENTINEL: a doubled-constant mutant is distinguishable from the "
+           "real 1.0x convention (0.42 vs 0.84 Pa/N, delta=0.42)");
+
+    // ---- Pathological counter-example (mirrors testRadiatedPowerChain()'s
+    // eta_i=0 degenerate case): a partial with EXACTLY ZERO (or negative)
+    // physics-only amplitude -- e.g. a mode-shape node landing exactly on
+    // the strike position -- must fail-closed to the sentinel, not silently
+    // report a fabricated "0 Pa/N" claim. A real 0 Pa/N would break
+    // specimen_verify.py's _complex_level_db() (log10 of zero magnitude,
+    // raises ValueError -> the whole bundle REFUSED) instead of cleanly
+    // leaving that one partial's acoustic_transfer entry omitted/UNVERIFIED.
+    CHECK (RadiationModel::pressurePerForce (0.0f) < 0.0f,
+           "pressurePerForce: exactly-zero amplitude fail-closes to the "
+           "sentinel (-1), not a fabricated 0 Pa/N that would break "
+           "specimen_verify.py's log10-of-zero-magnitude handling");
+    CHECK (RadiationModel::pressurePerForce (-0.1f) < 0.0f,
+           "pressurePerForce: negative amplitude (structurally should not "
+           "happen upstream, but fail-closed anyway) -> sentinel");
+    CHECK (RadiationModel::pressurePerForce (std::numeric_limits<float>::quiet_NaN()) < 0.0f,
+           "pressurePerForce: NaN amplitude -> sentinel");
+    CHECK (RadiationModel::pressurePerForce (std::numeric_limits<float>::infinity()) < 0.0f,
+           "pressurePerForce: +infinity amplitude -> sentinel (not a physical value)");
+}
+
+// docs/workcards/B6.md §6 step 12 / DiagnosticOverrides::
+// capturePhysicsOnlyModes doc: the new B6 Phase 3 diagnostic capture must
+// not change ANYTHING CimbalomVoice::noteOn() feeds into ModalResonator --
+// i.e. getModes()/getAllStringModes() must be bit-identical whether the
+// flag is on or off. This is the unit-level half of §9's bit-identity
+// proof; the other half is the full-WAV SHA256 check in
+// reports/gate_outputs/b6_bit_identity.txt, which this fast unit test
+// cannot substitute for but complements (catches a regression here in
+// milliseconds instead of a multi-minute corpus re-render).
+void testPhysicsOnlyCaptureDoesNotAffectRender()
+{
+    MaterialDB::Material mat = steel();
+    // Any finite, positive-property material works as the "soundboard" for
+    // THIS check -- it is about render-path invariance under the capture
+    // flag, not about radiation-model correctness (which testRadiationEfficiencyShape()/
+    // testRadiatedPowerChain()/testPressurePerForceCalibration() already
+    // cover), so reusing steel() for both arguments is deliberate, not lazy.
+    MaterialDB::Material soundboardStub = steel();
+
+    CimbalomParams cp;   // defaults: strike 0.3, Wood exciter, 3 strings, tuneToMidi
+
+    DiagnosticOverrides::capturePhysicsOnlyModes = false;
+    CimbalomVoice voiceOff;
+    voiceOff.prepare (48000.0);
+    voiceOff.noteOn (69, 0.5f, mat, soundboardStub, cp);   // A4, velocity 0.5
+    const auto modesOff = voiceOff.getAllStringModes();
+    CHECK (voiceOff.getPhysicsOnlyModeAmplitudes().empty(),
+           "capturePhysicsOnlyModes=false: getPhysicsOnlyModeAmplitudes() "
+           "stays empty (no computation happened, not just an unused result)");
+
+    DiagnosticOverrides::capturePhysicsOnlyModes = true;
+    CimbalomVoice voiceOn;
+    voiceOn.prepare (48000.0);
+    voiceOn.noteOn (69, 0.5f, mat, soundboardStub, cp);
+    const auto modesOn = voiceOn.getAllStringModes();
+    const auto physicsOnly = voiceOn.getPhysicsOnlyModeAmplitudes();
+    DiagnosticOverrides::capturePhysicsOnlyModes = false;   // restore the
+        // default for every test that runs after this one in the same binary
+
+    bool identical = modesOff.size() == modesOn.size();
+    for (size_t s = 0; identical && s < modesOff.size(); ++s)
+    {
+        identical = modesOff[s].size() == modesOn[s].size();
+        for (size_t i = 0; identical && i < modesOff[s].size(); ++i)
+        {
+            const auto& a = modesOff[s][i];
+            const auto& b = modesOn[s][i];
+            identical = (a.frequency == b.frequency)
+                     && (a.amplitude == b.amplitude)
+                     && (a.decayTime == b.decayTime);
+        }
+    }
+    CHECK (identical,
+           "capturePhysicsOnlyModes flag does not change getAllStringModes() "
+           "(bit-exact float == comparison) -- the diagnostic capture is "
+           "purely additive bookkeeping, never touches what feeds the render path");
+    CHECK (! physicsOnly.empty(),
+           "capturePhysicsOnlyModes=true: getPhysicsOnlyModeAmplitudes() is "
+           "populated for a qualifying (steel string) voice");
+
+    // ---- Counter-example: the physics-only amplitude must NOT equal the
+    // render-path amplitude of the SAME partial -- if it did, that would
+    // mean spectralTilt/loudnessCompensationGain got applied to the
+    // "physics-only" capture too (the exact contamination Option B exists
+    // to avoid), or a copy-paste bug aliased the two vectors.
+    CHECK (! modesOn.empty() && ! modesOn[0].empty() && ! physicsOnly.empty(),
+           "positive control: both vectors are non-empty so the next check "
+           "cannot pass vacuously");
+    if (! modesOn.empty() && ! modesOn[0].empty() && ! physicsOnly.empty())
+    {
+        std::cout << "[SENTINEL] render-path amp[0]=" << modesOn[0][0].amplitude
+                  << "  physics-only amp[0]=" << physicsOnly[0]
+                  << " -- must differ (render path includes "
+                  << "loudnessCompensationGain/spectralTilt, physics-only excludes both)\n";
+        CHECK (std::abs (modesOn[0][0].amplitude - physicsOnly[0]) > 1.0e-6f,
+               "SENTINEL: physics-only amplitude differs from the render-path "
+               "amplitude of the same partial (proves the creative-layer "
+               "multipliers were actually excluded, not accidentally left in)");
+    }
 }
 
 // ── String damping first principles (2026-08-24 B3) ───────────────────────
@@ -1133,6 +1282,8 @@ int main()
     testBridgeLossSentinel();
     testRadiationEfficiencyShape();
     testRadiatedPowerChain();
+    testPressurePerForceCalibration();
+    testPhysicsOnlyCaptureDoesNotAffectRender();
     testStringDampingFirstPrinciples();
     testDimensionalScalingLaws();
     testPassivityAndInvalidNumericRefusal();

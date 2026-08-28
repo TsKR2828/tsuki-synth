@@ -388,6 +388,20 @@ public:
         StringModel::calculateModes (sp, mat, baseModesScratch);
         auto& baseModes = baseModesScratch;
 
+        // B6 Phase 3 diagnostic-only capture (DiagnosticOverrides::
+        // capturePhysicsOnlyModes, see that flag's doc comment): snapshot
+        // amplitudes BEFORE the spectralTilt loop below mutates
+        // baseModes[i].amplitude in place. Guarded so a normal render()
+        // call (flag stays false) does not even pay for the vector copy --
+        // this is the ONLY place spectralTilt's pre-image is ever visible,
+        // since baseModes itself gets overwritten a few lines down.
+        if (DiagnosticOverrides::capturePhysicsOnlyModes)
+        {
+            physicsOnlyBaseAmplitudeScratch.resize (baseModes.size());
+            for (size_t bi = 0; bi < baseModes.size(); ++bi)
+                physicsOnlyBaseAmplitudeScratch[bi] = baseModes[bi].amplitude;
+        }
+
         // ── spectralTilt: CREATIVE / HEURISTIC LAYER (not physics) ──────────
         // Same untraced empirical constants (7.5 / 4.0 / 0.2, plus the 2.0
         // in materialBright below) as startNote() -- see the full comment
@@ -514,6 +528,37 @@ public:
             strings[s].excite (velocity);
         }
 
+        // B6 Phase 3: finish the physics-only capture -- multiply the
+        // pre-spectralTilt base amplitude (snapshotted above, BEFORE the
+        // per-string loop) by the SAME physics-driven HammerImpulse::
+        // forceSpectrumMagnitude() term the render just applied, evaluated
+        // at string 0's FINAL (tuned + detuned) frequency so results line
+        // up index-for-index with getModes()/getAllStringModes()[0] (what
+        // --dump-modes calls "partials"). Deliberately EXCLUDES
+        // spectralTilt and gain (=noteComp/sqrt(N): the creative
+        // loudnessCompensationGain + multi-string normalisation) -- see
+        // RadiationModel::kPascalsPerUnitPhysicsAmplitude for what this
+        // feeds. physicsOnlyModeAmplitudes stays empty when the flag is
+        // off, matching "no computation happened" rather than stale data.
+        if (DiagnosticOverrides::capturePhysicsOnlyModes)
+        {
+            physicsOnlyModeAmplitudes.clear();
+            if (numActiveStrings > 0)
+            {
+                const auto& s0 = stringModesScratch[0];
+                const size_t n = std::min (s0.size(), physicsOnlyBaseAmplitudeScratch.size());
+                physicsOnlyModeAmplitudes.resize (n);
+                for (size_t i = 0; i < n; ++i)
+                {
+                    const float physicsAmp = physicsOnlyBaseAmplitudeScratch[i]
+                        * HammerImpulse::forceSpectrumMagnitude (
+                              juce::MathConstants<float>::twoPi * s0[i].frequency, tauC);
+                    physicsOnlyModeAmplitudes[i] =
+                        (std::isfinite (physicsAmp) && physicsAmp >= 0.0f) ? physicsAmp : -1.0f;
+                }
+            }
+        }
+
         float materialBright = juce::jlimit (0.15f, 2.0f, spectralTilt * 2.0f);
         setupExciter (static_cast<float> (hammerIdx), velocity,
                       0.5f, 0.0f, materialBright, sr);
@@ -602,6 +647,23 @@ public:
     /// magnitudeAt(). Single source of truth for --dump-modes' body-filter
     /// column; not a re-derivation, reads the same bodyRes the renderer uses.
     float getBodyMagnitudeAt (float freqHz) const { return bodyRes.magnitudeAt (freqHz); }
+
+    /// B6 Phase 3 (docs/workcards/B6.md, DiagnosticOverrides::
+    /// capturePhysicsOnlyModes): the physics-only (pre-spectralTilt,
+    /// pre-loudnessCompensationGain/multi-string-gain) per-partial
+    /// amplitude of string 0, index-aligned with
+    /// getModes()/getAllStringModes()[0] ("partials" in --dump-modes JSON).
+    /// Empty unless DiagnosticOverrides::capturePhysicsOnlyModes was set
+    /// BEFORE this voice's noteOn() call -- ScoreRenderer::dumpModes() is
+    /// the only caller that sets it. A value of exactly -1.0f at index i is
+    /// a fail-closed sentinel (non-finite/negative intermediate result),
+    /// not a real physics amplitude -- callers must exclude that partial
+    /// rather than treat -1 as data (mirrors RadiationModel's sentinel
+    /// convention throughout this codebase).
+    const std::vector<float>& getPhysicsOnlyModeAmplitudes() const
+    {
+        return physicsOnlyModeAmplitudes;
+    }
 
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
                           int startSample, int numSamples) override
@@ -714,6 +776,14 @@ private:
     ModalResonator strings[kMaxStringsPerCourse];
     std::vector<ModalResonator::Mode> baseModesScratch;
     std::array<std::vector<ModalResonator::Mode>, kMaxStringsPerCourse> stringModesScratch;
+    // B6 Phase 3 diagnostic-only (DiagnosticOverrides::
+    // capturePhysicsOnlyModes, see that flag's doc comment) -- both stay
+    // empty (default-constructed) unless the flag was set before noteOn()
+    // was called. physicsOnlyBaseAmplitudeScratch is scratch state used
+    // only within a single noteOn() call; physicsOnlyModeAmplitudes is the
+    // exposed result (see getPhysicsOnlyModeAmplitudes()).
+    std::vector<float> physicsOnlyBaseAmplitudeScratch;
+    std::vector<float> physicsOnlyModeAmplitudes;
     int            numActiveStrings = 1;
     bool           damped = false;
     uint64_t       noiseIdentity = 0;
