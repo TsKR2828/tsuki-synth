@@ -1,15 +1,21 @@
 # TsukiSynth — Current TODO
 
-> Last updated: 2026-08-24
-> Branch: `fix/deep-physics-audit-20260716`
+> Last updated: 2026-08-29
+> Branch: `fix/deep-physics-audit-20260716`（HEAD `51bd6cc`，工作樹乾淨、已 push）
 
 The deep-audit implementation fixes are on the branch. Historical Phase D–I decisions remain in `DEVLOG.md`; this file lists only current work and scientific gaps.
 
-**2026-08-22 快照**：紅燈清零（X1/X2/X3 done，X 段只剩 X4 文件規約）；M10 收官（A1' 接受）；
-A9 關閉（L3b 真 Cubase 實測）；C3 容差登記完成（跨平台檢查轉阻斷式）；A12 修畢。
-下一步 = X4 或 B3（見 HANDOVER §5）。
-**2026-08-24 快照**：B3 完工（GATE 12 條全過、corpus 73/73 零新增豁免、D3 關閉），
-Rule 10 報告 `reports/string_damping_firstprinciples_before_after.md` 待月月裁決；改動 unstaged。
+**2026-08-29 快照（最新）**：**B1–B6 物理鏈全部 Done**，六場物理戰役收官。
+B6 全卡完工（方案 B 絕對聲壓校準落地，月月裁決；對抗稽核五缺陷已修）；B7 卡已立
+（第一原理力鏈，前置阻擋已解除，缺 velocity→m/s 映射資料）；轉譜層 GATE
+`tools/score_vs_midi_verify.py` 補上驗證鏈最後缺口；corpus **73 → 75 檔**
+（新增給愛麗絲 piano/cimbalom，首個授權全淨商品曲）。
+**唯一擋 merge → `main` 的是月月的 UI mockup 視覺裁決**（`uiux/double_door_mockup.html`）。
+剩餘待月月：UI 裁決、換源重製排程、A8、A10。工程缺口：D8（tongue_drum 40 dB 斜率）、
+D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
+
+（歷史快照：2026-08-22 紅燈清零＋M10 收官＋A9 關閉＋C3 登記＋A12 修畢；
+2026-08-24 B3 完工、Rule 10 報告待裁決 → 已於 08-26 放行並併入 `main`。）
 
 ---
 

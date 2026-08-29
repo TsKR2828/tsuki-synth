@@ -39,7 +39,7 @@
 | EN/中文 localization | Done |
 | Standalone REC recording | Done |
 
-**Version**: `v0.3.0` — the active deep-audit branch is `fix/deep-physics-audit-20260716`. B3 (string damping) has been reviewed and merged to `main`; B4/B5/B6-Phase1 are committed to the branch and pushed but not yet merged, pending the maintainer's review and a `main`-merge timing decision. Exact verification state: `HANDOVER.md` (start here for a new session) and `TODO.md`.
+**Version**: `v0.3.0` — the active deep-audit branch is `fix/deep-physics-audit-20260716`. B3 (string damping) has been reviewed and merged to `main`; **B4 (hammer contact), B5 (wood orthotropy schema) and B6 (radiation + calibrated physics-only tap, all phases) are committed to the branch and pushed but not yet merged**, pending the maintainer's UI/UX review and a `main`-merge timing decision. Exact verification state: `HANDOVER.md` (start here for a new session) and `TODO.md`.
 
 ## Overview
 
