@@ -1,6 +1,6 @@
 # TsukiSynth 交接文件
 
-> 重寫：2026-08-29　分支：`fix/deep-physics-audit-20260716`（HEAD `51bd6cc`，工作樹乾淨）
+> 重寫：2026-08-29／增修 2026-08-30　分支：`fix/deep-physics-audit-20260716`（HEAD `51bd6cc`）
 > **新 session 請先讀完這一頁再動手。** 待辦細節在 `TODO.md` 開頭「待辦總表」；
 > 歷史決策在 `DEVLOG.md`；更早版本的交接內容由 git 歷史保存，本檔只寫現況。
 
@@ -11,14 +11,16 @@
 **B1–B6 物理鏈全部 Done，六場物理戰役收官；驗證鏈從 MIDI 到耳朵全線閉環；
 第一首授權全淨的商品曲（給愛麗絲）已產出。工作樹乾淨，全部已 commit + push。**
 
-**唯一擋住 merge → `main` 的是月月的 UI mockup 視覺裁決**（見 §5 第 1 項）。
+**UI mockup 裁決已於 2026-08-30 下達：雙開門被否決，UI 改走「功能規格 → 設計端重做」**
+（見 §5 第 1 項）。merge → `main` 的時機因此重新回到月月手上，仍不自作主張。
 
 ## 1. 立刻要知道的三件事
 
 1. **`main` 落後分支四個 commit。** `main` 目前只到 B3（`b47d550`）。
    `f67050b`(B3)→`53e6c76`(B4)→`88bdfac`(B5+B6P1)→`0f271ae`(三件套)→`51bd6cc`(B6 收官)
    都在分支上，CI 全綠。月月 2026-08-28 明示：**「做完三件套 commit，等我看完 UI/UX 再 merge」**
-   ——所以**不要自作主張 merge**，等月月看過 `uiux/double_door_mockup.html` 給裁決。
+   ——UI 裁決 2026-08-30 已下（否決雙開門、改重新設計，見 §5 第 1 項），
+   但**仍不要自作主張 merge**：等月月明示要不要把物理成果先併回 `main`。
 2. **corpus 從 73 檔變成 75 檔**（新增給愛麗絲 piano/cimbalom 兩版）。任何文件寫 73 都是舊的。
    最新全綠證據：`reports/gate_outputs/b6_corpus_phase34.txt`（75/75，1 筆既有 moonlight 豁免）。
 3. **月月是聾人開發者，全程免耳驗收。** 任何「聽起來如何」的主張都不算數；
@@ -86,15 +88,19 @@ MIDI 原譜 ──① score_vs_midi_verify──> score.json ──② melody_ve
 
 ## 5. 接下來該做什麼（優先序）
 
-1. **⚠️ 等月月的 UI mockup 裁決**（擋住 merge）。月月要看
-   `uiux/double_door_mockup.html`（瀏覽器直接開）與 `docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md`。
-   裁決過了才 merge → `main`，然後才立 UI 實作卡。
-   **提案要點**：現行豎直佈局在 Mac 塞不下（固定區塊 638px + 最小高度 820px，
-   筆電可用高度僅 816–850px）→ 改雙開門（左=參數/右=樂器面，琴鍵⇄揚琴⇄空靈鼓切替），
-   新尺寸最小 620×560／預設 960×640。
-   **兩個誠實揭露**：(a) `uiux/TsukiSynth.html` 參考原型裡**其實沒有**樂器模擬畫面，
-   樂器視圖是全新設計不是復活；(b)「揚琴左右手強弱」在 APVTS 裡**沒有對應參數**，
-   mockup 只做視覺佔位，要落地得另開卡加參數與 DSP。
+1. **UI 裁決已下（2026-08-30）：雙開門提案被月月否決。**
+   原話：「左側那麼寬了但旋鈕超小；右側一點也沒有鋼琴／揚琴／空靈鼓的視覺感，
+   看上去像廉價玩具」。裁定**撇開現行 UI 的所有既有元素**，改由設計端（Claude Design）
+   從功能重新設計。`uiux/double_door_mockup.html` 與
+   `docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md` 就此**作廢，只留歷史**。
+   → 新的設計輸入文件：**`docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md`**（2026-08-30 建立）
+   ——只清點功能（60 個 APVTS 參數＋非參數控制項＋六條使用情境＋八條硬性約束），
+   **刻意不寫任何顏色／尺寸／佈局**。資料全部從程式碼本體清點，不是從舊文件轉抄。
+   **下一步待月月決定**：(a) 這份 spec 是否可以送出去設計；
+   (b) merge → `main` 的時機（原本綁在 UI 裁決上，現在 UI 走向重設計，
+   分支上的物理成果不該再被 UI 卡住——但仍**不自作主張 merge**，等月月明示）。
+   **兩個誠實揭露照舊有效**：(a) 樂器模擬畫面**從來沒做過**，不是復活是全新功能；
+   (b)「揚琴左右手強弱」在 APVTS 裡**沒有對應參數**，要落地得另開卡加參數與 DSP。
 2. **換源重製排程**（月月 2026-08-28 裁決「CC BY 可以」）——
    計畫在 `reports/decision_packets/CLASSICAL_RELICENSE_PLAN.md`：
    月光 4 檔（CC BY-SA 2.5）+ 四季 12 樂章（CC BY-SA 3.0）授權不淨，**換源前不上架**；
@@ -129,7 +135,7 @@ MIDI 原譜 ──① score_vs_midi_verify──> score.json ──② melody_ve
 | 溯源文件 | `docs/{BRIDGE_ADMITTANCE,STRING_DAMPING,HAMMER_CONTACT,WOOD_ANISOTROPY,RADIATION_POWER,EXTERNAL_ANCHOR,TAIWAN_WOOD_SPECIES,D2_CHROMATIC_CONTACT}_*.md` |
 | GATE 證據 | `reports/gate_outputs/`（x1-x4/l1-l3b/b1-b7/furelise 前綴） |
 | 產品/市場 | `docs/PRODUCT_MARKET_NOTES.zh-TW.md`、`docs/SOUND_DESIGN_KNOWLEDGE.zh-TW.md`、`reports/product_sheets/` |
-| UI/UX | `docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md`、`uiux/double_door_mockup.html`、`docs/MUSICIAN_UX_RESEARCH.zh-TW.md` |
+| UI/UX | **`docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md`（現行設計輸入）**、`docs/MUSICIAN_UX_RESEARCH.zh-TW.md`；已作廢：`docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md`＋`uiux/double_door_mockup.html` |
 | 田野/文化素材 | `docs/PESTLE_MUSIC_FIELD_NOTES.zh-TW.md`（月月口述杵音工藝） |
 | 外部參照調查 | `docs/COMMERCIAL_PM_PUBLIC_DATA.zh-TW.md`（Pianoteq 等公開資料調查） |
 | 歷史決策 | `DEVLOG.md` |
@@ -145,7 +151,9 @@ MIDI 原譜 ──① score_vs_midi_verify──> score.json ──② melody_ve
   `verify_score.py --all --shard-index N --shard-count 4`
 - 轉譜驗證：`python tools/score_vs_midi_verify.py <midi> <score>`；`--selftest` 跑哨兵
 - 旋律位置：`python tools/melody_verify.py <score> [--wav W] [--html H]`
-- 旋律影片：`python tools/melody_roll_video.py <score> <wav> <out.mp4>`
+- 旋律影片：`python tools/melody_roll_video.py <score> [--wav W] [--json 既有報告] [--out out.mp4]`
+  `--theme neon`（預設，2026-08-30 月月指定的霓虹紫配色＋左側固定音名尺）／
+  `--theme slate`（原單色深藍灰）；`--still-at <秒>` 只出一張 PNG 供快速看配色
 - HostProbe：`build/Release/TsukiSynthHostProbe.exe <.vst3 路徑> <outdir>`
 - ffmpeg（母帶/影片用）：`C:\Users\admin\Desktop\Tools\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe`
 - **系統部署的 VST3 仍是 0.2.0（7/12）**——要讓 Cubase 測最新版，月月需以管理員權限把
