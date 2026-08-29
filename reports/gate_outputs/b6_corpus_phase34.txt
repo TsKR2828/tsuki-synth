@@ -1,0 +1,18 @@
+B6 Phase 3/4 corpus verification (docs/workcards/B6.md §8 row 9)
+Generated: 2026-08-28
+Run as 4 parallel shards (python tools/verify_score.py --all --shard-index N --shard-count 4)
+for wall-clock time, same method as B5/B6-Phase1 (reports/gate_outputs/b6_corpus_*.txt).
+
+Corpus is now 75 scores (was 73 at the B6-Phase1 baseline -- 2 fur_elise_complete
+score.json files were added by unrelated work between Phase 1 and Phase 3/4; not a B6 change).
+
+=== shard 0 (see b6_corpus_phase34_shard0.txt for full detail) ===
+19/19 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.
+=== shard 1 (see b6_corpus_phase34_shard1.txt for full detail) ===
+19/19 score(s) passed all checks (0 check(s) covered by registered exemption(s)), 0 failed.
+=== shard 2 (see b6_corpus_phase34_shard2.txt for full detail) ===
+19/19 score(s) passed all checks (0 check(s) covered by registered exemption(s)), 0 failed.
+=== shard 3 (see b6_corpus_phase34_shard3.txt for full detail) ===
+18/18 score(s) passed all checks (0 check(s) covered by registered exemption(s)), 0 failed.
+
+TOTAL: 75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.

@@ -1,0 +1,151 @@
+score_vs_midi_verify.py -- full-corpus MIDI<->score GATE, real run on Fur Elise
+===================================================================================
+Date: 2026-08-28
+Tool: tools/score_vs_midi_verify.py (independent SMF parser, no mido; see module docstring)
+Source MIDI: scores/classical/fur_elise/source/fur_Elise_WoO59.mid (Mutopia id=931, Public Domain -- see furelise_license_evidence.txt)
+
+----------------------------------------------------------------------------------
+0. --selftest sentinel: known-good pair + 4 required mutations, each expected to FAIL, unmodified pair expected to PASS
+----------------------------------------------------------------------------------
+[PASS] sentinel A: unmodified Fur Elise (piano) score verifies clean against its source MIDI (905 notes matched)
+[PASS] sentinel B: +2 semitone transposition of one event is caught -> 3 FAIL as required (match.bidirectional, onset.within_tolerance, duration.not_exceeding_source)
+[PASS] sentinel C: +20 ms onset shift of one event is caught -> 1 FAIL as required (onset.within_tolerance)
+[PASS] sentinel D: deleting one score event is caught -> 4 FAIL as required (counts.total_events, match.bidirectional, onset.within_tolerance, duration.not_exceeding_source)
+[PASS] sentinel E: one extra (undeclared) note is caught -> 4 FAIL as required (counts.total_events, match.bidirectional, onset.within_tolerance, duration.not_exceeding_source)
+SELFTEST PASS (5/5)
+exit code: 0
+
+----------------------------------------------------------------------------------
+1. Real run: fur_elise_complete.score.json (piano engine) vs source MIDI
+----------------------------------------------------------------------------------
+  [PASS] midi.parse: Parsed fur_Elise_WoO59.mid with this tool's own SMF parser (no mido): 3 track chunk(s), 384 ticks/quarter-note.
+  [PASS] score.parse: Parsed fur_elise_complete.score.json: 905 event(s).
+  [PASS] midi.note_pairing: All note-on events paired cleanly with a note-off across 3 track(s): 905 source note(s).
+  [PASS] counts.total_events: Score event count matches source MIDI note count exactly: 905.
+  [PASS] score.pitch_parseable: All 905 event note names decode to a MIDI pitch.
+  [PASS] match.bidirectional: All 905 note(s) matched 1:1 between source MIDI and score, grouped by (track, pitch) and paired in onset order -- including every chord's simultaneous notes, each in its own pitch bucket.
+  [PASS] pitch.exact_match: All 905 matched event(s) render exactly the source MIDI note number (zero-tolerance integer equality).
+  [PASS] score.performance_midi_note_consistent: performance.midi_note agrees with the rendered note-name pitch on every matched event.
+  [PASS] onset.within_tolerance: All 905 matched event(s) land within +/-1.0 ms of the tempo-map-converted source onset (max observed: 0.0005 ms).
+  [PASS] duration.not_exceeding_source: All 905 matched event(s) sound no longer than their source MIDI note (articulation may shorten; never lengthen).
+  [PASS] duration.whole_piece: Score's overall length (130.383281s) does not extend past the source MIDI's last note-off (130.416615s); 33.333 ms short of it (articulation may legitimately shorten the final note's release, same as any other note -- see duration.not_exceeding_source).
+  summary: 11 PASS / 0 FAIL (905/905 notes matched, 905 score events)
+exit code: 0
+
+----------------------------------------------------------------------------------
+2. Real run: fur_elise_complete_cimbalom.score.json (cimbalom engine variant) vs the SAME source MIDI
+   (engine differs, notes must be identical -- proves engine variants share correct transcription)
+----------------------------------------------------------------------------------
+  [PASS] midi.parse: Parsed fur_Elise_WoO59.mid with this tool's own SMF parser (no mido): 3 track chunk(s), 384 ticks/quarter-note.
+  [PASS] score.parse: Parsed fur_elise_complete_cimbalom.score.json: 905 event(s).
+  [PASS] midi.note_pairing: All note-on events paired cleanly with a note-off across 3 track(s): 905 source note(s).
+  [PASS] counts.total_events: Score event count matches source MIDI note count exactly: 905.
+  [PASS] score.pitch_parseable: All 905 event note names decode to a MIDI pitch.
+  [PASS] match.bidirectional: All 905 note(s) matched 1:1 between source MIDI and score, grouped by (track, pitch) and paired in onset order -- including every chord's simultaneous notes, each in its own pitch bucket.
+  [PASS] pitch.exact_match: All 905 matched event(s) render exactly the source MIDI note number (zero-tolerance integer equality).
+  [PASS] score.performance_midi_note_consistent: performance.midi_note agrees with the rendered note-name pitch on every matched event.
+  [PASS] onset.within_tolerance: All 905 matched event(s) land within +/-1.0 ms of the tempo-map-converted source onset (max observed: 0.0005 ms).
+  [PASS] duration.not_exceeding_source: All 905 matched event(s) sound no longer than their source MIDI note (articulation may shorten; never lengthen).
+  [PASS] duration.whole_piece: Score's overall length (130.383281s) does not extend past the source MIDI's last note-off (130.416615s); 33.333 ms short of it (articulation may legitimately shorten the final note's release, same as any other note -- see duration.not_exceeding_source).
+  summary: 11 PASS / 0 FAIL (905/905 notes matched, 905 score events)
+exit code: 0
+
+----------------------------------------------------------------------------------
+3. pytest: tools/score_vs_midi_verify.py test suite + full repo test suite (must not break the pre-existing 131)
+----------------------------------------------------------------------------------
+.......................                                                  [100%]
+23 passed in 0.27s
+
+........................................................................ [ 46%]
+........................................................................ [ 93%]
+..........                                                               [100%]
+154 passed in 8.98s
+
+==================================================================================
+稽核記錄（2026-08-28，獨立複核 — 以下為稽核追加，非原始 run 的一部分）
+==================================================================================
+稽核方式：不採信本檔既有輸出，全部親自重跑一次，逐字比對。
+
+1. 獨立性（parser 真的不靠 mido）— PASS
+   tools/score_vs_midi_verify.py 的 import 清單只有 stdlib：
+   argparse / copy / json / struct / sys / tempfile / pathlib。
+   全檔查無 `import mido`，亦未 import tools/midi_to_tsukisynth.py 或
+   tools/verify_score.py；SMF 由本檔自寫的 parse_smf() 直接讀 bytes
+   （MThd/MTrk chunk、VLQ、running status、meta 0x03/0x51、sysex），
+   note-name 由本檔自寫的 note_name_to_midi() 解碼。獨立性主張成立。
+   （雞毛：`import copy` 全檔未使用，死 import 一行。）
+
+2. --selftest 哨兵四突變 — PASS，親自重跑，5/5 與本檔記載逐字相同：
+   A 未改動 905 notes matched；B +2 半音 -> 3 FAIL；C +20ms -> 1 FAIL；
+   D 刪一個 event -> 4 FAIL；E 多一個 event -> 4 FAIL。存證非編造。
+
+3. 給愛麗絲實戰 — PASS，親自重跑兩份 score，各 11 PASS / 0 FAIL、exit 0，
+   905/905 notes matched、max onset err 0.0005 ms、whole-piece 130.383281s
+   vs source 130.416615s（短 33.333 ms），與本檔上方數字逐字相同。
+
+4. pytest — 親自重跑：
+   tests/test_score_vs_midi_verify.py -> 23 passed（與本檔相同）
+   tests/ 全量 -> **156 passed**（本檔記載為 154）。
+   差異原因：unstaged 的 tests/test_specimen_verify.py 之後又增加 2 項測試
+   （+320/-17 行），與本工具無關。本檔「pre-existing 131」現為 133。
+   建議重跑後更新本檔數字，或註明取樣時點。
+
+5. 覆蓋率誠實標註（稽核新增觀察，非 FAIL）：
+   本工具 docstring 自稱 "full-corpus MIDI<->score.json transcription GATE"，
+   但 repo 內唯一有 source MIDI 的曲目只有 fur_elise（905 音 x 2 個引擎版本）。
+   scores/classical/vivaldi_four_seasons/README.md 記載其 12 樂章、28,376 個
+   音符同樣來自 Mutopia 的 MIDI，但**那些 .mid 並未入庫**，因此本 GATE
+   目前無法覆蓋 corpus 中最大的一份轉譜。這正是本工具存在要抓的缺陷類別，
+   缺口應明講而不是被 "full-corpus" 一詞蓋過。
+
+==================================================================================
+稽核記錄 II（2026-08-28，Opus 第二輪獨立複核 — 追加，非原始 run 的一部分）
+==================================================================================
+方式：不採信本檔既有輸出、也不採信上一輪稽核記錄，四項全部親手重跑。
+
+1. parser 獨立性 — PASS
+   tools/score_vs_midi_verify.py import 清單全數 stdlib：
+   argparse / copy / json / struct / sys / tempfile / pathlib。
+   全檔 grep 無 `import mido`，亦未 import midi_to_tsukisynth.py 或
+   verify_score.py。SMF 由本檔自寫 parse_smf() 直讀 bytes（MThd/MTrk、VLQ、
+   running status、meta 0x03/0x51、sysex、0xC0/0xD0 單資料位元組），
+   note name 由自寫 note_name_to_midi() 解碼。獨立性主張成立。
+   （雞毛：`import copy`（L108）全檔未使用，死 import。）
+
+2. --selftest 哨兵四突變 — PASS，親自重跑，逐字與本檔 §0 相同：
+   A 未改動 905 notes matched；B +2 半音 -> 3 FAIL（match.bidirectional /
+   onset.within_tolerance / duration.not_exceeding_source）；C +20ms -> 1 FAIL；
+   D 刪 event -> 4 FAIL；E 加 event -> 4 FAIL；SELFTEST PASS (5/5)、exit 0。
+   存證為真，非編造。
+   （觀察，非 FAIL：B 突變並未觸發 pitch.exact_match，而是由 bucket 配對
+   位移連鎖觸發其他三項。這與檔內設計說明（pitch 由 bucket key 保證，
+   pitch_fail 只是 refactor 護欄）一致，仍被抓到，但「零容差音高檢查」
+   的實際攔截路徑是 match.bidirectional，措辭上值得知道。）
+
+3. 給愛麗絲實戰 — PASS，兩份 score 各親手重跑一次：
+   fur_elise_complete.score.json      -> 11 PASS / 0 FAIL、exit 0
+   fur_elise_complete_cimbalom.score  -> 11 PASS / 0 FAIL、exit 0
+   905/905 matched、3 tracks、384 ticks/quarter、max onset err 0.0005 ms、
+   whole-piece 130.383281s vs source 130.416615s（短 33.333 ms）。
+   與本檔 §1/§2 逐字相同。
+
+4. pytest — 親自重跑：
+   tests/test_score_vs_midi_verify.py -> 23 passed in 0.27s（與本檔相同）
+   tests/ 全量 -> **156 passed in 9.45s**（本檔 §3 記載 154）。
+   兩輪稽核各自獨立跑出 156，確認本檔 154 為取樣時點較早所致
+   （unstaged 的 tests/test_specimen_verify.py 後續增修）。建議更新或註明時點。
+
+5. 覆蓋率誠實標註（觀察，非 FAIL；獨立重現上一輪同一結論）：
+   本工具 docstring 自稱 "full-corpus MIDI<->score.json transcription GATE"，
+   但全 repo `find scores -name "*.mid"` 只有一個檔：
+   scores/classical/fur_elise/source/fur_Elise_WoO59.mid。
+   scores/classical/ 下共 14 個 .score.json，本 GATE 實際只能覆蓋其中 2 個
+   （fur_elise 的 piano + cimbalom）。Vivaldi《四季》12 樂章的來源 MIDI 未入庫，
+   corpus 中最大一份轉譜目前無法被此 GATE 覆蓋。"full-corpus" 一詞應改為
+   「已入庫來源 MIDI 的全曲比對」之類的限定說法。
+
+6. 新增發現（上一輪未記）：本工具尚未接進任何 GATE / CI / 文件。
+   全 repo grep `score_vs_midi_verify`，除工具本身與 tests/ 之外零命中——
+   .github workflows、README.md「Verification commands」與快查表、
+   HANDOVER.md §6、TODO.md 都沒有它。目前它是「能跑的工具」，
+   還不是「會被跑的 GATE」。要當 GATE 就得接線，否則下次沒人會執行。

@@ -2,6 +2,65 @@
 
 ---
 
+## 2026-08-27 ~ 08-29 — B4/B5/B6 三卡連下、物理鏈收官、商品線開張、驗證鏈補洞
+
+**授權框架**：月月延續全權委託，指定分工「**規劃者畫地圖／Sonnet 當工兵／Opus 當驗證者**」，
+全程 Dynamic Workflow 發包。期間月月裁決十餘次（B4 的 F3 域重定義、A4、A11、A1、A6、A7、
+B5 選種、CC BY 授權、B6 校準方案、commit/merge 時機）。
+
+**物理線**
+- **B4 槌氈非線性接觸求解器**（commit `53e6c76`）：Felt 槌 tau_c 從查表換成由
+  `F=K·δ^α`＋槌質量＋撞速解出；力度指數 −0.2 → −0.394/−0.429/−0.500（C2/C4/C7）。
+  施工中撞上 **F3 velocity GATE**（C4 +7.79 dB／C7 +19.12 dB 超出 6.02±1.0 律，
+  偏差隨 α 單調、渲染與模型自身預測吻合 <0.2 dB）→ 依卡 §12 停工出裁決包 →
+  **月月裁決 (b)「重定義 F3 主張域」**：tau_c(v) 路徑改「模型自洽」判定
+  （容差數值不動），固定 tau_c 路徑 6.02 dB 律逐字不變；ROADMAP §6 已登記。
+- **B5 木材正交異向 schema**（commit `88bdfac`）：四木料 orthotropic 常數入庫
+  （FPL-GTR-190 逐字，月月裁決「照建議值走」= Sitka/sugar maple/red oak），
+  fail-closed 解析，**零消費路徑（死資料）**，13 首木料 score SHA256 位元全等 no-op 證明。
+- **B6 輻射與絕對聲壓**（`88bdfac` Phase 0+1、`51bd6cc` Phase 3/4 收官）：
+  Phase 0 溯源發現 Ege & Boutillon 兩篇都沒有功率鏈公式 → 改走標準定義代數推導，
+  並更正 `fc` 符號誤讀（`D̄=D/μ`，上標 H 是 homogenised 不是相乘量）。
+  Phase 1 σ(f) 骨架只進 `--dump-modes`（位元不變 8/8）。
+  **Phase 3/4 依月月裁決「B 先行、C 立卡排隊」**落地方案 B：純物理訊號分接點
+  （RAII 旗標守衛）＋校準常數（1.0≡1Pa≡94dB@1.05m，R4 標註為裁決慣例非實測）＋
+  `absolute_pressure_per_force`/`acoustic_transfer[]`。對抗稽核六項全過後修畢五缺陷
+  （旗標洩漏、微小值被格式化成 0、fc/fga 方向寫反等）。**B6 標 Done。**
+- **B7 立卡**：完整第一原理力鏈（方案 C）施工卡，三條驗收基準
+  （文獻 SPL 範圍／與 B 錨點雙路徑一致性／D7 實測終極驗收）；
+  velocity 補搜命中真實槌速 0.11–6.83 m/s（Boutillon）與 Askenfelt KTH 講義，
+  但 **MIDI velocity proxy → m/s 的映射函數查無出處**，列為 Phase 0 缺口。
+
+**驗證鏈**
+- **`tools/score_vs_midi_verify.py`**（月月指出的缺口：轉譜層此前只有抽驗）——
+  獨立 SMF parser（不用 mido 以避免共模錯誤）、全量 1:1、pitch 零容差、四突變哨兵。
+- **`tools/melody_roll_video.py`**——piano-roll 旋律影片，聾人視覺複核。
+- 至此鏈路閉環：MIDI ↔ score ↔ WAV ↔ 真 host ↔ 眼睛。
+
+**商品線（v0.4 起步）**
+- 月光第一批四版本渲染＋−14 LUFS 母帶完成，但 QA 抓到兩件事：
+  **(a) 音符來源是 CC BY-SA 2.5 非純公版** → 月月裁決「換乾淨公開來源」+「CC BY 可以」；
+  **(b) tongue_drum 引擎 40.3 dB 音高-響度斜率＋近純正弦無泛音** → 立 **D8**，
+  空靈鼓獨奏版判暫緩上架。
+- **給愛麗絲**（Mutopia id=931 真 PD，三重確認）成為**第一首授權全淨的商品曲**；
+  轉譜器泛化出通用 `convert` 子命令（four-seasons 舊路徑位元零改變）。
+- 市場情報入庫：`PRODUCT_MARKET_NOTES`（產出單位＝完整樂曲/有判準的音效，不是盲做示範音）、
+  `SOUND_DESIGN_KNOWLEDGE`（9 個一手來源、6 個可程式化判準）。
+
+**研究與 UX**
+- 月月口述杵音工藝入庫（`PESTLE_MUSIC_FIELD_NOTES`）；台灣樹種、D2 槌具、
+  正交異向板導納公式（解 B5 §11 (a) 阻擋）由 Codex 補搜 + Opus 逐格稽核入庫
+  （抓出並修正 4 個 R4 級失真）。
+- 三件套：雙開門 UI 提案＋mockup、IR 現況稽核（卷積實作正統；bug=user preset 不存 IR 路徑）、
+  音樂人 UX 痛點研究（19 條一手＋無障礙缺口）。
+- `COMMERCIAL_PM_PUBLIC_DATA`：月月假說「商業公司會釋出驗證資料」**未被證實**——
+  四家廠商零公開比對數據，反而學界 Chabassier 2013 JASA 更有價值。
+
+**落地**：`53e6c76`／`88bdfac`／`0f271ae`／`51bd6cc` 四批已 commit + push；
+**merge → `main` 依月月指示等 UI mockup 裁決**。
+
+---
+
 ## 2026-08-24 ~ 08-26 — B3 弦阻尼律第一原理（Dynamic Workflow 發包）、X4、A1/A6/A7 裁決、首度併入 main
 
 **授權框架**：月月延續 2026-08-20 全權委託，指示「開 Dynamic Workflow 把剩下的工程發包做完，

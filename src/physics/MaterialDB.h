@@ -55,6 +55,15 @@
  * materials.json 對不同引擎語意不同」是同類情形。若之後有人把 cimbalom 的
  * 弦材質也設成 wood_spruce，橋耦合公式仍會用同一個 wood_spruce 物件的彈性
  * 參數算共鳴板，這不是 bug，只是容易被誤會，故留此註解。
+ *
+ * ── Orthotropic（正交異向常數，2026-08-28 B5 草稿）──
+ *
+ * `Material::orthotropic` 是**死資料**：目前沒有任何引擎/PlateModel/BeamModel
+ * 讀它。任何未來的消費端在讀取前**必須**先檢查 `orthotropic.present == true`；
+ * `present == false` 時所有數值欄位都是結構預設值，不得被當成「等向性
+ * =0」之類的隱含語意使用。同理 `hasGRT == false` 時 `ratioGRT_EL` 是未定義
+ * 用途的預設值 0.0f（原文獻表「—」，不是量測出來的 0）。詳見 `Orthotropic`
+ * struct 上方註解與 `docs/workcards/B5.md`。
  */
 class MaterialDB
 {
@@ -98,6 +107,45 @@ public:
         return anchoredRate * kEtaToDecayRate / kLegacyAnchorHz;
     }
 
+    /**
+     * 正交異向常數（僅木材，2026-08-28 新增，B5 施工卡草稿階段）
+     *
+     * 來源：USDA Forest Service, Forest Products Laboratory, "Wood Handbook —
+     * Wood as an Engineering Material," General Technical Report FPL-GTR-190,
+     * Chapter 5. Table 5-1（彈性比，12% 含水率）與 Table 5-2（泊松比，12%
+     * 含水率）。逐字轉錄，未從任何曲線圖讀值（docs/WOOD_ANISOTROPY_SOURCES.md
+     * §7 已記錄取得方式）。ratio_* 皆以 E_L 為 1 的比值；E_L 本身沿用既有
+     * `youngsModulus`（`docs/MATERIALS_SOURCES.md` 已文件化為縱向 E）。
+     * poisson_RL / poisson_TL 與其餘 4 個泊松比是文獻各自獨立量測值，
+     * **刻意不用互易關係（μij/Ei = μji/Ej）相互推算或修正**——原文明確警告
+     * 該關係在實測上並非總是嚴格成立（見上述文件 §3）。
+     *
+     * 樹種對應（可能有選種歧義，見 docs/workcards/B5.md §4.2「選種說明」，
+     * 月月裁決 2026-08-28：照建議值走（Sitka / sugar maple / red oak；
+     * birch 唯一條目無歧義））：
+     *   wood_spruce -> Spruce, Sitka
+     *   wood_maple  -> Maple, sugar
+     *   wood_birch  -> Birch, yellow（唯一表列條目，無歧義）
+     *   wood_oak    -> Oak, red
+     *
+     * ⚠️ 這批資料目前沒有任何程式碼路徑消費（PlateModel/BeamModel 仍是
+     * 單一標量 E/nu 的 Kirchhoff/Euler-Bernoulli 公式）。present=false 或
+     * 欄位不存在時，呼叫端不得假設任何隱含語意。
+     */
+    struct Orthotropic
+    {
+        bool present = false;                 // false = 這個材質沒有正交異向資料
+        juce::String sourceSpecies;
+        float moistureContentPct = 12.0f;
+        float mpPercent          = 25.0f;
+        float ratioET_EL = 0.0f, ratioER_EL = 0.0f;
+        float ratioGLR_EL = 0.0f, ratioGLT_EL = 0.0f;
+        bool  hasGRT = false;                 // false = 原表「—」，ratioGRT_EL 未定義
+        float ratioGRT_EL = 0.0f;
+        float poissonLR = 0.0f, poissonLT = 0.0f, poissonRT = 0.0f;
+        float poissonTR = 0.0f, poissonRL = 0.0f, poissonTL = 0.0f;
+    };
+
     struct Material
     {
         juce::String displayName;
@@ -105,6 +153,7 @@ public:
         float youngsModulus   = 200e9f;    // Pa
         float poissonRatio    = 0.29f;
         Damping damping;
+        Orthotropic orthotropic;
     };
 
     bool loadFromString (const juce::String& jsonText)
@@ -217,6 +266,106 @@ private:
                 || eta < 0.0 || betaAir < 0.0 || gammaRadiation < 0.0)
                 return false;
 
+            // ── Orthotropic (B5, 2026-08-28 draft) — optional, wood-only, fail-closed ──
+            // Key absent entirely -> present = false (legal: non-wood materials, or wood
+            // not yet backfilled). Key present but not a JSON object -> reject whole file.
+            // Key present and object -> every sub-field must validate or the WHOLE file
+            // is rejected (all-or-nothing, same convention as density/youngs_modulus/etc
+            // above) — this is NOT a per-material rejection.
+            Orthotropic ortho;
+            if (matObj->hasProperty ("orthotropic"))
+            {
+                auto* orthoObj = matObj->getProperty ("orthotropic").getDynamicObject();
+                if (orthoObj == nullptr)
+                    return false;
+
+                // The four species this workcard has transcribed literature tables for
+                // (docs/workcards/B5.md §4.2). Anything else is an unsourced number —
+                // fail closed rather than silently accepting an untranscribed species.
+                static const juce::StringArray allowedSpecies {
+                    "Spruce, Sitka", "Maple, sugar", "Birch, yellow", "Oak, red"
+                };
+
+                const auto sourceSpeciesVar = orthoObj->getProperty ("source_species");
+                double moistureContentPct = 0.0, mpPercent = 0.0;
+                double ratioET_EL = 0.0, ratioER_EL = 0.0, ratioGLR_EL = 0.0, ratioGLT_EL = 0.0;
+                double poissonLR = 0.0, poissonLT = 0.0, poissonRT = 0.0;
+                double poissonTR = 0.0, poissonRL = 0.0, poissonTL = 0.0;
+
+                if (! sourceSpeciesVar.isString()
+                    || sourceSpeciesVar.toString().trim().isEmpty()
+                    || ! allowedSpecies.contains (sourceSpeciesVar.toString())
+                    // moisture_content_pct must be exactly 12 (Wood Handbook Table 5-1/5-2
+                    // measurement basis) — no source supports any other reference value.
+                    || ! finiteNumber (orthoObj->getProperty ("moisture_content_pct"), moistureContentPct)
+                    || moistureContentPct != 12.0
+                    || ! finiteNumber (orthoObj->getProperty ("mp_percent"), mpPercent)
+                    || mpPercent <= 0.0 || mpPercent > 40.0
+                    // ratio_* are open interval (0,1): cross-grain stiffness is strictly
+                    // less than longitudinal for orthotropic wood — this is definitional.
+                    || ! finiteNumber (orthoObj->getProperty ("ratio_ET_EL"), ratioET_EL)
+                    || ratioET_EL <= 0.0 || ratioET_EL >= 1.0
+                    || ! finiteNumber (orthoObj->getProperty ("ratio_ER_EL"), ratioER_EL)
+                    || ratioER_EL <= 0.0 || ratioER_EL >= 1.0
+                    || ! finiteNumber (orthoObj->getProperty ("ratio_GLR_EL"), ratioGLR_EL)
+                    || ratioGLR_EL <= 0.0 || ratioGLR_EL >= 1.0
+                    || ! finiteNumber (orthoObj->getProperty ("ratio_GLT_EL"), ratioGLT_EL)
+                    || ratioGLT_EL <= 0.0 || ratioGLT_EL >= 1.0
+                    || ! finiteNumber (orthoObj->getProperty ("poisson_LR"), poissonLR)
+                    || poissonLR < 0.0 || poissonLR >= 1.0
+                    || ! finiteNumber (orthoObj->getProperty ("poisson_LT"), poissonLT)
+                    || poissonLT < 0.0 || poissonLT >= 1.0
+                    || ! finiteNumber (orthoObj->getProperty ("poisson_RT"), poissonRT)
+                    || poissonRT < 0.0 || poissonRT >= 1.0
+                    || ! finiteNumber (orthoObj->getProperty ("poisson_TR"), poissonTR)
+                    || poissonTR < 0.0 || poissonTR >= 1.0
+                    || ! finiteNumber (orthoObj->getProperty ("poisson_RL"), poissonRL)
+                    || poissonRL < 0.0 || poissonRL >= 1.0
+                    || ! finiteNumber (orthoObj->getProperty ("poisson_TL"), poissonTL)
+                    || poissonTL < 0.0 || poissonTL >= 1.0)
+                    return false;
+
+                // ratio_GRT_EL: the ONE field allowed to be explicit JSON `null` (Table
+                // 5-1 lists "—" for maple/oak — no measured value exists). `null` is NOT
+                // the same as absent: the key must be present (explicit null or a number
+                // in (0,1)); a missing key, or any other type (e.g. the string "n/a"),
+                // is rejected. This line is the fix for the exact bug §11 of B5.md warns
+                // about — if it is ever relaxed to "missing key defaults to hasGRT=false"
+                // or "null coerces to 0", a future consumer could silently read a
+                // physically-nonsensical zero shear modulus. testOrthotropicSchemaFailClosed
+                // must FAIL if this is loosened.
+                if (! orthoObj->hasProperty ("ratio_GRT_EL"))
+                    return false;
+                const auto grtVar = orthoObj->getProperty ("ratio_GRT_EL");
+                bool hasGRT = false;
+                double ratioGRT_EL = 0.0;
+                if (grtVar.isVoid())
+                    hasGRT = false;
+                else if (finiteNumber (grtVar, ratioGRT_EL) && ratioGRT_EL > 0.0 && ratioGRT_EL < 1.0)
+                    hasGRT = true;
+                else
+                    return false;
+
+                ortho.present = true;
+                ortho.sourceSpecies = sourceSpeciesVar.toString();
+                ortho.moistureContentPct = (float) moistureContentPct;
+                ortho.mpPercent = (float) mpPercent;
+                ortho.ratioET_EL = (float) ratioET_EL;
+                ortho.ratioER_EL = (float) ratioER_EL;
+                ortho.ratioGLR_EL = (float) ratioGLR_EL;
+                ortho.ratioGLT_EL = (float) ratioGLT_EL;
+                ortho.hasGRT = hasGRT;
+                ortho.ratioGRT_EL = hasGRT ? (float) ratioGRT_EL : 0.0f;
+                ortho.poissonLR = (float) poissonLR;
+                ortho.poissonLT = (float) poissonLT;
+                ortho.poissonRT = (float) poissonRT;
+                ortho.poissonTR = (float) poissonTR;
+                ortho.poissonRL = (float) poissonRL;
+                ortho.poissonTL = (float) poissonTL;
+            }
+            // else: "orthotropic" key absent entirely -> ortho stays at struct defaults
+            // (present = false). This is a legal state, not an error (§0/§5.1 of B5.md).
+
             Material mat;
             mat.displayName = displayName.toString();
             mat.density = (float) density;
@@ -225,6 +374,7 @@ private:
             mat.damping.eta = (float) eta;
             mat.damping.beam_plate_beta_air = (float) betaAir;
             mat.damping.beam_plate_gamma_radiation = (float) gammaRadiation;
+            mat.orthotropic = ortho;
             parsedMaterials.emplace (key, mat);
         }
 

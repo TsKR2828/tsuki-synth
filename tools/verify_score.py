@@ -1850,10 +1850,18 @@ def default_report_path(score_path):
 
 
 def find_all_scores(repo_root):
-    """Task 2f directory list: examples/, vivaldi, ai_radiance, library/ (recursive)."""
+    """Task 2f directory list: examples/, classical, ai_radiance, library/ (recursive).
+
+    2026-08-28 (Fur Elise relicense work, CLASSICAL_RELICENSE_PLAN.md): widened
+    from the hard-coded `scores/classical/vivaldi_four_seasons` leaf to its
+    parent `scores/classical` so a second classical sub-corpus
+    (`scores/classical/fur_elise`) is discovered too, without needing a new
+    hard-coded entry per future classical work. `rglob("*.score.json")`
+    already recurses, so this is a strict superset of the old root -- every
+    previously-discovered Vivaldi file is still discovered identically."""
     roots = [
         repo_root / "scores" / "examples",
-        repo_root / "scores" / "classical" / "vivaldi_four_seasons",
+        repo_root / "scores" / "classical",
         repo_root / "scores" / "originals" / "ai_radiance",
         repo_root / "scores" / "library",
     ]
@@ -1882,7 +1890,7 @@ def main():
     ap.add_argument("score", nargs="?", help="path to a .score.json file")
     ap.add_argument("--all", action="store_true",
                      help="verify every .score.json under scores/examples, "
-                          "scores/classical/vivaldi_four_seasons, "
+                          "scores/classical (recursive), "
                           "scores/originals/ai_radiance, and scores/library (recursive)")
     ap.add_argument("--shard-index", type=int, default=None,
                     help="with --all, verify only this zero-based deterministic shard")

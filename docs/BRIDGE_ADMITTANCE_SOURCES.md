@@ -237,6 +237,117 @@ Z₀ = sqrt(T · μ)        T = 張力 (N)，μ = 線密度 (kg/m)
 
 ---
 
+## 5b. 正交異向板驅動點導納（2026-08-28 Codex 溯源命中）
+
+> **2026-08-28 Opus 稽核：一過一未過。** 原文見
+> `docs/research_inbox/codex_20260828_findings.md` §3。
+>
+> | 條目 | 狀態 |
+> |---|---|
+> | 公式一（輪胎論文 Eq.(28)，`Y_dp`） | **公式待原文複核**——原文取不到（見下方「取得嘗試紀錄」）。**這是本節唯一真正給出 `Y_dp` 的來源，所以整個 §5b 的核心公式目前仍未溯源。** |
+> | 公式二（Park/Hong/Kil Eq.(3)，`H_c`） | **Opus 已核（2026-08-28）**，公式、頁碼、Cremer 引述、參考文獻頁全部相符 |
+>
+> 因此本節整體**仍不得寫入程式碼、不得用於任何 GATE 判定**，
+> 也不構成 §5「實作需要新增的參數」表格的核准。
+
+§2.1 目前的 `Y∞ = 1/(8√(D·ρs))` 是**各向同性**薄板公式。`docs/workcards/B5.md`
+§11 (a) 記載的既有阻擋是：`orthotropic` 資料塊已入庫（9 個獨立正交異向常數），
+但**沒有任何已溯源的「正交異向板無限板點導納」公式**可以消費這批資料
+——`D` 的計算因此在 B5 卡裡刻意不做正交異向化。Codex 補搜回報找到兩篇
+可能解開這個阻擋的文獻：
+
+- 公式一（**公式待原文複核，2026-08-28 Opus 取不到全文**）：
+  Muggleton JM, Mace BR, Brennan MJ, *Vibrational response prediction of a
+  pneumatic tyre using an orthotropic two-plate wave model*,
+  **Journal of Sound and Vibration 264(4):929–950, 2003**，
+  DOI 10.1016/S0022-460X(02)01190-2，Codex 標注 p.938 Eq.(28)：
+
+  ```
+  Y_dp = 1 / (8·(ρ²h²·Dxx·Dyy)^(1/4))
+       = 1 / (8·√(ρh)·(Dxx·Dyy)^(1/4))
+       = 1 / (8·√(m·D_eff))     其中 m = ρh，D_eff = √(Dxx·Dyy)
+  ```
+
+  即形式上與各向同性版 `Y∞ = 1/(8√(D·ρs))` 完全類比，只是把單一 `D`
+  換成 `Dxx`、`Dyy` 兩個正交彎曲剛度的幾何平均 `D_eff`。
+  Codex 註記的限制：**Kirchhoff 正交異向薄板、點驅動、無限板高頻漸近**；
+  結果為純實數、不隨頻率變化；**非有限板逐模態曲線**——跟本文件 §2.1
+  各向同性版的性質與限制完全對應（同屬「平均值」而非峰谷結構）。
+
+  **【2026-08-28 Opus 取得嘗試紀錄・未通過】**
+  - ScienceDirect 頁面（S0022460X02011902）為付費牆，未取得全文。
+  - Hindawi/Wiley 那種開放管道不適用；OpenAlex 查詢 DOI 回報
+    `oa_status: "closed"`、`any_repository_has_fulltext: false`，
+    唯一的機構庫位置 `eprints.soton.ac.uk/10105/` 亦標記為非 OA，
+    實際存取回 HTTP 403。
+  - ISVR 出版清單頁（`resource.isvr.soton.ac.uk/staff/pubs/pubs218.htm`）
+    有著錄此文（第 82 筆）但**未附 PDF 連結**。
+  - **已從公開後設資料確認的部分**：作者三人、期刊 JSV、
+    **卷期頁 264(4):929–950 (2003)** ——因此 Codex 標注的 p.938
+    **落在頁碼範圍內、屬合理**，但**該頁確實有沒有 Eq.(28)、
+    係數是不是 8、指數是不是 1/4，全部未經本 repo 親眼核對**。
+  - **僅有的旁證（不能當成核過）**：上述三行寫法在代數上互相恆等
+    （`(ρ²h²DxxDyy)^(1/4) = √(ρh)·(DxxDyy)^(1/4) = √(m·√(DxxDyy))`），
+    且令 `Dxx = Dyy = D` 時退化為教科書的各向同性結果
+    `Y∞ = 1/(8√(Dm))`——**自洽性通過**。但自洽不等於出處正確：
+    一個抄錯係數的式子若同時抄錯兩處也可能自洽，且此式極可能是
+    抄自 Cremer/Heckl/Ungar 的標準結果而非該輪胎論文的原創。
+  - **裁決：維持「公式待原文複核」**，不得升級為「已驗證公式」。
+    後續途徑：館際互借取得 JSV 264(4) p.938，或改用
+    Cremer/Heckl/Ungar *Structure-Borne Sound*（本文件 §6 引用 #8，
+    同樣未取得全文）作為一手出處——後者其實才是這條式子的正統來源。
+
+- 公式二（**Opus 已核 2026-08-28**）：Park D-H, Hong S-Y, Kil H-G,
+  *Vibrational energy flow models of finite orthotropic plates*,
+  **Shock and Vibration 10(2):97–113, 2003**（IOS Press；作者單位
+  首爾大學造船海洋工程系／水原大學機械工程系），DOI 10.1155/2003/428705。
+  Gold OA (CC BY)，Opus 取得存檔版 PDF（18 頁）逐字核對，**全部相符**：
+  - **p.98 Eq.(3)**：`H_c = √(D_xc · D_yc)` ✓ 公式與頁碼皆相符。
+    原文語境：`H_c` 是運動方程式 Eq.(1) 裡的**複數等效扭轉剛度**
+    （complex effective torsional stiffness），在「板厚固定、橫向位移
+    很小、變形為彈性」的前提下，可**假設**為兩向彎曲剛度的幾何平均。
+  - **同頁（p.98）確有該引述**，原文逐字為：
+    "Despite of its preconditions, Cremer and Heckl [4] showed that
+    Eq. (3) is a very good approximation for many practical orthotropic
+    plates. It can be also seen in their work that the driving point
+    impedance of an orthotropic plate is very nearly equal to that of
+    an homogeneous plate whose bending stiffness is equal to the
+    geometric mean of the bending stiffnesses in the two coordinate
+    direction." ✓
+    （小差異：正文寫的是「Cremer and Heckl」兩人，
+    參考文獻 [4] 才是三人 Cremer/Heckl/Ungar。）
+  - **參考文獻 [4] 位於印刷頁 p.110** ✓：
+    "L. Cremer, M. Heckl and E.E. Ungar, Structure-Borne Sound,
+    Springer-Verlag, Berlin, 1973."——與本文件 §6 引用 #8 是同一本。
+  - **⚠️ 這篇能證明什麼、不能證明什麼（重要）**：它證明的是
+    **「幾何平均代換」這個做法有出處**，以及 Cremer/Heckl 對驅動點阻抗
+    講過「非常接近」。它**沒有給出任何 `Y_dp` 的閉式公式**——
+    Eq.(3) 是扭轉剛度不是導納，且該文全篇處理的是**有限板的能量流
+    (EFA)**，不是無限板點導納。**所以公式一不能靠公式二背書。**
+
+**對本文件與 B5 的意義（公式一未過稽核，以下全部維持假設語氣）**：這將解開
+`docs/workcards/B5.md` §11 (a) 的小階段阻擋——B5 已入庫的 orthotropic
+資料自此有了一條可溯源的消費公式**候選**：把 §2.1 的 `D = E·h³/(12(1−ν²))`
+換成正交異向的 `Dxx`、`Dyy`，再取幾何平均代入形式相同的 `Y∞` 公式。
+**但這僅止於登記溯源，不代表可以動工**：
+
+- 實作（把 `Dxx`/`Dyy` 接進 `BeamModel.h`/`PlateModel.h` 或琴橋導納模型）
+  是**模型結構改動**，屬於未來的新工作卡，不在本文件範圍，也不在
+  B5 範圍（B5 §11 已明確排除 (a)(b) 兩個小階段）。
+- **關鍵：真正給出 `Y_dp` 的那一篇（公式一）沒核過。** 2026-08-28 Opus
+  核過的是公式二，而公式二只支持「幾何平均代換合理」，**不含導納公式**。
+  所以 B5 §11 (a) 的阻擋**尚未解除**——現況是「有一條很可能正確、
+  且自洽、但出處未經親眼核對的候選公式」，不是「已溯源」。
+  在取得 JSV 264(4) p.938 或 Cremer/Heckl/Ungar 原書之前，
+  **不得引用為「已驗證公式」，不得寫進程式碼**。
+- 即使公式本身成立，正交異向版本繼承了各向同性版本 §4 列出的全部
+  限制（抓不到峰谷結構、高頻換檔、虛部、單一極化方向），且新增一條
+  自身限制：無限板高頻漸近對**低頻**（舌鼓/鑼的基頻常在低頻）的適用性
+  未經確認。公式二本身也帶了一條前置條件（p.98 原文）：幾何平均代換
+  假設**板厚固定、橫向位移很小、變形為彈性**——舌鼓的舌片是變厚度/
+  懸臂結構，鑼被大力敲擊時是大振幅非線性，**兩個前置條件在本專案的
+  目標樂器上都不見得成立**。
+
 ## 6. 引用清單
 
 | # | 出處 | 取得狀態 | 本文件用到什麼 |
@@ -248,7 +359,9 @@ Z₀ = sqrt(T · μ)        T = 張力 (N)，μ = 線密度 (kg/m)
 | 5 | Woodhouse, *On the synthesis of guitar plucks*, Acta Acustica 90 (2004) 928–944 | ✅ 開放全文 | 導納的模態展開式、2×2 導納矩陣需求（§4 侷限 4 的依據） |
 | 6 | Woodhouse, *Euphonics* §5.1 線上教材 | ✅ 開放 | `Z₀ = √(Tμ)`；耦合強度 ∝ `Y·Z₀` |
 | 7 | Wogram, *The strings and the soundboard*（KTH 講座系列） | 已引於 `damping_broadband_findings.md` §4.1 | C3/C4/G4/F#4 的 T20 實測，§3 對照與 §4 侷限 1 的依據 |
-| 8 | Cremer, Heckl & Ungar, *Structure-Borne Sound* / Skudrzyk mean-value theorem | 📖 教科書（未線上取得全文） | `Y∞ = 1/(8√(D·ρs))` 的經典出處 |
+| 8 | Cremer, Heckl & Ungar, *Structure-Borne Sound*, Springer-Verlag, Berlin, 1973 / Skudrzyk mean-value theorem | 📖 教科書（未線上取得全文） | `Y∞ = 1/(8√(D·ρs))` 的經典出處；亦是 §5b 正交異向版的正統一手來源（經 #10 p.98 轉引） |
+| 9 | Muggleton, Mace & Brennan, *Vibrational response prediction of a pneumatic tyre using an orthotropic two-plate wave model*, J. Sound Vib. **264(4) (2003) 929–950**, DOI 10.1016/S0022-460X(02)01190-2 | ❌ 付費牆，OpenAlex 標 `closed`、無任何機構庫全文（2026-08-28 Opus 實測） | §5b 公式一 `Y_dp`（Codex 標 p.938 Eq.(28)）——**公式待原文複核，未核過** |
+| 10 | Park, Hong & Kil, *Vibrational energy flow models of finite orthotropic plates*, Shock and Vibration **10(2) (2003) 97–113**, DOI 10.1155/2003/428705 | ✅ Gold OA (CC BY)，2026-08-28 Opus 已取得全文並逐字核對 | §5b 公式二：p.98 Eq.(3) `H_c = √(D_xc·D_yc)`；同頁 Cremer & Heckl 驅動點阻抗引述；p.110 參考文獻 [4] |
 
 **抓不到的**：Giordano 1998 的原始逐頻率導納曲線（付費牆）。本文件因此
 **沒有**數位化任何論文圖表——所有進到 §2 的東西都是閉式公式或文獻正文

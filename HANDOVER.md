@@ -1,62 +1,30 @@
 # TsukiSynth 交接文件
 
-> 重寫：2026-08-22　分支：`fix/deep-physics-audit-20260716`
-> **新 session 請先讀完這一頁再動手。** 待辦細節在 `TODO.md` 開頭「待辦總表」；歷史決策在 `DEVLOG.md`；
-> 2026-08-16 版交接的歷史內容已由 git 歷史保存（`d46cd84` 前後），本檔只寫現況。
+> 重寫：2026-08-29／增修 2026-08-30　分支：`fix/deep-physics-audit-20260716`（HEAD `51bd6cc`）
+> **新 session 請先讀完這一頁再動手。** 待辦細節在 `TODO.md` 開頭「待辦總表」；
+> 歷史決策在 `DEVLOG.md`；更早版本的交接內容由 git 歷史保存，本檔只寫現況。
 
 ---
 
 ## 0. 一句話現況
 
-**B4 完工（unstaged 待月月授權 commit）。** B3 已於 2026-08-26 隨月月裁決 commit 併入 `main`
-（A1 放行＋A6 完成＋A7 LICENSE）。**2026-08-27 月月三裁決全部落地**：
-- **B4（槌頭非線性接觸求解器）完工**——F3 velocity 撞牆（C4/C7 predicted_delta +7.79/+19.12 dB
-  超出 6.02±1.0 律、偏差隨 α 單調＝物理事實非 bug）經月月**裁決 (b) 重定義 F3 主張域**
-  （固定 tau_c 路徑一字不動；tau_c(v)/Felt 路徑改模型自洽判定，容差數值不變）後收尾：
-  重定義後 GATE 全綠（`b4_gate_full_after_f3_redefine.txt`）＋哨兵兩輪＋corpus 73/73 零新增豁免
-  （`b4_corpus_all.txt`）＋Rule 10 報告 `reports/b4_hammer_contact_before_after.md`。
-  裁決包 `reports/decision_packets/B4_f3_velocity_ruling.md`。
-- **A4 關閉**（裁決「調整文件建議值」）：Playbook 亮度 EQ 起手式降級為「預設不開」，程式碼零改動。
-- **A11 關閉**（裁決 (i) 確認現值 h=9mm/wood_spruce）：維持寫死，「可注入」子問題就地關閉。
-**下一步 = 月月審 B4 批次 unstaged 並授權 commit；之後 B5（木材正交異向，前置 B1 已完成）→ B6。**
-待月月的只剩 A8（外部資料集）/A10（Score 控制台實操）。
+**B1–B6 物理鏈全部 Done，六場物理戰役收官；驗證鏈從 MIDI 到耳朵全線閉環；
+第一首授權全淨的商品曲（給愛麗絲）已產出。工作樹乾淨，全部已 commit + push。**
 
-## 1. 2026-08-20 ~ 08-22 這三天發生了什麼（新 session 必讀）
+**UI mockup 裁決已於 2026-08-30 下達：雙開門被否決，UI 改走「功能規格 → 設計端重做」**
+（見 §5 第 1 項）。merge → `main` 的時機因此重新回到月月手上，仍不自作主張。
 
-1. **X1/X2 紅燈修畢**：audit_repro 回歸（測試 DB 補 `wood_spruce`，月月裁決 (a)）；
-   macOS Bessel（`src/physics/BesselPortable.h` A&S 級數 + `__cpp_lib_math_special_functions`
-   特性巨集切換，Windows 位元零改變）。
-2. **月月重大委託（2026-08-20）**：「我沒有樂理基礎也沒有程式基礎…你自己想辦法，照順序把
-   缺口都補上，我最後再拿去給專業人士聽」——免耳免人工驗證全權委託 AI，容差 AI 自定但
-   **R2 仍禁事後調寬**；最終**美學**驗收 = 外部專業人士試聽（月月安排）；物理/位置正確性
-   由 GATE 鏈負責，兩者主張分開。
-3. **免耳三層驗證建成**（設計 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md`）：
-   - **L1 `tools/melody_verify.py`**：score↔WAV 逐事件 onset(±10ms)/pitch(5c 已批准) 正向驗證
-     + extra-scan；8 條 fail-closed 拒答規則（重擊遮蔽/泛音污染/course 自拍/床能量/低頻<167Hz
-     精修極限/帶碰撞/delay/fm_ratio≠1），有效殘響 = max(乾 T60, reverb decay)；哨兵五件組
-     （時移/移調/刪音/幻音必 FAIL + 原封必 PASS）；`--html` piano-roll 疊圖（聾人可視驗收）。
-     **主張域**（設計文件 §7，月光 1141 事件四輪迭代定案）：強域=單音/稀疏/host 渲染；
-     弱域=密集低音複音+長混響 → 誠實拒答，位置保證改由 verify_score 2e 位元決定性承擔。
-   - **L2 `TsukiSynthHostProbe`**（`tests/host_probe.cpp`，CMake target）：載磁碟上的 .vst3，
-     A9 四步自動化，**16/16 全 PASS**；plugin 即時路徑旋律位置史上首驗 5/5。
-   - **L3a `tools/cubase_scan_verify.py`**：解析真 Cubase 掃描快取 XML，S1-S5 全 PASS。
-   - **L3b（2026-08-22 凌晨，月月授權螢幕控制）**：AI 全程操作真 Cubase——建軌/匯入哨兵
-     MIDI/tempo 100 對齊/plugin GUI 上 Reverb 歸零/匯出 Wave 48k24bit → **melody_verify 5/5**
-     （onset ≤2.5ms、pitch ≤0.4c）；存檔→關閉→重開→再匯出 → **音訊 SHA256 位元全等**。
-     專案留檔 `Documents\Cubase LE AI Elements Projects\无标题-06\l3b_tsukisynth_verify.cpr`。
-4. **B2 施工卡完整執行**（M10 收官）：corpus **73/73 PASS 零新增豁免**、`summer_m2` 自動回綠
-   （−46.8 FAIL → −52.2 PASS）、寬頻化低音發散被 B1 封頂證實（**C2 128.75s → 17.66s**）、
-   響度錨點重測 `kCimbalomAttackEnergyRefA4` 0.1497→**0.0874**（中央弦反解法；Chromatic 兩值
-   不變 = 雙 null 自驗）。**Rule 10 報告 `reports/b1_b2_bridge_damping_before_after.md`**，
-   月月裁決 **A1' 接受**。
-5. **CI 三平台首次全綠**（run 32446987833）+ **X3 跨平台數字**：max delta 5 LSB@24bit、
-   pitch +0.0000c → **C3 容差已登記**（`scores/crossplatform_tolerance.json`，月月裁決照提案）
-   → `cross-platform-compare` 自此為**阻斷式 GATE**。
-6. **A12 修畢**（月月裁決 (a)）：36 個 float 參數轉連續（interval 0），state round-trip 位元精確；
-   H5 主張修正為 fresh-vs-fresh（DAW「重開專案每次播放一致」語意——噪音事件計數器刻意隨敲擊
-   遞增且不入 state）。
-7. **A9 關閉**：四步全數以自動化+真 host 證據取代人工（唯一殘留 = Cubase GUI 畫 automation
-   lane，L2 合約層已蓋，非位置主張必需）。
+## 1. 立刻要知道的三件事
+
+1. **`main` 落後分支四個 commit。** `main` 目前只到 B3（`b47d550`）。
+   `f67050b`(B3)→`53e6c76`(B4)→`88bdfac`(B5+B6P1)→`0f271ae`(三件套)→`51bd6cc`(B6 收官)
+   都在分支上，CI 全綠。月月 2026-08-28 明示：**「做完三件套 commit，等我看完 UI/UX 再 merge」**
+   ——UI 裁決 2026-08-30 已下（否決雙開門、改重新設計，見 §5 第 1 項），
+   但**仍不要自作主張 merge**：等月月明示要不要把物理成果先併回 `main`。
+2. **corpus 從 73 檔變成 75 檔**（新增給愛麗絲 piano/cimbalom 兩版）。任何文件寫 73 都是舊的。
+   最新全綠證據：`reports/gate_outputs/b6_corpus_phase34.txt`（75/75，1 筆既有 moonlight 豁免）。
+3. **月月是聾人開發者，全程免耳驗收。** 任何「聽起來如何」的主張都不算數；
+   物理/位置正確性由 GATE 鏈負責，美學驗收由月月安排外部專業人士。這是本專案的根本設定。
 
 ## 2. 這個專案是什麼
 
@@ -68,65 +36,142 @@
 | R1 | 驗收只認 GATE 命令輸出，不認敘述 |
 | R2 | **禁止調寬任何容差**。達不到 → 回報數字 + 停下 |
 | R3 | 禁止縮小 GATE 範圍 |
-| R4 | 禁止 hardcode 無法溯源的物理常數 |
+| R4 | 禁止 hardcode 無法溯源的物理常數；查不到就誠實標「未溯源」 |
 | R5 | Milestone 不可部分標記 Done |
-| R6 | 改 `src/physics|engines|dsp|score` 後必跑 `--full` + 三 target build |
-| R7 | **不 commit、不 push**（月月明示才做；本輪月月已三度授權為例） |
+| R6 | 改 `src/physics\|engines\|dsp\|score` 後必跑 `--full` + 三 target build |
+| R7 | **不 commit、不 push**（月月明示才做） |
 | R10 | 任何讓既有 score 渲染結果改變的修正，必須產出前後對照報告 |
 
-**X4 規約（必遵守，2026-08-16 教訓）**：跑 `ctest` 前必先重建三個測試 target
+**X4 規約（必遵守）**：跑 `ctest` 前必先重建三個測試 target
 （`TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest`），否則測到舊 binary。
 
-四個引擎：Cimbalom/Piano（弦，域內，**含 B1 琴橋耦合**）、Tongue Drum（梁，域內）、
-Water Gong（板，域內）、FM Piano（域外，已誠實標註）。
+四個引擎：Cimbalom/Piano（弦，域內）、Tongue Drum（梁，域內）、
+Water Gong（板，域內）、FM Piano（**域外**，已誠實標註）。
 
-## 3. 檔案地圖
+## 3. 物理鏈現況（B1–B6 全 Done）
+
+| 卡 | 做了什麼（白話） | Rule 10 報告 |
+|---|---|---|
+| B1 | 琴橋導納／共鳴板耦合——低音發散 C2 128.75s→17.66s | `reports/b1_b2_bridge_damping_before_after.md` |
+| B2 | 阻尼寬頻化收尾 + 響度錨點重測（0.1497→0.0874） | 同上 |
+| B3 | 弦阻尼律換 Cuesta & Valette 零自由參數三機制 | `reports/string_damping_firstprinciples_before_after.md` |
+| B4 | 槌氈接觸時間從查表換成物理解出（力度指數 −0.2 → −0.394/−0.429/−0.500） | `reports/b4_hammer_contact_before_after.md` |
+| B5 | 木材正交異向常數入庫（**schema 備妥、零消費路徑、死資料**——措辭鐵律，不可說「已支援」） | `reports/b5_schema_noop_proof.md`（bit-exact no-op） |
+| B6 | 輻射效率骨架 σ(f) + **絕對聲壓校準**（方案 B）——引擎現在能主張「這個音在 1.05m 外幾 Pa」 | 不觸發（只進 `--dump-modes`，位元不變 8/8） |
+
+**B6 校準的性質要講清楚**：月月裁決方案 B——把「數位 1.0 ≡ 1 Pa ≡ 94 dB SPL @1.05m」
+釘在**創作層（響度補償/EQ）之前**的純物理訊號點。這是**慣例錨定，不是實測**，
+程式碼註解已 R4 標註。真正的第一原理力鏈是 B7（見 §6）。
+
+## 4. 驗證鏈全圖（聾人+AI 的閉環）
+
+```
+MIDI 原譜 ──① score_vs_midi_verify──> score.json ──② melody_verify──> WAV
+                                          │                            │
+                                          └──③ verify_score (75 檔) ───┘
+                                                                       │
+              ④ HostProbe(plugin) / ⑤ Cubase 實測 / ⑥ piano-roll 影片 ─┘
+```
+
+1. **`tools/score_vs_midi_verify.py`**（2026-08-29 新增，補上轉譜層缺口）——
+   獨立 SMF parser（刻意**不用** mido，避免與轉譜器共模錯誤）、逐音符全量 1:1、
+   pitch 整數零容差、onset ≤1ms、四種突變哨兵。
+2. **`tools/melody_verify.py`**——score↔WAV 逐事件 onset(±10ms)/pitch(5c)，
+   8 條 fail-closed 拒答規則，哨兵五件組，`--html` piano-roll 疊圖。
+   **主張域**在 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §7（強域=單音/稀疏；
+   弱域=密集低音複音 → 誠實拒答，位置保證改由 verify_score 位元決定性承擔）。
+3. **`tools/verify_score.py --all`**——corpus 75 檔全量（四分片可平行）。
+4. **`TsukiSynthHostProbe`**——載磁碟 .vst3，plugin 即時路徑 16/16。
+5. **L3b Cubase 實測**（2026-08-22，月月授權螢幕控制）——真 host 匯出 melody_verify 5/5、
+   存讀位元全等。
+6. **`tools/melody_roll_video.py`**（2026-08-29 新增）——旋律形狀影片，聾人視覺複核用。
+
+## 5. 接下來該做什麼（優先序）
+
+1. **UI 裁決已下（2026-08-30）：雙開門提案被月月否決。**
+   原話：「左側那麼寬了但旋鈕超小；右側一點也沒有鋼琴／揚琴／空靈鼓的視覺感，
+   看上去像廉價玩具」。裁定**撇開現行 UI 的所有既有元素**，改由設計端（Claude Design）
+   從功能重新設計。`uiux/double_door_mockup.html` 與
+   `docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md` 就此**作廢，只留歷史**。
+   → 新的設計輸入文件：**`docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md`**（2026-08-30 建立）
+   ——只清點功能（60 個 APVTS 參數＋非參數控制項＋六條使用情境＋八條硬性約束），
+   **刻意不寫任何顏色／尺寸／佈局**。資料全部從程式碼本體清點，不是從舊文件轉抄。
+   **下一步待月月決定**：(a) 這份 spec 是否可以送出去設計；
+   (b) merge → `main` 的時機（原本綁在 UI 裁決上，現在 UI 走向重設計，
+   分支上的物理成果不該再被 UI 卡住——但仍**不自作主張 merge**，等月月明示）。
+   **兩個誠實揭露照舊有效**：(a) 樂器模擬畫面**從來沒做過**，不是復活是全新功能；
+   (b)「揚琴左右手強弱」在 APVTS 裡**沒有對應參數**，要落地得另開卡加參數與 DSP。
+2. **換源重製排程**（月月 2026-08-28 裁決「CC BY 可以」）——
+   計畫在 `reports/decision_packets/CLASSICAL_RELICENSE_PLAN.md`：
+   月光 4 檔（CC BY-SA 2.5）+ 四季 12 樂章（CC BY-SA 3.0）授權不淨，**換源前不上架**；
+   給愛麗絲已完成（真 PD）。四季可換 IMSLP Schoonenbeek CC BY（但編制不同）、
+   月光需從譜面重轉譜。轉譜器已泛化（`tools/midi_to_tsukisynth.py convert` 子命令），
+   four-seasons 舊路徑零改變已用位元比對證明。
+3. **B7（第一原理力鏈，方案 C）**——卡已立 `docs/workcards/B7.md`。
+   **前置硬性阻擋已解除**（B6 方案 B 已落地=B7 的地基）。
+   開工前要補 Phase 0 三塊資料，最關鍵的缺口：**MIDI velocity（0-1 proxy）→ 真實槌速 m/s
+   的映射函數查無出處**（已知真實槌速範圍 0.11–6.83 m/s，Boutillon 實測／Askenfelt KTH 講義）。
+4. **D8 tongue_drum 引擎缺陷**（商品線的擋路石）——同 velocity 下有 **40.3 dB 音高-響度斜率**
+   （MIDI 37→87：−32.8→−73.1 dBFS；cimbalom 同域僅 4.4 dB），且輸出近純正弦無泛音列。
+   後果：空靈鼓獨奏商品不可用。屬引擎物理層調查，改動觸發 Rule 10。
+5. **IR 配套修補**（`docs/IR_REVERB_AUDIT.zh-TW.md` 已出結論）——
+   卷積實作本身**正統無誤**（juce::dsp::Convolution，IR 模式取代演算法 reverb）。
+   但有一個 **bug 級落差：IR 路徑進 DAW session state 卻沒進使用者 preset**，
+   存了 IR 模式的 preset 重載會靜默退回演算法殘響；另有 ALGO↔IR 切換 0.15× 增益跳變、
+   `.wav`/`.json` 共用同一顆 Load 鈕造成心智模型混淆。三個選項與工程量在該文件 §4。
+6. **音效產品線**（月月：不一定要完整樂曲，但要有判準）——
+   `docs/SOUND_DESIGN_KNOWLEDGE.zh-TW.md` 已建（9 個一手來源含《The Sound Effects Bible》全文、
+   6 個可寫成 Python 檢查器的量測判準）。開工前必讀，不得再盲做「10 秒兩聲鐘響」。
+
+## 6. 檔案地圖
 
 | 要找什麼 | 去哪 |
 |---|---|
 | 當前待辦 | `TODO.md` 開頭「待辦總表」（X/A/B/C/D 分段） |
 | 驗收規則、Milestone、容差表 | `ROADMAP_PHYSICS.md` §1 / §2 / §6 |
-| **免耳三層驗證設計 + 主張域** | `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md`（§7 = 方法極限） |
-| B1+B2 的 Rule 10 前後對照（月月已接受） | `reports/b1_b2_bridge_damping_before_after.md` |
-| 文獻線總覽 | `docs/RESEARCH_INDEX.md` |
-| 施工卡（B3-B6 待做） | `docs/workcards/B*.md` |
-| 溯源文件 | `docs/{BRIDGE_ADMITTANCE,STRING_DAMPING,HAMMER_CONTACT,WOOD_ANISOTROPY,EXTERNAL_ANCHOR}_SOURCES.md` |
-| GATE 證據 | `reports/gate_outputs/`（x1/x2/x3/l1/l2/l3a/l3b/b2/a12_c3 前綴） |
+| 免耳驗證設計 + 主張域 | `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §7 |
+| 施工卡（B7 待做） | `docs/workcards/B1–B7.md` |
+| 月月裁決包（看完就能決定的問題） | `reports/decision_packets/` |
+| 溯源文件 | `docs/{BRIDGE_ADMITTANCE,STRING_DAMPING,HAMMER_CONTACT,WOOD_ANISOTROPY,RADIATION_POWER,EXTERNAL_ANCHOR,TAIWAN_WOOD_SPECIES,D2_CHROMATIC_CONTACT}_*.md` |
+| GATE 證據 | `reports/gate_outputs/`（x1-x4/l1-l3b/b1-b7/furelise 前綴） |
+| 產品/市場 | `docs/PRODUCT_MARKET_NOTES.zh-TW.md`、`docs/SOUND_DESIGN_KNOWLEDGE.zh-TW.md`、`reports/product_sheets/` |
+| UI/UX | **`docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md`（現行設計輸入）**、`docs/MUSICIAN_UX_RESEARCH.zh-TW.md`；已作廢：`docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md`＋`uiux/double_door_mockup.html` |
+| 田野/文化素材 | `docs/PESTLE_MUSIC_FIELD_NOTES.zh-TW.md`（月月口述杵音工藝） |
+| 外部參照調查 | `docs/COMMERCIAL_PM_PUBLIC_DATA.zh-TW.md`（Pianoteq 等公開資料調查） |
 | 歷史決策 | `DEVLOG.md` |
 
 `libs/JUCE` 是 submodule（8.0.12，釘 `501c0767`，從未動過）；新 clone 用 `--recursive`。
 
-## 4. Milestone 狀態
-
-- **M1–M7、M9、M10 全部 Done**（M10 = 2026-08-21 B2 收官 + 月月 A1' 接受）。
-- **M8 In progress**：8a 的 Cubase 驗證已由 L2/L3a/L3b 自動化完成（A9 關閉）；
-  **只剩 8b：merge → `main` 時機（= TODO A6，月月裁決）**。
-- corpus 基準：73 檔全綠（2026-08-21，B1+B2 疊加後，`b2_corpus_*.txt`）。
-
-## 5. 接下來的順序（建議）
-
-1. **月月審 B4 批次並授權 commit**（最優先）：Rule 10 報告
-   `reports/b4_hammer_contact_before_after.md`（先讀白話導讀卡）＋F3 主張域重定義登記
-   （`ROADMAP_PHYSICS.md` §6 velocity 列）。B4 全部改動 unstaged（R7），
-   裁決「接受 commit」或「指名回退」。
-2. **月月裁決積壓**（只剩兩項，見 TODO A 段）：A8（外部資料集要不要下載）、
-   A10（Score 控制台實操驗收）。
-3. ~~B3 弦阻尼律~~ **已完成並併入 main（2026-08-26）**；~~B4 槌頭~~ **已完成
-   （2026-08-27，F3 域依裁決 (b) 重定義，見 §0）**；A4/A11 已依 2026-08-27 裁決關閉。
-4. 之後 **B5（木材正交異向，前置 B1 已完成）** → B6（輻射，前置 B1+B5）。
-   注意：B5 開工前建議等 B4 批次 commit 落地，避免 unstaged 疊加毀 Rule 10 歸因。
-
-## 6. 給下一個 session 的操作備忘
+## 7. 操作備忘
 
 - 建置：`cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON`
 - CLI：`build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe`
-- 全套 GATE：`--full`＋三 target build＋ctest（先重建三測試 target！）＋`pytest tests -q`＋
-  corpus 四分片 `verify_score.py --all --shard-index N --shard-count 4`
-- 旋律位置：`python tools/melody_verify.py <score> [--wav W] [--html H]`；`--selftest` 跑哨兵
-- HostProbe：`build/Release/TsukiSynthHostProbe.exe build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <outdir>`
-- 跨平台：CI 自動跑（現為阻斷式）；本機 `tools/crossplatform_verify.py --selftest`
-- Cubase 掃描：`python tools/cubase_scan_verify.py`
-- **系統部署的 VST3 是 0.2.0（7/12）**——要讓 Cubase 測最新版，月月需以管理員權限把
+- 全套 GATE：`--full` ＋三 target build ＋ ctest（**先重建三測試 target！**）＋
+  `pytest tests -q`（現 156 passed）＋ corpus 四分片
+  `verify_score.py --all --shard-index N --shard-count 4`
+- 轉譜驗證：`python tools/score_vs_midi_verify.py <midi> <score>`；`--selftest` 跑哨兵
+- 旋律位置：`python tools/melody_verify.py <score> [--wav W] [--html H]`
+- 旋律影片：`python tools/melody_roll_video.py <score> [--wav W] [--json 既有報告] [--out out.mp4]`
+  `--theme neon`（預設，2026-08-30 月月指定的霓虹紫配色＋左側固定音名尺）／
+  `--theme slate`（原單色深藍灰）；`--still-at <秒>` 只出一張 PNG 供快速看配色
+- HostProbe：`build/Release/TsukiSynthHostProbe.exe <.vst3 路徑> <outdir>`
+- ffmpeg（母帶/影片用）：`C:\Users\admin\Desktop\Tools\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe`
+- **系統部署的 VST3 仍是 0.2.0（7/12）**——要讓 Cubase 測最新版，月月需以管理員權限把
   `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3` 覆蓋到 `C:\Program Files\Common Files\VST3\`
 - GitHub `TsKR2828/tsuki-synth`，CI `.github/workflows/physics.yml`（push `main`/`fix/**` 觸發）
 - Python 需 numpy+scipy+mido（`tools/requirements-physics.txt`）
+
+## 8. 給下一個 session 的工作方式備忘
+
+月月 2026-08-28 明示的分工架構（token 效率考量）：
+**規劃者畫地圖、Sonnet 當工兵、Opus 當驗證者**——用 Dynamic Workflow 發包，
+工兵做完由獨立 Opus 稽核（不採信工兵自報，親自重跑/親自開來源），
+抓到 finding 進修正回合。這套在本輪抓出過真問題（Codex 數字的 4 個 R4 失真、
+B6 的 5 個缺陷、研究文件的引用不實），**不要為了省事跳過稽核層**。
+
+月月的偏好（歷史教訓，違反過會被糾正）：
+- 不要腦補——先看實際檔案/實際渲染，物件名與舊假設不可信。
+- 查不到就說查不到，寧缺勿假；不要編數字充數。
+- 需要人類裁決的事，做成「看完數字就能選 A/B/C」的裁決包，不要替月月決定。
+- 月月沒有樂理與程式基礎，白話說明要到位；但她的直覺常常命中真問題
+  （音效判準缺口、IR 疑慮、轉譜驗證缺口都是月月先提出的）。

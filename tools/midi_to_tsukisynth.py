@@ -10,8 +10,18 @@ non-auditory inspection while remaining harmless to the current C++ renderer.
 Requires:
     pip install mido
 
-Four Seasons batch mode expects the Mutopia MIDI folders:
-    spring/spring-score.mid, spring/spring-score-1.mid, ...
+Subcommands:
+    four-seasons  Vivaldi-specific batch mode (unchanged since 2026-06-21).
+                  Expects the Mutopia MIDI folders:
+                  spring/spring-score.mid, spring/spring-score-1.mid, ...
+    convert       Generic single/dual-track MIDI -> Score v1 (added
+                  2026-08-28 for the Fur Elise relicense work; see
+                  generic_piano_score_document() and
+                  reports/decision_packets/CLASSICAL_RELICENSE_PLAN.md).
+                  Example:
+                    python tools/midi_to_tsukisynth.py convert in.mid \\
+                      --output out.score.json --profile piano_two_hand \\
+                      --engine piano --id my_id --title "My Title"
 """
 
 from __future__ import annotations
@@ -21,7 +31,7 @@ import collections
 import json
 import math
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace as dataclass_replace
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -43,55 +53,135 @@ MUTOPIA_SOURCE_URLS = {
 
 @dataclass(frozen=True)
 class TrackProfile:
+    """Per-track physical/performance profile.
+
+    Generalised 2026-08-28 (Fur Elise relicense work, see
+    reports/decision_packets/CLASSICAL_RELICENSE_PLAN.md Sec.3): `engine`
+    and `params` replace the old string-instrument-only
+    diameter_mm/strike_position/damping fields so this dataclass can
+    describe a bowed string course (Vivaldi) OR a struck piano/cimbalom
+    course (Fur Elise, and any future single/dual-track piano MIDI)
+    without a second parallel struct. `params` holds exactly the dict
+    that goes into the score event's "params" object, in the same key
+    order it always rendered in, so existing four-seasons output is
+    byte-for-byte unchanged (verified by full corpus regeneration diff,
+    see CLASSICAL_RELICENSE_PLAN.md execution notes)."""
+
     role: str
     label: str
+    engine: str
     base_velocity: float
-    diameter_mm: float
-    strike_position: float
-    damping: float
+    params: dict[str, Any]
 
 
 TRACK_PROFILES = {
     "solo": TrackProfile(
         role="solo_violin",
         label="Violino principale",
+        engine="string",
         base_velocity=0.72,
-        diameter_mm=0.55,
-        strike_position=0.18,
-        damping=0.34,
+        params={
+            "material": "steel",
+            "diameter_mm": 0.55,
+            "strike_position": 0.18,
+            "exciter": "bow",
+            "damping_override": 0.34,
+        },
     ),
     "violinone": TrackProfile(
         role="violin_1",
         label="Violino primo",
+        engine="string",
         base_velocity=0.50,
-        diameter_mm=0.62,
-        strike_position=0.22,
-        damping=0.40,
+        params={
+            "material": "steel",
+            "diameter_mm": 0.62,
+            "strike_position": 0.22,
+            "exciter": "bow",
+            "damping_override": 0.40,
+        },
     ),
     "violintwo": TrackProfile(
         role="violin_2",
         label="Violino secondo",
+        engine="string",
         base_velocity=0.45,
-        diameter_mm=0.68,
-        strike_position=0.24,
-        damping=0.44,
+        params={
+            "material": "steel",
+            "diameter_mm": 0.68,
+            "strike_position": 0.24,
+            "exciter": "bow",
+            "damping_override": 0.44,
+        },
     ),
     "viola": TrackProfile(
         role="viola",
         label="Alto viola",
+        engine="string",
         base_velocity=0.42,
-        diameter_mm=0.90,
-        strike_position=0.28,
-        damping=0.48,
+        params={
+            "material": "steel",
+            "diameter_mm": 0.90,
+            "strike_position": 0.28,
+            "exciter": "bow",
+            "damping_override": 0.48,
+        },
     ),
     "cello": TrackProfile(
         role="cello_continuo",
         label="Violoncello / continuo",
+        engine="string",
         base_velocity=0.47,
-        diameter_mm=1.45,
-        strike_position=0.32,
-        damping=0.52,
+        params={
+            "material": "steel",
+            "diameter_mm": 1.45,
+            "strike_position": 0.32,
+            "exciter": "bow",
+            "damping_override": 0.52,
+        },
     ),
+}
+
+
+# Generic single/dual-track piano profile set (2026-08-28, Fur Elise).
+# Mutopia's LilyPond-exported piano MIDIs conventionally name the two
+# staves' tracks "up:" (treble/right hand) and "down:" (bass/left hand) --
+# confirmed by direct inspection of fur_Elise_WoO59.mid (see
+# reports/gate_outputs/furelise_license_evidence.txt for the source
+# fetch). params intentionally mirror the ONE existing verified "piano"
+# engine example in this repo (scores/examples/physical_piano.score.json:
+# material=steel, diameter_mm=1.0, no explicit strike_position/exciter)
+# rather than inventing a per-note string-gauge table this project has no
+# sourced data for -- ScoreRenderer.h's piano branch already overrides
+# strike_position/exciter internally (wood_mallet+0.3 -> felt+0.125) when
+# they are left at their string defaults, so omitting them here is not a
+# loss of fidelity versus the existing example. base_velocity gives the
+# melody (right hand) a touch more presence than the accompaniment (left
+# hand), the same relative-dynamics idea already used for Vivaldi's
+# solo-vs-continuo split -- the source MIDI itself has NO real dynamics
+# (every note_on is velocity 62, a LilyPond/MIDI-export constant, verified
+# by direct inspection), so per-hand balance is TsukiSynth interpretation
+# data, exactly like the Vivaldi editorial_note already discloses for bow
+# gaps and dynamics.
+PIANO_HAND_PROFILES = {
+    "up": TrackProfile(
+        role="right_hand",
+        label="Right hand (melody)",
+        engine="piano",
+        base_velocity=0.62,
+        params={"material": "steel", "diameter_mm": 1.0},
+    ),
+    "down": TrackProfile(
+        role="left_hand",
+        label="Left hand (bass / accompaniment)",
+        engine="piano",
+        base_velocity=0.44,
+        params={"material": "steel", "diameter_mm": 1.0},
+    ),
+}
+
+PROFILE_SETS = {
+    "piano_two_hand": PIANO_HAND_PROFILES,
 }
 
 
@@ -316,15 +406,29 @@ def note_name(note: int, key: str) -> str:
 def track_name(track: mido.MidiTrack, index: int) -> str:
     for message in track:
         if message.type == "track_name":
-            return message.name.strip().lower()
+            # 2026-08-28: also strip a trailing colon. Mutopia's LilyPond
+            # piano exports name staves "up:"/"down:" (confirmed by direct
+            # inspection of fur_Elise_WoO59.mid); the Vivaldi track names
+            # ("solo", "violinone", ...) never contain a colon, so this is
+            # a no-op for every existing four-seasons caller (verified by
+            # full 12-movement byte-for-byte regeneration diff, see
+            # CLASSICAL_RELICENSE_PLAN.md execution notes).
+            return message.name.strip().lower().rstrip(":")
     return f"track_{index}"
 
 
-def extract_notes(midi: mido.MidiFile) -> list[MidiNote]:
+def extract_notes(midi: mido.MidiFile, valid_tracks: set[str]) -> list[MidiNote]:
+    """Parses note-on/note-off pairs from every MIDI track whose
+    (lower-cased, stripped) track_name is in `valid_tracks`. Generalised
+    2026-08-28: previously read the module-global TRACK_PROFILES (Vivaldi
+    only); callers now pass whichever track-name set applies to their
+    profile set (e.g. set(TRACK_PROFILES) for four-seasons,
+    set(PIANO_HAND_PROFILES) for a piano MIDI), with no change in
+    behaviour for existing callers."""
     notes: list[MidiNote] = []
     for index, track in enumerate(midi.tracks[1:], start=1):
         name = track_name(track, index)
-        if name not in TRACK_PROFILES:
+        if name not in valid_tracks:
             continue
         absolute = 0
         active: dict[tuple[int, int], collections.deque[tuple[int, int]]] = (
@@ -368,13 +472,39 @@ def next_value(values: list[int], current: int) -> int | None:
     return None
 
 
+# Articulation-gap LABEL vocabulary per instrument family. The gap-length
+# *physics* (how much of the notated duration is shaved off before the
+# next onset) is identical across families -- only the semantic name of
+# "what physically causes the gap" changes, so a piano transcription
+# doesn't claim a "bow change" it never had. Generalised 2026-08-28;
+# "bowed" is byte-for-byte the original (pre-generalisation) label set, so
+# every existing four-seasons caller (which does not pass `style`) is
+# unaffected.
+ARTICULATION_STYLE_LABELS = {
+    "bowed": {
+        "short": "short_bow",
+        "detached": "detached_bow",
+        "long_change": "long_bow_change",
+        "change": "bow_change",
+    },
+    "piano": {
+        "short": "short_release",
+        "detached": "detached_touch",
+        "long_change": "long_pedal_release",
+        "change": "finger_release",
+    },
+}
+
+
 def articulation_gap_seconds(
     note: MidiNote,
     next_onset_tick: int | None,
     tick_map: TickMap,
     pace: str,
     same_pitch_at_next: bool,
+    style: str = "bowed",
 ) -> tuple[float, str]:
+    labels = ARTICULATION_STYLE_LABELS[style]
     source_duration = note.end_sec - note.start_sec
     if next_onset_tick is None:
         return min(0.055, source_duration * 0.08), "final_release"
@@ -390,16 +520,16 @@ def articulation_gap_seconds(
         cap = 0.042 if pace in {"fast", "very_fast"} else 0.055
         return min(cap, source_duration * 0.18), "staccato_rearticulation"
     if pace == "very_fast":
-        return min(0.012, source_duration * 0.07), "short_bow"
+        return min(0.012, source_duration * 0.07), labels["short"]
     if pace in {"fast", "dance"}:
-        return min(0.018, source_duration * 0.08), "detached_bow"
+        return min(0.018, source_duration * 0.08), labels["detached"]
     if pace == "slow":
-        return min(0.032, source_duration * 0.05), "long_bow_change"
-    return min(0.022, source_duration * 0.07), "bow_change"
+        return min(0.032, source_duration * 0.05), labels["long_change"]
+    return min(0.022, source_duration * 0.07), labels["change"]
 
 
 def add_timing_and_articulation(
-    notes: list[MidiNote], tick_map: TickMap, pace: str
+    notes: list[MidiNote], tick_map: TickMap, pace: str, style: str = "bowed"
 ) -> None:
     by_track: dict[str, list[MidiNote]] = collections.defaultdict(list)
     for note in notes:
@@ -421,7 +551,7 @@ def add_timing_and_articulation(
                 and note.note in notes_at_onset[next_onset_tick]
             )
             gap, articulation = articulation_gap_seconds(
-                note, next_onset_tick, tick_map, pace, same_pitch
+                note, next_onset_tick, tick_map, pace, same_pitch, style
             )
             source_duration = note.end_sec - note.start_sec
             gap = min(gap, max(0.0, source_duration - 0.006))
@@ -459,8 +589,15 @@ def merged_intervals(notes: list[MidiNote]) -> list[tuple[float, float]]:
 
 
 def make_rests(
-    notes: list[MidiNote], piece_end: float, tick_map: TickMap
+    notes: list[MidiNote],
+    piece_end: float,
+    tick_map: TickMap,
+    role_for: dict[str, str],
 ) -> list[dict[str, Any]]:
+    """`role_for` maps track name -> performance.role string. Generalised
+    2026-08-28: previously indexed the module-global TRACK_PROFILES
+    directly; callers now pass whichever role mapping applies (see
+    extract_notes() docstring for the same pattern)."""
     by_track: dict[str, list[MidiNote]] = collections.defaultdict(list)
     for note in notes:
         by_track[note.track].append(note)
@@ -471,15 +608,15 @@ def make_rests(
         cursor = 0.0
         for start, end in intervals:
             if start - cursor >= 0.035:
-                rests.append(rest_record(track, cursor, start, tick_map))
+                rests.append(rest_record(track, cursor, start, tick_map, role_for[track]))
             cursor = max(cursor, end)
         if piece_end - cursor >= 0.035:
-            rests.append(rest_record(track, cursor, piece_end, tick_map))
+            rests.append(rest_record(track, cursor, piece_end, tick_map, role_for[track]))
     return rests
 
 
 def rest_record(
-    track: str, start: float, end: float, tick_map: TickMap
+    track: str, start: float, end: float, tick_map: TickMap, role: str
 ) -> dict[str, Any]:
     duration = end - start
     if start <= 0.001:
@@ -493,7 +630,7 @@ def rest_record(
     quarter = tick_map.quarter_seconds_at(0)
     return {
         "track": track,
-        "role": TRACK_PROFILES[track].role,
+        "role": role,
         "time": round_float(start),
         "duration": round_float(duration),
         "approx_quarter_beats": round_float(duration / quarter, 3),
@@ -502,7 +639,10 @@ def rest_record(
 
 
 def make_phrases(
-    notes: list[MidiNote], rests: list[dict[str, Any]], piece_end: float
+    notes: list[MidiNote],
+    rests: list[dict[str, Any]],
+    piece_end: float,
+    role_for: dict[str, str],
 ) -> list[dict[str, Any]]:
     by_track: dict[str, list[MidiNote]] = collections.defaultdict(list)
     for note in notes:
@@ -528,7 +668,7 @@ def make_phrases(
                 phrases.append(
                     {
                         "track": track,
-                        "role": TRACK_PROFILES[track].role,
+                        "role": role_for[track],
                         "number": phrase_number,
                         "start": round_float(phrase_start),
                         "end": round_float(phrase_end),
@@ -544,7 +684,7 @@ def make_phrases(
             phrases.append(
                 {
                     "track": track,
-                    "role": TRACK_PROFILES[track].role,
+                    "role": role_for[track],
                     "number": phrase_number,
                     "start": round_float(phrase_start),
                     "end": round_float(min(piece_end, last_end)),
@@ -628,16 +768,10 @@ def event_record(
     event: dict[str, Any] = {
         "time": round_float(note.start_sec),
         "duration": round_float(renderer_duration, 8),
-        "engine": "string",
+        "engine": profile.engine,
         "note": note_name(note.note, key),
         "velocity": round_float(velocity_for(note, profile, tick_map, pace), 3),
-        "params": {
-            "material": "steel",
-            "diameter_mm": profile.diameter_mm,
-            "strike_position": profile.strike_position,
-            "exciter": "bow",
-            "damping_override": profile.damping,
-        },
+        "params": dict(profile.params),
         "performance": performance,
     }
     if note.phrase_end and note.breath_after_ms >= 35.0:
@@ -654,15 +788,16 @@ def score_document(
 ) -> dict[str, Any]:
     midi = mido.MidiFile(midi_path)
     tick_map = TickMap(midi)
-    notes = extract_notes(midi)
+    notes = extract_notes(midi, set(TRACK_PROFILES))
     add_timing_and_articulation(notes, tick_map, movement["pace"])
 
     piece_end = max(
         tick_map.seconds(max(note.end_tick for note in notes)),
         midi.length,
     )
-    rests = make_rests(notes, piece_end, tick_map)
-    phrases = make_phrases(notes, rests, piece_end)
+    role_for = {name: profile.role for name, profile in TRACK_PROFILES.items()}
+    rests = make_rests(notes, piece_end, tick_map, role_for)
+    phrases = make_phrases(notes, rests, piece_end, role_for)
 
     season_title, rv, opus_number = SEASON_META[season]
     movement_number = movement["number"]
@@ -690,12 +825,8 @@ def score_document(
         name: {
             "role": profile.role,
             "label": profile.label,
-            "engine": "string",
-            "material": "steel",
-            "diameter_mm": profile.diameter_mm,
-            "strike_position": profile.strike_position,
-            "exciter": "bow",
-            "damping_override": profile.damping,
+            "engine": profile.engine,
+            **profile.params,
             "base_velocity": profile.base_velocity,
         }
         for name, profile in TRACK_PROFILES.items()
@@ -815,6 +946,193 @@ def score_document(
     }
 
 
+def generic_piano_score_document(
+    midi_path: Path,
+    *,
+    score_id: str,
+    title: str,
+    engine: str = "piano",
+    profile_set_name: str = "piano_two_hand",
+    composer: str | None = None,
+    work: str | None = None,
+    key: str = "C major",
+    mood: str = "neutral",
+    pace: str = "moderate",
+    description: str = "",
+    tags: list[str] | None = None,
+    family_id: str | None = None,
+    created: str | None = None,
+    variation_of: str | None = None,
+    reverb_decay: float = 2.2,
+    reverb_wet: float = 0.20,
+    master_volume: float = 0.75,
+    sample_rate: int = 48000,
+    tail_silence_ms: int = 900,
+    source_info: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Generic single/dual-track MIDI -> TsukiSynth Score v1 converter.
+
+    Added 2026-08-28 (reports/decision_packets/CLASSICAL_RELICENSE_PLAN.md
+    Sec.3/Sec.4, Fur Elise being the first clean-source relicense target)
+    to generalise the previously Vivaldi-only pipeline: reuses TickMap,
+    extract_notes, add_timing_and_articulation, make_rests, make_phrases,
+    velocity_for, time_signatures, tempo_map, event_record and
+    validate_score/write_score exactly as `score_document()` (the
+    four-seasons path) does, parameterised instead of hard-coded to
+    Vivaldi's movement/season metadata. `score_document()` itself is
+    UNCHANGED by this addition (see CLASSICAL_RELICENSE_PLAN.md execution
+    notes: full 12-movement regeneration diffed byte-for-byte against a
+    pre-refactor baseline).
+
+    `style="piano"` is used for articulation labelling (see
+    ARTICULATION_STYLE_LABELS) so a struck-piano transcription doesn't
+    claim bowed-string articulation ("bow_change" etc.).
+    """
+    if engine not in {"piano", "cimbalom", "string"}:
+        raise ValueError(f"unsupported engine for generic piano conversion: {engine}")
+    profile_set = PROFILE_SETS[profile_set_name]
+    # Only the engine field is overridden per the CLI --engine choice; the
+    # params dict (material/diameter_mm) is schema-valid and physically
+    # identical across string/cimbalom/piano (see PIANO_HAND_PROFILES
+    # docstring), so no per-engine param table is needed.
+    active_profile_set = {
+        name: dataclass_replace(profile, engine=engine)
+        for name, profile in profile_set.items()
+    }
+
+    midi = mido.MidiFile(midi_path)
+    tick_map = TickMap(midi)
+    notes = extract_notes(midi, set(active_profile_set))
+    if not notes:
+        raise ValueError(
+            f"{midi_path}: no notes extracted -- track names did not match "
+            f"profile set {profile_set_name!r} ({sorted(active_profile_set)}). "
+            "Inspect the MIDI's track_name meta events."
+        )
+    add_timing_and_articulation(notes, tick_map, pace, style="piano")
+
+    piece_end = max(
+        tick_map.seconds(max(note.end_tick for note in notes)),
+        midi.length,
+    )
+    role_for = {name: profile.role for name, profile in active_profile_set.items()}
+    rests = make_rests(notes, piece_end, tick_map, role_for)
+    phrases = make_phrases(notes, rests, piece_end, role_for)
+
+    events = [
+        event_record(note, active_profile_set[note.track], tick_map, pace, key)
+        for note in sorted(
+            notes,
+            key=lambda n: (
+                n.start_sec,
+                list(active_profile_set).index(n.track),
+                n.note,
+                n.end_sec,
+            ),
+        )
+    ]
+
+    active_profiles = {
+        name: {
+            "role": profile.role,
+            "label": profile.label,
+            "engine": profile.engine,
+            **profile.params,
+            "base_velocity": profile.base_velocity,
+        }
+        for name, profile in active_profile_set.items()
+        if any(note.track == name for note in notes)
+    }
+
+    first_tempo = tempo_map(tick_map)[0]["quarter_bpm"]
+    author = (
+        f"{composer}; physical-model transcription by TsukiSynth pipeline"
+        if composer
+        else "TsukiSynth classical transcription pipeline"
+    )
+    meta: dict[str, Any] = {
+        "title": title,
+        "id": score_id,
+        "author": author,
+        "key": key,
+        "description": description,
+        "mood": mood,
+        "use_case": "AI physical-model composition / accessible score rendering",
+        "category": "classical_transcription",
+        "variation_of": variation_of,
+        "primary_type": "ambience",
+        "sound_type": "oneshot",
+        "character": ["soft", "airy"],
+    }
+    if composer is not None:
+        meta["composer"] = composer
+    if work is not None:
+        meta["work"] = work
+    if tags is not None:
+        meta["tags"] = tags
+    if family_id is not None:
+        meta["family_id"] = family_id
+    if created is not None:
+        meta["created"] = created
+
+    score: dict[str, Any] = {
+        "$schema": "TsukiSynth Score v1",
+        "meta": meta,
+        "global": {
+            "bpm": first_tempo,
+            "sample_rate": sample_rate,
+            "master_volume": master_volume,
+            "effects": {
+                "reverb": {"decay": reverb_decay, "wet": reverb_wet},
+                "delay": {"time_ms": 0, "feedback": 0, "wet": 0},
+                "distortion": {
+                    "type": "overdrive",
+                    "drive": 0,
+                    "instability": 0,
+                    "wet": 0,
+                },
+            },
+        },
+        "tempo_map": tempo_map(tick_map),
+        "time_signatures": time_signatures(midi, tick_map),
+        "track_profiles": active_profiles,
+        "timing_policy": {
+            "time_unit": "seconds",
+            "source_timing": "MIDI note-on/note-off converted through tempo map",
+            "renderer_note_off_ratio": 0.9,
+            "duration_compensation": (
+                "event.duration = intended sounding duration / 0.9 so the C++ "
+                "renderer damper begins at the intended release time"
+            ),
+            "silence_representation": (
+                "No fake rest notes. Silence is absence of events; rests[] and "
+                "performance.breath_after_ms expose it explicitly."
+            ),
+            "articulation_policy": (
+                "Notated rests are untouched. Contiguous notes receive a small "
+                "finger-release gap; rapid repeated notes receive a larger "
+                "detached-touch gap (labels use ARTICULATION_STYLE_LABELS "
+                "'piano' set -- no bowed-string vocabulary)."
+            ),
+        },
+        "events": events,
+        "rests": rests,
+        "phrases": phrases,
+        "export": {
+            "filename": score_id,
+            "format": "wav",
+            "bit_depth": 24,
+            "normalize": True,
+            "tail_silence_ms": tail_silence_ms,
+            "start_position": 0,
+            "end_position": 1,
+        },
+    }
+    if source_info is not None:
+        score["source"] = source_info
+    return score
+
+
 def validate_score(score: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     events = score.get("events", [])
@@ -924,6 +1242,51 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Directory containing spring/, summer/, autumn/, winter/ MIDI folders",
     )
     batch.add_argument("--output-dir", type=Path, required=True)
+
+    convert = subparsers.add_parser(
+        "convert",
+        help=(
+            "Generic single/dual-track MIDI -> TsukiSynth Score v1 "
+            "(e.g. a single-work piano transcription; see generic_piano_"
+            "score_document())"
+        ),
+    )
+    convert.add_argument("midi", type=Path, help="Source MIDI file")
+    convert.add_argument("--output", type=Path, required=True, help="Output .score.json path")
+    convert.add_argument("--profile", choices=sorted(PROFILE_SETS), default="piano_two_hand")
+    convert.add_argument("--engine", choices=["piano", "cimbalom", "string"], default="piano")
+    convert.add_argument("--id", dest="score_id", required=True)
+    convert.add_argument("--title", required=True)
+    convert.add_argument("--composer")
+    convert.add_argument("--work")
+    convert.add_argument("--key", default="C major")
+    convert.add_argument(
+        "--mood",
+        default="neutral",
+        choices=[
+            "sacred", "mystical", "tense", "ominous", "playful", "calm",
+            "epic", "melancholic", "neutral", "aggressive", "oppressive",
+        ],
+    )
+    convert.add_argument("--pace", default="moderate")
+    convert.add_argument("--description", default="")
+    convert.add_argument("--tags", nargs="*", default=None)
+    convert.add_argument("--family-id", dest="family_id")
+    convert.add_argument("--created", default=None, help="ISO date, e.g. 2026-08-28")
+    convert.add_argument("--variation-of", dest="variation_of", default=None)
+    convert.add_argument("--reverb-decay", type=float, default=2.2)
+    convert.add_argument("--reverb-wet", type=float, default=0.20)
+    convert.add_argument("--master-volume", type=float, default=0.75)
+    convert.add_argument("--sample-rate", type=int, default=48000)
+    convert.add_argument("--tail-silence-ms", type=int, default=900)
+    convert.add_argument("--source-url")
+    convert.add_argument("--source-score-source")
+    convert.add_argument("--source-format")
+    convert.add_argument("--source-license")
+    convert.add_argument("--source-license-url")
+    convert.add_argument("--source-attribution")
+    convert.add_argument("--source-editorial-note")
+
     return parser.parse_args(argv)
 
 
@@ -936,6 +1299,46 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"Generated {len(summary)} movements: "
             f"{total_events} events, {total_rests} explicit rests"
+        )
+    elif args.command == "convert":
+        source_fields = {
+            "score_source": args.source_score_source,
+            "source_url": args.source_url,
+            "source_midi_file": args.midi.name,
+            "source_format": args.source_format,
+            "license": args.source_license,
+            "license_url": args.source_license_url,
+            "attribution": args.source_attribution,
+            "editorial_note": args.source_editorial_note,
+        }
+        source_info = {k: v for k, v in source_fields.items() if v is not None}
+        score = generic_piano_score_document(
+            args.midi,
+            score_id=args.score_id,
+            title=args.title,
+            engine=args.engine,
+            profile_set_name=args.profile,
+            composer=args.composer,
+            work=args.work,
+            key=args.key,
+            mood=args.mood,
+            pace=args.pace,
+            description=args.description,
+            tags=args.tags,
+            family_id=args.family_id,
+            created=args.created,
+            variation_of=args.variation_of,
+            reverb_decay=args.reverb_decay,
+            reverb_wet=args.reverb_wet,
+            master_volume=args.master_volume,
+            sample_rate=args.sample_rate,
+            tail_silence_ms=args.tail_silence_ms,
+            source_info=source_info or None,
+        )
+        write_score(score, args.output)
+        print(
+            f"Generated {args.output}: {len(score['events'])} events, "
+            f"{len(score['rests'])} explicit rests, {len(score['phrases'])} phrases"
         )
     return 0
 

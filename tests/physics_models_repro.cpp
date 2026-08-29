@@ -1,9 +1,12 @@
 #include "physics/BeamModel.h"
 #include "physics/PlateModel.h"
 #include "physics/StringModel.h"
+#include "physics/RadiationModel.h"
 #include "physics/HammerImpulse.h"
 #include "engines/ChromaticEngine.h"
+#include "engines/CimbalomEngine.h"
 #include "dsp/NoiseGen.h"
+#include "dsp/DiagnosticOverrides.h"
 #include "dsp/EffectsChain.h"
 #include "effects/EffectChain.h"
 #include "effects/StereoDelay.h"
@@ -374,6 +377,288 @@ void testBridgeLossSentinel()
     CHECK (correctPassesEqualityCheck,
            "SENTINEL: real bridgeLoss term passes the same equality check "
            "(frequency-independent, as required)");
+}
+
+// ── Radiation efficiency skeleton (2026-08-28 B6 Phase 1) ─────────────────
+// docs/workcards/B6.md §7 / docs/RADIATION_POWER_SOURCES.md. RadiationModel.h
+// is a pure-function header consumed only from the --dump-modes diagnostic
+// path (ScoreRenderer::dumpModes()) -- render()/renderEvent()/
+// ModalResonator are untouched by B6, so these are ordinary unit tests
+// against the header directly, no CLI/subprocess involved.
+
+void testRadiationEfficiencyShape()
+{
+    // docs/RADIATION_POWER_SOURCES.md §3's "additional finding": with real
+    // spruce/bridge parameters fga(~1.3kHz) < fc(~1.8kHz), so the "fc <= f
+    // < fga" branch (sigma==1 but f still inside the model's valid range)
+    // is UNREACHABLE for any currently-tabulated material. To actually
+    // exercise that branch here we use synthetic fc/fga with fc < fga, per
+    // that document's §5 test-construction recommendation -- these are not
+    // meant to represent any real soundboard.
+    const float fc  = 1000.0f;
+    const float fga = 2000.0f;
+
+    // f < fc: strictly below 1, and non-decreasing as f increases.
+    const float s100 = RadiationModel::radiationEfficiency (100.0f, fc, fga);
+    const float s300 = RadiationModel::radiationEfficiency (300.0f, fc, fga);
+    const float s500 = RadiationModel::radiationEfficiency (500.0f, fc, fga);
+    const float s900 = RadiationModel::radiationEfficiency (900.0f, fc, fga);
+    CHECK (s100 < 1.0f && s300 < 1.0f && s500 < 1.0f && s900 < 1.0f,
+           "radiationEfficiency: f < fc all give sigma < 1");
+    CHECK (s100 <= s300 && s300 <= s500 && s500 <= s900,
+           "radiationEfficiency: f < fc branch is non-decreasing in f");
+
+    // fc <= f < fga: identically 1 (saturated).
+    const float sAtFc   = RadiationModel::radiationEfficiency (fc, fc, fga);
+    const float sMid    = RadiationModel::radiationEfficiency (1500.0f, fc, fga);
+    const float sNearFga = RadiationModel::radiationEfficiency (1999.9f, fc, fga);
+    CHECK (std::abs (sAtFc - 1.0f) < 1.0e-6f,
+           "radiationEfficiency: f == fc gives sigma == 1");
+    CHECK (std::abs (sMid - 1.0f) < 1.0e-6f,
+           "radiationEfficiency: fc < f < fga gives sigma == 1");
+    CHECK (std::abs (sNearFga - 1.0f) < 1.0e-6f,
+           "radiationEfficiency: f just below fga still gives sigma == 1");
+
+    // f >= fga: sentinel, model has no prediction here.
+    const float sAtFga  = RadiationModel::radiationEfficiency (fga, fc, fga);
+    const float sAboveFga = RadiationModel::radiationEfficiency (2500.0f, fc, fga);
+    CHECK (sAtFga < 0.0f, "radiationEfficiency: f == fga gives the sentinel (-1)");
+    CHECK (sAboveFga < 0.0f, "radiationEfficiency: f > fga gives the sentinel (-1)");
+
+    // Fail-closed on bad fc/fga.
+    CHECK (RadiationModel::radiationEfficiency (500.0f, -1.0f, fga) < 0.0f,
+           "radiationEfficiency: non-positive fc is fail-closed (-1)");
+    CHECK (RadiationModel::radiationEfficiency (500.0f, fc, 0.0f) < 0.0f,
+           "radiationEfficiency: non-positive fga is fail-closed (-1)");
+
+    // ---- Counter-example (docs/workcards/B6.md §7, mandatory) --------------
+    // If sigma(f) were mistakenly implemented as the linear ratio f/fc
+    // instead of the real (f/fc)^2 subcritical shape, the two disagree by an
+    // identifiable amount at f = 0.5*fc: 0.25 (real) vs 0.5 (mutant). This
+    // mirrors testBridgeLossSentinel()'s two-round mutant/real pattern
+    // (reports/gate_outputs/b1_selftest_sentinel.txt) so a future regression
+    // that silently swaps the exponent gets caught.
+    const float fHalf = 0.5f * fc;
+    const float mutantLinear = fHalf / fc;                                  // WRONG shape
+    const float realQuadratic = RadiationModel::radiationEfficiency (fHalf, fc, fga);
+    const float delta = std::abs (realQuadratic - mutantLinear);
+    std::cout << "[SENTINEL 1/2] mutant (linear f/fc): sigma(0.5*fc)="
+              << mutantLinear << " -- if this were the real implementation, "
+              << "it would silently disagree with the correct (f/fc)^2 shape\n";
+    std::cout << "[SENTINEL 2/2] real radiationEfficiency (quadratic f/fc): "
+              << "sigma(0.5*fc)=" << realQuadratic << '\n';
+    CHECK (delta > 0.2f,
+           "SENTINEL: linear-f/fc mutant is distinguishable from the real "
+           "quadratic shape at f=0.5*fc (0.25 vs 0.5, delta=0.25)");
+    CHECK (std::abs (realQuadratic - 0.25f) < 1.0e-4f,
+           "SENTINEL: real implementation gives the expected (f/fc)^2=0.25 "
+           "at f=0.5*fc, not the mutant's 0.5");
+}
+
+void testRadiatedPowerChain()
+{
+    // docs/RADIATION_POWER_SOURCES.md §2.2/§5: eta_rad(f) = rhoAir*cAir*
+    // sigma(f) / (omega*rhoS), derived (not literature-verbatim) from the
+    // radiation-efficiency definition + the SEA loss-factor definition.
+    // Hand-calculated reference point: f=1000 Hz, sigma=1.0 (simplified
+    // known condition per B6.md §7), rhoAir=1.2 kg/m^3, cAir=340 m/s,
+    // rhoS=3.6 kg/m^2 (typical spruce areal density, same value used in
+    // docs/RADIATION_POWER_SOURCES.md §3's table).
+    //   omega = 2*pi*1000 = 6283.185307
+    //   eta_rad = (1.2*340) / (6283.185307*3.6) = 408 / 22619.46711
+    //           = 0.01803736 (hand calc, double precision)
+    // Cross-check against the doc's own table: at f=1800 (=fc there),
+    // sigma=1 gives eta_rad=0.01002 -- since eta_rad ∝ 1/f at fixed sigma,
+    // 0.01002 * (1800/1000) = 0.018036, matching this hand calc to within
+    // rounding of the doc table's own 5-significant-figure entries.
+    const float f     = 1000.0f;
+    const float sigma = 1.0f;
+    const float rhoAir = 1.2f;
+    const float cAir   = 340.0f;
+    const float rhoS   = 3.6f;
+    const float expectedEtaRad = 0.0180374f;
+
+    const float etaRad = RadiationModel::radiationLossFactor (f, sigma, rhoAir, cAir, rhoS);
+    CHECK (std::abs (etaRad - expectedEtaRad) < 1.0e-4f,
+           "radiationLossFactor: matches hand-calculated value at f=1000Hz, "
+           "sigma=1 (eta_rad=rhoAir*cAir*sigma/(omega*rhoS))");
+
+    // Sentinel propagation: an invalid (sentinel) sigma must not be silently
+    // treated as a real sigma=-1 value plugged into the formula.
+    CHECK (RadiationModel::radiationLossFactor (f, -1.0f, rhoAir, cAir, rhoS) < 0.0f,
+           "radiationLossFactor: sentinel sigma (-1) propagates to sentinel output");
+    CHECK (RadiationModel::radiationLossFactor (f, sigma, rhoAir, cAir, -1.0f) < 0.0f,
+           "radiationLossFactor: non-positive rhoS is fail-closed (-1)");
+
+    // ---- Counter-example (docs/workcards/B6.md §7, mandatory): eta_i forced
+    // to 0 (soundboard modelled as if ALL of its damping were radiative --
+    // the degenerate case docs/RADIATION_POWER_SOURCES.md §5's
+    // eta_i(f)=eta_total-eta_rad(f) subtraction hits when eta_total==
+    // eta_rad(f)). fraction_radiated must correctly saturate to 1.0, not
+    // produce NaN or a divide-by-zero.
+    const float etaTotalAllRadiative = etaRad;   // eta_i = etaTotal - etaRad = 0
+    const float fraction = RadiationModel::radiatedEnergyFraction (etaRad, etaTotalAllRadiative);
+    CHECK (std::isfinite (fraction), "radiatedEnergyFraction: eta_i=0 degenerate case is finite (no NaN/Inf)");
+    CHECK (std::abs (fraction - 1.0f) < 1.0e-6f,
+           "radiatedEnergyFraction: eta_i=0 (all damping radiative) correctly gives fraction=1.0, not NaN/div-by-zero");
+
+    // Normal case: eta_rad well below a realistic eta_total (0.02, docs/
+    // BRIDGE_ADMITTANCE_SOURCES.md §2.1) gives a fraction well below 1, and
+    // is fail-closed on non-positive/invalid inputs.
+    const float normalFraction = RadiationModel::radiatedEnergyFraction (etaRad, 0.02f);
+    CHECK (normalFraction > 0.0f && normalFraction < 1.0f,
+           "radiatedEnergyFraction: realistic eta_total=0.02 gives 0 < fraction < 1");
+    CHECK (RadiationModel::radiatedEnergyFraction (-1.0f, 0.02f) < 0.0f,
+           "radiatedEnergyFraction: sentinel etaRad (-1) propagates to sentinel output");
+    CHECK (RadiationModel::radiatedEnergyFraction (etaRad, 0.0f) < 0.0f,
+           "radiatedEnergyFraction: non-positive etaTotal is fail-closed (-1)");
+}
+
+// ── Absolute calibration (2026-08-28 B6 Phase 3/4) ─────────────────────────
+// docs/workcards/B6.md §7 / reports/decision_packets/B6_calibration_choice.md
+// "裁決記錄". RadiationModel::pressurePerForce() is a DECIDED CONVENTION
+// (kPascalsPerUnitPhysicsAmplitude), not a measured/derived physical law --
+// see that constant's doc comment. The "hand calculation" below is therefore
+// the definition itself (Pa/N = kPascalsPerUnitPhysicsAmplitude *
+// physicsOnlyAmplitude), which is exactly what makes this test meaningful:
+// it catches an accidental change to the constant's VALUE or a stray extra
+// multiplier creeping in, not a physics-derivation error (there is none to
+// check here -- that absence is the whole point of Option B being a
+// convention anchor rather than a first-principles chain).
+void testPressurePerForceCalibration()
+{
+    CHECK (std::abs (RadiationModel::kPascalsPerUnitPhysicsAmplitude - 1.0f) < 1.0e-9f,
+           "kPascalsPerUnitPhysicsAmplitude is the decided 1.0 Pa-per-unit-"
+           "amplitude convention (docs/EXTERNAL_ANCHOR_SOURCES.md §1), unchanged");
+    CHECK (std::abs (RadiationModel::kMeasurementRadiusM - 1.05f) < 1.0e-6f,
+           "kMeasurementRadiusM matches the 1.05 m anechoic-array convention "
+           "(docs/EXTERNAL_ANCHOR_SOURCES.md §1)");
+
+    const float amp = 0.42f;   // arbitrary representative dimensionless amplitude
+    const float expected = RadiationModel::kPascalsPerUnitPhysicsAmplitude * amp;
+    const float actual = RadiationModel::pressurePerForce (amp);
+    CHECK (std::abs (actual - expected) < 1.0e-4f,
+           "pressurePerForce: matches the hand-calculated "
+           "kPascalsPerUnitPhysicsAmplitude * physicsOnlyAmplitude definition");
+    CHECK (std::abs (actual - 0.42f) < 1.0e-4f,
+           "pressurePerForce: with the 1.0x convention constant, output equals "
+           "the input amplitude numerically (0.42 Pa/N for 0.42 amplitude)");
+
+    // ---- Counter-example (docs/workcards/B6.md §7, mandatory): a mutant
+    // that accidentally doubled the calibration constant (e.g. a stray
+    // copy-pasted "x2" gain) must be distinguishable from the real 1.0x
+    // convention.
+    const float mutantDoubledConstant = 2.0f * amp;
+    const float delta = std::abs (actual - mutantDoubledConstant);
+    std::cout << "[SENTINEL 1/2] mutant (2x calibration constant): "
+              << mutantDoubledConstant << " Pa/N -- if "
+              << "kPascalsPerUnitPhysicsAmplitude were silently doubled, this "
+              << "is what pressurePerForce(0.42) would return instead\n";
+    std::cout << "[SENTINEL 2/2] real pressurePerForce(0.42): " << actual << " Pa/N\n";
+    CHECK (delta > 0.3f,
+           "SENTINEL: a doubled-constant mutant is distinguishable from the "
+           "real 1.0x convention (0.42 vs 0.84 Pa/N, delta=0.42)");
+
+    // ---- Pathological counter-example (mirrors testRadiatedPowerChain()'s
+    // eta_i=0 degenerate case): a partial with EXACTLY ZERO (or negative)
+    // physics-only amplitude -- e.g. a mode-shape node landing exactly on
+    // the strike position -- must fail-closed to the sentinel, not silently
+    // report a fabricated "0 Pa/N" claim. A real 0 Pa/N would break
+    // specimen_verify.py's _complex_level_db() (log10 of zero magnitude,
+    // raises ValueError -> the whole bundle REFUSED) instead of cleanly
+    // leaving that one partial's acoustic_transfer entry omitted/UNVERIFIED.
+    CHECK (RadiationModel::pressurePerForce (0.0f) < 0.0f,
+           "pressurePerForce: exactly-zero amplitude fail-closes to the "
+           "sentinel (-1), not a fabricated 0 Pa/N that would break "
+           "specimen_verify.py's log10-of-zero-magnitude handling");
+    CHECK (RadiationModel::pressurePerForce (-0.1f) < 0.0f,
+           "pressurePerForce: negative amplitude (structurally should not "
+           "happen upstream, but fail-closed anyway) -> sentinel");
+    CHECK (RadiationModel::pressurePerForce (std::numeric_limits<float>::quiet_NaN()) < 0.0f,
+           "pressurePerForce: NaN amplitude -> sentinel");
+    CHECK (RadiationModel::pressurePerForce (std::numeric_limits<float>::infinity()) < 0.0f,
+           "pressurePerForce: +infinity amplitude -> sentinel (not a physical value)");
+}
+
+// docs/workcards/B6.md §6 step 12 / DiagnosticOverrides::
+// capturePhysicsOnlyModes doc: the new B6 Phase 3 diagnostic capture must
+// not change ANYTHING CimbalomVoice::noteOn() feeds into ModalResonator --
+// i.e. getModes()/getAllStringModes() must be bit-identical whether the
+// flag is on or off. This is the unit-level half of §9's bit-identity
+// proof; the other half is the full-WAV SHA256 check in
+// reports/gate_outputs/b6_bit_identity.txt, which this fast unit test
+// cannot substitute for but complements (catches a regression here in
+// milliseconds instead of a multi-minute corpus re-render).
+void testPhysicsOnlyCaptureDoesNotAffectRender()
+{
+    MaterialDB::Material mat = steel();
+    // Any finite, positive-property material works as the "soundboard" for
+    // THIS check -- it is about render-path invariance under the capture
+    // flag, not about radiation-model correctness (which testRadiationEfficiencyShape()/
+    // testRadiatedPowerChain()/testPressurePerForceCalibration() already
+    // cover), so reusing steel() for both arguments is deliberate, not lazy.
+    MaterialDB::Material soundboardStub = steel();
+
+    CimbalomParams cp;   // defaults: strike 0.3, Wood exciter, 3 strings, tuneToMidi
+
+    DiagnosticOverrides::capturePhysicsOnlyModes = false;
+    CimbalomVoice voiceOff;
+    voiceOff.prepare (48000.0);
+    voiceOff.noteOn (69, 0.5f, mat, soundboardStub, cp);   // A4, velocity 0.5
+    const auto modesOff = voiceOff.getAllStringModes();
+    CHECK (voiceOff.getPhysicsOnlyModeAmplitudes().empty(),
+           "capturePhysicsOnlyModes=false: getPhysicsOnlyModeAmplitudes() "
+           "stays empty (no computation happened, not just an unused result)");
+
+    DiagnosticOverrides::capturePhysicsOnlyModes = true;
+    CimbalomVoice voiceOn;
+    voiceOn.prepare (48000.0);
+    voiceOn.noteOn (69, 0.5f, mat, soundboardStub, cp);
+    const auto modesOn = voiceOn.getAllStringModes();
+    const auto physicsOnly = voiceOn.getPhysicsOnlyModeAmplitudes();
+    DiagnosticOverrides::capturePhysicsOnlyModes = false;   // restore the
+        // default for every test that runs after this one in the same binary
+
+    bool identical = modesOff.size() == modesOn.size();
+    for (size_t s = 0; identical && s < modesOff.size(); ++s)
+    {
+        identical = modesOff[s].size() == modesOn[s].size();
+        for (size_t i = 0; identical && i < modesOff[s].size(); ++i)
+        {
+            const auto& a = modesOff[s][i];
+            const auto& b = modesOn[s][i];
+            identical = (a.frequency == b.frequency)
+                     && (a.amplitude == b.amplitude)
+                     && (a.decayTime == b.decayTime);
+        }
+    }
+    CHECK (identical,
+           "capturePhysicsOnlyModes flag does not change getAllStringModes() "
+           "(bit-exact float == comparison) -- the diagnostic capture is "
+           "purely additive bookkeeping, never touches what feeds the render path");
+    CHECK (! physicsOnly.empty(),
+           "capturePhysicsOnlyModes=true: getPhysicsOnlyModeAmplitudes() is "
+           "populated for a qualifying (steel string) voice");
+
+    // ---- Counter-example: the physics-only amplitude must NOT equal the
+    // render-path amplitude of the SAME partial -- if it did, that would
+    // mean spectralTilt/loudnessCompensationGain got applied to the
+    // "physics-only" capture too (the exact contamination Option B exists
+    // to avoid), or a copy-paste bug aliased the two vectors.
+    CHECK (! modesOn.empty() && ! modesOn[0].empty() && ! physicsOnly.empty(),
+           "positive control: both vectors are non-empty so the next check "
+           "cannot pass vacuously");
+    if (! modesOn.empty() && ! modesOn[0].empty() && ! physicsOnly.empty())
+    {
+        std::cout << "[SENTINEL] render-path amp[0]=" << modesOn[0][0].amplitude
+                  << "  physics-only amp[0]=" << physicsOnly[0]
+                  << " -- must differ (render path includes "
+                  << "loudnessCompensationGain/spectralTilt, physics-only excludes both)\n";
+        CHECK (std::abs (modesOn[0][0].amplitude - physicsOnly[0]) > 1.0e-6f,
+               "SENTINEL: physics-only amplitude differs from the render-path "
+               "amplitude of the same partial (proves the creative-layer "
+               "multipliers were actually excluded, not accidentally left in)");
+    }
 }
 
 // ── String damping first principles (2026-08-24 B3) ───────────────────────
@@ -995,6 +1280,10 @@ int main()
     testGeometryFrequencyModeAndDamping();
     testBridgeAdmittanceLoss();
     testBridgeLossSentinel();
+    testRadiationEfficiencyShape();
+    testRadiatedPowerChain();
+    testPressurePerForceCalibration();
+    testPhysicsOnlyCaptureDoesNotAffectRender();
     testStringDampingFirstPrinciples();
     testDimensionalScalingLaws();
     testPassivityAndInvalidNumericRefusal();

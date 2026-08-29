@@ -39,13 +39,17 @@
 | EN/中文 localization | Done |
 | Standalone REC recording | Done |
 
-**Version**: `v0.3.0` — the active deep-audit branch and exact verification state are documented in `docs/DEEP_FIX_VERIFICATION_2026-07-17.zh-TW.md` and `TODO.md`.
+**Version**: `v0.3.0` — the active deep-audit branch is `fix/deep-physics-audit-20260716`. B3 (string damping) has been reviewed and merged to `main`; **B4 (hammer contact), B5 (wood orthotropy schema) and B6 (radiation + calibrated physics-only tap, all phases) are committed to the branch and pushed but not yet merged**, pending the maintainer's UI/UX review and a `main`-merge timing decision. Exact verification state: `HANDOVER.md` (start here for a new session) and `TODO.md`.
 
 ## Overview
 
 TsukiSynth is a multi-engine software synthesizer plugin based on **Physical Modeling (Modal Synthesis)**. The Cimbalom (string), Tongue Drum (beam), and Water Gong (plate) engines calculate vibration mode frequencies and decay from physical parameters (material density, plate thickness, string length, strike position). The automated harness verifies rendered output against the implemented equations and independently anchors pitch/eigenvalue relationships. Amplitude and T60 checks currently establish implementation conformance, not external specimen accuracy; calibrated radiated-pressure and laboratory validation remain open. The FM Piano engine and the effect chain are outside this verification domain — see the same section for the full scope declaration.
 
 The prototypes originated from [piano-play](https://github.com/TsKR2828/piano-play) and other Web Audio experiments. The codebase has been rewritten in C++ / JUCE as VST3 and AU format for use in DAWs (Cubase, Logic Pro, FL Studio, Reaper, etc.).
+
+### Why this project is unusual
+
+TsukiSynth is built by a Deaf developer working with an AI assistant, neither of whom can listen to the audio to judge correctness by ear. Because "does it sound right" is not an available check, the project instead proves correctness through physics theory and a chain of hearing-free verification: physical equations predict what a rendered waveform's pitch, decay, and amplitude *should* be, and automated tools compare the actual rendered audio against those predictions — spectrum plots, pass/fail diffs, and numeric deltas the developer can read visually instead of hearing. Final aesthetic judgment (does it sound *good*) is separately delegated to an external professional listening pass; physical/positional correctness is carried entirely by the automated GATE chain described below. See [Physical Verification](#physical-verification) and [Hearing-Free Melody Verification](#hearing-free-melody-verification).
 
 ## Core Direction
 
@@ -71,9 +75,34 @@ TsukiSynth's physical claims are scoped and machine-checked, not aspirational �
 | Effect Chain (Reverb/Delay/Comp/Dist) | ❌ Out of domain — verification always runs with FX off | Not covered |
 | Chromatic scaling (size → timbre, MIDI → pitch) | ⚠️ Hybrid — physics shapes the spectral content, equal temperament sets f0 | Not "fully physical"; do not describe as such |
 
-For the in-domain engines, `tools/physics_verify.py` compares rendered audio with theory using a ±5-cent frequency gate, ±3.0 dB partial-amplitude gate, +6.0 ±1.0 dB velocity-doubling gate and a measured/model T60 ratio gate; T60 fits must also capture at least 8.0 dB of clean decay. `tools/verify_score.py` measures a multi-string course by its amplitude-weighted centroid with a ±5-cent gate, and also checks rest RMS ≤ −50 dBFS, clipping, manifests and same-environment SHA256 determinism. Manifest v4 binds the WAV, renderer executable, root score and every recursively referenced layer by SHA256, plus a canonical dependency-tree digest and configure-time commit/dirty/toolchain metadata. The 2026-08-02 fresh-build `--full` run has no checked failures; three ultra-short rubber cases are reported as `UNVERIFIED/N/A`, not as passes. A new four-shard full-corpus run passed 73/73 with the one pre-existing visible FX-art exemption and no failures. Current VST3 also passes pluginval L10 across six sample rates and adversarial block sizes, plus the pinned Steinberg SDK 3.8 validator (47/47). See `DEVLOG.md` and `TODO.md`.
+For the in-domain engines, `tools/physics_verify.py` compares rendered audio with theory using a ±5-cent frequency gate, ±3.0 dB partial-amplitude gate, +6.0 ±1.0 dB velocity-doubling gate and a measured/model T60 ratio gate; T60 fits must also capture at least 8.0 dB of clean decay. `tools/verify_score.py` measures a multi-string course by its amplitude-weighted centroid with a ±5-cent gate, and also checks rest RMS ≤ −50 dBFS, clipping, manifests and same-environment SHA256 determinism. Manifest v4 binds the WAV, renderer executable, root score and every recursively referenced layer by SHA256, plus a canonical dependency-tree digest and configure-time commit/dirty/toolchain metadata. The 2026-08-02 fresh-build `--full` run has no checked failures; three ultra-short rubber cases are reported as `UNVERIFIED/N/A`, not as passes. A new four-shard full-corpus run passed 75/75 with the one pre-existing visible FX-art exemption and no failures. Current VST3 also passes pluginval L10 across six sample rates and adversarial block sizes, plus the pinned Steinberg SDK 3.8 validator (47/47). See `DEVLOG.md` and `TODO.md`.
 
 These numbers are model-conformance evidence a deaf user (or an AI) can check visually/numerically — via spectrum plots and pass/fail diffs — without relying on how anything sounds. They are not yet a substitute for calibrated external-instrument measurements.
+
+### Physics chain status (2026-08-28)
+
+The string/cimbalom/piano damping law has been extended in stages, each gated on the commands above and, where the render output changes, on a before/after Rule 10 report:
+
+| Stage | What it adds | Status | Report |
+|---|---|---|---|
+| B1 | Bridge/soundboard admittance — a frequency-independent loss channel from the driving-point admittance of an infinite soundboard plate, wired into Cimbalom/Piano decay only | Done (2026-08-21) | `reports/b1_b2_bridge_damping_before_after.md` |
+| B2 | Broadband-damping cleanup — corpus-wide re-verification and loudness-anchor remeasurement after B1 | Done (2026-08-21) | `reports/b1_b2_bridge_damping_before_after.md` |
+| B3 | String damping law rewritten to Cuesta & Valette's zero-free-parameter three-mechanism model (air/viscoelastic/thermoelastic loss), replacing two previously unsourced fit constants | Done (2026-08-26, merged to `main`) | `reports/string_damping_firstprinciples_before_after.md` |
+| B4 | Hammer/felt contact solved per-note from a nonlinear force law instead of a fixed contact-time constant | Done (2026-08-27) | `reports/b4_hammer_contact_before_after.md` |
+| B5 | Orthotropic wood-material schema (9 independent elastic constants per species, from the USDA Wood Handbook) added to `materials.json` | Schema staged, zero consumption — `PlateModel`/`BeamModel` still read a single scalar E/ν; no render output changed | `reports/b5_schema_noop_proof.md` |
+| B6 | Radiation-efficiency skeleton (`RadiationModel.h`, σ(f)/η_rad(f)) exposing diagnostic-only `radiated_power_relative`/`absolute_pressure_per_force`/`acoustic_transfer[]` fields in `--dump-modes` | Done (2026-08-28) — Phase 0-1 skeleton, Phase 2 scope decision (方案 B, physics-only signal-tap calibration), Phase 3/4 landed the calibrated tap; diagnostic path only, `render()`/`ModalResonator` untouched (verified bit-identical 8/8) | — |
+
+Full detail and the current decision backlog are in `HANDOVER.md` and `TODO.md`.
+
+## Hearing-Free Melody Verification
+
+Because neither the developer nor the AI can rely on listening, a second verification chain checks *where in time and at what pitch* notes actually land — independent of the acoustic-model checks above:
+
+- **L1 `tools/melody_verify.py`** — compares a rendered WAV against its source score event-by-event (onset ±10ms, pitch within 5 cents), plus 8 fail-closed refusal rules (masking, overtone contamination, course self-beating, bed energy, low-frequency resolution limits, etc.) so it reports `UNVERIFIED` rather than a false pass when a case is outside its proven domain. Five adversarial sentinels (time-shift/transpose/delete-note/phantom-note must FAIL, unmodified must PASS) guard against a rubber-stamp checker. `--html` renders a piano-roll overlay so a Deaf reviewer can inspect the result visually.
+- **L2 `TsukiSynthHostProbe`** — a CMake test target that loads the built `.vst3` from disk and drives it like a real host (16/16 automated checks PASS), the first automated proof that the plugin's live audio path (not just the offline CLI renderer) places notes correctly.
+- **L3 Cubase real-host verification** — `tools/cubase_scan_verify.py` parses Cubase's own scan-cache XML (5/5 PASS), and a supervised end-to-end pass (project build, MIDI import, tempo-aligned export, reverb zeroed) fed back through `melody_verify.py` scored 5/5 with onset ≤2.5ms / pitch ≤0.4 cents, and reload → re-export reproduced bit-identical audio (SHA256 match).
+
+The regression corpus this all runs against is **75 score files** (`scores/examples/` + `scores/classical/` + `scores/originals/ai_radiance/` + `scores/library/`), currently passing 75/75 with zero newly-registered exemptions per full run.
 
 ### Verification commands
 
@@ -110,8 +139,8 @@ python tools\specimen_verify.py path\to\new-bundle\measurement.json `
 
 | Format | Target DAWs | Status |
 |--------|-------------|--------|
-| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | **Built** (current x64 binary 7.42 MiB) |
-| Standalone | No DAW required | **Built** (current x64 binary 7.30 MiB) |
+| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | **Built** (current x64 binary 7.53 MiB) |
+| Standalone | No DAW required | **Built** (current x64 binary 7.40 MiB) |
 
 The Standalone doubles as a self-contained tool: the title-bar **Score** button opens a
 console that renders a `score.json` to WAV (spawning the bundled `TsukiSynthCLI.exe` —
@@ -319,10 +348,24 @@ Use cases: VTuber sound effects, character UI sounds, short BGM motifs, worldvie
 ```bash
 git submodule update --init --recursive
 pip install -r tools/requirements-physics.txt   # Python deps for the physics verification harness
-cmake -B build -G "Visual Studio 17 2022"
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
 cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
 ctest --test-dir build -C Release --output-on-failure
 ```
+
+Always rebuild the three test targets (`TsukiSynthAuditTest`, `TsukiSynthTunerTest`, `TsukiSynthPhysicsModelsTest`) immediately before `ctest` — a stale binary from an earlier build will silently report against old code (see `HANDOVER.md` §2, "X4 規約").
+
+### Quick reference (see `HANDOVER.md` §6 for the full list)
+
+| Task | Command |
+|---|---|
+| Full physics GATE | `python tools/physics_verify.py --full` |
+| Score corpus (4 shards) | `python tools/verify_score.py --all --shard-index N --shard-count 4 --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe` |
+| Hearing-free melody check | `python tools/melody_verify.py <score> [--wav W] [--html H]` (`--selftest` runs the adversarial sentinels) |
+| Live-plugin position check (L2) | `build/Release/TsukiSynthHostProbe.exe build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <outdir>` |
+| Cubase scan-cache check (L3a) | `python tools/cubase_scan_verify.py` |
+| Cross-platform check | `python tools/crossplatform_verify.py --selftest` (CI runs this on push, blocking) |
+| Python unit/contract tests | `pytest tests -q` |
 
 ### Output
 - VST3: `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3`
@@ -341,8 +384,8 @@ The binaries already present in a checkout may predate the current source. Rebui
 |---------|-----------|-----------|
 | v0.1 | Playable Build | 3 engines, effects, presets, CLI — **Done** |
 | v0.2 | Polish | DAW validation, standalone listening test, factory preset tuning |
-| v0.3 | Physics hardening | external specimen validation, calibrated amplitudes, coupled-body/damper work |
-| v0.4 | AI Sound Library | CLI batch export pipeline, sound library metadata, AI workflow docs |
+| v0.3 | Physics hardening | bridge admittance (B1-B2, done) + first-principles string damping (B3, done) + hammer contact solver (B4, done) + wood orthotropy schema (B5, staged) + radiation-efficiency skeleton (B6, done — physics-only signal-tap calibration landed 2026-08-28) |
+| v0.4 | AI Sound Library | CLI batch export pipeline, sound library metadata, AI workflow docs; product line = re-rendered public-domain/CC-BY classical arrangements as full multi-engine pieces, not sound-effect packs (see `docs/PRODUCT_MARKET_NOTES.zh-TW.md`) |
 | v0.5 | Advanced Sound Design | creative features only with explicit out-of-physical-domain labels |
 | v1.0 | Product Release | Installer, user manual, demo videos, commercial licensing |
 
@@ -358,3 +401,124 @@ public release. The VST3 SDK inside JUCE 8 is MIT.
 - Web prototype: https://github.com/TsKR2828/piano-play
 - GitHub: https://github.com/TsKR2828/tsuki-synth
 - JUCE: https://juce.com/
+
+---
+
+## Audit record — 2026-08-28 (independent claim spot-check)
+
+An independent audit pass re-derived five factual claims in this file from the
+repository itself (source constants, the LICENSE file, the JUCE submodule, the
+preset array, the binaries on disk, the gate-output evidence), rather than from
+any prior report. Result: **3 verified, 2 stale.** Nothing overstated; both
+defects understate or mis-attribute, they do not inflate.
+
+**Verified against the repo**
+
+- **GATE constants** (§ Physical Verification): ±5 cent = `physics_verify.py`
+  `F0_TOL_CENTS = 5.0`; ±3.0 dB partial amplitude = `AMPS_DB_TOL = 3.0`;
+  +6.0 ±1.0 dB velocity doubling = `VELOCITY_DB_TARGET = 6.0` /
+  `VELOCITY_DB_TOL = 1.0`; T60 ratio gate = `T60_RATIO_TOLERANCE = (0.80, 1.25)`;
+  ≥ 8.0 dB clean decay = `T60_MIN_SPAN_DB = 8.0`; rest RMS ≤ −50 dBFS =
+  `verify_score.py` `REST_RMS_LIMIT_DBFS = -50.0`. All five match verbatim.
+- **License**: `LICENSE` is "Proprietary — All Rights Reserved" as stated. The
+  claim "the VST3 SDK inside JUCE 8 is MIT" is confirmed by the pinned
+  submodule's own `libs/JUCE/LICENSE.md` (VST3 listed as MIT). JUCE's free tier
+  is indeed named **Starter**. (Not verified: the exact revenue figure's tier
+  attribution on juce.com, whose live page now describes the JUCE 9 EULA while
+  this project pins JUCE 8.0.12 — the 8.0.12 pin itself is confirmed in
+  `libs/JUCE/CMakeLists.txt`.)
+- **Scope honesty**: FM Piano is consistently declared out of the verification
+  domain (status table, Overview, Engine 3 heading). B5's "zero consumption" is
+  true in source: `MaterialDB.h` parses `orthotropic` into a struct its own
+  comment marks 死資料, and `PlateModel.h` / `BeamModel.h` read only the scalar
+  `material.youngsModulus`. 27 factory presets counted structurally in
+  `src/Presets.h` (not taken from its comment): 27.
+
+**Stale / to correct**
+
+1. **Corpus attribution and pass count** (§ Hearing-Free Melody Verification):
+   "75 score files (`scores/examples/` + `scores/library/`)" — those two
+   directories hold 13 + 43 = **56**. `verify_score.py::find_all_scores()` also
+   walks `scores/classical/` (14) and `scores/originals/ai_radiance/` (5),
+   which is what makes 75. The "**73/73**" figure is stale: the newest
+   in-repo shard evidence (`reports/gate_outputs/b6_corpus_phase34_shard0-3.txt`
+   and `b6_corpus_phase4_shard0-3.txt`) reads 19/19 + 19/19 + 19/19 + 18/18 =
+   **75/75, 0 failed**, one registered exemption still visible. The same stale
+   73/73 also appears in `CONTEXT.md` and § Physical Verification above.
+2. **B6 status**: the Physics-chain table says "Phase 0-1 done … Phase 2
+   awaiting a scope decision", but `TODO.md` records B6 as Done (2026-08-28)
+   with Phase 2 decided (方案 B) and Phase 3/4 landed, and the working tree's
+   `src/score/ScoreRenderer.h` already emits `absolute_pressure_per_force` and
+   `acoustic_transfer[]`. The README understates work that ships in the same
+   unstaged batch.
+3. **Binary sizes** (§ Plugin Formats): stated 7.42 MiB VST3 / 7.30 MiB
+   Standalone; the binaries actually in `build/` measure **7.53 MiB**
+   (7,891,968 B) and **7.40 MiB** (7,764,480 B).
+
+Not corrected here — these are the maintainer's call, and this audit changes no
+code, no tolerance and no gate.
+
+---
+
+## Audit record II — 2026-08-28 (second, independent claim spot-check)
+
+A second audit pass re-derived five factual claims from the repository itself,
+without trusting either the file's own wording or the first audit record above.
+Result: **3 confirmed verbatim, 2 stale — both stale items understate or
+mis-attribute; nothing in this file is inflated.**
+
+**Confirmed against the repo**
+
+- **GATE constant list** (§ Physical Verification) — all six re-read from source
+  this round: `physics_verify.py` `F0_TOL_CENTS = 5.0` (L429),
+  `AMPS_DB_TOL = 3.0` (L1467), `VELOCITY_DB_TARGET = 6.0` /
+  `VELOCITY_DB_TOL = 1.0` (L1131-1132), `T60_RATIO_TOLERANCE = (0.80, 1.25)`
+  (L69), `T60_MIN_SPAN_DB = 8.0` (L1979); `verify_score.py`
+  `REST_RMS_LIMIT_DBFS = -50.0` (L145). Every number in the prose matches its
+  constant exactly.
+- **License** — `LICENSE` opens "TsukiSynth — Proprietary License (All Rights
+  Reserved)", matching the § License claim.
+- **Scope honesty (FM out-of-domain / B5 zero consumption)** — FM Piano is
+  declared out of domain consistently in the status table, the Overview and the
+  Engine 3 heading. B5's "zero consumption" is true in source: `orthotropic` is
+  parsed only in `src/physics/MaterialDB.h` (whose own comment marks it 死資料),
+  and `PlateModel.h` L71 / `BeamModel.h` L88 read only the scalar
+  `material.youngsModulus`. No engine reads the orthotropic struct.
+  27 factory presets counted structurally out of the `FactoryPreset presets[]`
+  array in `src/Presets.h`: 27.
+
+**Stale — independently reproduced**
+
+1. **Corpus count and attribution** (§ Hearing-Free Melody Verification, and
+   the same figure in § Physical Verification). Replaying
+   `verify_score.py::find_all_scores()`'s own four roots gives
+   examples 13 + classical 14 + originals/ai_radiance 5 + library 43 = **75**.
+   The README attributes the 75 to "`scores/examples/` + `scores/library/`",
+   which is only 13 + 43 = 56 — the classical and ai_radiance roots are missing
+   from the sentence. The "**73/73**" pass figure is stale: the newest in-repo
+   shard evidence (`reports/gate_outputs/b6_corpus_phase4_shard0-3.txt`) reads
+   19/19 + 19/19 + 19/19 + 18/18 = **75/75, 0 failed**, with one registered
+   exemption visible in shard 0.
+2. **B6 status** (Physics-chain table and the v0.3 roadmap row). Both still say
+   "Phase 0-1 done … Phase 2 awaiting a scope decision", but `TODO.md` L219
+   records B6 as `[x]` Done and L290 states "B6 Phase 3/4 皆 Done" as the
+   satisfied precondition for B7; `src/score/ScoreRenderer.h` already emits
+   `absolute_pressure_per_force` (L401 region) and `acoustic_transfer[]` (L447).
+   The README understates work that ships in the same unstaged batch.
+3. **Binary sizes** (§ Plugin Formats) — measured this round:
+   VST3 `TsukiSynth.vst3` = 7,891,968 B (**7.53 MiB**, stated 7.42);
+   Standalone `TsukiSynth.exe` = 7,764,480 B (**7.40 MiB**, stated 7.30).
+
+**New this round — undocumented tooling**
+
+Two new verification tools exist in the working tree but appear nowhere in this
+file, `HANDOVER.md`, `TODO.md` or any CI workflow (repo-wide grep: zero hits
+outside the tools themselves and `tests/`):
+`tools/score_vs_midi_verify.py` (MIDI↔score transcription GATE, 11 checks,
+mutation-sentinel 5/5) and `tools/melody_roll_video.py` (scrolling piano-roll
+video of `melody_verify`'s own verdicts). Until they are listed in the
+Verification-commands quick reference and wired into a runner, they are tools
+that *can* run, not gates that *will* run.
+
+This audit changes no code, no tolerance and no gate; the corrections above are
+the maintainer's call.

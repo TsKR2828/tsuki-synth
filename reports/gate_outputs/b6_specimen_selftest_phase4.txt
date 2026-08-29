@@ -1,0 +1,63 @@
+==============================================================================
+B6 workcard ¡±8 GATE item 7: specimen_verify.py self-consistency selftest
+SYNTHETIC_TEST_ONLY -- self-consistency proof, NOT real specimen evidence
+==============================================================================
+
+real dump: C:\Users\admin\Desktop\Claude\tsuki-synth\reports\gate_outputs\b6_specimen_selftest_bundle_verify\b6_phase4_probe.modes.json
+real CLI note: A4, steel, strike_position=0.31, velocity=0.5, wood exciter
+acoustic_transfer points in this dump: [{'model_partial_index': 0, 'radius_m': 1.05, 'azimuth_deg': 0.0, 'elevation_deg': 0.0, 'pressure_per_force_real_pa_n': 0.790482, 'pressure_per_force_imag_pa_n': 0.0}, {'model_partial_index': 1, 'radius_m': 1.05, 'azimuth_deg': 0.0, 'elevation_deg': 0.0, 'pressure_per_force_real_pa_n': 0.772729, 'pressure_per_force_imag_pa_n': 0.0}]
+
+--- Case 1: self-consistent bundle (measured == predicted, verbatim copy) ---
+$ python tools/specimen_verify.py reports\gate_outputs\b6_specimen_selftest_bundle_verify\measurement_selfconsistent.json --dump-modes reports\gate_outputs\b6_specimen_selftest_bundle_verify\b6_phase4_probe.modes.json
+SPECIMEN: SYNTHETIC_TEST_ONLY-b6-phase4-selfcheck
+  [PROVENANCE] acoustic_calibration: SHA256 verified (95603721ee56e5405e6d87ad687c29991c28ad3a3308b5a65a47561a574daa4c)
+  [PROVENANCE] analysis_config: SHA256 verified (5f709adc3c3e1b908c1d2de41be61bd9b1336de5ffab55e9f442e39fa0ef553e)
+  [PROVENANCE] derived_acoustic_transfer: SHA256 verified (a271423b80eb8549e305a03323b8d6e787929b22f2e9501d0b495674b1b71671)
+  [PROVENANCE] derived_frf: SHA256 verified (e0d7823ed60d1bf386922c29b9a5c2e742289afa54e4358a2b7733ddf6ab1162)
+  [PROVENANCE] excitation_calibration: SHA256 verified (58dbe9f5ecfbc1e83e7608154061c886cb429f2f40141dca93b59361cf9c32fa)
+  [PROVENANCE] raw_acoustic_response: SHA256 verified (101425782f44c545881a7bdf64f2acaad8ad19ba19eb0e68853e6d9ed7202dfa)
+  [PROVENANCE] raw_excitation: SHA256 verified (dad0bf85a75d25dc316a2504c009e766743b5f32b3f7221e98ed24bddf2f6114)
+  [PROVENANCE] raw_response: SHA256 verified (586c07b548057afaff8e543cbdb1f42025241b6dc1b81e6091b877d68a05e3a6)
+  [PROVENANCE] response_calibration: SHA256 verified (4d839e3b90e78c7463df251ae21927e253eb4dddbc9314f6f686fcfb59c7142d)
+  [PROVENANCE] uncertainty_analysis: SHA256 verified (183ef6acb7de59d0f51c315258aad2e59df0563ab57da5b04cb9f81e90758631)
+  [PROVENANCE] mode_dump: SHA256 verified (618f28a7c056c16eed3628ba5f53c98c22c5116747db225055724f5c8e1bc3bc)
+  [PASS      ] measurement_quality: 2 measured mode(s); minimum 1
+  [N/A       ] modal_frequencies: not requested
+  [N/A       ] relative_modal_magnitudes: not requested
+  [N/A       ] modal_t60: not requested
+  [N/A       ] complex_phase: not requested
+  [PASS      ] absolute_spl: absolute pressure/force level; reported SPL uses the declared RMS force
+  [N/A       ] radiation_directivity: not requested
+RESULT: PASS
+
+exit code: 0
+
+--- Case 2: tampered bundle (+10dB on partial 0's measured level) ---
+$ python tools/specimen_verify.py reports\gate_outputs\b6_specimen_selftest_bundle_verify\measurement_tampered_10db.json --dump-modes reports\gate_outputs\b6_specimen_selftest_bundle_verify\b6_phase4_probe.modes.json
+SPECIMEN: SYNTHETIC_TEST_ONLY-b6-phase4-selfcheck
+  [PROVENANCE] acoustic_calibration: SHA256 verified (95603721ee56e5405e6d87ad687c29991c28ad3a3308b5a65a47561a574daa4c)
+  [PROVENANCE] analysis_config: SHA256 verified (5f709adc3c3e1b908c1d2de41be61bd9b1336de5ffab55e9f442e39fa0ef553e)
+  [PROVENANCE] derived_acoustic_transfer: SHA256 verified (a271423b80eb8549e305a03323b8d6e787929b22f2e9501d0b495674b1b71671)
+  [PROVENANCE] derived_frf: SHA256 verified (e0d7823ed60d1bf386922c29b9a5c2e742289afa54e4358a2b7733ddf6ab1162)
+  [PROVENANCE] excitation_calibration: SHA256 verified (58dbe9f5ecfbc1e83e7608154061c886cb429f2f40141dca93b59361cf9c32fa)
+  [PROVENANCE] raw_acoustic_response: SHA256 verified (101425782f44c545881a7bdf64f2acaad8ad19ba19eb0e68853e6d9ed7202dfa)
+  [PROVENANCE] raw_excitation: SHA256 verified (dad0bf85a75d25dc316a2504c009e766743b5f32b3f7221e98ed24bddf2f6114)
+  [PROVENANCE] raw_response: SHA256 verified (586c07b548057afaff8e543cbdb1f42025241b6dc1b81e6091b877d68a05e3a6)
+  [PROVENANCE] response_calibration: SHA256 verified (4d839e3b90e78c7463df251ae21927e253eb4dddbc9314f6f686fcfb59c7142d)
+  [PROVENANCE] uncertainty_analysis: SHA256 verified (183ef6acb7de59d0f51c315258aad2e59df0563ab57da5b04cb9f81e90758631)
+  [PROVENANCE] mode_dump: SHA256 verified (618f28a7c056c16eed3628ba5f53c98c22c5116747db225055724f5c8e1bc3bc)
+  [PASS      ] measurement_quality: 2 measured mode(s); minimum 1
+  [N/A       ] modal_frequencies: not requested
+  [N/A       ] relative_modal_magnitudes: not requested
+  [N/A       ] modal_t60: not requested
+  [N/A       ] complex_phase: not requested
+  [FAIL      ] absolute_spl: absolute pressure/force level; reported SPL uses the declared RMS force
+      partial 0: {"partial_index": 0, "radius_m": 1.05, "azimuth_deg": 0.0, "elevation_deg": 0.0, "predicted_db_re_20upa_per_n": 91.93723978866488, "measured_db_re_20upa_per_n": 101.93723978866488, "central_error_db": 10.0, "conservative_error_db": 10.0, "limit_db": 0.01, "status": "FAIL"}
+  [N/A       ] radiation_directivity: not requested
+RESULT: FAIL
+
+exit code: 1
+
+==============================================================================
+OVERALL: PASS (self-consistent=PASS, tampered=FAIL, as expected)
+==============================================================================

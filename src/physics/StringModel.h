@@ -213,6 +213,67 @@ public:
         return std::isfinite (bridgeLoss) && bridgeLoss > 0.0f ? bridgeLoss : 0.0f;
     }
 
+    /** Soundboard D / rhoS / G triple, exposed for the --dump-modes
+     *  diagnostic path (B6, docs/workcards/B6.md SS3/SS6 step 6). This does
+     *  NOT add any new physics: it is the exact same D/rhoS/Y_inf algebra
+     *  bridgeLossRate() already computes internally above, just returned as
+     *  a triple instead of being collapsed straight into the final
+     *  bridgeLoss scalar -- B1's own already-computed quantities, factored
+     *  out into their own getter so RadiationModel.h's criticalFrequency()/
+     *  radiationLossFactor() can be called from the diagnostic path without
+     *  re-deriving D/rhoS or duplicating bridgeLossRate()'s fail-closed
+     *  checks by hand. bridgeLossRate() itself is left untouched (B6.md SS3
+     *  "do not touch" boundary does not list this function, but it is B1's
+     *  code, not B6's -- this getter reads the same inputs, it does not
+     *  modify how bridgeLossRate() computes the real render-path bridgeLoss).
+     *
+     *  @param soundboardMaterial    soundboard material (same one
+     *                               bridgeLossRate() takes).
+     *  @param soundboardThicknessM  soundboard thickness h (m); must be > 0.
+     *  @return {D, rhoS, G, valid}. valid=false (all other fields 0.0f) on
+     *          the same fail-closed conditions as bridgeLossRate() (non-
+     *          finite/non-positive thickness or material properties).
+     */
+    struct SoundboardDynamics
+    {
+        float D    = 0.0f;   // bending stiffness (N*m)
+        float rhoS = 0.0f;   // areal density (kg/m^2)
+        float G    = 0.0f;   // Re(Y_inf), infinite-plate driving-point admittance (s/kg)
+        bool valid = false;
+    };
+
+    static SoundboardDynamics soundboardDynamics (const MaterialDB::Material& soundboardMaterial,
+                                                  float soundboardThicknessM)
+    {
+        SoundboardDynamics r;
+        if (! std::isfinite (soundboardThicknessM) || soundboardThicknessM <= 0.0f)
+            return r;
+
+        const float E  = soundboardMaterial.youngsModulus;
+        const float nu = soundboardMaterial.poissonRatio;
+        const float rho = soundboardMaterial.density;
+        const float h  = soundboardThicknessM;
+
+        const float D = (E * h * h * h) / (12.0f * (1.0f - nu * nu));
+        const float rhoS = rho * h;
+        const float DrhoS = D * rhoS;
+
+        if (! std::isfinite (D) || D <= 0.0f
+            || ! std::isfinite (rhoS) || rhoS <= 0.0f
+            || ! std::isfinite (DrhoS) || DrhoS <= 0.0f)
+            return r;
+
+        const float Y_inf = 1.0f / (8.0f * std::sqrt (DrhoS));
+        if (! std::isfinite (Y_inf) || Y_inf <= 0.0f)
+            return r;
+
+        r.D = D;
+        r.rhoS = rhoS;
+        r.G = Y_inf;
+        r.valid = true;
+        return r;
+    }
+
     /**
      * 從物理參數計算所有模態
      * @return 模態列表，可直接傳入 ModalResonator::setModes()

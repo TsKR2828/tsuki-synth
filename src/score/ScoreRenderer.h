@@ -7,7 +7,9 @@
 #include "../engines/ChromaticEngine.h"
 #include "../engines/FMPianoEngine.h"
 #include "../physics/MaterialDB.h"
+#include "../physics/RadiationModel.h"
 #include "../dsp/EffectsChain.h"
+#include "../dsp/DiagnosticOverrides.h"
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -141,12 +143,38 @@ public:
         out << "{\n  \"contract\": \"TsukiSynth Mode Dump v2\","
             << "\n  \"sample_rate_hz\": " << score.global.sampleRate
             << ",\n  \"model_observables\": "
-               "[\"modal_frequency_hz\", \"relative_modal_amplitude\", \"modal_t60_s\"],"
+               "[\"modal_frequency_hz\", \"relative_modal_amplitude\", \"modal_t60_s\", "
+               "\"radiated_power_relative\", \"absolute_pressure_per_force\"],"
             << "\n  \"unsupported_observables\": "
                "[\"complex_phase\", \"absolute_spl\", \"radiation_directivity\"],"
             << "\n  \"input_event_count\": " << static_cast<int> (score.events.size())
             << ",\n  \"events\": [\n";
         bool first = true;
+        // B6 Phase 3 (docs/workcards/B6.md SS6 step 12,
+        // DiagnosticOverrides::capturePhysicsOnlyModes doc): this diagnostic
+        // dump is the ONLY caller that wants the physics-only per-partial
+        // amplitude capture, so the flag is set once for the whole dump
+        // rather than per-event. render()/renderEvent() never set this --
+        // RenderApp.cpp's --dump-modes branch and its normal-render branch
+        // are mutually exclusive within one CLI process, so there was no
+        // risk of this leaking into an actual render *there*. But a single
+        // process that calls dumpModes() and then render() on the SAME
+        // ScoreRenderer -- e.g. tests/audit_repro.cpp -- is not covered by
+        // that argument, so the flag must be explicitly restored on exit
+        // from this function rather than left permanently true. ScopedFlag
+        // below is a plain RAII restore-on-destruction guard: it captures
+        // the flag's value on entry (always false today, since nothing else
+        // sets it) and puts that value back when dumpModes() returns, by
+        // any path, including an exception unwinding through this function.
+        // See testDumpModesDoesNotLeakPhysicsOnlyFlagIntoRender() in
+        // tests/physics_models_repro.cpp for the bit-identity proof.
+        struct ScopedFlag
+        {
+            bool& flag;
+            const bool previous;
+            explicit ScopedFlag (bool& f) : flag (f), previous (f) { flag = true; }
+            ~ScopedFlag() { flag = previous; }
+        } physicsOnlyModesGuard (DiagnosticOverrides::capturePhysicsOnlyModes);
         int sourceIndex = 0;
         int dumpedCount = 0;
         const auto eventIdentities =
@@ -162,6 +190,15 @@ public:
             }
             int midiNote = noteNameToMidi (ev.note);
             std::vector<std::vector<ModalResonator::Mode>> allStrings;
+            // B6 Phase 3: physics-only per-partial amplitude of string 0
+            // (see CimbalomVoice::getPhysicsOnlyModeAmplitudes()), captured
+            // below only for the string/cimbalom/piano branch. Stays empty
+            // for every other engine -- acoustic_transfer[] construction
+            // near the bottom of this loop iteration is gated on
+            // radiationValid, which is likewise only ever true for that
+            // same branch, so an empty vector here never gets read as if it
+            // were real data.
+            std::vector<float> physicsOnlyAmplitudes;
             // per-partial body-filter magnitude lookup, filled below (same
             // shape as allStrings) so each partial can carry its own
             // |dry+BodyResonance(dry)| value -- see BodyResonance::
@@ -170,6 +207,19 @@ public:
             // per-string), but is looked up per-frequency so the JSON stays
             // self-contained (Python never has to know the filter's shape).
             std::function<float(float)> bodyMagFn = [] (float) { return 1.0f; };
+
+            // Radiation-efficiency skeleton inputs (B6 Phase 1, informational
+            // only -- docs/workcards/B6.md SS3/SS5/SS6 step 8). Stays invalid
+            // (radiationValid=false) for every engine other than
+            // string/cimbalom/piano below, so modeToJson() never emits the
+            // "radiated_power_relative" field for beam/tongue_drum/plate/
+            // water_gong/custom (fm never reaches this loop body at all --
+            // see the "else" branch further down). This --dump-modes-only
+            // computation does not touch render()/renderEvent()/
+            // ModalResonator -- see RadiationModel.h for the full derivation.
+            float radiationFc = -1.0f;
+            float radiationFga = -1.0f;
+            bool radiationValid = false;
 
             if (ev.engine == "string" || ev.engine == "cimbalom" || ev.engine == "piano")
             {
@@ -182,6 +232,22 @@ public:
                 const Material* soundboardMat =
                     materialDB->getMaterial (kBridgeSoundboardMaterialKey);
                 if (soundboardMat == nullptr) continue;
+
+                // B6 Phase 1: expose the same D/rhoS this event's
+                // bridgeLossRate() call (inside CimbalomVoice::noteOn(),
+                // renderEvent()'s real bridge-loss path) already derives
+                // internally, purely to compute fc/fga for the
+                // "radiated_power_relative" diagnostic field below. Reads the
+                // same soundboardMat/kBridgeSoundboardThicknessM B1 already
+                // uses; does not change what noteOn()/bridgeLossRate() do.
+                const auto sbDyn = StringModel::soundboardDynamics (
+                    *soundboardMat, kBridgeSoundboardThicknessM);
+                if (sbDyn.valid)
+                {
+                    radiationFc = RadiationModel::criticalFrequency (sbDyn.D, sbDyn.rhoS);
+                    radiationFga = RadiationModel::acousticCutoffFrequency();
+                    radiationValid = radiationFc > 0.0f && radiationFga > 0.0f;
+                }
                 // 2026-07 (--amps GATE fix): mirror renderEvent()'s piano
                 // branch EXACTLY -- piano's actual render overrides
                 // strikePosition/exciter (wood_mallet+0.3 -> felt+0.125)
@@ -214,6 +280,11 @@ public:
                 voice->prepare (score.global.sampleRate);
                 voice->noteOn (midiNote, ev.velocity, *mat, *soundboardMat, cp);
                 allStrings = voice->getAllStringModes();
+                // B6 Phase 3: capturePhysicsOnlyModes was set true at the
+                // top of dumpModes(), so noteOn() just above already
+                // populated this (empty only if numActiveStrings somehow
+                // ended up 0, which noteOn()'s own jlimit(1, ...) prevents).
+                physicsOnlyAmplitudes = voice->getPhysicsOnlyModeAmplitudes();
                 bodyMagFn = [voice] (float f) { return voice->getBodyMagnitudeAt (f); };
             }
             else if (ev.engine == "beam" || ev.engine == "tongue_drum"
@@ -326,7 +397,26 @@ public:
                 s << "{\"freq\": " << juce::String (m.frequency, 3)
                   << ", \"amp\": " << juce::String (m.amplitude, 5)
                   << ", \"decay\": " << juce::String (m.decayTime, 4, true)
-                  << ", \"body_mag\": " << juce::String (bodyMagFn (m.frequency), 5) << "}";
+                  << ", \"body_mag\": " << juce::String (bodyMagFn (m.frequency), 5);
+                // B6 Phase 1 (docs/workcards/B6.md SS3/SS5): informational-only
+                // dimensionless radiation-efficiency skeleton value sigma(f),
+                // see RadiationModel::radiationEfficiency(). Omitted entirely
+                // (not written as a sentinel) when radiationValid is false
+                // (non string/cimbalom/piano engine, or this event's
+                // soundboard D/rhoS could not be derived) or when sigma's
+                // sentinel says f >= fga (model has no prediction there) --
+                // specimen_verify.py is not supposed to read this key at all
+                // (it is not in model_observables' companion
+                // unsupported_observables list either; it is purely for human/
+                // future-work inspection, see B6.md SS5).
+                if (radiationValid)
+                {
+                    const float sigma = RadiationModel::radiationEfficiency (
+                        m.frequency, radiationFc, radiationFga);
+                    if (sigma >= 0.0f)
+                        s << ", \"radiated_power_relative\": " << juce::String (sigma, 5);
+                }
+                s << "}";
                 return s;
             };
 
@@ -353,6 +443,78 @@ public:
                     out << modeToJson (allStrings[s][i]);
                 }
                 out << "]";
+            }
+            // Close the OUTER "strings" array here -- the pre-B6 code used
+            // to fold this close bracket into the same "] }" as the event
+            // object's own close brace (one combined literal at the very
+            // end of this block); B6 Phase 3/4 inserts "acoustic_transfer"
+            // between them, so the two closes can no longer share one
+            // string. Missing this bracket produced malformed JSON
+            // (caught by tests/audit_repro.cpp's mode-dump parse check).
+            out << "]";
+            // B6 Phase 3/4 (docs/workcards/B6.md SS5, 月月 Option B decision
+            // -- reports/decision_packets/B6_calibration_choice.md): one
+            // entry per qualifying partial of string 0 (index-aligned with
+            // "partials" above via model_partial_index), radius/azimuth/
+            // elevation hardcoded per SS5 (not a score.json knob -- Rule 4).
+            // Empty ([]), never an absent key, for every non-qualifying
+            // engine or when this event's D/rhoS could not be derived
+            // (radiationValid==false) -- SS5 "缺 D/rhoS 引擎輸出空陣列".
+            out << ", \"acoustic_transfer\": [";
+            if (radiationValid && ! allStrings.empty())
+            {
+                bool firstTransfer = true;
+                for (size_t i = 0; i < allStrings[0].size(); ++i)
+                {
+                    // f >= fga: model has no prediction here (same boundary
+                    // radiationEfficiency() uses for "radiated_power_relative"
+                    // above) -- omit the partial entirely, do not emit a
+                    // sentinel value for it.
+                    if (! (allStrings[0][i].frequency < radiationFga))
+                        continue;
+                    if (i >= physicsOnlyAmplitudes.size())
+                        continue;
+                    const float paPerN =
+                        RadiationModel::pressurePerForce (physicsOnlyAmplitudes[i]);
+                    if (paPerN <= 0.0f)   // sentinel (-1) or non-physical: omit, don't fabricate
+                        continue;
+
+                    if (! firstTransfer) out << ", ";
+                    firstTransfer = false;
+                    out << "{\"model_partial_index\": " << static_cast<int> (i)
+                        << ", \"radius_m\": "
+                        << juce::String (RadiationModel::kMeasurementRadiusM, 2)
+                        << ", \"azimuth_deg\": "
+                        << juce::String (RadiationModel::kMeasurementAzimuthDeg, 1)
+                        << ", \"elevation_deg\": "
+                        << juce::String (RadiationModel::kMeasurementElevationDeg, 1)
+                        // Scientific notation (not fixed 6dp), same rationale as
+                        // "decay" above: paPerN already passed the fail-closed
+                        // paPerN <= 0.0f guard above, i.e. this partial's
+                        // pressure-per-force claim is a genuine positive model
+                        // output, however small. Fixed-point %.6f silently
+                        // rounds anything below 5e-7 to the string "0.000000",
+                        // byte-identical to a true zero once re-parsed as
+                        // JSON -- exactly the "printed zero claim"
+                        // pressurePerForce()'s own doc comment says the
+                        // fail-closed guard above exists to avoid. This is a
+                        // dump-precision fix only: it does not change paPerN's
+                        // underlying numeric value or the render() audio path.
+                        << ", \"pressure_per_force_real_pa_n\": "
+                        << juce::String (paPerN, 6, true)
+                        // imag fixed 0.0: this is a SCHEMA-SHAPE PLACEHOLDER,
+                        // NOT a phase claim of 0 degrees -- this model has no
+                        // phase model at all (docs/workcards/B6.md SS5,
+                        // docs/RADIATION_POWER_SOURCES.md SS5 補記). The real
+                        // component alone carries the (non-negative-by-
+                        // construction) magnitude claim. specimen_verify.py's
+                        // radiation_directivity claim (which WOULD read
+                        // real/imag together as a phase) stays gated by
+                        // "radiation_directivity" being absent from
+                        // model_observables -- never added by B6 (guarded by
+                        // the sentinel test in tests/test_specimen_verify.py).
+                        << ", \"pressure_per_force_imag_pa_n\": 0.0}";
+                }
             }
             out << "] }";
             ++sourceIndex;

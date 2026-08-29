@@ -1,0 +1,1 @@
+{"$schema": "TsukiSynth Score v1", "meta": {"title": "B6 Phase 4 self-consistency probe", "id": "b6_phase4_probe"}, "global": {"bpm": 120, "sample_rate": 48000, "master_volume": 0.9}, "events": [{"time": 0.0, "duration": 1.0, "engine": "cimbalom", "note": "A4", "velocity": 0.5, "params": {"material": "steel", "strike_position": 0.31}}], "export": {"filename": "b6_phase4_probe"}}

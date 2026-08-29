@@ -1,0 +1,99 @@
+[render] CLI rendering fur_elise_complete.score.json ...
+[render] -> C:\Users\admin\AppData\Local\Temp\melody_roll_2250kan9\fur_elise_complete.wav
+[verify] reusing existing report reports/gate_outputs/fur_elise_melody_roll_verify.json
+[layout] 905 events, 54 bands, pitch range 31.0..102.0 semitones (MIDI)
+[strip] 22153x720 px, timeline 130.43s
+[video] exports\videos\fur_elise_melody_roll.mp4  frames=4002  duration=133.40s  size=6.97 MB
+EXIT=0
+
+==================================================================================
+稽核記錄（2026-08-28，獨立複核 — 以下為稽核追加，非原始 run 的一部分）
+==================================================================================
+1. 影片檔存在且可解碼 — PASS（親自 ffprobe + 全片解碼）
+   exports/videos/fur_elise_melody_roll.mp4 存在，7,305,021 bytes（6.97 MiB，
+   與本檔 "size=6.97 MB" 一致）。
+   ffprobe：video h264 1280x720、r_frame_rate 30/1、nb_frames 4001、
+   duration 133.366016s；audio aac 48000 Hz stereo、duration 133.389000s；
+   container mov,mp4,m4a duration 133.389000s、bit_rate 438118。
+   全片解碼（ffmpeg -i ... -f null -）**零 error 輸出、exit 0** —— 不是只有
+   容器 metadata 看起來對，是真的每一格都解得開。
+   （雞毛：本檔寫 frames=4002，ffprobe 讀到 nb_frames=4001，差 1 格，
+   屬寫入端計數與容器索引的慣常差異，非缺陷。）
+
+2. 時長合理性 — PASS
+   曲子本身（score 最後發聲點）130.383281s；影片 133.39s。
+   工具是 duration_total = max(strip 時間軸, wav 長度)，多出的約 3.0s 是
+   渲染 WAV 的殘響/釋音尾巴，方向與量級都合理（不是短到切掉、也不是暴增）。
+
+3. 重用 melody_verify 的偵測函式（非自造弱版）— PASS
+   melody_roll_video.py 用 importlib 載入 tools/melody_verify.py，實際取用：
+   mv.verify()（整份 PASS/FAIL/UNVERIFIED 判定）、mv.Spectrogram / .band_db、
+   mv.band_of()、mv.BAND_GATE_DBFS、mv.N_FFT / mv.HOP、mv.PAD_S、
+   report["extra_scan"]["unexplained"]（未重算），以及 mv.vs 的
+   find_cli/render_score/read_wav_mono/midi_to_hz/note_to_midi。
+   逐一在 tools/melody_verify.py 對到本體：BAND_GATE_DBFS=-70.0(L96)、
+   N_FFT,HOP=2048,256(L107)、PAD_S=0.25(L108)、class Spectrogram(L126)、
+   band_db(L143)、band_of(L176)、verify(L281)。
+   本檔自身只新增 semitone()/font()/note_name() 與繪圖/切窗邏輯，
+   **沒有任何一行新的 pitch/onset 偵測數學**，宣稱屬實。
+   RING_CAP_S=3.0 是顯示用切窗上限，不是驗證容差，melody_verify 的
+   onset/pitch 容差未被本工具碰過 —— 符合 R2/R4。
+
+4. 本輪影片所用的 melody_verify 判定來自既有 JSON（--json 重用，本檔已明寫）：
+   reports/gate_outputs/fur_elise_melody_roll_verify.json
+   summary = 30 PASS / 14 FAIL / 862 UNVERIFIED，extra_scan verdict=FAIL、
+   unexplained 37 筆。稽核核對過 summary 的 fail=14 與逐項 verdict 的
+   FAIL=13 之間差 1 的原因：melody_verify.py L574 的
+   `n_fail = sum(... verdict=="FAIL") + (1 if extra_state=="FAIL" else 0)`
+   ——extra_scan 自己算一筆 FAIL，屬設計而非計數 bug。
+   （未做：未重跑 melody_verify 本體重新產生該 JSON，需重建 CLI 並重渲染；
+   本輪只驗證了影片端對該 JSON 的忠實使用，此點標為未複核。）
+
+==================================================================================
+稽核記錄 II（2026-08-28，Opus 第二輪獨立複核 — 追加，非原始 run 的一部分）
+==================================================================================
+
+1. 影片檔存在且可解碼 — PASS（親自 ffprobe + 親自全片解碼）
+   exports/videos/fur_elise_melody_roll.mp4 存在，7,305,021 bytes（6.97 MiB）。
+   ffprobe（Tools\ffmpeg-8.1.1-full_build\bin\ffprobe.exe）：
+     video: h264, 1280x720, r_frame_rate 30/1, nb_frames 4001,
+            duration 133.366016s, bit_rate 231423
+     audio: aac, 48000 Hz, 2ch, duration 133.389000s, bit_rate 198464
+     container: mov,mp4,m4a duration 133.389000s, size 7305021, bit_rate 438118
+   全片解碼 `ffmpeg -v error -i ... -f null -` -> **零錯誤輸出、exit 0**。
+   不是只有 metadata 好看，是每一格真的解得開，且音軌真的在。
+   （雞毛：本檔寫 frames=4002，容器索引 nb_frames=4001，差 1 格屬寫入端
+   計數與容器索引的常見差異，非缺陷。）
+
+2. 時長合理性 — PASS
+   score 最後發聲點 130.383281s（由 score_vs_midi_verify 同日實測），
+   影片 133.389s，多出約 3.0s。工具邏輯 duration_total = max(strip 時間軸,
+   WAV 長度)，多出的是渲染 WAV 的釋音/殘響尾巴；方向與量級都合理，
+   既非被切短、也非異常膨脹。
+
+3. 重用 melody_verify 偵測函式（非自造弱版）— PASS
+   melody_roll_video.py 以 importlib 載入 tools/melody_verify.py，取用：
+   mv.verify()、mv.Spectrogram / .band_db、mv.band_of()、mv.BAND_GATE_DBFS、
+   mv.N_FFT / mv.HOP、mv.PAD_S、report["extra_scan"]["unexplained"]（未重算），
+   以及 mv.vs 的 find_cli / render_score / read_wav_mono / midi_to_hz /
+   note_to_midi。逐一在 tools/melody_verify.py 對到本體：
+   BAND_GATE_DBFS = -70.0 (L96)、N_FFT, HOP = 2048, 256 (L107)、
+   PAD_S = 0.25 (L108)、class Spectrogram (L126)、band_db (L143)、
+   band_of (L176)、verify (L281)。
+   本檔自身只新增 semitone() / font() / note_name() 與繪圖切窗邏輯，
+   **無任何一行新的 pitch/onset 偵測數學**，宣稱屬實。
+   RING_CAP_S = 3.0 是顯示用切窗上限（且檔內註解已明講「NOT a verification
+   tolerance」），melody_verify 的 onset/pitch 容差未被本工具碰過，符合 R2/R4。
+
+4. 未複核項（誠實標註）：本輪與上一輪一樣，**沒有重跑 melody_verify 本體**
+   重新產生 reports/gate_outputs/fur_elise_melody_roll_verify.json
+   （需重建 CLI 並重渲染 WAV）。本輪只驗證影片端對該 JSON 的忠實使用，
+   該 JSON 內容本身標為未複核。
+
+5. 新增發現（上一輪未記）：melody_roll_video.py 尚未接進任何文件或 CI。
+   全 repo grep `melody_roll_video`，在 *.md / *.yml / *.ps1 中零命中——
+   README.md 快查表、HANDOVER.md、TODO.md 都沒有它。
+   另：DEFAULT_FFMPEG 硬寫月月本機絕對路徑
+   `C:\Users\admin\Desktop\Tools\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe`，
+   換機／CI 上會直接失效（有 --ffmpeg 可覆蓋，但無 PATH 後援）。
+   兩者都不影響本輪判定，屬可攜性與接線待辦。

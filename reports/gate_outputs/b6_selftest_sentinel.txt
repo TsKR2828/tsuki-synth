@@ -1,0 +1,51 @@
+B6 self-test sentinel evidence (docs/workcards/B6.md §7 / §8 row selftest)
+Generated: 2026-08-28
+Source: tests/physics_models_repro.cpp :: testRadiationEfficiencyShape() + testRadiatedPowerChain()
+Command: ./build/Release/TsukiSynthPhysicsModelsTest.exe
+
+testRadiationEfficiencyShape() simulates a mutant (broken) sigma(f) shape
+INLINE (linear f/fc instead of the real quadratic (f/fc)^2) without touching
+RadiationModel.h, and shows the two disagree by an identifiable amount at
+f=0.5*fc (0.25 real vs 0.5 mutant). testRadiatedPowerChain() additionally
+verifies radiationLossFactor()/radiatedEnergyFraction() against a hand
+calc and the eta_i=0 degenerate case (must saturate to fraction=1.0, not
+NaN/div-by-zero).
+
+[SENTINEL 1/2] mutant (frequency-scaled bridgeLoss): T60(55Hz)=20.2186s  T60(4000Hz)=0.278006s -- same equality check as the real test would report: [FAIL] (GOOD -- regression caught)
+[PASS] SENTINEL: mutant frequency-dependent bridgeLoss is distinguishable at 55Hz vs 4000Hz (proves the Sec7-3 equality check has detection power)
+[SENTINEL 2/2] real StringModel::decayTimeForFrequency: T60(55Hz)=4.25044s  T60(4000Hz)=4.25044s -- verdict: [PASS]
+[PASS] SENTINEL: real bridgeLoss term passes the same equality check (frequency-independent, as required)
+[PASS] radiationEfficiency: f < fc all give sigma < 1
+[PASS] radiationEfficiency: f < fc branch is non-decreasing in f
+[PASS] radiationEfficiency: f == fc gives sigma == 1
+[PASS] radiationEfficiency: fc < f < fga gives sigma == 1
+[PASS] radiationEfficiency: f just below fga still gives sigma == 1
+[PASS] radiationEfficiency: f == fga gives the sentinel (-1)
+[PASS] radiationEfficiency: f > fga gives the sentinel (-1)
+[PASS] radiationEfficiency: non-positive fc is fail-closed (-1)
+[PASS] radiationEfficiency: non-positive fga is fail-closed (-1)
+[SENTINEL 1/2] mutant (linear f/fc): sigma(0.5*fc)=0.5 -- if this were the real implementation, it would silently disagree with the correct (f/fc)^2 shape
+[SENTINEL 2/2] real radiationEfficiency (quadratic f/fc): sigma(0.5*fc)=0.25
+[PASS] SENTINEL: linear-f/fc mutant is distinguishable from the real quadratic shape at f=0.5*fc (0.25 vs 0.5, delta=0.25)
+[PASS] SENTINEL: real implementation gives the expected (f/fc)^2=0.25 at f=0.5*fc, not the mutant's 0.5
+[PASS] radiationLossFactor: matches hand-calculated value at f=1000Hz, sigma=1 (eta_rad=rhoAir*cAir*sigma/(omega*rhoS))
+[PASS] radiationLossFactor: sentinel sigma (-1) propagates to sentinel output
+[PASS] radiationLossFactor: non-positive rhoS is fail-closed (-1)
+[PASS] radiatedEnergyFraction: eta_i=0 degenerate case is finite (no NaN/Inf)
+[PASS] radiatedEnergyFraction: eta_i=0 (all damping radiative) correctly gives fraction=1.0, not NaN/div-by-zero
+[PASS] radiatedEnergyFraction: realistic eta_total=0.02 gives 0 < fraction < 1
+[PASS] radiatedEnergyFraction: sentinel etaRad (-1) propagates to sentinel output
+[PASS] radiatedEnergyFraction: non-positive etaTotal is fail-closed (-1)
+[SENTINEL r^6->r^2 mutant] f=147Hz: Q=1.20594e-07 vs table 3629 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=1000Hz: Q=2.60591e-09 vs table 6787 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=4000Hz: Q=1.62869e-10 vs table 2817 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=10000Hz: Q=2.60591e-11 vs table 580 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+
+Full test binary exit code: 0 (all official CHECK() assertions pass --
+the mutant's disagreement above is a printed demonstration used by a
+passing CHECK, not an actual failing CHECK, so it does not affect the
+ctest/'Passed, 0 Failed' gate; see reports/gate_outputs/b6_ctest.txt).
