@@ -337,12 +337,74 @@ static bool writeRenderManifest (const juce::File& scoreFile,
     return true;
 }
 
-static bool isSafeOutputName (const juce::String& name)
+// Rejects any output filename stem that could escape the output directory,
+// collide with a Windows-reserved device name, or land as a different name
+// than requested because Windows silently mangles it. `reason` is set to a
+// specific, human-readable description of the violated rule whenever this
+// returns false, so callers can report *why* up front (F-07) instead of a
+// generic "FAILED to render" once the renderer already gave up.
+// The four original conditions (empty / path separator / ".." / absolute
+// path) are unchanged; everything below them is additive.
+static bool isSafeOutputName (const juce::String& name, juce::String& reason)
 {
-    if (name.isEmpty()) return false;
-    if (name.containsChar ('/') || name.containsChar ('\\')) return false;
-    if (name.contains ("..")) return false;
-    if (juce::File::isAbsolutePath (name)) return false;
+    if (name.isEmpty()) { reason = "filename is empty"; return false; }
+    if (name.containsChar ('/') || name.containsChar ('\\'))
+    {
+        reason = "filename contains a path separator ('/' or '\\')";
+        return false;
+    }
+    if (name.contains ("..")) { reason = "filename contains '..'"; return false; }
+    if (juce::File::isAbsolutePath (name)) { reason = "filename is an absolute path"; return false; }
+
+    // Windows forbids these characters in any path component.
+    static const juce::String forbiddenChars = "<>:\"|?*";
+    for (int i = 0; i < forbiddenChars.length(); ++i)
+    {
+        if (name.containsChar (forbiddenChars[i]))
+        {
+            reason = juce::String ("filename contains the Windows-reserved character '")
+                + juce::String::charToString (forbiddenChars[i]) + "'";
+            return false;
+        }
+    }
+
+    // Windows forbids ASCII control characters (0x00-0x1F) in path components.
+    for (auto p = name.getCharPointer(); ! p.isEmpty(); )
+    {
+        if (p.getAndAdvance() < (juce::juce_wchar) 0x20)
+        {
+            reason = "filename contains a control character";
+            return false;
+        }
+    }
+
+    // Windows silently strips a trailing '.' or space, so the file that
+    // actually lands on disk would not match `name` -- reject it up front
+    // instead of producing a mismatched output/manifest pair later.
+    if (name.endsWithChar ('.') || name.endsWithChar (' '))
+    {
+        reason = "filename ends with a trailing '.' or space";
+        return false;
+    }
+
+    // Windows reserved device names, matched against the portion of `name`
+    // before its first '.' -- the same rule Windows itself applies.
+    static const char* const reservedDeviceNames[] = {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    };
+    const juce::String stem = name.upToFirstOccurrenceOf (".", false, false);
+    for (const auto* reserved : reservedDeviceNames)
+    {
+        if (stem.equalsIgnoreCase (reserved))
+        {
+            reason = juce::String ("filename is a Windows-reserved device name ('")
+                + reserved + "')";
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -378,9 +440,11 @@ static bool renderScore (const juce::File& scoreFile, const juce::File& outputDi
         ? ".flac"
         : ".wav";
 
-    if (! isSafeOutputName (outName))
+    juce::String unsafeReason;
+    if (! isSafeOutputName (outName, unsafeReason))
     {
-        std::cout << "  REJECTED unsafe filename: " << outName << std::endl;
+        std::cout << "  REJECTED unsafe filename: " << outName
+                  << " (" << unsafeReason << ")" << std::endl;
         return false;
     }
     juce::File outFile = outputDir.getChildFile (outName + extension);
@@ -597,10 +661,11 @@ int main (int argc, char* argv[])
                 ? score.exportSettings.exportFilename
                 : ! score.exportSettings.filename.empty() ? score.exportSettings.filename
                                                            : file.getFileNameWithoutExtension().toStdString();
-            if (! isSafeOutputName (juce::String (stem)))
+            juce::String unsafeReason;
+            if (! isSafeOutputName (juce::String (stem), unsafeReason))
             {
                 std::cout << "Batch preflight rejected unsafe filename: "
-                          << stem << std::endl;
+                          << stem << " (" << unsafeReason << ")" << std::endl;
                 return 1;
             }
             const auto key = juce::String (stem

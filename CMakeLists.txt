@@ -219,6 +219,28 @@ if(TSUKI_BUILD_TESTS)
     tsuki_enable_test_sanitizers(TsukiSynthPhysicsModelsTest)
     add_test(NAME physics_models_repro COMMAND TsukiSynthPhysicsModelsTest)
 
+    # K-04: SpectrumView.h lives in the plugin editor, so nothing in the other
+    # test targets ever compiled it. This target exists purely so the 1px-wide
+    # pixel -> frequency boundary has a ctest sentinel; it links juce_gui_basics
+    # because SpectrumView.h (via TsukiLookAndFeel.h) is a juce::Component.
+    add_executable(TsukiSynthSpectrumViewTest tests/spectrum_view_repro.cpp)
+    target_include_directories(TsukiSynthSpectrumViewTest PRIVATE src)
+    target_compile_definitions(TsukiSynthSpectrumViewTest PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+    )
+    target_link_libraries(TsukiSynthSpectrumViewTest
+        PRIVATE
+            juce::juce_audio_formats
+            juce::juce_audio_processors
+            juce::juce_dsp
+            juce::juce_gui_basics
+        PUBLIC
+            juce::juce_recommended_config_flags
+    )
+    tsuki_enable_test_sanitizers(TsukiSynthSpectrumViewTest)
+    add_test(NAME spectrum_view_repro COMMAND TsukiSynthSpectrumViewTest)
+
     # --- L2 host-integration probe (EARFREE_MELODY_GATE_DESIGN L2) ---
     # Loads the BUILT TsukiSynth.vst3 bundle from disk through
     # juce::VST3PluginFormat (the binary a DAW loads, not linked-in source)

@@ -3,6 +3,7 @@
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 
@@ -444,6 +445,54 @@ class ResidualEnergyTests(unittest.TestCase):
     def test_selftest_residual_energy_negative(self):
         ok, detail = pv.selftest_residual_energy_negative()
         self.assertTrue(ok, detail)
+
+    # ── K-06: subprocess.run must not hang forever on a stuck CLI ──────────
+    def _stub_run_raises_timeout(self, cmd_snippet, timeout_secs):
+        def fake_run(cmd, **kwargs):
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout_secs)
+        return fake_run
+
+    def test_render_probe_reports_clear_timeout_not_traceback(self):
+        # Before the fix, subprocess.run() had no timeout at all, so a stuck
+        # CLI would hang forever; here a mocked hang must surface as a clean
+        # RuntimeError instead of a raw TimeoutExpired escaping the function.
+        original = pv.subprocess.run
+        pv.subprocess.run = self._stub_run_raises_timeout("render", 600)
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                with self.assertRaises(RuntimeError) as ctx:
+                    pv.render_probe("fake-cli", "cimbalom", 60, Path(td))
+            self.assertIn("600", str(ctx.exception))
+            self.assertIn("timed out", str(ctx.exception).lower())
+        finally:
+            pv.subprocess.run = original
+
+    def test_dump_modes_event_returns_none_not_traceback_on_timeout(self):
+        # dump_modes_event()'s contract is "None on any failure" so callers
+        # can report NOT FOUND; a timeout must reach that same contract
+        # instead of an uncaught TimeoutExpired killing the whole scan.
+        original = pv.subprocess.run
+        pv.subprocess.run = self._stub_run_raises_timeout("dump-modes", 1800)
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                sf = Path(td) / "probe.score.json"
+                sf.write_text("{}", encoding="utf-8")
+                result = pv.dump_modes_event("fake-cli", sf)
+            self.assertIsNone(result)
+        finally:
+            pv.subprocess.run = original
+
+    def test_model_fundamental_decay_returns_none_not_traceback_on_timeout(self):
+        original = pv.subprocess.run
+        pv.subprocess.run = self._stub_run_raises_timeout("dump-modes", 1800)
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                sf = Path(td) / "probe.score.json"
+                sf.write_text("{}", encoding="utf-8")
+                result = pv.model_fundamental_decay("fake-cli", sf)
+            self.assertIsNone(result)
+        finally:
+            pv.subprocess.run = original
 
 
 if __name__ == "__main__":

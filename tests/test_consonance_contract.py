@@ -3,6 +3,7 @@
 import importlib.util
 import math
 from pathlib import Path
+import subprocess
 import unittest
 
 
@@ -86,6 +87,24 @@ class ConsonanceContractTests(unittest.TestCase):
     def test_default_report_name_is_score_specific(self):
         path = cc.default_report_path(Path("pieces/my_piece.score.json"))
         self.assertEqual("my_piece_consonance_check.md", path.name)
+
+    def test_dumped_score_events_reports_clear_timeout_not_traceback(self):
+        # Before the fix, subprocess.run() had no timeout at all, so a stuck
+        # CLI would hang forever; here a mocked hang must surface as a clean
+        # RuntimeError -- the same failure shape dumped_score_events() already
+        # uses for a nonzero exit code or invalid JSON -- not a raw
+        # TimeoutExpired escaping the function.
+        def fake_run(cmd, **kwargs):
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=1800)
+        original = cc.subprocess.run
+        cc.subprocess.run = fake_run
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                cc.dumped_score_events("fake-cli", Path("unused.score.json"))
+            self.assertIn("1800", str(ctx.exception))
+            self.assertIn("timed out", str(ctx.exception).lower())
+        finally:
+            cc.subprocess.run = original
 
 
 if __name__ == "__main__":

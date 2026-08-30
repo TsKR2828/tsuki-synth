@@ -870,8 +870,13 @@ def build_probe_score(eng, midi, outdir, sr=48000, vel=0.85, dur=2.0,
 def render_probe(cli, eng, midi, outdir, sr=48000, vel=0.85, dur=2.0,
                   params_override=None, tag=""):
     sf, fn = build_probe_score(eng, midi, outdir, sr, vel, dur, params_override, tag)
-    r = subprocess.run([str(cli), str(sf), "--output", str(outdir)],
-                       capture_output=True, text=True)
+    try:
+        r = subprocess.run([str(cli), str(sf), "--output", str(outdir)],
+                           capture_output=True, text=True, timeout=600)
+    except subprocess.TimeoutExpired as e:
+        raise RuntimeError(
+            f"render timed out for {fn}: {cli} did not finish within 600s "
+            f"rendering {sf}") from e
     wav = outdir / (fn + ".wav")
     if r.returncode != 0 or not wav.exists():
         raise RuntimeError(f"render failed for {fn}: {r.stdout}\n{r.stderr}")
@@ -1490,8 +1495,13 @@ def dump_modes_event(cli, score_path):
     C++ model's noteOn() computed them -- see CimbalomVoice::
     getAllStringModes() / ChromaticVoice::getModes()). Every mode also carries
     "body_mag". Returns None on any failure."""
-    r = subprocess.run([str(cli), "--dump-modes", str(score_path)],
-                       capture_output=True, text=True)
+    try:
+        r = subprocess.run([str(cli), "--dump-modes", str(score_path)],
+                           capture_output=True, text=True, timeout=1800)
+    except subprocess.TimeoutExpired:
+        print(f"   [--dump-modes timed out after 1800s for {score_path}]",
+              file=sys.stderr)
+        return None
     if r.returncode != 0:
         return None
     try:
@@ -1934,8 +1944,13 @@ def model_fundamental_decay(cli, score_path):
     # Ground-truth decay from the C++ model itself (--dump-modes), avoiding any
     # Python re-derivation drift (the model's decayTime uses the natural,
     # pre-MIDI-tuning frequency, which a formula on the tuned f0 would get wrong).
-    r = subprocess.run([str(cli), "--dump-modes", str(score_path)],
-                       capture_output=True, text=True)
+    try:
+        r = subprocess.run([str(cli), "--dump-modes", str(score_path)],
+                           capture_output=True, text=True, timeout=1800)
+    except subprocess.TimeoutExpired:
+        print(f"   [--dump-modes timed out after 1800s for {score_path}]",
+              file=sys.stderr)
+        return None
     if r.returncode != 0:
         return None
     try:
