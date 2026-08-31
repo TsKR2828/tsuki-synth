@@ -1271,11 +1271,137 @@ void testBesselPortable()
            "Portable Bessel positive control: in-domain evaluation is finite");
 }
 
+// ---------------------------------------------------------------------------
+// Water-gong pitch glide: the SETTLED pitch must not depend on the host's
+// audio buffer size.
+//
+// Pre-2026-08-31 the cap was a per-block REJECT (`if (glidePhase < 0.5f)`), so
+// the phase froze on whatever value the last ACCEPTED block left it at -- up to
+// one full increment below the cap. At 8192 samples / 48 kHz one increment is
+// 0.0256 phase, which is ~15.6 cents of pitch. Same project, different buffer
+// size, different tuning. The fix clamps instead of rejecting.
+// ---------------------------------------------------------------------------
+void testWaterGongGlideSettlesIndependentlyOfBlockSize()
+{
+    constexpr double kSr = 48000.0;
+    constexpr float  kAmount = 1.0f;
+    constexpr double kSeconds = 6.0;          // well past the ~3.3 s cap
+
+    auto settledPhase = [&] (int blockSize)
+    {
+        float phase = 0.0f;
+        const int totalSamples = (int) (kSeconds * kSr);
+        for (int done = 0; done < totalSamples; done += blockSize)
+            phase = ChromaticVoice::advanceGlidePhase (phase, kAmount,
+                                                       blockSize, kSr);
+        return phase;
+    };
+
+    // The pre-fix rule, reproduced exactly: advance unconditionally, and only
+    // adopt the value while it is still below the cap.
+    auto legacySettledPhase = [&] (int blockSize)
+    {
+        float phase = 0.0f, adopted = 0.0f;
+        const int totalSamples = (int) (kSeconds * kSr);
+        for (int done = 0; done < totalSamples; done += blockSize)
+        {
+            phase += kAmount * 0.15f * (float) ((double) blockSize / kSr);
+            if (phase < ChromaticVoice::kGlidePhaseCap)
+                adopted = phase;
+        }
+        return adopted;
+    };
+
+    auto centsBetween = [] (float phaseA, float phaseB)
+    {
+        const double a = ChromaticVoice::glideMultiplierFor (phaseA);
+        const double b = ChromaticVoice::glideMultiplierFor (phaseB);
+        return std::abs (1200.0 * std::log2 (a / b));
+    };
+
+    const int blockSizes[] = { 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
+
+    bool allIdentical = true;
+    const float reference = settledPhase (64);
+    for (int blockSize : blockSizes)
+        if (settledPhase (blockSize) != reference)
+            allIdentical = false;
+
+    CHECK (allIdentical,
+           "Water-gong glide settles on a bit-identical phase at every buffer size");
+    CHECK (reference == ChromaticVoice::kGlidePhaseCap,
+           "The settled glide phase is exactly the documented cap");
+    CHECK (std::abs (ChromaticVoice::glideMultiplierFor (reference) - 0.85f) < 1.0e-6f,
+           "The settled glide multiplier is the documented 0.85 (15 % drop)");
+
+    // Self-proof: the pre-fix rule really was buffer-size dependent, so this
+    // test would have failed against it rather than passing vacuously. The
+    // threshold is the project's own melody-GATE pitch tolerance (5 cents, see
+    // docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md) rather than an arbitrary
+    // number: the pre-fix spread has to be large enough that the project's own
+    // verifier would have called it a pitch error.
+    double legacyWorstSpreadCents = 0.0;
+    int legacyWorstBlock = 0;
+    for (int blockSize : blockSizes)
+    {
+        const double spread = centsBetween (legacySettledPhase (64),
+                                            legacySettledPhase (blockSize));
+        if (spread > legacyWorstSpreadCents)
+        {
+            legacyWorstSpreadCents = spread;
+            legacyWorstBlock = blockSize;
+        }
+    }
+    CHECK (legacyWorstSpreadCents > 5.0,
+           "The pre-fix per-block reject really did make settled pitch depend on "
+           "buffer size, by more than the 5-cent melody-GATE tolerance "
+           "(this test is meaningful)");
+    std::cout << "       legacy worst settled-pitch spread vs 64 samples = "
+              << legacyWorstSpreadCents << " cents (at " << legacyWorstBlock
+              << " samples)\n";
+
+    // The cap must never be exceeded, whatever the block size or amount.
+    bool neverExceedsCap = true;
+    for (int blockSize : blockSizes)
+        for (float amount : { 0.02f, 0.5f, 1.0f })
+        {
+            float phase = 0.0f;
+            for (int done = 0; done < (int) (kSeconds * kSr); done += blockSize)
+            {
+                phase = ChromaticVoice::advanceGlidePhase (phase, amount,
+                                                           blockSize, kSr);
+                if (phase > ChromaticVoice::kGlidePhaseCap || ! std::isfinite (phase))
+                    neverExceedsCap = false;
+            }
+        }
+    CHECK (neverExceedsCap,
+           "Glide phase stays finite and within the cap for every amount/buffer size");
+
+    // A zero/invalid sample rate must not produce NaN or move the phase.
+    CHECK (ChromaticVoice::advanceGlidePhase (0.25f, 1.0f, 512, 0.0) == 0.25f,
+           "A zero sample rate leaves the glide phase untouched");
+
+    // Different sample rates must reach the same settled phase too -- the cap
+    // is a position, not a rate.
+    bool sampleRateIndependent = true;
+    for (double sr : { 44100.0, 48000.0, 96000.0, 192000.0 })
+    {
+        float phase = 0.0f;
+        for (int done = 0; done < (int) (kSeconds * sr); done += 512)
+            phase = ChromaticVoice::advanceGlidePhase (phase, kAmount, 512, sr);
+        if (phase != ChromaticVoice::kGlidePhaseCap)
+            sampleRateIndependent = false;
+    }
+    CHECK (sampleRateIndependent,
+           "The settled glide phase is the same at every sample rate");
+}
+
 int main()
 {
     std::cout << "TsukiSynth physical-model regression tests\n";
     testBeamBoundaryAndGeometry();
     testBesselPortable();
+    testWaterGongGlideSettlesIndependentlyOfBlockSize();
     testPlateModesAndPoisson();
     testGeometryFrequencyModeAndDamping();
     testBridgeAdmittanceLoss();
