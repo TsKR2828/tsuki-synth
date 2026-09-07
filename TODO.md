@@ -1,11 +1,31 @@
 # TsukiSynth — Current TODO
 
-> Last updated: 2026-08-29
-> Branch: `fix/deep-physics-audit-20260716`（HEAD `51bd6cc`，工作樹乾淨、已 push）
+> Last updated: 2026-09-07
+> Branch: `fix/deep-physics-audit-20260716`（HEAD `cdf2017`，2026-09-07 merge → `main`）
+
+**2026-09-07 補記**：8/31 兩個 commit 登記（`a7413e5` 稽核修復批次、`cdf2017` 水鑼 Pitch Glide
+buffer-size 缺陷已修＝稽核 §4-A 關閉）＋月月裁決批次（push/merge、requirements 加 pytest+mido、
+A8 下載、UI 等功能做完再送設計、A13/A14/F-03 由 AI 查外部資料決定）——詳見 `HANDOVER.md` §0-2。
 
 The deep-audit implementation fixes are on the branch. Historical Phase D–I decisions remain in `DEVLOG.md`; this file lists only current work and scientific gaps.
 
-**2026-08-29 快照（最新）**：**B1–B6 物理鏈全部 Done**，六場物理戰役收官。
+**2026-08-31 稽核修復輪**：codex 兩輪稽核的問題點已整理成診斷文件
+`docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md`（三個結構性病根 + 未修清單 +
+我複驗後與稽核判斷不同的項目）。F-03 裁決包在
+`reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md`（待月月選 A/B/C）。
+
+**2026-08-30 快照（最新）**：**UI 走向重設計 + 密集複音驗證缺口部分補上**。
+(1) 月月**否決**雙開門 UI 提案，裁定撇開現行 UI 既有元素、由設計端從功能重做
+→ 新的設計輸入 `docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md`（只清點功能，不寫樣式）。
+(2) 分支已全數 **merge → `main`**（月月明示授權），`main` = `b7e4330`。
+(3) 旋律影片工具換月月指定的霓虹配色 + 左側固定音名尺（`--theme neon` 預設）。
+(4) **裁決包選項 A 已實作並實跑**：`tools/stem_verify.py`（逐事件乾聲分軌 + 疊加證明），
+給愛麗絲全曲拒答 **862 → 212**，疊加證明 ESTABLISHED。
+兩個新發現：**殘響會把 melody_verify 的音高質心拉偏最多 9.5 cents**（現行 GATE 既有缺陷）、
+**22 顆高音弱基頻需 harmonic-aware 判定**。主張域已更新
+（`docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8）。**stem_verify 相關檔案全部 unstaged 待審。**
+
+（歷史快照）**2026-08-29**：**B1–B6 物理鏈全部 Done**，六場物理戰役收官。
 B6 全卡完工（方案 B 絕對聲壓校準落地，月月裁決；對抗稽核五缺陷已修）；B7 卡已立
 （第一原理力鏈，前置阻擋已解除，缺 velocity→m/s 映射資料）；轉譜層 GATE
 `tools/score_vs_midi_verify.py` 補上驗證鏈最後缺口；corpus **73 → 75 檔**
@@ -69,6 +89,20 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       未施工的 B3–B6 直接融入 GATE 清單表格前的強制說明。未來所有新卡沿用同一段規約文字。
 
 ## A. 等月月決定（AI 不能自己動）
+
+- [ ] **A13 partial GATE 的主張域** — 2026-08-30 新增。`stem_verify` **完全沒有實測 partial
+      的頻率或振幅**（`--dump-modes` 的 partials 只用來預判基頻帶污染），因此目前
+      **不可宣稱「泛音已驗證」**。要不要立 partial GATE、以及它的主張要多強
+      （只驗頻率？連振幅一起？容差多少？）需月月裁決——**新容差不可由工程端自訂（R2）**。
+      參考：`docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.4。
+- [ ] **A14 高音弱基頻是物理正確還是引擎缺陷** — 2026-08-30 新增，**擋住 22 顆音的判定**。
+      乾聲單音實測（piano 引擎、velocity 0.427/0.462）：G5 峰值 −46.7 dBFS、主導頻率
+      1571.5 Hz（第二 partial，比值 2.0044）、基頻低 21.9 dB；G6 峰值 −54.5 dBFS、
+      主導 3214.9 Hz（比值 2.0503）、基頻低 24.0 dB；D7 峰值 −64.5 dBFS（主導即基頻）。
+      比值 > 2 與 stiffness inharmonicity 方向一致，且真鋼琴高音區基頻本來就弱
+      → **可能完全正確**。但整體電平偏低這點與 D8（tongue_drum 40 dB 斜率）氣味相近。
+      需物理域判定 + 溯源；若判定要改引擎，**觸發 Rule 10**。
+      證據：`reports/gate_outputs/stem_verify_fur_elise_run.txt` 發現 2。
 
 - [x] **A1 Rule 10 前後對照裁決** — **2026-08-26 月月裁決「放行」（整批接受）**。7/22 那六項物理修正
       （`reports/deep_fix_before_after.md`）最終放行，無指名回退項。同一句裁決一併授權「下一批
@@ -350,6 +384,26 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       `docs/COMMERCIAL_PM_PUBLIC_DATA.zh-TW.md`
 
 ## C. 不需要任何資料、純工程（可隨時插隊）
+
+> **2026-08-30 新增的 stem_verify 收尾四項，建議順序 C10 → C11 → C12 → (A13/A14 裁決後) C13。**
+
+- [ ] **C10 量測器自身的合成哨兵（先做這個）** — 月月 2026-08-30 查核第 5 點：
+      ±5 cents 是本專案既有裁定的產品門檻，**不是 ISO 或業界標準**；
+      要用它執行 GATE，量測器本身必須先用**合成訊號**（已知頻率、已知衰減、
+      已知泛音結構）證明自身誤差 **≤1 cent**。目前沒有這個證明。
+      不做這項，後面所有音高數字都站在一把未經校驗的尺上。
+- [ ] **C11 逐顆記錄拒答理由** — `stem_verify` 的 JSON 目前只有
+      index/time/note/engine/verdict/onset_err_ms/pitch_cents/expected_f0_hz，
+      **沒有 reason 欄位**。212 顆拒答因此是黑盒，無法收斂（要靠人工重跑單顆才知道理由）。
+      melody_verify 本來就回傳 reason，只是沒被帶進來。
+- [ ] **C12 `--analysis-dry` 旗標 + 衍生 score 的 hash/diff 寫進 JSON** —
+      目前乾聲跑法是手動改 score 存到 temp，**JSON 裡的 `score` 指向使用者 temp 路徑**，
+      temp 一清就只剩口述來源（月月 2026-08-30 查核指出）。
+      應由工具自己產生乾聲衍生 score，並把來源 hash 與 leaf diff 寫進報告。
+      §8.3 已定：**帶殘響訊號的音高判定不得作為 GATE 依據**，所以乾聲應是預設分析路徑。
+- [ ] **C13 harmonic-aware 判定** — 給 22 顆弱基頻高音一個「答得出來」的問法：
+      驗 `f_n = n·F0·√(1+B·n²)` 或直接對 `--dump-modes` 預測的逐 partial 頻率比對。
+      **前置**：A13 主張域裁決、A14 物理判定。`B` 的物理合理性須獨立查證（R4）。
 
 - [ ] **C1 rubber 短瞬態 T60 估計器** — 現行「不足八週期即 N/A」太粗，改用 EDT／Schroeder 反向積分 + 明確拒答條件，把三個 `UNVERIFIED/N/A` 轉成可判定。**需月月裁決可信門檻（幾個週期算數）**。
 - [ ] **C2 多音／缺基頻調音器模式** — 只在能可靠拒答模稜兩可的情況下才做。工作量最大、對物理驗證主張價值最小。

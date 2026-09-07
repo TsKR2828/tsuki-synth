@@ -1,0 +1,1535 @@
+================================================================================
+stem_verify 首跑證據 — 給愛麗絲全曲（905 事件）
+日期：2026-08-30　工具：tools/stem_verify.py（裁決包選項 A，月月 2026-08-30 裁定）
+================================================================================
+
+【指令與原始輸出】
+
+$ python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json \
+      --jobs 6 --json output/stem_verify_fur_elise_full.json
+  events total=905  velocity>0=905  used=905
+  stem_verify summary: 595 PASS / 122 FAIL / 188 UNVERIFIED
+  baseline (whole-file melody_verify): 30 PASS / 14 FAIL / 862 UNVERIFIED
+  superposition: NOT bit-exact / ESTABLISHED
+    max_abs_diff=4.460569e-06  budget=5.394220e-05  peak=-107.01 dBFS  rms=-116.73 dBFS
+  [exit=1] n_fail=122
+
+$ python tools/stem_verify.py <乾聲版：僅 reverb wet/decay 歸零> \
+      --jobs 6 --json output/stem_verify_fur_elise_dry.json
+  events total=905  velocity>0=905  used=905
+  stem_verify summary: 671 PASS / 22 FAIL / 212 UNVERIFIED
+  superposition: NOT bit-exact / ESTABLISHED
+    max_abs_diff=1.174398e-06  budget=5.394220e-05  peak=-118.60 dBFS  rms=-134.09 dBFS
+  [exit=1] n_fail=22
+
+【主結果】拒答 862 → 212（−75%）；595→671 顆音取得明確 PASS。
+疊加證明 ESTABLISHED：905 軌相加與成品混音殘差 -118.60 dBFS（門檻 -85 dBFS）。
+=> 「每一軌都驗過」在數學上可轉移到成品，這是選項 A 的核心主張，成立。
+
+【判定轉移（帶殘響 → 乾聲）】
+  PASS       -> PASS         595
+  UNVERIFIED -> UNVERIFIED   188
+  FAIL       -> PASS          76
+  FAIL       -> UNVERIFIED    24
+  FAIL       -> FAIL          22
+
+================================================================================
+發現 1（工具層，重要）：melody_verify 的音高判定會被殘響帶偏，最大 ~9.5 cents
+================================================================================
+帶殘響版 122 個 FAIL 中，100 個在乾聲版消失。全部是「音高超出 5 cents」型，
+而且同一音名的偏差值完全相同（E4 全部 52 顆 -9.47c、A#2 全部 18 顆 +7.93c）。
+
+三層排查（每層皆親自執行）：
+ (1) 起音誤差全部落在 ±3 ms（容差 ±10 ms）——不是時間問題。
+ (2) 獨立量測（1 s 穩態段、2^22 點補零 FFT、拋物線內插）：
+       E4  宣告 329.6276 Hz → 實測 329.6220 Hz = -0.03 cents
+       A#2 宣告 116.5409 Hz → 實測 116.5411 Hz = +0.00 cents
+       C4（對照 PASS）                         = -0.01 cents
+     引擎音高正確到 0.03 cents，不是引擎問題。
+ (3) 同一顆音、同一支 melody_verify，只差有無殘響：
+       帶殘響 -9.48 cents → FAIL ／ 無殘響 -0.02 cents → PASS
+機制：melody_verify.py:487 用頻帶（±3%）內振幅加權質心 f=Σ(f·|X|)/Σ|X| 判音高。
+殘響為梳狀濾波（SimpleReverb），其響應在該窄帶內有斜率，把質心整體拉偏；
+拉偏量隨頻率固定 → 同一音名永遠同一偏差。用相同公式、相同頻帶但高解析度重算，
+E4 質心為 -0.02 cents，證明不是質心慣例本身的問題，而是解析度/著色所致。
+
+*** 這個偏差本來就存在於現行 melody_verify GATE，不是本工具引入。***
+以往密集段幾乎全數拒答故未浮現。任何帶殘響 score 的音高判定都帶此偏差，
+而容差僅 5 cents。建議另立卡處理（本檔不擅自修改 melody_verify，R2）。
+
+=> 直接後果：分軌驗證應在乾聲上進行（殘響是混音後的線性級，不屬音符內容）。
+   疊加證明殘差也同源改善（-107.01 → -118.60 dBFS）。一改兩解。
+
+================================================================================
+發現 2（引擎層，待裁決）：22 顆高音的基頻帶近乎無能量
+================================================================================
+乾聲版存活的 22 個 FAIL：G5 ×19、D7 ×1、G6 ×1、F#6 ×1，全為 piano 引擎，
+velocity 正常（0.427 / 0.462）。melody_verify 給的理由一致：
+  "no onset in near-silent fundamental band ... (pre-onset floor -19x dBFS)"
+
+單音乾聲渲染實測（24-bit、未正規化）：
+  G5 宣告 784.0 Hz：整軌峰值 -46.7 dBFS，主導頻率 1571.5 Hz（= 2 倍音），
+     宣告基頻處能量比峰值低 21.9 dB
+  G6 宣告 1568.0 Hz：峰值 -54.5 dBFS，主導 3214.9 Hz（= 2.05 倍，含張力偏移），
+     基頻低 24.0 dB
+  D7 宣告 2349.3 Hz：峰值 -64.5 dBFS，主導 2358.0 Hz（即基頻本身，+4.7 cents），
+     此顆屬「整體太安靜」而非「基頻缺失」
+
+即：這些音「有聲音」，但能量集中在第二泛音，基頻極弱；整體電平也偏低。
+真鋼琴高音區基頻本來就弱（泛音承載音高感），因此**這未必是缺陷**。
+本檔不做判定——需要物理域的判斷與溯源，屬 ROADMAP_PHYSICS 管轄。
+
+同時暴露一個驗證設計問題：melody_verify 判的是「基頻帶」，
+對於基頻天生就弱的高音，此慣例會拒答或誤判即使音本身正確。應記入主張域文件。
+
+================================================================================
+剩餘 212 顆拒答
+================================================================================
+八度分布（帶殘響版 188 顆的統計）：第 2 八度 140、第 3 八度 46、第 1 八度 2。
+全部集中在低音，與既有「低音密集複音弱域」一致。
+*** 缺口：目前 stem_verify 的 JSON 未記錄逐顆拒答理由，無法收斂。應補。***
+
+================================================================================
+規則遵循
+================================================================================
+R2 容差未動（git diff tools/melody_verify.py 為空，親自確認）
+R6 未動 src/ 任何 C++（git status 親自確認）
+R7 未 commit、未 push
+稽核：本輪 Dynamic Workflow 的 Opus 稽核抓到 blocker（分軌被峰值正規化造成假綠燈，
+      實例：velocity 0.001、實際 -76 dBFS 的音被判 PASS），已修；
+      修後該攻擊正確 FAIL（親自重放確認）。pytest 21 passed（親自重跑）。
+
+
+================================================================================
+音準／泛音驗證方法獨立查核（追加）
+日期：2026-08-30　查核範圍：現行程式、兩份 Fur Elise JSON、實際重跑、
+ISO／論文／GitHub 參考實作／現售商業產品文件
+================================================================================
+
+【先講結論】
+
+1. 「逐事件乾聲分軌 + 線性疊加證明」作為密集複音的拆解方法，方向合理，
+   而且這首曲子的實測疊加殘差有充分餘裕；這一段可以保留。
+
+2. 現行 `melody_verify` 的逐軌音高法只適合「基頻可量、單音、乾聲」的案例。
+   它以基頻附近 ±3% 頻帶的振幅質心代表音高；對弱基頻／missing-fundamental
+   類型的高音鋼琴、低音起音、以及帶殘響後的頻譜著色都不穩健。
+
+3. 現行 `stem_verify` **沒有實測泛音／partials 的頻率或振幅**。它只把
+   `--dump-modes` partials 用來預判「別顆音的 partial 是否污染基頻帶」。所以目前
+   可以主張「逐事件起音／基頻帶音高（在可量域）」，不能主張「泛音已驗證」。
+
+4. 乾聲結果不應只報 671 PASS / 22 FAIL / 212 UNVERIFIED。分開主張後是：
+     - 音高數字：883/905 顆取得量測，883/883 全在 ±5 cents，最大 |偏差| 2.4266 c。
+     - 起音數字：671/905 顆取得精測且全在 ±10 ms，最大 |偏差| 6.9272 ms。
+     - 起音拒答：212 顆，全部是 f0 < 167 Hz 的低音解析度限制。
+     - 起音 FAIL：22 顆高音，基頻帶未出現足夠 rise；不能據此直接說「音高錯」。
+   把兩個維度壓成一個 verdict，會把「音高已量到、起音沒量到」誤看成整顆音沒驗。
+
+5. ±5 cents 是本專案既有、經裁定的產品門檻，不是 ISO 或業界通用標準。
+   它可以保留（本次沒有改容差），但量測器本身應先用合成哨兵證明誤差 ≤1 cent，
+   才能用來執行 ±5 cents 的產品 GATE。
+
+6. 鋼琴 partial 不可一律驗成 n*f0。真實鋼琴弦有 stiffness inharmonicity；應驗
+   `f_n = n F0 sqrt(1 + B n^2)` 或直接驗 `--dump-modes` 預測的逐 partial 頻率，
+   並另用獨立公式／參考琴資料查 `B` 的物理合理性。
+
+7. 目前可接受的發布措辭是「給愛麗絲 score、模態表、渲染決定性、逐軌疊加已驗；
+   乾聲 883 顆有音高證據，其中 671 顆另有起音證據」。目前**不可**寫成
+   「905 顆音高與泛音全部驗過」；22 顆高音的 harmonic-aware 音高／起音，以及
+   所有事件的逐 partial 頻率／振幅 GATE 尚未補齊。
+
+
+================================================================================
+一、查核對象與不可否認的檔案指紋
+================================================================================
+
+SHA256（本次查核時）：
+
+  tools/stem_verify.py
+    F472136E28F3E058BCC785A917CF02516E56C78FBF13EB71CC0A8963F55602C1
+  tools/melody_verify.py
+    4F2CB2E5BAFE1F5978B1668B303AA71B4A6EFCC35E27A0CDBB69EC1A0814CD30
+  tests/test_stem_verify.py
+    873502F4092E4298905D3569F92C45141F1395D864E0F29C4B1D10058A25B224
+  scores/classical/fur_elise/fur_elise_complete.score.json
+    3D4099608CA0F2495EAE5ABC3F6D88AB03D582FADD0E4D1CA746C1DFDF5568A7
+  output/stem_verify_fur_elise_full.json
+    D4357F56FEDFC2A40CC1D16E50D395263A5ACD4EC3684AAA166385BDFB4915C0
+  output/stem_verify_fur_elise_dry.json
+    DA5FBB2D10D07A2100A24265F74532B932A19A2C10F0FE6073BE2CA71853F98D
+  build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+    041FACB72B14E150209C063004E4FAB548C58FAF86DE4D05D52039016B401C10
+
+乾聲衍生 score（當下仍存在於 JSON 記錄的 temp path）：
+  SHA256 2A6658D64F065DF49D20037121529947FAC547BC105A61208157503138CC78D1
+  與正式 score 的 leaf diff 只有三項：
+    /export/filename                 fur_elise_complete -> fur_elise_complete_dry
+    /global/effects/reverb/decay     1.4 -> 0.0
+    /global/effects/reverb/wet       0.1 -> 0.0
+
+可重現性提醒：乾聲 JSON 的 `score` 指向使用者 temp 目錄，不是 repo 內耐久檔案。
+上面已把原始 score hash 與完整差異寫死，因此數學上可重建；正式工具仍應提供
+`--analysis-dry`（或等價）並把衍生 score hash／diff 寫進 JSON，避免 temp 消失後
+只剩口述來源。
+
+
+================================================================================
+二、本機實際重跑證據
+================================================================================
+
+【A. 新工具測試】
+
+$ pytest -q tests/test_stem_verify.py
+.....................                                                    [100%]
+21 passed in 20.84s
+
+涵蓋：非線性／layer fail-closed、PCM16/24/float32 讀取、近靜音不被 normalize 假救活、
+實際 CLI 端到端疊加、漏 stem mutant、--limit 空洞自比、exit code 等。
+
+【B. 正式 score GATE 重跑】
+
+$ python tools/verify_score.py scores/classical/fur_elise/fur_elise_complete.score.json
+
+關鍵原始行（完整命令 exit 0）：
+  [OK] schema.events_sorted: All 905 events are sorted by time (ascending).
+  [OK] schema.frequency_hz_equal_temperament: All 905 performance.frequency_hz
+       value(s) match equal temperament (max deviation 0.006 cents, limit +/-1.0).
+  [OK] modes.event_identity_contract: input=905, modal=905, source indices match.
+  [OK] modes.no_nan_inf: 28257 partials checked.
+  [OK] modes.frequency_range: All 28257 partial frequencies are within [20, 20000] Hz.
+  [OK] modes.render_active_energy: Every modal event has render-active modal energy.
+  [OK] modes.f0_deviation: 905 events within +/-5.0 cents; max 2.482 cents.
+  [OK] determinism.sha256_match: two independent renders identical,
+       SHA256 a6be972499e8a7b2...
+  RESULT: ALL CHECKS PASSED
+
+重要解讀：這個 GATE 證明 score 宣告頻率與 ET、dump mode 與 ET、渲染決定性；
+它**沒有**逐事件從 WAV 量出每個 partial。所以它是 stem 音訊檢查的必要上游，
+不是逐 partial 音訊驗證的替代品。
+
+【C. 兩份 stem JSON 重新統計（直接讀上述 SHA256 綁定檔）】
+
+帶殘響：
+  event verdict         595 PASS / 122 FAIL / 188 UNVERIFIED
+  有 pitch_cents        883
+  其中 |pitch| <= 5 c  783（其餘 100 是殘響著色造成的質心 FAIL）
+  有 onset_err_ms       671
+  max |onset|           7.0521667 ms
+  max |pitch|           9.6104369 cents
+
+乾聲：
+  event verdict         671 PASS / 22 FAIL / 212 UNVERIFIED
+  有 pitch_cents        883 / 905 = 97.57%
+  其中 |pitch| <= 5 c  883 / 883 = 100%
+  pitch median          -0.0726920 cents
+  pitch |P90|           1.4382108 cents
+  pitch |P95|           1.4382827 cents
+  pitch max absolute    2.4266253 cents
+  有 onset_err_ms       671 / 905 = 74.14%
+  max |onset|           6.9271667 ms
+  onset UNVERIFIED      212（全是 f0 < 167 Hz 的低音）
+  onset FAIL            22（G5x19, D7x1, G6x1, F#6x1）
+
+【勘誤：本檔前段「起音誤差全部落在 ±3 ms」不正確】
+
+由兩份保存的 JSON 直接重算：帶殘響最大 7.0522 ms（ev215 A#4），乾聲最大
+6.9272 ms（同一 ev215 A#4）。兩者仍通過 ±10 ms，但必須把「±3 ms」改讀成
+「全部在 ±10 ms；最大 7.0522/6.9272 ms」。本追加段為較新的校正證據。
+
+【D. 疊加數學證據】
+
+帶殘響：
+  n_stems=905, max_abs_diff=4.4605694711e-06,
+  residual peak=-107.012 dBFS, rms=-116.731 dBFS,
+  24-bit 最壞三角不等式 budget=5.3942203522e-05 (-85.361 dBFS), ESTABLISHED。
+
+乾聲：
+  n_stems=905, max_abs_diff=1.1743977666e-06,
+  residual peak=-118.604 dBFS, rms=-134.086 dBFS,
+  同 budget=5.3942203522e-05，實測比 budget 再低 33.24 dB，ESTABLISHED。
+
+兩份皆：render_errors={}、duplicate_identity_risk_groups=[]、905 stems 全數入和。
+
+判斷：這個 budget 是 905 次獨立 24-bit rounding 的極保守上界，會隨事件數線性變寬；
+但本首實測餘裕 33.24 dB，且完整性 mutant 有測試守住，作為本首的「疊加成立」證據合理。
+它證明的是「分軌和 ≈ reference mix（受量化上界限制）」，不是 bit-exact；程式已如實
+同時輸出 bit_exact=False 與 established=True，這個表達應保留。
+
+
+================================================================================
+三、現行量測法逐點審查
+================================================================================
+
+【1. 分軌策略：合理】
+
+`stem_verify.py:109` 先拒絕 layered 與 distortion；`:272` 強制未 normalize；
+`:410` 把同一個 stem WAV 交給既有 `melody_verify`；`:452` 做疊加比較；`:480`
+用 N * half-LSB 建 24-bit rounding 上界。對本 score（單層、distortion=0、delay=0、
+reverb 為固定係數 LTI）而言，拆成事件後再相加有明確數學基礎，實測也成立。
+
+【2. 乾聲作音準主判：合理，但要保留 post-FX 證據】
+
+固定係數 LTI reverb 不會搬移輸入 sinusoid 的頻率位置，但會改各頻率振幅／相位；
+因此它能把窄帶的「振幅質心」推動數 cents，而不代表引擎的 mode frequency 變了。
+本首同一音名固定偏移、乾聲後 100 個 pitch FAIL 全消失，符合此機制。
+
+建議契約：
+  - 音準／partials 頻率在 analysis-dry stem 判。
+  - 正式 wet 成品仍做疊加、效果設定／程式路徑、頻率不新增的 post-FX sanity check。
+  - 不再拿 wet 窄帶質心直接執行 ±5-cents GATE。
+
+【3. ±3% 是搜尋帶，不是允收門檻】
+
+`melody_verify.py:92/177` 的 ±3% 換算約為 +51.173 / -52.732 cents；真正 verdict
+仍在 `:489` 以 ±5 cents 判，所以目前沒有把 ±3% 誤當 PASS 容差。
+
+但 onset STFT 是 Hann/2048 @48k（`:107`），bin 寬 23.4375 Hz。A2=110 Hz 的
+整個 ±3% 帶只有 6.6 Hz，程式因 band 比一個 bin 還窄而退化成「只拿最近一格」。
+這就是低音被設計成 f0<167 Hz 一律拒絕精測的根本解析度限制，不是低音真的沒有起音。
+
+【4. 頻譜質心不是通用 F0 estimator】
+
+`melody_verify.py:469-486` 取 t+20ms 到 t+1.25s、Hann、在基頻 ±3% 內用
+`sum(f*|X|)/sum(|X|)`。優點是決定性、對已知且強的單一 peak 很便宜；缺點是：
+  - reverb/EQ 的頻帶斜率會改質心；
+  - 多弦 beating 與每弦振幅不平衡會改質心；
+  - 基頻弱時，onset 在抵達 pitch 計算前就 FAIL；
+  - 它不利用第二、第三 partial，因此與人耳的 missing-fundamental pitch 不同；
+  - `--dump-modes` amplitude-weighted course_f0 和渲染共用模型振幅，單獨使用會偏向
+    implementation self-consistency，必須與 score/ET 的獨立 anchor 串成兩段證據。
+
+本專案其實已有較好的第一段：`verify_score.py:MODE_F0_TOL_CENTS` 把 dump course_f0
+對 ET 判 ±5c；本首 max 2.482c。建議 stem JSON 明確同時保存：
+  authored_et_hz、dump_course_hz、audio_estimate_hz、
+  dump_vs_et_cents、audio_vs_dump_cents、audio_vs_et_cents。
+目前只存 expected_f0_hz（dump）與 audio_vs_dump，證據鏈不夠一眼可見。
+
+【5. 2^22 zero-padding 的文字要精確】
+
+本檔前段的獨立探針用 1s 真實資料 + 2^22 零補點 FFT。零補點會把既有 DTFT
+主瓣做更密的 spectral interpolation，方便抓 peak；它不會創造超過 1s 觀測窗的
+真正解析力。Julius O. Smith 的《Spectral Audio Signal Processing》明確把它描述為
+interpolating spectral peaks。故該探針的 -0.03c 數字可作輔助，但必須另以不同窗長、
+phase、振幅、partial 配比的合成哨兵校準，不能只因 FFT 點數大就稱「高解析度真值」。
+
+【6. 現行沒有泛音 GATE】
+
+`melody_verify.expected_f0s()` 讀 partials；之後只在 `:354` 判「別顆 partial 是否掉進
+本顆基頻帶」來決定拒答。逐 stem 的 `judge_stem()` 原封不動委派這個單基頻 judge。
+沒有任何迴圈逐一量 observed partial peak，也沒有 partial 頻差 cents、SNR、prominence、
+coverage 或振幅 dB 誤差。因此「泛音正確」目前是未證主張。
+
+
+================================================================================
+四、22 顆高音為何不能用「基頻帶沒 rise」直接判音高錯
+================================================================================
+
+從正式 score 與真實 `TsukiSynthCLI --dump-modes` 取四個代表事件；下列 amp 是 center
+string 的 mode amp，dB 是相對第一 partial。course cents 是三弦 amplitude-weighted
+course_f0 相對 score 的 `performance.frequency_hz`（ET anchor）：
+
+  ev195 G5, ET 783.991 Hz, course 783.239153 Hz (-1.661 c)
+    p1  783.991 Hz amp .00307    0.00 dB
+    p2 1578.069 Hz amp .04612  +23.54 dB
+    p3 2392.108 Hz amp .00401   +2.32 dB
+
+  ev746 G6, ET 1567.982 Hz, course 1567.431525 Hz (-0.608 c)
+    p1 1567.982 Hz amp .00011    0.00 dB
+    p2 3214.894 Hz amp .01437  +42.32 dB
+    p3 5013.458 Hz amp .00820  +37.45 dB
+
+  ev747 F#6, ET 1479.978 Hz, course 1478.963648 Hz (-1.187 c)
+    p1 1479.978 Hz amp .00239    0.00 dB
+    p2 3026.538 Hz amp .01547  +16.22 dB
+    p3 4701.554 Hz amp .00782  +10.30 dB
+
+  ev734 D7, ET 2349.318 Hz, course 2352.688171 Hz (+2.482 c)
+    p1 2349.318 Hz amp .00078    0.00 dB
+    p2 4954.909 Hz amp .00205   +8.39 dB
+    p3 8032.265 Hz amp .00361  +13.31 dB
+
+這些不是「只有基頻才代表音名」的訊號。聽覺研究確認：即使物理頻譜沒有 f0，人仍可由
+partials 關係感到 missing fundamental；沒有任何單一頻率的能量與 perceived pitch 必然
+一對一。故高音應用 multi-partial/template estimator；至少要求兩個合格 partial 對同一
+基頻／同一 inharmonic B 給出一致解，再判音高。起音也應在多個可聽 partial band 的
+總 spectral flux／包絡上量，不應只看最弱的 p1 band。
+
+另外，鋼琴 partial 是 inharmonic。以上 p2 相對 2*p1 的 stretch：
+  G5 +11.10 c；F#6 +38.51 c；G6 +43.03 c；D7 +91.94 c。
+所以把它們硬對 `2*f0, 3*f0...` 會誤殺。必須對 dump 頻率或 stiff-string 公式。
+
+
+================================================================================
+五、外部標準、理論、GitHub 與商業作品對照
+================================================================================
+
+以下網址均於 2026-08-30 查閱。只採官方標準頁、論文／大學鏡像、官方 GitHub／文件、
+或原廠商業產品文件；搜尋結果本身不當證據。
+
+【A. 標準與常用評測數字】
+
+1. ISO 16:1975（2022 再確認仍現行）
+   https://www.iso.org/standard/3601.html
+   規定 treble-stave A = 440 Hz；用來 tuning/retuning 的產生器準確度 0.5 Hz。
+   440 Hz 的 +0.5 Hz 約 +1.966 cents。注意：這是基準音／調音器材的要求，
+   不是「每顆合成音可偏幾 cents」的完整產品驗收規範。
+
+2. mir_eval melody/transcription 官方文件
+   https://mir-eval.readthedocs.io/latest/api/melody.html
+   https://mir-eval.readthedocs.io/latest/api/transcription.html
+   預設 pitch tolerance = 50 cents；note transcription onset tolerance = 50 ms。
+   這是 AMT 演算法評測中「音符辨識對不對」的寬門檻（半音的一半），不是樂器校音
+   或數值合成器精度標準。不能拿 50c/50ms 來放寬本專案 5c/10ms。
+
+【B. 現售商業調音器：代表的是量測精度，不是音符允收門檻】
+
+1. BOSS TU-3 原廠規格：tuning accuracy ±1 cent
+   https://www.boss.info/us/products/tu-3/
+
+2. Peterson StroboStomp HD 原廠：accuracy 0.1 cent
+   https://www.petersontuners.com/media/pdf/StroboStomp_HD_Manual_v1.1_EN.pdf
+
+3. TC Electronic PolyTune Clip 原廠：strobe mode ±0.02 cent
+   https://www.tcelectronic.com/en/products/0713-AAF
+
+解讀：商業測量端普遍宣告 1c 或更細；所以「量測器自誤差 ≤1c、產品 PASS ±5c」是
+合理的工程分層。不能反過來說商業產品的 0.1c 就要求所有自然鋼琴 partial/音高都在
+0.1c；自然樂器有 stretch、unison beating、attack drift。
+
+【C. 商業音高校正／物理鋼琴如何處理 pitch center 與 partials】
+
+1. Celemony Melodyne 5 原廠手冊
+   https://helpcenter.celemony.com/M5/doc/melodyneStudio5/en/M5tour_ToolPitch_2
+   把 pitch center 稱作音符的 central emphasis / center of gravity，並以 cents 顯示
+   相對 ET 偏差。這支持「音高中心不是只取最大 FFT bin」，但不等於本專案目前的
+   單一窄帶質心已經是唯一正解。
+
+   Polyphonic note assignment／overtone 官方說明：
+   https://helpcenter.celemony.com/M5/doc/melodyneStudio5/en/M5tour_NA_Mode_Tools
+   明說商業 polyphonic 分析也可能把 prominent overtone 誤當實際音符，或把很小聲的
+   真音符誤當低音的 overtone；介面會顯示 overtone series 並允許人工改 assignment。
+   這直接支持本專案 fail-closed 與分軌法，也提醒不能把黑箱轉譜當唯一 GATE。
+
+2. Modartt Pianoteq 原廠手冊
+   https://www.modartt.com/user_manual?lang=en&product=pianoteq
+   說明其 piano tuning（flat temperament 除外）會考慮 string inharmonicity，像調音師
+   聽 partial 間 beats；並提供 natural/harmonic stretching、unison width/balance。
+   這是現售物理鋼琴產品的直接先例：鋼琴不能用所有 partial 必須恰為 n*f0 的簡化規格。
+
+【D. 鋼琴 inharmonicity 理論與參考範圍】
+
+Rigaud, David & Daudet, JASA 133(5), 2013, DOI 10.1121/1.4799806：
+https://www.institut-langevin.espci.fr/biblio/2020/3/5/916/files/2013_a_parametric_model_and_estimation_techniques_for_the_inharmonicity_and_tuning_of_the_piano.pdf
+
+論文給 plain stiff string：
+  f_n = n F0 sqrt(1 + B n^2)
+  B = pi^3 E d^4 / (64 T L^2)
+  典型 B 範圍約 10^-5 到 10^-2；也明說 bridge motion 與 doublet/triplet coupling
+  會讓實際 partial 偏離簡式並產生 multiple partials、double decays、beating。
+  ET anchor：F_ET(m)=440*2^((m-69)/12)，tuning deviation 用 cents 表示。
+
+用同一定義由 center-string f1/f2 反解（
+  r=(f2/(2*f1))^2，B=(r-1)/(4-r)）：
+  G5  B=0.004321（在上述典型範圍內）
+  F#6 B=0.015398
+  G6  B=0.017284
+  D7  B=0.038802
+
+後三者高於該論文列的典型上緣 0.01，尤其 D7 約 3.88 倍；這是**物理合理性警訊，
+不是本查核直接宣告 bug**。高音 score 全部指定 diameter_mm=1.0，而 Acoustical Society
+of America 的 Acoustics Today 鋼琴弦文章指出現代琴 extreme treble 約 0.8 mm、
+低到 middle C 下方一個八度才約 1.0 mm：
+https://acousticstoday.org/issues/2016AT/2016Spring/files/basic-html/page17.html
+
+因 B 與 d^4 成正比，直徑對高 partial stretch 極敏感。建議另立物理卡，拿實際琴 scale
+（逐音 L/d/T）或商業／實測 reference 驗 F#6/G6/D7；不得只為讓 stem GATE 過而改模型。
+
+【E. 人耳不是只看物理 f0 能量】
+
+Oxenham, “Pitch Perception” review：
+https://pmc.ncbi.nlm.nih.gov/articles/PMC3481156/
+說明 harmonic complex 的 pitch 通常關聯於 periodicity/F0，低階 resolved harmonics
+提供較穩健準確 pitch；即使 fundamental 缺失，仍可抽取 missing-fundamental pitch。
+
+Bendor et al. review：
+https://pmc.ncbi.nlm.nih.gov/articles/PMC3098378/
+明說沒有「某一個頻率的能量」與 perceived pitch 的直接一對一關係。
+
+這是 G5/G6/F#6/D7 不能只靠 p1 onset 作最終 verdict 的理論依據。
+
+【F. 可參考的 GitHub／開源實作】
+
+1. librosa `yin` / `pyin` / `piptrack`
+   https://github.com/librosa/librosa/blob/main/librosa/core/pitch.py
+   pYIN 先產生 YIN F0 candidates/probabilities，再用 Viterbi 找最可能軌跡；
+   官方建議範圍約 C2-C7，D7 已超過建議上界，所以它適合做單音 harmonic cross-check，
+   不宜單獨承擔本首最高音 GATE。
+
+2. pYIN 原作者群 Vamp plugin
+   https://github.com/c4dm/pyin
+   README 明確限定 monophonic、harmonic instrument。這正好說明：分軌後可用，但鋼琴
+   inharmonic high register 仍需 model-aware partial template。
+
+3. Essentia PitchYinFFT / HarmonicPeaks
+   https://essentia.upf.edu/reference/streaming_PitchYinFFT.html
+   https://essentia.upf.edu/reference/std_HarmonicPeaks.html
+   PitchYinFFT 會輸出 confidence（官方要求 confidence=0 時不得使用 pitch）；
+   HarmonicPeaks 以 spectral peaks + pitch 找逐 harmonic 頻率與振幅。可參考其資料流，
+   但 TsukiSynth piano 必須把理想 harmonic 位置替換成 dump/stiff-string partial 位置。
+
+4. Spotify Basic Pitch
+   https://github.com/spotify/basic-pitch
+   是 polyphonic AMT / audio-to-MIDI，適合非權威交叉檢查；本專案已有精確 stems，
+   沒必要把可解釋的主 GATE 換成神經網路黑箱。
+
+5. librosa `piptrack` 的 thresholded parabolic peak interpolation
+   https://librosa.org/doc/0.10.2/generated/librosa.piptrack.html
+   可直接參考 peak interpolation 寫法。Julius O. Smith 的零補點／peak interpolation 理論：
+   https://www.dsprelated.com/freebooks/sasp/Zero_Padding_Interpolating_Spectral_Peaks.html
+
+
+================================================================================
+六、建議的可執行驗收契約（不在本次擅自改容差）
+================================================================================
+
+【Layer 0：來源真值】
+  - `performance.frequency_hz` 或 note->MIDI ET 公式為獨立 authored anchor。
+  - `frequency_mode=midi`：f_ET=440*2^((m-69)/12)。
+  - `frequency_mode=geometry`：必須改用明列的 geometry truth，不能硬判 ET。
+  - 保存 score/tool/CLI/hash、analysis-dry 衍生 diff。
+
+【Layer 1：dump 物理／設計真值】
+  - course f0 vs authored anchor：沿用 ±5c（現有 R2，不改）。
+  - string piano partials：獨立用 stiff-string oracle fit B，再與 dump 比；
+    B 的 10^-5~10^-2 只當一般鋼琴 sanity range，超出要 REVIEW，不可無條件 FAIL，
+    因琴型、bridge、coupling、參數定義會影響。
+  - beam/plate 非諧模態繼續用各自 eigenvalue ratio，不套 harmonic series。
+
+【Layer 2：逐 stem 音訊音高】
+  - primary：model-aware multi-partial peak assignment。
+  - 每個 predicted partial 在寬 candidate band 中找唯一 peak，最後以 cents 判定。
+  - candidate band 可沿用 ±3%（搜尋而非 PASS）；final frequency gate 沿用 ±5c。
+  - 至少 2 個合格低階 partial 同意同一 pitch/B；若 p1 很弱，不把 p1 absence 當音高 FAIL。
+  - 可測 p1 時，以 YIN/pYIN 或 parabolic spectral peak 作第二 estimator；不一致則 REVIEW。
+  - estimator 自身合成校準：純 sine、missing-fundamental、inharmonic、不同 phase/velocity/
+    T60、±4.9c PASS mutant、±5.1c FAIL mutant；目標量測誤差 ≤1c。
+
+【Layer 3：逐 partial 存在、頻率、振幅】
+  - 可直接重用 `tools/physics_verify.py` 的概念與程式：unique peak assignment、
+    SNR>=20dB、prominence>=6dB、global>=-60dB、model-required floor=-45dB、coverage。
+  - 但 `physics_verify` 現行 piano partial `tol_pct=3.0` 約 51 cents，對「音準」太寬；
+    不可照抄為 stem final frequency tolerance。搜尋窗與 final tolerance 必須分欄。
+  - partial frequency final 建議與 f0 一樣 ±5c；這是專案規格，不宣稱 ISO 標準。
+  - partial relative amplitude 可沿用專案既有 ±3.0 dB；外界沒有一個跨琴型、音高、力度
+    都成立的固定泛音振幅表。若要主張「像真實鋼琴」，必須另建逐音/力度 reference corpus
+    與統計區間，不能拿 ±3dB 說成自然鋼琴業界標準。
+  - 報告每個 partial：expected Hz、measured Hz、cents、SNR、prominence、relative dB、
+    required/optional/missing/out_of_band，不能只給總 PASS。
+
+【Layer 4：起音】
+  - 保留 ±10ms（既有 R2），但把 estimator 換成「所有 model-audible partial bands 的
+    合計 spectral flux／wideband transient envelope」，讓 A1/A2 等低音不受 6.6Hz 窄帶限制。
+  - mir_eval 的 50ms 只能當 AMT 對照，不能用來放寬 sample-accurate renderer。
+  - 音高、起音分開 verdict；一個 UNVERIFIED 不抹掉另一個已得到的 PASS 證據。
+
+【Layer 5：mix transfer】
+  - analysis-dry stems 全數入和；reference 與 stems 長度／channel／identity 完整性檢查。
+  - 非線性、layered、stateful cross-event coupling 繼續 fail-closed。
+  - 正式 wet score 保留目前疊加證明；另報 raw residual、量化 budget、margin。
+
+建議最終 JSON 不是單一 event verdict，而是：
+  event: {
+    onset: PASS|FAIL|UNVERIFIED,
+    authored_pitch: PASS|FAIL,
+    audio_pitch: PASS|FAIL|UNVERIFIED,
+    partial_frequency: PASS|FAIL|UNVERIFIED,
+    partial_amplitude: PASS|FAIL|UNVERIFIED,
+    overall: PASS only if all REQUIRED claims PASS
+  }
+
+
+================================================================================
+七、目前可以／不可以對外宣告的句子
+================================================================================
+
+可以：
+  - 「905 個事件的 score ET 頻率欄位全數通過（max 0.006c）；905 個 dump course f0
+     全數在 ±5c（max 2.482c）；28257 partial 結構值皆 finite/in-range/有能量。」
+  - 「乾聲逐 stem 有 883/905 顆音高量測，全部在 ±5c，最大 2.4266c。」
+  - 「671/905 顆另取得 ±10ms 起音精測；212 顆低音起音因 estimator 解析度拒答。」
+  - 「905 stems 的乾聲／帶殘響疊加皆在量化上界內成立。」
+
+不可以：
+  - 「905/905 每顆音都完整 PASS。」（現況 671/22/212）
+  - 「22 顆高音音準錯。」（現況只證明弱基頻帶沒有可量 rise）
+  - 「905 顆泛音都驗過。」（現行 stem verifier 沒有逐 partial 音訊 GATE）
+  - 「±5c 是 ISO 標準。」（ISO 16 是 A440 與 reference generator accuracy；不同命題）
+  - 「2^22 zero-padding 等於取得 2^22 點份量的新物理解析力。」（它是 spectral interpolation）
+
+
+================================================================================
+八、最終裁定
+================================================================================
+
+方法裁定：**CONDITIONALLY SOUND / 尚未完成音高與泛音全域驗收**。
+
+  PASS：逐事件拆分、未 normalize、fail-closed domain gate、完整性檢查、乾／濕疊加證明、
+        ET/dump 上游 anchor、現有測試 21/21。
+
+  必修：
+    P0  將 onset 與 pitch verdict 分開（否則 212 顆已量到的 pitch 證據被總 verdict 淹沒）。
+    P0  22 顆高音改用 multi-partial onset/pitch；不得以 p1 absence 直接判音高錯。
+    P0  新增逐 partial 音訊頻率 GATE，否則不得宣稱泛音已驗。
+    P1  analysis-dry 衍生 score/hash/diff 內建到工具，移除 temp provenance 脆弱點。
+    P1  用合成哨兵校準 estimator ≤1c，並補 ±4.9/±5.1c、missing-fundamental、
+        inharmonic high-piano 反例。
+    P1  F#6/G6/D7 的 B 與固定 1.0mm 高音弦另做物理合理性複核。
+
+本次只做查核與證據追加：未修改 `tools/melody_verify.py`、未修改任何 `src/`、
+未改 ±5c／±10ms／±3dB 等既有容差，未 commit、未 push。
+
+
+################################################################################
+# 全專案漏洞／Bug 掃描（接續逐 stem 稽核）
+# 執行時間：2026-08-30 19:35:56 +08:00
+################################################################################
+
+【結論先行】
+
+本輪是唯讀診斷與隔離重現，沒有修程式、沒有改容差、沒有 commit／push。
+全量重建與現有測試皆通過，但另外找到 2 個可穩定重現的高風險本機資料刪除問題、
+3 個格式／相容性錯誤，以及數個效果器狀態與 UI 邊界候選問題。
+
+這不是網路服務；主要信任邊界是：
+  1. JUCE VST3／Standalone 接收宿主狀態、MIDI、IR 檔與 preset。
+  2. C++ 離線 CLI 接收 score JSON 與輸出目錄。
+  3. Python 工具接收 MIDI／score／使用者指定輸出目錄並啟動本機 CLI。
+
+沒有發現遠端 RCE、命令注入或嵌入式憑證。最高風險是使用者正常執行驗證工具時，
+工具會遞迴刪除其指定輸出目錄下同名、但不是本次建立的既有子目錄內容。
+
+
+================================================================================
+一、範圍、基線與方法
+================================================================================
+
+專案根目錄：
+  C:\Users\admin\Desktop\Claude\tsuki-synth
+
+掃描範圍：
+  - src/、tools/、tests/、scores/schema/、.github/workflows/、CMakeLists.txt
+  - C++ CLI／Standalone／VST3／HostProbe／ASan test path
+  - Python verifier、MIDI converter、cross-platform emitter、specimen pipeline
+  - parser/schema drift、檔案覆寫與遞迴刪除、process launch、DSP block/state 邊界
+
+開始本輪前指定證據檔基線：
+  bytes = 33463
+  lines = 590
+  SHA256 = 66D0060402510886DE0802C77821FF01236D5396BD8173EC60B000200C79563F
+
+開始時工作樹（全部視為使用者既有變更，未覆蓋）：
+  M DEVLOG.md
+  M HANDOVER.md
+  M README.md
+  M TODO.md
+  M docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+  ?? reports/decision_packets/POLYPHONIC_VERIFICATION_OPTIONS.zh-TW.md
+  ?? reports/gate_outputs/stem_verify_fur_elise_run.txt
+  ?? tests/test_stem_verify.py
+  ?? tools/stem_verify.py
+
+本輪的破壞性測試全部在 tempfile 建立的暫存目錄內執行；沒有拿專案目錄或使用者
+實際資料做刪除測試。最小重現驅動程式位於 Codex 暫存工作區：
+  C:\Users\admin\Documents\Codex\2026-08-30\c-users-admin-desktop-claude-tsuki\work\project_audit_repro.py
+
+
+================================================================================
+二、建置、測試與靜態掃描原始結果
+================================================================================
+
+1. Python 全測試：
+
+  command:
+    python -m pytest -q
+  result:
+    177 passed in 36.65s
+
+2. Release C++ 測試：
+
+  command:
+    ctest --test-dir build -C Release --output-on-failure
+  result:
+    3/3 passed, 0 failed
+
+3. ASan：直接 ctest 曾以 0xc0000135 失敗，原因是 Windows PATH 沒有
+   clang_rt.asan_dynamic-x86_64.dll；`dumpbin /DEPENDENTS` 確認相依 DLL，實體位於：
+
+  D:\Visual_Studio\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\clang_rt.asan_dynamic-x86_64.dll
+
+   專案已提供會加入 runtime 路徑的正式執行器，使用正確入口重跑：
+
+  command:
+    powershell -ExecutionPolicy Bypass -File tools/run_asan_ctest.ps1 \
+      -BuildDirectory build-asan -Configuration RelWithDebInfo
+  result:
+    3/3 passed, 0 failed
+
+   因此 0xc0000135 是手動啟動環境問題，不列為產品缺陷。
+
+4. Python 語法編譯：
+
+  command:
+    python -m compileall -q tools tests
+  result:
+    exit 0
+
+5. 全量 Release 重建：
+
+  command:
+    cmake --build build --config Release --target \
+      TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3 \
+      TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+    cmake --build build --config Release --target TsukiSynthHostProbe
+  result:
+    全部 exit 0
+
+6. 重建後 VST3 HostProbe：
+
+  result:
+    H1 VST3 scan/instantiate                         PASS
+    H2 non-clipping output, peak 0.505276           PASS
+    H3 fresh-instance determinism                   PASS
+    H4 EQ automation, measured +8.51 dB             PASS
+    H5 state parameter exact + byte-identical audio PASS
+    failures = 0
+
+7. HostProbe WAV 再跑 melody verifier：
+
+  result:
+    5 PASS / 0 FAIL / 0 UNVERIFIED
+    onset error range = +0.62 ms to +1.25 ms
+    pitch error range = -0.54 cents to +1.39 cents
+
+8. Python 型別檢查（目前 CI 沒有把 mypy 設為 gate）：
+
+  command:
+    python -m mypy --explicit-package-bases --ignore-missing-imports \
+      --no-error-summary tools
+  result:
+    exit 1，16 個 error：
+      tools/specimen_pipeline.py:135,137,174(3),701,702
+      tools/melody_verify.py:87,88(2)
+      tools/crossplatform_verify.py:141,142,234,251,388,389
+
+   這些多為 Optional／NumPy／CSV writer 型別縮窄問題；本輪沒有把它們誤報成已發生的
+   runtime crash，但表示 tools/ 尚未達到 type-clean，也沒有靜態型別回歸 gate。
+
+9. 危險 Python 執行方式與常見秘密字串掃描：
+
+  patterns:
+    shell=True | os.system( | eval( | exec( | pickle.load(s) | yaml.load(
+    PRIVATE KEY marker | AWS AKIA form | common GitHub token prefix
+  scope:
+    src tools tests .github（排除 build 與本證據檔）
+  result:
+    兩組 rg 皆 exit 1（no matches）
+
+   限制：這只能證明指定模式未命中，不等於形式化保證不存在任何 secret 或 injection。
+
+
+================================================================================
+三、隔離重現的完整輸出
+================================================================================
+
+command:
+  python C:\Users\admin\Documents\Codex\2026-08-30\c-users-admin-desktop-claude-tsuki\work\project_audit_repro.py
+
+output（重建後最後一次，wall time 6.7s）：
+
+  CASE parser_schema_drift
+  cpp_exit 0
+  cpp_stdout VALID: 905 events, 0 layers
+  cpp_stderr
+  schema_error_count 2
+  schema_first_errors ['-1 is less than the minimum of 0',
+                       '-1 is less than or equal to the minimum of 0']
+
+  CASE generic_converter_range_drift
+  write_score_created True
+  schema_error_count 6
+  schema_first_errors ["'INVALID ID' does not match '^[a-z0-9_]+$'",
+                       '123 is not one of [44100, 48000, 88200, 96000, 176400, 192000]',
+                       '2.0 is greater than the maximum of 1',
+                       '99.0 is greater than the maximum of 30',
+                       '9.0 is greater than the maximum of 1',
+                       '-1 is less than the minimum of 0']
+
+  CASE format_zero_midi
+  midi_type 0
+  track_count 1
+  extracted_note_count 0
+
+  CASE windows_ads_output_name
+  cpp_exit 1
+  cpp_stdout Rendering: Melody-position sentinel fixture (5 events)
+    FAILED to render: ads.score.json
+  cpp_stderr
+  ordinary_directory_entries ['carrier']
+  carrier_content carrier remains
+  hidden_wav_stream_exists False size -1
+  hidden_manifest_stream_exists False
+
+  CASE stem_verify_deletes_preexisting_directory
+  run_exit 0 run_status ok
+  preexisting_sentinel_survived False
+
+  CASE crossplatform_emit_deletes_preexisting_directory
+  run_exit 0
+  preexisting_sentinel_survived False
+
+Windows `carrier:hidden` 案沒有寫出 ADS，故不宣稱存在 ADS 覆寫漏洞；它只證明 filename
+validator 接受 Windows 無法正常落盤的名稱，最後給使用者不具體的 render failure。
+
+
+================================================================================
+四、已確認問題（依優先度）
+================================================================================
+
+F-01  P1 / HIGH — stem_verify 會刪除使用者既有的 `<out-dir>/stems`
+-------------------------------------------------------------------------------
+
+重現：先建立 `<temp-out>/stems/unrelated-user-file.txt`，再以同一 temp-out 執行
+`stem_verify.run(..., limit=1, keep_stems=False)`。工具 exit 0、status=ok，但哨兵消失。
+
+程式證據：
+  - tools/stem_verify.py:582-586：使用呼叫者提供的 out_dir，固定建立／重用 stems。
+  - tools/stem_verify.py:905-906：只要 keep_stems=False，就對整個 stems_dir 執行
+    `shutil.rmtree(..., ignore_errors=True)`。
+
+影響：使用者只要把 --out-dir 指到一個已有 `stems` 子目錄的工作區，正常成功執行也會
+遞迴刪除裡面與本次驗證無關的資料；ignore_errors 也會隱藏部分清理失敗。
+
+建議契約：caller-owned out_dir 下只能刪除本次以 unique run-id 建立且已驗證 containment 的
+目錄；或明確拒絕非空 stems，除非使用者另給 `--force-clean`。這輪未實作修正。
+
+
+F-02  P1 / HIGH — crossplatform `emit` 會刪除既有同名 probe 目錄
+-------------------------------------------------------------------------------
+
+重現：先建立 `<temp-out>/water_gong_clamped/unrelated-user-file.txt`，把 probe 限縮為該
+score 後呼叫 emit。工具 exit 0，哨兵消失。
+
+程式證據：
+  - tools/crossplatform_verify.py:180-181：接受並建立 caller-owned out_dir。
+  - tools/crossplatform_verify.py:202-208：由固定 score stem 組 render_dir；若存在就直接
+    `shutil.rmtree(render_dir)`，沒有 ownership marker、空目錄檢查或確認。
+
+影響：`--emit` 指到含同名資料夾的目錄時，舊資料會在 render 前被遞迴刪除。
+
+建議契約：每次 emit 使用獨立 run directory；既有路徑預設 fail-closed。這輪未修。
+
+
+F-03  P1 / 商品 recall blocker — IR user preset 不自包含，結果依 instance 歷史而變
+-------------------------------------------------------------------------------
+
+程式證據：
+  - src/PresetManager.h:122-152：user preset 只序列化 `apvts.copyState()`。
+  - src/PresetManager.h:374-383：load user preset 也只 `apvts.replaceState()`。
+  - src/PluginProcessor.cpp:687-700：只有 DAW/plugin state 另外加 `reverb_ir_path`。
+  - src/PluginProcessor.cpp:736-745：只有 setStateInformation 路徑會嘗試 reload IR。
+
+因此 user preset 可保存 `fx_reverb_mode=IR` 參數，卻沒有保存它所需的 IR 路徑：
+  - fresh instance 載入時，EffectChain 因無 IR 而退回 algorithmic reverb；
+  - 已載入另一個 IR 的 instance 載入時，PresetManager 沒有清除 convolution／IR metadata，
+    可能沿用上一個 IR，使同一 preset 的聲音依先前操作歷史不同。
+
+補充程式證據：src/effects/EffectChain.h:98-101 的 clearImpulseResponse 只把 atomic flag
+設 false，且 preset load path 沒呼叫它；setStateInformation 收到沒有 reverb_ir_path 的 state
+時也沒有清掉 PluginProcessor 的 reverbIRPath/name/seconds。
+
+此問題已在 HANDOVER.md 的 IR known issue 記錄；本輪用完整 state/preset call path 再確認。
+HostProbe H5 只覆蓋 DAW state round-trip，不覆蓋 user preset IR round-trip，所以全綠不反證。
+
+
+F-04  P2 — generic MIDI converter 可成功寫出違反官方 JSON Schema 的 score
+-------------------------------------------------------------------------------
+
+重現輸入：score id=`INVALID ID`、sample_rate=123、master_volume=2、reverb decay=99、
+wet=9、tail_silence_ms=-1。`write_score_created=True`，官方 schema 同時報 6 個 error。
+
+程式證據：
+  - tools/midi_to_tsukisynth.py:1136-1160 的 validate_score 只驗 events 排序／時長、
+    release 與短 rest，未驗 meta/global/effects/export。
+  - :1163-1171 在上述局部檢查通過後直接寫檔。
+  - :1258、:1277-1281 的 CLI 參數沒有 schema 對應的 choices/range validation。
+  - scores/schema/score.schema.json:20,51-63,339 明列 id、sample rate、音量、reverb、
+    tail 的限制。
+
+影響：工具自己產生的檔案可能被 C++ parser 拒絕，或讓上下游對「converter 成功」與
+「score 合法」得到矛盾結論。建議 write 前跑單一 canonical schema validator。
+
+
+F-05  P2 — C++ `--validate` 對 tempo_map 與官方 Schema 漂移
+-------------------------------------------------------------------------------
+
+重現：把已知合法 Fur Elise score 的 tempo_map 第一筆改成 time=-1、quarter_bpm=-1。
+C++ CLI exit 0 並輸出 `VALID: 905 events, 0 layers`；JSON Schema 報 2 errors。
+
+程式證據：
+  - src/score/ScoreParser.h:942-944 只用 validateSimpleObjectArray 檢查允許／必填 key
+    與 scalar type，沒有 tempo 欄位專屬 range。
+  - scores/schema/score.schema.json:240-245 要求 time>=0、quarter_bpm>0，tick>=0、
+    microseconds_per_quarter>=1。
+
+影響：`--validate` 名稱暗示符合 TsukiSynth Score v1，但目前只符合 parser 的較弱子集。
+本例 tempo_map 是 annotation，不直接改變 renderer 的 event seconds，因此列 correctness P2，
+不誇大成音訊記憶體安全漏洞。
+
+
+F-06  P2 — Standard MIDI File Format 0 的唯一 track 被完全略過
+-------------------------------------------------------------------------------
+
+重現：建立合法 Type-0 MIDI，唯一 track 同時含 track_name、note_on、note_off；
+`midi_type=0`、`track_count=1`，但 extracted_note_count=0。
+
+程式證據：tools/midi_to_tsukisynth.py:420-429 宣稱讀 every matching MIDI track，實際卻固定
+迭代 `midi.tracks[1:]`。Type 0 的音符本來就在 track 0，所以全被跳過。
+
+影響：CLI help 宣稱 generic single/dual-track MIDI，但常見單軌 Type-0 輸入無法轉換。
+修正方向應以 meta-only track 的內容而非固定 index 判斷，不是單純永遠跳過 track 0。
+
+
+F-07  P3 — Windows output filename validation 與實際可寫名稱集合不一致
+-------------------------------------------------------------------------------
+
+程式證據：src/cli/RenderApp.cpp:340-346 只拒絕空字串、斜線、`..`、absolute path；
+Windows 禁用的 `: * ? " < > |` 與 reserved device names 沒有被拒絕。
+
+隔離結果：`carrier:hidden` 通過 parse/name gate，但 render exit 1；既有 carrier 沒被改、
+也沒有 ADS，因此目前只列低優先度的輸入驗證／錯誤訊息問題。
+
+
+================================================================================
+五、已知未解產品缺陷與需補 runtime test 的候選問題
+================================================================================
+
+K-01  已知商品 blocker：tongue_drum 的音高—響度斜率與泛音缺失
+-------------------------------------------------------------------------------
+
+既有專案證據（非本輪重新渲染）：HANDOVER.md:138-139、TODO.md:465-467：
+  - 同 velocity，MIDI 37→87：RMS -32.8→-73.1 dBFS，落差 40.3 dB。
+  - cimbalom 同域只 4.4 dB。
+  - tongue_drum 約 99.9% 能量在基頻，近純正弦、缺預期泛音列。
+
+現有 physics gate 的 velocity ×2 線性測試與 f0 測試全綠，並不能偵測「固定 velocity 跨
+音域 loudness」或「每音的 spectral richness」，所以這仍是誠實的 coverage gap。
+
+
+K-02  候選 P2：algorithmic／IR reverb 的 wet gain 標度不一致
+-------------------------------------------------------------------------------
+
+  - src/effects/SimpleReverb.h:154-156：algorithmic wet 額外乘 0.15。
+  - src/effects/EffectChain.h:198-205：convolution wet 直接以 m 混合，沒有 0.15。
+
+切 mode 可能出現顯著 loudness jump；但 IR 自身振幅、JUCE convolution loading normalization
+也會影響實際量級。本輪沒有建立具代表性的 IR loudness corpus，因此列候選，不捏造固定 dB。
+
+
+K-03  候選 P2：超過 prepare maxBlock 的單一 audio block 會瞬間改用另一套 reverb
+-------------------------------------------------------------------------------
+
+src/effects/EffectChain.h:129-135 明確以 `numSamples <= maxBlock` 決定 IR mode；超過時同一
+參數狀態直接落入 algorithmic path。這避免 audio-thread allocation，但也讓音色依 block size
+改變，且可能在邊界產生不連續。本輪 HostProbe 未注入 oversize block，需加 DSP unit test：
+同一 IR、同一輸入分別以 maxBlock 與 maxBlock+1 驗證不能靜默換演算法。
+
+
+K-04  候選 P3：SpectrumView 寬度 1 px 時產生 0/0
+-------------------------------------------------------------------------------
+
+src/analyzer/SpectrumView.h:193 把 w clamp 到至少 1；:200 卻除以 `(w - 1)`。
+w=1 時為 0/0 → NaN，後續交給 bin/path 計算。一般 UI 尺寸通常大於 1，所以是低風險邊界，
+但縮放／layout transient 或獨立 component test 可觸發，應以 w<=1 特判或分母至少 1。
+
+
+K-05  候選 P3／local DoS：大型輸入缺全域資源上限
+-------------------------------------------------------------------------------
+
+ScoreParser 先 loadFileAsString，再解析 events/annotation arrays；schema 對 events、tempo_map、
+time_signatures 等也沒有 maxItems。renderer 對最終 audio buffer 已有約 1 GiB budget 防線，
+但 JSON parse、validation 與 dump 前仍可能被巨大本機檔耗盡記憶體／CPU。
+
+這需要攻擊者能讓使用者／CI 驗證其 score，不是 remote unauthenticated DoS；本輪沒有為了
+證明它而建立巨量檔案。建議按 CI 與桌面產品可接受規模訂 file bytes、events、layers、
+annotation rows 上限，並以 near-limit/over-limit fixture 驗證。
+
+
+K-06  候選 P3：部分 verifier subprocess 沒有 timeout
+-------------------------------------------------------------------------------
+
+唯讀搜尋顯示 tools/physics_verify.py 的數個 subprocess.run，以及
+tools/check_piece_consonance.py:86 沒有 timeout。正常內建 probe 有界，但任意 score 或 CLI
+hang 會讓 automation 無限等待。這是可用性／CI robustness，不是命令注入。
+
+
+================================================================================
+六、沒有發現的高風險類別與既有正向防線
+================================================================================
+
+本輪沒有找到：
+  - shell=True、os.system、eval/exec、pickle/yaml unsafe load。
+  - 明碼 private key、典型 AWS/GitHub token pattern。
+  - 網路 listener、HTTP API、帳號驗證或遠端資料庫 attack surface。
+  - Windows ADS 寫入成功；隔離測試明確為 False。
+
+已觀察到的正向設計：
+  - score event、global effect 多數聲學數字在 C++ parser 有 finite/range check。
+  - renderer 有 buffer-budget 與 duration 上限，避免直接配置無限 PCM。
+  - score layer path 有 project-root containment 與 extension gate。
+  - preset／WAV writer 使用 temporary file／atomic replace 思路，正常覆寫路徑較安全。
+  - specimen pipeline 的 rmtree 對象是工具自己 mkdtemp 的 unique directory；沒有和 F-01/F-02
+    一樣刪 caller-owned 固定子目錄的證據。
+  - subprocess 都以 argv list 啟動，未見 shell interpolation。
+
+重要限制：regex/static review、177 個 pytest、3 個 ctest、ASan 與 HostProbe 全綠，只表示
+被覆蓋的路徑未報錯；它們沒有覆蓋 caller-owned nonempty output dir、Type-0 MIDI、schema
+cross-validation、IR user preset round-trip、1px spectrum 與 oversize host block。
+
+
+================================================================================
+七、優先修復順序與驗收條件（本輪未改碼）
+================================================================================
+
+P1-A  修 F-01/F-02：
+  - 所有 recursive delete 前驗證 resolved target 位於本次 unique run directory。
+  - caller-owned 既有非空路徑預設拒絕，不得靜默清掉。
+  - regression test 必須放 unrelated sentinel，成功與失敗路徑都確認仍存在。
+
+P1-B  修 F-03：
+  - 明確決定 IR preset 是 embed、copy-to-managed-library，或保存可攜 asset reference。
+  - preset load 若沒有 IR 必須清除舊 convolution/meta；缺檔要可見警告，不可依 instance 歷史。
+  - 新增 fresh/dirty instance、IR→no-IR、missing-file 三組 audio/state round-trip test。
+
+P2-A  修 F-04/F-05：
+  - Python converter、C++ `--validate`、JSON Schema 共用一份可執行契約或 cross-validator suite。
+  - 對 schema 每個 boundary 做 valid/invalid mutation，不只 events。
+
+P2-B  修 F-06：
+  - 加 Type-0 single-track fixture，以及 Type-1 meta track + music track fixture。
+  - 驗收不只 event count，還要驗 onset/note/channel/note-off pairing。
+
+P2-C  為 K-02/K-03 加 DSP test，先量化再裁定 compensation／block strategy。
+
+P3    修 filename 訊息、w=1 特判、subprocess timeout，並規劃大型輸入 budget。
+
+
+================================================================================
+八、最終裁定
+================================================================================
+
+安全面：沒有發現 remote exploit chain、命令注入或秘密洩漏；但 F-01/F-02 是可穩定重現的
+本機資料損失風險，工具在修復前不應對未知／共享／已有資料的 --out-dir 執行。
+
+正確性面：現有測試與主要二進位重建健康，但 converter/parser 沒有真正共享 schema 契約，
+Type-0 MIDI 相容性、IR user preset recall、跨音域音色商品 QA 仍有實質缺口。
+
+本次改動範圍只有把本節追加到：
+  reports/gate_outputs/stem_verify_fur_elise_run.txt
+沒有修改 src/、tools/、tests/、scores/ 或既有容差；沒有 commit、沒有 push。
+
+
+################################################################################
+# 修後全盤交叉審計：功能互斥、狀態歷史與參數誠實性
+# 日期：2026-08-30（Asia/Taipei）
+################################################################################
+
+【裁定摘要】
+
+修補並非無效：原先「未要求 force 就刪既有 stems/probe 目錄」、Type-0 固定略過 track 0、
+Windows 非法檔名、Spectrum 1px 除零、數個 subprocess 無 timeout 都已修，而且新增測試通過。
+
+但「全部修完」目前不能成立。本輪找到：
+  - 1 個新的 P1 資料刪除繞過（crossplatform `--force-clean` + parent symlink）。
+  - 2 條 stem verifier 輸出根目錄逃逸（空 stems/reference symlink）。
+  - IR 模式／user preset 的舊問題仍未改，UI 可以顯示 IR、實際卻跑 algorithmic。
+  - Host 回報的 tail length 忽略 4–30 秒的物理模態長尾。
+  - Custom Harmonics 與一般 Chromatic 控件同時可見／殘留、部分控件仍暗中改聲音。
+  - Schema、generic converter 舊漂移仍存在；Type-0 只修「名稱剛好是 up/down」的子集合。
+  - pitch glide 的最終音高依 host block size，與原註解「block-size independent」不完全一致。
+
+這些多半不是記憶體安全 RCE；主要風險是本機資料損失、DAW bounce/freeze 截尾、preset
+recall 不決定性、使用者看到的參數狀態與真正 DSP path 不一致。
+
+
+================================================================================
+一、修後基線與執行範圍
+================================================================================
+
+專案：C:\Users\admin\Desktop\Claude\tsuki-synth
+HEAD：212106c（fix/deep-physics-audit-20260716；main 也包含此 HEAD）
+
+本節追加前證據檔：
+  bytes=54892
+  lines=1039
+  SHA256=5593466D12413522CFB54C521D3F90890C5E32ADDA7D80A2AFCBB0BA3F90922F
+
+修後工作樹涉及：
+  src/analyzer/SpectrumView.h
+  src/cli/RenderApp.cpp
+  tools/crossplatform_verify.py
+  tools/midi_to_tsukisynth.py
+  tools/physics_verify.py
+  tools/check_piece_consonance.py
+  新增 test_crossplatform_emit_safety / test_midi_type0 /
+       test_render_app_filename_safety，以及擴充 test_stem_verify 等。
+
+沒有看到 src/PresetManager.h、src/PluginProcessor.cpp、src/effects/EffectChain.h、
+src/score/ScoreParser.h 的修後差異；因此 IR preset、IR fallback、oversize IR block、
+annotation schema validator 等舊路徑必須重新驗，不可假設已隨其他修補一起消失。
+
+本輪只審計／執行測試／追加本檔；沒有修改專案功能碼、容差、score、workflow，沒有 commit/push。
+兩支重現腳本均在 Codex 暫存工作區，不在 repo：
+  work/project_audit_repro.py
+  work/reaudit_contract_repro.py
+
+
+================================================================================
+二、乾淨重建與全套 GATE
+================================================================================
+
+1. Fresh Release build：
+
+  cmake --build build --config Release --target \
+    TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3 TsukiSynthHostProbe \
+    TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+
+  result：全部 exit 0；CLI／Standalone／VST3／HostProbe／3 test targets 均完成。
+
+2. Python 全測試（fresh CLI 後再跑）：
+
+  python -m pytest -q
+  198 passed, 1 skipped in 28.23s
+
+  skipped 是 test_render_app_filename_safety 的 trailing-space case：ScoreParser 會先 trim，
+  Windows 上若要從 fallback 檔名路徑觸發需特殊 `\\?\` 路徑；測試檔有明確理由，非隱藏 PASS。
+
+3. Release CTest：
+
+  ctest --test-dir build -C Release --output-on-failure
+  3/3 passed, 0 failed
+
+4. ASan 正式入口：
+
+  powershell -ExecutionPolicy Bypass -File tools/run_asan_ctest.ps1 \
+    -BuildDirectory build-asan -Configuration RelWithDebInfo
+  3/3 passed, 0 failed
+
+5. Fresh VST3 HostProbe：
+
+  H1 scan/describe/instantiate                  PASS
+  H3 non-silent, non-clipping peak=0.505276     PASS
+  H3 fresh-instance determinism                 PASS
+  H4 EQ automation +8.51 dB                     PASS
+  H5 state parameter exact 0.42→0.42            PASS
+  H5 same-state audio byte-identical            PASS
+  result：PASS (0 failures)
+
+6. Python syntax：
+
+  python -m compileall -q tools tests
+  exit 0
+
+7. mypy（仍非 CI gate）：
+
+  python -m mypy --explicit-package-bases --ignore-missing-imports \
+    --no-error-summary tools
+  exit 1；仍有 16 errors：
+    specimen_pipeline.py 7、melody_verify.py 3、crossplatform_verify.py 6。
+
+8. 完整物理 GATE：
+
+  python tools/physics_verify.py --full
+  exit 0
+
+  summary：
+    F1 eigenvalue anchors       PASS
+    1b note-range scan         PASS
+    1c material sensitivity    CHECKED CASES PASS; 3 UNVERIFIED/N/A
+    1d velocity judgment       PASS
+    2d amplitude judgment      PASS
+    5b measured T60            PASS
+    F5 residual energy         PASS
+    RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+  誠實拒答維持：cimbalom/rubber 0.028s、tongue_drum/rubber 0.014s、
+  water_gong/rubber 0.028s，小於量測所需 0.031s。
+
+  與本輪 host-tail finding 直接相關的實測：
+    cimbalom MIDI60       model 4.14s, measured 4.35s
+    tongue_drum MIDI60    model 30.14s, measured 30.18s
+    water_gong MIDI60     model 7.49s, measured 7.47s
+    water_gong_free MIDI60 model 7.49s, measured 7.48s
+    piano MIDI60          model 4.14s, measured 4.34s
+
+9. git diff --check：exit 0；只有既有 Windows LF→CRLF warning，沒有 whitespace error。
+
+
+================================================================================
+三、舊 finding 修後重現：哪些真的關閉、哪些仍在
+================================================================================
+
+舊重現腳本修後輸出：
+
+  parser_schema_drift:
+    cpp_exit 0
+    cpp_stdout VALID: 905 events, 0 layers
+    schema_error_count 2
+  → F-05 未修。
+
+  generic_converter_range_drift:
+    write_score_created True
+    schema_error_count 6
+  → F-04 未修。
+
+  format_zero_midi（具 `track_name=up`）：
+    midi_type 0, track_count 1, extracted_note_count 1
+  → 原本固定跳過 track 0 的 F-06 核心已修。
+
+  windows_ads_output_name:
+    cpp_exit 1
+    REJECTED unsafe filename: carrier:hidden
+      (filename contains the Windows-reserved character ':')
+    hidden_wav_stream_exists False
+  → F-07 已修，且錯誤原因可見。
+
+  stem_verify pre-existing non-empty stems、未給 force：
+    run_exit 1, status error, sentinel survived True
+  → F-01 一般案例已修。
+
+  crossplatform pre-existing non-empty probe dir、未給 force：
+    run_exit 2, sentinel survived True
+  → F-02 一般案例已修。
+
+  SpectrumView：w-1 已改成 denom=max(1,w-1)，plugin fresh build 成功。
+  physics/check_piece subprocess 已加 600/1800s timeout 與 regression test。
+
+
+================================================================================
+四、新確認的高風險修補繞過
+================================================================================
+
+R-01  P1 / HIGH — crossplatform `--force-clean` 可經 parent symlink 刪掉整個 --emit root
+-------------------------------------------------------------------------------
+
+安全暫存重現：
+  1. 建 `<out>/unrelated-at-output-root.txt`。
+  2. 令 `<out>/water_gong_clamped` directory symlink 指回 `<out>` 本身。
+  3. 執行 emit(..., force_clean=True)。
+
+原始結果：
+  [OK] ...water_gong_clamped.score.json -> water_gong_clamped.wav
+  Wrote ...\crossplatform-parent-link\platform.json (1 score(s), 0 failure(s))
+  run_exit 0
+  root_sentinel_survived False
+  output_root_entries ['platform.json', 'water_gong_clamped']
+
+根因：tools/crossplatform_verify.py:205-229：
+  resolved = render_dir.resolve()
+  out_resolved = out_dir.resolve()
+  if resolved != out_resolved and out_resolved not in resolved.parents: reject
+
+當 symlink 恰好 resolve 成 out_resolved 本身，`resolved != out_resolved` 為 false，containment
+守衛反而放行；接著 `shutil.rmtree(resolved)` 直接刪除整個 caller-owned --emit root，並重建它。
+
+`--force-clean` help 授權的是清理「pre-existing non-empty render directory」，不是刪除它的
+父輸出根與其他檔案；所以不能因使用者給了 destructive flag 就把此案例降為正常行為。
+
+必修驗收：resolved target 必須是 out_resolved 的「嚴格子孫」且 identity 不等於 root；
+最好不要 rmtree resolved target，而是拒絕任何 symlink/reparse point，或只操作由本次 marker
+證明 ownership 的實體目錄。新增 parent-link、sibling-link、outside-link 三種反例。
+
+
+R-02  P2 / output path escape — stem_verify 會跟隨空 stems/reference link 寫出 --out-dir
+-------------------------------------------------------------------------------
+
+案例 A：`<out>/stems` 是指向另一個空目錄的 directory symlink。
+
+  run_exit 0, status ok
+  outside_entry_count 4
+  outside entries:
+    ev_0000/
+    ev_0000/score.json
+    ev_0000/stem_stem_0000.wav
+    ev_0000/stem_stem_0000.wav.render.json
+
+案例 B：`<out>/reference` 指向另一個空目錄。
+
+  run_exit 0, status ok
+  outside_entry_count 3
+  outside entries:
+    score.json
+    reference.wav
+    reference.wav.render.json
+
+根因：
+  - tools/stem_verify.py:592-618 只有「stems 已存在且非空」時才做 resolved containment。
+    空 symlink 的 `any(stems_dir.iterdir())` 為 false，直接被當作 caller-owned empty dir 使用。
+  - ref_dir 沒有對 caller-owned existing link 做 containment/reparse-point guard。
+  - cleanup 因 stems_dir_preexisted=True 不刪，工具仍回 status ok。
+
+這次沒有覆寫既有檔（CLI 本身拒絕 overwrite），但能在使用者指定根目錄以外建立固定名稱
+的 JSON/WAV/manifest。威脅需要本機預置 symlink/junction，故列 P2，不誇大成 remote RCE。
+
+
+R-03  P3 / option-contract — keep_stems=False 仍會保留本次產生的 stems
+-------------------------------------------------------------------------------
+
+若 caller 事先建立一個「空的真實 stems 目錄」，修補將它標為非本次 ownership：
+
+  run_exit 0, status ok
+  stems_dir_survived True
+  entry_count 4（score.json + WAV + manifest）
+
+CLI help 說 `--keep-stems` 是「keep ... instead of deleting」，因此沒給此旗標通常表示不保留；
+現在為了安全而保留是合理 fail-safe，但參數語意已改。較乾淨的設計是 caller out-dir 下再建
+unique run child，最後只刪自己的 child，而不是讓 keep_stems=False 變成條件式。
+
+
+================================================================================
+五、功能彼此打架／參數顯示與 DSP 真相不同
+================================================================================
+
+P-01  P1 商品 recall blocker — IR mode 與 user preset 舊問題仍未修
+-------------------------------------------------------------------------------
+
+程式仍是：
+  - PresetManager.h:122-152 user preset 只保存 APVTS。
+  - PresetManager.h:374-383 load 只 replace APVTS state。
+  - PluginProcessor.cpp:699-745 只有完整 DAW state 額外保存/載入 reverb_ir_path。
+  - EffectChain.h:132-135 真正 IR 條件還需要 hasImpulseResponse()。
+
+更直接的參數不誠實：
+  - PluginEditor.cpp:642-653 只看 `fx_reverb_mode==1` 就把按鈕顯示成 `IR`。
+  - UiLocale.h:254-255 tooltip 明說「IR convolution reverb」。
+  - EffectChain 在沒有已載入 IR 時卻走 algorithmic fallback。
+
+所以畫面／DAW automation lane 可以說 IR，實際 DSP 不是 IR。使用者也能在未載入 WAV 時直接
+按切換鍵進入此假狀態。user preset reload 仍可能 fresh instance 退回 algorithmic、dirty
+instance 沿用上一個 IR；本輪 HostProbe H5 只驗完整 DAW state，不驗 user preset asset recall。
+
+
+P-02  P1/P2 DAW integration — getTailLengthSeconds 忽略物理模態長尾
+-------------------------------------------------------------------------------
+
+PluginProcessor.cpp:402-459 的 tail 只計：
+  - FM release（並至少 2 秒）
+  - delay repeats
+  - algorithmic T60/room-size 或 IR seconds
+
+它完全沒有讀目前 engine/material/geometry，也沒有讀 CimbalomVoice/ChromaticVoice 的 modal T60。
+
+預設參數公式只回約：
+  base 2.0000s + default algorithmic component 1.4527s = 3.4527s。
+
+但同一實作的 fresh `physics_verify --full` 音訊實測：
+  cimbalom/piano MIDI60 約 4.34–4.35s、water gong 7.47–7.48s、tongue drum 30.18s。
+若 reverb mix=0，host metadata 更只剩 2s。
+
+影響：依 `getTailLengthSeconds()` 決定 offline bounce/freeze 尾長的 DAW 可能截掉域內引擎的
+可聽尾音；插件自己宣稱 T60 正確，宿主介面卻回更短數字，兩功能互相打架。
+
+必修：以 active/max supported engine 的保守上界回報，或維護與當前 APVTS 物理參數一致的
+可即時計算 modal tail；新增 reverb-off 的 Tongue/Cimbalom/Piano host-tail regression。
+
+
+P-03  P2 UI collision + hidden-state sound — Custom Harmonics 與一般 Chromatic controls 打架
+-------------------------------------------------------------------------------
+
+PluginEditor.cpp:408-417：只要 eng=Chromatic，就把 exciter/strike/thickness/size/glide 全部
+setVisible(true)；subengine=Custom 時又把 16 個 ratio/amp controls 設 visible。
+
+PluginEditor.cpp:1305-1339：Custom layout 只配置 ratios/amps；一般 Chromatic layout 才配置
+thickness/size/glide/strike/exciter。從 Tongue/Water 切到 Custom 時，那些仍 visible 的 controls
+保留舊 bounds，會與新 harmonic grid 疊在一起或形成 stale/zero-bound 控件。
+
+DSP 又不是單純「多出無效 UI」：
+  - ChromaticEngine.h:148 對所有 subengine 讀 chr_pitch_glide。
+  - :455-467 對所有 subengine 套 scaleFrequencies，沒有 subEngine==WaterGong 條件。
+  - :261 對 Custom 也呼叫 setupExciter，所以 chr_exciter 仍改變 transient noise。
+  - strike/thickness/size 對 Custom 主模態路徑多數不生效，成為看得到但不改主要聲音的 dead knobs。
+
+因此 Custom 聲音可能依切換前留下的 glide/exciter 值而變，同時 UI 可能重疊。文件提案原本寫
+glide 僅 Water Gong，現行 C++ 註解也稱 Water gong pitch glide，但實作沒有 domain gate。
+
+
+P-04  P2 — pitch glide 的 cap 與曲線依 host block size
+-------------------------------------------------------------------------------
+
+ChromaticEngine.h:452-467 宣稱 rate independent of host buffer size；實際每 block：
+
+  glidePhase += amount * 0.15 * numSamples/sampleRate;
+  if (glidePhase < 0.5) scaleFrequencies(1 - glidePhase*0.3);
+
+跨過 0.5 的那個 block 不會 clamp/apply 精確 0.85，而是停在前一個 block 的頻率。
+48kHz、amount=1 的最壞 cap shortfall（純公式，不是聽感猜測）：
+
+  block 64:   0.122 cents
+  block 512:  0.977 cents
+  block 2048: 3.906 cents
+  block 8192: 15.572 cents
+
+達 cap 前也以每 block 階梯更新。這不是「時間進度完全失速」，但最終音高確實依 buffer size，
+與 sample-accurate/host-independent 主張不一致。應 clamp phase=min(0.5, phase+step) 並在 cap
+那個 block 套最後值；若要真正 sample-independent glide，要在 block 內插值。
+
+
+P-05  P2/P3 — Reverb 三套控制互斥，但 UI/automation 沒揭露誰正在失效
+-------------------------------------------------------------------------------
+
+EffectChain.h:129-158：
+  - IR active 時 Room Size 與 T60 都不控制 reverb algorithm。
+  - Algorithmic 且 T60>=0.01 時，Room Size 不生效。
+  - T60<0.01 時才由 Room Size 控制。
+
+PluginEditor 仍同時顯示 Mix/Room Size/T60，切 IR 也不 disable irrelevant knobs；IR 沒 asset
+時還反向 fallback algorithmic。使用者移動一顆合法、host-visible 的 continuous parameter，
+可能完全沒有聲音變化，且畫面沒有 inactive/fallback 狀態。
+
+另有實作註解 `smooth every continuous control`，但 EffectChain.h:112-121 只 smooth comp、delay、
+room size、mix、distortion；`fx_reverb_decay`、`fx_eq_freq`、`fx_eq_gain` 是 block-step 更新。
+這是註解／automation 品質主張過頭，不表示目前一定 crash；需 automation discontinuity test。
+
+
+P-06  P2 candidate — Algorithmic 與 IR wet gain 沒有同一標度
+-------------------------------------------------------------------------------
+
+SimpleReverb.h:154-156：algorithmic wet output 額外乘 0.15。
+EffectChain.h:198-205：IR wet 直接以 m 混合，沒有 0.15。
+
+IR 檔本身振幅與 JUCE convolution normalization 會影響實際 dB，所以本輪不捏造固定 loudness
+jump；但同一 `fx_reverb_mix` 在兩 mode 不是同一 gain law，切 mode 的參數可比性沒有成立。
+
+
+P-07  P2 candidate — oversize block 讓 IR mode 靜默換成 algorithmic，tail metadata 卻仍按 IR
+-------------------------------------------------------------------------------
+
+EffectChain.h:132-135 以 `numSamples <= maxBlock` 決定 IR；超過 prepare maxBlock 就切 algo。
+PluginProcessor::getTailLengthSeconds 只看 mode+hasIR，不知道該 block 已 fallback，仍加 IR seconds。
+這是音訊 path 與 host metadata 的另一個分歧。現有 HostProbe 沒有 IR + oversize block 組合測試。
+
+
+================================================================================
+六、資料格式／轉換器的誠實性仍未閉合
+================================================================================
+
+D-01  P2 — C++ `--validate` 不只 tempo，整組 annotation range/enum 都比 Schema 弱
+-------------------------------------------------------------------------------
+
+修後隔離 matrix（每案以合法 Fur Elise 為基底）：
+
+  tempo_negative:
+    C++ exit 0 / VALID；Schema 2 errors
+  timesig_zero（time=-1,tick=-1,numerator=0,denominator=0）：
+    C++ exit 0 / VALID；Schema 4 errors
+  rest_negative_bad_kind（time=-1,duration=-1,kind=not_a_kind）：
+    C++ exit 0 / VALID；Schema 3 errors
+  phrase_negative_zero_number（number=0,start=-1,end=-2,breath=-1）：
+    C++ exit 0 / VALID；Schema 4 errors
+
+根因 ScoreParser.h:897-923 的 validateSimpleObjectArray 只驗 object/key/scalar type；
+Schema lines 234-327 還要求 nonnegative、integer minimum、rest kind enum 等。
+
+annotations 不直接驅動 renderer，所以不是音訊 memory-safety bug；但 `--validate` 與官方
+TsukiSynth Score v1 契約互相矛盾，會讓 AI/免耳流程接受不可能的時間與拍號資料。
+
+
+D-02  P2 — generic converter 仍能寫出 6 項 schema-invalid score
+-------------------------------------------------------------------------------
+
+修後重現仍是：INVALID ID、sample_rate=123、master_volume=2、reverb decay=99、wet=9、
+tail=-1；write_score_created=True，Draft 2020-12 validator 回 6 errors。
+
+tools/midi_to_tsukisynth.py:1136-1171 的 validate_score 仍只驗 events/release/rest threshold；
+CLI 的 id/effect/sample-rate/tail 參數也沒有 canonical schema range gate。
+
+
+D-03  P2 — Type-0 只修有匹配 track_name 的子集合，help 的「generic single-track」仍過寬
+-------------------------------------------------------------------------------
+
+新增 test_midi_type0 證明 `track_name=up` 的 Type-0 已能抽到 notes，這是真修復。
+
+但對一個標準 Type-0、唯一 track 有 tempo+note_on/off、沒有 track_name：
+
+  track_count 1
+  fallback_name track_0
+  extracted_note_count 0
+  converter_error ValueError: no notes extracted -- track names did not match
+    profile set 'piano_two_hand' (['down', 'up'])
+
+工具 help 仍寫 `Generic single/dual-track MIDI`，實際唯一 profile 只接受 MuseScore 類 `up/down`
+命名；test_midi_type0 自己也把 unmatched name 列為 deliberate non-goal。功能可以保留嚴格
+profile，但 help/錯誤前置說明應改成「named up/down profile」，或提供 explicit track mapping/
+auto single-track policy，否則一般 single-track 使用者仍得到零音符。
+
+
+================================================================================
+七、文件、CI 與「完成」狀態互相矛盾
+================================================================================
+
+1. README.md:23 把 Reverb profile/IR loading 標 Done，README:19 Preset Manager Done、:37
+   State save/load Done；但 IR user preset asset recall 與假 IR fallback 尚未解決。若 Done 只指
+   「能手動載入 WAV」，需縮小文字，不應暗示 preset/session recall 完整。
+
+2. README.md:42 仍寫 B4/B5/B6 not yet merged；HANDOVER.md:12/21-23 與 git branch containment
+   都顯示已 merge main。README 自己在 :437-510 又保留兩輪 audit record，明列 corpus/B6/
+   binary size 等 stale claim「Not corrected here」。同一份對外入口同時陳述現況與反駁現況。
+
+3. `.github/workflows/physics.yml` 的一般 push/PR 只逐一執行 5 個 Python test modules，沒有
+   test_stem_verify、test_midi_type0、test_crossplatform_emit_safety、
+   test_render_app_filename_safety。release-physics.yml 的 unittest discover 只在 tag/manual 跑。
+   所以這批修補的核心 regression 在日常 PR CI 不會執行；本輪本機 198 passed 不能替代未來 CI。
+
+4. 新增修補與 tests 目前仍是 unstaged/untracked working-tree 狀態的一部分；直到正式納入
+   commit/CI，遠端 main 的綠燈不代表這批修補。
+
+
+================================================================================
+八、優先順序
+================================================================================
+
+P1：
+  1. crossplatform 禁止 resolved target == out root；拒絕 reparse point，再補 parent/sibling/outside。
+  2. 修 IR asset/preset lifecycle；UI 不得在 no-IR 時宣稱 IR active。
+  3. getTailLengthSeconds 納入物理 modal tail，避免 DAW bounce/freeze 截尾。
+
+P2：
+  4. stem verifier 對 stems/reference 每次都做 strict containment + reparse-point/ownership gate。
+  5. 修 Custom 控件 visibility/layout，明確裁決 glide 是否只屬 Water Gong；移除 hidden-state sound。
+  6. canonical schema cross-validator，converter 與 C++ `--validate` 共用 mutation suite。
+  7. Type-0 增加 track mapping/auto policy或縮小 help；glide cap clamp 並做 multi-block test。
+
+P3：
+  8. 讓 keep_stems=False 語意穩定；reverb inactive knobs/automation smoothing 狀態可見。
+  9. 日常 physics.yml 改跑 unittest discover/pytest，至少納入本批四個 regression modules。
+ 10. 清掉 README 頂部與 audit record 已知互斥的 current-state 文字。
+
+
+================================================================================
+九、最終裁定
+================================================================================
+
+修後健康度：核心 build、既有 C++ tests、198 個 Python tests、HostProbe、完整 physics gate 都健康；
+原本五項修補在一般案例確實生效，沒有理由整批回退。
+
+但交叉契約裁定：NOT YET CLOSED。
+
+最嚴重的不是音準公式回歸，而是：
+  - force-clean containment 等號漏洞可刪錯整個輸出根；
+  - IR/UI/preset 狀態不一致；
+  - host tail metadata 與已驗證 4–30s 物理 T60 不一致；
+  - Custom UI/DSP domain 沒有對齊；
+  - schema/converter 的舊漂移仍存在。
+
+因此現在可說「原案例部分修復且全量物理 GATE 無 checked failure」，不可說「全專案修完」或
+「所有 UI/automation parameter 都忠實代表當下 DSP」。本輪未修改任何上述功能，只留下證據。

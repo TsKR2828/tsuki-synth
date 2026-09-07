@@ -511,14 +511,20 @@ mis-attribute; nothing in this file is inflated.**
 
 **New this round — undocumented tooling**
 
-Two new verification tools exist in the working tree but appear nowhere in this
-file, `HANDOVER.md`, `TODO.md` or any CI workflow (repo-wide grep: zero hits
-outside the tools themselves and `tests/`):
+Three verification tools exist in the working tree but are not wired into any CI
+workflow. Until they are listed in the Verification-commands quick reference and
+wired into a runner, they are tools that *can* run, not gates that *will* run:
 `tools/score_vs_midi_verify.py` (MIDI↔score transcription GATE, 11 checks,
-mutation-sentinel 5/5) and `tools/melody_roll_video.py` (scrolling piano-roll
-video of `melody_verify`'s own verdicts). Until they are listed in the
-Verification-commands quick reference and wired into a runner, they are tools
-that *can* run, not gates that *will* run.
+mutation-sentinel 5/5), `tools/melody_roll_video.py` (scrolling piano-roll video
+of `melody_verify`'s own verdicts; `--theme neon` since 2026-08-30) and
+`tools/stem_verify.py` (2026-08-30, decision-packet Option A: per-event dry stem
+rendering + linear-superposition proof; 21 sentinels). On Für Elise complete the
+stem path cut refusals from 862/905 to 212/905 and established the superposition
+proof (residual −118.60 dBFS vs −85 dBFS budget). **Claim limits are binding:**
+pitch verdicts are valid on dry signal only (reverb colours `melody_verify`'s
+band centroid by up to 9.5 cents), pitch and onset must be claimed as separate
+dimensions, and no partial frequency or amplitude has ever been measured — see
+`docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.
 
 This audit changes no code, no tolerance and no gate; the corrections above are
 the maintainer's call.

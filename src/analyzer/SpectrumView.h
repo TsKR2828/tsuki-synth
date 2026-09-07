@@ -42,6 +42,26 @@ public:
 
     void setSampleRate (double sr) { sampleRate = sr; repaint(); }
 
+    // Pixel -> frequency mapping used by drawSpectrum(). Public and static so
+    // tests/spectrum_view_repro.cpp can exercise the K-04 boundary (width == 1)
+    // without a message loop, a live FIFO or a Graphics context. drawSpectrum()
+    // calls this very function, so the regression test cannot drift away from
+    // the code that actually paints.
+    static float frequencyForPixel (int px, int width, double sampleRate) noexcept
+    {
+        const float maxFreq  = (float) (sampleRate * 0.5);
+        const float logMin   = std::log2 (kMinFreq);
+        const float logRange = std::log2 (maxFreq) - logMin;
+        // K-04: width == 1 makes (width - 1) zero, and px / 0.0f is NaN, which
+        // then propagates into the bin lookup and the Path coordinates.
+        // jmax (1, width - 1) keeps the denominator at least 1, so a 1px-wide
+        // view maps its single column to logMin (kMinFreq) instead of NaN. For
+        // every width >= 2 (the normal UI case) jmax (1, width - 1) is exactly
+        // width - 1, so the mapping is bit-identical to before this fix.
+        const int denom = juce::jmax (1, width - 1);
+        return std::pow (2.0f, logMin + (float) px / (float) denom * logRange);
+    }
+
     juce::Colour accentColour { Clr::gold };
 
     void paint (juce::Graphics& g) override
@@ -186,9 +206,6 @@ private:
     void drawSpectrum (juce::Graphics& g,
                        juce::Rectangle<float> bounds) const
     {
-        float maxFreq  = (float) (sampleRate * 0.5);
-        float logMin   = std::log2 (kMinFreq);
-        float logRange = std::log2 (maxFreq) - logMin;
         float dbRange  = kCeilDB - kFloorDB;
         int   w = juce::jmax (1, (int) bounds.getWidth());
 
@@ -197,8 +214,7 @@ private:
 
         for (int px = 0; px < w; ++px)
         {
-            float freq = std::pow (2.0f, logMin + (float) px / (float) (w - 1)
-                                                * logRange);
+            float freq = frequencyForPixel (px, w, sampleRate);
             float binF = freq * (float) fftSize / (float) sampleRate;
             float dB   = getBinDB (binF);
             float normY = juce::jlimit (0.0f, 1.0f,

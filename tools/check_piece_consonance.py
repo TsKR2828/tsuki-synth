@@ -83,8 +83,12 @@ def note_to_midi(note):
 
 
 def dumped_score_events(cli, score_path):
-    result = subprocess.run([str(cli), "--dump-modes", str(score_path)],
-                            capture_output=True, text=True)
+    try:
+        result = subprocess.run([str(cli), "--dump-modes", str(score_path)],
+                                capture_output=True, text=True, timeout=1800)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"--dump-modes timed out after 1800s for {score_path}") from exc
     if result.returncode != 0:
         detail = result.stderr.strip() or result.stdout.strip() or "unknown CLI error"
         raise RuntimeError(f"--dump-modes failed: {detail}")

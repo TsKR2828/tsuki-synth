@@ -417,19 +417,67 @@ def track_name(track: mido.MidiTrack, index: int) -> str:
     return f"track_{index}"
 
 
-def extract_notes(midi: mido.MidiFile, valid_tracks: set[str]) -> list[MidiNote]:
-    """Parses note-on/note-off pairs from every MIDI track whose
-    (lower-cased, stripped) track_name is in `valid_tracks`. Generalised
-    2026-08-28: previously read the module-global TRACK_PROFILES (Vivaldi
-    only); callers now pass whichever track-name set applies to their
-    profile set (e.g. set(TRACK_PROFILES) for four-seasons,
-    set(PIANO_HAND_PROFILES) for a piano MIDI), with no change in
-    behaviour for existing callers."""
+def extract_notes(midi: mido.MidiFile, valid_tracks: set[str],
+                  single_track_fallback: str | None = None) -> list[MidiNote]:
+    """Parses note-on/note-off pairs from every MIDI track that both (a)
+    contains at least one note_on event -- pure meta/conductor tracks are
+    skipped -- and (b) has a (lower-cased, stripped) track_name in
+    `valid_tracks`. Generalised 2026-08-28: previously read the
+    module-global TRACK_PROFILES (Vivaldi only); callers now pass whichever
+    track-name set applies to their profile set (e.g. set(TRACK_PROFILES)
+    for four-seasons, set(PIANO_HAND_PROFILES) for a piano MIDI), with no
+    change in behaviour for existing callers.
+
+    2026-08-30 (F-06): track selection used to hard-skip track index 0
+    under the assumption it was always a conductor/meta track. Format 0
+    SMF files keep all notes in the single track 0, so that assumption
+    silently produced zero notes for them. Selection is now content-based
+    (skip a track only if it carries no note_on at all) instead of
+    index-based; the track_name() fallback index for track 1+ is
+    unaffected since enumerate(midi.tracks) still yields the same index
+    for those tracks as the previous enumerate(midi.tracks[1:], start=1).
+
+    2026-08-31 (F-06 second half): dropping the index gate alone was not
+    enough. A Format 0 file still had to be named `up`/`down` to survive
+    the NAME gate below, so an ordinary single-track MIDI with no
+    track_name (or any other name) still yielded zero notes. When
+    `single_track_fallback` is given AND the file has exactly one
+    note-bearing track AND that track's name matches nothing in
+    `valid_tracks`, that one track is admitted under the fallback name
+    instead of being dropped. The fallback deliberately does NOT fire for
+    multi-track files, nor when any track already matches: those paths
+    keep their previous behaviour byte-for-byte. Callers that pass None
+    (e.g. the four-seasons path) are entirely unaffected.
+
+    Caveat the caller must surface: a single-track piano MIDI usually
+    carries BOTH hands, so admitting it under one profile name applies
+    that hand's role/base_velocity to the whole piece. That is a real
+    musical simplification, not a transcription -- hence the warning
+    emitted below rather than a silent success."""
     notes: list[MidiNote] = []
-    for index, track in enumerate(midi.tracks[1:], start=1):
-        name = track_name(track, index)
-        if name not in valid_tracks:
-            continue
+    note_bearing = [
+        (index, track)
+        for index, track in enumerate(midi.tracks)
+        if any(message.type == "note_on" for message in track)
+    ]
+    selected = [
+        (index, track, track_name(track, index))
+        for index, track in note_bearing
+        if track_name(track, index) in valid_tracks
+    ]
+    if not selected and single_track_fallback is not None and len(note_bearing) == 1:
+        index, track = note_bearing[0]
+        print(
+            f"[WARN] {getattr(midi, 'filename', '<midi>')}: the only "
+            f"note-bearing track is named {track_name(track, index)!r}, which "
+            f"matches no profile in {sorted(valid_tracks)}. Admitting it as "
+            f"{single_track_fallback!r} (SMF Format {midi.type}, single track). "
+            "If this MIDI contains both hands on one track, the whole piece "
+            "inherits that one profile's role and base velocity.",
+            file=sys.stderr,
+        )
+        selected = [(index, track, single_track_fallback)]
+    for index, track, name in selected:
         absolute = 0
         active: dict[tuple[int, int], collections.deque[tuple[int, int]]] = (
             collections.defaultdict(collections.deque)
@@ -969,6 +1017,7 @@ def generic_piano_score_document(
     sample_rate: int = 48000,
     tail_silence_ms: int = 900,
     source_info: dict[str, Any] | None = None,
+    single_track_profile: str | None = "up",
 ) -> dict[str, Any]:
     """Generic single/dual-track MIDI -> TsukiSynth Score v1 converter.
 
@@ -1002,12 +1051,21 @@ def generic_piano_score_document(
 
     midi = mido.MidiFile(midi_path)
     tick_map = TickMap(midi)
-    notes = extract_notes(midi, set(active_profile_set))
+    if single_track_profile is not None and single_track_profile not in active_profile_set:
+        raise ValueError(
+            f"single_track_profile {single_track_profile!r} is not in profile set "
+            f"{profile_set_name!r} ({sorted(active_profile_set)})"
+        )
+    notes = extract_notes(midi, set(active_profile_set),
+                          single_track_fallback=single_track_profile)
     if not notes:
         raise ValueError(
             f"{midi_path}: no notes extracted -- track names did not match "
             f"profile set {profile_set_name!r} ({sorted(active_profile_set)}). "
-            "Inspect the MIDI's track_name meta events."
+            "Inspect the MIDI's track_name meta events. (A single-track MIDI "
+            "is admitted automatically via --single-track-profile; this error "
+            "means the file has several note-bearing tracks and none of them "
+            "matched.)"
         )
     add_timing_and_articulation(notes, tick_map, pace, style="piano")
 
@@ -1254,6 +1312,15 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     convert.add_argument("midi", type=Path, help="Source MIDI file")
     convert.add_argument("--output", type=Path, required=True, help="Output .score.json path")
     convert.add_argument("--profile", choices=sorted(PROFILE_SETS), default="piano_two_hand")
+    convert.add_argument(
+        "--single-track-profile", default="up",
+        help="F-06: profile name to admit a single-track (e.g. SMF Format 0) "
+             "MIDI under when its track_name matches no profile in the set. "
+             "Pass 'none' to keep the strict name gate and reject such files. "
+             "Only ever applies when the file has exactly one note-bearing "
+             "track and nothing already matched; a warning is printed because "
+             "one-track piano MIDIs usually hold both hands, which then all "
+             "inherit this profile's role and base velocity. (default: up)")
     convert.add_argument("--engine", choices=["piano", "cimbalom", "string"], default="piano")
     convert.add_argument("--id", dest="score_id", required=True)
     convert.add_argument("--title", required=True)
@@ -1334,6 +1401,10 @@ def main(argv: list[str] | None = None) -> int:
             sample_rate=args.sample_rate,
             tail_silence_ms=args.tail_silence_ms,
             source_info=source_info or None,
+            single_track_profile=(
+                None if args.single_track_profile.lower() == "none"
+                else args.single_track_profile
+            ),
         )
         write_score(score, args.output)
         print(

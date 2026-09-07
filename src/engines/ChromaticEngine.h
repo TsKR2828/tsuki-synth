@@ -444,6 +444,36 @@ public:
     /// magnitudeAt() for the full rationale (2026-07 --amps GATE fix).
     float getBodyMagnitudeAt (float freqHz) const { return bodyRes.magnitudeAt (freqHz); }
 
+    /// Cap on the water-gong glide phase. Reached in ~3.3 s at amount 1.0; the
+    /// resulting frequency multiplier is 1 - 0.5 * 0.3 = 0.85 (a 15 % drop).
+    static constexpr float kGlidePhaseCap = 0.5f;
+
+    /// One block's worth of water-gong glide-phase advance, clamped to the cap.
+    /// Pure and static so tests/physics_models_repro.cpp can assert the
+    /// block-size independence contract without a MaterialDB fixture or a
+    /// message loop; renderNextBlock() calls this very function, so the test
+    /// cannot drift away from the code that actually renders.
+    ///
+    /// Clamping (rather than the pre-2026-08-31 per-block reject) is what makes
+    /// the SETTLED phase -- and therefore the settled pitch -- identical at
+    /// every host buffer size.
+    static float advanceGlidePhase (float phase, float amount, int numSamples,
+                                    double sampleRate) noexcept
+    {
+        if (sampleRate <= 0.0)
+            return phase;
+        return juce::jmin (kGlidePhaseCap,
+                           phase + amount * 0.15f
+                                 * (float) ((double) numSamples / sampleRate));
+    }
+
+    /// Frequency multiplier for a given glide phase (1.0 = no glide,
+    /// 0.85 at the cap = the documented 15 % drop).
+    static float glideMultiplierFor (float phase) noexcept
+    {
+        return 1.0f - phase * 0.3f;
+    }
+
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
                           int startSample, int numSamples) override
     {
@@ -451,20 +481,38 @@ public:
 
         // Water gong pitch glide（持續降低模態頻率模擬浸水效果）
         // Advance scaled by block length → glide rate is independent of host buffer
-        // size; 0.15/sec ⇒ glidePhase reaches the 0.5 cap (~15% drop) in ~3.3s.
+        // size; 0.15/sec ⇒ glidePhase reaches the cap (~15% drop) in ~3.3s.
+        //
+        // 2026-08-31: the cap used to be a per-block REJECT (`if (glidePhase <
+        // 0.5f)`), which left the phase frozen at whatever value the last
+        // ACCEPTED block happened to land on -- up to one full increment below
+        // the cap. The glide RATE was already buffer-size independent (the
+        // comment above was accurate), but the FINAL pitch was not: one
+        // increment at 8192 samples / 48 kHz is 0.0256 phase, i.e. up to
+        // ~15.6 cents in the theoretical worst case. tests/physics_models_repro
+        // measures the spread actually reachable across 16..8192-sample buffers
+        // and prints it (8.2 cents at the time of the fix) -- already past the
+        // project's own 5-cent melody-GATE pitch tolerance. Clamping instead of
+        // rejecting lands every buffer size on exactly the cap.
+        //
+        // Re-applying the capped factor on later blocks is harmless:
+        // ModalResonator::scaleFrequencies() is ABSOLUTE (phaseDelta = base
+        // freq * factor), not cumulative, so it is idempotent.
+        //
+        // Residual, documented: the ramp itself is still quantised to block
+        // boundaries, so intermediate pitch during the ~3.3 s glide differs
+        // slightly between buffer sizes. Only the settled pitch is contractual.
+        // (The offline CLI path in ScoreRenderer.h drives its own, unrelated
+        // note-to-note portamento per SAMPLE and is not affected by any of this.)
         if (glideAmount > 0.01f && ! baseModes.empty())
         {
-            double glideSr = getSampleRate();
-            if (glideSr > 0.0)
-                glidePhase += glideAmount * 0.15f * (float) ((double) numSamples / glideSr);
-            if (glidePhase < 0.5f)
-            {
-                float glideMul = 1.0f - glidePhase * 0.3f;  // max 15% pitch drop
-                // ModalResonator retains each base frequency, so scaling the
-                // phase increments in place avoids a vector allocation/copy on
-                // every audio block while preserving phase continuity.
-                resonator.scaleFrequencies (glideMul);
-            }
+            glidePhase = advanceGlidePhase (glidePhase, glideAmount, numSamples,
+                                            getSampleRate());
+            float glideMul = glideMultiplierFor (glidePhase);  // max 15% pitch drop
+            // ModalResonator retains each base frequency, so scaling the
+            // phase increments in place avoids a vector allocation/copy on
+            // every audio block while preserving phase continuity.
+            resonator.scaleFrequencies (glideMul);
         }
 
         while (--numSamples >= 0)

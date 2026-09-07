@@ -177,7 +177,7 @@ def db(x: float) -> float:
 # Emit
 # --------------------------------------------------------------------------
 
-def emit(out_dir: Path, cli: Path, label: str) -> int:
+def emit(out_dir: Path, cli: Path, label: str, *, force_clean: bool = False) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     report = {
         "contract": "TsukiSynth CrossPlatform Emit v1",
@@ -201,11 +201,52 @@ def emit(out_dir: Path, cli: Path, label: str) -> int:
             continue
         stem = Path(rel).stem.replace(".score", "")
         # The CLI refuses to overwrite an existing render, so always render
-        # into a directory that is guaranteed empty.
+        # into a directory that is guaranteed empty. "Guaranteed empty" must
+        # not mean "we delete whatever the caller already had there": an
+        # existing non-empty render_dir is only ever removed when the caller
+        # passed --force-clean, and only after a containment check confirms
+        # render_dir really is inside out_dir (guards against a symlink or a
+        # stem containing ".." pointing the delete somewhere else). This
+        # gating happens before the subprocess launch below so a rejection
+        # never depends on the CLI actually running.
         render_dir = out_dir / stem
         if render_dir.exists():
-            shutil.rmtree(render_dir)
-        render_dir.mkdir(parents=True)
+            resolved = render_dir.resolve()
+            out_resolved = out_dir.resolve()
+            # STRICTLY under out_dir. An earlier version also accepted
+            # `resolved == out_resolved`, which let a <out>/<stem> symlink or
+            # junction pointing back at <out> itself pass the check -- with
+            # --force-clean that rmtree'd the entire --emit root (every other
+            # stem's render plus platform.json) and still reported success.
+            # render_dir is always out_dir/stem, so equality is never legitimate.
+            if out_resolved not in resolved.parents:
+                print(f"[ERROR] refusing to touch {render_dir}: resolves to "
+                      f"{resolved}, which is not strictly inside {out_resolved} "
+                      f"(symlink or path escape?)")
+                failures += 1
+                continue
+            if not resolved.is_dir():
+                # A plain file (or a link to one) sitting where the render
+                # directory belongs: report it as this score's failure instead
+                # of letting iterdir()/rmtree raise NotADirectoryError and take
+                # the whole run down with a traceback.
+                print(f"[ERROR] {render_dir} exists but is not a directory; "
+                      f"refusing to touch it. Move it aside or use a different "
+                      f"--emit directory.")
+                failures += 1
+                continue
+            if any(resolved.iterdir()):
+                if not force_clean:
+                    print(f"[ERROR] {render_dir} already exists and is not "
+                          f"empty; refusing to delete it. Pass --force-clean "
+                          f"to allow recursive deletion, or use a different "
+                          f"--emit directory.")
+                    failures += 1
+                    continue
+                shutil.rmtree(resolved)
+                resolved.mkdir(parents=True)
+        else:
+            render_dir.mkdir(parents=True)
         r = subprocess.run([str(cli), str(score), "--output", str(render_dir)],
                            capture_output=True, text=True,
                            encoding="utf-8", errors="replace", timeout=1800)
@@ -561,6 +602,10 @@ def main() -> int:
     ap.add_argument("--label", default=None,
                     help="human-readable name for this platform (default: auto)")
     ap.add_argument("--cli", default=None, help="path to TsukiSynthCLI")
+    ap.add_argument("--force-clean", action="store_true",
+                    help="allow --emit to recursively delete a pre-existing, "
+                         "non-empty render directory (default: refuse and "
+                         "fail closed)")
     ap.add_argument("--compare", nargs="+", metavar="DIR",
                     help="compare emitted directories; the first is the reference")
     ap.add_argument("--tolerance", default=str(DEFAULT_TOLERANCE_FILE),
@@ -579,7 +624,7 @@ def main() -> int:
             return EXIT_ERROR
         label = args.label or f"{platform.system()}-{platform.machine()}"
         print(f"Rendering probe set with {cli}")
-        return emit(Path(args.emit), cli, label)
+        return emit(Path(args.emit), cli, label, force_clean=args.force_clean)
     if args.compare:
         return compare([Path(d) for d in args.compare], Path(args.tolerance))
     ap.print_help()
