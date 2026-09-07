@@ -1,165 +1,282 @@
 #pragma once
+
 #include <juce_core/juce_core.h>
+#include <vector>
 
-// ======================================================================
-//  UiLocale -- centralized UI text for English / Traditional Chinese
-//
-//  All Chinese text is constructed via juce::CharPointer_UTF8 to avoid
-//  u8/char8_t type issues and ensure correct decoding on all platforms.
-//  APVTS parameter IDs and choice values are NEVER modified by this layer.
-// ======================================================================
-
+// Centralized display text for the plugin UI.
+// APVTS parameter IDs, parameter names, and AudioParameterChoice values stay
+// in their original English form; this layer only changes visible UI text.
 enum class UiLanguage { English, Chinese };
 
 class UiLocale
 {
 public:
-    static UiLanguage getLanguage()              { return lang_; }
-    static void       setLanguage (UiLanguage l) { lang_ = l; }
-    static bool       isChinese()                { return lang_ == UiLanguage::Chinese; }
+    static UiLanguage getLanguage() { return lang_; }
+    static bool isChinese()         { return lang_ == UiLanguage::Chinese; }
 
-    // ------------------------------------------------------------------
-    //  label()  -- get the display label for a UI control by paramID
-    //  Returns English text when in English mode.
-    //  Returns "Chinese English" when in Chinese mode (if translation exists).
-    //  Falls back to English text if no Chinese entry.
-    // ------------------------------------------------------------------
-    static juce::String label (const juce::String& key)
+    static void setLanguage (UiLanguage language)
     {
-        if (isChinese())
+        lang_ = language;
+        syncFrameworkTranslations();
+    }
+
+    static void syncFrameworkTranslations()
+    {
+        if (! isChinese())
         {
-            for (const auto& e : labelTable())
-                if (key == e.key && e.zh[0] != '\0')
-                    return T (e.zh);
+            juce::LocalisedStrings::setCurrentMappings (nullptr);
+            return;
         }
-        for (const auto& e : labelTable())
-            if (key == e.key)
-                return juce::String (e.en);
+
+        static const char* const translations = R"locale(
+language: Traditional Chinese
+countries: tw hk mo
+
+"Options" = "選項"
+"Audio/MIDI Settings..." = "音訊／MIDI 設定..."
+"Audio/MIDI Settings" = "音訊／MIDI 設定"
+"Save current state..." = "儲存目前狀態..."
+"Load a saved state..." = "載入已儲存狀態..."
+"Reset to default state" = "重設為預設狀態"
+"Save" = "儲存"
+"Cancel" = "取消"
+"OK" = "確定"
+)locale";
+
+        juce::LocalisedStrings::setCurrentMappings (
+            new juce::LocalisedStrings (T (translations), false));
+    }
+
+    static juce::String text (const juce::String& key)
+    {
+        if (const auto* entry = findEntry (textTable(), key))
+            return isChinese() ? T (entry->zh) : juce::String (entry->en);
+
         return key;
     }
 
-    // ------------------------------------------------------------------
-    //  comboItems()  -- get localized ComboBox display items
-    //  Returns localized items for paramIDs that have translations.
-    //  Returns empty array for params without translations -> caller
-    //  should fall back to APVTS choices.
-    //  Item count and order always match the APVTS ChoiceParam.
-    // ------------------------------------------------------------------
+    static juce::String label (const juce::String& paramID)
+    {
+        return text (paramID);
+    }
+
+    static juce::String toggleLabel()
+    {
+        return isChinese() ? text ("languageChinese") : text ("languageEnglish");
+    }
+
+    static juce::String paramCount (int count)
+    {
+        return isChinese()
+            ? juce::String (count) + T (" 個參數")
+            : juce::String (count) + " params";
+    }
+
+    static juce::String engineHeaderName (int engine)
+    {
+        switch (engine)
+        {
+            case 0:  return text ("engineHeaderCimbalom");
+            case 1:  return text ("engineHeaderChromatic");
+            case 2:  return text ("engineHeaderFm");
+            default: return text ("engine");
+        }
+    }
+
+    static juce::String engineHeaderSubtitle (int engine)
+    {
+        switch (engine)
+        {
+            case 0:  return text ("engineSubtitleCimbalom");
+            case 1:  return text ("engineSubtitleChromatic");
+            case 2:  return text ("engineSubtitleFm");
+            default: return {};
+        }
+    }
+
+    static juce::String tabName (int engine)
+    {
+        switch (engine)
+        {
+            case 0:  return text ("tabCimbalom");
+            case 1:  return text ("tabChromatic");
+            case 2:  return text ("tabFm");
+            default: return {};
+        }
+    }
+
+    static juce::String factoryPresetName (const juce::String& englishName)
+    {
+        if (! isChinese())
+            return englishName;
+
+        if (const auto* entry = findEntry (presetTable(), englishName))
+            return T (entry->zh);
+
+        return englishName;
+    }
+
     static juce::StringArray comboItems (const juce::String& paramID)
     {
-        // ---- Materials (shared by cim_material and chr_material) ----
         if (paramID == "cim_material" || paramID == "chr_material")
-        {
-            if (isChinese())
-                return { T("鋼 Steel"),     T("銅 Copper"),   T("青銅 Bronze"),
-                         T("鋁 Aluminum"),  T("黃銅 Brass"),
-                         T("雲杉木 Spruce"), T("楓木 Maple"),
-                         T("玻璃 Glass"),    T("橡膠 Rubber") };
-            return { "Steel", "Copper", "Bronze", "Aluminum", "Brass",
-                     "Spruce", "Maple", "Glass", "Rubber" };
-        }
+            return isChinese()
+                ? juce::StringArray { T ("鋼"), T ("銅"), T ("青銅"), T ("鋁"), T ("黃銅"),
+                                      T ("雲杉"), T ("楓木"), T ("玻璃"), T ("橡膠") }
+                : juce::StringArray { "Steel", "Copper", "Bronze", "Aluminum", "Brass",
+                                      "Spruce", "Maple", "Glass", "Rubber" };
 
-        // ---- Hammer ----
         if (paramID == "cim_hammer")
-        {
-            if (isChinese())
-                return { T("棉槌 Cotton"), T("氈槌 Felt"),
-                         T("木槌 Wood"),   T("金屬槌 Metal") };
-            return { "Cotton", "Felt", "Wood", "Metal" };
-        }
+            return isChinese()
+                ? juce::StringArray { T ("棉槌"), T ("毛氈槌"), T ("木槌"), T ("金屬槌") }
+                : juce::StringArray { "Cotton", "Felt", "Wood", "Metal" };
 
-        // ---- Chromatic sub-engine ----
         if (paramID == "chr_sub_engine")
-        {
-            if (isChinese())
-                return { T("空靈鼓 Tongue Drum"), T("水鑼 Water Gong"),
-                         T("自訂泛音 Custom") };
-            return { "Tongue Drum", "Water Gong", "Custom" };
-        }
+            return isChinese()
+                ? juce::StringArray { T ("舌鼓"), T ("水鑼"), T ("自訂") }
+                : juce::StringArray { "Tongue Drum", "Water Gong", "Custom" };
 
-        // No localized items for this param -> caller uses APVTS choices
+        if (paramID == "chr_exciter")
+            return isChinese()
+                ? juce::StringArray { T ("柔和"), T ("中等"), T ("強硬"), T ("尖銳") }
+                : juce::StringArray { "Soft", "Medium", "Hard", "Sharp" };
+
+        if (paramID == "fm_type")
+            return isChinese()
+                ? juce::StringArray { T ("鋼琴"), T ("電鋼琴"), T ("顫音琴"), T ("鐘聲"),
+                                      T ("風琴"), T ("音墊"), T ("貝斯"), T ("銅管") }
+                : juce::StringArray { "Piano", "E.Piano", "Vibraphone", "Bell",
+                                      "Organ", "Pad", "Bass", "Brass" };
+
+        if (paramID == "fx_dist_type")
+            return isChinese()
+                ? juce::StringArray { T ("過載"), T ("位元破碎"), T ("波形摺疊") }
+                : juce::StringArray { "Overdrive", "Bitcrush", "Wavefold" };
+
         return {};
     }
 
-    // ------------------------------------------------------------------
-    //  toggleLabel()  -- text for the language toggle button
-    // ------------------------------------------------------------------
-    static juce::String toggleLabel()
-    {
-        return isChinese() ? "EN" : T("中文");
-    }
-
 private:
+    struct Entry { const char* key; const char* en; const char* zh; };
+
     static inline UiLanguage lang_ = UiLanguage::Chinese;
 
-    // Safe juce::String from raw UTF-8 bytes
     static juce::String T (const char* utf8)
     {
         return juce::String (juce::CharPointer_UTF8 (utf8));
     }
 
-    // Label lookup table: { paramID, englishLabel, chineseLabel }
-    // Empty zh string "" means no Chinese translation -> use English.
-    struct Entry { const char* key; const char* en; const char* zh; };
-
-    static const std::vector<Entry>& labelTable()
+    static const Entry* findEntry (const std::vector<Entry>& table,
+                                   const juce::String& key)
     {
-        static const std::vector<Entry> t = {
-            // -- Macro knobs --
-            { "macro_material",    "MATERIAL",    "材質 Material"    },
-            { "macro_tension",     "TENSION",     "張力 Tension"     },
-            { "macro_damping",     "DAMPING",     "阻尼 Damping"    },
-            { "macro_strike",      "STRIKE",      "敲擊位置 Strike"  },
-            { "macro_brightness",  "BRIGHT",      "亮度 Brightness"  },
-            { "macro_body",        "BODY",        "共鳴體 Body"      },
-            { "macro_noise",       "NOISE",       "雜質 Noise"       },
-            { "macro_output",      "OUTPUT",      "輸出 Output"      },
+        for (const auto& entry : table)
+            if (key == entry.key)
+                return &entry;
 
-            // -- Cimbalom combo labels --
-            { "cim_material",      "MATERIAL",    "材質 Material"    },
-            { "cim_hammer",        "HAMMER",      "槌頭 Hammer"      },
+        return nullptr;
+    }
 
-            // -- Cimbalom knob labels --
-            { "cim_strike_pos",    "STRIKE POS",  ""                 },
-            { "cim_diameter",      "DIAMETER",    ""                 },
-            { "cim_num_strings",   "STRINGS",     ""                 },
-            { "cim_detuning",      "DETUNING",    ""                 },
+    static const std::vector<Entry>& textTable()
+    {
+        static const std::vector<Entry> table {
+            { "languageEnglish", "English", "英文" },
+            { "languageChinese", "Chinese", "中文" },
 
-            // -- Chromatic combo labels --
-            { "chr_sub_engine",    "SUB-ENGINE",  "子引擎 Sub Engine" },
-            { "chr_material",      "MATERIAL",    "材質 Material"    },
-            { "chr_exciter",       "EXCITER",     ""                 },
+            { "appTitle", "TsukiSynth", "TsukiSynth" },
+            { "options", "Options", "選項" },
+            { "save", "Save", "儲存" },
+            { "init", "Init", "初始化" },
+            { "cancel", "Cancel", "取消" },
+            { "presetSaveTitle", "Save Preset", "儲存預設" },
+            { "presetSaveMessage", "Enter a name for the preset:", "請輸入預設名稱：" },
+            { "presetNameLabel", "Preset Name:", "預設名稱：" },
+            { "presetDefaultName", "My Preset", "我的預設" },
 
-            // -- Chromatic knob labels --
-            { "chr_strike_pos",    "STRIKE POS",  ""                 },
-            { "chr_thickness",     "THICKNESS",   ""                 },
-            { "chr_size",          "SIZE",        ""                 },
-            { "chr_pitch_glide",   "PITCH GLIDE", ""                 },
+            { "macro", "Macro", "巨集" },
+            { "engine", "Engine", "音源引擎" },
+            { "effects", "Effects", "效果" },
+            { "scope", "Scope", "示波器" },
+            { "reverb", "Reverb", "殘響" },
+            { "delay", "Delay", "延遲" },
+            { "compressor", "Compressor", "壓縮器" },
+            { "distortion", "Distortion", "失真" },
+            { "noSignal", "No signal", "無訊號" },
 
-            // -- FM Piano --
-            { "fm_type",           "SOUND TYPE",  ""                 },
-            { "fm_ratio",          "RATIO",       ""                 },
-            { "fm_index",          "MOD INDEX",   ""                 },
-            { "fm_brightness",     "BRIGHTNESS",  ""                 },
-            { "fm_feedback",       "FEEDBACK",    ""                 },
-            { "fm_attack",         "ATTACK",      ""                 },
-            { "fm_release",        "RELEASE",     ""                 },
+            { "tabCimbalom", "Cimbalom", "揚琴" },
+            { "tabChromatic", "Chromatic", "半音音源" },
+            { "tabFm", "FM Piano", "調頻鋼琴" },
+            { "engineHeaderCimbalom", "Cimbalom Engine", "揚琴音源" },
+            { "engineHeaderChromatic", "Chromatic Engine", "半音音源" },
+            { "engineHeaderFm", "FM Piano Engine", "調頻鋼琴音源" },
+            { "engineSubtitleCimbalom", "Physical Modeling String", "物理模型弦鳴" },
+            { "engineSubtitleChromatic", "Beam / Plate / Custom", "簧片、板鳴、自訂" },
+            { "engineSubtitleFm", "Frequency Modulation", "頻率調變" },
 
-            // -- Effects --
-            { "fx_reverb_mix",     "MIX",         ""                 },
-            { "fx_reverb_size",    "SIZE",        ""                 },
-            { "fx_delay_time",     "TIME",        ""                 },
-            { "fx_delay_feedback", "FB",          ""                 },
-            { "fx_delay_mix",      "MIX",         ""                 },
-            { "fx_comp_threshold", "THRESH",      ""                 },
-            { "fx_comp_ratio",     "RATIO",       ""                 },
+            { "macro_material", "Material", "材質" },
+            { "macro_tension", "Tension", "張力" },
+            { "macro_damping", "Damping", "阻尼" },
+            { "macro_strike", "Strike", "擊弦" },
+            { "macro_brightness", "Brightness", "亮度" },
+            { "macro_body", "Body", "共鳴體" },
+            { "macro_noise", "Noise", "噪音" },
+            { "macro_output", "Output", "輸出" },
 
-            // -- Distortion --
-            { "fx_dist_type",      "TYPE",        ""                 },
-            { "fx_dist_drive",     "DRIVE",       ""                 },
-            { "fx_dist_instability","INSTABILITY", ""                },
-            { "fx_dist_mix",       "MIX",         ""                 },
+            { "cim_material", "Material", "材質" },
+            { "cim_hammer", "Hammer", "琴槌" },
+            { "cim_strike_pos", "Strike", "擊弦" },
+            { "cim_diameter", "Diameter", "弦徑" },
+            { "cim_num_strings", "Strings", "弦數" },
+            { "cim_detuning", "Detuning", "微調" },
+
+            { "chr_sub_engine", "Sub Engine", "子音源" },
+            { "chr_material", "Material", "材質" },
+            { "chr_exciter", "Exciter", "激發器" },
+            { "chr_strike_pos", "Strike", "擊弦" },
+            { "chr_thickness", "Thickness", "厚度" },
+            { "chr_size", "Size", "尺寸" },
+            { "chr_pitch_glide", "Pitch Glide", "滑音" },
+
+            { "fm_type", "Sound Type", "音色類型" },
+            { "fm_ratio", "Ratio", "比率" },
+            { "fm_index", "Mod Index", "調變指數" },
+            { "fm_brightness", "Brightness", "亮度" },
+            { "fm_feedback", "Feedback", "回授" },
+            { "fm_attack", "Attack", "起音" },
+            { "fm_release", "Release", "釋放" },
+
+            { "fx_reverb_mix", "Mix", "混合" },
+            { "fx_reverb_size", "Size", "空間大小" },
+            { "fx_delay_time", "Time", "時間" },
+            { "fx_delay_feedback", "Feedback", "回授" },
+            { "fx_delay_mix", "Mix", "混合" },
+            { "fx_comp_threshold", "Threshold", "閾值" },
+            { "fx_comp_ratio", "Ratio", "比率" },
+
+            { "fx_dist_type", "Type", "類型" },
+            { "fx_dist_drive", "Drive", "驅動" },
+            { "fx_dist_instability", "Instability", "不穩定度" },
+            { "fx_dist_mix", "Mix", "混合" },
         };
-        return t;
+
+        return table;
+    }
+
+    static const std::vector<Entry>& presetTable()
+    {
+        static const std::vector<Entry> table {
+            { "Steel Hammered Dulcimer", "Steel Hammered Dulcimer", "鋼弦擊奏揚琴" },
+            { "Copper Warm Strings", "Copper Warm Strings", "暖銅弦鳴" },
+            { "Glass Wind Chimes", "Glass Wind Chimes", "玻璃風鈴" },
+            { "Muted Felt Piano", "Muted Felt Piano", "柔氈悶音琴" },
+            { "Crystal Tongue Drum", "Crystal Tongue Drum", "水晶舌鼓" },
+            { "Bronze Water Gong", "Bronze Water Gong", "青銅水鑼" },
+            { "Wooden Kalimba", "Wooden Kalimba", "木質卡林巴" },
+            { "Ethereal Steel Bells", "Ethereal Steel Bells", "空靈鋼鐘" },
+            { "Acoustic Piano", "Acoustic Piano", "原聲鋼琴" },
+            { "Electric Rhodes", "Electric Rhodes", "電鋼琴" },
+            { "DX7 Crystal Bell", "DX7 Crystal Bell", "水晶鐘聲" },
+            { "Church Organ", "Church Organ", "教堂風琴" },
+        };
+
+        return table;
     }
 };

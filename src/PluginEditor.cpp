@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "BinaryData.h"
 #include "Presets.h"
 
 namespace
@@ -18,6 +19,7 @@ namespace
     constexpr int kAnalyzerH  = 80;
     constexpr int kKeyboardH  = 80;
     constexpr int kSidePad   = 16;
+    constexpr int kMaxScale   = 2;
 }
 
 // ========================================================================
@@ -67,11 +69,32 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
             UiLocale::setLanguage (UiLanguage::English);
         else
             UiLocale::setLanguage (UiLanguage::Chinese);
-        langToggle.setButtonText (UiLocale::toggleLabel());
         refreshLocalizedText();
+        if (auto* topLevel = getTopLevelComponent())
+            topLevel->resized();
         repaint();
     };
     addAndMakeVisible (langToggle);
+
+    // -- Standalone recorder --------------------------------------------
+    recordButton.setComponentID ("step");
+    recordButton.onClick = [this]
+    {
+        if (proc.isRecording())
+            proc.stopRecording();
+        else
+            proc.startRecording();
+
+        updateRecordingUi();
+    };
+    recordButton.setVisible (proc.isStandalone());
+    addAndMakeVisible (recordButton);
+
+    recordStatus.setFont (juce::Font (juce::FontOptions (10.0f)));
+    recordStatus.setJustificationType (juce::Justification::centredRight);
+    recordStatus.setColour (juce::Label::textColourId, Clr::textDim);
+    recordStatus.setVisible (proc.isStandalone());
+    addAndMakeVisible (recordStatus);
 
     // -- Preset ----------------------------------------------------------
     presetCombo.setColour (juce::ComboBox::backgroundColourId, Clr::comboBg);
@@ -183,10 +206,17 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
 
     // -- Engine listener + initial state ---------------------------------
     proc.apvts.addParameterListener ("engine", this);
+    refreshLocalizedText();
     updateEngine();
     updateDirtyIndicator();
+    updateRecordingUi();
     startTimerHz (5);
     setSize (kW, kH);
+    setResizable (true, true);
+    setResizeLimits (kW, kH, kW * kMaxScale, kH * kMaxScale);
+
+    if (auto* boundsConstrainer = getConstrainer())
+        boundsConstrainer->setFixedAspectRatio ((double) kW / (double) kH);
 }
 
 TsukiSynthEditor::~TsukiSynthEditor()
@@ -208,6 +238,8 @@ void TsukiSynthEditor::parameterChanged (const juce::String& id, float)
 void TsukiSynthEditor::timerCallback()
 {
     updateDirtyIndicator();
+    updateRecordingUi();
+    updateStandaloneWindowTitle();
 }
 
 int TsukiSynthEditor::currentEngine() const
@@ -254,6 +286,135 @@ void TsukiSynthEditor::updateEngine()
     keyboard.setColour (juce::MidiKeyboardComponent::keyDownOverlayColourId,
                         lnf.accent.withAlpha (0.35f));
     analyzerPanel.setAccent (lnf.accent);
+}
+
+void TsukiSynthEditor::updateStandaloneWindowTitle()
+{
+    auto* window = findParentComponentOfClass<juce::DocumentWindow>();
+    if (window == nullptr)
+        return;
+
+    window->setName (UiLocale::text ("appTitle"));
+}
+
+void TsukiSynthEditor::updateRecordingUi()
+{
+    const auto standalone = proc.isStandalone();
+    recordButton.setVisible (standalone);
+    recordStatus.setVisible (standalone);
+
+    if (! standalone)
+        return;
+
+    const auto recording = proc.isRecording();
+    const auto status = proc.getRecordingStatusText();
+    recordButton.setButtonText (recording ? "STOP" : "REC");
+    recordStatus.setText (status, juce::dontSendNotification);
+    recordStatus.setTooltip (status);
+    recordStatus.setColour (juce::Label::textColourId,
+                            recording ? Clr::goldBright : Clr::textDim);
+}
+
+float TsukiSynthEditor::currentUiScale() const
+{
+    auto widthScale  = (float) getWidth()  / (float) kW;
+    auto heightScale = (float) getHeight() / (float) kH;
+    return juce::jlimit (1.0f, (float) kMaxScale, juce::jmin (widthScale, heightScale));
+}
+
+juce::AffineTransform TsukiSynthEditor::contentTransform() const
+{
+    const auto scale = currentUiScale();
+    const auto contentW = (float) kW * scale;
+    const auto contentH = (float) kH * scale;
+    const auto x = ((float) getWidth()  - contentW) * 0.5f;
+    const auto y = ((float) getHeight() - contentH) * 0.5f;
+
+    return juce::AffineTransform::scale (scale)
+        .followedBy (juce::AffineTransform::translation (x, y));
+}
+
+void TsukiSynthEditor::updateScaledChildTransforms()
+{
+    const auto transform = contentTransform();
+
+    auto apply = [&] (juce::Component& component)
+    {
+        component.setTransform (transform);
+    };
+
+    auto applyKnob = [&] (KnobParam& k)
+    {
+        apply (k.slider);
+        apply (k.label);
+    };
+
+    auto applyCombo = [&] (ComboParam& c)
+    {
+        apply (c.combo);
+        apply (c.label);
+    };
+
+    apply (keyboard);
+    apply (tabCim);
+    apply (tabChr);
+    apply (tabFM);
+    apply (langToggle);
+    apply (recordButton);
+    apply (recordStatus);
+    apply (presetCombo);
+    apply (presetPrev);
+    apply (presetNext);
+    apply (presetSave);
+    apply (presetInit);
+    apply (dirtyLabel);
+
+    applyCombo (cimMaterial);
+    applyCombo (cimHammer);
+    applyKnob  (cimStrike);
+    applyKnob  (cimDiameter);
+    applyKnob  (cimStrings);
+    applyKnob  (cimDetune);
+
+    applyCombo (chrSubEngine);
+    applyCombo (chrMaterial);
+    applyCombo (chrExciter);
+    applyKnob  (chrStrike);
+    applyKnob  (chrThickness);
+    applyKnob  (chrSize);
+    applyKnob  (chrGlide);
+
+    applyCombo (fmType);
+    applyKnob  (fmRatio);
+    applyKnob  (fmIndex);
+    applyKnob  (fmBrightness);
+    applyKnob  (fmFeedback);
+    applyKnob  (fmAttack);
+    applyKnob  (fmRelease);
+
+    applyKnob (macroMaterial);
+    applyKnob (macroTension);
+    applyKnob (macroDamping);
+    applyKnob (macroStrike);
+    applyKnob (macroBrightness);
+    applyKnob (macroBody);
+    applyKnob (macroNoise);
+    applyKnob (macroOutput);
+
+    applyKnob (fxRevMix);
+    applyKnob (fxRevSize);
+    applyKnob (fxDlyTime);
+    applyKnob (fxDlyFeedback);
+    applyKnob (fxDlyMix);
+    applyKnob (fxCompThresh);
+    applyKnob (fxCompRatio);
+
+    applyCombo (distType);
+    applyKnob  (distDrive);
+    applyKnob  (distInstability);
+    applyKnob  (distMix);
+
+    apply (analyzerPanel);
 }
 
 // ========================================================================
@@ -362,6 +523,14 @@ void TsukiSynthEditor::refreshComboItems (ComboParam& cp)
 
 void TsukiSynthEditor::refreshLocalizedText()
 {
+    langToggle.setButtonText (UiLocale::toggleLabel());
+    presetSave.setButtonText (UiLocale::text ("save"));
+    presetInit.setButtonText (UiLocale::text ("init"));
+    tabCim.setButtonText (UiLocale::tabName (0));
+    tabChr.setButtonText (UiLocale::tabName (1));
+    tabFM.setButtonText  (UiLocale::tabName (2));
+    rebuildPresetCombo();
+
     // Helper lambdas
     auto refreshKnobLabel = [] (KnobParam& k)
     {
@@ -423,6 +592,11 @@ void TsukiSynthEditor::refreshLocalizedText()
     refreshKnobLabel  (distDrive);
     refreshKnobLabel  (distInstability);
     refreshKnobLabel  (distMix);
+
+    keyboard.repaint();
+    analyzerPanel.repaint();
+    analyzerPanel.oscilloscope.repaint();
+    updateStandaloneWindowTitle();
 }
 
 // ========================================================================
@@ -437,7 +611,7 @@ void TsukiSynthEditor::rebuildPresetCombo()
     int nUser    = pm.getNumUserPresets();
 
     for (int i = 0; i < nFactory; ++i)
-        presetCombo.addItem (pm.getPresetName (i), i + 1);
+        presetCombo.addItem (UiLocale::factoryPresetName (pm.getPresetName (i)), i + 1);
 
     if (nUser > 0)
     {
@@ -459,12 +633,14 @@ void TsukiSynthEditor::updateDirtyIndicator()
 
 void TsukiSynthEditor::promptSavePreset()
 {
-    auto* aw = new juce::AlertWindow ("Save Preset",
-                                       "Enter a name for the preset:",
+    auto* aw = new juce::AlertWindow (UiLocale::text ("presetSaveTitle"),
+                                       UiLocale::text ("presetSaveMessage"),
                                        juce::AlertWindow::NoIcon, this);
-    aw->addTextEditor ("name", "My Preset", "Preset Name:");
-    aw->addButton ("Save",   1);
-    aw->addButton ("Cancel", 0);
+    aw->addTextEditor ("name",
+                       UiLocale::text ("presetDefaultName"),
+                       UiLocale::text ("presetNameLabel"));
+    aw->addButton (UiLocale::text ("save"),   1);
+    aw->addButton (UiLocale::text ("cancel"), 0);
 
     aw->enterModalState (true, juce::ModalCallbackFunction::create (
         [this, aw] (int result)
@@ -533,7 +709,10 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         Clr::pluginBot, 0.0f, (float) getHeight(), false));
     g.fillAll();
 
-    int w = getWidth();
+    juce::Graphics::ScopedSaveState scaledState (g);
+    g.addTransform (contentTransform());
+
+    int w = kW;
 
     // -- title bar -------------------------------------------------------
     {
@@ -542,36 +721,64 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
             juce::Colours::transparentBlack, 0.0f, (float) kTitleH, false));
         g.fillRect (0, 0, w, kTitleH);
 
-        // moon crescent (two overlapping circles)
-        g.setColour (Clr::goldBright.withAlpha (0.92f));
-        g.fillEllipse (18.0f, 16.0f, 15.0f, 15.0f);
-        g.setColour (juce::Colour (0xff1a1a2d));
-        g.fillEllipse (23.0f, 13.0f, 14.0f, 14.0f);
+        // MoonIcon crescent from uiux/components.jsx, viewBox 0 0 20 20.
+        static const auto sourceMoonPath = [] {
+            return juce::Drawable::parseSVGPath ("M14 3 a8 8 0 1 0 0 14 a6 6 0 0 1 0 -14 z");
+        }();
+
+        auto moonPath = sourceMoonPath;
+        moonPath.applyTransform (
+            juce::AffineTransform::scale (18.0f / 20.0f)
+                .followedBy (juce::AffineTransform::translation (20.0f, 16.0f)));
+        g.setColour (Clr::goldBright.withAlpha (0.95f));
+        g.fillPath (moonPath);
 
         // wordmark
-        g.setFont (juce::Font (juce::FontOptions (20.0f)).boldened()
-                       .withExtraKerningFactor (0.04f));
-        g.setColour (Clr::goldBright);
-        g.drawText ("TsukiSynth", 38, 14, 150, 22, juce::Justification::centredLeft);
+        static const auto wordmarkTypeface = []() -> juce::Typeface::Ptr
+        {
+            return juce::Typeface::createSystemTypefaceFor (
+                BinaryData::IBMPlexSansSemiBold_ttf,
+                BinaryData::IBMPlexSansSemiBold_ttfSize);
+        }();
+
+        auto wordmarkOptions = wordmarkTypeface != nullptr
+            ? juce::FontOptions (wordmarkTypeface).withHeight (22.0f)
+            : juce::FontOptions ("Segoe UI", "Semibold", 22.0f);
+
+        auto wordmarkFont = juce::Font (
+            wordmarkOptions
+                .withFallbacks (std::vector<juce::String> { "Segoe UI", "Arial", "Microsoft JhengHei" })
+                .withKerningFactor (0.04f));
+        g.setGradientFill (juce::ColourGradient (
+            juce::Colour (0xfff0e8d8), 46.0f, 12.0f,
+            juce::Colour (0xffc49a6c), 46.0f, 36.0f, false));
+        g.setFont (wordmarkFont);
+        g.drawText (UiLocale::text ("appTitle"), 46, 12, 180, 24,
+                    juce::Justification::centredLeft);
 
         // subtitle
         int eng = currentEngine();
-        auto eName = eng == 0 ? juce::String ("CIMBALOM")
-                   : eng == 1 ? juce::String ("CHROMATIC")
-                   :            juce::String ("FM PIANO");
+        auto eName = eng == 0 ? juce::String ("CIMBALOM ENGINE")
+                   : eng == 1 ? juce::String ("CHROMATIC ENGINE")
+                   :            juce::String ("FM PIANO ENGINE");
         auto eType = eng == 0 ? juce::String ("PHYSICAL MODELING STRING")
                    : eng == 1 ? juce::String ("BEAM / PLATE / CUSTOM")
                    :            juce::String ("FREQUENCY MODULATION");
-        auto subFont = juce::Font (juce::FontOptions (10.0f)).withExtraKerningFactor (0.1f);
+        auto subFont = juce::Font (
+            juce::FontOptions ("IBM Plex Sans", "Medium", 10.0f)
+                .withFallbacks (std::vector<juce::String> { "Segoe UI", "Arial", "Microsoft JhengHei" })
+                .withKerningFactor (0.12f));
         g.setFont (subFont);
         g.setColour (Clr::textMid);
-        auto nameStr = eName + " ENGINE";
-        g.drawText (nameStr, 40, 36, 200, 14, juce::Justification::centredLeft);
+        auto nameStr = eName;
+        auto typeStr = eType;
+        constexpr int subtitleX = 20;
+        g.drawText (nameStr, subtitleX, 36, 200, 14, juce::Justification::centredLeft);
         int nameW = (int) juce::GlyphArrangement::getStringWidth (subFont, nameStr);
         g.setColour (juce::Colour (0xff3a3a5a));
-        g.drawText ("|", 40 + nameW + 4, 36, 10, 14, juce::Justification::centred);
+        g.drawText ("|", subtitleX + nameW + 7, 36, 8, 14, juce::Justification::centred);
         g.setColour (Clr::textDim);
-        g.drawText (eType, 40 + nameW + 16, 36, 300, 14, juce::Justification::centredLeft);
+        g.drawText (typeStr, subtitleX + nameW + 22, 36, 300, 14, juce::Justification::centredLeft);
 
         g.setColour (Clr::borderLight);
         g.drawHorizontalLine (kTitleH - 1, 0.0f, (float) w);
@@ -607,11 +814,12 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.setColour (Clr::divLabel);
         g.setFont (juce::Font (juce::FontOptions (9.0f)).boldened()
                        .withExtraKerningFactor (0.2f));
-        g.drawText ("MACRO", kSidePad, y + 6, 56, 14, juce::Justification::centredLeft);
+        g.drawText (UiLocale::text ("macro"), kSidePad, y + 6, 56, 14,
+                    juce::Justification::centredLeft);
 
         g.setColour (juce::Colour (0xff334455));
         g.setFont (juce::FontOptions (9.0f));
-        g.drawText ("8 params", kSidePad + 52, y + 6,
+        g.drawText (UiLocale::paramCount (8), kSidePad + 52, y + 6,
                     60, 14, juce::Justification::centredLeft);
 
         g.setColour (Clr::border.withAlpha (0.5f));
@@ -633,18 +841,19 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.setColour (Clr::divLabel);
         g.setFont (juce::Font (juce::FontOptions (9.0f)).boldened()
                        .withExtraKerningFactor (0.2f));
-        g.drawText ("ENGINE", kSidePad, y + 6, 56, 14, juce::Justification::centredLeft);
+        g.drawText (UiLocale::text ("engine"), kSidePad, y + 6, 64, 14,
+                    juce::Justification::centredLeft);
 
         int eng = currentEngine();
         int pc  = (eng == 0) ? 6 : 7;
         g.setColour (juce::Colour (0xff334455));
         g.setFont (juce::FontOptions (9.0f));
-        g.drawText (juce::String (pc) + " params", kSidePad + 58, y + 6,
+        g.drawText (UiLocale::paramCount (pc), kSidePad + 68, y + 6,
                     60, 14, juce::Justification::centredLeft);
 
         // divider line
         g.setColour (Clr::border.withAlpha (0.5f));
-        g.fillRect (kSidePad + 120, y + 12, w - kSidePad * 2 - 120, 1);
+        g.fillRect (kSidePad + 130, y + 12, w - kSidePad * 2 - 130, 1);
     }
 
     // -- effects section -------------------------------------------------
@@ -659,13 +868,14 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.setColour (Clr::divLabel);
         g.setFont (juce::Font (juce::FontOptions (9.0f)).boldened()
                        .withExtraKerningFactor (0.2f));
-        g.drawText ("EFFECTS", kSidePad, y + 6, 60, 14, juce::Justification::centredLeft);
+        g.drawText (UiLocale::text ("effects"), kSidePad, y + 6, 60, 14,
+                    juce::Justification::centredLeft);
         g.setColour (Clr::border.withAlpha (0.5f));
         g.fillRect (kSidePad + 64, y + 12, w - kSidePad * 2 - 64, 1);
 
-        paintPanel (g, reverbBounds_, "REVERB");
-        paintPanel (g, delayBounds_,  "DELAY");
-        paintPanel (g, compBounds_,   "COMPRESSOR");
+        paintPanel (g, reverbBounds_, UiLocale::text ("reverb"));
+        paintPanel (g, delayBounds_,  UiLocale::text ("delay"));
+        paintPanel (g, compBounds_,   UiLocale::text ("compressor"));
     }
 
     // -- distortion row --------------------------------------------------
@@ -673,7 +883,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         int y = distRow_.getY();
         g.setColour (Clr::effectsBg);
         g.fillRect (0, y, w, distRow_.getHeight());
-        paintPanel (g, distPanelBounds_, "DISTORTION");
+        paintPanel (g, distPanelBounds_, UiLocale::text ("distortion"));
     }
 
     // -- analyzer row ----------------------------------------------------
@@ -689,7 +899,7 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
     {
         int y = analyzerRow_.getBottom();
         g.setColour (Clr::kbFooter);
-        g.fillRect (0, y, w, getHeight() - y);
+        g.fillRect (0, y, w, kH - y);
         g.setColour (Clr::borderLight);
         g.drawHorizontalLine (y, 0.0f, (float) w);
     }
@@ -700,11 +910,13 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
 // ========================================================================
 void TsukiSynthEditor::resized()
 {
-    auto area = getLocalBounds();
+    auto area = juce::Rectangle<int> (0, 0, kW, kH);
     int w = area.getWidth();
 
     // -- title (paint only) + language toggle in title bar ----------------
     area.removeFromTop (kTitleH);
+    recordStatus.setBounds (230, 20, 188, 18);
+    recordButton.setBounds (w - 112, 20, 48, 18);
     langToggle.setBounds (w - 60, 20, 44, 18);
 
     // -- preset row ------------------------------------------------------
@@ -717,9 +929,9 @@ void TsukiSynthEditor::resized()
         presetNext.setBounds (inner.removeFromLeft (20).reduced (0, 1));
         inner.removeFromLeft (6);
 
-        presetInit.setBounds (inner.removeFromRight (30).reduced (0, 1));
+        presetInit.setBounds (inner.removeFromRight (46).reduced (0, 1));
         inner.removeFromRight (4);
-        presetSave.setBounds (inner.removeFromRight (36).reduced (0, 1));
+        presetSave.setBounds (inner.removeFromRight (42).reduced (0, 1));
         inner.removeFromRight (4);
         dirtyLabel.setBounds (inner.removeFromRight (14));
 
@@ -887,4 +1099,6 @@ void TsukiSynthEditor::resized()
             layoutKnobCell (r3, fmRelease);
         }
     }
+
+    updateScaledChildTransforms();
 }

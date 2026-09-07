@@ -2,6 +2,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../dsp/AudioFIFO.h"
 #include "../TsukiLookAndFeel.h"
+#include "../UiLocale.h"
 
 class OscilloscopeView : public juce::Component, private juce::Timer
 {
@@ -37,7 +38,7 @@ public:
         {
             g.setColour (Clr::textDim.withAlpha (0.3f));
             g.setFont (juce::FontOptions (10.0f));
-            g.drawText ("No signal", bounds, juce::Justification::centred);
+            g.drawText (UiLocale::text ("noSignal"), bounds, juce::Justification::centred);
             return;
         }
 

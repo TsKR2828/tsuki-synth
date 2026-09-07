@@ -44,6 +44,7 @@ juce_add_plugin(TsukiSynth
 
 juce_add_binary_data(TsukiSynthData SOURCES
     data/materials.json
+    data/fonts/IBMPlexSans-SemiBold.ttf
 )
 
 target_sources(TsukiSynth PRIVATE

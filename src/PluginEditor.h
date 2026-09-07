@@ -37,6 +37,23 @@ private:
         juce::String paramID;
     };
 
+    class LocalizedMidiKeyboard : public juce::MidiKeyboardComponent
+    {
+    public:
+        LocalizedMidiKeyboard (juce::MidiKeyboardState& state, Orientation orientation)
+            : juce::MidiKeyboardComponent (state, orientation)
+        {
+        }
+
+        juce::String getWhiteNoteText (int midiNoteNumber) override
+        {
+            if (UiLocale::isChinese())
+                return {};
+
+            return juce::MidiKeyboardComponent::getWhiteNoteText (midiNoteNumber);
+        }
+    };
+
     void parameterChanged (const juce::String& parameterID, float newValue) override;
     void timerCallback() override;
 
@@ -45,8 +62,13 @@ private:
     void setVisible  (KnobParam&,  bool);
     void setVisible  (ComboParam&, bool);
     void updateEngine();
+    void updateStandaloneWindowTitle();
+    void updateRecordingUi();
     int  currentEngine() const;
     juce::Colour accentForEngine (int eng) const;
+    float currentUiScale() const;
+    juce::AffineTransform contentTransform() const;
+    void updateScaledChildTransforms();
 
     // Localization
     void refreshLocalizedText();
@@ -61,21 +83,25 @@ private:
     TsukiLookAndFeel lnf;
 
     // Keyboard (state lives in processor for MIDI injection)
-    juce::MidiKeyboardComponent keyboard;
+    LocalizedMidiKeyboard keyboard;
 
     // Engine tabs
-    juce::TextButton tabCim { "Cimbalom" };
-    juce::TextButton tabChr { "Chromatic" };
-    juce::TextButton tabFM  { "FM Piano" };
+    juce::TextButton tabCim;
+    juce::TextButton tabChr;
+    juce::TextButton tabFM;
 
     // Language toggle
     juce::TextButton langToggle;
 
+    // Standalone recorder
+    juce::TextButton recordButton;
+    juce::Label      recordStatus;
+
     // Preset
     juce::ComboBox   presetCombo;
     juce::TextButton presetPrev, presetNext;
-    juce::TextButton presetSave { "Save" };
-    juce::TextButton presetInit { "Init" };
+    juce::TextButton presetSave;
+    juce::TextButton presetInit;
     juce::Label      dirtyLabel;
     void rebuildPresetCombo();
     void updateDirtyIndicator();

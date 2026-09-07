@@ -5,6 +5,7 @@
 #include "effects/EffectChain.h"
 #include "dsp/AudioFIFO.h"
 #include "PresetManager.h"
+#include "StandaloneRecorder.h"
 
 class TsukiSynthProcessor : public juce::AudioProcessor
 {
@@ -38,6 +39,12 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    bool isStandalone() const;
+    bool isRecording() const;
+    bool startRecording();
+    juce::File stopRecording();
+    juce::String getRecordingStatusText() const;
+
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presetManager { apvts };
     AudioFIFO analyzerFifo { 4096 };
@@ -55,6 +62,7 @@ private:
     std::atomic<float>* pMacroOutput = nullptr;
     juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
+    StandaloneRecorder recorder;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout
         createParameterLayout();

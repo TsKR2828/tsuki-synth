@@ -2,6 +2,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../dsp/AudioFIFO.h"
 #include "../TsukiLookAndFeel.h"
+#include "../UiLocale.h"
 #include "OscilloscopeView.h"
 
 // Container panel for analyzer views (oscilloscope, future spectrum).
@@ -36,8 +37,8 @@ public:
 
         g.setColour (Clr::fxTitle);
         g.setFont (juce::Font (juce::FontOptions (9.0f)).boldened());
-        g.drawText ("SCOPE", (int) b.getX() + 8, (int) b.getY() + 4,
-                    50, 12, juce::Justification::centredLeft);
+        g.drawText (UiLocale::text ("scope"), (int) b.getX() + 8, (int) b.getY() + 4,
+                    60, 12, juce::Justification::centredLeft);
     }
 
     void resized() override

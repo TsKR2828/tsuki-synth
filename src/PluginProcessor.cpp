@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "UiLocale.h"
 #include "engines/CimbalomEngine.h"
 #include "engines/ChromaticEngine.h"
 #include "engines/FMPianoEngine.h"
@@ -170,6 +171,8 @@ TsukiSynthProcessor::TsukiSynthProcessor()
                         .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
       apvts (*this, nullptr, "PARAMETERS", createParameterLayout())
 {
+    UiLocale::syncFrameworkTranslations();
+
     // Load material database
     materialDB.loadFromBinary (BinaryData::materials_json,
                                BinaryData::materials_jsonSize);
@@ -306,7 +309,10 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     effectChain.pDistMix         = apvts.getRawParameterValue ("fx_dist_mix");
 }
 
-TsukiSynthProcessor::~TsukiSynthProcessor() {}
+TsukiSynthProcessor::~TsukiSynthProcessor()
+{
+    recorder.stop();
+}
 
 // == Audio ==
 void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
@@ -316,9 +322,13 @@ void TsukiSynthProcessor::prepareToPlay (double sampleRate, int)
     fmPianoSynth.setCurrentPlaybackSampleRate (sampleRate);
     effectChain.prepare (sampleRate);
     smoothedOutput.reset (sampleRate, 0.02);
+    recorder.prepare (sampleRate);
 }
 
-void TsukiSynthProcessor::releaseResources() {}
+void TsukiSynthProcessor::releaseResources()
+{
+    recorder.stop();
+}
 
 void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                                         juce::MidiBuffer& midiMessages)
@@ -369,6 +379,9 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
     }
 
+    if (isStandalone())
+        recorder.recordBlock (buffer);
+
     // Mix to mono and push to analyzer FIFO (no lock, no alloc)
     {
         constexpr int kMaxBlock = 2048;
@@ -381,6 +394,37 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             mono[i] = (L[i] + R[i]) * 0.5f;
         analyzerFifo.push (mono, n);
     }
+}
+
+bool TsukiSynthProcessor::isStandalone() const
+{
+    return wrapperType == wrapperType_Standalone;
+}
+
+bool TsukiSynthProcessor::isRecording() const
+{
+    return isStandalone() && recorder.isRecording();
+}
+
+bool TsukiSynthProcessor::startRecording()
+{
+    return isStandalone() && recorder.start();
+}
+
+juce::File TsukiSynthProcessor::stopRecording()
+{
+    if (! isStandalone())
+        return {};
+
+    return recorder.stop();
+}
+
+juce::String TsukiSynthProcessor::getRecordingStatusText() const
+{
+    if (! isStandalone())
+        return {};
+
+    return recorder.getStatusText();
 }
 
 // == State ==
