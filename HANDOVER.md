@@ -1,7 +1,7 @@
 # TsukiSynth 交接文件
 
-> 交接視窗：2026-08-30　分支：`fix/deep-physics-audit-20260716`
-> （HEAD `212106c`，已 merge → `main` `b7e4330`；工作樹有 unstaged 待審，見 §1-2）
+> 交接視窗：2026-08-30（2026-09-07 補記 §0-2）　分支：`fix/deep-physics-audit-20260716`
+> （HEAD `cdf2017`；`main` 於 2026-09-07 再度同步，見 §0-2；工作樹乾淨）
 > **新 session 請先讀完這一頁再動手。** 待辦細節在 `TODO.md` 開頭「待辦總表」；
 > 歷史決策在 `DEVLOG.md`；更早版本的交接內容由 git 歷史保存，本檔只寫現況。
 
@@ -30,16 +30,33 @@ codex 對全專案做了兩輪稽核，證據在
 
 新 session 若要接這條線，先讀那份診斷文件的 §4（未修項目）與附錄（卡在裁決 vs 可開工）。
 
+## 0-2. 2026-09-07 補記：8/31 兩個 commit 登記 + 月月裁決批次
+
+8/30 之後分支上多了兩個 commit，先前 HANDOVER/TODO 都沒登記：
+
+| commit | 內容 |
+|---|---|
+| `a7413e5` | 稽核修復批次：F-01/F-02（工具刪使用者資料）、F-06（Type-0 MIDI）、F-07（檔名驗證）、K-04/K-06（subprocess timeout）+ 哨兵測試 |
+| `cdf2017` | **稽核 §4-A 已修**：水鑼 Pitch Glide 最終音高依 host buffer size（cap 改取樣層級）+ `docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md` |
+
+→ 稽核未修清單自此只剩 §4-B（`getTailLengthSeconds()`）、§4-C（F-03 裁決）、
+§4-D（schema 三份契約）、§4-E（K-02/K-03）、§4-F（文件措辭）、§4-G（CI 接新測試）。
+
+**月月 2026-09-07 裁決（一次批 6 項）**：
+1. 上述兩個 commit **push + merge → `main`**（本次執行）。
+2. `pytest` + `mido` 加進 `tools/requirements-physics.txt`，新測試檔接進 CI（§4-G 關閉）。
+3. **A8 外部資料集（TU Berlin 樂器指向性資料庫，CC BY-SA 4.0）下載**——只當外部參照，
+   repo 內只留 DOI + SHA256 + 比對數字，資料檔不進版控。
+4. UI 功能規格**等所有功能做完再**送設計端重做（不是現在）。
+5. A13 / A14 / F-03 改由 AI 查外部資料（含 Reddit 等社群討論）後做出決定，附證據。
+6. 可開工的工程項與「只做了骨架」的部分，以 規劃者→Sonnet 工兵→Opus 稽核 的 Dynamic Workflow 發包。
+
 ## 1. 立刻要知道的三件事
 
-1. **`main` 與分支已同步**（2026-08-30，月月明示授權 commit+push+merge）。
-   merge commit `64afb49` + `b7e4330`，`git diff main fix/deep-physics-audit-20260716` 為空。
-   分支保留為工作 branch。**R7 照舊：往後沒有月月明示就不 commit / 不 push。**
-2. **工作樹有一批 unstaged 待審**（本輪 stem_verify 產物與文件更新）：
-   `tools/stem_verify.py`、`tests/test_stem_verify.py`、
-   `reports/decision_packets/POLYPHONIC_VERIFICATION_OPTIONS.zh-TW.md`、
-   `reports/gate_outputs/stem_verify_fur_elise_run.txt`（含月月獨立查核追加段），
-   以及 HANDOVER / TODO / DEVLOG / README / `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8。
+1. **`main` 與分支已同步**（2026-08-30 首次；2026-09-07 再同步含 `a7413e5`/`cdf2017`，
+   皆月月明示授權 commit+push+merge）。分支保留為工作 branch。
+   **R7 照舊：往後沒有月月明示就不 commit / 不 push。**
+2. **工作樹乾淨**（2026-09-07）。8/30 那批 stem_verify 產物已在 `212106c` 前入庫。
 3. **月月是聾人開發者，全程免耳驗收。** 任何「聽起來如何」的主張都不算數；
    物理/位置正確性由 GATE 鏈負責，美學驗收由月月安排外部專業人士。這是本專案的根本設定。
    corpus 為 **75 檔**（任何文件寫 73 都是舊的），最新全綠證據

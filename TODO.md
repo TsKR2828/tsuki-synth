@@ -1,7 +1,11 @@
 # TsukiSynth — Current TODO
 
-> Last updated: 2026-08-30
-> Branch: `fix/deep-physics-audit-20260716`（HEAD `212106c`，已 merge → `main` `b7e4330`）
+> Last updated: 2026-09-07
+> Branch: `fix/deep-physics-audit-20260716`（HEAD `cdf2017`，2026-09-07 merge → `main`）
+
+**2026-09-07 補記**：8/31 兩個 commit 登記（`a7413e5` 稽核修復批次、`cdf2017` 水鑼 Pitch Glide
+buffer-size 缺陷已修＝稽核 §4-A 關閉）＋月月裁決批次（push/merge、requirements 加 pytest+mido、
+A8 下載、UI 等功能做完再送設計、A13/A14/F-03 由 AI 查外部資料決定）——詳見 `HANDOVER.md` §0-2。
 
 The deep-audit implementation fixes are on the branch. Historical Phase D–I decisions remain in `DEVLOG.md`; this file lists only current work and scientific gaps.
 
