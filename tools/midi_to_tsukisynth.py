@@ -40,6 +40,47 @@ try:
 except ImportError as exc:  # pragma: no cover - user-facing dependency guard
     raise SystemExit("mido is required: python -m pip install mido") from exc
 
+try:
+    from jsonschema import Draft202012Validator
+except ImportError as exc:  # pragma: no cover - user-facing dependency guard
+    raise SystemExit("jsonschema is required: python -m pip install jsonschema") from exc
+
+# WF0907-E8 (F-04, reports/gate_outputs/stem_verify_fur_elise_run.txt): "what
+# counts as a legal score" has exactly one executable definition --
+# scores/schema/score.schema.json (also the C++ ScoreParser --validate
+# contract, see src/score/ScoreParser.h). validate_score() below only ever
+# checked this converter's OWN renderer-timing invariants (event sort order,
+# release-time math, rest thresholds) -- never meta/global/effects/export
+# bounds, so a converter caller could write a file that jsonschema itself
+# rejects (id="INVALID ID", sample_rate=123, master_volume=2, reverb
+# decay=99, tail_silence_ms=-1 all previously passed straight through to
+# write_score()). write_score() now runs the canonical validator too,
+# single source of truth, before anything reaches disk.
+_SCORE_SCHEMA_PATH = Path(__file__).resolve().parent.parent / "scores" / "schema" / "score.schema.json"
+_score_schema_validator: Draft202012Validator | None = None
+
+
+def _get_score_schema_validator() -> Draft202012Validator:
+    global _score_schema_validator
+    if _score_schema_validator is None:
+        with open(_SCORE_SCHEMA_PATH, encoding="utf-8") as fh:
+            schema = json.load(fh)
+        _score_schema_validator = Draft202012Validator(schema)
+    return _score_schema_validator
+
+
+def schema_errors(score: dict[str, Any]) -> list[str]:
+    """Canonical-schema errors, one line per violation, each naming its
+    JSON path so a caller can locate the offending field."""
+    validator = _get_score_schema_validator()
+    errors = []
+    for error in validator.iter_errors(score):
+        location = "$" + "".join(
+            f"[{p!r}]" if isinstance(p, str) else f"[{p}]" for p in error.absolute_path
+        )
+        errors.append(f"schema: {location}: {error.message}")
+    return errors
+
 
 MUTOPIA_LICENSE = "Creative Commons Attribution-ShareAlike 3.0"
 MUTOPIA_LICENSE_URL = "https://creativecommons.org/licenses/by-sa/3.0/"
@@ -1219,6 +1260,21 @@ def validate_score(score: dict[str, Any]) -> list[str]:
 
 
 def write_score(score: dict[str, Any], output: Path) -> None:
+    # Schema errors are checked first and reported IN FULL, never truncated
+    # -- these are exactly the errors TsukiSynthCLI --validate and
+    # tests/test_schema_contract_sync.py would report, so a converter caller
+    # needs the complete list to fix the input (a CLI arg, a profile, a
+    # source MIDI value), never a clamp. They are raised on their own
+    # (before validate_score runs at all) specifically so the "; ".join(...)
+    # below has nothing else appended ahead of it that could push a schema
+    # error past a shared truncation cutoff.
+    s_errors = schema_errors(score)
+    if s_errors:
+        raise ValueError("; ".join(s_errors))
+    # Renderer-timing errors are truncated to 20 -- once a document is
+    # schema-valid, these usually share one systemic root cause (e.g. an
+    # events sort bug), so the value of listing every occurrence drops
+    # fast and an unbounded message is not worth the noise.
     errors = validate_score(score)
     if errors:
         raise ValueError("; ".join(errors[:20]))

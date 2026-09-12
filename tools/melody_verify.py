@@ -24,10 +24,17 @@ Method (all deterministic, all documented):
     exact; the tolerance covers only the measurement (hop quantisation
     5.3 ms @ 48 kHz + exciter attack, tau_c is ms-scale).
   * PITCH (per event): amplitude centroid of the band over the early
-    sustain, judged in cents against the --dump-modes course-centroid
-    fundamental -- SAME 5.0-cent limit and same centroid convention the
-    2026-07-23 ratified tuner gate uses (verify_score.MODE_F0_TOL_CENTS).
-    No new pitch tolerance is introduced.
+    sustain (hard +/-3% band edges -- WF0909-C10B tried and REVERTED a
+    raised-cosine edge taper meant to cut the estimator's own zero-offset
+    bias below 1 cent; see measure_pitch_cents()'s docstring for why it
+    was reverted rather than shipped), judged in cents against the
+    --dump-modes course-centroid fundamental -- SAME 5.0-cent limit and
+    same centroid convention the 2026-07-23 ratified tuner gate uses
+    (verify_score.MODE_F0_TOL_CENTS). No new pitch tolerance is
+    introduced. (measure_pitch_cents_legacy() below is now byte-identical
+    in behaviour to measure_pitch_cents() -- kept as a separate name so
+    the WF0909-C10B before/after numbers in
+    reports/gate_outputs/wf0909_C10B_estimator.txt stay reproducible.)
   * EXTRA/MISPLACED ("no note is anywhere else"): every rise detected in
     ANY monitored band must coincide with SOME declared event's onset
     (strike transients are broadband, so any strike may light up any
@@ -214,22 +221,201 @@ def overlaps(a, b):
     return a[0] <= b[1] and b[0] <= a[1]
 
 
+def measure_pitch_cents_legacy(mono, sr, f0, t_exp):
+    """Band-limited amplitude-CENTROID pitch estimator -- kept VERBATIM,
+    byte-for-byte the WF0907-C10 extraction of verify()'s original inline
+    pitch block, under its own name so the WF0909-C10B before/after numbers
+    in reports/c10b_estimator_before_after.md stay reproducible.
+
+    WF0909-C10B tried to replace this with a raised-cosine-tapered variant
+    (see measure_pitch_cents() below) to clear the self-cal sentinel's
+    1-cent self-certification bar (this function's own error: max |error|
+    = 1.1721 cents over the 1170-point development grid,
+    reports/decision_packets/C10_selfcal_domain.zh-TW.md) -- that attempt
+    was REVERTED (see measure_pitch_cents()'s docstring for the full
+    numbers and why), so as of the WF0909-C10B fix round this function and
+    measure_pitch_cents() are byte-identical in behaviour again. Both names
+    are kept: this one for historical/comparison clarity, the other
+    because it is the name every caller (verify(), stem_verify.py,
+    partial_verify.py, measurement_selfcal.py) actually uses.
+
+    Returns (cents, fail_reason): on success fail_reason is None; on
+    failure cents is None and fail_reason is the same string verify() used
+    to inline as r["reason"]."""
+    s0 = int((t_exp + PITCH_SEG_S[0]) * sr)
+    s1 = min(len(mono), int((t_exp + PITCH_SEG_S[1]) * sr))
+    seg = mono[s0:s1]
+    if len(seg) < 2048:
+        return None, "segment too short for pitch"
+    spec = np.abs(np.fft.rfft(seg * np.hanning(len(seg))))
+    fr = np.fft.rfftfreq(len(seg), 1.0 / sr)
+    lo, hi = band_of(f0)
+    m = (fr >= lo) & (fr <= hi)
+    if not m.any() or float(np.sum(spec[m])) <= 0:
+        return None, "no measurable band energy for pitch"
+    f_meas = float(np.sum(fr[m] * spec[m]) / np.sum(spec[m]))
+    cents = vs.cents_between(f_meas, f0)
+    return cents, None
+
+
+def measure_pitch_cents(mono, sr, f0, t_exp):
+    """Pitch estimator: band-limited amplitude centroid of `mono` (sr Hz)
+    over PITCH_SEG_S relative to onset time `t_exp` (already carrying
+    whatever offset the caller's timeline uses -- verify() passes the
+    +PAD_S analysis time), judged in cents against expected fundamental
+    `f0`. This is the function verify(), stem_verify.py and
+    partial_verify.py all call for the product GATE.
+
+    AS OF THE WF0909-C10B FIX ROUND this is byte-identical to
+    measure_pitch_cents_legacy() above (hard +/-3% rectangular band,
+    band_of, no edge taper) -- the attempted replacement was tried,
+    measured on BOTH the self-cal sentinel's accuracy axis and (this
+    round's addition, WF0909-C10B fix round) its GAIN-FIDELITY axis, and
+    REVERTED because every configuration found traded one for the other.
+    Full story below, all numbers in
+    reports/gate_outputs/wf0909_C10B_estimator.txt (step 1 = original
+    round, step 2 = fix round).
+
+    WHY THE ATTEMPT WAS MADE: the self-cal sentinel
+    (tools/measurement_selfcal.py, 1170-point development grid) measures
+    this hard-edge centroid's own error, AT ZERO true-vs-expected offset,
+    at max |error| = 1.1721 cents -- above the 1-cent self-certification
+    threshold the month-lead ruled the +/-5-cent product GATE needs before
+    it can be trusted (C10 decision packet,
+    reports/decision_packets/C10_selfcal_domain.zh-TW.md). Root cause
+    (decision packet §0): summing energy over the WHOLE band with a HARD
+    0/1 cutoff at its edges makes the result sensitive to exactly which
+    bins the discrete FFT grid happens to place on which side of the
+    boundary -- asymmetric Hann-window sidelobe leakage across that
+    boundary then pulls the weighted mean off the true partial, worst
+    where the band spans few bins (low f0, e.g. MIDI 37) or an inharmonic
+    partial sits close to the edge (high f0, e.g. MIDI 100).
+
+    FIVE CANDIDATES WERE TRIED AND ALL REJECTED, honestly recorded here
+    rather than silently discarded (docs/workcards/WF0909_C10B_estimator
+    .md §2.1 a/b/c for the first three; the fourth was the estimator this
+    project briefly shipped before the fix-round audit caught it; the
+    fifth was tried during the fix round itself):
+      (a) 3-bin log-magnitude PARABOLIC interpolation around the single
+          spectral peak (Smith & Serra 1987): passed both self-cal grids
+          on ZERO-offset accuracy (dev max 0.2228 c, hold-out max 0.0832
+          c) -- REJECTED on real rendered audio (melody_sentinel,
+          --selftest): a course is 3 strings detuned +/-5 cents, i.e.
+          separated by a FRACTION of one FFT bin at this window length, so
+          within one partial beat cycle the peak bin locks onto whichever
+          string's phase constructively dominates at that instant instead
+          of the course's actual centre -- 4 of 5 sentinel notes went from
+          PASS (<=1.6 c) to FAIL (up to -8.95 c, past the +/-5 c product
+          GATE). The synthetic self-cal grid has no course/detuning model
+          at all, so it could not have caught this.
+      (b) two-frame PHASE-DIFFERENCE instantaneous frequency at the peak
+          bin (phase-vocoder convention): passed both self-cal grids on
+          zero-offset accuracy (dev max 0.3923 c) -- REJECTED for the
+          IDENTICAL reason as (a): still a single-peak-bin method, same
+          course failure on melody_sentinel (4/5 notes FAIL, up to
+          -8.04 c).
+      (c) zero-padding the SAME window before the SAME hard-edge centroid,
+          swept 8x/16x/32x/64x -- REJECTED, does not converge below the
+          1-cent line at all (max |error| 1.1796 / 1.1727 / 1.1693 /
+          1.1710 c, asymptoting toward the un-padded 1.1721 c). Confirms
+          the bias is real in-band sidelobe ENERGY, not a discrete-bin
+          sampling artifact finer FFT sampling could interpolate away.
+      (d) RAISED-COSINE EDGE TAPER (the estimator this project briefly
+          shipped, PITCH_EDGE_TAPER_FRAC=0.75): a whole-band weighted mean
+          -- same family as (c) -- but softening only the outer 75% of
+          each band edge before summing, so course/detuning robustness is
+          inherited (unlike (a)/(b)) while removing the hard 0/1 cutoff
+          (c) never touched. On the zero-offset axis this WORKED: dev grid
+          max |error| 0.2924 c, INDEPENDENT hold-out grid (off-lattice f0
+          offsets, disjoint B/level/onset) 0.2465 c, melody_sentinel real
+          audio improved 1.6007 c -> 0.4890 c with no PASS->FAIL
+          regression. REJECTED by the fix-round audit on a SECOND axis the
+          original round's hold-out grid never tested: gain fidelity when
+          the TRUE frequency actually deviates from the EXPECTED one (the
+          exact situation the +/-5-cent product GATE exists to catch).
+          Both self-cal grids only ever centre the band on the SYNTHESIZED
+          (already-shifted) frequency, so a taper that peaks its weight at
+          the band's own centre necessarily also peaks at the true
+          frequency in BOTH grids -- structurally blind to its own
+          matched-filter behaviour. Measured with the sentinel's own
+          measure_one(freq_offset_cents=...) (true frequency shifted away
+          from the value passed as `f0`, mirroring real product use): at
+          MIDI 37 (~69 Hz), harmonic, -6 dBFS, a true +12.0-cent deviation
+          measured as only +4.806 c (gain 0.40, legacy's own +8.620 c on
+          the SAME signal is gain 0.72) -- i.e. WITHOUT touching the
+          +/-5-cent tolerance number, this taper shrank the EFFECTIVE
+          tolerance at low f0 to roughly +/-12.5 cents worth of real
+          mistuning before the GATE would catch it. A full taper-fraction
+          sweep (0.75 down to 0.0 in 13 steps, same MIDI-36..100 sweep,
+          offsets +-3/+-5/+-10/+-12 c, clean -6 dBFS signal) found the
+          trade is CONTINUOUS and monotonic in the taper width -- no
+          fraction gets the dev-grid error under 1.0 cent without a worst-
+          case gain deficit at low MIDI staying above ~0.34 (34% of a real
+          deviation silently absorbed); the fraction (~0.15-0.20) where
+          dev-grid error first crosses 1.0 cent still carries a ~0.35-0.40
+          gain deficit, no better than the shipped 0.75.
+      (e) MEAN-SHIFT (self-referential) taper, tried during the fix round
+          as a way to decouple (d)'s taper from the fixed hypothesis `f0`:
+          start from the plain hard-cutoff centroid as a first estimate,
+          then iterate the SAME raised-cosine taper re-centred on the
+          CURRENT estimate (not on `f0`) until it converges (5 iterations
+          is enough; 15 gives identical numbers). This measurably helps --
+          at taper fraction 0.5 the worst-case gain deficit on the same
+          offset sweep drops from (d)'s ~0.55-0.66 to ~0.31, with dev-grid
+          max |error| = 0.7167 c (still < 1.0 c) -- but converges to a
+          fixed point that is STILL worse than the legacy estimator's own
+          gain fidelity at the same worst cell (MIDI 37, -12 c: mean-shift
+          measures gain 0.687 vs legacy's own 0.885 on the identical
+          signal) -- REJECTED for the same reason as (d), a smaller
+          version of the identical defect, not a fix of it.
+    CONCLUSION (fix round, WF0909-C10B): within the scope this card
+    allows -- change only the frequency-estimation math inside this one
+    function, leave band_of's +/-3% band selection untouched -- no
+    variant of (c)/(d)/(e) achieves BOTH the self-cal sentinel's <=1-cent
+    zero-offset bar AND gain fidelity at least as good as the legacy
+    estimator's own (already imperfect, but not silently regressed)
+    behaviour under a real deviation. Per this card's own §5 ("try three
+    methods, if none reach <=1.0 including hold-out, stop and report the
+    numbers"): five methods across two structurally different families
+    were tried and none qualify -- this function REVERTS to the legacy
+    hard-edge math (byte-identical to measure_pitch_cents_legacy() above)
+    rather than ship a change that improves one number the sentinel
+    checks while quietly weakening the number the product GATE actually
+    depends on. The zero-offset bias this card set out to fix (1.1721 c
+    > 1.0 c) remains UNFIXED; docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §9
+    and the C10 decision packet record this outcome and the still-open
+    choice between the decision packet's original option A (narrow the
+    claim domain, no code change) and a genuinely new option C (a method
+    outside this family, not yet found).
+
+    Band selection (band_of's +/-3% width itself), onset refinement
+    (refined_onset), the Ra-Re refusal rules and course/detune handling
+    were never touched by any of the five attempts above.
+
+    Returns (cents, fail_reason): on success fail_reason is None; on
+    failure cents is None and fail_reason is the same string verify() uses
+    to inline as r["reason"]."""
+    return measure_pitch_cents_legacy(mono, sr, f0, t_exp)
+
+
 def expected_f0s(cli, score_path, events):
-    """Per-event expected fundamental. Modal engines: --dump-modes course
-    centroid (physically true, incl. inharmonicity + detuning). FM with
-    default ratio: equal temperament. f0s[i] None => refusal reason in
-    refusals[i]."""
-    try:
-        dumped = vs.dump_modes(cli, str(score_path)).get("events", [])
-    except vs.CliError as e:
-        if "layer expansion is not implemented" in str(e):
-            # Layered scores have no --dump-modes (upstream CLI limitation,
-            # 2026-08-21 corpus sweep) -> the whole file is a refusal, not a
-            # crash: no expected-f0 ground truth exists to judge against.
-            print("  [UNVERIFIED] whole file: layered score has no --dump-modes"
-                  " ground truth (CLI: layer expansion not implemented)")
-            sys.exit(3)
-        raise
+    """Per-event expected fundamental for a FLAT (non-layered) score.json --
+    `events` is the score's own top-level "events" array, matched to
+    --dump-modes output positionally by source_index. Modal engines:
+    --dump-modes course centroid (physically true, incl. inharmonicity +
+    detuning). FM with default ratio: equal temperament. f0s[i] None =>
+    refusal reason in refusals[i].
+
+    A layered score.json (top-level "layers", no "events") never reaches
+    this function: verify() routes it to expected_f0s_layered() instead,
+    on the flattened dump ScoreRenderer::dumpModesLayered() now produces
+    (WF0907-E9 gave --dump-modes real layered support; before that, CLI
+    --dump-modes on a layered file raised CliError("layer expansion is not
+    implemented") and this function used to catch that string here as a
+    whole-file refusal -- WF0907-E9b removed that branch since the CLI no
+    longer raises it, and leaving it in would have been a stale claim about
+    an upstream limitation that no longer exists)."""
+    dumped = vs.dump_modes(cli, str(score_path)).get("events", [])
     by_src = {d.get("source_index"): d for d in dumped}
     f0s, partials, refusals, decays = [], [], [], []
     for i, ev in enumerate(events):
@@ -278,9 +464,77 @@ def expected_f0s(cli, score_path, events):
     return f0s, partials, refusals, decays
 
 
+def expected_f0s_layered(dumped_events):
+    """WF0907-E9b: expected_f0s()'s counterpart for a LAYERED score.json.
+
+    `dumped_events` is ScoreRenderer::dumpModesLayered()'s flattened
+    "events" array (each leaf's own dumpModes() event objects, re-emitted
+    with a layer-offset "time", "layer_source", and gain-scaled amplitude
+    fields -- see RenderApp.cpp's --dump-modes branch and
+    ScoreRenderer.h's dumpModesLayered()). There is no top-level score
+    "events" array to match these against for a layered file
+    (validateLayeredScore() requires "layers" instead), so the caller
+    (verify()) builds its synthetic per-event list directly from this same
+    `dumped_events`, in the same order -- the mapping here is POSITIONAL
+    (index i <-> dumped_events[i]), not by "source_index" (that field is
+    each LEAF's own local index and repeats across layers, so a
+    source_index-keyed dict the way expected_f0s() uses one would silently
+    collide entries from different layers).
+
+    Known, honest degradation vs expected_f0s() (this is why WF0907-E9b's
+    layered verification is INFORMATIONAL ONLY, never GATE-judged):
+      * no velocity gate -- unneeded: dumpModes() already omits
+        zero-velocity events ("not part of the render plan", see the C++
+        comment in ScoreRenderer::dumpModes()), so every entry here already
+        renders.
+      * no FM fm_ratio!=1 special case -- expected_f0s() detects a
+        decoupled FM carrier from the raw score event's own "params",
+        which the flattened dump does not carry (only engine/note/midi +
+        the dumped modal partials survive flattening). Every engine here,
+        FM included, is judged uniformly off its own dumped
+        partials/strings via vs.course_f0() -- the same measurement modal
+        engines already use, applied to FM too rather than left unjudged.
+      * is_course() (verify()'s extra-scan, see its definition) also reads
+        each event's "params" (num_strings/detuning_cents) to tell a
+        detuned multi-string course from a plain event -- absent here for
+        the same reason as the FM ratio above, so it falls back to the
+        default num_strings=3/detuning_cents=5.0 for every layered
+        cimbalom/piano/string event, fail-open (over-widens refused
+        beat-interference rises rather than under-widening). See the
+        comment at is_course()'s definition for the full mechanism.
+    """
+    f0s, partials, refusals, decays = [], [], [], []
+    for d in dumped_events:
+        f0 = vs.course_f0(d)
+        parts = []
+        if f0 is None:
+            refusals.append("no usable fundamental in --dump-modes output")
+        else:
+            refusals.append(None)
+            seen = set()
+            string_lists = d.get("strings") or [d.get("partials") or []]
+            for plist in string_lists:
+                for p in (plist or []):
+                    fq = p.get("freq") if isinstance(p, dict) else None
+                    if fq and math.isfinite(fq) and fq > 0:
+                        seen.add(float(fq))
+            parts = sorted(seen) or [f0]
+        f0s.append(f0)
+        partials.append(parts)
+        t60 = None
+        plist = (d.get("partials") or [])
+        if plist and isinstance(plist[0], dict):
+            dv = plist[0].get("decay")
+            if dv and math.isfinite(dv) and dv > 0:
+                t60 = float(dv)
+        decays.append(t60)
+    return f0s, partials, refusals, decays
+
+
 def verify(score_path, wav_path=None, keep_json=None, quiet=False):
     score_path = Path(score_path)
     score = json.loads(score_path.read_text(encoding="utf-8"))
+    is_layered = "layers" in score
     events = score.get("events", [])
     cli = vs.find_cli()
 
@@ -294,8 +548,31 @@ def verify(score_path, wav_path=None, keep_json=None, quiet=False):
     # reported/judged time has it removed again).
     mono = np.concatenate([np.zeros(int(PAD_S * sr)), mono])
 
-    f0s, partials, refusals, decays = expected_f0s(cli, score_path, events)
+    if is_layered:
+        # WF0907-E9b: a layered score.json has no top-level "events" (its
+        # "layers" list stands in for that -- see validateLayeredScore()),
+        # so `events` above is []. Build a synthetic per-event list
+        # directly from the flattened --dump-modes output instead, in the
+        # SAME order as expected_f0s_layered()'s own positional read of it
+        # (both walk `dumped` once, so index i in `events` below lines up
+        # with dumped[i]). This is informational only, never GATE-judged --
+        # see the docstring on expected_f0s_layered() for exactly what
+        # cannot be reproduced from a flattened dump (FM ratio decoupling)
+        # and what does not need to be (the velocity gate).
+        dumped = vs.dump_modes(cli, str(score_path)).get("events", [])
+        events = [{"time": d.get("time", 0.0), "note": d.get("note"),
+                   "engine": d.get("engine"), "layer_source": d.get("layer_source")}
+                  for d in dumped]
+        f0s, partials, refusals, decays = expected_f0s_layered(dumped)
+    else:
+        f0s, partials, refusals, decays = expected_f0s(cli, score_path, events)
 
+    # Reads the TOP-LEVEL score's own global.effects only. A layered
+    # score.json's effects live per-leaf (each layer.source's own "global"),
+    # not here -- a leaf's reverb/delay is invisible to this gate for a
+    # layered file, so a layered run cannot claim the delay-echo/reverb-tail
+    # refusals below the way a flat score's own run can. Another reason
+    # WF0907-E9b's layered verification stays informational only.
     fx = (score.get("global") or {}).get("effects") or {}
     delay_wet = float(((fx.get("delay") or {}).get("wet")) or 0.0)
     rev = fx.get("reverb") or {}
@@ -466,25 +743,12 @@ def verify(score_path, wav_path=None, keep_json=None, quiet=False):
             r["reason"] = "pitch refused: " + pitch_refused[i] + note
             results.append(r)
             continue
-        s0 = int((t_exp + PITCH_SEG_S[0]) * sr)
-        s1 = min(len(mono), int((t_exp + PITCH_SEG_S[1]) * sr))
-        seg = mono[s0:s1]
-        if len(seg) < 2048:
+        cents, pitch_fail = measure_pitch_cents(mono, sr, f0, t_exp)
+        if pitch_fail:
             r["verdict"] = "UNVERIFIED"
-            r["reason"] = "segment too short for pitch"
+            r["reason"] = pitch_fail
             results.append(r)
             continue
-        spec = np.abs(np.fft.rfft(seg * np.hanning(len(seg))))
-        fr = np.fft.rfftfreq(len(seg), 1.0 / sr)
-        lo, hi = band_of(f0)
-        m = (fr >= lo) & (fr <= hi)
-        if not m.any() or float(np.sum(spec[m])) <= 0:
-            r["verdict"] = "UNVERIFIED"
-            r["reason"] = "no measurable band energy for pitch"
-            results.append(r)
-            continue
-        f_meas = float(np.sum(fr[m] * spec[m]) / np.sum(spec[m]))
-        cents = vs.cents_between(f_meas, f0)
         r["pitch_cents"] = cents
         if abs(cents) > PITCH_TOL_CENTS:
             r["verdict"] = "FAIL"
@@ -533,6 +797,24 @@ def verify(score_path, wav_path=None, keep_json=None, quiet=False):
             # deep AM nulls whose recovery registers as a rise (moonlight
             # v3: 5-cent spread at 69 Hz beats every ~5 s). One ringing
             # course therefore explains interference rises on its own.
+            #
+            # WF0907-E9b, known fail-open for a LAYERED score: the synthetic
+            # `events` verify() builds for a layered run (see the is_layered
+            # branch above) come from the flattened --dump-modes "events"
+            # array, which carries only time/note/engine/layer_source --
+            # never the raw score event's own "params" (num_strings,
+            # detuning_cents). `ev.get("params")` is therefore ALWAYS None
+            # for a layered event, so `prm` is always {} and this predicate
+            # falls back to the DEFAULT num_strings=3/detuning_cents=5.0 for
+            # every cimbalom/piano/string-engine layered event, whether or
+            # not that leaf actually declared a multi-string detuned course.
+            # Net effect: is_course() over-widens refused_rises (treats more
+            # rises as course-beat interference than a flat-score run of the
+            # same leaf would) -- fail-open, same direction as the other two
+            # documented degradations in expected_f0s_layered()'s docstring.
+            # Cannot be fixed without the leaf's own params reaching the
+            # flattened dump (a --dump-modes / dumpModesLayered() change,
+            # out of this card's scope); left honestly labeled here instead.
             def is_course(ev):
                 if ev.get("engine") not in ("cimbalom", "piano", "string"):
                     return False
@@ -583,9 +865,25 @@ def verify(score_path, wav_path=None, keep_json=None, quiet=False):
               "onset_err_ms": {"max_abs": (max_abs_err * 1e3) if max_abs_err is not None else None,
                                "tol": ONSET_TOL_S * 1e3},
               "summary": {"pass": n_pass, "fail": n_fail, "unverified": n_unv}}
+    if is_layered:
+        # WF0907-E9b: layered runs are informational only, never
+        # GATE-judged (see the is_layered branch above and
+        # expected_f0s_layered()'s docstring for why) -- main() reads this
+        # to keep the exit code from acting like a real GATE for a layered
+        # score.json, matching that claim instead of just stating it
+        # (audit finding, WF0908-C10b fix round). Added ONLY for a layered
+        # run, never for a flat one, so a flat score's report dict (and its
+        # --json output) stays byte-identical to before this fix round --
+        # required for WF0907-C10 §9.1's extract-before/after JSON-identity
+        # proof (GATE 1), which this key must not disturb.
+        report["informational"] = True
     if keep_json:
         Path(keep_json).write_text(json.dumps(report, indent=2), encoding="utf-8")
     if not quiet:
+        if is_layered:
+            print("  (informational only -- layered score.json, NOT "
+                  "GATE-judged; see EARFREE_MELODY_GATE_DESIGN.zh-TW.md "
+                  "WF0907-E9b / expected_f0s_layered() docstring)")
         for r in results:
             line = "  [%s] ev%d t=%.3f note=%s" % (r["verdict"], r["index"], r["time"], r["note"])
             if "onset_err_ms" in r:
@@ -809,6 +1107,13 @@ def main():
         else:
             write_html_report(rep, score, wav, a.html)
         print("  html report: %s" % a.html)
+    # WF0907-E9b: a layered score.json's report is informational only (see
+    # verify()'s "informational" field) -- its exit code must not act like
+    # a real GATE's, matching the claim in expected_f0s_layered()'s
+    # docstring instead of contradicting it (audit finding, WF0908-C10b fix
+    # round).
+    if rep.get("informational"):
+        sys.exit(0)
     sys.exit(1 if rep["summary"]["fail"] else 0)
 
 
