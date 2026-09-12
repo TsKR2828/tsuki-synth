@@ -36,16 +36,19 @@ TsukiSynth 自己算出來的。** 程式算出模型該長什麼樣，再檢查
 
 ## 1. 主要資源：校準過的樂器輻射資料庫
 
-| 項目 | 內容 |
-|---|---|
-| 收錄 | 41 種現代與古樂器 |
-| 量測 | 消音室；32 顆 Sennheiser KE4-211-2 電容音頭，配置於**五角化十二面體頂點**，陣列直徑 **2.1 m**（半徑 1.05 m） |
-| **校準** | **數位振幅 1 對應 1 Pa，亦即 `Lp = 94 dB`**（參考 2 × 10⁻⁵ Pa） |
-| 內容 | 逐音錄音（複數傳遞函數）、逐音指向性、1/3 八度帶平均指向性 |
-| 格式 | SOFA；另有 OpenDAFF 與 GLL（8192 taps FIR，2522 個空間點） |
-| 頻率範圍 | 消音室下限 `fc = 63 Hz`；取樣率 44.1 kHz |
-| 授權 | **CC BY-SA 4.0** |
-| 位置 | DepositOnce 典藏庫（有 DOI）；論文 arXiv:2307.02110 |
+| 項目 | 內容 | 出處 |
+|---|---|---|
+| 收錄 | 41 種現代與古樂器 | 資料檔（說明 PDF） |
+| 量測 | 消音室；32 顆 Sennheiser KE4-211-2 電容音頭，配置於**五角化十二面體頂點**，**半徑 2.06 m**（SOFA `ReceiverPosition`，32 顆麥克風一律 2.06 m；說明 PDF 式(4) S1=54.63 m² 反推 2.085 m） | 資料檔（SOFA metadata＋說明 PDF） |
+| **校準** | **數位振幅 1 對應 1 Pa，亦即 `Lp = 94 dB`**（參考 2 × 10⁻⁵ Pa） | 資料檔（說明 PDF）／arXiv |
+| 內容 | 逐音錄音（複數傳遞函數）、逐音指向性、1/3 八度帶平均指向性 | 資料檔（說明 PDF） |
+| 格式 | SOFA；另有 OpenDAFF 與 GLL（8192 taps FIR，2522 個空間點） | 資料檔（說明 PDF） |
+| 頻率範圍 | 消音室下限 `fc = 63 Hz`（僅見 arXiv 2307.02110 全文；說明 PDF 無此數）；取樣率 44.1 kHz | arXiv |
+| 授權 | **CC BY-NC-SA 4.0**（資料檔 metadata 與說明 PDF；arXiv 預印本寫 BY-SA、DepositOnce 記錄寫 InC——四源不一致，見 `docs/EXTERNAL_DATASET_A8.zh-TW.md` §2.1） | 資料檔（說明 PDF＋SOFA metadata） |
+| 位置 | DepositOnce 典藏庫；論文 arXiv:2307.02110；DOI——資料檔內印的 `10.14279/depositonce-5861.3` 回 404，可用 `10.14279/depositonce-19858` | DepositOnce |
+| 補充來源（可商用） | 另有兩份**可商用**來源已登記於 `docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md`：Weinzierl 2018 JASA（CC BY 4.0，有 B&K 4230 校準）與 Iowa MIS 泰國鑼（網站聲明無限制，未校準） | 見該文件 §1 |
+
+> 本專案 `radius_m=1.05` 是自訂觀測距離，與該資料庫無關。
 
 ### 1.1 對 TsukiSynth 的可用性（誠實分節）
 
@@ -72,11 +75,12 @@ TsukiSynth 自己算出來的。** 程式算出模型該長什麼樣，再檢查
 | 位移 → 體積速度 → 輻射功率 | ❌ 無 | ⚠️ 理論可得（見 §3），**未實作** |
 | 輻射功率 → 某距離的絕對 Pa | ❌ 無 | ⚠️ 理論可得，但**校準必須對到實測** |
 | 指向性 | ❌ 無 | ✅ **有可比對的實測資料**（§1） |
-| 麥克風位置語意 | ❌ 無 | ✅ 資料庫定義了明確的球面半徑 1.05 m，可直接沿用為 TsukiSynth 的「量測面」定義 |
+| 麥克風位置語意 | ❌ 無 | ✅ 資料庫定義了明確的球面半徑 **2.06 m**（本專案 `radius_m=1.05` 是自訂觀測距離，與該資料庫無關，兩者不可混用） |
 
 **最大的收穫是最後兩列**：現在 `specimen_verify.py` 把 phase／絕對 SPL／
 指向性一律判為 `UNVERIFIED`，是因為合成端**沒有可比對的預測**。有了
-明確的量測面定義（1.05 m 球面）與絕對校準慣例（1.0 ≡ 1 Pa ≡ 94 dB），
+明確的量測面定義（資料庫本身的 2.06 m 球面；本專案 `radius_m=1.05` 是自訂觀測距離，兩者無關）
+與絕對校準慣例（1.0 ≡ 1 Pa ≡ 94 dB），
 合成端至少可以開始輸出**有定義的**絕對量，而不是無單位的數字。
 
 ---
@@ -166,7 +170,10 @@ TsukiSynth 自己算出來的。** 程式算出模型該長什麼樣，再檢查
 | 9 | 168 | 133 | 20% |
 
 **必須連同侷限一起讀（重要）**：
-- 量測用 PicoScope 示波器做 FFT，**單一台樂器**，非校準、非消音室。
+- 量測用 PicoScope 示波器做 FFT，**單一台樂器**、非校準；**消音室**
+  （Sinin et al. 2026, p.1087 原句：「All recordings were conducted in an
+  anechoic chamber」——本文件先前寫「非消音室」是錯的，已更正）。
+  另注意 Table 3 的比值只報兩位小數、論文未報 FFT 解析度，精度有限。
 - 那個「偏差」是**「頻率 vs 部分音序號」線性回歸斜率與 `f0` 的差**，
   **不是**標準的非諧性係數 `B`。**不可**直接拿去比對 TsukiSynth 的
   `StringModel` 非諧性主張。
@@ -208,7 +215,7 @@ specimen-level 主張。**「要建立可信的外部錨仍須走實體試體量
 
 | # | 出處 | 取得狀態 | 用到什麼 |
 |---|---|---|---|
-| 1 | *A Database with Directivities of Musical Instruments*（arXiv:2307.02110），資料集典藏於 DepositOnce，CC BY-SA 4.0 | ✅ 論文開放全文；資料集未下載 | §1 全部：樂器清單、陣列幾何、**絕對校準 1.0 ≡ 1 Pa ≡ 94 dB**、格式、頻率範圍、授權 |
+| 1 | *A Database with Directivities of Musical Instruments*（arXiv:2307.02110），資料集典藏於 DepositOnce，CC BY-SA 4.0（該授權說法已被本文件 §1 更正為 CC BY-NC-SA 4.0，見上） | ✅ 論文開放全文；**已下載子集（2026-09-07，撥弦：吉他＋豎琴＋說明＋指向性 SOFA，3.77 GB），見 `docs/EXTERNAL_DATASET_A8.zh-TW.md`——該文件以資料檔內部 metadata 推翻本文件 §1 舊版寫的「CC BY-SA 4.0」與「半徑 1.05 m」（1.05 m 是本專案自訂觀測距離，與該資料庫無關，資料庫實際半徑為 2.06 m），§1 已據此更正** | §1 全部：樂器清單、陣列幾何、**絕對校準 1.0 ≡ 1 Pa ≡ 94 dB**、格式、頻率範圍、授權 |
 | 2 | Ege & Boutillon, *Vibroacoustics of the piano soundboard…*, J. Sound Vib. 332 (2013)（arXiv:1305.3057） | ✅ 開放全文 | §3 的 `fc ≈ 1.8 kHz`、`fc` 公式、`fga`、`η ≈ 2%±1%` |
 | 3 | SNDB（Single Note Database） | ✅ 公開（GitHub） | §4 |
 | 4 | MAPS piano database | ✅ 公開（INRIA/HAL 論文） | §4 |

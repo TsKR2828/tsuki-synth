@@ -123,6 +123,17 @@ preview/moonlight_sonata_i_yangqin_tongue_mix_preview.mp3    (5:25.87)
    20–40 dB；成品 97.4% 能量在 200 Hz 以下、2 kHz 以上能量為 0。且該引擎輸出
    接近純正弦（99.9% 能量在基頻，無泛音列）——真實鋼舌鼓應有豐富非諧泛音。
    已登記工程項 **TODO D8**（引擎級調查，非本批產線能解）。
+   **2026-09-09 更新（WF0909-D8，月月裁決 `wood_mallet`）**：根因診斷（`reports/decision_packets/D8_tongue_drum_diagnosis.zh-TW.md`）
+   查出這不是引擎缺陷，是**樂譜本身把 `exciter` 設成 `"finger"`**（等效槌接觸時間 4–11 ms，太軟）；
+   把兩首月光空靈鼓相關 score 裡 tongue_drum 事件的 `exciter` 改成 `"wood_mallet"` 後（`scores/` 已落地，
+   不動揚琴事件），本曲重渲實測：200 Hz 以下能量 **97.36% → 17.55%**，旋律音域（200 Hz–2 kHz）
+   **2.64% → 82.44%**，單音斜率（MIDI 37→87，0.3s 窗，樂譜實際兩組幾何）從 37–39 dB 降到約 2.7 dB。
+   f0／T60 逐音位元不變（exciter 不影響音高與衰減，只影響激發力譜）。完整數字與方法見
+   `reports/d8_tongue_drum_exciter_before_after.md`。**這一項音色缺陷視為已解除**——但下方「母帶／
+   Distribution/Preview 檔案清單」的實際音檔與 SHA256 是 2026-08-28 用舊 `finger` 版渲染的舊母帶，
+   **本次只改了 `scores/`，沒有重新渲染出貨批次**（超出 WF0909-D8 範圍）；曲目 3 要真正解除「暫緩上架」
+   標記，需要另外排程用新 score 重新出這批母帶／發行版／試聽版。**且上架仍受下方 CC BY-SA
+   授權疑慮限制、月月 2026-08-28 裁決未變**（換源重製前不上架）——音色缺陷解除不代表可以上架。
 2. **曲目 4（混音版）不受影響**：其中的 tongue_drum 依設計只作低頻光暈層
    （延遲 18ms、平均 velocity 0.127 vs 主奏 0.247），主旋律由揚琴承擔。
 3. **溯源鏈註記**：`.render.json` 記錄的 `renderer_executable_sha256`
