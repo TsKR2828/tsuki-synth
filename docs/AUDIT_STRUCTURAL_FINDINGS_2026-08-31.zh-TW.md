@@ -22,7 +22,7 @@
 | 同一件事實 | 地方 A | 地方 B | 症狀 |
 |---|---|---|---|
 | 什麼是合法 score | `scores/schema/score.schema.json` | C++ `--validate`（`src/score/ScoreParser.h:942`）＋ Python converter（`tools/midi_to_tsukisynth.py:1136-1171`）——**共三份** | `--validate` 說 VALID、schema 報 2 錯；converter 寫得出 6 個 schema 錯誤的檔（F-04 / F-05） |
-| 有沒有載入 IR | UI 問 `reverbIRName`（`src/PluginProcessor.h:76`） | 音訊問 `effectChain.hasImpulseResponse()`（`src/effects/EffectChain.h:103`） | 按鈕顯示 IR、實際跑 algorithmic；載入 preset 時兩個都沒更新（F-03） |
+| 有沒有載入 IR | UI 問 `reverbIRName`（`src/PluginProcessor.h:76`） | 音訊問 `effectChain.hasImpulseResponse()`（`src/effects/EffectChain.h:103`） | 按鈕顯示 IR、實際跑 algorithmic；載入 preset 時兩個都沒更新（F-03）——**已修（WF0908-P3）**：`getIRStatus().loaded` 直接等於 `effectChain.hasImpulseResponse()`（同一個欄位，非兩個變數），UI 只讀這一個函式，見 §4-C |
 | 這個聲音有多長 | 物理引擎的模態衰減（Tongue Drum 實測 T60 30.18 s） | `getTailLengthSeconds()` 的 base＝`max(2.0, fmRelease)`，`fmRelease` 來自 **FM Piano 的 release 參數**（`src/PluginProcessor.cpp:403-412`） | Host 收到 2–3.45 s，DAW bounce/freeze 截尾 |
 | wet 的增益標度 | algorithmic wet 額外乘 `0.15`（`src/effects/SimpleReverb.h:155`） | convolution wet 直接以 `m` 混合，**沒有** 0.15（`src/effects/EffectChain.h:204`） | 切模式會跳響度；「靜默退回 algorithmic」不是溫和降級（K-02） |
 
@@ -48,10 +48,10 @@
 
 | 缺陷 | 落在哪一層 | 現行 GATE 有沒有覆蓋 |
 |---|---|---|
-| F-03 IR user preset 不可重現 | plugin preset | ❌ HostProbe H5 只覆蓋 **DAW state** round-trip，不覆蓋 user preset |
-| `getTailLengthSeconds()` 截尾 | plugin ↔ host 合約 | ❌ 無 |
-| Pitch Glide 依 block size | plugin 音訊執行緒 | ❌ HostProbe 未注入變動 block size |
-| K-03 超過 maxBlock 靜默換演算法 | plugin 音訊執行緒 | ❌ 同上 |
+| F-03 IR user preset 不可重現 | plugin preset | ✅ 已修（WF0908-P3）：HostProbe H7 三情境（吻合／缺檔無 GUI／內容不符）全部 CHECK 化，見 §4-C |
+| `getTailLengthSeconds()` 截尾 | plugin ↔ host 合約 | ✅ HostProbe H8（WF0907-E5）已覆蓋 |
+| Pitch Glide 依 block size | plugin 音訊執行緒 | ✅ HostProbe H6（WF0907-E10）已注入變動 block size {64,256,512,1024,4096}；哨兵旋律 5 個 size 位元相同（melody_verify 5/5 PASS）。water_gong+Pitch Glide 巨集拉滿原本另有 informational block-size delta（明顯非雜訊層級，未深究成因）——已根治（WF0908-E10b）：`ChromaticEngine.h::renderNextBlock()` 的 glide phase 推進 + `resonator.scaleFrequencies()` 改成逐取樣（原本逐 block 一次），4 個 block size 現在同樣 0 LSB（位元相同），CHECK 已由 informational 硬化為必過項，見 `EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §10.1 |
+| K-03 超過 maxBlock 靜默換演算法 | plugin 音訊執行緒 | ✅ `TsukiSynthAuditTest`/ctest（WF0907-E7，非 HostProbe）已覆蓋分塊處理 |
 | F-01 / F-02 工具刪資料 | 開發者工具 | ❌ 沒有人測過「caller 自帶的非空輸出目錄」 |
 
 **所以「全綠」曾經反覆地不等於「正確」**：稽核當時 177 passed、ctest 3/3、
@@ -107,29 +107,91 @@ phase 一格一格跳，跳到哪一格才越過 0.5 取決於 buffer 粒度，�
 對一個 pitch 驗到 0.4 cent 的物理建模合成器，這是最傷招牌的一條。
 修法方向：cap 要在**取樣層級**處理（把超出的部分夾住而非整格丟棄），不是逐 block 比對。
 
-### 🔴 B. `getTailLengthSeconds()` 忽略物理模態尾音
+### ✅ B. `getTailLengthSeconds()` 忽略物理模態尾音 — 已修（WF0907-E5）
 
 見 §1 第三列。Tongue Drum 實測 T60 30.18 s，回報 2–3.45 s。
-**建議另開一張施工卡**，不要混進 F-03（兩者都碰 reverb 欄位但成因無關）。
+修法：`CimbalomEngine.h` / `ChromaticEngine.h` 各新增 `worstCaseTailSeconds()`
+（對目前參數狀態在 MIDI 21..108 逐音呼叫與 `startNote()` 相同的模態建構路徑，
+取所有模態 `decayTime` 最大值，訊息執行緒上以參數值雜湊快取），
+`PluginProcessor::getTailLengthSeconds()` 改回報
+`max(FM envelope 估計, 目前選用引擎的 worstCaseTailSeconds()) + delay/reverb 尾巴`，
+並移除原本無可溯源理由的 300 s 上限。詳見
+`docs/workcards/WF0907_E5_plugin_truth_source.md`。
 
-### 🟡 C. F-03 IR user preset 不自包含 — **等月月裁決**
+### ✅ C. F-03 IR user preset 不自包含 — 已修（WF0908-P3）
 
-決策單：`reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md`
-要決定兩件事：IR 資源怎麼跟著 preset 走（A 內嵌／B 受管理 IR 庫／C 資源參考，
-建議 B）、IR 不見時怎麼表現（建議：音訊不中斷但強制切回 algorithmic ＋ 顯眼警告）。
+決策單：`reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md`（§8 裁決記錄：
+問題一 B＋受管理 IR 庫＋工廠／使用者分流；問題二強制切回 algorithmic ＋警告，
+照 Waves IR-1 拆三態）。
 
-### 🟡 D. schema 三份契約不同步（F-04 / F-05）
+落地：`src/IRLibrary.h`（新，內容雜湊定址的受管理 IR 庫，`%APPDATA%/TsukiSynth/IR/`）
+＋ `TsukiSynthProcessor::getIRStatus()`（單一真相：`loaded` 就是
+`effectChain.hasImpulseResponse()` 本人，不是第二個會漂移的變數）＋三態載入
+（`restoreReverbIR()`／`tryLoadIRRef()`：吻合直接載入；找不到就強制切回
+algorithmic＋一次性警告，絕不沿用 instance 既有 IR；resolve 到但內容雜湊對不上
+就照樣載入並標記「不是同一個 IR」，不靜默頂替）。preset／DAW state 序列化改成
+「APVTS state ＋ 可選附加 ValueTree」（`PresetManager::getExtraStateBlock`／
+`applyExtraStateBlock`，`PresetManager` 本身仍不知道 IR 是什麼）。
+HostProbe H7 三情境全部 CHECK 化，`KNOWN-FAIL(F-03)` 標記已移除。
+詳見 `docs/workcards/WF0908_P3_f03_ir_library.md`。
+
+### ✅ D. schema 三份契約不同步（F-04 / F-05）— 已修（WF0907-E8）
 
 - C++ `--validate` 仍接受負 tempo、零拍號、負 rest、非法 kind、負 phrase
 - generic MIDI converter 仍寫得出六項 schema 錯誤的 score
 
 工程量最大的一項，適合獨立一輪。
 
-### 🟡 E. K-02 / K-03 reverb
+修法：`ScoreParser.h::validateSimpleObjectArray` 從「只查鍵名/必填/型別」擴充成吃
+每欄位的 `SimpleFieldSpec`（minimum/exclusiveMinimum/integer/enum），逐欄鏡射
+`scores/schema/score.schema.json` 對 `tempo_map`/`time_signatures`/`rests`/`phrases`
+的界限——只拒絕 schema 也拒絕的東西，不比 schema 更嚴。`tools/midi_to_tsukisynth.py`
+的 `write_score()` 現在在既有 renderer-timing 檢查之前先跑一次
+`Draft202012Validator`（`schema_errors()`），非法輸出一律 `raise`、不落地。
 
-兩者都需要**先量化再裁定**，不能直接修：
-- K-02：需要有代表性的 IR loudness corpus，才知道補償多少
-- K-03：需要 DSP 測試（同一 IR、同輸入，maxBlock 與 maxBlock+1 不得靜默換演算法）
+新的交叉驗證單一真相：`tests/test_schema_contract_sync.py` 從一個 schema-valid
+fixture 出發，**走訪** schema 本身的 `minimum`/`maximum`/`exclusiveMinimum`/
+`enum`/`pattern`/`required`/`type`/`oneOf`，對每一條產生突變體（388 個），
+逐一比對 `jsonschema` 判定 vs `TsukiSynthCLI --validate` exit code——修前
+22/388 不一致（全部在 tempo_map/time_signatures/rests/phrases），修後 0/388。
+`tests/test_score_vs_midi_verify.py::ConverterSchemaContractTests` 額外證明
+converter 對 repo 內每一份來源 MIDI 的 `convert` 輸出 jsonschema 0 errors，
+以及 F-04 原始 6-錯誤 repro 現在會被 `write_score()` 拒絕而不寫檔。
+證據：`reports/gate_outputs/wf0907_E8_schema.txt`、
+`reports/gate_outputs/wf0907_E8_corpus_validate.txt`（corpus 75/75 VALID）、
+`reports/gate_outputs/wf0907_E8_convert_gate3.txt`。詳見
+`docs/workcards/WF0907_E8_schema_contract_sync.md`。
+
+### ✅ E-1. K-03 超過 maxBlock 靜默換演算法 — 已修（WF0907-E7）
+
+`EffectChain::processBlock()` 原本在 `numSamples > maxBlock` 時，`irMode` 的
+`numSamples <= maxBlock` 守衛會直接失效，使用者已載入 IR 也會**靜默退回
+algorithmic reverb**——不是溫和降級，是換了一整條訊號路徑而不告知。
+
+修法：`processBlock()` 開頭偵測 `numSamples > maxBlock`，以 `maxBlock` 為步長
+切成子 block（`juce::AudioBuffer` 的非擁有 sub-view 建構子，不在音訊執行緒配置
+記憶體），對每個子 block 遞迴呼叫同一個 `processBlock()`，不新增任何分支邏輯。
+`tests/audit_repro.cpp::testEffectChainOversizedBlockMatchesExternalChunking()`
+證明：(a) IR 模式下一次 1537-sample 呼叫（觸發內部自動分塊）與外部手動
+512+512+513 三次呼叫**位元相同**；(b) 同一檢查在 ALGO 模式下也成立；
+(c) 在測試裡模擬「分塊邊界丟掉 1 個輸入樣本」的 mutant，證明 (a)/(b) 的位元比對
+確實會抓到這類差異（有牙齒，不是空比對）。8/8 corpus 位元不變、
+`physics_verify --full` NO CHECKED FAILURES、`pytest` 249 passed。
+證據：`reports/gate_outputs/wf0907_E7_reverb.txt`。詳見
+`docs/workcards/WF0907_E7_reverb_k02_k03.md`。
+
+### 🟡 E-2. K-02 ALGO/IR wet 增益差 — 已量化，**等月月裁決**
+
+`SimpleReverb.h:155-156` 的 ALGO wet 額外乘 `0.15`，`EffectChain.h` 的 IR
+convolution wet 混合沒有這個因子（file:line 已在裁決包核實）。實測（48 kHz、
+2 s 固定種子白噪、mix=1.0、IR 用與 ALGO 同 T60 的合成指數衰減白噪重建）：
+ALGO 穩態 wet RMS = **1.857 dBFS**，IR = **−26.626 dBFS**，實測差
+**−28.483 dB**（IR 更小聲）——方向與量級都跟「只算 0.15 因子」的理論值
+`20·log10(1/0.15) = 16.478 dB` 對不上，因為摺積 IR 的固有能量正規化與
+comb 回饋式 reverb 的穩態增益是完全不同的物理量，T60 對齊不保證響度對齊。
+三個選項（A 讓 IR 也乘 0.15／B 拿掉 ALGO 的 0.15／C 維持現狀＋文件標註）與
+各自的 Rule 10 衝擊：`reports/decision_packets/K02_reverb_wet_scale.zh-TW.md`。
+不修 DSP，等待裁決。
 
 ### 🟢 F. `keep_stems=False` 遇到既存空 stems 目錄會保留輸出
 
@@ -168,6 +230,10 @@ phase 一格一格跳，跳到哪一格才越過 0.5 取決於 buffer 粒度，�
 
 **但這裡確實有病根一的味道**：同一個「是否為 Custom 模式」的判斷式被寫了兩份。
 目前兩份一致，屬於**漂移風險**而非現行缺陷。建議抽成單一函式，但不必當 P2 修。
+
+**已抽成單一函式（WF0907-E5）**：`TsukiSynthEditor::isCustomHarmonicsMode()`
+（`src/PluginEditor.h`/`.cpp`），`:413` 與 `:1246` 兩處都改呼叫它，純重構、
+條件式不變。
 
 ### ❗ 「glide、exciter 仍可能暗中影響 Custom 聲音」— 措辭我不同意
 
