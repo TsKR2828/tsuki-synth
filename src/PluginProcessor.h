@@ -6,6 +6,7 @@
 #include "dsp/AudioFIFO.h"
 #include "dsp/MidiNoteTracker.h"
 #include "PresetManager.h"
+#include "IRLibrary.h"
 
 class TsukiSynthProcessor : public juce::AudioProcessor
 {
@@ -62,9 +63,11 @@ public:
     std::atomic<float>* getEngineParam() noexcept { return pEngine; }
 
     // ---- Reverb profile / impulse-response loading (editor API) ----------
-    /** Load a convolution IR (.wav). Switches fx_reverb_mode to IR on
-        success unless switchModeToIR is false (state restore keeps the saved
-        mode). Returns false and fills `error` on failure. */
+    /** Load a convolution IR (.wav) chosen directly by the user (GUI file
+        picker), importing it into the managed IR library (IRLibrary.h,
+        WF0908-P3 / F-03 decision packet §7.1 B+). Switches fx_reverb_mode to
+        IR on success unless switchModeToIR is false. Returns false and fills
+        `error` on failure. */
     bool loadReverbIRFile (const juce::File& file, juce::String& error,
                            bool switchModeToIR = true);
     /** Load a reverb profile: either a scene_reverb JSON fragment
@@ -72,8 +75,34 @@ public:
         global.effects.reverb carries the same keys. Sets fx_reverb_decay +
         fx_reverb_mix and switches fx_reverb_mode to Algorithmic. */
     bool loadReverbProfileFile (const juce::File& file, juce::String& error);
-    juce::String getReverbIRName() const { return reverbIRName; }
-    bool hasReverbIR() const { return reverbIRName.isNotEmpty(); }
+
+    // ---- IR status: single source of truth (WF0908-P3 §2.4) --------------
+    // `loaded` is assigned directly from effectChain.hasImpulseResponse() --
+    // there is no second, independently-tracked bool that could drift from
+    // audio truth (red line 2 of the F-03 decision packet §7.2: "UI 顯示
+    // IR 而音訊在跑 algorithmic，這種狀態不可以存在").
+    struct IRStatus
+    {
+        bool loaded = false;      // == effectChain.hasImpulseResponse()
+        juce::String name;        // loaded IR's original name, or (if
+                                   // `missing`) the preset-recorded name that
+                                   // could not be resolved
+        bool mismatch = false;    // loaded, but its content hash differs
+                                   // from what the active preset/state named
+        bool missing = false;     // preset/state named an IR that could not
+                                   // be resolved with no GUI to ask; forced
+                                   // to algorithmic (red line 1: never keeps
+                                   // the instance's previous IR across this)
+    };
+    IRStatus getIRStatus() const;
+
+    /** One-shot: returns and clears the pending "IR file named by this
+        preset/state could not be found -- forced back to algorithmic" alert
+        text, or an empty string when nothing is pending. Polled by the
+        editor's timer (state restore is not guaranteed to happen on the
+        message thread in every host) so the warning surfaces exactly once
+        per missing-IR event, never silently. */
+    juce::String getAndClearIRWarning();
 
 private:
     juce::Synthesiser cimbalomSynth;
@@ -101,13 +130,43 @@ private:
     juce::File lastRecordingFile;
     juce::String recordingStatus;
 
-    // Reverb IR state (path persisted via getStateInformation)
+    // ---- Reverb IR state (WF0908-P3: identity now persisted via the
+    // "reverb_ir" block -- see buildReverbIRBlock()/restoreReverbIR() --
+    // instead of a raw path; reverbIRPath below is informational only). ----
     juce::String reverbIRPath;
     juce::String reverbIRName;
     double reverbIRSeconds = 0.0;
+    IRLibrary::IRRef reverbIRRef;      // identity of what's ACTUALLY loaded (empty = nothing loaded)
+    IRLibrary::IRRef expectedIRRef;    // identity the active preset/state recorded, for mismatch checks
+    bool reverbIRMismatch = false;
+    bool reverbIRMissing  = false;
+    juce::String irWarningMessage;     // guarded by statusLock (shared with recordingStatus below)
 
-    static juce::AudioProcessorValueTreeState::ParameterLayout
-        createParameterLayout();
+    /** Clears any currently-loaded IR, then (if `irBlock` is a valid
+        "reverb_ir" tree) resolves and loads the identity it names -- forcing
+        fx_reverb_mode back to Algorithmic and raising a one-shot warning if
+        it cannot be found. Called at the start of every preset/state load
+        (WF0908-P3 §2.4: "loadPreset / setStateInformation 一開始先 clear
+        IR，再依區塊決定載入"), including with an invalid tree when the
+        preset/state carries none. */
+    void restoreReverbIR (const juce::ValueTree& irBlock);
+    /** No-GUI load of a library-resolved IR by identity: used by
+        restoreReverbIR(). Sets reverbIRMismatch when the resolved file's
+        actual content hash differs from `ref.sha256` (§2.3 row 2 -- this is
+        also how a corrupted/rewritten library entry is detected, not only a
+        manual GUI override). Returns false (does not touch effectChain) when
+        the file cannot be found at all (§2.3 row 3). */
+    bool tryLoadIRRef (const IRLibrary::IRRef& ref, juce::String& error);
+    /** Validates an IR file (readable, non-empty, <= 30 s) and loads it into
+        effectChain without touching the library or any identity bookkeeping
+        -- the shared tail of loadReverbIRFile()/tryLoadIRRef(). */
+    bool validateAndLoadIRFile (const juce::File& file, juce::String& error, double& seconds);
+    /** The "reverb_ir" block for whatever is CURRENTLY loaded (reverbIRRef),
+        or an invalid ValueTree when nothing is loaded -- the block that both
+        saveUserPreset() (via PresetManager::getExtraStateBlock) and
+        getStateInformation() embed. */
+    juce::ValueTree buildReverbIRBlock() const;
+    void setIRWarning (const juce::String& message);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthProcessor)
 };

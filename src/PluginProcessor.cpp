@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "ParameterLayout.h"
 #include "engines/CimbalomEngine.h"
 #include "engines/ChromaticEngine.h"
 #include "engines/FMPianoEngine.h"
@@ -8,212 +9,11 @@
 #include <algorithm>
 #include <cmath>
 
-// == Parameter Layout (grouped for DAW automation lanes) ==
-juce::AudioProcessorValueTreeState::ParameterLayout
-TsukiSynthProcessor::createParameterLayout()
-{
-    // A12 (2026-08-22, 月月裁決選 (a)): every float parameter is CONTINUOUS
-    // (interval 0). The former 0.01/0.1/1.0 steps made setValue (no snap)
-    // and state save/restore (snap) disagree by up to half a step, so a DAW
-    // project reload rendered differently from the pre-save live state
-    // (HostProbe H5 catch, reports/gate_outputs/l1_l2_l3a_melody_gate.txt).
-    // With interval 0 the normalised<->plain mapping is lossless both ways
-    // and the state round-trip is bit-exact. CLI rendering never reads
-    // APVTS, so corpus output is untouched (Rule 10 not triggered).
-    using FloatParam  = juce::AudioParameterFloat;
-    using ChoiceParam = juce::AudioParameterChoice;
-    using IntParam    = juce::AudioParameterInt;
-    using Group       = juce::AudioProcessorParameterGroup;
-    using Range       = juce::NormalisableRange<float>;
-    using PID         = juce::ParameterID;
-
-    auto global = std::make_unique<Group> ("global", "Global", "|");
-    global->addChild (std::make_unique<ChoiceParam> (
-        PID { "engine", 1 }, "Engine",
-        juce::StringArray { "Cimbalom", "Chromatic", "FM Piano", "Piano" }, 0));
-
-    auto macro = std::make_unique<Group> ("macro", "Macro", "|");
-    macro->addChild (std::make_unique<FloatParam> (
-        PID { "macro_material", 1 }, "Material",
-        Range (0.0f, 1.0f, 0.0f), 0.5f));
-    macro->addChild (std::make_unique<FloatParam> (
-        PID { "macro_tension", 1 }, "Tension",
-        Range (0.0f, 1.0f, 0.0f), 0.5f));
-    macro->addChild (std::make_unique<FloatParam> (
-        PID { "macro_damping", 1 }, "Damping",
-        Range (0.0f, 1.0f, 0.0f), 0.5f));
-    macro->addChild (std::make_unique<FloatParam> (
-        PID { "macro_strike", 1 }, "Strike",
-        Range (0.0f, 1.0f, 0.0f), 0.5f));
-    macro->addChild (std::make_unique<FloatParam> (
-        PID { "macro_brightness", 1 }, "Brightness",
-        Range (0.0f, 1.0f, 0.0f), 0.5f));
-    macro->addChild (std::make_unique<FloatParam> (
-        PID { "macro_body", 1 }, "Body",
-        Range (0.0f, 1.0f, 0.0f), 0.5f));
-    macro->addChild (std::make_unique<FloatParam> (
-        PID { "macro_noise", 1 }, "Noise",
-        Range (0.0f, 1.0f, 0.0f), 0.0f));
-    macro->addChild (std::make_unique<FloatParam> (
-        PID { "macro_output", 1 }, "Output",
-        Range (0.0f, 1.0f, 0.0f), 1.0f));
-
-    auto cim = std::make_unique<Group> ("cimbalom", "Cimbalom", "|");
-    cim->addChild (std::make_unique<ChoiceParam> (
-        PID { "cim_material", 1 }, "Material",
-        juce::StringArray { "Steel", "Copper", "Bronze", "Aluminum", "Brass",
-                            "Spruce", "Maple", "Glass", "Rubber" }, 0));
-    cim->addChild (std::make_unique<ChoiceParam> (
-        PID { "cim_hammer", 1 }, "Hammer",
-        juce::StringArray { "Cotton", "Felt", "Wood", "Metal" }, 2));
-    cim->addChild (std::make_unique<FloatParam> (
-        PID { "cim_strike_pos", 1 }, "Strike Position",
-        Range (0.05f, 0.95f, 0.0f), 0.3f));
-    cim->addChild (std::make_unique<FloatParam> (
-        PID { "cim_diameter", 1 }, "String Diameter (mm)",
-        Range (0.3f, 2.0f, 0.0f), 0.8f));
-    cim->addChild (std::make_unique<IntParam> (
-        PID { "cim_num_strings", 1 }, "Strings / Course", 1, 5, 3));
-    cim->addChild (std::make_unique<FloatParam> (
-        PID { "cim_detuning", 1 }, "Detuning (cents)",
-        Range (0.0f, 15.0f, 0.0f), 5.0f));
-
-    auto chr = std::make_unique<Group> ("chromatic", "Chromatic", "|");
-    chr->addChild (std::make_unique<ChoiceParam> (
-        PID { "chr_sub_engine", 1 }, "Sub-Engine",
-        juce::StringArray { "Tongue Drum", "Water Gong", "Custom" }, 0));
-    chr->addChild (std::make_unique<ChoiceParam> (
-        PID { "chr_material", 1 }, "Material",
-        juce::StringArray { "Steel", "Copper", "Bronze", "Aluminum", "Brass",
-                            "Spruce", "Maple", "Glass", "Rubber" }, 0));
-    chr->addChild (std::make_unique<ChoiceParam> (
-        PID { "chr_exciter", 1 }, "Exciter",
-        juce::StringArray { "Soft", "Medium", "Hard", "Sharp" }, 1));
-    chr->addChild (std::make_unique<FloatParam> (
-        PID { "chr_strike_pos", 1 }, "Strike Position",
-        Range (0.0f, 1.0f, 0.0f), 0.35f));
-    chr->addChild (std::make_unique<FloatParam> (
-        PID { "chr_thickness", 1 }, "Thickness (mm)",
-        Range (0.5f, 10.0f, 0.0f), 3.0f));
-    chr->addChild (std::make_unique<FloatParam> (
-        PID { "chr_size", 1 }, "Size (mm)",
-        Range (10.0f, 100.0f, 0.0f), 20.0f));
-    chr->addChild (std::make_unique<FloatParam> (
-        PID { "chr_pitch_glide", 1 }, "Pitch Glide",
-        Range (0.0f, 1.0f, 0.0f), 0.0f));
-
-    {
-        static constexpr float defRatios[] = { 1.0f, 2.0f, 3.0f, 4.16f, 5.43f, 6.98f, 8.21f, 10.0f };
-        static constexpr float defAmps[]   = { 1.0f, 0.7f, 0.5f, 0.35f, 0.25f, 0.18f, 0.12f, 0.08f };
-        for (int i = 0; i < 8; ++i)
-        {
-            chr->addChild (std::make_unique<FloatParam> (
-                PID { "chr_ratio_" + juce::String (i), 1 },
-                "Harmonic " + juce::String (i + 1) + " Ratio",
-                Range (0.25f, 20.0f, 0.0f, 0.4f), defRatios[i]));
-            chr->addChild (std::make_unique<FloatParam> (
-                PID { "chr_amp_" + juce::String (i), 1 },
-                "Harmonic " + juce::String (i + 1) + " Amp",
-                Range (0.0f, 1.0f, 0.0f), defAmps[i]));
-        }
-    }
-
-    auto fm = std::make_unique<Group> ("fm", "FM Piano", "|");
-    fm->addChild (std::make_unique<ChoiceParam> (
-        PID { "fm_type", 1 }, "Sound Type",
-        juce::StringArray { "Piano", "E.Piano", "Vibraphone", "Bell",
-                            "Organ", "Pad", "Bass", "Brass" }, 0));
-    fm->addChild (std::make_unique<FloatParam> (
-        PID { "fm_ratio", 1 }, "FM Ratio",
-        Range (0.5f, 16.0f, 0.0f, 0.4f), 1.0f));           // Piano: 1:1
-    fm->addChild (std::make_unique<FloatParam> (
-        PID { "fm_index", 1 }, "Mod Index",
-        Range (0.0f, 25.0f, 0.0f), 4.5f));                   // was 5.0 → Acoustic Piano direction
-    fm->addChild (std::make_unique<FloatParam> (
-        PID { "fm_brightness", 1 }, "Tone Decay",
-        Range (0.0f, 1.0f, 0.0f), 0.6f));                   // label: body modulation decay speed
-    fm->addChild (std::make_unique<FloatParam> (
-        PID { "fm_feedback", 1 }, "Feedback",
-        Range (0.0f, 1.0f, 0.0f), 0.02f));                  // was 0.0 → subtle odd harmonics
-    fm->addChild (std::make_unique<FloatParam> (
-        PID { "fm_attack", 1 }, "FM Attack (ms)",
-        Range (1.0f, 2000.0f, 0.0f, 0.4f), 5.0f));           // was 10 → quick hammer
-    fm->addChild (std::make_unique<FloatParam> (
-        PID { "fm_release", 1 }, "FM Release (ms)",
-        Range (10.0f, 5000.0f, 0.0f, 0.4f), 500.0f));
-
-    auto rev = std::make_unique<Group> ("reverb", "Reverb", "|");
-    rev->addChild (std::make_unique<FloatParam> (
-        PID { "fx_reverb_mix", 1 }, "Reverb Mix",
-        Range (0.0f, 1.0f, 0.0f), 0.2f));
-    rev->addChild (std::make_unique<FloatParam> (
-        PID { "fx_reverb_size", 1 }, "Room Size",
-        Range (0.0f, 1.0f, 0.0f), 0.5f));
-    // Authored T60 in seconds; below 0.01 the room-size knob stays in
-    // control. Range mirrors the score schema's reverb.decay [0, 30].
-    rev->addChild (std::make_unique<FloatParam> (
-        PID { "fx_reverb_decay", 1 }, "Reverb T60 (s)",
-        Range (0.0f, 30.0f, 0.0f, 0.35f), 0.0f));
-    rev->addChild (std::make_unique<ChoiceParam> (
-        PID { "fx_reverb_mode", 1 }, "Reverb Mode",
-        juce::StringArray { "Algorithmic", "Impulse Response" }, 0));
-
-    auto dly = std::make_unique<Group> ("delay", "Delay", "|");
-    dly->addChild (std::make_unique<FloatParam> (
-        PID { "fx_delay_time", 1 }, "Delay Time (ms)",
-        Range (50.0f, 2000.0f, 0.0f, 0.4f), 300.0f));
-    dly->addChild (std::make_unique<FloatParam> (
-        PID { "fx_delay_feedback", 1 }, "Delay Feedback",
-        Range (0.0f, 0.95f, 0.0f), 0.3f));
-    dly->addChild (std::make_unique<FloatParam> (
-        PID { "fx_delay_mix", 1 }, "Delay Mix",
-        Range (0.0f, 1.0f, 0.0f), 0.0f));
-
-    auto comp = std::make_unique<Group> ("comp", "Compressor", "|");
-    comp->addChild (std::make_unique<FloatParam> (
-        PID { "fx_comp_threshold", 1 }, "Threshold (dB)",
-        Range (-40.0f, 0.0f, 0.0f), -12.0f));
-    comp->addChild (std::make_unique<FloatParam> (
-        PID { "fx_comp_ratio", 1 }, "Ratio",
-        Range (1.0f, 20.0f, 0.0f, 0.5f), 4.0f));
-
-    auto dist = std::make_unique<Group> ("dist", "Distortion", "|");
-    dist->addChild (std::make_unique<ChoiceParam> (
-        PID { "fx_dist_type", 1 }, "Type",
-        juce::StringArray { "Overdrive", "Bitcrush", "Wavefold" }, 0));
-    dist->addChild (std::make_unique<FloatParam> (
-        PID { "fx_dist_drive", 1 }, "Drive",
-        Range (0.0f, 1.0f, 0.0f), 0.0f));
-    dist->addChild (std::make_unique<FloatParam> (
-        PID { "fx_dist_instability", 1 }, "Instability",
-        Range (0.0f, 1.0f, 0.0f), 0.0f));
-    dist->addChild (std::make_unique<FloatParam> (
-        PID { "fx_dist_mix", 1 }, "Mix",
-        Range (0.0f, 1.0f, 0.0f), 0.5f));
-
-    // Brightness-compensation high shelf (documented creative layer,
-    // 2026-08-06 月月 ruling) -- gain 0 dB bypasses the filter entirely.
-    auto eqg = std::make_unique<Group> ("eqfx", "EQ", "|");
-    eqg->addChild (std::make_unique<FloatParam> (
-        PID { "fx_eq_freq", 1 }, "EQ Shelf Freq (Hz)",
-        Range (100.0f, 16000.0f, 0.0f, 0.3f), 2000.0f));
-    eqg->addChild (std::make_unique<FloatParam> (
-        PID { "fx_eq_gain", 1 }, "EQ Shelf Gain (dB)",
-        Range (-24.0f, 24.0f, 0.0f), 0.0f));
-
-    juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    layout.add (std::move (global), std::move (macro), std::move (cim),
-                std::move (chr), std::move (fm), std::move (rev),
-                std::move (dly), std::move (comp), std::move (dist),
-                std::move (eqg));
-    return layout;
-}
-
 // == Constructor ==
 TsukiSynthProcessor::TsukiSynthProcessor()
     : AudioProcessor (BusesProperties()
                         .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-      apvts (*this, nullptr, "PARAMETERS", createParameterLayout())
+      apvts (*this, nullptr, "PARAMETERS", createTsukiParameterLayout())
 {
     // Load material database
     materialDB.loadFromBinary (BinaryData::materials_json,
@@ -374,6 +174,16 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     effectChain.pEqFreq = apvts.getRawParameterValue ("fx_eq_freq");
     effectChain.pEqGain = apvts.getRawParameterValue ("fx_eq_gain");
 
+    // ---- IR library extra state block (WF0908-P3 §2.5) ----
+    presetManager.getExtraStateBlock = [this] () -> juce::ValueTree
+    {
+        return buildReverbIRBlock();
+    };
+    presetManager.applyExtraStateBlock = [this] (const juce::ValueTree& extra)
+    {
+        restoreReverbIR (extra);
+    };
+
     recordingThread.startThread();
 }
 
@@ -410,6 +220,33 @@ double TsukiSynthProcessor::getTailLengthSeconds() const
         fmRelease *= 1.0 + (0.5 - damping) * 1.4;
     }
     double tailSeconds = std::max (2.0, fmRelease);
+
+    // WF0907-E5: for the physics-modeled engines (Cimbalom/"Piano" preset
+    // share cimbalomSynth via engine==0||3; Chromatic==1 covers Tongue
+    // Drum/Water Gong/Custom Harmonics), report the engine's own worst-case
+    // modal decay (T60) instead of relying on the FM envelope estimate above
+    // -- see engines/CimbalomEngine.h / ChromaticEngine.h ::
+    // worstCaseTailSeconds() (docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.
+    // zh-TW.md §1/§4-B: Tongue Drum measured T60 30.18 s vs the old
+    // envelope-only estimate of 2-3.45 s). FM Piano (engine==2) is out of
+    // the physics-verified domain (ROADMAP_PHYSICS.md §0) and stays on the
+    // envelope estimate. All 16 voices of a synth share identical APVTS
+    // parameter pointers (only materialDB/noiseIdentity differ per voice --
+    // see the constructor's addVoice() loops), so voice 0 is representative
+    // of the live parameter state.
+    const int currentEngineForTail = pEngine != nullptr ? (int) pEngine->load() : -1;
+    double engineTailSeconds = 0.0;
+    if (currentEngineForTail == 0 || currentEngineForTail == 3)
+    {
+        if (auto* v = dynamic_cast<CimbalomVoice*> (cimbalomSynth.getVoice (0)))
+            engineTailSeconds = v->getWorstCaseTailSecondsCached();
+    }
+    else if (currentEngineForTail == 1)
+    {
+        if (auto* v = dynamic_cast<ChromaticVoice*> (chromaticSynth.getVoice (0)))
+            engineTailSeconds = v->getWorstCaseTailSecondsCached();
+    }
+    tailSeconds = std::max (tailSeconds, engineTailSeconds);
 
     if (effectChain.pDelayMix != nullptr
         && effectChain.pDelayMix->load() > 0.001f
@@ -456,7 +293,10 @@ double TsukiSynthProcessor::getTailLengthSeconds() const
         }
     }
 
-    return std::clamp (tailSeconds, 0.0, 300.0);
+    // WF0907-E5: no upper clamp -- there is no traceable reason to cap the
+    // reported tail (JUCE hosts accept long tails; the previous 300 s ceiling
+    // had no cited source). Only floor at 0.
+    return std::max (tailSeconds, 0.0);
 }
 
 void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
@@ -696,8 +536,28 @@ void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
     if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (apvts.getParameter ("chr_sub_engine")))
         state.setProperty ("chr_sub_engine_index", p->getIndex(), nullptr);
 
-    if (reverbIRPath.isNotEmpty())
-        state.setProperty ("reverb_ir_path", reverbIRPath, nullptr);
+    // WF0908-P3 §2.2/§2.4: the reverb_ir child is the single source of truth
+    // for "which IR does this state carry" (present only when effectChain
+    // genuinely has convolution audio loaded -- reverbIRRef is cleared by
+    // restoreReverbIR() whenever the missing-file fallback fires, so a save
+    // taken right after that correctly carries NO reverb_ir block; red line
+    // 1 forbids remembering a stale IR across saves). ir_missing/ir_mismatch
+    // are informational snapshots of the live IRStatus at capture time --
+    // setStateInformation() below never reads them back, it always
+    // re-resolves from reverb_ir itself; they exist so a host-generic reader
+    // (tests/host_probe.cpp H7, which only has the opaque VST3 ABI) can
+    // observe the three-state outcome without any custom API (§2.5's "VST3
+    // 實例側用 getStateInformation() 讀回的 state 檢查 reverb_ir 區塊與 IR
+    // 狀態一致").
+    const auto irStatusForState = getIRStatus();
+    state.setProperty ("ir_missing",  irStatusForState.missing  ? 1 : 0, nullptr);
+    state.setProperty ("ir_mismatch", irStatusForState.mismatch ? 1 : 0, nullptr);
+    auto existingIRChild = state.getChildWithName ("reverb_ir");
+    if (existingIRChild.isValid())
+        state.removeChild (existingIRChild, nullptr);
+    auto irBlock = buildReverbIRBlock();
+    if (irBlock.isValid())
+        state.addChild (irBlock, -1, nullptr);
 
     auto xml = state.createXml();
     copyXmlToBinary (*xml, destData);
@@ -733,17 +593,16 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         restoreChoice (apvts, "engine",         engineIdx);
         restoreChoice (apvts, "chr_sub_engine", subEngIdx);
 
-        // Reload the saved reverb IR if its file still exists; a missing file
-        // silently degrades to the algorithmic reverb (EffectChain falls back
-        // whenever no IR is loaded).
-        const juce::String irPath = tree.getProperty ("reverb_ir_path",
-                                                      juce::String()).toString();
-        if (irPath.isNotEmpty())
-        {
-            juce::String irError;
-            loadReverbIRFile (juce::File (irPath), irError,
-                              /*switchModeToIR*/ false);
-        }
+        // WF0908-P3 §2.2/§2.4: DAW project state carries the IR by identity
+        // (reverb_ir: kind/sha256/original_name), resolved through the
+        // managed library -- restoreReverbIR() always clears any IR first,
+        // then implements the three-state contract (§2.3): resolved+matched
+        // loads silently, resolved-but-content-mismatched loads with a
+        // mismatch flag, and unresolved forces fx_reverb_mode back to
+        // Algorithmic and raises a one-shot warning (never silently keeps
+        // whatever IR this instance happened to have loaded before -- red
+        // line 1).
+        restoreReverbIR (tree.getChildWithName ("reverb_ir"));
 
         presetManager.reattachListener();
         const int resolvedPreset = presetId.isNotEmpty()
@@ -756,10 +615,11 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
     }
 }
 
-// == Reverb profile / IR loading ==
-bool TsukiSynthProcessor::loadReverbIRFile (const juce::File& file,
-                                            juce::String& error,
-                                            bool switchModeToIR)
+// == Reverb profile / IR loading (WF0908-P3: managed IR library) ==
+
+bool TsukiSynthProcessor::validateAndLoadIRFile (const juce::File& file,
+                                                 juce::String& error,
+                                                 double& seconds)
 {
     if (! file.existsAsFile())
     {
@@ -782,8 +642,7 @@ bool TsukiSynthProcessor::loadReverbIRFile (const juce::File& file,
         return false;
     }
 
-    const double seconds = (double) reader->lengthInSamples
-                         / reader->sampleRate;
+    seconds = (double) reader->lengthInSamples / reader->sampleRate;
     if (seconds > 30.0)   // matches the score schema's reverb.decay ceiling
     {
         error = "Impulse response longer than 30 s refused ("
@@ -793,9 +652,40 @@ bool TsukiSynthProcessor::loadReverbIRFile (const juce::File& file,
     reader.reset();
 
     effectChain.loadImpulseResponse (file);
+    return true;
+}
+
+bool TsukiSynthProcessor::loadReverbIRFile (const juce::File& file,
+                                            juce::String& error,
+                                            bool switchModeToIR)
+{
+    double seconds = 0.0;
+    if (! validateAndLoadIRFile (file, error, seconds))
+        return false;
+
+    juce::String importError;
+    auto ref = IRLibrary::importFile (file, importError);
+    if (ref.sha256.isEmpty())
+    {
+        error = importError.isNotEmpty() ? importError
+                                          : "Failed to import IR into library";
+        effectChain.clearImpulseResponse();
+        return false;
+    }
+
+    reverbIRRef = ref;
+    reverbIRName = ref.originalName;
     reverbIRPath = file.getFullPathName();
-    reverbIRName = file.getFileName();
     reverbIRSeconds = seconds;
+    reverbIRMissing = false;
+    // A GUI pick made while a preset/state load's IR was left unresolved
+    // (expectedIRRef still set from that failed restore) is "the user
+    // pointed at a different file" (F-03 decision packet §2.3 row 2). With
+    // no such pending expectation this is an ordinary fresh load: no
+    // mismatch to report.
+    reverbIRMismatch = expectedIRRef.sha256.isNotEmpty()
+                        && expectedIRRef.sha256 != ref.sha256;
+    presetManager.setDirty();
 
     if (switchModeToIR)
         if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
@@ -803,6 +693,131 @@ bool TsukiSynthProcessor::loadReverbIRFile (const juce::File& file,
             *p = 1;
 
     return true;
+}
+
+bool TsukiSynthProcessor::tryLoadIRRef (const IRLibrary::IRRef& ref, juce::String& error)
+{
+    auto file = IRLibrary::resolve (ref);
+    if (! file.existsAsFile())
+    {
+        error = "IR not found in library: " + ref.originalName;
+        return false;
+    }
+
+    double seconds = 0.0;
+    if (! validateAndLoadIRFile (file, error, seconds))
+        return false;
+
+    // Content-hash re-verification, not just the name-based lookup resolve()
+    // just did: a library entry whose actual bytes no longer match its own
+    // sha-derived filename (corrupted, or -- in the no-GUI HostProbe -- a
+    // deliberately rewritten entry standing in for "the user picked a
+    // different file", per the card's documented simulation strategy) is
+    // exactly the §2.3 row 2 mismatch case, not row 1.
+    const auto actualSha = IRLibrary::hashFile (file);
+    reverbIRRef = ref;
+    reverbIRRef.sha256 = actualSha;
+    reverbIRName = ref.originalName.isNotEmpty() ? ref.originalName : file.getFileName();
+    reverbIRPath = file.getFullPathName();
+    reverbIRSeconds = seconds;
+    reverbIRMissing = false;
+    reverbIRMismatch = (actualSha != ref.sha256);
+    return true;
+}
+
+void TsukiSynthProcessor::restoreReverbIR (const juce::ValueTree& irBlock)
+{
+    // §2.4: "loadPreset / setStateInformation 一開始先 clear IR，再依區塊
+    // 決定載入" -- unconditional, so a preset/state that carries no IR
+    // genuinely leaves none loaded (red line 1: never keep the instance's
+    // previous IR across this event).
+    effectChain.clearImpulseResponse();
+    reverbIRRef = {};
+    reverbIRName.clear();
+    reverbIRPath.clear();
+    reverbIRSeconds = 0.0;
+    reverbIRMismatch = false;
+    reverbIRMissing = false;
+    expectedIRRef = {};
+
+    if (! irBlock.isValid() || ! irBlock.hasType ("reverb_ir"))
+        return;
+
+    IRLibrary::IRRef expected;
+    expected.kind = irBlock.getProperty ("kind", "user").toString();
+    expected.sha256 = irBlock.getProperty ("sha256", juce::String()).toString();
+    expected.originalName = irBlock.getProperty ("original_name", juce::String()).toString();
+    if (expected.sha256.isEmpty())
+        return;   // malformed block -- nothing to restore
+
+    expectedIRRef = expected;
+
+    juce::String loadError;
+    if (tryLoadIRRef (expected, loadError))
+        return;
+
+    // §2.3 row 3: not found, and there is no GUI to ask (this runs from
+    // preset load / DAW state restore) -- force algorithmic and warn once,
+    // never leave the UI claiming IR while audio silently runs algorithmic
+    // (red line 2) or clip/mute the transport (§4/§7.2's "不可靜音").
+    reverbIRMissing = true;
+    if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
+            apvts.getParameter ("fx_reverb_mode")))
+        *p = 0;
+
+    setIRWarning (
+        (UiLocale::isChinese() ? juce::String (juce::CharPointer_UTF8 (
+             "\xe6\x9c\xaa\xe8\xbc\x89\xe5\x85\xa5\xef\xbc\x9a"))          // "未載入："
+                               : juce::String ("Not loaded: "))
+        + expected.originalName
+        + (UiLocale::isChinese()
+               ? juce::String (juce::CharPointer_UTF8 (
+                     "\xe2\x80\x94\xe2\x80\x94\xe9\x80\x99\xe5\x80\x8b preset "
+                     "\xe8\xa8\x98\xe7\x9a\x84 IR \xe5\x9c\xa8\xe9\x80\x99\xe5\x8f\xb0"
+                     "\xe9\x9b\xbb\xe8\x85\xa6\xe4\xb8\x8a\xe6\x89\xbe\xe4\xb8\x8d\xe5\x88\xb0\xe3\x80\x82"
+                     "\xe5\xb7\xb2\xe5\x88\x87\xe5\x9b\x9e algorithmic reverb\xef\xbc\x8c"
+                     "\xe9\x9f\xb3\xe9\x87\x8f\xe6\x9c\x83\xe5\x92\x8c IR \xe6\xa8\xa1\xe5\xbc\x8f\xe4\xb8\x8d\xe5\x90\x8c\xe3\x80\x82"))
+               : juce::String (" -- this preset's IR could not be found on this"
+                                " computer. Switched back to algorithmic reverb;"
+                                " the volume will differ from IR mode.")));
+}
+
+juce::ValueTree TsukiSynthProcessor::buildReverbIRBlock() const
+{
+    if (reverbIRRef.sha256.isEmpty())
+        return {};
+    juce::ValueTree v ("reverb_ir");
+    v.setProperty ("kind", reverbIRRef.kind, nullptr);
+    v.setProperty ("sha256", reverbIRRef.sha256, nullptr);
+    v.setProperty ("original_name", reverbIRRef.originalName, nullptr);
+    return v;
+}
+
+TsukiSynthProcessor::IRStatus TsukiSynthProcessor::getIRStatus() const
+{
+    IRStatus s;
+    // Single source of truth (§2.4 red line 2): `loaded` IS the audio
+    // engine's own bool, not a second variable that could drift from it.
+    s.loaded = effectChain.hasImpulseResponse();
+    s.mismatch = reverbIRMismatch;
+    s.missing = reverbIRMissing;
+    s.name = s.loaded ? reverbIRName
+                       : (reverbIRMissing ? expectedIRRef.originalName : juce::String());
+    return s;
+}
+
+void TsukiSynthProcessor::setIRWarning (const juce::String& message)
+{
+    const juce::ScopedLock sl (statusLock);
+    irWarningMessage = message;
+}
+
+juce::String TsukiSynthProcessor::getAndClearIRWarning()
+{
+    const juce::ScopedLock sl (statusLock);
+    auto msg = irWarningMessage;
+    irWarningMessage.clear();
+    return msg;
 }
 
 bool TsukiSynthProcessor::loadReverbProfileFile (const juce::File& file,

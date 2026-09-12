@@ -10,6 +10,7 @@
 #include "../physics/MaterialDB.h"
 #include "../physics/HammerImpulse.h"
 #include <array>
+#include <cstring>
 
 /**
  * Cimbalom 引擎 — 物理建模弦振動
@@ -115,6 +116,32 @@ public:
     bool canPlaySound (juce::SynthesiserSound* sound) override
     {
         return dynamic_cast<CimbalomSound*> (sound) != nullptr;
+    }
+
+    // WF0907-E5: modal decay-time construction shared by startNote()
+    // (realtime voice), noteOn() (CLI/ScoreRenderer standalone) and
+    // worstCaseTailSeconds() (host tail-length query) -- previously each of
+    // the three inlined its own StringModel::decayTimeForFrequency() call
+    // (docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md §1). `modes` must
+    // already carry final (tuned + detuned) frequencies; decayTime is
+    // written in place, same formula, same operation order as before this
+    // refactor (bit-identical). matScale/dmpScale are the plugin's Macro
+    // Material/Damping multipliers (1.0f for CLI callers, which have no
+    // macros); dampingOverride is StringModel's internal-friction override
+    // sentinel (-1.0f = none -- the plugin path and worstCaseTailSeconds()
+    // always pass this; only the CLI's score.json damping_override field
+    // can pass a real value).
+    static void applyStringDecayTimes (
+        std::vector<ModalResonator::Mode>& modes,
+        const MaterialDB::Material& mat, float dampingOverride,
+        float bridgeLoss, float radius, float tension,
+        float matScale, float dmpScale)
+    {
+        for (auto& m : modes)
+            m.decayTime = StringModel::decayTimeForFrequency (
+                              m.frequency, mat, dampingOverride, bridgeLoss,
+                              radius, tension)
+                        * matScale * dmpScale;
     }
 
     void startNote (int midiNoteNumber, float velocity,
@@ -234,13 +261,9 @@ public:
         }
 
         for (auto& m : baseModes)
-        {
             m.frequency *= tScale * tuneScale;
-            m.decayTime = StringModel::decayTimeForFrequency (
-                              m.frequency, *mat, -1.0f, bridgeLoss,
-                              sp.diameter * 0.5f, sp.tension)
-                        * matScale * dmpScale;
-        }
+        applyStringDecayTimes (baseModes, *mat, -1.0f, bridgeLoss,
+                               sp.diameter * 0.5f, sp.tension, matScale, dmpScale);
 
         // B4（2026-08-27）：Felt（鋼琴氈槌）檔位的 tau_c 改由實測接觸律
         // F=K·δ^α + 槌質量 + 撞速解出（HammerImpulse::pianoHammerTauC()，
@@ -296,12 +319,11 @@ public:
             auto& modes = stringModesScratch[(size_t) s];
             modes.assign (baseModes.begin(), baseModes.end());
             for (auto& m : modes)
-            {
                 m.frequency *= freqMul;
-                m.decayTime = StringModel::decayTimeForFrequency (
-                                  m.frequency, *mat, -1.0f, bridgeLoss,
-                                  sp.diameter * 0.5f, sp.tension)
-                            * matScale * dmpScale;
+            applyStringDecayTimes (modes, *mat, -1.0f, bridgeLoss,
+                                   sp.diameter * 0.5f, sp.tension, matScale, dmpScale);
+            for (auto& m : modes)
+            {
                 m.amplitude *= HammerImpulse::forceSpectrumMagnitude (
                     juce::MathConstants<float>::twoPi * m.frequency, tauC);
                 m.amplitude *= gain;
@@ -513,11 +535,11 @@ public:
             auto& modes = stringModesScratch[(size_t) s];
             modes.assign (baseModes.begin(), baseModes.end());
             for (auto& m : modes)
-            {
                 m.frequency *= freqMul;
-                m.decayTime = StringModel::decayTimeForFrequency (
-                    m.frequency, mat, dampingOverride, bridgeLoss,
-                    sp.diameter * 0.5f, sp.tension);
+            applyStringDecayTimes (modes, mat, dampingOverride, bridgeLoss,
+                                   sp.diameter * 0.5f, sp.tension, 1.0f, 1.0f);
+            for (auto& m : modes)
+            {
                 m.amplitude *= HammerImpulse::forceSpectrumMagnitude (
                     juce::MathConstants<float>::twoPi * m.frequency, tauC);
                 m.amplitude *= gain;
@@ -579,6 +601,133 @@ public:
     }
 
     void noteOff() { applyDamp(); }
+
+    // ── WF0907-E5: host tail-length truth source ───────────────────────
+    //
+    // Worst-case modal decay (max decayTime across MIDI 21..108 and all
+    // detuned strings) for the CURRENT live parameter state -- read by
+    // TsukiSynthProcessor::getTailLengthSeconds() so the host is told the
+    // physics engine's real T60, not an unrelated FM-envelope estimate
+    // (docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md §1/§4-B). Mirrors
+    // startNote()'s construction path exactly (same StringModel calls, same
+    // Macro-derived tScale/matScale/dmpScale, same per-string detuning) via
+    // the shared applyStringDecayTimes() helper above, so this is provably
+    // not a separate/divergent formula. dampingOverride is always -1.0f
+    // (the plugin UI has no such control; only the CLI's score.json path
+    // does). This does NOT touch render()/ModalResonator/strings[] state --
+    // it uses local scratch buffers only, so it is safe to call from the
+    // message thread while a voice is sounding.
+    double worstCaseTailSeconds() const
+    {
+        if (materialDB == nullptr || pMaterial == nullptr)
+            return 0.0;
+
+        const auto& keys = MaterialDB::getOrderedKeys();
+        int matIdx = juce::jlimit (0, (int) keys.size() - 1, (int) pMaterial->load());
+        auto* mat = materialDB->getMaterial (keys[matIdx]);
+        auto* soundboardMat = materialDB->getMaterial (kBridgeSoundboardMaterialKey);
+        if (mat == nullptr || soundboardMat == nullptr)
+            return 0.0;
+
+        float strikePos = pStrikePos ? pStrikePos->load() : 0.3f;
+        float diameter  = (pDiameter ? pDiameter->load() : 0.8f) * 0.001f;
+        int   nStrings  = juce::jlimit (1, kMaxStringsPerCourse,
+                              (int) (pNumStrings ? pNumStrings->load() : 3.0f));
+        float detCents  = pDetuning ? pDetuning->load() : 5.0f;
+
+        float mMaterial = pMacroMaterial ? pMacroMaterial->load() : 0.5f;
+        float mTension  = pMacroTension  ? pMacroTension->load()  : 0.5f;
+        float mDamping  = pMacroDamping  ? pMacroDamping->load()  : 0.5f;
+        float mStrike   = pMacroStrike   ? pMacroStrike->load()   : 0.5f;
+        float mBody     = pMacroBody     ? pMacroBody->load()     : 0.5f;
+
+        // Same macro folding as startNote() -- strikePos does not feed the
+        // decay-time formula, but is folded identically for construction-
+        // path fidelity (StringModel::calculateModes() takes it, even
+        // though decayTimeForFrequency() itself does not depend on it).
+        strikePos *= (0.5f + mStrike);
+        strikePos = juce::jlimit (0.05f, 0.95f, strikePos);
+        detCents *= (0.4f + mBody * 1.2f);
+
+        const float tScale   = 0.85f + mTension * 0.30f;
+        const float matScale = 0.5f + mMaterial;
+        const float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
+
+        double worst = 0.0;
+        std::vector<ModalResonator::Mode> baseModesLocal;
+        std::vector<ModalResonator::Mode> stringModesLocal;
+        baseModesLocal.reserve (40);
+        stringModesLocal.reserve (40);
+
+        for (int midiNote = 21; midiNote <= 108; ++midiNote)
+        {
+            StringModel::Params sp;
+            sp.length         = StringModel::lengthFromMidiNote (midiNote);
+            sp.tension        = StringModel::tensionForNote (midiNote,
+                                    sp.length, diameter, mat->density);
+            sp.diameter       = diameter;
+            sp.strikePosition = strikePos;
+            sp.numModes       = 40;
+
+            const float bridgeLoss = StringModel::bridgeLossRate (
+                sp.tension, sp.length, *soundboardMat, kBridgeSoundboardThicknessM);
+
+            StringModel::calculateModes (sp, *mat, baseModesLocal);
+            if (baseModesLocal.empty())
+                continue;
+
+            float tuneScale = 1.0f;
+            if (std::isfinite (baseModesLocal[0].frequency)
+                && baseModesLocal[0].frequency > 0.0f)
+            {
+                const float target = 440.0f
+                    * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
+                tuneScale = target / baseModesLocal[0].frequency;
+            }
+
+            for (auto& m : baseModesLocal)
+                m.frequency *= tScale * tuneScale;
+
+            for (int s = 0; s < nStrings; ++s)
+            {
+                float centOffset = 0.0f;
+                if (nStrings > 1)
+                    centOffset = detCents
+                        * (2.0f * (float) s / (float) (nStrings - 1) - 1.0f);
+                const float freqMul = std::pow (2.0f, centOffset / 1200.0f);
+
+                stringModesLocal.assign (baseModesLocal.begin(), baseModesLocal.end());
+                for (auto& m : stringModesLocal)
+                    m.frequency *= freqMul;
+                applyStringDecayTimes (stringModesLocal, *mat, -1.0f, bridgeLoss,
+                                       sp.diameter * 0.5f, sp.tension, matScale, dmpScale);
+
+                for (const auto& m : stringModesLocal)
+                    worst = std::max (worst, (double) m.decayTime);
+            }
+        }
+
+        return worst;
+    }
+
+    /// Cached wrapper around worstCaseTailSeconds() -- getTailLengthSeconds()
+    /// is polled by hosts on the message thread, sometimes frequently, so
+    /// this only re-runs the 88-note sweep when the parameters that feed the
+    /// decay-time formula have actually changed (value hash compare, per
+    /// WF0907-E5 §2.1). Not thread-safe against concurrent callers -- valid
+    /// because both this and getTailLengthSeconds() are message-thread-only
+    /// by construction (see the doc comment there).
+    double getWorstCaseTailSecondsCached() const
+    {
+        const uint64_t h = tailParamHash();
+        if (! cachedTailValid || h != cachedTailParamHash)
+        {
+            cachedTailSeconds = worstCaseTailSeconds();
+            cachedTailParamHash = h;
+            cachedTailValid = true;
+        }
+        return cachedTailSeconds;
+    }
 
     bool isActive() const
     {
@@ -770,6 +919,38 @@ private:
         if (! DiagnosticOverrides::disableExciterNoise)
             exciterEnv.trigger (amp, durations[idx] * durScale, sr);
     }
+
+    // WF0907-E5: change-detection hash for getWorstCaseTailSecondsCached() --
+    // covers exactly the atomics worstCaseTailSeconds() reads (including
+    // pMacroStrike, which is folded into strikePos but does not actually
+    // reach decayTimeForFrequency() -- included anyway so the cache can
+    // never go stale if that changes). FNV-1a over the raw float bit
+    // patterns; this is a change detector, not a cryptographic hash.
+    uint64_t tailParamHash() const
+    {
+        auto mix = [] (uint64_t seed, float v) -> uint64_t
+        {
+            uint32_t bits;
+            std::memcpy (&bits, &v, sizeof (bits));
+            return (seed ^ (uint64_t) bits) * 1099511628211ull;
+        };
+        uint64_t h = 1469598103934665603ull;
+        h = mix (h, pMaterial      ? pMaterial->load()      : 0.0f);
+        h = mix (h, pStrikePos     ? pStrikePos->load()     : 0.0f);
+        h = mix (h, pDiameter      ? pDiameter->load()      : 0.0f);
+        h = mix (h, pNumStrings    ? pNumStrings->load()    : 0.0f);
+        h = mix (h, pDetuning      ? pDetuning->load()      : 0.0f);
+        h = mix (h, pMacroMaterial ? pMacroMaterial->load() : 0.0f);
+        h = mix (h, pMacroTension  ? pMacroTension->load()  : 0.0f);
+        h = mix (h, pMacroDamping  ? pMacroDamping->load()  : 0.0f);
+        h = mix (h, pMacroStrike   ? pMacroStrike->load()   : 0.0f);
+        h = mix (h, pMacroBody     ? pMacroBody->load()     : 0.0f);
+        return h;
+    }
+
+    mutable bool     cachedTailValid = false;
+    mutable uint64_t cachedTailParamHash = 0;
+    mutable double   cachedTailSeconds = 0.0;
 
     MaterialDB*    materialDB = nullptr;
     double         standaloneSR = 0.0;

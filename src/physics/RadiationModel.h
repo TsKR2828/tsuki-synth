@@ -282,11 +282,15 @@ public:
     static constexpr float kPascalsPerUnitPhysicsAmplitude = 1.0f;
 
     /** Measurement radius (m) for the fixed `acoustic_transfer[]` observer
-     *  point -- `docs/EXTERNAL_ANCHOR_SOURCES.md` §1's 1.05 m anechoic-array
-     *  convention (the same radius `kPascalsPerUnitPhysicsAmplitude`
-     *  assumes), `docs/workcards/B6.md` §5. Not a score.json parameter
-     *  (Rule 4: no knob nobody asked for) -- v1 hardcodes a single forward
-     *  point; see `kMeasurementAzimuthDeg`/`kMeasurementElevationDeg`.
+     *  point -- 1.05 m is this project's own DECIDED CONVENTION for an
+     *  observation distance, `docs/workcards/B6.md` §5. The external TU
+     *  Berlin directivity database's actual measurement radius is 2.06 m
+     *  (SOFA `ReceiverPosition`; see `docs/EXTERNAL_ANCHOR_SOURCES.md` §1
+     *  and `docs/EXTERNAL_DATASET_A8.zh-TW.md` §2.3) -- the two are
+     *  unrelated; this value is NOT copied from that database. Not a
+     *  score.json parameter (Rule 4: no knob nobody asked for) -- v1
+     *  hardcodes a single forward point; see
+     *  `kMeasurementAzimuthDeg`/`kMeasurementElevationDeg`.
      */
     static constexpr float kMeasurementRadiusM = 1.05f;
 

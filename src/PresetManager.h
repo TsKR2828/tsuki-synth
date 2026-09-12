@@ -2,6 +2,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "Presets.h"
 #include <atomic>
+#include <functional>
 
 class PresetManager : private juce::ValueTree::Listener
 {
@@ -18,6 +19,20 @@ public:
         if (listenedState.isValid())
             listenedState.removeListener (this);
     }
+
+    // ── Extra state block (WF0908-P3 §2.5) ─────────────────────────
+    // This class stays IR-agnostic on purpose (it is also built, header-
+    // only, into the GUI-free HostProbe target -- see tests/host_probe.cpp's
+    // ShadowProcessor): the owner supplies an optional callback pair so an
+    // arbitrary extra ValueTree (e.g. TsukiSynthProcessor's "reverb_ir"
+    // block) rides alongside the APVTS state in both saveUserPreset() and
+    // loadPreset()/initPreset(), without this class knowing what that block
+    // means. applyExtraStateBlock is ALWAYS invoked on every load/init (with
+    // an invalid tree when the preset carries none) so the owner can clear
+    // whatever the extra block represents -- e.g. TsukiSynthProcessor's
+    // "clear any loaded IR before deciding what to load" rule.
+    std::function<juce::ValueTree()> getExtraStateBlock;
+    std::function<void (const juce::ValueTree&)> applyExtraStateBlock;
 
     // ── Counts ──────────────────────────────────────────────────
 
@@ -70,13 +85,18 @@ public:
         {
             int ui = index - nFactory;
             juce::ValueTree cachedState;
+            juce::ValueTree cachedExtra;
             {
                 const juce::ScopedLock lock (presetLock);
                 if (ui >= 0 && ui < userPresets.size())
+                {
                     cachedState = userPresets[ui].state.createCopy();
+                    if (userPresets[ui].extraState.isValid())
+                        cachedExtra = userPresets[ui].extraState.createCopy();
+                }
             }
             if (cachedState.isValid())
-                loaded = loadUserState (cachedState);
+                loaded = loadUserState (cachedState, cachedExtra);
         }
 
         if (! loaded)
@@ -94,6 +114,8 @@ public:
         loading = true;
         apvts.replaceState (defaultState.createCopy());
         reattachListener();
+        if (applyExtraStateBlock)
+            applyExtraStateBlock ({});   // init has no extra block -- clear whatever it represents
         loading = false;
         currentIndex.store (-1, std::memory_order_release);
         dirty.store (false, std::memory_order_release);
@@ -150,6 +172,16 @@ public:
         root.setAttribute ("id", presetId);
         root.setAttribute ("version", 2);
         root.addChildElement (stateXml.release());
+
+        // WF0908-P3 §2.5: an optional extra block (e.g. reverb_ir) rides as
+        // a second top-level XML child, sibling to the APVTS state above.
+        if (getExtraStateBlock)
+        {
+            auto extra = getExtraStateBlock();
+            if (extra.isValid())
+                if (auto extraXml = extra.createXml())
+                    root.addChildElement (extraXml.release());
+        }
 
         auto tempFile = file.getSiblingFile (file.getFileName() + ".tmp-"
                                               + juce::Uuid().toString());
@@ -295,7 +327,21 @@ public:
             auto state = juce::ValueTree::fromXml (*paramsXml);
             if (! state.isValid())
                 continue;
-            scanned.add ({ name, id, file, state });
+
+            // WF0908-P3 §2.5: at most one extra top-level child besides the
+            // APVTS state (see saveUserPreset() above) -- found generically,
+            // without this class knowing what it means, as "whichever child
+            // isn't the params block".
+            juce::ValueTree extraState;
+            for (auto* child : xml->getChildIterator())
+            {
+                if (child == paramsXml)
+                    continue;
+                extraState = juce::ValueTree::fromXml (*child);
+                break;
+            }
+
+            scanned.add ({ name, id, file, state, extraState });
         }
 
         struct NameCmp
@@ -318,6 +364,7 @@ private:
         juce::String id;
         juce::File   file;
         juce::ValueTree state;
+        juce::ValueTree extraState;   // invalid if this preset carries no extra block
     };
 
     juce::AudioProcessorValueTreeState& apvts;
@@ -354,6 +401,11 @@ private:
         loading = true;
         apvts.replaceState (defaultState.createCopy());
         reattachListener();
+        // Factory presets carry no extra block yet (no factory IR content --
+        // see IRLibrary.h's IRRef::kind comment): always clear whatever the
+        // owner's extra block represents.
+        if (applyExtraStateBlock)
+            applyExtraStateBlock ({});
 
         const auto& preset = presets[index];
         for (int i = 0; i < preset.numParams; ++i)
@@ -371,7 +423,7 @@ private:
 
     // ── User preset file loader ─────────────────────────────────
 
-    bool loadUserState (const juce::ValueTree& state)
+    bool loadUserState (const juce::ValueTree& state, const juce::ValueTree& extra = {})
     {
         if (! state.isValid() || state.getType() != apvts.state.getType())
             return false;
@@ -379,6 +431,8 @@ private:
         loading = true;
         apvts.replaceState (state.createCopy());
         reattachListener();
+        if (applyExtraStateBlock)
+            applyExtraStateBlock (extra);   // extra may be invalid -- clears prior state either way
         loading = false;
         return true;
     }

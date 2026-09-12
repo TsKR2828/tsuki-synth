@@ -274,10 +274,22 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     analyzerPanel.setSynthAwareSources (&proc.lastNoteOnMidi, proc.getEngineParam());
     analyzerPanel.refreshText();
 
-    // -- Reverb profile / IR loading -------------------------------------
+    // -- Reverb profile / IR loading (WF0908-P3: split .wav / .json load
+    // buttons -- UiLocale.h is out of this card's file scope, so the new
+    // second button's text/tooltips are set inline here rather than through
+    // a new UiLocale key) -----------------------------------------------
     addAndMakeVisible (revLoadButton);
-    revLoadButton.setTooltip (UiLocale::tooltip ("ui_tip_revload"));
-    revLoadButton.onClick = [this] { launchReverbFileChooser(); };
+    revLoadButton.setTooltip (UiLocale::isChinese()
+        ? juce::String (juce::CharPointer_UTF8 ("\xe8\xbc\x89\xe5\x85\xa5\xe8\x84\x88\xe8\xa1\x9d"
+                                                  "\xe9\x9f\xbf\xe6\x87\x89 (.wav)"))   // "載入脈衝響應 (.wav)"
+        : juce::String ("Load impulse response (.wav)"));
+    revLoadButton.onClick = [this] { launchReverbIRFileChooser(); };
+    addAndMakeVisible (revLoadProfileButton);
+    revLoadProfileButton.setTooltip (UiLocale::isChinese()
+        ? juce::String (juce::CharPointer_UTF8 ("\xe8\xbc\x89\xe5\x85\xa5\xe6\xae\x98\xe9\x9f\xbf"
+                                                  "\xe8\xa8\xad\xe5\xae\x9a\xe6\xaa\x94 (.json)"))   // "載入殘響設定檔 (.json)"
+        : juce::String ("Load reverb profile (.json)"));
+    revLoadProfileButton.onClick = [this] { launchReverbProfileFileChooser(); };
     addAndMakeVisible (revModeButton);
     revModeButton.onClick = [this]
     {
@@ -370,11 +382,34 @@ void TsukiSynthEditor::timerCallback()
     double sr = proc.getSampleRate();
     if (sr > 0.0)
         analyzerPanel.setSampleRate (sr);
+
+    // WF0908-P3 §2.3 row 3 / §7.2: a preset/state load that could not find
+    // its IR forces algorithmic and raises this ONE-SHOT warning. Polled
+    // here (rather than pushed from setStateInformation()) because that
+    // call is not guaranteed to land on the message thread in every host,
+    // and NativeMessageBox needs the message thread.
+    const auto irWarning = proc.getAndClearIRWarning();
+    if (irWarning.isNotEmpty())
+    {
+        juce::NativeMessageBox::showMessageBoxAsync (
+            juce::MessageBoxIconType::WarningIcon,
+            UiLocale::isChinese() ? juce::String (juce::CharPointer_UTF8 (
+                                        "IR \xe6\x9c\xaa\xe8\xbc\x89\xe5\x85\xa5"))   // "IR 未載入"
+                                  : juce::String ("IR not loaded"),
+            irWarning, this);
+        repaint();
+    }
 }
 
 int TsukiSynthEditor::currentEngine() const
 {
     return (int) proc.apvts.getRawParameterValue ("engine")->load();
+}
+
+bool TsukiSynthEditor::isCustomHarmonicsMode() const
+{
+    return currentEngine() == 1
+        && (int) proc.apvts.getRawParameterValue ("chr_sub_engine")->load() == 2;
 }
 
 juce::Colour TsukiSynthEditor::accentForEngine (int eng) const
@@ -409,8 +444,7 @@ void TsukiSynthEditor::updateEngine()
     setVisible (chrExciter,   isChr); setVisible (chrStrike,    isChr);
     setVisible (chrThickness, isChr); setVisible (chrSize,      isChr);
     setVisible (chrGlide,     isChr);
-    int chrSub = (int) proc.apvts.getRawParameterValue ("chr_sub_engine")->load();
-    bool isCustom = isChr && (chrSub == 2);
+    bool isCustom = isCustomHarmonicsMode();
     for (int i = 0; i < 8; ++i)
     {
         setVisible (chrRatios[i], isCustom);
@@ -601,7 +635,14 @@ void TsukiSynthEditor::refreshLocalizedText()
     refreshKnobLabel (fxRevSize);
     refreshKnobLabel (fxRevDecay);
     revLoadButton.setButtonText (UiLocale::label ("ui_btn_revload"));
-    revLoadButton.setTooltip (UiLocale::tooltip ("ui_tip_revload"));
+    revLoadButton.setTooltip (UiLocale::isChinese()
+        ? juce::String (juce::CharPointer_UTF8 ("\xe8\xbc\x89\xe5\x85\xa5\xe8\x84\x88\xe8\xa1\x9d"
+                                                  "\xe9\x9f\xbf\xe6\x87\x89 (.wav)"))
+        : juce::String ("Load impulse response (.wav)"));
+    revLoadProfileButton.setTooltip (UiLocale::isChinese()
+        ? juce::String (juce::CharPointer_UTF8 ("\xe8\xbc\x89\xe5\x85\xa5\xe6\xae\x98\xe9\x9f\xbf"
+                                                  "\xe8\xa8\xad\xe5\xae\x9a\xe6\xaa\x94 (.json)"))
+        : juce::String ("Load reverb profile (.json)"));
     refreshReverbModeButton();
     refreshKnobLabel (fxDlyTime);
     refreshKnobLabel (fxDlyFeedback);
@@ -653,12 +694,12 @@ void TsukiSynthEditor::refreshReverbModeButton()
                                                         : "ui_btn_revmode_algo"));
 }
 
-void TsukiSynthEditor::launchReverbFileChooser()
+void TsukiSynthEditor::launchReverbIRFileChooser()
 {
     revChooser = std::make_unique<juce::FileChooser> (
         UiLocale::label ("ui_dlg_revload"),
         juce::File::getSpecialLocation (juce::File::userDocumentsDirectory),
-        "*.json;*.wav");
+        "*.wav");
 
     const auto chooserFlags = juce::FileBrowserComponent::openMode
                             | juce::FileBrowserComponent::canSelectFiles;
@@ -669,12 +710,37 @@ void TsukiSynthEditor::launchReverbFileChooser()
             return;
 
         juce::String error;
-        bool ok = false;
-        if (file.getFileExtension().equalsIgnoreCase (".wav"))
-            ok = proc.loadReverbIRFile (file, error);
-        else
-            ok = proc.loadReverbProfileFile (file, error);
+        const bool ok = proc.loadReverbIRFile (file, error);
+        if (! ok)
+            juce::NativeMessageBox::showMessageBoxAsync (
+                juce::MessageBoxIconType::WarningIcon,
+                UiLocale::label ("ui_dlg_revload"), error, this);
 
+        refreshReverbModeButton();
+        repaint();
+    });
+}
+
+void TsukiSynthEditor::launchReverbProfileFileChooser()
+{
+    revChooser = std::make_unique<juce::FileChooser> (
+        UiLocale::isChinese()
+            ? juce::String (juce::CharPointer_UTF8 ("\xe8\xbc\x89\xe5\x85\xa5\xe6\xae\x98\xe9\x9f\xbf"
+                                                      "\xe8\xa8\xad\xe5\xae\x9a\xe6\xaa\x94"))   // "載入殘響設定檔"
+            : juce::String ("Load reverb profile"),
+        juce::File::getSpecialLocation (juce::File::userDocumentsDirectory),
+        "*.json");
+
+    const auto chooserFlags = juce::FileBrowserComponent::openMode
+                            | juce::FileBrowserComponent::canSelectFiles;
+    revChooser->launchAsync (chooserFlags, [this] (const juce::FileChooser& fc)
+    {
+        const auto file = fc.getResult();
+        if (file == juce::File())
+            return;
+
+        juce::String error;
+        const bool ok = proc.loadReverbProfileFile (file, error);
         if (! ok)
             juce::NativeMessageBox::showMessageBoxAsync (
                 juce::MessageBoxIconType::WarningIcon,
@@ -1058,11 +1124,32 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
 
         {
             // Panel title carries the loaded-IR name so the state is visible
-            // without hovering anything.
+            // without hovering anything (WF0908-P3: reads getIRStatus(), the
+            // single source of truth -- `loaded` is literally
+            // effectChain.hasImpulseResponse(), never a second UI-only bool
+            // that could drift from it).
             auto revTitle = UiLocale::label ("ui_panel_reverb");
-            if (proc.hasReverbIR())
+            const auto irStatus = proc.getIRStatus();
+            if (irStatus.loaded)
+            {
                 revTitle << " " << juce::String (juce::CharPointer_UTF8 ("\xc2\xb7"))
-                         << " " << proc.getReverbIRName();
+                         << " " << irStatus.name;
+                if (irStatus.mismatch)
+                    revTitle << " " << (UiLocale::isChinese()
+                        ? juce::String (juce::CharPointer_UTF8 (
+                              "(\xe8\x88\x87 preset \xe5\xad\x98\xe7\x9a\x84\xe4\xb8\x8d"
+                              "\xe6\x98\xaf\xe5\x90\x8c\xe4\xb8\x80\xe5\x80\x8b IR)"))   // "(與 preset 存的不是同一個 IR)"
+                        : juce::String ("(different IR than the preset recorded)"));
+            }
+            else if (irStatus.missing)
+            {
+                revTitle << " " << juce::String (juce::CharPointer_UTF8 ("\xc2\xb7")) << " "
+                         << (UiLocale::isChinese()
+                                ? juce::String (juce::CharPointer_UTF8 (
+                                      "\xe6\x9c\xaa\xe8\xbc\x89\xe5\x85\xa5\xef\xbc\x9a"))   // "未載入："
+                                : juce::String ("not loaded: "))
+                         << irStatus.name;
+            }
             paintPanel (g, reverbBounds_, revTitle);
         }
         paintPanel (g, delayBounds_,  UiLocale::label ("ui_panel_delay"));
@@ -1209,8 +1296,14 @@ void TsukiSynthEditor::resized()
         // reverb knobs + profile/IR buttons in the title strip
         {
             auto titleStrip = reverbBounds_.reduced (6, 0).removeFromTop (24);
-            auto btns = titleStrip.removeFromRight (92);
+            // WF0908-P3: widened from 92 to fit the new split-out profile
+            // (.json) load button alongside the existing IR (.wav) load and
+            // mode buttons -- titleStrip/btns are laid out independently of
+            // the knob row below, so this does not shrink the knobs.
+            auto btns = titleStrip.removeFromRight (140);
             revModeButton.setBounds (btns.removeFromRight (42).reduced (0, 2));
+            btns.removeFromRight (4);
+            revLoadProfileButton.setBounds (btns.removeFromRight (36).reduced (0, 2));
             btns.removeFromRight (4);
             revLoadButton.setBounds (btns.reduced (0, 2));
 
@@ -1242,8 +1335,7 @@ void TsukiSynthEditor::resized()
     {
         auto inner = engineArea_.reduced (kSidePad, 0).withTrimmedTop (30);
         int eng = currentEngine();
-        int chrSub = (int) proc.apvts.getRawParameterValue ("chr_sub_engine")->load();
-        bool chrCustom = (eng == 1 && chrSub == 2);
+        bool chrCustom = isCustomHarmonicsMode();
 
         int numRows = chrCustom ? 5 : 3;
         int gap     = 8;

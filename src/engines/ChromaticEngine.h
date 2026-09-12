@@ -11,6 +11,7 @@
 #include "../physics/MaterialDB.h"
 #include "../physics/HammerImpulse.h"
 #include <algorithm>
+#include <cstring>
 
 /**
  * Chromatic Synth 引擎 — 三合一
@@ -411,6 +412,121 @@ public:
         }
     }
 
+    // ── WF0907-E5: host tail-length truth source ───────────────────────
+    // Worst-case modal decay (max decayTime across MIDI 21..108) for the
+    // CURRENT live parameter state and sub-engine (Tongue Drum / Water Gong
+    // / Custom Harmonics) -- read by TsukiSynthProcessor::
+    // getTailLengthSeconds() (docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.
+    // zh-TW.md §1/§4-B). Mirrors startNote()'s construction path exactly:
+    // same BeamModel::calculateModes() / PlateModel::calculateModes() /
+    // buildCustomModes() calls per sub-engine, same Macro-derived
+    // tScale/matScale/dmpScale, and the SAME decayTimeForMode() static
+    // helper startNote() and noteOn() already share -- so this is provably
+    // not a fourth divergent formula. Uses local scratch (not modeScratch/
+    // resonator), so safe to call while a voice is sounding.
+    double worstCaseTailSeconds() const
+    {
+        if (materialDB == nullptr || pMaterial == nullptr || pSubEngine == nullptr)
+            return 0.0;
+
+        const auto& keys = MaterialDB::getOrderedKeys();
+        int matIdx = juce::jlimit (0, (int) keys.size() - 1, (int) pMaterial->load());
+        auto* mat = materialDB->getMaterial (keys[matIdx]);
+        if (mat == nullptr)
+            return 0.0;
+
+        const int subEngine = (int) pSubEngine->load();
+        float strikePos = pStrikePos ? pStrikePos->load() : 0.3f;
+        float thickness = (pThickness ? pThickness->load() : 3.0f) * 0.001f;
+        float size      = (pSize      ? pSize->load()      : 20.0f) * 0.001f;
+
+        float mMaterial = pMacroMaterial ? pMacroMaterial->load() : 0.5f;
+        float mTension  = pMacroTension  ? pMacroTension->load()  : 0.5f;
+        float mDamping  = pMacroDamping  ? pMacroDamping->load()  : 0.5f;
+        float mStrike   = pMacroStrike   ? pMacroStrike->load()   : 0.5f;
+        float mBody     = pMacroBody     ? pMacroBody->load()     : 0.5f;
+
+        // Same macro folding as startNote() -- strikePos does not feed
+        // decayTimeForMode(), but is folded identically for construction-
+        // path fidelity (BeamModel/PlateModel::calculateModes() do take it).
+        strikePos *= (0.5f + mStrike);
+        strikePos = juce::jlimit (0.0f, 1.0f, strikePos);
+        size *= (0.5f + mBody);
+
+        const float tScale   = 0.85f + mTension * 0.30f;
+        const float matScale = 0.5f + mMaterial;
+        const float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
+
+        // tuneChromaticModesToMidi()'s sample-rate filter needs a real rate;
+        // fall back to the CLI/standalone default if queried before
+        // prepareToPlay() has ever run (some hosts probe tail length early).
+        const double sr = getSampleRate() > 0.0 ? getSampleRate() : 44100.0;
+
+        double worst = 0.0;
+        std::vector<ModalResonator::Mode> modes;
+        modes.reserve (20);
+
+        for (int midiNote = 21; midiNote <= 108; ++midiNote)
+        {
+            modes.clear();
+
+            if (subEngine == 0)  // Tongue Drum (beam)
+            {
+                BeamModel::Params bp;
+                const float sizeScale = juce::jlimit (0.5f, 5.0f, size / 0.02f);
+                bp.length    = BeamModel::lengthFromMidiNote (midiNote) * sizeScale;
+                bp.width     = 0.02f;
+                bp.thickness = thickness > 0.0001f ? thickness : 0.003f;
+                bp.strikePosition = strikePos;
+                bp.numModes  = 12;
+                BeamModel::calculateModes (bp, *mat, modes);
+                tuneChromaticModesToMidi (modes, midiNote, sr);
+            }
+            else if (subEngine == 1)  // Water Gong (plate)
+            {
+                PlateModel::Params pp;
+                const float sizeScale = juce::jlimit (0.5f, 5.0f, size / 0.02f);
+                pp.radius    = PlateModel::radiusFromMidiNote (midiNote) * sizeScale;
+                pp.thickness = thickness > 0.0001f ? thickness : 0.003f;
+                pp.strikePosition = strikePos;
+                pp.numModes  = 20;
+                pp.freeEdge  = true;
+                PlateModel::calculateModes (pp, *mat, modes);
+                tuneChromaticModesToMidi (modes, midiNote, sr);
+            }
+            else  // Custom harmonics
+            {
+                buildCustomModes (midiNote, *mat, modes);
+            }
+
+            for (auto& m : modes)
+            {
+                m.frequency *= tScale;
+                const float decay = decayTimeForMode (subEngine, m.frequency, *mat)
+                                   * matScale * dmpScale;
+                worst = std::max (worst, (double) decay);
+            }
+        }
+
+        return worst;
+    }
+
+    /// Cached wrapper around worstCaseTailSeconds() -- see the identical
+    /// rationale on CimbalomVoice::getWorstCaseTailSecondsCached(). Not
+    /// thread-safe against concurrent callers -- valid because both this and
+    /// getTailLengthSeconds() are message-thread-only by construction.
+    double getWorstCaseTailSecondsCached() const
+    {
+        const uint64_t h = tailParamHash();
+        if (! cachedTailValid || h != cachedTailParamHash)
+        {
+            cachedTailSeconds = worstCaseTailSeconds();
+            cachedTailParamHash = h;
+            cachedTailValid = true;
+        }
+        return cachedTailSeconds;
+    }
+
     bool isActive() const
     {
         return resonator.isActive() || exciterEnv.isActive();
@@ -480,43 +596,52 @@ public:
         bool anyActive = false;
 
         // Water gong pitch glide（持續降低模態頻率模擬浸水效果）
-        // Advance scaled by block length → glide rate is independent of host buffer
-        // size; 0.15/sec ⇒ glidePhase reaches the cap (~15% drop) in ~3.3s.
+        // 0.15/sec ⇒ glidePhase reaches the cap (~15% drop) in ~3.3s.
         //
-        // 2026-08-31: the cap used to be a per-block REJECT (`if (glidePhase <
-        // 0.5f)`), which left the phase frozen at whatever value the last
-        // ACCEPTED block happened to land on -- up to one full increment below
-        // the cap. The glide RATE was already buffer-size independent (the
-        // comment above was accurate), but the FINAL pitch was not: one
-        // increment at 8192 samples / 48 kHz is 0.0256 phase, i.e. up to
-        // ~15.6 cents in the theoretical worst case. tests/physics_models_repro
-        // measures the spread actually reachable across 16..8192-sample buffers
-        // and prints it (8.2 cents at the time of the fix) -- already past the
-        // project's own 5-cent melody-GATE pitch tolerance. Clamping instead of
-        // rejecting lands every buffer size on exactly the cap.
+        // 2026-08-31 (cdf2017): the cap used to be a per-block REJECT (`if
+        // (glidePhase < 0.5f)`), which left the phase frozen at whatever value
+        // the last ACCEPTED block happened to land on. Clamping instead of
+        // rejecting fixed the SETTLED pitch to be block-size independent, but
+        // left a documented residual: the ramp itself was still advanced and
+        // applied to the resonator ONCE PER BLOCK (`advanceGlidePhase(...,
+        // numSamples, ...)` called with the whole block's sample count, then
+        // one `scaleFrequencies()` call) -- so the INTERMEDIATE pitch during
+        // the ~3.3s glide was a staircase quantised to block boundaries, and
+        // measurably so: WF0907-E10's H6 host probe found max|delta| up to
+        // +2.63 dB re signal between block 4096 and block 64 renders of a
+        // sustained glide note (reports/gate_outputs/wf0907_E10_hostprobe.txt).
         //
-        // Re-applying the capped factor on later blocks is harmless:
-        // ModalResonator::scaleFrequencies() is ABSOLUTE (phaseDelta = base
-        // freq * factor), not cumulative, so it is idempotent.
-        //
-        // Residual, documented: the ramp itself is still quantised to block
-        // boundaries, so intermediate pitch during the ~3.3 s glide differs
-        // slightly between buffer sizes. Only the settled pitch is contractual.
+        // WF0908-E10b: advance the phase and re-scale the resonator ONE
+        // SAMPLE AT A TIME instead, inside the per-sample loop below. This is
+        // block-size independent BY CONSTRUCTION, not just by the cap's
+        // idempotence: the sequence of operations performed to produce sample
+        // N is now identical no matter where the host happens to cut the
+        // stream into blocks (host block size never appears in the
+        // computation below), so byte-identical rendering across block sizes
+        // follows for the whole trajectory, not only the settled endpoint.
+        // advanceGlidePhase(phase, amount, 1, sr) called once per sample is
+        // mathematically the same accumulation as the old
+        // advanceGlidePhase(phase, amount, numSamples, sr) called once per
+        // block PROVIDED the cap does not engage mid-block (jmin is
+        // idempotent once it does) -- so the settled (post-cap) pitch is
+        // unchanged from cdf2017; only the block-quantisation of the ramp is
+        // removed.
+        // ModalResonator::scaleFrequencies() just recomputes phaseDelta over
+        // this voice's own small mode list (<=20 modes) -- cheap enough to
+        // call every sample; no allocation, no branch outside the mode loop.
         // (The offline CLI path in ScoreRenderer.h drives its own, unrelated
-        // note-to-note portamento per SAMPLE and is not affected by any of this.)
-        if (glideAmount > 0.01f && ! baseModes.empty())
-        {
-            glidePhase = advanceGlidePhase (glidePhase, glideAmount, numSamples,
-                                            getSampleRate());
-            float glideMul = glideMultiplierFor (glidePhase);  // max 15% pitch drop
-            // ModalResonator retains each base frequency, so scaling the
-            // phase increments in place avoids a vector allocation/copy on
-            // every audio block while preserving phase continuity.
-            resonator.scaleFrequencies (glideMul);
-        }
+        // note-to-note portamento per SAMPLE already and is not touched here.)
+        const bool glideActive = glideAmount > 0.01f && ! baseModes.empty();
 
         while (--numSamples >= 0)
         {
+            if (glideActive)
+            {
+                glidePhase = advanceGlidePhase (glidePhase, glideAmount, 1,
+                                                getSampleRate());
+                resonator.scaleFrequencies (glideMultiplierFor (glidePhase));
+            }
+
             float sample = 0.0f;
 
             if (resonator.isActive())
@@ -596,9 +721,12 @@ private:
     }
 
     /// Custom harmonics mode: user-defined ratio/amplitude
+    /// (const: WF0907-E5's worstCaseTailSeconds() calls this from a const
+    /// context; it never mutated instance state, so this is not a
+    /// behavior change -- only reads pRatio[]/pAmp[].)
     void buildCustomModes (
         int midiNote, const MaterialDB::Material& mat,
-        std::vector<ModalResonator::Mode>& modes)
+        std::vector<ModalResonator::Mode>& modes) const
     {
         float fundamental = 440.0f * std::pow (2.0f, (float) (midiNote - 69) / 12.0f);
 
@@ -647,6 +775,44 @@ private:
         if (! DiagnosticOverrides::disableExciterNoise)
             exciterEnv.trigger (amp, durations[idx], sr);
     }
+
+    // WF0907-E5: change-detection hash for getWorstCaseTailSecondsCached() --
+    // covers exactly the atomics worstCaseTailSeconds() reads (including
+    // pMacroStrike, which is folded into strikePos but does not actually
+    // reach decayTimeForMode() -- included anyway so the cache can never go
+    // stale if that changes). Also covers all 16 custom-harmonics ratio/amp
+    // params, since subEngine==2 depends on them. FNV-1a over the raw float
+    // bit patterns; this is a change detector, not a cryptographic hash.
+    uint64_t tailParamHash() const
+    {
+        auto mix = [] (uint64_t seed, float v) -> uint64_t
+        {
+            uint32_t bits;
+            std::memcpy (&bits, &v, sizeof (bits));
+            return (seed ^ (uint64_t) bits) * 1099511628211ull;
+        };
+        uint64_t h = 1469598103934665603ull;
+        h = mix (h, pSubEngine    ? pSubEngine->load()    : 0.0f);
+        h = mix (h, pMaterial     ? pMaterial->load()     : 0.0f);
+        h = mix (h, pStrikePos    ? pStrikePos->load()    : 0.0f);
+        h = mix (h, pThickness    ? pThickness->load()    : 0.0f);
+        h = mix (h, pSize         ? pSize->load()         : 0.0f);
+        h = mix (h, pMacroMaterial ? pMacroMaterial->load() : 0.0f);
+        h = mix (h, pMacroTension  ? pMacroTension->load()  : 0.0f);
+        h = mix (h, pMacroDamping  ? pMacroDamping->load()  : 0.0f);
+        h = mix (h, pMacroStrike   ? pMacroStrike->load()   : 0.0f);
+        h = mix (h, pMacroBody     ? pMacroBody->load()     : 0.0f);
+        for (int i = 0; i < 8; ++i)
+        {
+            h = mix (h, pRatio[i] ? pRatio[i]->load() : 0.0f);
+            h = mix (h, pAmp[i]   ? pAmp[i]->load()   : 0.0f);
+        }
+        return h;
+    }
+
+    mutable bool     cachedTailValid = false;
+    mutable uint64_t cachedTailParamHash = 0;
+    mutable double   cachedTailSeconds = 0.0;
 
     MaterialDB*    materialDB = nullptr;
     double         standaloneSR = 0.0;

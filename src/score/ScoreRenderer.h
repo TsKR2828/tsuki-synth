@@ -779,6 +779,270 @@ public:
                                  &writeReport);
     }
 
+    /// WF0907-E9: layer-aware --dump-modes. Produces one flattened,
+    /// absolute-time event list for a layered composite by calling the
+    /// UNMODIFIED dumpModes() on each leaf and shifting/scaling its events
+    /// by exactly the (offset, gain) renderLayered() would place that leaf
+    /// at in the mixed-down output.
+    ///
+    /// This function deliberately does NOT call renderLayered() or render(),
+    /// and renderLayered() is not touched by this change (WF0907-E9
+    /// contract: "渲染路徑一個位元都不能變"). Instead it re-derives, purely
+    /// analytically, the sample counts renderLayered() would compute for
+    /// each leaf:
+    ///   - subDuration / subTotalSamples: same eventEndTime() +
+    ///     wallDelaySeconds() + effectTailSeconds() + tailSilenceMs sum
+    ///     renderLayered() uses (see renderLayered() above, the block
+    ///     building `subDuration` from `subRenderPlan`).
+    ///   - the post-effects/trim length: applyEffects() never resizes the
+    ///     buffer, and trimBuffer()'s output length is a pure function of
+    ///     exportSettings.startPosition/endPosition and the (already known)
+    ///     pre-trim sample count -- see trimBuffer() below -- so it is
+    ///     reproduced here without allocating or touching any audio buffer.
+    ///   - the region crop (layer.regionStart/regionEnd) and the
+    ///     crossfade-driven cumulative placement (writePos per layer): both
+    ///     copied verbatim from renderLayered()'s own formulas above.
+    /// If either renderLayered() formula ever changes, this function must
+    /// change with it -- tests/test_dump_modes_layered.py recomputes the
+    /// same formulas independently in Python (from the layered score JSON
+    /// plus each leaf's own non-layered --dump-modes output) as a
+    /// cross-check, so a silent drift between the two would fail that GATE.
+    ///
+    /// Amplitude fields ("amp" in partials/strings, and
+    /// "pressure_per_force_real_pa_n" in acoustic_transfer -- both
+    /// ultimately derived from the same per-partial physical amplitude) are
+    /// multiplied by layer.gain, mirroring renderLayered()'s
+    /// `rl.buffer.applyGain (layer.gain)` -- a literal linear rescale the
+    /// real render already applies, not an invented compensation or
+    /// normalization (see "禁止" section, WF0907_E9 workcard: peak
+    /// normalization faked a pass once; this is the opposite -- reporting
+    /// the SAME multiply the audio path performs, on the SAME quantity).
+    /// decay/freq/body_mag/radiated_power_relative are left unscaled: none
+    /// of them is an amplitude the render's gain stage touches.
+    ///
+    /// Nested layers (a leaf that itself declares "layers") are rejected by
+    /// validateLayeredScore() below exactly as renderLayered() rejects them
+    /// ("Nested layer scores are not supported by this renderer") -- since
+    /// a two-level cycle A->B->A necessarily makes B itself "hasLayers()",
+    /// this existing single-level restriction already fails closed on any
+    /// layer cycle without needing separate cycle detection here.
+    bool dumpModesLayered (const Score& score, juce::String& jsonOut)
+    {
+        if (! validateLayeredScore (score))
+            return false;
+
+        double sr = score.global.sampleRate;
+        if (! isValidSampleRate (sr))
+        {
+            renderWarnings.push_back ("Invalid sample rate for layered dump");
+            return false;
+        }
+
+        // Re-parse every leaf (validateLayeredScore() already proved each
+        // one parses, isn't itself layered, matches sample rate, and passes
+        // validateScore() -- it did not keep the parsed Score objects
+        // around). Stored up front, with capacity reserved exactly once, so
+        // pointers into subScores[i].events taken below (via
+        // TsukiEventIdentity::buildPlan) stay valid across both loops.
+        std::vector<Score> subScores;
+        subScores.reserve (score.layers.size());
+        for (const auto& layer : score.layers)
+        {
+            juce::File sourceFile = baseDir.getChildFile (juce::String (layer.source));
+            Score subScore;
+            if (! ScoreParser::parse (sourceFile, subScore))
+            {
+                renderWarnings.push_back (
+                    "Layer " + layer.source + ": failed to re-parse after validation");
+                return false;
+            }
+            subScores.push_back (std::move (subScore));
+        }
+
+        struct LeafPlacement
+        {
+            int numSamples = 0;
+        };
+        std::vector<LeafPlacement> placements;
+        placements.reserve (score.layers.size());
+
+        for (size_t li = 0; li < score.layers.size(); ++li)
+        {
+            const auto& layer = score.layers[li];
+            const auto& subScore = subScores[li];
+
+            const auto subRenderPlan = TsukiEventIdentity::buildPlan (subScore.events);
+            if (subRenderPlan.empty())
+            {
+                renderWarnings.push_back (
+                    "Layer has no non-zero-velocity events: " + layer.source);
+                return false;
+            }
+
+            double subDuration = 0.0;
+            for (const auto& planned : subRenderPlan)
+                subDuration = std::max (subDuration, eventEndTime (
+                    *planned.event, sr, subScore.global.randomSeed, planned.identity));
+            subDuration += wallDelaySeconds (subScore.global.effects);
+            subDuration += effectTailSeconds (subScore.global.effects);
+            subDuration += subScore.exportSettings.tailSilenceMs / 1000.0;
+
+            int64_t subTotalSamples64 = static_cast<int64_t> (std::ceil (subDuration * sr)) + 1;
+            if (! validateBufferBudget (subTotalSamples64, "layer source " + layer.source))
+                return false;
+            int subTotalSamples = static_cast<int> (subTotalSamples64);
+
+            // trimBuffer()'s length formula, reproduced verbatim (see
+            // trimBuffer() below) -- deterministic from exportSettings
+            // alone, so no buffer needs to exist for this to be exact.
+            const double ts = std::clamp (subScore.exportSettings.startPosition, 0.0, 1.0);
+            const double te = std::clamp (subScore.exportSettings.endPosition, ts, 1.0);
+            const int trimStart = static_cast<int> (ts * subTotalSamples);
+            const int trimEnd = static_cast<int> (te * subTotalSamples);
+            const int trimLength = trimEnd - trimStart;
+            if (trimLength <= 0)
+            {
+                renderWarnings.push_back (
+                    "Layer trims to zero or negative length: " + layer.source);
+                return false;
+            }
+            subTotalSamples = trimLength;
+
+            double rs = std::clamp (layer.regionStart, 0.0, 1.0);
+            double re = std::clamp (layer.regionEnd, 0.0, 1.0);
+            if (re < rs) std::swap (rs, re);
+            int regionStart = std::clamp (
+                static_cast<int> (rs * subTotalSamples), 0, subTotalSamples - 1);
+            int regionEnd = std::clamp (
+                static_cast<int> (re * subTotalSamples), regionStart + 1, subTotalSamples);
+
+            LeafPlacement placement;
+            placement.numSamples = regionEnd - regionStart;
+            placements.push_back (placement);
+        }
+
+        // Crossfade clamp + cumulative placement -- copied verbatim from
+        // renderLayered()'s own post-loop block above.
+        int crossfadeSamples = static_cast<int> (score.crossfadeMs / 1000.0 * sr);
+        int minLayerLen = placements[0].numSamples;
+        for (const auto& p : placements)
+            minLayerLen = std::min (minLayerLen, p.numSamples);
+        crossfadeSamples = std::min (crossfadeSamples, minLayerLen - 1);
+        crossfadeSamples = std::max (crossfadeSamples, 0);
+
+        std::vector<double> offsetSeconds (placements.size(), 0.0);
+        {
+            int writePos = 0;
+            for (size_t i = 0; i < placements.size(); ++i)
+            {
+                offsetSeconds[i] = static_cast<double> (writePos) / sr;
+                if (i + 1 < placements.size())
+                    writePos += placements[i].numSamples - crossfadeSamples;
+            }
+        }
+
+        // ---- Flatten: dumpModes() on each leaf (unmodified call), parsed
+        // back and re-emitted with time/layer_source/layer_depth added and
+        // gain applied to amplitude-derived fields.
+        juce::Array<juce::var> flatEvents;
+        juce::Array<juce::var> layersMeta;
+        int totalInputEvents = 0;
+        int totalDumped = 0;
+        juce::var observables, unsupported;
+        bool haveTopLevel = false;
+
+        for (size_t li = 0; li < score.layers.size(); ++li)
+        {
+            const auto& layer = score.layers[li];
+            const auto& subScore = subScores[li];
+            const juce::String leafJson = dumpModes (subScore);
+            juce::var parsed = juce::JSON::parse (leafJson);
+            auto* leafObj = parsed.getDynamicObject();
+            if (leafObj == nullptr)
+            {
+                renderWarnings.push_back (
+                    "Layer produced an unparsable mode dump: " + layer.source);
+                return false;
+            }
+
+            if (! haveTopLevel)
+            {
+                observables = leafObj->getProperty ("model_observables");
+                unsupported = leafObj->getProperty ("unsupported_observables");
+                haveTopLevel = true;
+            }
+
+            totalInputEvents += static_cast<int> (leafObj->getProperty ("input_event_count"));
+            const int leafDumped = static_cast<int> (leafObj->getProperty ("dumped_event_count"));
+            totalDumped += leafDumped;
+
+            const double offsetS = offsetSeconds[li];
+            const double gain = layer.gain;
+            auto scaleAmp = [gain] (juce::var& modeVar)
+            {
+                auto* m = modeVar.getDynamicObject();
+                if (m == nullptr || ! m->hasProperty ("amp")) return;
+                m->setProperty ("amp", static_cast<double> (m->getProperty ("amp")) * gain);
+            };
+
+            if (auto* eventsArr = leafObj->getProperty ("events").getArray())
+            {
+                for (auto& evVar : *eventsArr)
+                {
+                    auto* evObj = evVar.getDynamicObject();
+                    if (evObj == nullptr) continue;
+                    const int sourceIndex = static_cast<int> (evObj->getProperty ("source_index"));
+                    double leafTime = 0.0;
+                    if (sourceIndex >= 0
+                        && static_cast<size_t> (sourceIndex) < subScore.events.size())
+                        leafTime = subScore.events[static_cast<size_t> (sourceIndex)].time;
+                    evObj->setProperty ("time", leafTime + offsetS);
+                    evObj->setProperty ("layer_source", juce::String (layer.source));
+                    evObj->setProperty ("layer_depth", 1);
+
+                    if (auto* partialsArr = evObj->getProperty ("partials").getArray())
+                        for (auto& mv : *partialsArr) scaleAmp (mv);
+                    if (auto* stringsArr = evObj->getProperty ("strings").getArray())
+                        for (auto& sArrVar : *stringsArr)
+                            if (auto* sArr = sArrVar.getArray())
+                                for (auto& mv : *sArr) scaleAmp (mv);
+                    if (auto* transferArr = evObj->getProperty ("acoustic_transfer").getArray())
+                        for (auto& tv : *transferArr)
+                        {
+                            auto* t = tv.getDynamicObject();
+                            if (t != nullptr && t->hasProperty ("pressure_per_force_real_pa_n"))
+                                t->setProperty ("pressure_per_force_real_pa_n",
+                                    static_cast<double> (
+                                        t->getProperty ("pressure_per_force_real_pa_n")) * gain);
+                        }
+
+                    flatEvents.add (evVar);
+                }
+            }
+
+            juce::DynamicObject::Ptr layerMeta (new juce::DynamicObject());
+            layerMeta->setProperty ("source", juce::String (layer.source));
+            layerMeta->setProperty ("offset_s", offsetS);
+            layerMeta->setProperty ("gain", gain);
+            layerMeta->setProperty ("event_count", leafDumped);
+            layersMeta.add (juce::var (layerMeta.get()));
+        }
+
+        juce::DynamicObject::Ptr root (new juce::DynamicObject());
+        root->setProperty ("contract", "TsukiSynth Mode Dump v2");
+        root->setProperty ("sample_rate_hz", sr);
+        root->setProperty ("model_observables", observables);
+        root->setProperty ("unsupported_observables", unsupported);
+        root->setProperty ("layered", true);
+        root->setProperty ("layers", layersMeta);
+        root->setProperty ("input_event_count", totalInputEvents);
+        root->setProperty ("events", flatEvents);
+        root->setProperty ("dumped_event_count", totalDumped);
+
+        jsonOut = juce::JSON::toString (juce::var (root.get()), false);
+        return true;
+    }
+
 private:
     static bool hasRenderableModalEnergy (
         const std::vector<std::vector<ModalResonator::Mode>>& modeSets,
