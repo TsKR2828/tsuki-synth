@@ -1,0 +1,1159 @@
+# WF0907 整合卡證據檔
+建立時間：2026-09-09（回報時間；規劃日期為 2026-09-07）
+角色：整合工兵（Sonnet）
+
+## 已通過稽核（staged）：E1, C12, E5, E8, E9, E7
+## 未通過/未做：C10=BLOCKED, C11=RED, E10=BLOCKED
+
+## 步驟 1：git status --short / git diff --cached --stat
+
+### git status --short
+M  .github/workflows/physics.yml
+ M .gitignore
+M  CMakeLists.txt
+M  HANDOVER.md
+MM docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+ M docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+ M docs/EXTERNAL_ANCHOR_SOURCES.md
+ M reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md
+A  reports/decision_packets/K02_reverb_wet_scale.zh-TW.md
+AM reports/gate_outputs/wf0907_C11_reason.txt
+A  reports/gate_outputs/wf0907_C12_dry.txt
+A  reports/gate_outputs/wf0907_E1_ci.txt
+A  reports/gate_outputs/wf0907_E5_ctest_log.txt
+A  reports/gate_outputs/wf0907_E5_hostprobe_log.txt
+A  reports/gate_outputs/wf0907_E5_physics_verify_full.txt
+A  reports/gate_outputs/wf0907_E5_pytest.txt
+A  reports/gate_outputs/wf0907_E5_tail.txt
+A  reports/gate_outputs/wf0907_E5_tail_after_render_log.txt
+A  reports/gate_outputs/wf0907_E5_tail_baseline_render_log.txt
+A  reports/gate_outputs/wf0907_E7_reverb.txt
+A  reports/gate_outputs/wf0907_E8_build_ctest_full_bitidentity.txt
+A  reports/gate_outputs/wf0907_E8_build_main.txt
+A  reports/gate_outputs/wf0907_E8_build_tests.txt
+A  reports/gate_outputs/wf0907_E8_configure.txt
+A  reports/gate_outputs/wf0907_E8_convert_gate3.txt
+A  reports/gate_outputs/wf0907_E8_corpus_pytest.txt
+A  reports/gate_outputs/wf0907_E8_corpus_validate.txt
+A  reports/gate_outputs/wf0907_E8_ctest_log.txt
+A  reports/gate_outputs/wf0907_E8_diffscope.txt
+A  reports/gate_outputs/wf0907_E8_physics_verify_full.txt
+A  reports/gate_outputs/wf0907_E8_pytest_full.txt
+A  reports/gate_outputs/wf0907_E8_schema.txt
+A  reports/gate_outputs/wf0907_E8_schema_before.txt
+A  reports/gate_outputs/wf0907_E8_schema_contract_sync_pytest.txt
+A  reports/gate_outputs/wf0907_E9_layered.txt
+A  reports/gate_outputs/wf0907_method/render_wf0907_e5_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e5_before.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e7_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e8_fixround_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e8_takeover.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e9_takeover2.csv
+A  reports/gate_outputs/wf0907_method/render_wf_scores.py
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e5_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e5_before.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e7_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e8_fixround_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e8_takeover.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e9_takeover2.txt
+A  scores/tests/wf0907_e9_cycle_a.score.json
+A  scores/tests/wf0907_e9_cycle_b.score.json
+M  src/PluginEditor.cpp
+M  src/PluginEditor.h
+M  src/PluginProcessor.cpp
+M  src/cli/RenderApp.cpp
+M  src/effects/EffectChain.h
+M  src/engines/ChromaticEngine.h
+M  src/engines/CimbalomEngine.h
+M  src/score/ScoreParser.h
+M  src/score/ScoreRenderer.h
+M  tests/audit_repro.cpp
+MM tests/host_probe.cpp
+A  tests/test_dump_modes_layered.py
+A  tests/test_schema_contract_sync.py
+M  tests/test_score_vs_midi_verify.py
+M  tests/test_stem_verify.py
+ M tools/melody_verify.py
+M  tools/midi_to_tsukisynth.py
+M  tools/requirements-physics.txt
+M  tools/stem_verify.py
+?? docs/B7_PHASE0_DATA.zh-TW.md
+?? docs/EXTERNAL_DATASET_A8.zh-TW.md
+?? docs/workcards/WF0907_C10_selfcal.md
+?? docs/workcards/WF0907_C11_refusal_reason.md
+?? docs/workcards/WF0907_C12_analysis_dry.md
+?? docs/workcards/WF0907_E10_hostprobe_h6_h7.md
+?? docs/workcards/WF0907_E1_ci_requirements.md
+?? docs/workcards/WF0907_E5_plugin_truth_source.md
+?? docs/workcards/WF0907_E7_reverb_k02_k03.md
+?? docs/workcards/WF0907_E8_schema_contract_sync.md
+?? docs/workcards/WF0907_E9_layered_dump_modes.md
+?? docs/workcards/WF0907_R1_A13_partial_gate.md
+?? docs/workcards/WF0907_R2_A14_weak_fundamental.md
+?? docs/workcards/WF0907_R3_F03_ir_preset.md
+?? docs/workcards/WF0907_R4_B7_phase0_data.md
+?? docs/workcards/WF0907_R5_A8_dataset.md
+?? docs/workcards/WF0907_R6_D8_tongue_drum.md
+?? docs/workcards/WF0907_README.md
+?? docs/workcards/WF0907_R_research_common.md
+?? docs/workcards/WF0908_P1_partial_verify.md
+?? docs/workcards/WF0908_P2_a14_tauc_rule10.md
+?? docs/workcards/WF0908_P3_f03_ir_library.md
+?? docs/workcards/WF0908_P4_a8_citation_fix.md
+?? docs/workcards/WF0908_P5_research_cleanup.md
+?? reports/decision_packets/A13_partial_gate_domain.zh-TW.md
+?? reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md
+?? reports/decision_packets/C10_selfcal_domain.zh-TW.md
+?? reports/decision_packets/D8_tongue_drum_diagnosis.zh-TW.md
+?? reports/gate_outputs/wf0907_C10_selfcal.txt
+?? reports/gate_outputs/wf0907_E10_hostprobe.txt
+?? reports/gate_outputs/wf0907_INTEGRATION.txt
+?? reports/gate_outputs/wf0907_R6_d8_evidence.txt
+?? reports/gate_outputs/wf0907_method/render_audit_e9.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e8_after.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e8_audit.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e8_auditor.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e9_after.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e9_auditor.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e9_verify.csv
+?? reports/gate_outputs/wf0907_method/sha256_audit_e9.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e8_after.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e8_audit.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e8_auditor.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e9_after.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e9_auditor.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e9_verify.txt
+?? tests/test_measurement_selfcal.py
+?? tools/measurement_selfcal.py
+
+### git diff --cached --stat
+ .github/workflows/physics.yml                      |   6 +-
+ CMakeLists.txt                                     |   6 +
+ HANDOVER.md                                        |  22 +-
+ docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md |  71 +-
+ .../decision_packets/K02_reverb_wet_scale.zh-TW.md |  95 +++
+ reports/gate_outputs/wf0907_C11_reason.txt         | 413 ++++++++++++
+ reports/gate_outputs/wf0907_C12_dry.txt            | 453 +++++++++++++
+ reports/gate_outputs/wf0907_E1_ci.txt              |  87 +++
+ reports/gate_outputs/wf0907_E5_ctest_log.txt       |  13 +
+ reports/gate_outputs/wf0907_E5_hostprobe_log.txt   |  27 +
+ .../gate_outputs/wf0907_E5_physics_verify_full.txt | 622 ++++++++++++++++++
+ reports/gate_outputs/wf0907_E5_pytest.txt          |   4 +
+ reports/gate_outputs/wf0907_E5_tail.txt            | 152 +++++
+ .../wf0907_E5_tail_after_render_log.txt            |  18 +
+ .../wf0907_E5_tail_baseline_render_log.txt         |  18 +
+ reports/gate_outputs/wf0907_E7_reverb.txt          | 474 ++++++++++++++
+ .../wf0907_E8_build_ctest_full_bitidentity.txt     | 105 +++
+ reports/gate_outputs/wf0907_E8_build_main.txt      |  32 +
+ reports/gate_outputs/wf0907_E8_build_tests.txt     |  25 +
+ reports/gate_outputs/wf0907_E8_configure.txt       |   9 +
+ reports/gate_outputs/wf0907_E8_convert_gate3.txt   |   4 +
+ reports/gate_outputs/wf0907_E8_corpus_pytest.txt   |  12 +
+ reports/gate_outputs/wf0907_E8_corpus_validate.txt |  20 +
+ reports/gate_outputs/wf0907_E8_ctest_log.txt       |  13 +
+ reports/gate_outputs/wf0907_E8_diffscope.txt       |  42 ++
+ .../gate_outputs/wf0907_E8_physics_verify_full.txt | 622 ++++++++++++++++++
+ reports/gate_outputs/wf0907_E8_pytest_full.txt     |   5 +
+ reports/gate_outputs/wf0907_E8_schema.txt          | 201 ++++++
+ reports/gate_outputs/wf0907_E8_schema_before.txt   |  25 +
+ .../wf0907_E8_schema_contract_sync_pytest.txt      |   2 +
+ reports/gate_outputs/wf0907_E9_layered.txt         | 336 ++++++++++
+ .../wf0907_method/render_wf0907_e5_after.csv       |   9 +
+ .../wf0907_method/render_wf0907_e5_before.csv      |   9 +
+ .../wf0907_method/render_wf0907_e7_after.csv       |   9 +
+ .../render_wf0907_e8_fixround_after.csv            |   9 +
+ .../wf0907_method/render_wf0907_e8_takeover.csv    |   9 +
+ .../wf0907_method/render_wf0907_e9_takeover2.csv   |   9 +
+ .../gate_outputs/wf0907_method/render_wf_scores.py | 158 +++++
+ .../wf0907_method/sha256_wf0907_e5_after.txt       |   8 +
+ .../wf0907_method/sha256_wf0907_e5_before.txt      |   8 +
+ .../wf0907_method/sha256_wf0907_e7_after.txt       |   8 +
+ .../sha256_wf0907_e8_fixround_after.txt            |   8 +
+ .../wf0907_method/sha256_wf0907_e8_takeover.txt    |   8 +
+ .../wf0907_method/sha256_wf0907_e9_takeover2.txt   |   8 +
+ scores/tests/wf0907_e9_cycle_a.score.json          |  39 ++
+ scores/tests/wf0907_e9_cycle_b.score.json          |  39 ++
+ src/PluginEditor.cpp                               |  12 +-
+ src/PluginEditor.h                                 |   7 +
+ src/PluginProcessor.cpp                            |  32 +-
+ src/cli/RenderApp.cpp                              |  16 +-
+ src/effects/EffectChain.h                          |  26 +
+ src/engines/ChromaticEngine.h                      | 159 ++++-
+ src/engines/CimbalomEngine.h                       | 211 +++++-
+ src/score/ScoreParser.h                            | 118 +++-
+ src/score/ScoreRenderer.h                          | 264 ++++++++
+ tests/audit_repro.cpp                              | 323 +++++++++
+ tests/host_probe.cpp                               | 201 ++++++
+ tests/test_dump_modes_layered.py                   | 296 +++++++++
+ tests/test_schema_contract_sync.py                 | 726 +++++++++++++++++++++
+ tests/test_score_vs_midi_verify.py                 |  98 +++
+ tests/test_stem_verify.py                          | 446 +++++++++++++
+ tools/midi_to_tsukisynth.py                        |  56 ++
+ tools/requirements-physics.txt                     |   4 +
+ tools/stem_verify.py                               | 321 ++++++++-
+ 64 files changed, 7508 insertions(+), 80 deletions(-)
+
+## 步驟 2：對 build\ 跑 cmake（Python lane 已結束，可重建）
+
+### cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Configuring done (2.7s)
+-- Generating done (0.8s)
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    CMAKE_BUILD_TYPE
+
+
+-- Build files have been written to: C:/Users/admin/Desktop/Claude/tsuki-synth/build
+
+### cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthCLI_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_rc_lib.dir\Release\TsukiSynthCLI_rc_lib.lib
+  Generating juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData.h
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthData.lib
+  RenderApp.cpp
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  Generating juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData.h
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthData.lib
+  PluginEditor.cpp
+  PluginProcessor.cpp
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynth_Standalone.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  Generating juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData.h
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthData.lib
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  TsukiSynth_vst3_helper.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynth_vst3_helper.exe
+     正在建立程式庫 C:/Users/admin/Desktop/Claude/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.lib 和物件 C:/Users/admin/Desktop/Claude/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.exp
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynth_VST3.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  removing moduleinfo.json
+  creating C:/Users/admin/Desktop/Claude/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+
+### cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  audit_repro.cpp
+  juce_audio_formats.cpp
+  juce_audio_basics.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_dsp.cpp
+  juce_graphics_Sheenbidi.c
+  TsukiSynthAuditTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthAuditTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthTunerTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthTunerTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  physics_models_repro.cpp
+  TsukiSynthPhysicsModelsTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthPhysicsModelsTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  spectrum_view_repro.cpp
+  TsukiSynthSpectrumViewTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthSpectrumViewTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  host_probe.cpp
+  TsukiSynthHostProbe.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthHostProbe.exe
+
+全部 target 建置成功。
+
+## 步驟 3：X4 -> ctest --test-dir build -C Release --output-on-failure
+
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.19 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.56 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.10 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.05 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   2.00 sec
+
+## 步驟 4：python -m pytest tests -q
+
+........................................................................ [ 28%]
+......s................................................................. [ 57%]
+........................................................................ [ 86%]
+...................................                                      [100%]
+250 passed, 1 skipped in 65.47s (0:01:05)
+
+## 步驟 5：python tools/physics_verify.py --full（用 build\ 的 exe）
+
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+======================================================================
+--full: implementation gate (eigenvalue anchors + range + material sensitivity + velocity) + M2 amplitude judgment + measured T60 + residual energy
+======================================================================
+
+----------------------------------------------------------------------
+Eigenvalue-ratio anchors (MIDI 60, --dump-modes ratios vs literature beam/plate eigenvalues; independent of the C++ tables):
+
+# tongue_drum cantilever (default)
+    n anchor_ratio  dump_ratio     err%  verdict   (tol +/-0.10%)
+    1     1.000000    1.000000  +0.0000  PASS
+    2     6.266893    6.266881  -0.0002  PASS
+    3    17.547481   17.547453  -0.0002  PASS
+    4    34.386060   34.385998  -0.0002  PASS
+    5    56.842621   56.842516  -0.0002  PASS
+   -> PASS
+
+# tongue_drum free_free (explicit)
+    n anchor_ratio  dump_ratio     err%  verdict   (tol +/-0.10%)
+    1     1.000000    1.000000  +0.0000  PASS
+    2     2.756538    2.756580  +0.0015  PASS
+    3     5.403917    5.403993  +0.0014  PASS
+    4     8.932949    8.933134  +0.0021  PASS
+    5    13.344286   13.344553  +0.0020  PASS
+   -> PASS
+
+# water_gong clamped
+    n anchor_ratio  dump_ratio     err%  verdict   (tol +/-0.10%)
+    1     1.000000    1.000000  +0.0000  PASS
+    2     2.081090    2.081085  -0.0002  PASS
+    3     3.414025    3.414018  -0.0002  PASS
+    4     3.893087    3.893080  -0.0002  PASS
+    5     4.995204    4.995195  -0.0002  PASS
+    6     5.954404    5.954393  -0.0002  PASS
+    7     6.819437    6.819425  -0.0002  PASS
+    8     8.279626    8.279613  -0.0002  PASS
+   -> PASS
+
+# water_gong_free free-edge (nu-dependent) [nu=0.34 from data/materials.json, roots re-solved from the free-plate characteristic equation]
+    n anchor_ratio  dump_ratio     err%  verdict   (tol +/-0.50%)
+    1     1.000000    1.000000  +0.0000  PASS
+    2     1.738427    1.738424  -0.0001  PASS
+    3     2.328640    2.328637  -0.0001  PASS
+    4     3.925280    3.925271  -0.0002  PASS
+    5     4.096416    4.096409  -0.0002  PASS
+    6     6.738528    6.738516  -0.0002  PASS
+    7     7.367962    7.367949  -0.0002  PASS
+   -> PASS
+
+----------------------------------------------------------------------
+Note-range scan (6 notes per engine, spanning each engine's declared valid range):
+
+### cimbalom: valid range MIDI 36-96 -> probing [36, 48, 60, 72, 84, 96]
+
+# cimbalom    MIDI 36  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0006% [OK]
+   f0 ET anchor: expected 65.406 Hz (12-TET MIDI 36), measured 65.406 Hz (-0.004 cents, tol +/-5.0); dump-conformance -0.011 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      65.407      65.406   -0.00    +0.0   84.5  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     130.817     130.816   -0.00    +1.2  118.8  PASS model=+1.2dB raw=+2.3dB isolated=+1.2dB
+    3     196.235     196.235   +0.00    -5.6   80.1  PASS model=-5.6dB raw=-2.9dB isolated=-5.6dB
+    4     261.664     261.662   -0.00   -15.4   73.1  PASS model=-15.4dB raw=-10.2dB isolated=-15.4dB
+    5     327.108     327.089   -0.01    -7.9   83.1  PASS model=-8.0dB raw=+0.6dB isolated=-8.0dB
+    6     392.571     390.990   -0.40   -11.1   71.7  PASS model=-11.1dB raw=+0.6dB isolated=-11.1dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 48  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0004% [OK]
+   f0 ET anchor: expected 130.813 Hz (12-TET MIDI 48), measured 130.813 Hz (+0.003 cents, tol +/-5.0); dump-conformance -0.004 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     130.813     130.813   -0.00    +0.0  129.3  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     261.656     261.655   -0.00    -1.9   98.4  PASS model=-1.9dB raw=+2.2dB isolated=-1.9dB
+    3     392.560     391.016   -0.39   -13.6   86.1  PASS model=-13.6dB raw=-3.2dB isolated=-13.6dB
+    4     523.553     521.349   -0.42   -23.3   84.2  PASS model=-23.3dB raw=-10.8dB isolated=-23.3dB
+    5     654.667     651.805   -0.44   -13.8   89.7  PASS model=-13.8dB raw=-0.4dB isolated=-13.8dB
+    6     785.931     782.851   -0.39   -13.2   94.5  PASS model=-13.2dB raw=-0.8dB isolated=-13.2dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 60  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 261.626 Hz (12-TET MIDI 60), measured 261.626 Hz (+0.004 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     261.626     261.626   -0.00    +0.0  138.2  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     523.493     521.295   -0.42    -6.6  105.7  PASS model=-6.6dB raw=+1.9dB isolated=-6.6dB
+    3     785.842     782.731   -0.40   -12.7  103.0  PASS model=-12.7dB raw=-4.0dB isolated=-12.7dB
+    4    1048.912    1045.971   -0.28   -19.3  101.9  PASS model=-19.3dB raw=-12.3dB isolated=-19.3dB
+    5    1312.940    1309.955   -0.23    -9.6  112.9  PASS model=-9.6dB raw=-2.9dB isolated=-9.6dB
+    6    1578.164    1573.810   -0.28   -12.4  105.2  PASS model=-12.4dB raw=-4.8dB isolated=-12.4dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 72  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 523.251 Hz (12-TET MIDI 72), measured 523.252 Hz (+0.004 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     523.252     523.252   +0.00    +0.0  119.2  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1048.430    1045.270   -0.30    +1.6  141.5  PASS model=+1.6dB raw=+1.1dB isolated=+1.6dB
+    3    1577.448    1573.139   -0.27    -5.8  117.2  PASS model=-5.8dB raw=-6.2dB isolated=-5.8dB
+    4    2112.190    2112.228   +0.00   -17.8    9.0  PASS model=-17.8dB raw=-16.9dB isolated=-17.8dB
+    5    2654.491    2654.601   +0.00   -13.9   17.4  PASS model=-13.9dB raw=-11.5dB isolated=-13.9dB
+    6    3205.985    3206.391   +0.01   -26.4   21.3  PASS model=-26.4dB raw=-22.0dB isolated=-26.4dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 84  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 1046.502 Hz (12-TET MIDI 84), measured 1046.503 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1046.502    1046.503   +0.00    +0.0  136.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    2108.322    2102.395   -0.28    -1.5  135.2  PASS model=-1.5dB raw=-1.1dB isolated=-1.5dB
+    3    3200.375    3200.490   +0.00   -17.0   15.8  PASS model=-17.0dB raw=-13.5dB isolated=-17.0dB
+    4    4334.004          --      --      --     --  MODEL-WEAK (not required) model=-57.8dB raw=-49.7dB isolated=-57.8dB
+    5    5531.856    5531.834   -0.00   -35.0   22.1  PASS model=-35.0dB raw=-20.8dB isolated=-35.0dB
+    6    6795.507          --      --      --     --  MODEL-WEAK (not required) model=-50.8dB raw=-29.0dB isolated=-50.8dB
+   coverage: 4/4 required (100%), 6 model modes listed
+   -> PASS
+
+# cimbalom    MIDI 96  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 2093.005 Hz (12-TET MIDI 96), measured 2092.995 Hz (-0.008 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    2092.994    2092.995   +0.00    +0.0  138.9  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    4305.454    4293.522   -0.28   -12.0  126.8  PASS model=-12.0dB raw=-9.4dB isolated=-12.0dB
+    3    6747.138    6747.044   -0.00   -34.8   11.4  PASS model=-34.8dB raw=-23.0dB isolated=-34.8dB
+    4    9511.114          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-46.0dB isolated=-72.2dB
+    5   12650.852          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-46.7dB isolated=-89.5dB
+    6   16247.364          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-48.0dB isolated=-112.0dB
+   coverage: 3/3 required (100%), 6 model modes listed
+   -> PASS
+
+### tongue_drum: valid range MIDI 48-84 -> probing [48, 55, 62, 70, 77, 84]
+
+# tongue_drum MIDI 48  (expectation=--dump-modes)
+   f0 ET anchor: expected 130.813 Hz (12-TET MIDI 48), measured 130.813 Hz (-0.002 cents, tol +/-5.0); dump-conformance -0.005 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     130.813     130.813   -0.00    +0.0  134.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     819.790     819.790   +0.00    +8.0  158.6  PASS model=+7.9dB raw=+9.9dB isolated=+7.9dB
+    3    2295.435    2295.435   -0.00   -34.3  116.3  PASS model=-34.3dB raw=-25.1dB isolated=-34.3dB
+    4    4498.136    4498.137   +0.00   -41.0  109.6  PASS model=-41.0dB raw=-16.1dB isolated=-41.0dB
+    5    7435.740          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-41.9dB isolated=-87.6dB
+   coverage: 4/4 required (100%), 5 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 55  (expectation=--dump-modes)
+   f0 ET anchor: expected 195.998 Hz (12-TET MIDI 55), measured 195.998 Hz (+0.003 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     195.998     195.998   +0.00    +0.0  149.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1228.297    1228.297   -0.00    +4.6  154.7  PASS model=+4.6dB raw=+7.9dB isolated=+4.6dB
+    3    3439.267    3439.267   +0.00   -23.9  126.3  PASS model=-23.9dB raw=-7.0dB isolated=-23.9dB
+    4    6739.589          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-21.2dB isolated=-62.2dB
+    5   11141.023          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-76.8dB isolated=-143.1dB
+   coverage: 3/3 required (100%), 5 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 62  (expectation=--dump-modes)
+   f0 ET anchor: expected 293.665 Hz (12-TET MIDI 62), measured 293.665 Hz (+0.002 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     293.665     293.665   +0.00    +0.0  152.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1840.366    1840.366   -0.00    -2.0  150.7  PASS model=-2.0dB raw=+4.2dB isolated=-2.0dB
+    3    5153.077          --      --      --     --  MODEL-WEAK (not required) model=-49.0dB raw=-19.5dB isolated=-49.0dB
+    4   10097.975          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-27.0dB isolated=-87.8dB
+    5   16692.674          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-68.9dB isolated=-158.9dB
+   coverage: 2/2 required (100%), 5 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 70  (expectation=--dump-modes)
+   f0 ET anchor: expected 466.164 Hz (12-TET MIDI 70), measured 466.164 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     466.164     466.164   +0.00    +0.0  155.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    2921.399    2921.398   -0.00   -19.2  136.5  PASS model=-19.2dB raw=-6.6dB isolated=-19.2dB
+    3    8180.000          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-26.7dB isolated=-76.2dB
+    4   16029.536          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-31.3dB isolated=-118.2dB
+   coverage: 2/2 required (100%), 4 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 77  (expectation=--dump-modes)
+   f0 ET anchor: expected 698.456 Hz (12-TET MIDI 77), measured 698.457 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.002 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     698.456     698.457   +0.00    +0.0  156.6  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    4377.152    4377.152   +0.00   -34.8  121.8  PASS model=-34.8dB raw=-12.3dB isolated=-34.8dB
+    3   12256.152          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-24.9dB isolated=-95.1dB
+   coverage: 2/2 required (100%), 3 model modes listed
+   -> PASS
+
+# tongue_drum MIDI 84  (expectation=--dump-modes)
+   f0 ET anchor: expected 1046.502 Hz (12-TET MIDI 84), measured 1046.502 Hz (-0.001 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1046.502    1046.502   -0.00    +0.0  147.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    6558.317          --      --      --     --  MODEL-WEAK (not required) model=-52.0dB raw=-14.8dB isolated=-52.0dB
+    3   18363.479          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-29.5dB isolated=-123.3dB
+   coverage: 1/1 required (100%), 3 model modes listed
+   -> PASS
+
+### water_gong: valid range MIDI 48-84 -> probing [48, 55, 62, 70, 77, 84]
+
+# water_gong  MIDI 48  (expectation=--dump-modes)
+   f0 ET anchor: expected 130.813 Hz (12-TET MIDI 48), measured 130.813 Hz (-0.002 cents, tol +/-5.0); dump-conformance -0.005 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     130.813     130.813   -0.00    +0.0  161.3  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     272.233     272.233   +0.00    -0.2  125.9  PASS model=-0.3dB raw=+0.9dB isolated=-0.3dB
+    3     446.598     446.599   +0.00    -5.8  115.4  PASS model=-5.8dB raw=-3.2dB isolated=-5.8dB
+    4     509.266     509.267   +0.00   -13.2   81.0  PASS model=-13.2dB raw=-10.0dB isolated=-13.2dB
+    5     653.436     653.435   -0.00   -13.3   93.1  PASS model=-13.3dB raw=-8.9dB isolated=-13.3dB
+    6     778.912     778.912   -0.00    -6.7  112.5  PASS model=-6.7dB raw=-1.1dB isolated=-6.7dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 55  (expectation=--dump-modes)
+   f0 ET anchor: expected 195.998 Hz (12-TET MIDI 55), measured 195.998 Hz (+0.003 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     195.998     195.998   +0.00    +0.0  145.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     407.889     407.889   +0.00    -1.0  139.5  PASS model=-1.0dB raw=+0.7dB isolated=-1.0dB
+    3     669.141     669.140   -0.00    -7.7  115.3  PASS model=-7.7dB raw=-3.7dB isolated=-7.7dB
+    4     763.036     763.036   +0.00   -15.6   84.6  PASS model=-15.6dB raw=-10.7dB isolated=-15.6dB
+    5     979.048     979.048   +0.00   -17.0  112.7  PASS model=-17.0dB raw=-10.0dB isolated=-17.0dB
+    6    1167.049    1167.050   +0.00   -11.6  129.4  PASS model=-11.6dB raw=-2.8dB isolated=-11.6dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 62  (expectation=--dump-modes)
+   f0 ET anchor: expected 293.665 Hz (12-TET MIDI 62), measured 293.665 Hz (+0.002 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     293.665     293.665   +0.00    +0.0  151.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     611.143     611.144   +0.00    -2.3  124.1  PASS model=-2.3dB raw=+0.5dB isolated=-2.3dB
+    3    1002.579    1002.579   -0.00   -11.0  146.0  PASS model=-11.0dB raw=-4.5dB isolated=-11.0dB
+    4    1143.262    1143.262   +0.00   -19.7   90.9  PASS model=-19.7dB raw=-11.9dB isolated=-19.7dB
+    5    1466.915    1466.916   +0.00   -23.3  105.6  PASS model=-23.3dB raw=-12.1dB isolated=-23.3dB
+    6    1748.599    1748.598   -0.00   -20.1  117.1  PASS model=-20.1dB raw=-6.1dB isolated=-20.1dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 70  (expectation=--dump-modes)
+   f0 ET anchor: expected 466.164 Hz (12-TET MIDI 70), measured 466.164 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     466.164     466.164   +0.00    +0.0  153.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     970.129     970.128   -0.00    -4.7  132.1  PASS model=-4.7dB raw=-0.1dB isolated=-4.7dB
+    3    1591.495    1591.496   +0.00   -17.4  135.7  PASS model=-17.4dB raw=-6.5dB isolated=-17.4dB
+    4    1814.816    1814.817   +0.00   -27.8  104.7  PASS model=-27.8dB raw=-14.5dB isolated=-27.8dB
+    5    2328.583    2328.584   +0.00   -36.0  117.0  PASS model=-36.0dB raw=-17.2dB isolated=-36.0dB
+    6    2775.727    2775.727   +0.00   -38.4  114.6  PASS model=-38.4dB raw=-14.9dB isolated=-38.4dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 77  (expectation=--dump-modes)
+   f0 ET anchor: expected 698.456 Hz (12-TET MIDI 77), measured 698.457 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.002 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     698.456     698.457   +0.00    +0.0  153.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1453.551    1453.551   -0.00    -8.4  145.3  PASS model=-8.4dB raw=-1.0dB isolated=-8.4dB
+    3    2384.548    2384.548   -0.00   -27.1  126.6  PASS model=-27.1dB raw=-9.8dB isolated=-27.1dB
+    4    2719.152    2719.151   -0.00   -40.2  113.5  PASS model=-40.2dB raw=-19.4dB isolated=-40.2dB
+    5    3488.932          --      --      --     --  MODEL-WEAK (not required) model=-58.4dB raw=-29.8dB isolated=-58.4dB
+    6    4158.892          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-27.0dB isolated=-61.9dB
+   coverage: 4/4 required (100%), 6 model modes listed
+   -> PASS
+
+# water_gong  MIDI 84  (expectation=--dump-modes)
+   f0 ET anchor: expected 1046.502 Hz (12-TET MIDI 84), measured 1046.502 Hz (-0.001 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1046.502    1046.502   -0.00    +0.0  145.0  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    2177.865    2177.865   +0.00   -14.5  130.5  PASS model=-14.5dB raw=-2.7dB isolated=-14.5dB
+    3    3572.785    3572.785   +0.00   -43.7  101.3  PASS model=-43.6dB raw=-17.5dB isolated=-43.6dB
+    4    4074.124          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-33.9dB isolated=-64.7dB
+    5    5227.491          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-29.9dB isolated=-70.6dB
+    6    6231.296          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-23.2dB isolated=-71.5dB
+   coverage: 3/3 required (100%), 6 model modes listed
+   -> PASS
+
+### water_gong_free: valid range MIDI 48-84 -> probing [48, 55, 62, 70, 77, 84]
+
+# water_gong_free MIDI 48  (expectation=--dump-modes)
+   f0 ET anchor: expected 130.813 Hz (12-TET MIDI 48), measured 130.813 Hz (-0.002 cents, tol +/-5.0); dump-conformance -0.005 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     130.813     130.813   -0.00    +0.0   88.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     227.408     227.408   +0.00   +16.0  139.5  PASS model=+16.0dB raw=+16.7dB isolated=+16.0dB
+    3     304.616     304.616   +0.00    -9.7   74.6  PASS model=-9.7dB raw=-8.3dB isolated=-9.7dB
+    4     513.477     513.477   -0.00   +14.4  131.9  PASS model=+14.4dB raw=+17.6dB isolated=+14.4dB
+    5     535.864     535.833   -0.01   -20.1   41.1  PASS model=-20.1dB raw=-16.7dB isolated=-20.1dB
+   coverage: 5/5 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 55  (expectation=--dump-modes)
+   f0 ET anchor: expected 195.998 Hz (12-TET MIDI 55), measured 195.998 Hz (+0.003 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     195.998     195.998   +0.00    +0.0   97.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     340.728     340.727   -0.00   +15.4  162.2  PASS model=+15.4dB raw=+16.6dB isolated=+15.4dB
+    3     456.408     456.408   +0.00   -10.6   85.4  PASS model=-10.6dB raw=-8.5dB isolated=-10.6dB
+    4     769.346     769.346   -0.00   +12.0  139.1  PASS model=+12.0dB raw=+16.9dB isolated=+12.0dB
+    5     802.888     802.874   -0.00   -22.7   45.1  PASS model=-22.7dB raw=-17.5dB isolated=-22.8dB
+   coverage: 5/5 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 62  (expectation=--dump-modes)
+   f0 ET anchor: expected 293.665 Hz (12-TET MIDI 62), measured 293.665 Hz (+0.002 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     293.665     293.665   +0.00    +0.0  130.0  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     510.515     510.515   -0.00   +14.6  151.3  PASS model=+14.6dB raw=+16.4dB isolated=+14.6dB
+    3     683.839     683.839   -0.00   -12.2  106.5  PASS model=-12.2dB raw=-8.8dB isolated=-12.2dB
+    4    1152.716    1152.718   +0.00    +7.8  136.8  PASS model=+7.8dB raw=+15.7dB isolated=+7.8dB
+    5    1202.973    1202.973   +0.00   -27.2   48.6  PASS model=-27.2dB raw=-18.8dB isolated=-27.2dB
+   coverage: 5/5 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 70  (expectation=--dump-modes)
+   f0 ET anchor: expected 466.164 Hz (12-TET MIDI 70), measured 466.164 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     466.164     466.164   +0.00    +0.0  118.3  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     810.392     810.392   +0.00   +13.0  157.9  PASS model=+13.0dB raw=+16.1dB isolated=+13.0dB
+    3    1085.528    1085.527   -0.00   -15.4   97.9  PASS model=-15.4dB raw=-9.6dB isolated=-15.4dB
+    4    1829.823    1829.824   +0.00    -0.5  144.4  PASS model=-0.5dB raw=+13.0dB isolated=-0.5dB
+    5    1909.601    1909.604   +0.00   -36.2   49.5  PASS model=-36.2dB raw=-21.8dB isolated=-36.2dB
+   coverage: 5/5 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 77  (expectation=--dump-modes)
+   f0 ET anchor: expected 698.456 Hz (12-TET MIDI 77), measured 698.457 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.002 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     698.456     698.457   +0.00    +0.0  132.9  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1214.215    1214.215   +0.00   +10.6  147.6  PASS model=+10.6dB raw=+15.6dB isolated=+10.6dB
+    3    1626.454    1626.452   -0.00   -20.1  117.0  PASS model=-20.1dB raw=-10.8dB isolated=-20.1dB
+    4    2741.637    2741.638   +0.00   -13.1  123.9  PASS model=-13.1dB raw=+8.0dB isolated=-13.1dB
+    5    2861.168          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-27.6dB isolated=-49.8dB
+   coverage: 4/4 required (100%), 5 model modes listed
+   -> PASS
+
+# water_gong_free MIDI 84  (expectation=--dump-modes)
+   f0 ET anchor: expected 1046.502 Hz (12-TET MIDI 84), measured 1046.502 Hz (-0.001 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1046.502    1046.502   -0.00    +0.0  140.6  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1819.267    1819.268   +0.00    +6.6  147.3  PASS model=+6.6dB raw=+14.6dB isolated=+6.6dB
+    3    2436.927    2436.927   +0.00   -27.7  112.9  PASS model=-27.7dB raw=-13.1dB isolated=-27.7dB
+    4    4107.814    4107.814   -0.00   -38.6  102.1  PASS model=-38.4dB raw=-7.4dB isolated=-38.4dB
+    5    4286.908          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-50.5dB isolated=-83.2dB
+   coverage: 4/4 required (100%), 5 model modes listed
+   -> PASS
+
+### fm: valid range MIDI 24-96 -> probing [24, 38, 53, 67, 82, 96]
+
+# fm          MIDI 24  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 32.703 Hz (12-TET MIDI 24), measured 32.703 Hz (-0.000 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      32.703      32.703   -0.00    +0.0   56.4  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 38  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 73.416 Hz (12-TET MIDI 38), measured 73.416 Hz (+0.001 cents, tol +/-5.0); dump-conformance +0.001 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      73.416      73.416   +0.00    +0.0   59.6  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 53  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 174.614 Hz (12-TET MIDI 53), measured 174.615 Hz (+0.008 cents, tol +/-5.0); dump-conformance +0.008 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     174.614     174.615   +0.00    +0.0  116.0  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 67  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 391.995 Hz (12-TET MIDI 67), measured 391.995 Hz (+0.000 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     391.995     391.995   +0.00    +0.0  139.2  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 82  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 932.328 Hz (12-TET MIDI 82), measured 932.328 Hz (+0.000 cents, tol +/-5.0); dump-conformance +0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     932.328     932.328   +0.00    +0.0  155.9  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+# fm          MIDI 96  (expectation=f0-only/non-physical)
+   oracle: FM non-modal: f0-only [OK]
+   f0 ET anchor: expected 2093.005 Hz (12-TET MIDI 96), measured 2093.004 Hz (-0.000 cents, tol +/-5.0); dump-conformance -0.000 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    2093.005    2093.004   -0.00    +0.0  156.6  PASS model=+0.0dB
+   coverage: 1/1 required (100%), 1 model modes listed
+   -> PASS
+
+### piano: valid range MIDI 21-108 -> probing [21, 38, 56, 73, 91, 108]
+
+# piano       MIDI 21  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0014% [OK]
+   f0 ET anchor: expected 27.500 Hz (12-TET MIDI 21), measured 27.500 Hz (-0.020 cents, tol +/-5.0); dump-conformance -0.041 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      27.500      27.500   -0.00    +0.0   75.3  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2      55.000      55.000   -0.00    +4.9   73.8  PASS model=+4.9dB raw=+5.1dB isolated=+4.9dB
+    3      82.501      82.501   -0.00    +6.6  109.3  PASS model=+6.6dB raw=+7.2dB isolated=+6.6dB
+    4     110.003     110.003   -0.00    +6.5   74.7  PASS model=+6.5dB raw=+7.5dB isolated=+6.5dB
+    5     137.506     137.506   -0.00    +4.7   70.3  PASS model=+4.8dB raw=+6.3dB isolated=+4.8dB
+    6     165.010     165.009   -0.00    +1.2   67.4  PASS model=+1.2dB raw=+3.5dB isolated=+1.2dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 38  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0008% [OK]
+   f0 ET anchor: expected 73.416 Hz (12-TET MIDI 38), measured 73.416 Hz (+0.006 cents, tol +/-5.0); dump-conformance +0.004 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1      73.416      73.416   +0.00    +0.0   85.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     146.838     146.838   +0.00    +3.2  129.9  PASS model=+3.2dB raw=+4.5dB isolated=+3.2dB
+    3     220.269     220.269   -0.00    +1.9   84.1  PASS model=+2.0dB raw=+5.4dB isolated=+2.0dB
+    4     293.715     293.708   -0.00    -2.5   79.1  PASS model=-2.5dB raw=+4.0dB isolated=-2.5dB
+    5     367.181     365.999   -0.32   -10.2   73.3  PASS model=-10.2dB raw=+0.4dB isolated=-10.2dB
+    6     440.670     438.775   -0.43   -18.2   70.5  PASS model=-18.2dB raw=-5.9dB isolated=-18.2dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 56  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0003% [OK]
+   f0 ET anchor: expected 207.652 Hz (12-TET MIDI 56), measured 207.653 Hz (+0.003 cents, tol +/-5.0); dump-conformance +0.006 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     207.652     207.653   +0.00    +0.0  127.2  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2     415.420     413.707   -0.41    -7.7  123.8  PASS model=-7.8dB raw=+1.1dB isolated=-7.8dB
+    3     623.409     620.737   -0.43   -17.0  118.6  PASS model=-17.0dB raw=-5.8dB isolated=-17.0dB
+    4     832.002     834.890   +0.35   -32.4  111.5  PASS model=-32.4dB raw=-22.8dB isolated=-32.4dB
+    5    1040.662    1037.770   -0.28   -23.5  128.3  PASS model=-23.5dB raw=-14.7dB isolated=-23.5dB
+    6    1249.892    1247.180   -0.22   -35.9  118.8  PASS model=-35.9dB raw=-27.8dB isolated=-35.9dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 73  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0001% [OK]
+   f0 ET anchor: expected 554.365 Hz (12-TET MIDI 73), measured 554.361 Hz (-0.012 cents, tol +/-5.0); dump-conformance +0.013 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1     554.357     554.361   +0.00    +0.0  141.9  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    1111.120    1114.199   +0.28   -13.8  118.0  PASS model=-13.8dB raw=-15.0dB isolated=-13.8dB
+    3    1668.537    1667.476   -0.06   -42.3   99.6  PASS model=-42.2dB raw=-46.8dB isolated=-42.2dB
+    4    2239.776    2240.297   +0.02   -26.0   11.0  PASS model=-26.0dB raw=-25.1dB isolated=-26.0dB
+    5    2817.015    2817.377   +0.01   -27.9   18.3  PASS model=-27.9dB raw=-25.4dB isolated=-27.9dB
+    6    3405.392    3405.619   +0.01   -34.2   22.3  PASS model=-34.2dB raw=-29.5dB isolated=-34.2dB
+   coverage: 6/6 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 91  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 1567.982 Hz (12-TET MIDI 91), measured 1567.993 Hz (+0.012 cents, tol +/-5.0); dump-conformance -0.007 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    1567.999    1567.993   -0.00    +0.0  119.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    3187.332    3187.022   -0.01   -11.0    6.6  PASS model=-11.0dB raw=-9.2dB isolated=-11.0dB
+    3    4906.137    4905.495   -0.01   -21.0   14.6  PASS model=-21.0dB raw=-13.9dB isolated=-21.0dB
+    4    6766.942    6767.041   +0.00   -33.0   15.8  PASS model=-33.0dB raw=-17.0dB isolated=-33.0dB
+    5    8799.199          --      --      --     --  MODEL-WEAK (not required) model=-58.5dB raw=-33.0dB isolated=-61.1dB
+    6   11062.185          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-29.1dB isolated=-70.9dB
+   coverage: 4/4 required (100%), 6 model modes listed
+   -> PASS
+
+# piano       MIDI 108  (expectation=--dump-modes)
+   oracle: stiff-string oracle max error 0.0000% [OK]
+   f0 ET anchor: expected 4186.009 Hz (12-TET MIDI 108), measured 4179.776 Hz (-2.580 cents, tol +/-5.0); dump-conformance -1.163 cents
+    n    expected    measured    err%  rel_dB   prom  verdict
+    1    4182.584    4179.776   -0.07    +0.0   87.4  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+    2    9246.338    9269.690   +0.25    -9.2   78.2  PASS model=-9.2dB raw=+4.2dB isolated=-9.2dB
+    3   15815.985          --      --      --     --  MODEL-WEAK (not required) model=-49.4dB raw=-3.7dB isolated=-49.4dB
+   coverage: 2/2 required (100%), 3 model modes listed
+   -> PASS
+
+----------------------------------------------------------------------
+Material implementation-sensitivity scan (NOT real-material validation; MIDI 60, 9 materials x 3 modal engines):
+   cimbalom    material=steel        T60(model)=   4.144s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0000%]
+   cimbalom    material=copper       T60(model)=   2.082s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=bronze       T60(model)=   2.782s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=aluminum     T60(model)=   7.652s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=brass        T60(model)=   2.429s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=wood_spruce  T60(model)=   0.897s freq=5/5 amp=4 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=wood_maple   T60(model)=   0.613s freq=5/5 amp=4 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=glass        T60(model)=   3.387s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0000%]
+   cimbalom    material=rubber       T60(model)=   0.028s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+   cimbalom    material T60 sensitivity spread=273.32x -> PASS (no-op threshold 1.10x)
+   tongue_drum material=steel        T60(model)=  16.390s freq=2/2 amp=1 PASS
+   tongue_drum material=copper       T60(model)=   2.030s freq=2/2 amp=1 PASS
+   tongue_drum material=bronze       T60(model)=   3.961s freq=2/2 amp=1 PASS
+   tongue_drum material=aluminum     T60(model)=  30.135s freq=2/2 amp=1 PASS
+   tongue_drum material=brass        T60(model)=   2.686s freq=2/2 amp=1 PASS
+   tongue_drum material=wood_spruce  T60(model)=   0.589s freq=2/2 amp=1 PASS
+   tongue_drum material=wood_maple   T60(model)=   0.347s freq=2/2 amp=1 PASS
+   tongue_drum material=glass        T60(model)=   2.756s freq=2/2 amp=1 PASS
+   tongue_drum material=rubber       T60(model)=   0.014s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+   tongue_drum material T60 sensitivity spread=2153.12x -> PASS (no-op threshold 1.10x)
+   water_gong  material=steel        T60(model)=  26.860s freq=6/6 amp=5 PASS
+   water_gong  material=copper       T60(model)=   3.927s freq=6/6 amp=5 PASS
+   water_gong  material=bronze       T60(model)=   7.486s freq=6/6 amp=5 PASS
+   water_gong  material=aluminum     T60(model)=  46.965s freq=6/6 amp=5 PASS
+   water_gong  material=brass        T60(model)=   5.155s freq=6/6 amp=5 PASS
+   water_gong  material=wood_spruce  T60(model)=   1.155s freq=6/6 amp=5 PASS
+   water_gong  material=wood_maple   T60(model)=   0.687s freq=6/6 amp=5 PASS
+   water_gong  material=glass        T60(model)=   5.422s freq=6/6 amp=5 PASS
+   water_gong  material=rubber       T60(model)=   0.028s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+   water_gong  material T60 sensitivity spread=1679.96x -> PASS (no-op threshold 1.10x)
+   Scope note: this is an implementation/no-op gate. It does not prove that JSON material constants match a measured specimen.
+   UNVERIFIED/N/A: 3 case(s): cimbalom/rubber, tongue_drum/rubber, water_gong/rubber
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band. Fixed-tau_c paths: render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law. tau_c(v)/Felt paths [B4, 2026-08-27 ruling (b)]: render delta vs the model's own prediction; predicted delta reported honestly vs the fixed-tau_c reference, not judged against it. tol +/-1.0 dB throughout, unchanged. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   cimbalom      60    -45.1    -39.0      +6.1      +6.1  PASS
+      broadband RMS delta = +6.40 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band. Fixed-tau_c paths: render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law. tau_c(v)/Felt paths [B4, 2026-08-27 ruling (b)]: render delta vs the model's own prediction; predicted delta reported honestly vs the fixed-tau_c reference, not judged against it. tol +/-1.0 dB throughout, unchanged. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   tongue_drum   60    -42.3    -36.2      +6.1      +6.1  PASS
+      broadband RMS delta = +6.88 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band. Fixed-tau_c paths: render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law. tau_c(v)/Felt paths [B4, 2026-08-27 ruling (b)]: render delta vs the model's own prediction; predicted delta reported honestly vs the fixed-tau_c reference, not judged against it. tol +/-1.0 dB throughout, unchanged. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   water_gong    60    -37.0    -31.0      +6.1      +6.1  PASS
+      broadband RMS delta = +6.23 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band. Fixed-tau_c paths: render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law. tau_c(v)/Felt paths [B4, 2026-08-27 ruling (b)]: render delta vs the model's own prediction; predicted delta reported honestly vs the fixed-tau_c reference, not judged against it. tol +/-1.0 dB throughout, unchanged. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   water_gong_free   60    -51.8    -45.7      +6.1      +6.1  PASS
+      broadband RMS delta = +6.39 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band. Fixed-tau_c paths: render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law. tau_c(v)/Felt paths [B4, 2026-08-27 ruling (b)]: render delta vs the model's own prediction; predicted delta reported honestly vs the fixed-tau_c reference, not judged against it. tol +/-1.0 dB throughout, unchanged. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   fm            60    -34.6    -29.0      +5.6        --  EXEMPT (FM index also scales with velocity)
+      broadband RMS delta = +5.92 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band. Fixed-tau_c paths: render delta vs dump-derived model AND model delta vs the 6.0206 dB physical law. tau_c(v)/Felt paths [B4, 2026-08-27 ruling (b)]: render delta vs the model's own prediction; predicted delta reported honestly vs the fixed-tau_c reference, not judged against it. tol +/-1.0 dB throughout, unchanged. Wideband RMS delta is printed below as INFORMATIONAL ONLY):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   piano         60    -44.6    -36.8      +7.8      +7.8  PASS
+      tau_c(v) claim domain [2026-08-27 ruling (b), reports/decision_packets/B4_f3_velocity_ruling.md]: Felt-hammer contact time is velocity-solved (HammerImpulse::pianoHammerTauC), so the fixed-tau_c 6.0206 dB law is not asserted here; JUDGED claim = render matches the model's own prediction. Honest report: predicted f0-band delta +7.79 dB, deviation from the fixed-tau_c reference +1.77 dB (informational).
+      broadband RMS delta = +9.13 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+----------------------------------------------------------------------
+Partial-amplitude judgment (MIDI 60, first 5 partials, rel-dB vs --dump-modes theory, tol +/-3.0 dB):
+
+# cimbalom    MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     521.295    -6.64    -6.63   +0.01  PASS
+    3     782.731   -12.72   -12.72   +0.00  PASS
+    4    1045.971   -19.32   -19.31   +0.01  PASS
+    5    1309.955    -9.65    -9.64   +0.00  PASS
+   -> PASS
+
+# tongue_drum MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2    1639.579    +0.39    +0.39   +0.00  PASS
+    3    4590.870   -50.09   -50.09      --  MODEL-WEAK (not required)
+    4    8996.271  -240.00       --      --  MODEL-WEAK (not required)
+    5   14871.480  -240.00       --      --  MODEL-WEAK (not required)
+   -> PASS
+
+# water_gong  MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     544.467    -1.81    -1.81   +0.01  PASS
+    3     893.196    -9.82    -9.81   +0.00  PASS
+    4    1018.531   -18.26   -18.26   +0.01  PASS
+    5    1306.873   -21.11   -21.11   +0.00  PASS
+   -> PASS
+
+# water_gong_free MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     454.817   +14.92   +14.93   +0.00  PASS
+    3     609.232   -11.67   -11.67   +0.01  PASS
+    4    1026.953    +9.24    +9.24   +0.00  PASS
+    5    1071.726   -25.68   -25.68   +0.00  PASS
+   -> PASS
+
+# piano       MIDI 60  (f0_expected =  261.626 Hz)
+    n        freq  pred_dB  meas_dB  err_dB  verdict
+    1     261.626    +0.00    +0.00   +0.00  ref (0 dB)
+    2     521.299    -9.55    -9.55   +0.01  PASS
+    3     782.765   -26.68   -26.68   +0.00  PASS
+    4    1051.855   -20.09   -20.09   +0.01  PASS
+    5    1309.838   -30.76   -30.76   +0.00  PASS
+   -> PASS
+Modal decay T60 - measured (audio) vs model ground truth (--dump-modes):
+   engine      MIDI    model     meas  ratio
+   cimbalom      60    4.14s    4.35s   1.05  (beat 1.51 Hz)  (span 51.5dB, probe 5.0s)
+   cimbalom      72    2.11s    2.22s   1.05  (beat 3.02 Hz)  (span 51.8dB, probe 5.0s)
+   tongue_drum   60   30.14s   30.18s   1.00  (span 26.0dB, probe 15.1s)
+   tongue_drum   72   12.93s   12.91s   1.00  (span 25.0dB, probe 6.5s)
+   water_gong    60    7.49s    7.47s   1.00  (span 32.4dB, probe 5.0s)
+   water_gong    72    3.51s    3.51s   1.00  (span 57.7dB, probe 5.0s)
+   water_gong_free   60    7.49s    7.48s   1.00  (span 32.4dB, probe 5.0s)
+   water_gong_free   72    3.51s    3.51s   1.00  (span 57.6dB, probe 5.0s)
+   piano         60    4.14s    4.34s   1.05  (beat 1.51 Hz)  (span 51.6dB, probe 5.0s)
+   piano         72    2.11s    2.22s   1.05  (beat 3.02 Hz)  (span 51.8dB, probe 5.0s)
+
+(model = fundamental decayTime straight from the C++ model;
+ measured = narrowband (+/-3% of measured f0) Hilbert-envelope
+ log-slope fit, beat-period-averaged for multi-string courses;
+ see measure_t60()'s docstring for the exact method, ROADMAP_PHYSICS.md M5-5a.)
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -64.4 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+
+======================================================================
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+## 步驟 6：HostProbe 對 build\ 的 VST3 跑
+
+### build/Release/TsukiSynthHostProbe.exe "build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3" "output/wf0907/INTEGRATION/hostprobe_out"
+[PASS] H1 scan: VST3 format finds the bundle (C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)
+[PASS] H1 scan: described as instrument named TsukiSynth (got 'TsukiSynth', isInstrument=1, version 0.3.0)
+[PASS] H2 instantiate: instance created
+[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.505276) -- melody-position verdict follows via melody_verify.py
+[PASS] H3 MIDI render: WAV written: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0907\INTEGRATION\hostprobe_out\hostprobe_render.wav
+[PASS] H3 determinism: second instance created
+[PASS] H3 determinism: fresh-instance re-render is byte-identical
+[PASS] H4 automation: instances created
+[PASS] H4 automation: 'EQ Shelf Gain (dB)' parameter exposed to host
+[PASS] H4 automation: identically-automated renders are byte-identical
+[PASS] H4 automation: +12 dB shelf ramp lifts 3-12 kHz band by 8.51 dB (require >= 6)
+[PASS] H5 state: 'Strike Position' parameter found
+[PASS] H5 state: non-empty state captured (3777 bytes)
+[PASS] H5 state: two fresh instances created
+[PASS] H5 state: parameter survives round-trip exactly (requested 0.42, settled 0.42, restored 0.42)
+[PASS] H5 state: two restores of the same state render byte-identically
+
+-- H6 variable block size (sentinel melody) --
+[PASS] H6: fresh instance created for block size 64
+[PASS] H6: WAV written for block size 64: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0907\INTEGRATION\hostprobe_out\h6_block_64.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+[PASS] H6: fresh instance created for block size 256
+[PASS] H6: WAV written for block size 256: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0907\INTEGRATION\hostprobe_out\h6_block_256.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 512
+[PASS] H6: WAV written for block size 512: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0907\INTEGRATION\hostprobe_out\h6_block_512.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 1024
+[PASS] H6: WAV written for block size 1024: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0907\INTEGRATION\hostprobe_out\h6_block_1024.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 4096
+[PASS] H6: WAV written for block size 4096: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0907\INTEGRATION\hostprobe_out\h6_block_4096.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+
+-- H6 supplementary (informational only, not melody_verify-judged): water_gong Pitch Glide=1.0 --
+  [INFO] block 256 vs 64: max|delta|=757927.625 LSB@24bit, RMS delta=-11.21 dB re signal (n=216000 samples/ch)
+  [INFO] block 512 vs 64: max|delta|=1693565.312 LSB@24bit, RMS delta=-4.17 dB re signal (n=216000 samples/ch)
+  [INFO] block 1024 vs 64: max|delta|=3056105.000 LSB@24bit, RMS delta=0.99 dB re signal (n=216000 samples/ch)
+  [INFO] block 4096 vs 64: max|delta|=5258823.250 LSB@24bit, RMS delta=2.63 dB re signal (n=216000 samples/ch)
+
+-- H6 supplementary (informational only, not melody_verify-judged): FM Piano high note (MIDI 96) --
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+
+-- H7 user preset round-trip --
+[BLOCKED] H7 not implemented: PresetManager::saveUserPreset() has no host-visible (VST3-generic) entry point on an opaquely-loaded juce::AudioPluginInstance; testing it for real requires linking PluginProcessor.cpp (and, via createEditor(), the full GUI module chain) into this target -- a CMakeLists.txt change outside WF0907-E10's declared file scope. See reports/gate_outputs/wf0907_E10_hostprobe.txt for the full analysis + options.
+[PASS] H8 tail: MaterialDB loads C:\Users\admin\Desktop\Claude\tsuki-synth\data\materials.json
+[PASS] H8 tail: instance created for cimbalom
+[PASS] H8 tail: cimbalom getTailLengthSeconds()=34.4814s >= engine worstCaseTailSeconds()=33.0287s
+[PASS] H8 tail: instance created for tongue_drum
+[PASS] H8 tail: tongue_drum getTailLengthSeconds()=178.734s >= engine worstCaseTailSeconds()=177.281s
+[PASS] H8 tail: instance created for water_gong
+[PASS] H8 tail: water_gong getTailLengthSeconds()=319.848s >= engine worstCaseTailSeconds()=318.395s
+[PASS] H8 tail: tongue_drum sustain instance created
+[PASS] H8 tail: tongue_drum MIDI 40 tail RMS at 10s = -16.09 dB relative to peak (require > -60, -60dB IS the T60 definition)
+[PASS] H8 tail: tongue_drum still audibly ringing at 10s -> getTailLengthSeconds()=178.734s (require > 10)
+PASS (0 failures)
+
+備註：E10 為 BLOCKED（H7 未實作，非本卡範圍），故不對 H6 WAV 額外跑 melody_verify（規約步驟 6：僅 E10 PASS 時才跑）。H1-H6, H8 全部 PASS，總計 PASS (0 failures)。
+
+## 步驟 7：位元不變 -- render_wf_scores.py（wf0907_method 版，DEFAULT_CLI 已指向 build\，未加 --cli）渲染 8 首 vs sha256_before.txt
+
+### python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0907_integration --workdir <TEMP, repo 外>
+rendering moonlight_sonata_movement1_yangqin ...
+  len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+  len=325.869s  RMS=-23.409 dBFS  sha256=7b0413dd4f858079
+rendering physical_piano ...
+  len=7.575s  RMS=-18.579 dBFS  sha256=607d0d3bc578136f
+rendering restraint_metal_click ...
+  len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...
+  len=327.289s  RMS=-20.222 dBFS  sha256=c37ac02d01f08a30
+rendering water_gong_free ...
+  len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...
+  len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+rendering fur_elise_opening ...
+  len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+wrote C:\Users\admin\Desktop\Claude\tsuki-synth\reports\gate_outputs\wf0907_method\render_wf0907_integration.csv
+wrote C:\Users\admin\Desktop\Claude\tsuki-synth\reports\gate_outputs\wf0907_method\sha256_wf0907_integration.txt
+
+### diff sha256_before.txt vs sha256_wf0907_integration.txt（sort + 去除 CRLF 後比對，唯一差異是換行符）
+(diff 為空 = 內容完全一致)
+
+結論：8/8 IDENTICAL。R10 未觸發，位元不變成立。
+
+## 步驟 8：E9b（E9 已 PASS，故執行）-- tools/melody_verify.py 移除已失效的 layered 拒答，改走新 layered dump
+
+背景：E9 讓 --dump-modes 支援 layered score.json（見 src/score/ScoreRenderer.h dumpModesLayered()）。
+melody_verify.py 原本在 expected_f0s() 裡 catch CliError('layer expansion is not implemented')，
+把整份 layered 檔當拒答處理並 sys.exit(3)。E9 落地後這個字串再也不會被 CLI 丟出，這個分支變成死碼——
+而且更糟：因為 verify() 頂層 events = score.get('events', []) 對 layered 檔本來就是空陣列，
+改動前實測（見下）直接靜默輸出『0 PASS / 0 FAIL / 0 UNVERIFIED』，看起來像『全過』但其實什麼都沒判。
+
+### 改動前實測：python tools/melody_verify.py scores/examples/layered_transition.score.json（修改前）
+  [extra-scan] PASS
+  summary: 0 PASS / 0 FAIL / 0 UNVERIFIED
+（此為改動前的真實輸出，先手動確認過死碼路徑存在後才動手改）
+
+### 修改內容（tools/melody_verify.py，未 stage）
+1. expected_f0s()：移除 catch CliError('layer expansion is not implemented') 的死碼分支，
+   docstring 註明 layered 檔現在由 verify() 另外路由到 expected_f0s_layered()，不再宣稱『upstream CLI limitation』（該說法已不成立）。
+2. 新增 expected_f0s_layered(dumped_events)：直接走 ScoreRenderer::dumpModesLayered() 攤平後的 events
+   （position 對齊，不用 source_index 查表，因為 source_index 是每個 leaf 自己的區域索引，跨 layer 會撞號），
+   對每個 event 用既有的 vs.course_f0() 讀 f0；docstring 誠實列出兩個已知降級（不隱藏）：
+   (a) 不需要 velocity 過濾——dumpModes() 本來就只吐 velocity>0 的 event；
+   (b) FM fm_ratio!=1 的特判無法重現（攤平後的 dump 沒有帶 leaf 的原始 params），
+       所以 layered 路徑下 FM 也統一用 course_f0() 判，不像 flat 分支那樣區分。
+3. verify()：偵測 score 是否為 layered（'layers' in score），是的話用攤平 dump 直接組出一份合成 events
+   （time/note/engine/layer_source），呼叫 expected_f0s_layered()；否則走原本 expected_f0s() 路徑不變。
+4. fx（delay_wet/reverb_decay）旁補註解：layered 檔的 effects 活在每個 leaf 自己的 global 裡，
+   頂層 score 讀不到，所以 layered 跑法量不到 leaf 自己的 reverb/delay，這也是為什麼這條路徑只能是 informational。
+
+全部改動只影響 layered-detection 分支（新程式碼路徑）與 expected_f0s() 開頭的 exception 處理；
+非 layered（原有）路徑的程式碼與行為未變動。
+
+### GATE：python tools/melody_verify.py --selftest（修改後）
+[PASS] sentinel A: unmodified fixture verifies clean (max |onset err| = 0.33 ms, tol 10 ms)
+[PASS] sentinel B: +100 ms time shift is caught -> 1 FAIL as required
+[PASS] sentinel C: +1 semitone transposition is caught -> 1 FAIL as required
+[PASS] sentinel D: undeclared (extra) note is caught -> 1 FAIL as required
+[PASS] sentinel E: declared-but-absent (phantom) note is caught -> 1 FAIL as required
+SELFTEST PASS (5/5)
+
+備註：卡片口述預期『仍 12 PASS』，但 melody_verify.py --selftest 本身向來就是 5 個哨兵（A-E）
+輸出 5 個 [PASS] 行 + 'SELFTEST PASS (5/5)'；『12 PASS』對不上 --selftest 單獨的輸出行數
+（查證：reports/gate_outputs/l1_selftest_v2.txt 裡的 12 PASS 是 --selftest 的 5 個 PASS 加上
+後面另外兩個獨立 score 檔各自的逐事件 PASS 行加總，不是 --selftest 這個子命令自己的行數）。
+本卡只確認一件事——selftest 在改動前後行為不變：改動只新增了 is_layered 分支與移除 expected_f0s()
+裡一段用不到的 except 分支，selftest 用的 FIXTURE 是非 layered 檔，从未走到這兩處被動到的程式碼；
+5/5 PASS 如實記錄，列進 open_items 供月月核對『12 PASS』的出處。
+
+### GATE：對三個 layered corpus 檔跑 melody_verify（informational，不判 GATE，結果照實記）
+
+### scores/examples/layered_transition.score.json
+  [FAIL] ev0 t=0.000 note=C5 onset_err=+56.52ms  <- refined onset off by +56.52 ms (limit 10 ms)
+  [FAIL] ev1 t=0.000 note=G5 onset_err=+43.94ms  <- refined onset off by +43.94 ms (limit 10 ms)
+  [FAIL] ev2 t=8.707 note=C2 pitch=+5.85c  <- pitch off by +5.85 cents (limit 5.0)
+  [FAIL] ev3 t=8.727 note=F#4 onset_err=+46.15ms  <- refined onset off by +46.15 ms (limit 10 ms)
+  [extra-scan] PASS
+  summary: 0 PASS / 4 FAIL / 0 UNVERIFIED
+
+### scores/tests/test_layer.score.json
+  [FAIL] ev0 t=0.000 note=E6 onset_err=+40.31ms  <- refined onset off by +40.31 ms (limit 10 ms)
+  [PASS] ev1 t=0.120 note=A6 onset_err=+0.02ms pitch=-0.67c
+  [PASS] ev2 t=3.494 note=C7 onset_err=+5.44ms pitch=-1.79c
+  [extra-scan] PASS
+  summary: 2 PASS / 1 FAIL / 0 UNVERIFIED
+
+### scores/originals/ai_radiance/ai_radiance_complete.score.json（259 events，全量輸出過長，附首尾）
+  [FAIL] ev0 t=0.000 note=E2 pitch=-6.32c  <- pitch off by -6.32 cents (limit 5.0)
+  [UNVERIFIED] ev1 t=0.000 note=E4 onset_err=-8.54ms  <- pitch refused: concurrent ev0 partial inside fundamental band (onset PASS, err -8.54 ms)
+  [PASS] ev2 t=0.417 note=B4 onset_err=-4.73ms pitch=-3.73c
+  [FAIL] ev3 t=0.558 note=F#5  <- no onset in near-silent fundamental band 717.8-762.2 Hz (pre-onset floor -68.4 dBFS) within +/-31 ms of t=0.558s
+  [UNVERIFIED] ev4 t=0.833 note=F#5  <- re-strike over ev3's ringing tail (predicted only 3.5 dB decayed, need >= 21.0)
+  [UNVERIFIED] ev5 t=1.250 note=G#4 pitch=+1.60c  <- pre-onset band floor -54.0 dBFS already energised (> -64.0): rise unmeasurable (Rd); pitch verified +1.60 c
+  [UNVERIFIED] ev6 t=1.392 note=G#5  <- re-strike over ev5's ringing tail (predicted only 2.8 dB decayed, need >= 21.0)
+  [UNVERIFIED] ev7 t=1.667 note=C#5  <- re-strike over ev0's ringing tail (predicted only 4.0 dB decayed, need >= 21.0)
+  [UNVERIFIED] ev8 t=2.083 note=B4  <- pitch refused: concurrent ev2 partial inside fundamental band (onset also refused)
+  [UNVERIFIED] ev9 t=2.225 note=F#5  <- pitch refused: concurrent ev3 partial inside fundamental band (onset also refused)
+  [UNVERIFIED] ev10 t=2.500 note=E5  <- pitch refused: concurrent ev1 partial inside fundamental band (onset also refused)
+  [PASS] ev11 t=2.917 note=F#4 onset_err=+1.17ms pitch=-2.05c
+  [UNVERIFIED] ev12 t=3.058 note=G#5  <- pitch refused: concurrent ev5 partial inside fundamental band (onset also refused)
+  [UNVERIFIED] ev13 t=3.333 note=E5  <- re-strike over ev10's ringing tail (predicted only 16.7 dB decayed, need >= 21.0)
+  [UNVERIFIED] ev14 t=3.333 note=G#5  <- re-strike over ev12's ringing tail (predicted only 4.1 dB decayed, need >= 21.0)
+  [UNVERIFIED] ev15 t=3.333 note=B5  <- pitch refused: concurrent ev2 partial inside fundamental band (onset also refused)
+  [UNVERIFIED] ev16 t=3.333 note=E4  <- re-strike over ev0's ringing tail (predicted only 8.0 dB decayed, need >= 21.0)
+  [UNVERIFIED] ev17 t=3.750 note=B4  <- pitch refused: concurrent ev8 partial inside fundamental band (onset also refused)
+  [UNVERIFIED] ev18 t=3.892 note=F#5  <- re-strike over ev11's ringing tail (predicted only 19.5 dB decayed, need >= 21.0)
+  [UNVERIFIED] ev19 t=4.167 note=F#5  <- re-strike over ev18's ringing tail (predicted only 3.5 dB decayed, need >= 21.0)
+  ... (中略，完整輸出見下方摘要行數) ...
+  [UNVERIFIED] ev256 t=104.640 note=A4 pitch=-4.66c  <- pre-onset band floor -53.4 dBFS already energised (> -64.0): rise unmeasurable (Rd); pitch verified -4.66 c
+  [FAIL] ev257 t=104.661 note=E5 pitch=-7.93c  <- pitch off by -7.93 cents (limit 5.0)
+  [UNVERIFIED] ev258 t=104.682 note=B5 pitch=+3.37c  <- pre-onset band floor -51.9 dBFS already energised (> -64.0): rise unmeasurable (Rd); pitch verified +3.37 c
+  [FAIL] ev259 t=110.291 note=C2 pitch=-8.49c  <- pitch off by -8.49 cents (limit 5.0)
+  [extra-scan] FAIL  <- unexplained onset at 48.177s in 82.4 Hz band; unexplained onset at 82.086s in 329.6 Hz band; unexplained onset at 112.411s in 329.6 Hz band; unexplained onset at 77.606s in 493.9 Hz band; unexplained onset at 81.819s in 493.9 Hz band
+  summary: 6 PASS / 46 FAIL / 209 UNVERIFIED
+
+三檔摘要：layered_transition.score.json = 0 PASS/4 FAIL/0 UNVERIFIED；
+test_layer.score.json = 2 PASS/1 FAIL/0 UNVERIFIED；
+ai_radiance_complete.score.json = 6 PASS/46 FAIL/209 UNVERIFIED。
+如前述，FAIL/UNVERIFIED 偏高主要來自兩個已知、docstring 已誠實列出的降級
+（FM ratio 特判無法重現、layered 頂層讀不到 leaf 自己的 reverb/delay 造成 extra-scan 誤判可能性升高），
+本卡不判定這些 FAIL 為真實缺陷，也不修 layered melody 判準本身——只回報數字（informational only）。
+
+### GATE：python -m pytest tests -q（E9b 修改後）
+........................................................................ [ 28%]
+......s................................................................. [ 57%]
+........................................................................ [ 86%]
+...................................                                      [100%]
+250 passed, 1 skipped in 64.80s (0:01:04)
+
+======================================================================
+## 整合卡總結
+
+- build\ 已用當前工作樹重建（三 target + 四測試 target + HostProbe），全部建置成功。
+- X4 ctest：4/4 PASS。
+- pytest tests：250 passed, 1 skipped（E9b 修改前後一致）。
+- physics_verify.py --full：RESULT: NO CHECKED FAILURES；UNVERIFIED/N/A 僅 3 個既有已知案例
+  （cimbalom/tongue_drum/water_gong 的 rubber 材質 T60 太短，測不到 8 個週期，屬既有已知限制，非本次新增）。
+- HostProbe 對 build\ 的 VST3：H1-H6/H8 全 PASS，H7 為既有 [BLOCKED]（E10 範圍，非本卡）；PASS (0 failures)。
+  因 E10=BLOCKED（未 PASS），依規約不對 H6 WAV 額外跑 melody_verify。
+- 位元不變：8/8 IDENTICAL，與 sha256_before.txt 完全一致，R10 未觸發。
+- E9b（E9 已 PASS 故執行）：tools/melody_verify.py 移除已失效的 layered 拒答死碼，改走 E9 新增的
+  layered --dump-modes，對三個 layered corpus 檔跑出 informational 結果（不判 GATE）；
+  --selftest 改動前後皆 5/5 PASS（不變）；pytest 改動後仍 250 passed/1 skipped。
+  此檔案刻意留 unstaged，未 git add，交給稽核審查。
+
+status: DONE

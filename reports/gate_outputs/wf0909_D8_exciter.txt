@@ -1,0 +1,912 @@
+=== GATE 1: diff line counts + non-exciter-line check ===
+--- git diff --numstat ---
+1142	1142	scores/examples/moonlight_sonata_movement1_tongue_drum.score.json
+1142	1142	scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json
+
+--- tongue_drum score: grep '^[-+]' | grep -v exciter (must be empty) ---
+(exit code: 1, expect 1 = no matches)
+
+--- yangqin_tongue_mix score: grep '^[-+]' | grep -v exciter (must be empty) ---
+(exit code: 1, expect 1 = no matches)
+
+=== full verify_score.py output appended below ===
+=== GATE 2: verify_score.py ===
+--- tongue_drum ---
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\moonlight_sonata_movement1_tongue_drum.score.json
+==============================================================================
+  rendered: 327.29s @ 48000 Hz, peak -0.45 dBFS, RMS -21.59 dBFS
+  loudness (info only, no registered tolerance): integrated -22.15 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s- 309.12s: -21.3 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 1142 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 1142 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=1142, modal=1142, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 1142 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (1142 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (6570 partials checked across 1142 events).
+  [OK    ] modes.frequency_range: All 6570 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (1142 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 6570 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 1142 modal events (max observed: 0.019 cents).
+  [OK    ] render.ran: Score rendered successfully to moonlight_sonata_i_tongue_drum.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV f539aefa9191..., 1 score dependency file(s), tree 9ed97a5dfe5c..., renderer 0f45331f8dc6...; version=0.3.0, configured source=98f346f8f084 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.361519, gain=2.6278, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 f539aefa91919cbf...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+rc=0
+
+--- yangqin_tongue_mix ---
+CLI: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\moonlight_sonata_movement1_yangqin_tongue_mix.score.json
+==============================================================================
+  rendered: 325.87s @ 48000 Hz, peak -0.45 dBFS, RMS -23.90 dBFS
+  loudness (info only, no registered tolerance): integrated -24.58 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s- 309.14s: -23.7 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 2284 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 2284 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=2284, modal=2284, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 2284 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (2284 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (49986 partials checked across 2284 events).
+  [OK    ] modes.frequency_range: All 49986 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (2284 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 49986 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 2284 modal events (max observed: 0.019 cents).
+  [OK    ] render.ran: Score rendered successfully to moonlight_sonata_i_yangqin_tongue_mix.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 280cbdac3c11..., 1 score dependency file(s), tree 3f059dc9f60e..., renderer 0f45331f8dc6...; version=0.3.0, configured source=98f346f8f084 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.437934, gain=2.16928, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 280cbdac3c117c14...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+rc=0
+
+[exited with code 0]
+
+================================================================================
+=== GATE 3 (part 1): rule10_metrics.py (whole-piece RMS/centroid/band-energy) ===
+================================================================================
+
+--- script: output/wf0909/D8/rule10_metrics.py ---
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""WF0909-D8 Rule 10 before/after metrics for the two moonlight scores whose
+tongue_drum events changed exciter finger -> wood_mallet.
+
+Whole-piece metrics (identical definitions to reports/gate_outputs/b4_method/
+render_affected_pieces.py, extended with a 3-band energy split):
+  * Channels mixed to mono by averaging.
+  * RMS dBFS = 20*log10(sqrt(mean(x^2))) over the ENTIRE file.
+  * Spectral centroid = amplitude-weighted mean frequency of one rfft of the
+    ENTIRE mono signal (no window).
+  * Band energy % = sum(|X(f)|^2) in the band / sum(|X(f)|^2) over the whole
+    spectrum * 100, bands <200 Hz / 200 Hz-2 kHz / >2 kHz (same edges as
+    D8 decision packet SS3.5).
+
+Usage: python rule10_metrics.py
+"""
+import wave
+import numpy as np
+
+FILES = {
+    "tongue_drum": {
+        "before": r"output\wf0909\D8\render_before\moonlight_sonata_i_tongue_drum.wav",
+        "after": r"output\wf0909\D8\render_after\moonlight_sonata_i_tongue_drum.wav",
+    },
+    "yangqin_tongue_mix": {
+        "before": r"output\wf0909\D8\render_before\moonlight_sonata_i_yangqin_tongue_mix.wav",
+        "after": r"output\wf0909\D8\render_after\moonlight_sonata_i_yangqin_tongue_mix.wav",
+    },
+}
+
+
+def read_wav_mono(path):
+    with wave.open(path, "rb") as w:
+        sr = w.getframerate()
+        n = w.getnframes()
+        sw = w.getsampwidth()
+        ch = w.getnchannels()
+        raw = w.readframes(n)
+    if sw == 2:
+        data = np.frombuffer(raw, dtype="<i2").astype(np.float64) / 32768.0
+    elif sw == 3:
+        b = np.frombuffer(raw, dtype=np.uint8).reshape(-1, 3)
+        as_int = (b[:, 0].astype(np.int32)
+                  | (b[:, 1].astype(np.int32) << 8)
+                  | (b[:, 2].astype(np.int32) << 16))
+        as_int[as_int >= (1 << 23)] -= (1 << 24)
+        data = as_int.astype(np.float64) / (1 << 23)
+    elif sw == 4:
+        data = np.frombuffer(raw, dtype="<i4").astype(np.float64) / (2 ** 31)
+    else:
+        raise ValueError("unsupported sampwidth %d" % sw)
+    if ch > 1:
+        data = data.reshape(-1, ch).mean(axis=1)
+    return sr, data
+
+
+def rms_dbfs(x):
+    r = np.sqrt(np.mean(x ** 2)) if len(x) else 0.0
+    return 20 * np.log10(max(r, 1e-12))
+
+
+def peak_dbfs(x):
+    p = np.max(np.abs(x)) if len(x) else 0.0
+    return 20 * np.log10(max(p, 1e-12))
+
+
+def spectral_metrics(sr, x):
+    n = len(x)
+    X = np.abs(np.fft.rfft(x)) ** 2
+    freqs = np.fft.rfftfreq(n, 1.0 / sr)
+    total = X.sum()
+    centroid = float((freqs * X).sum() / total) if total > 0 else float("nan")
+    band_lt200 = 100.0 * X[freqs < 200].sum() / total
+    band_mid = 100.0 * X[(freqs >= 200) & (freqs <= 2000)].sum() / total
+    band_hi = 100.0 * X[freqs > 2000].sum() / total
+    return centroid, band_lt200, band_mid, band_hi
+
+
+def main():
+    for piece, paths in FILES.items():
+        print("=" * 78)
+        print(piece)
+        print("=" * 78)
+        rows = {}
+        for label, path in paths.items():
+            sr, x = read_wav_mono(path)
+            rms = rms_dbfs(x)
+            peak = peak_dbfs(x)
+            centroid, lt200, mid, hi = spectral_metrics(sr, x)
+            rows[label] = dict(rms=rms, peak=peak, centroid=centroid,
+                                lt200=lt200, mid=mid, hi=hi, len_s=len(x) / sr)
+            print("%-8s len=%.3fs sr=%d  RMS=%.2f dBFS  peak=%.2f dBFS  "
+                  "centroid=%.2f Hz  <200Hz=%.4f%%  200Hz-2kHz=%.4f%%  >2kHz=%.4f%%"
+                  % (label, len(x) / sr, sr, rms, peak, centroid, lt200, mid, hi))
+        d = rows["after"]
+        b = rows["before"]
+        print("  delta: dRMS=%.3f dB  dCentroid=%+.2f%%  <200Hz %.4f%%->%.4f%%  "
+              "200Hz-2kHz %.4f%%->%.4f%%  >2kHz %.4f%%->%.4f%%"
+              % (d["rms"] - b["rms"],
+                 100.0 * (d["centroid"] - b["centroid"]) / b["centroid"],
+                 b["lt200"], d["lt200"], b["mid"], d["mid"], b["hi"], d["hi"]))
+        print()
+
+
+if __name__ == "__main__":
+    main()
+
+--- command: python output/wf0909/D8/rule10_metrics.py ---
+==============================================================================
+tongue_drum
+==============================================================================
+before   len=327.289s sr=48000  RMS=-20.22 dBFS  peak=-6.21 dBFS  centroid=81.41 Hz  <200Hz=97.3557%  200Hz-2kHz=2.6442%  >2kHz=0.0001%
+after    len=327.289s sr=48000  RMS=-21.59 dBFS  peak=-6.00 dBFS  centroid=367.24 Hz  <200Hz=17.5481%  200Hz-2kHz=82.4365%  >2kHz=0.0154%
+  delta: dRMS=-1.367 dB  dCentroid=+351.07%  <200Hz 97.3557%->17.5481%  200Hz-2kHz 2.6442%->82.4365%  >2kHz 0.0001%->0.0154%
+
+==============================================================================
+yangqin_tongue_mix
+==============================================================================
+before   len=325.869s sr=48000  RMS=-23.41 dBFS  peak=-5.55 dBFS  centroid=360.13 Hz  <200Hz=29.4139%  200Hz-2kHz=70.5117%  >2kHz=0.0744%
+after    len=325.869s sr=48000  RMS=-23.90 dBFS  peak=-5.54 dBFS  centroid=375.68 Hz  <200Hz=23.8049%  200Hz-2kHz=76.1287%  >2kHz=0.0663%
+  delta: dRMS=-0.490 dB  dCentroid=+4.32%  <200Hz 29.4139%->23.8049%  200Hz-2kHz 70.5117%->76.1287%  >2kHz 0.0744%->0.0663%
+
+
+================================================================================
+=== GATE 3 (part 2): gen_probes.py + measure_slope.py (MIDI 37->87 slope probe) ===
+================================================================================
+
+--- script: output/wf0909/D8/gen_probes.py ---
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""WF0909-D8: generate MIDI 37/47/57/67/77/87 tongue_drum probe scores for
+the exciter slope measurement. Two geometry groups, matched to the ACTUAL
+distribution found in the two production scores this card edits (counted
+directly from scores/examples/moonlight_sonata_movement1_tongue_drum.score.json):
+  g_majority: thickness_mm=2.6, width_mm=24, strike_position=0.44 (952/1142 = 83.4% of that score's events)
+  g_minor:    thickness_mm=3.2, width_mm=30, strike_position=0.42 (176/1142 = 15.4%)
+(a third group, thickness 2.0/width 18/strike 0.46, is 14/1142 = 1.2% and is
+skipped here as out of scope for the slope headline number).
+
+Same layout convention as output/wf0907/R6/verify4 round-4 probes: velocity
+0.5, 6.0s note duration, 8.0s spacing, dry (no reverb/delay/distortion),
+one score per (geometry, exciter) pair.
+"""
+import json
+import os
+
+MIDIS = [37, 47, 57, 67, 77, 87]
+SPACING = 8.0
+GEOMETRIES = {
+    "gmaj": dict(thickness_mm=2.6, width_mm=24, strike_position=0.44),
+    "gmin": dict(thickness_mm=3.2, width_mm=30, strike_position=0.42),
+}
+EXCITERS = ["finger", "wood_mallet"]
+
+OUTDIR = r"output\wf0909\D8\probe_scores"
+
+
+def make_score(geo_name, geo, exciter):
+    events = []
+    for i, m in enumerate(MIDIS):
+        events.append({
+            "time": i * SPACING,
+            "duration": 6.0,
+            "engine": "tongue_drum",
+            "note": m,
+            "velocity": 0.5,
+            "params": {
+                "material": "steel",
+                "thickness_mm": geo["thickness_mm"],
+                "length_mm": 100,
+                "width_mm": geo["width_mm"],
+                "strike_position": geo["strike_position"],
+                "exciter": exciter,
+            },
+        })
+    return {
+        "$schema": "TsukiSynth Score v1",
+        "meta": {
+            "title": "D8 slope probe %s_%s" % (geo_name, exciter),
+            "id": "d8_slope_%s_%s" % (geo_name, exciter),
+            "author": "WF0909-D8",
+            "description": "Rule 10 before/after slope probe, MIDI 37-87, geometry=%s, exciter=%s" % (geo_name, exciter),
+        },
+        "global": {
+            "bpm": 120,
+            "sample_rate": 48000,
+            "master_volume": 1.0,
+            "effects": {
+                "reverb": {"decay": 0.1, "wet": 0.0},
+                "delay": {"time_ms": 0, "feedback": 0, "wet": 0},
+                "distortion": {"type": "overdrive", "drive": 0, "instability": 0, "wet": 0},
+            },
+        },
+        "events": events,
+        "export": {
+            "filename": "d8_slope_%s_%s" % (geo_name, exciter),
+            "format": "wav",
+            "bit_depth": 24,
+            "normalize": False,
+            "tail_silence_ms": 500,
+        },
+    }
+
+
+def main():
+    os.makedirs(OUTDIR, exist_ok=True)
+    for geo_name, geo in GEOMETRIES.items():
+        for exciter in EXCITERS:
+            score = make_score(geo_name, geo, exciter)
+            path = os.path.join(OUTDIR, "d8_slope_%s_%s.score.json" % (geo_name, exciter))
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(score, f, indent=2, ensure_ascii=False)
+            print("wrote", path)
+
+
+if __name__ == "__main__":
+    main()
+
+--- script: output/wf0909/D8/measure_slope.py ---
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""WF0909-D8: measure MIDI 37->87 pitch-loudness slope for the 4 probe
+renders. Methodology reused from output/wf0907/R6/verify3/measure.py
+(D8 decision-packet round 3/4 method): notes at 8.0s spacing, RMS over a
+0.3s window and a 6.0s window from each note's onset, slope = RMS(37) -
+RMS(87). fund_share_pct_6s = % of the 6.0s window's spectral energy within
++-3% of the note's equal-tempered f0 (same tolerance as verify3/measure.py).
+"""
+import glob
+import json
+import os
+import wave
+
+import numpy as np
+
+RD = r"output\wf0909\D8\probe_render"
+MIDIS = [37, 47, 57, 67, 77, 87]
+SPACING = 8.0
+
+
+def rd(p):
+    with wave.open(p, "rb") as w:
+        n, ch, sw, sr = w.getnframes(), w.getnchannels(), w.getsampwidth(), w.getframerate()
+        raw = w.readframes(n)
+    if sw == 3:
+        a = np.frombuffer(raw, dtype=np.uint8).reshape(-1, 3).astype(np.int32)
+        v = (a[:, 0] | (a[:, 1] << 8) | (a[:, 2] << 16))
+        v = np.where(v & 0x800000, v - 0x1000000, v)
+        x = v.astype(np.float64) / 8388608.0
+    elif sw == 2:
+        x = np.frombuffer(raw, dtype="<i2").astype(np.float64) / 32768.0
+    else:
+        raise SystemExit("sw " + str(sw))
+    x = x.reshape(-1, ch)
+    return x.mean(axis=1), sr
+
+
+def db(v):
+    return 20 * np.log10(v) if v > 0 else float("-inf")
+
+
+def fundshare(seg, sr, f0):
+    n = len(seg)
+    X = np.abs(np.fft.rfft(seg)) ** 2
+    fr = np.fft.rfftfreq(n, 1 / sr)
+    tot = X.sum()
+    if tot <= 0:
+        return float("nan")
+    band = (fr >= f0 * 0.97) & (fr <= f0 * 1.03)
+    return 100.0 * X[band].sum() / tot
+
+
+def main():
+    res = {}
+    for p in sorted(glob.glob(os.path.join(RD, "*.wav"))):
+        x, sr = rd(p)
+        name = os.path.basename(p)[:-4]
+        row = {}
+        for i, m in enumerate(MIDIS):
+            f0 = 440.0 * 2 ** ((m - 69) / 12.0)
+            s = int(i * SPACING * sr)
+            seg03 = x[s:s + int(0.3 * sr)]
+            seg60 = x[s:s + int(6.0 * sr)]
+            row[m] = {
+                "rms_0p3": db(float(np.sqrt((seg03 ** 2).mean()))),
+                "rms_6p0": db(float(np.sqrt((seg60 ** 2).mean()))),
+                "peak": db(float(np.abs(seg60).max())),
+                "fund_share_pct_6s": fundshare(seg60, sr, f0),
+            }
+        for k in ("rms_0p3", "rms_6p0", "peak"):
+            row["slope_" + k] = row[MIDIS[0]][k] - row[MIDIS[-1]][k]
+        res[name] = row
+        print("%-24s 0.3s slope %7.2f dB | 6.0s slope %7.2f dB | fund%% 37=%6.2f 87=%6.2f"
+              % (name, row["slope_rms_0p3"], row["slope_rms_6p0"],
+                 row[37]["fund_share_pct_6s"], row[87]["fund_share_pct_6s"]))
+    out_path = r"output\wf0909\D8\measure_slope.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(res, f, indent=1)
+    print("\nwrote", out_path)
+    print()
+    for name in sorted(res):
+        print(name, " ".join("%.2f" % res[name][m]["rms_0p3"] for m in MIDIS),
+              "| 6s:", " ".join("%.2f" % res[name][m]["rms_6p0"] for m in MIDIS))
+
+
+if __name__ == "__main__":
+    main()
+
+--- command: python output/wf0909/D8/measure_slope.py ---
+d8_slope_gmaj_finger     0.3s slope   37.20 dB | 6.0s slope   47.13 dB | fund% 37= 99.27 87= 96.42
+d8_slope_gmaj_wood_mallet 0.3s slope    2.67 dB | 6.0s slope    8.32 dB | fund% 37= 49.61 87= 99.16
+d8_slope_gmin_finger     0.3s slope   39.31 dB | 6.0s slope   49.21 dB | fund% 37= 99.27 87= 97.81
+d8_slope_gmin_wood_mallet 0.3s slope    2.77 dB | 6.0s slope    8.24 dB | fund% 37= 46.32 87= 99.12
+
+wrote output\wf0909\D8\measure_slope.json
+
+d8_slope_gmaj_finger -35.99 -37.68 -49.12 -64.30 -66.66 -73.20 | 6s: -38.33 -41.51 -54.97 -72.65 -77.21 -85.46
+d8_slope_gmaj_wood_mallet -33.32 -33.77 -34.51 -35.13 -35.41 -35.99 | 6s: -39.90 -41.26 -42.03 -43.43 -45.93 -48.22
+d8_slope_gmin_finger -36.56 -38.25 -51.69 -67.00 -69.24 -75.87 | 6s: -38.90 -42.08 -57.55 -75.27 -79.80 -88.12
+d8_slope_gmin_wood_mallet -33.78 -34.25 -35.02 -35.69 -35.98 -36.55 | 6s: -40.55 -41.96 -42.71 -44.00 -46.50 -48.79
+
+================================================================================
+=== GATE 3 (part 3): f0_t60_first5.py (model-level f0/T60 invariance) ===
+================================================================================
+
+--- script: output/wf0909/D8/f0_t60_first5.py ---
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""WF0909-D8: compare model f0 / T60 (mode 1, from --dump-modes) of the
+first 5 tongue_drum events in each of the two edited scores, before vs
+after the exciter change. Model-level (not audio-extracted) because
+exciter only feeds HammerImpulse's force-spectrum amplitude weighting
+(src/score/ScoreRenderer.h:311 chromaticExciterHardness -> cp.exciterHardness),
+never the modal frequency or the damping/decay model -- so an EXACT match
+here is the expected, falsifiable prediction, not an assumption.
+"""
+import json
+
+PAIRS = [
+    ("tongue_drum", r"output\wf0909\D8\dump_old_td.json", r"output\wf0909\D8\dump_new_td.json"),
+    ("yangqin_tongue_mix", r"output\wf0909\D8\dump_old_mix.json", r"output\wf0909\D8\dump_new_mix.json"),
+]
+
+
+def main():
+    for name, old_path, new_path in PAIRS:
+        old = json.load(open(old_path, encoding="utf-8"))
+        new = json.load(open(new_path, encoding="utf-8"))
+        old_ev = old["events"]
+        new_ev = new["events"]
+        assert len(old_ev) == len(new_ev), (name, len(old_ev), len(new_ev))
+        print("=" * 78)
+        print(name)
+        print("=" * 78)
+        count = 0
+        for oe, ne in zip(old_ev, new_ev):
+            if oe.get("engine") != "tongue_drum":
+                continue
+            if count >= 5:
+                break
+            assert oe["source_index"] == ne["source_index"]
+            assert oe["midi"] == ne["midi"]
+            op = oe["partials"][0]
+            npz = ne["partials"][0]
+            f0_eq = (op["freq"] == npz["freq"])
+            t60_eq = (op["decay"] == npz["decay"])
+            print("idx=%d midi=%s  before: f0=%.4f Hz T60=%.4f s  after: f0=%.4f Hz T60=%.4f s  "
+                  "f0_identical=%s T60_identical=%s"
+                  % (oe["source_index"], oe["midi"], op["freq"], op["decay"],
+                     npz["freq"], npz["decay"], f0_eq, t60_eq))
+            count += 1
+
+
+if __name__ == "__main__":
+    main()
+
+--- command: python output/wf0909/D8/f0_t60_first5.py ---
+==============================================================================
+tongue_drum
+==============================================================================
+idx=0 midi=37  before: f0=69.2960 Hz T60=68.6750 s  after: f0=69.2960 Hz T60=68.6750 s  f0_identical=True T60_identical=True
+idx=1 midi=49  before: f0=138.5910 Hz T60=33.0300 s  after: f0=138.5910 Hz T60=33.0300 s  f0_identical=True T60_identical=True
+idx=2 midi=56  before: f0=207.6520 Hz T60=21.2390 s  after: f0=207.6520 Hz T60=21.2390 s  f0_identical=True T60_identical=True
+idx=3 midi=61  before: f0=277.1830 Hz T60=15.3470 s  after: f0=277.1830 Hz T60=15.3470 s  f0_identical=True T60_identical=True
+idx=4 midi=64  before: f0=329.6280 Hz T60=12.5690 s  after: f0=329.6280 Hz T60=12.5690 s  f0_identical=True T60_identical=True
+==============================================================================
+yangqin_tongue_mix
+==============================================================================
+idx=3 midi=37  before: f0=69.2960 Hz T60=68.6750 s  after: f0=69.2960 Hz T60=68.6750 s  f0_identical=True T60_identical=True
+idx=4 midi=49  before: f0=138.5910 Hz T60=33.0300 s  after: f0=138.5910 Hz T60=33.0300 s  f0_identical=True T60_identical=True
+idx=5 midi=56  before: f0=207.6520 Hz T60=21.2390 s  after: f0=207.6520 Hz T60=21.2390 s  f0_identical=True T60_identical=True
+idx=7 midi=61  before: f0=277.1830 Hz T60=15.3470 s  after: f0=277.1830 Hz T60=15.3470 s  f0_identical=True T60_identical=True
+idx=9 midi=64  before: f0=329.6280 Hz T60=12.5690 s  after: f0=329.6280 Hz T60=12.5690 s  f0_identical=True T60_identical=True
+
+--- dump-modes commands used ---
+build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes output/wf0909/D8/old_tongue_drum.score.json > output/wf0909/D8/dump_old_td.json
+build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes scores/examples/moonlight_sonata_movement1_tongue_drum.score.json > output/wf0909/D8/dump_new_td.json
+build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes output/wf0909/D8/old_yangqin_tongue_mix.score.json > output/wf0909/D8/dump_old_mix.json
+build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json > output/wf0909/D8/dump_new_mix.json
+
+================================================================================
+=== GATE 3 (part 4): melody_verify.py (informational, before/after x 2 scores) ===
+================================================================================
+
+--- tongue_drum before (finger) summary ---
+  [UNVERIFIED] ev1141 t=304.640 note=61  <- re-strike over ev1135's ringing tail (predicted only 8.8 dB decayed, need >= 21.0)
+  [extra-scan] UNVERIFIED  <- delay wet=0.08: echoes are authored rises
+  summary: 1 PASS / 84 FAIL / 1058 UNVERIFIED
+
+--- tongue_drum after (wood_mallet) summary ---
+  [UNVERIFIED] ev1141 t=304.640 note=61  <- re-strike over ev1135's ringing tail (predicted only 8.8 dB decayed, need >= 21.0)
+  [extra-scan] UNVERIFIED  <- delay wet=0.08: echoes are authored rises
+  summary: 0 PASS / 36 FAIL / 1107 UNVERIFIED
+
+--- yangqin_tongue_mix before (finger) summary ---
+  [UNVERIFIED] ev2283 t=304.658 note=61  <- band collision with concurrent event
+  [extra-scan] UNVERIFIED  <- delay wet=0.045: echoes are authored rises
+  summary: 0 PASS / 0 FAIL / 2285 UNVERIFIED
+
+--- yangqin_tongue_mix after (wood_mallet) summary ---
+  [UNVERIFIED] ev2283 t=304.658 note=61  <- band collision with concurrent event
+  [extra-scan] UNVERIFIED  <- delay wet=0.045: echoes are authored rises
+  summary: 0 PASS / 0 FAIL / 2285 UNVERIFIED
+
+================================================================================
+=== GATE 4: python -m pytest tests -q ===
+================================================================================
+
+--- command: python -m pytest tests -q ---
+........................................................................ [ 27%]
+................s....................................................... [ 55%]
+................................................F......F................ [ 82%]
+.............................................                            [100%]
+================================== FAILURES ===================================
+_______ test_e2e_run_on_real_fixture_stem_count_matches_and_established _______
+
+tmp_path = WindowsPath('C:/Users/admin/AppData/Local/Temp/pytest-of-admin/pytest-349/test_e2e_run_on_real_fixture_s0')
+
+    def test_e2e_run_on_real_fixture_stem_count_matches_and_established(tmp_path):
+        """Runs the REAL run() orchestration (real CLI renders) end to end on
+        the small fx-free sentinel fixture: n_stems_summed must equal the
+        voiced event count (MAJOR#4/#7), and since there is no reverb/delay to
+        truncate or to introduce IIR path-order divergence, the superposition
+        proof must be ESTABLISHED against its own quantization budget
+        (MAJOR#5) -- not merely 'not bit-exact' with no verdict attached."""
+        score_path = tmp_path / "sentinel.score.json"
+        score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    
+        report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"), quiet=True)
+        assert report["status"] == "ok"
+        assert report["event_count_used"] == 5
+        sp = report["superposition_proof"]
+        assert sp["n_stems_summed"] == 5
+        assert sp.get("vacuous_self_comparison") is not True
+        assert sp["established"] is True, sp
+>       assert report["stem_verify"]["summary"]["fail"] == 0
+E       assert 4 == 0
+
+tests\test_stem_verify.py:423: AssertionError
+___________ test_f01_own_temp_success_and_failure_paths_unaffected ____________
+
+tmp_path = WindowsPath('C:/Users/admin/AppData/Local/Temp/pytest-of-admin/pytest-349/test_f01_own_temp_success_and_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002C0BD9BF450>
+
+    def test_f01_own_temp_success_and_failure_paths_unaffected(tmp_path, monkeypatch):
+        """own_temp (out_dir=None) never pre-exists a stems/ directory, so it
+        must never hit the new fail-closed guard, and its existing cleanup
+        behaviour (full removal of stems/reference/out_root on completion) must
+        be unchanged by this fix -- exercised on both the sentinel fixture's
+        normal PASSing run (success path) and its near-silent-note FAIL
+        construction (failure path, MINOR#1's own regression), in both cases
+        with out_dir left at its default of None."""
+        fake_temp_root = tmp_path / "own_temp_root"
+        fake_temp_root.mkdir()
+        monkeypatch.setattr(sv.tempfile, "mkdtemp", lambda *a, **kw: str(fake_temp_root))
+    
+        # -- success path: sentinel fixture verifies clean, own_temp fully
+        #    cleaned up, no F-01 refusal ever triggered ------------------------
+        score_path = tmp_path / "sentinel.score.json"
+        score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    
+        report, code = sv.run(str(score_path), quiet=True)  # out_dir=None
+        assert report["status"] == "ok"
+>       assert code == 0
+E       assert 1 == 0
+
+tests\test_stem_verify.py:609: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_stem_verify.py::test_e2e_run_on_real_fixture_stem_count_matches_and_established
+FAILED tests/test_stem_verify.py::test_f01_own_temp_success_and_failure_paths_unaffected
+2 failed, 258 passed, 1 skipped in 110.96s (0:01:50)
+rc=1
+
+--- retry 1 (isolated, just the 2 failing tests): python -m pytest tests/test_stem_verify.py::test_e2e_run_on_real_fixture_stem_count_matches_and_established tests/test_stem_verify.py::test_f01_own_temp_success_and_failure_paths_unaffected -q ---
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_______ test_e2e_run_on_real_fixture_stem_count_matches_and_established _______
+
+tmp_path = WindowsPath('C:/Users/admin/AppData/Local/Temp/pytest-of-admin/pytest-351/test_e2e_run_on_real_fixture_s0')
+
+    def test_e2e_run_on_real_fixture_stem_count_matches_and_established(tmp_path):
+        """Runs the REAL run() orchestration (real CLI renders) end to end on
+        the small fx-free sentinel fixture: n_stems_summed must equal the
+        voiced event count (MAJOR#4/#7), and since there is no reverb/delay to
+        truncate or to introduce IIR path-order divergence, the superposition
+        proof must be ESTABLISHED against its own quantization budget
+        (MAJOR#5) -- not merely 'not bit-exact' with no verdict attached."""
+        score_path = tmp_path / "sentinel.score.json"
+        score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    
+        report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"), quiet=True)
+        assert report["status"] == "ok"
+        assert report["event_count_used"] == 5
+        sp = report["superposition_proof"]
+        assert sp["n_stems_summed"] == 5
+        assert sp.get("vacuous_self_comparison") is not True
+        assert sp["established"] is True, sp
+>       assert report["stem_verify"]["summary"]["fail"] == 0
+E       assert 4 == 0
+
+tests\test_stem_verify.py:423: AssertionError
+___________ test_f01_own_temp_success_and_failure_paths_unaffected ____________
+
+tmp_path = WindowsPath('C:/Users/admin/AppData/Local/Temp/pytest-of-admin/pytest-351/test_f01_own_temp_success_and_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002AF26361CD0>
+
+    def test_f01_own_temp_success_and_failure_paths_unaffected(tmp_path, monkeypatch):
+        """own_temp (out_dir=None) never pre-exists a stems/ directory, so it
+        must never hit the new fail-closed guard, and its existing cleanup
+        behaviour (full removal of stems/reference/out_root on completion) must
+        be unchanged by this fix -- exercised on both the sentinel fixture's
+        normal PASSing run (success path) and its near-silent-note FAIL
+        construction (failure path, MINOR#1's own regression), in both cases
+        with out_dir left at its default of None."""
+        fake_temp_root = tmp_path / "own_temp_root"
+        fake_temp_root.mkdir()
+        monkeypatch.setattr(sv.tempfile, "mkdtemp", lambda *a, **kw: str(fake_temp_root))
+    
+        # -- success path: sentinel fixture verifies clean, own_temp fully
+        #    cleaned up, no F-01 refusal ever triggered ------------------------
+        score_path = tmp_path / "sentinel.score.json"
+        score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    
+        report, code = sv.run(str(score_path), quiet=True)  # out_dir=None
+        assert report["status"] == "ok"
+>       assert code == 0
+E       assert 1 == 0
+
+tests\test_stem_verify.py:609: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_stem_verify.py::test_e2e_run_on_real_fixture_stem_count_matches_and_established
+FAILED tests/test_stem_verify.py::test_f01_own_temp_success_and_failure_paths_unaffected
+2 failed in 9.49s
+
+--- retry 2 (same, after all other background jobs in this session finished, CPU idle) ---
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_______ test_e2e_run_on_real_fixture_stem_count_matches_and_established _______
+
+tmp_path = WindowsPath('C:/Users/admin/AppData/Local/Temp/pytest-of-admin/pytest-353/test_e2e_run_on_real_fixture_s0')
+
+    def test_e2e_run_on_real_fixture_stem_count_matches_and_established(tmp_path):
+        """Runs the REAL run() orchestration (real CLI renders) end to end on
+        the small fx-free sentinel fixture: n_stems_summed must equal the
+        voiced event count (MAJOR#4/#7), and since there is no reverb/delay to
+        truncate or to introduce IIR path-order divergence, the superposition
+        proof must be ESTABLISHED against its own quantization budget
+        (MAJOR#5) -- not merely 'not bit-exact' with no verdict attached."""
+        score_path = tmp_path / "sentinel.score.json"
+        score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    
+        report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"), quiet=True)
+        assert report["status"] == "ok"
+        assert report["event_count_used"] == 5
+        sp = report["superposition_proof"]
+        assert sp["n_stems_summed"] == 5
+        assert sp.get("vacuous_self_comparison") is not True
+        assert sp["established"] is True, sp
+>       assert report["stem_verify"]["summary"]["fail"] == 0
+E       assert 4 == 0
+
+tests\test_stem_verify.py:423: AssertionError
+___________ test_f01_own_temp_success_and_failure_paths_unaffected ____________
+
+tmp_path = WindowsPath('C:/Users/admin/AppData/Local/Temp/pytest-of-admin/pytest-353/test_f01_own_temp_success_and_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000022371AA9BA0>
+
+    def test_f01_own_temp_success_and_failure_paths_unaffected(tmp_path, monkeypatch):
+        """own_temp (out_dir=None) never pre-exists a stems/ directory, so it
+        must never hit the new fail-closed guard, and its existing cleanup
+        behaviour (full removal of stems/reference/out_root on completion) must
+        be unchanged by this fix -- exercised on both the sentinel fixture's
+        normal PASSing run (success path) and its near-silent-note FAIL
+        construction (failure path, MINOR#1's own regression), in both cases
+        with out_dir left at its default of None."""
+        fake_temp_root = tmp_path / "own_temp_root"
+        fake_temp_root.mkdir()
+        monkeypatch.setattr(sv.tempfile, "mkdtemp", lambda *a, **kw: str(fake_temp_root))
+    
+        # -- success path: sentinel fixture verifies clean, own_temp fully
+        #    cleaned up, no F-01 refusal ever triggered ------------------------
+        score_path = tmp_path / "sentinel.score.json"
+        score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    
+        report, code = sv.run(str(score_path), quiet=True)  # out_dir=None
+        assert report["status"] == "ok"
+>       assert code == 0
+E       assert 1 == 0
+
+tests\test_stem_verify.py:609: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_stem_verify.py::test_e2e_run_on_real_fixture_stem_count_matches_and_established
+FAILED tests/test_stem_verify.py::test_f01_own_temp_success_and_failure_paths_unaffected
+2 failed in 7.94s
+
+--- confirm neither failing test's file nor the module it tests were touched by this card (unstaged diff empty) ---
+$ git diff --stat -- tests/test_stem_verify.py tools/stem_verify.py
+(empty = not modified by WF0909-D8 or any other unstaged work)
+
+--- these two files ARE different from a pre-WF0907 baseline, but that diff is already STAGED (audited PASS in a prior WF0907 round, not part of this card or any current unstaged lane) ---
+$ git diff --cached --stat -- tests/test_stem_verify.py tools/stem_verify.py
+ tests/test_stem_verify.py | 446 ++++++++++++++++++++++++++++++++++++++++++++++
+ tools/stem_verify.py      | 321 ++++++++++++++++++++++++++++++---
+ 2 files changed, 744 insertions(+), 23 deletions(-)
+
+================================================================================
+=== 8-piece bit-identity baseline renewal (README §1/§3) ===
+================================================================================
+
+--- command: python reports/gate_outputs/b6_method/render_b6_scores.py --label before_post_d8 --workdir <outside-repo> ---
+rendering moonlight_sonata_movement1_yangqin ...
+  len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+  len=325.869s  RMS=-23.899 dBFS  sha256=280cbdac3c117c14
+rendering physical_piano ...
+  len=7.575s  RMS=-18.579 dBFS  sha256=607d0d3bc578136f
+rendering restraint_metal_click ...
+  len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...
+  len=327.289s  RMS=-21.589 dBFS  sha256=f539aefa91919cbf
+rendering water_gong_free ...
+  len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...
+  len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+rendering fur_elise_opening ...
+  len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+wrote C:\Users\admin\Desktop\Claude\tsuki-synth\reports\gate_outputs\b6_method\render_before_post_d8.csv
+wrote C:\Users\admin\Desktop\Claude\tsuki-synth\reports\gate_outputs\b6_method\sha256_before_post_d8.txt
+
+--- diff: old baseline vs new baseline ---
+1,8c1,8
+< 49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+< 7b0413dd4f85807969242b831c512758834e18b878ec4181c67ad308e9b8b79b  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+< 607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71  physical_piano/physical_piano.wav
+< be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click/restraint_metal_click_001.wav
+< c37ac02d01f08a307b1bafcbc5aa6068fe041049fa75a2cb7b240c4a18ccb92e  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+< 31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free/water_gong_free.wav
+< 74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+< b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening/fur_elise_opening.wav
+---
+> 49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+> 280cbdac3c117c142dd89853eaec0706ef6d6afec604de37621577d57bf637d1  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+> 607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71  physical_piano/physical_piano.wav
+> be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click/restraint_metal_click_001.wav
+> f539aefa91919cbfe3b22e7fb4d17f404e758aca39d1b08b173e6f44cd63f67e  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+> 31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free/water_gong_free.wav
+> 74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+> b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening/fur_elise_opening.wav
+(exit code above: expect 2 changed lines only -- yangqin_tongue_mix and tongue_drum, both this card's edits)
+
+--- clearer per-line same/changed summary (diff above merges into one hunk since file is short; this confirms exactly 6 SAME / 2 CHANGED, no spillover) ---
+SAME    moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+CHANGED moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav 7b0413dd4f858079 -> 280cbdac3c117c14
+SAME    physical_piano/physical_piano.wav
+SAME    restraint_metal_click/restraint_metal_click_001.wav
+CHANGED moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav c37ac02d01f08a30 -> f539aefa91919cbf
+SAME    water_gong_free/water_gong_free.wav
+SAME    ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+SAME    fur_elise_opening/fur_elise_opening.wav
+
+same=6 changed=2
+
+================================================================================
+=== GATE 5: git diff --stat scope check ===
+================================================================================
+
+--- this card's own files (tracked, unstaged) ---
+$ git diff --stat -- scores/examples/moonlight_sonata_movement1_tongue_drum.score.json scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json reports/product_sheets/moonlight_batch1_PRODUCT_SHEET.md
+ .../moonlight_batch1_PRODUCT_SHEET.md              |   11 +
+ ...onlight_sonata_movement1_tongue_drum.score.json | 2284 ++++++++++----------
+ ..._sonata_movement1_yangqin_tongue_mix.score.json | 2284 ++++++++++----------
+ 3 files changed, 2295 insertions(+), 2284 deletions(-)
+
+--- untracked new files this card added (not shown by plain 'git diff') ---
+?? reports/d8_tongue_drum_exciter_before_after.md
+?? reports/gate_outputs/b6_method/render_before_post_d8.csv
+?? reports/gate_outputs/b6_method/sha256_before_post_d8.txt
+?? reports/gate_outputs/wf0909_D8_exciter.txt
+
+--- exports/products copy (gitignored, invisible to git status; edited in place, verified separately) ---
+exports/products/moonlight_batch1/PRODUCT_SHEET.md is gitignored (exports/), so it never shows in
+'git status'/'git diff'. Verified by direct byte comparison (Python), stripping the tracked copy's
+leading version-control header note block (a pre-existing line, unrelated to this card) before
+comparing bodies:
+  a = exports/products/moonlight_batch1/PRODUCT_SHEET.md (body from its own title line onward)
+  b = reports/product_sheets/moonlight_batch1_PRODUCT_SHEET.md (body from its own title line onward)
+  a_body == b_body -> True (8799 chars each, byte-identical)
+This confirms the SAME known-issues edit was applied to both copies of the product sheet, matching
+the card's "更新兩份商品表" instruction.
+
+--- docs/workcards/WF0907_README.md: edited per card SS1 instruction, but this file is UNTRACKED (git ls-files shows nothing) so it never appears in 'git diff' -- confirmed not a GATE5 scope violation ---
+?? docs/workcards/WF0907_README.md
+
+--- FULL unstaged git diff --stat (for transparency): includes MANY files this card did NOT touch, all from OTHER concurrent WF0909 lanes sharing this working tree per README SS1 ("三個 lane 同時在同一個工作樹作業") ---
+ .gitignore                                         |    5 +
+ DEVLOG.md                                          |   62 +
+ TODO.md                                            |   38 +-
+ docs/EXTERNAL_ANCHOR_SOURCES.md                    |   35 +-
+ docs/RADIATION_POWER_SOURCES.md                    |   24 +
+ docs/workcards/B7.md                               |   13 +-
+ .../decision_packets/K02_reverb_wet_scale.zh-TW.md |   20 +
+ .../moonlight_batch1_PRODUCT_SHEET.md              |   11 +
+ ...onlight_sonata_movement1_tongue_drum.score.json | 2284 ++++++++++----------
+ ..._sonata_movement1_yangqin_tongue_mix.score.json | 2284 ++++++++++----------
+ src/physics/HammerImpulse.h                        |   14 +-
+ src/physics/RadiationModel.h                       |   14 +-
+ tests/test_measurement_selfcal.py                  |   15 +-
+ tools/measurement_selfcal.py                       |  140 +-
+ tools/melody_verify.py                             |  168 +-
+ 15 files changed, 2780 insertions(+), 2347 deletions(-)
+
+--- files in the full diff above that are OUTSIDE this card's scope, confirmed untouched by WF0909-D8: .gitignore, DEVLOG.md, TODO.md, docs/EXTERNAL_ANCHOR_SOURCES.md, docs/RADIATION_POWER_SOURCES.md, docs/workcards/B7.md, reports/decision_packets/K02_reverb_wet_scale.zh-TW.md, src/physics/HammerImpulse.h, src/physics/RadiationModel.h, tools/measurement_selfcal.py, tools/melody_verify.py -- these were already unstaged (or became unstaged mid-session by other agents) before/independent of this card's own edits; this card's own diff is exactly the 2 scores + 1 tracked product sheet shown above ---
+
+================================================================================
+=== 第二次執行（2026-09-09，同日第二輪，接手重跑全部 GATE） ===
+================================================================================
+
+背景：第一輪已完成全部實作（兩檔 exciter 各 1142 顆改動、verify_score 兩檔 PASS、Rule 10 報告、
+新基準 sha256_before_post_d8.txt、兩份商品表更新），唯一沒過的是 GATE 4 全套 pytest——當時
+tests/test_stem_verify.py 的兩條測試 FAIL，經查是同一工作樹裡另一張卡（WF0909-C10B）的半成品
+（stem_verify 相關）造成的並行汙染，本卡自身完全沒有碰過 tests/test_stem_verify.py 或
+tools/stem_verify.py。C10B 的半成品現已撤回。本段是接手後重跑卡上全部 GATE（不重做任何實作）
+的完整命令與輸出。
+
+--- 重跑 GATE 1: git diff --numstat + 非 exciter 行檢查 ---
+$ git diff --numstat -- scores/examples/moonlight_sonata_movement1_tongue_drum.score.json scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json
+1142	1142	scores/examples/moonlight_sonata_movement1_tongue_drum.score.json
+1142	1142	scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json
+
+$ git diff -- scores/examples/moonlight_sonata_movement1_tongue_drum.score.json | grep -E '^[-+]' | grep -v '^[-+][-+][-+]' | grep -v exciter
+(no output, exit=1 = 沒有非 exciter 的改動行)
+
+$ git diff -- scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json | grep -E '^[-+]' | grep -v '^[-+][-+][-+]' | grep -v exciter
+(no output, exit=1 = 沒有非 exciter 的改動行)
+-> PASS（與第一輪一致，兩檔改動未被任何其他卡動過）
+
+--- 重跑 GATE 2: verify_score.py（用 build\ 的 CLI，Python lane 唯讀） ---
+$ python tools/verify_score.py --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe scores/examples/moonlight_sonata_movement1_tongue_drum.score.json
+  ... (省略逐項，全部 [OK]) ...
+  render.pre_normalize_manifest: WAV f539aefa9191... (與第一輪、與新基準 sha256_before_post_d8.txt 記錄的 tongue_drum SHA256 完全一致)
+  determinism.sha256_match: PASS
+  -> PASS
+RESULT: ALL CHECKS PASSED
+rc=0
+
+$ python tools/verify_score.py --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json
+  ... (省略逐項，全部 [OK]) ...
+  render.pre_normalize_manifest: WAV 280cbdac3c11... (與第一輪、與新基準 sha256_before_post_d8.txt 記錄的 yangqin_tongue_mix SHA256 完全一致)
+  determinism.sha256_match: PASS
+  -> PASS
+RESULT: ALL CHECKS PASSED
+rc=0
+-> PASS，兩檔 SHA256 與第一輪、與 sha256_before_post_d8.txt 三方一致，證明本次重跑沒有意外改變渲染結果。
+
+--- 重跑 GATE 3: 指標表與報告存在性檢查 ---
+$ ls -la reports/d8_tongue_drum_exciter_before_after.md
+-rw-r--r-- 1 admin 197609 18328 Sep  9 06:29 reports/d8_tongue_drum_exciter_before_after.md
+$ wc -l reports/d8_tongue_drum_exciter_before_after.md
+257 reports/d8_tongue_drum_exciter_before_after.md
+-> PASS（報告與 §3 指標表存在；第一輪產出的實測數字未變，因為 GATE 2 的 SHA256 三方一致，
+   代表音檔本身完全沒有重新變過，第一輪的整曲 RMS/質心/能量占比/斜率/f0/T60 數字對這次重跑仍然有效，
+   不需要重新量測）。
+
+--- 重跑 GATE 4: python -m pytest tests -q（全套，C10B 半成品已撤回後） ---
+$ python -m pytest tests -q
+...............x........................................................ [ 27%]
+...................s.................................................... [ 54%]
+........................................................................ [ 81%]
+................................................                         [100%]
+262 passed, 1 skipped, 1 xfailed in 155.50s (0:02:35)
+rc=0
+-> PASS，全綠（0 failed / 0 error）。第一輪的 2 個 FAIL（test_e2e_run_on_real_fixture_stem_count_matches_and_established、
+   test_f01_own_temp_success_and_failure_paths_unaffected）本次都通過，證實第一輪的診斷正確：
+   那 2 個 FAIL 是 C10B 半成品造成的並行汙染，不是本卡（D8）改動造成的迴歸。
+   （collected 數量 264 台 vs 第一輪 261，多出的測試來自本輪其他卡新增的測試檔，非本卡所加，
+   與本卡 files_touched 範圍無關。）
+
+--- 重跑 GATE 5: git diff --stat 範圍檢查 ---
+$ git diff --stat -- scores/examples/moonlight_sonata_movement1_tongue_drum.score.json scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json reports/product_sheets/moonlight_batch1_PRODUCT_SHEET.md
+ .../moonlight_batch1_PRODUCT_SHEET.md              |   11 +
+ ...onlight_sonata_movement1_tongue_drum.score.json | 2284 ++++++++++----------
+ ..._sonata_movement1_yangqin_tongue_mix.score.json | 2284 ++++++++++----------
+ 3 files changed, 2295 insertions(+), 2284 deletions(-)
+
+$ git status --short reports/d8_tongue_drum_exciter_before_after.md reports/gate_outputs/b6_method/sha256_before_post_d8.txt reports/gate_outputs/b6_method/render_before_post_d8.csv reports/gate_outputs/wf0909_D8_exciter.txt
+?? reports/d8_tongue_drum_exciter_before_after.md
+?? reports/gate_outputs/b6_method/render_before_post_d8.csv
+?? reports/gate_outputs/b6_method/sha256_before_post_d8.txt
+?? reports/gate_outputs/wf0909_D8_exciter.txt
+-> PASS，範圍與第一輪完全一致：兩個 score + 一份已追蹤商品表（tracked diff）+ 本卡新增的 4 個
+   untracked 檔案（報告、新基準 csv/sha256、本證據檔）。exports/products/ 下的商品表副本因
+   .gitignore 而不出現在 git diff/status 裡（第一輪已用位元比對驗證過兩份商品表內容一致，本輪
+   未再改動該檔案，結論不變）。
+
+=== 第二次執行總結：GATE 1-5 全數 PASS，狀態 DONE ===

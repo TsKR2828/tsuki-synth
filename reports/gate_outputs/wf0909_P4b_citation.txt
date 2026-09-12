@@ -1,0 +1,364 @@
+WF0909-P4b：補完 A8 引用更正 + B7.md §4.6 + HammerImpulse 檔頭出處
+工兵：Sonnet　日期：2026-09-09
+卡：docs/workcards/WF0909_P4b_citation_fix_finish.md
+
+====================================================================
+背景說明：本卡在共享工作樹中，其他 lane（WF0909-D8 wood_mallet 等）
+同時在跑，工作樹裡有大量不屬於本卡的 unstaged 改動（DEVLOG.md、
+TODO.md、.gitignore、tools/melody_verify.py、
+scores/examples/moonlight_sonata_movement1_tongue_drum.score.json、
+scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json
+等）。這些不是本卡動的，下面 GATE 3 已用 -- <本卡檔案> 限定範圍證明。
+====================================================================
+
+## GATE 1：build-wf 三 target exit 0；位元不變 8/8 IDENTICAL；ctest（X4）
+
+### 1a. 重建三個主要 target
+
+命令：
+  cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+
+結果：MSBuild 全部成功（TsukiSynthCLI.exe / TsukiSynth.exe(Standalone) /
+TsukiSynth.vst3 均產出），複跑一次專門量 exit code：
+  MAIN_EXIT=0
+
+尾段輸出：
+  TsukiSynthCLI.vcxproj -> ...\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  TsukiSynth_Standalone.vcxproj -> ...\build-wf\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+  TsukiSynth_VST3.vcxproj -> ...\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\...\TsukiSynth.vst3
+  creating .../build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+
+### 1b. 重建三個測試 target（X4 規約：先重建才跑 ctest）
+
+命令：
+  cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+
+結果：全部成功，複跑一次專門量 exit code：
+  TESTS_EXIT=0
+
+尾段輸出：
+  TsukiSynthAuditTest.vcxproj -> ...\build-wf\Release\TsukiSynthAuditTest.exe
+  TsukiSynthTunerTest.vcxproj -> ...\build-wf\Release\TsukiSynthTunerTest.exe
+  TsukiSynthPhysicsModelsTest.vcxproj -> ...\build-wf\Release\TsukiSynthPhysicsModelsTest.exe
+  TsukiSynthSpectrumViewTest.vcxproj -> ...\build-wf\Release\TsukiSynthSpectrumViewTest.exe
+  TsukiSynthHostProbe.vcxproj -> ...\build-wf\Release\TsukiSynthHostProbe.exe
+
+### 1c. ctest
+
+命令：
+  ctest --test-dir build-wf -C Release --output-on-failure
+
+輸出：
+  Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+      Start 1: audit_repro
+  1/4 Test #1: audit_repro ......................   Passed    1.38 sec
+      Start 2: tuner_repro
+  2/4 Test #2: tuner_repro ......................   Passed    0.65 sec
+      Start 3: physics_models_repro
+  3/4 Test #3: physics_models_repro .............   Passed    0.13 sec
+      Start 4: spectrum_view_repro
+  4/4 Test #4: spectrum_view_repro ..............   Passed    0.04 sec
+
+  100% tests passed, 0 tests failed out of 4
+  Total Test time (real) =   2.28 sec
+  CTEST_EXIT=0
+
+### 1d. 位元不變（8 首代表曲）
+
+命令：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py \
+      --label wf0909_p4b_after \
+      --workdir C:\Users\admin\AppData\Local\Temp\wf0909_p4b_render \
+      --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+輸出（8 首）：
+  moonlight_sonata_movement1_yangqin              sha256=49514b007e3e01fc...
+  moonlight_sonata_movement1_yangqin_tongue_mix   sha256=280cbdac3c117c14...
+  physical_piano                                  sha256=607d0d3bc578136f...
+  restraint_metal_click                           sha256=be634798c4a0bf71...
+  moonlight_sonata_movement1_tongue_drum          sha256=f539aefa91919cbf...
+  water_gong_free                                 sha256=31b539c6ac08d942...
+  ai_radiance_m1                                  sha256=74122637a0c71278...
+  fur_elise_opening                               sha256=b0877774da9e5fc5...
+
+基準檔判斷：`reports/gate_outputs/b6_method/sha256_before_post_d8.txt`
+不存在（find 全 repo 確認）——代表 D8（WF0909-D8 wood_mallet）**尚未落地
+（未 staged，也沒有官方 post-D8 基準檔）**，故依規約用
+`reports/gate_outputs/b6_method/sha256_before.txt` 比對。
+
+比對命令：
+  diff reports/gate_outputs/b6_method/sha256_before.txt reports/gate_outputs/wf0907_method/sha256_wf0909_p4b_after.txt
+
+結果：**6/8 IDENTICAL，2/8 不同**——
+  IDENTICAL（6）：moonlight_sonata_movement1_yangqin／physical_piano／
+    restraint_metal_click／water_gong_free／ai_radiance_m1／
+    fur_elise_opening
+  不同（2）：moonlight_sonata_movement1_tongue_drum／
+    moonlight_sonata_movement1_yangqin_tongue_mix
+    （before: c37ac02d.../7b0413dd... → after: f539aefa.../280cbdac...）
+
+**根因查證（不是本卡改動造成）**：
+  git diff -- scores/examples/moonlight_sonata_movement1_tongue_drum.score.json
+  顯示這兩首曲子的音符事件被同時在跑的 WF0909-D8（月月裁決 wood_mallet）
+  改了 exciter 欄位：`"exciter": "finger"` → `"exciter": "wood_mallet"`
+  （unstaged、非本卡碰的檔案，本卡「files_touched」不含任何 scores/*）。
+  D8 尚未落地（該 2 檔目前只是 unstaged 工作中狀態，不是官方 post-D8
+  基準），所以本卡也無法用官方 post_d8 基準檔做「兩檔都比」的第二次比對
+  ——official sha256_before_post_d8.txt 還不存在。
+
+**本卡自身改動不可能造成任何渲染差異的獨立證明**：
+  git diff -- src/physics/HammerImpulse.h src/physics/RadiationModel.h
+  顯示兩份 diff **100% 落在 /** ... *\/ 或 /* ... *\/ C++ 註解區塊內**，
+  沒有任何一行程式碼／數值／格式字元被改動（`kMeasurementRadiusM = 1.05f`
+  數值原封不動，`F(t) = F_max * sin(...)` 公式原封不動），註解在編譯期
+  被前處理器整段丟棄，**不可能**改變任何編譯輸出或渲染結果。
+
+**結論**：8/8 這一項因為共享工作樹裡另一個 lane（D8）尚未落地的 in-flight
+score.json 編輯而測不到（不是本卡造成，已用 git diff 逐字證明），**本卡
+自身的位元不變性已用「diff 100% 落在註解區塊」這個更強的證明方式確認**。
+依專案規約（「需要...非預期的渲染輸出改變 → BLOCKED」），本卡對此
+如實回報並標記 BLOCKED，留給月月／整合輪確認：待 D8 落地產生官方
+sha256_before_post_d8.txt 後，本卡的 6/8（非 D8 相關曲目）+ 註解限定
+diff 證明應該就足以視為通過，屆時建議重跑本 GATE 一次留存最終記錄。
+
+## GATE 2：`grep -n '1.05' docs/EXTERNAL_ANCHOR_SOURCES.md docs/workcards/B7.md`
+
+命令：
+  grep -n '1.05' docs/EXTERNAL_ANCHOR_SOURCES.md docs/workcards/B7.md
+
+輸出（逐行）：
+docs/EXTERNAL_ANCHOR_SOURCES.md:51:> 本專案 `radius_m=1.05` 是自訂觀測距離，與該資料庫無關。
+docs/EXTERNAL_ANCHOR_SOURCES.md:78:| 麥克風位置語意 | ❌ 無 | ✅ 資料庫定義了明確的球面半徑 **2.06 m**（本專案 `radius_m=1.05` 是自訂觀測距離，與該資料庫無關，兩者不可混用） |
+docs/EXTERNAL_ANCHOR_SOURCES.md:82:明確的量測面定義（資料庫本身的 2.06 m 球面；本專案 `radius_m=1.05` 是自訂觀測距離，兩者無關）
+docs/EXTERNAL_ANCHOR_SOURCES.md:218:| 1 | ...（1.05 m 是本專案自訂觀測距離，與該資料庫無關，資料庫實際半徑為 2.06 m）... |
+docs/EXTERNAL_ANCHOR_SOURCES.md:219:| 2 | Ege & Boutillon ... |  ← 誤命中（"1305.3057" 的正規表示式巧合，非 1.05 m 語意）
+docs/workcards/B7.md:10:> ...一路推到 1.05 m 處的 **Pa**...  ← 本專案觀測點敘述，保留（卡上明列 L10 保留）
+docs/workcards/B7.md:23:1.05 m 處真實 Pa）...  ← 本專案觀測點敘述，保留（卡上明列 L23 保留）
+docs/workcards/B7.md:87:| `docs/EXTERNAL_ANCHOR_SOURCES.md` | §1（94 dB SPL 校準慣例的**定義**與資料庫實際球面幾何**半徑 2.06 m**，本卡不採用它的「數位 1.0≡1Pa」捷徑；本卡 §4.6 用的 `r=1.05 m` 是本專案自訂觀測距離（`RadiationModel.h::kMeasurementRadiusM`，DECIDED CONVENTION），與該資料庫的 2.06 m 半徑無關，兩者不可混用） | ... |  ← 本卡已改
+docs/workcards/B7.md:237:   │  (e) §4.6 —— 【球面擴散，r=1.05 m 是本專案自訂觀測距離（DECIDED CONVENTION），與 EXTERNAL_ANCHOR_SOURCES.md §1 資料庫實際半徑 2.06 m 無關】  ← 本卡已改
+docs/workcards/B7.md:241:1.05 m 處聲壓 p(f) = ...  ← 本專案觀測點敘述（公式），保留
+docs/workcards/B7.md:349:...arXiv:1305.3057...  ← 誤命中（同上，正規表示式巧合）
+docs/workcards/B7.md:361:### 4.6 (e) 1.05 m 處絕對聲壓  ← 本專案觀測點敘述（章節標題），保留
+docs/workcards/B7.md:366:I(f) = W_rad(f) / (4π·r²)  // 聲強，r=1.05 m  ← 本專案觀測點敘述（公式註解），保留
+docs/workcards/B7.md:370:`r=1.05` 是本專案自訂觀測距離（`RadiationModel.h::kMeasurementRadiusM`，DECIDED CONVENTION）；外部資料庫（`EXTERNAL_ANCHOR_SOURCES.md` §1）實際球面半徑是 2.06 m，兩者無關...  ← 本卡已改
+docs/workcards/B7.md:435:...Path C 算出的 1.05 m 處總 SPL...  ← 本專案觀測點敘述，保留
+docs/workcards/B7.md:675-676:「本輪未處理...」歷史記錄，676 已自帶「這個說法是錯的——1.05 m 是本專案自訂的觀測距離」的說明，保留（卡上未列此處為改動範圍）
+docs/workcards/B7.md:693:...留給 WF0908-P4（見上一節末尾）  ← 歷史記錄，保留
+
+判定：**每一處都附了自訂觀測距離說明，或屬本專案觀測點的敘述** ——GATE 2 PASS。
+
+## GATE 3：`git diff --stat`（unstaged）範圍檢查
+
+因共享工作樹同時有其他 lane（見上方「背景說明」）在跑，全庫
+`git diff --stat` 目前還混著非本卡檔案。用 -- 限定本卡檔案清單：
+
+命令：
+  git diff --stat -- docs/EXTERNAL_ANCHOR_SOURCES.md src/physics/RadiationModel.h docs/RADIATION_POWER_SOURCES.md docs/workcards/B7.md src/physics/HammerImpulse.h reports/gate_outputs/
+
+輸出：
+   docs/EXTERNAL_ANCHOR_SOURCES.md | 35 +++++++++++++++++++++--------------
+   docs/RADIATION_POWER_SOURCES.md | 24 ++++++++++++++++++++++++
+   docs/workcards/B7.md            | 13 ++++++++-----
+   src/physics/HammerImpulse.h     | 14 +++++++++++---
+   src/physics/RadiationModel.h    | 14 +++++++++-----
+   5 files changed, 73 insertions(+), 27 deletions(-)
+
+判定：**只含卡上列出的 5 個檔案**（含 P4 已完成的 EXTERNAL_ANCHOR_SOURCES.md
+與 RadiationModel.h 兩檔），reports/gate_outputs/ 下新增本證據檔本身不算
+額外範圍——GATE 3 PASS（限定於本卡檔案）。
+
+全庫 unstaged diff --stat（僅供對照，非本卡改動，見背景說明）：
+   .gitignore                                          |    5 +
+   DEVLOG.md                                           |   62 +
+   TODO.md                                             |   38 +-
+   docs/EXTERNAL_DATASET_A8.zh-TW.md                   |   59 +
+   reports/decision_packets/K02_reverb_wet_scale.zh-TW.md |   20 +
+   scores/examples/moonlight_sonata_movement1_tongue_drum.score.json      | 2284 +++++++++----------
+   scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json | 2284 +++++++++----------
+   tools/melody_verify.py                              |  112 +-
+  （以上皆非本卡 files_touched，屬其他同時進行的 lane）
+
+## 附加檢查：README §3 硬性檢查 `python -m pytest tests -q`
+
+命令：
+  python -m pytest tests -q
+
+結果：`2 failed, 258 passed, 1 skipped in 117.92s`
+  失敗：tests/test_stem_verify.py::test_e2e_run_on_real_fixture_stem_count_matches_and_established
+       tests/test_stem_verify.py::test_f01_own_temp_success_and_failure_paths_unaffected
+複跑 tests/test_stem_verify.py 單獨確認非偶發：仍然同樣 2 failed（47 passed）。
+這兩個失敗都在 `tools/stem_verify.py`／`tests/test_stem_verify.py`（Python
+lane C11/C12 的既有稽核過檔案，本卡 files_touched 不含這兩個檔案，本卡也
+未曾開啟或編輯它們），與本卡的三個改動檔案（RADIATION_POWER_SOURCES.md、
+B7.md、HammerImpulse.h）在物理/內容上無關聯（stem_verify 是量測器/哨兵
+邏輯，不是輻射或槌頭脈衝）。列為 open_items，不在本卡範圍內處理。
+
+====================================================================
+狀態：BLOCKED —— 原因是 GATE 1 的位元不變 8/8 因為共享工作樹另一個尚未
+落地的 lane（WF0909-D8）而測不到官方 8/8（見上方根因查證），依規約
+「非預期的渲染輸出改變 → BLOCKED」如實停下回報，不自行判定通過並落地。
+本卡三個檔案的實際修改內容（RADIATION_POWER_SOURCES.md §5 補記、
+B7.md §4.6 三處、HammerImpulse.h 檔頭出處）已完成且已用「diff 100%
+落在註解區塊」證明對渲染結果零影響；GATE 2、GATE 3（限定本卡檔案）
+皆 PASS。
+====================================================================
+
+====================================================================
+## 第二次執行（2026-09-09，接手說明指示）
+
+背景：D8（WF0909-D8，月月裁決 `wood_mallet`）已落地，官方新基準檔
+`reports/gate_outputs/b6_method/sha256_before_post_d8.txt` 現已存在。
+接手指示：`git diff` 確認上輪三項文字/註解修改仍在 → 重跑卡上全部
+GATE，位元不變改對 `sha256_before_post_d8.txt` 比（應 8/8 IDENTICAL），
+同時貼對舊基準 `sha256_before.txt` 的結果並註明差異即 D8 那兩首。
+
+### 0. 確認上輪三項修改仍在（git diff 逐檔核對）
+
+命令：
+  git diff --stat -- docs/EXTERNAL_ANCHOR_SOURCES.md src/physics/RadiationModel.h docs/RADIATION_POWER_SOURCES.md docs/workcards/B7.md src/physics/HammerImpulse.h
+
+輸出：
+   docs/EXTERNAL_ANCHOR_SOURCES.md | 35 +++++++++++++++++++++--------------
+   docs/RADIATION_POWER_SOURCES.md | 24 ++++++++++++++++++++++++
+   docs/workcards/B7.md            | 13 ++++++++-----
+   src/physics/HammerImpulse.h     | 14 +++++++++++---
+   src/physics/RadiationModel.h    | 14 +++++++++-----
+   5 files changed, 73 insertions(+), 27 deletions(-)
+
+與第一次執行時完全一致（同樣的行數變化），逐段讀取內容（RADIATION_
+POWER_SOURCES.md §5「2026-09-09 補記」段落、B7.md L87/L237-239/L367-370
+三處改法、HammerImpulse.h 檔頭出處段落）確認文字內容未被任何其他 lane
+覆寫、與第一次執行時記錄的內容一致。**上輪三項修改仍在，未流失。**
+
+### 1. 重跑 GATE 1：build-wf 三 target + ctest + 位元不變
+
+#### 1a. 重建三個主要 target
+
+命令：
+  cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+
+結果：MSBuild 全部成功。
+  MAIN_EXIT=0
+尾段輸出：
+  TsukiSynthCLI.vcxproj -> ...\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  TsukiSynth_Standalone.vcxproj -> ...\build-wf\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+  TsukiSynth_VST3.vcxproj -> ...\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  creating .../build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+
+#### 1b. 重建測試 target（X4 規約）
+
+命令：
+  cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+
+結果：全部成功。
+  TESTS_EXIT=0
+尾段輸出：
+  TsukiSynthAuditTest.vcxproj -> ...\build-wf\Release\TsukiSynthAuditTest.exe
+  TsukiSynthTunerTest.vcxproj -> ...\build-wf\Release\TsukiSynthTunerTest.exe
+  TsukiSynthPhysicsModelsTest.vcxproj -> ...\build-wf\Release\TsukiSynthPhysicsModelsTest.exe
+  TsukiSynthSpectrumViewTest.vcxproj -> ...\build-wf\Release\TsukiSynthSpectrumViewTest.exe
+  TsukiSynthHostProbe.vcxproj -> ...\build-wf\Release\TsukiSynthHostProbe.exe
+
+#### 1c. ctest
+
+命令：
+  ctest --test-dir build-wf -C Release --output-on-failure
+
+輸出：
+  Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+      Start 1: audit_repro
+  1/4 Test #1: audit_repro ......................   Passed    1.16 sec
+      Start 2: tuner_repro
+  2/4 Test #2: tuner_repro ......................   Passed    0.55 sec
+      Start 3: physics_models_repro
+  3/4 Test #3: physics_models_repro .............   Passed    0.11 sec
+      Start 4: spectrum_view_repro
+  4/4 Test #4: spectrum_view_repro ..............   Passed    0.05 sec
+
+  100% tests passed, 0 tests failed out of 4
+  CTEST_EXIT=0
+
+#### 1d. 位元不變（8 首代表曲）—— 對新基準 sha256_before_post_d8.txt
+
+命令：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py \
+      --label wf0909_p4b_after2 \
+      --workdir C:\Users\admin\AppData\Local\Temp\wf0909_p4b_render2 \
+      --cli C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+輸出（8 首）：
+  moonlight_sonata_movement1_yangqin              len=317.495s  sha256=49514b007e3e01fc...
+  moonlight_sonata_movement1_yangqin_tongue_mix   len=325.869s  sha256=280cbdac3c117c14...
+  physical_piano                                  len=7.575s    sha256=607d0d3bc578136f...
+  restraint_metal_click                           len=4.929s    sha256=be634798c4a0bf71...
+  moonlight_sonata_movement1_tongue_drum          len=327.289s  sha256=f539aefa91919cbf...
+  water_gong_free                                 len=10.075s   sha256=31b539c6ac08d942...
+  ai_radiance_m1                                  len=35.930s   sha256=74122637a0c71278...
+  fur_elise_opening                               len=6.780s    sha256=b0877774da9e5fc5...
+
+比對命令（新基準，post-D8）：
+  diff reports/gate_outputs/b6_method/sha256_before_post_d8.txt reports/gate_outputs/wf0907_method/sha256_wf0909_p4b_after2.txt
+
+結果：**無輸出（8/8 IDENTICAL）** —— 本卡文字/註解改動對 D8 落地後的
+新基準完全逐位元一致，符合預期（README §3：D8 之後的卡一律比對
+`sha256_before_post_d8.txt`，8/8 IDENTICAL 才算過）。
+
+比對命令（舊基準，僅供對照，同時貼出如接手說明要求）：
+  diff reports/gate_outputs/b6_method/sha256_before.txt reports/gate_outputs/wf0907_method/sha256_wf0909_p4b_after2.txt
+
+結果：**6/8 IDENTICAL，2/8 不同**——
+  IDENTICAL（6）：moonlight_sonata_movement1_yangqin／physical_piano／
+    restraint_metal_click／water_gong_free／ai_radiance_m1／
+    fur_elise_opening
+  不同（2，**屬 D8 預期落地，非本卡造成、非 R10 意外觸發**）：
+    moonlight_sonata_movement1_tongue_drum
+      舊基準 c37ac02d... → 本次 f539aefa...
+    moonlight_sonata_movement1_yangqin_tongue_mix
+      舊基準 7b0413dd... → 本次 280cbdac...
+  這兩個 sha256 與 `sha256_before_post_d8.txt` 裡登記的官方 post-D8 值
+  逐字相同，證明差異完全來自 D8（`exciter: finger → wood_mallet`）落地，
+  與本卡三個檔案（皆為註解/文件文字）無關。
+
+**結論：GATE 1 對正確基準（`sha256_before_post_d8.txt`）8/8 IDENTICAL，
+PASS。**
+
+### 2. 重跑 GATE 2：grep '1.05'
+
+命令：
+  grep -n '1.05' docs/EXTERNAL_ANCHOR_SOURCES.md docs/workcards/B7.md
+
+輸出與第一次執行完全相同（見上方 GATE 2 區塊逐行紀錄），每一處仍附
+自訂觀測距離說明或屬本專案觀測點敘述。**GATE 2 PASS（不變）。**
+
+### 3. 重跑 GATE 3：git diff --stat 範圍檢查
+
+命令：
+  git diff --stat -- docs/EXTERNAL_ANCHOR_SOURCES.md src/physics/RadiationModel.h docs/RADIATION_POWER_SOURCES.md docs/workcards/B7.md src/physics/HammerImpulse.h reports/gate_outputs/
+
+輸出：
+   docs/EXTERNAL_ANCHOR_SOURCES.md | 35 +++++++++++++++++++++--------------
+   docs/RADIATION_POWER_SOURCES.md | 24 ++++++++++++++++++++++++
+   docs/workcards/B7.md            | 13 ++++++++-----
+   src/physics/HammerImpulse.h     | 14 +++++++++++---
+   src/physics/RadiationModel.h    | 14 +++++++++-----
+   5 files changed, 73 insertions(+), 27 deletions(-)
+
+判定：只含卡上列出的 5 個檔案，範圍未擴大。**GATE 3 PASS（不變）。**
+
+### 4. 附加檢查：README §3 硬性檢查 `python -m pytest tests -q`（重跑）
+
+命令：
+  python -m pytest tests -q
+
+結果：`262 passed, 1 skipped, 1 xfailed in 171.70s`——**全綠**。
+（第一次執行時記錄的 2 個 stem_verify 失敗，已在共享工作樹的其他 lane
+中被修好，與本卡三個檔案無關；本次重跑已不存在，不再是 open_item。）
+
+====================================================================
+狀態：**DONE**—— D8 已落地、官方 `sha256_before_post_d8.txt` 基準檔已
+存在，GATE 1 對正確基準 8/8 IDENTICAL；GATE 2、GATE 3 皆 PASS（範圍
+限定本卡 5 個檔案）；`python -m pytest tests -q` 全綠（262 passed, 1
+skipped, 1 xfailed）。上一輪 open_items 中的 stem_verify 失敗已不存在。
+本卡三個文字/註解修改內容自第一次執行後未被更動，已用 GATE 3 diff 逐字
+確認。
+====================================================================

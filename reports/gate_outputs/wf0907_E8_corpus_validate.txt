@@ -1,0 +1,20 @@
+=== WF0907-E8 GATE 2: corpus 75/75 VALID (rerun by Sonnet, takeover run 2026-09-08) ===
+
+Scope: GATE 2 requires "corpus 75/75 VALID" (jsonschema + CLI --validate), NOT a
+full physics/audio verify_score.py --all render of all 75 pieces (that heavier
+check is not listed among this card's GATE steps and was aborted partway through
+this takeover run after ~15/75 files to avoid burning an unbounded amount of time
+on unrequired work; it did not report any failure on the files it did cover).
+This evidence covers exactly what GATE 2 asks for.
+
+Also independently confirmed via pytest (see reports/gate_outputs/wf0907_E8_corpus_pytest.txt):
+tests/test_schema_contract_sync.py::CorpusValidityTests::test_corpus_has_75_files PASSED
+tests/test_schema_contract_sync.py::CorpusValidityTests::test_corpus_is_cli_valid PASSED
+tests/test_schema_contract_sync.py::CorpusValidityTests::test_corpus_is_schema_valid PASSED
+
+Direct check (jsonschema Draft202012Validator + TsukiSynthCLI --validate, one call per file):
+corpus files = 75
+cli = C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+jsonschema failures: 0
+CLI --validate failures: 0
+ALL 75/75 VALID (both jsonschema and CLI --validate)

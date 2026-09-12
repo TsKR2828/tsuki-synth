@@ -1,0 +1,9 @@
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Configuring done (7.5s)
+-- Generating done (0.8s)
+-- Build files have been written to: C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf

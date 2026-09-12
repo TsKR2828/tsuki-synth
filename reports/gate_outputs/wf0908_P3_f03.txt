@@ -1,0 +1,216 @@
+WF0908-P3: F-03 落地 -- 受管理 IR 庫（B+）+ 缺檔三態 + UI/音訊單一真相
+工兵：Sonnet (effort high)　日期：2026-09-09
+卡：docs/workcards/WF0908_P3_f03_ir_library.md
+依據：reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md §7.1/§7.2/§8 裁決記錄
+
+======================================================================
+0. 步驟 1：施工前現況複驗（先讀確認，非本卡改動）
+======================================================================
+
+- user preset 實際路徑：
+  juce::File::getSpecialLocation(userApplicationDataDirectory)
+    .getChildFile("TsukiSynth").getChildFile("Presets")
+  == %APPDATA%\TsukiSynth\Presets\*.tsukipreset （src/PresetManager.h
+  getPresetDirectory()，本卡未改動這個路徑）。
+  檔案格式：XML root <TsukiSynthPreset name=".." id=".." version="2">，
+  單一 child = apvts.copyState() 的 XML（saveUserPreset()）。改動前這個
+  child 是「唯一」child——IR 完全沒有位置可記。
+
+- DAW state 現況（改動前）：TsukiSynthProcessor::getStateInformation() 在
+  apvts state 上多設一個 flat property "reverb_ir_path"（使用者機器上的
+  絕對路徑字串，無雜湊、無原始檔名）；setStateInformation() 讀回這個路徑
+  直接呼叫 loadReverbIRFile(path, ..., switchModeToIR=false)——檔案不存在
+  就照 loadReverbIRFile 的「File not found」失敗路徑安靜跳過（呼叫方沒接
+  error），fx_reverb_mode 維持存檔時的值（可能還是 Impulse Response），
+  等於「按鈕聲稱 IR、音訊其實在跑 algorithmic」——這正是本卡要修的雙軌
+  （docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md §1 第二列）。
+
+- Load 鈕現況（改動前）：src/PluginEditor.cpp 只有一顆 revLoadButton，
+  FileChooser filter "*.json;*.wav"，callback 依副檔名分派到
+  loadReverbIRFile()（.wav）或 loadReverbProfileFile()（.json）——
+  審計文件點名的心智模型混淆：使用者看到一顆「Load」，不知道自己在載入
+  的是 IR 音訊還是殘響參數設定檔。
+
+======================================================================
+1. 設計落地摘要（對照卡 §2）
+======================================================================
+
+- src/IRLibrary.h（新）：%APPDATA%\TsukiSynth\IR\<sha256 前 32 碼>.wav +
+  同名 .json metadata；importFile()/resolve()/list()；IRRef.kind 預留
+  user/factory（factory 本卡不實作，已確認 data/、BinaryData 無工廠 IR
+  資產）。SHA-256 自帶實作（FIPS 180-4，經 Python hashlib 對照 ""/"abc"/
+  pangram 三組向量驗證一致），未新增 CMakeLists 模組相依。
+- 三態載入：TsukiSynthProcessor::restoreReverbIR()/tryLoadIRRef()
+  （src/PluginProcessor.{h,cpp}）。
+    吻合：resolve 找到檔，內容雜湊核對通過 -> 靜默載入。
+    庫被改寫／指了別的檔：resolve 依檔名找到檔，但實際內容雜湊與 preset
+      記的不符 -> 照樣載入，reverbIRMismatch=true（不靜默頂替）。
+    缺檔無 GUI：resolve 找不到檔 -> effectChain.clearImpulseResponse()、
+      fx_reverb_mode 強制切回 Algorithmic、reverbIRMissing=true、跳一次性
+      警告（措辭比照決策包 §7.2/§7.6：報原始檔名＋講明「音量會和 IR 模式
+      不同」，K-02 未量化前不補係數，R4）。
+- 兩條紅線：restoreReverbIR() 一律先 clearImpulseResponse() 才決定要不要
+  載入（紅線一，永不沿用 instance 既有 IR）；IRStatus::loaded 直接賦值
+  = effectChain.hasImpulseResponse()（同一個欄位，非兩個變數，紅線二，
+  結構上保證恆成立）。
+- 單一真相 / 序列化：PresetManager 新增 getExtraStateBlock /
+  applyExtraStateBlock 回呼（src/PresetManager.h），preset 序列化變成
+  「APVTS state + 可選附加 ValueTree」，PresetManager 本身仍不知道
+  "reverb_ir" 是什麼（IR-agnostic）。getStateInformation()/
+  setStateInformation()（DAW state）改用同一個 reverb_ir 區塊，並額外寫入
+  ir_missing/ir_mismatch 兩個 informational 快照供 HostProbe 讀。
+- UI：PluginEditor.{h,cpp} 把 .wav/.json 共用的 Load 鈕拆成兩顆
+  （revLoadButton=IR .wav、revLoadProfileButton=Profile .json）；面板標題
+  改讀 getIRStatus()，missing 顯示「未載入：<原始檔名>」、mismatch 顯示
+  「與 preset 存的不是同一個 IR」；一次性警告由 editor 20Hz timer 輪詢
+  proc.getAndClearIRWarning() 彈出 NativeMessageBox。
+
+======================================================================
+2. GATE 1：HostProbe 全 PASS，三情境輸出逐條貼
+======================================================================
+
+命令：
+  cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+  cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+  build-wf\Release\TsukiSynthHostProbe.exe build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 output\wf0908\P3
+
+結果：67 個 CHECK 全 PASS，0 FAIL，exit code 0。
+
+-- H7 user preset round-trip --
+[PASS] H7: IR fixture imported into managed library ()
+  [INFO] preset directory: C:\Users\admin\AppData\Roaming\TsukiSynth\Presets
+  [INFO] IR library directory: C:\Users\admin\AppData\Roaming\TsukiSynth\IR
+[PASS] H7: shadow PresetManager::saveUserPreset("wf0908_h7", true) succeeded
+[PASS] H7: preset file written: C:\Users\admin\AppData\Roaming\TsukiSynth\Presets\wf0908_h7.tsukipreset
+[PASS] H7: saved user preset's reverb_ir block records the imported IR's sha256 (fx_reverb_mode was saved as Impulse Response)
+
+  -- H7 scenario 1: matched --
+[PASS] H7: fresh real VST3 instance created for LOAD side
+[PASS] H7: "wf0908_h7" user preset visible to a fresh real VST3 instance's getProgramName() (scanned 28 programs)
+[PASS] H7: loaded real instance exposes at least the shadow's 60 product parameters (2142 total, incl. VST3-wrapper extras -- Bypass/Program/MIDI CC)
+[PASS] H7: setCurrentProgram("wf0908_h7") on a real VST3 instance restores every one of 60 product parameters bit-identical to the shadow APVTS that saved it (0 value mismatches, 0 name mismatches)
+[PASS] H7 scenario 1 (matched): getStateInformation() carries a reverb_ir block with the imported sha256, ir_missing=0, ir_mismatch=0 -- getIRStatus().loaded == effectChain.hasImpulseResponse() by construction (PluginProcessor.h's IRStatus comment: single field, not a second independently-tracked bool)
+
+  -- H7 scenario 3: missing (no GUI) --
+[PASS] H7: IR fixture present in library before missing simulation
+[PASS] H7: library IR file moved aside to simulate a missing file
+[PASS] H7: fresh real VST3 instance created for LOAD side
+[PASS] H7: "wf0908_h7" user preset visible to a fresh real VST3 instance's getProgramName() (scanned 28 programs)
+[PASS] H7 scenario 3: fx_reverb_mode forced back to Algorithmic (0) -- red line 1, never keeps the instance's previous IR
+[PASS] H7 scenario 3 (missing, no GUI): getStateInformation() carries NO reverb_ir block (red line 1: nothing is remembered as loaded) and ir_missing=1 -- UI shows "not loaded", never claims IR while audio silently runs algorithmic (red line 2)
+
+  -- H7 scenario 2: mismatch (library index rewritten) --
+[PASS] H7: library index rewritten -- different IR content placed at the sha-named path the preset expects (simulates "使用者指了別的檔", behaviourally identical from the processor's point of view: loaded content whose hash disagrees with the recorded identity)
+[PASS] H7: fresh real VST3 instance created for LOAD side
+[PASS] H7: "wf0908_h7" user preset visible to a fresh real VST3 instance's getProgramName() (scanned 28 programs)
+[PASS] H7 scenario 2: fx_reverb_mode stays Impulse Response -- loaded anyway per §2.3 row 2, mismatch does not silently fall back to algorithmic
+[PASS] H7 scenario 2 (mismatch): getStateInformation() carries a reverb_ir block (something IS loaded, audio truth == UI truth) and ir_mismatch=1 (UI would flag "not the same IR as the preset")
+[PASS] H7: cleanup -- PresetManager::deleteUserPreset() removed "wf0908_h7" (C:\Users\admin\AppData\Roaming\TsukiSynth\Presets\wf0908_h7.tsukipreset)
+[PASS] H7: cleanup -- preset file no longer on disk
+
+（完整 96 行輸出，含 H1-H6/H8 全部沿用既有 PASS，見同目錄
+output\wf0908\P3\hostprobe_render.wav 等渲染檔；H3 melody_verify 判定另見
+下方。）
+
+H3 melody_verify 判定（沿用既有必跑步驟，本卡未動 H3 行為）：
+  python tools/melody_verify.py scores/tests/melody_sentinel.score.json --wav output/wf0908/P3/hostprobe_render.wav
+  [PASS] ev0..ev4 全過；summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+
+======================================================================
+3. GATE 2：8/8 IDENTICAL、--full NO CHECKED FAILURES、ctest 全綠
+======================================================================
+
+位元不變（before=build\ 穩定 exe，after=build-wf\ 本卡 exe；碰了 src/ 故跑）：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0908_p3_before --workdir <scratch>/wf0908_p3_before --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0908_p3_after  --workdir <scratch>/wf0908_p3_after  --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  diff reports/gate_outputs/wf0907_method/sha256_wf0908_p3_before.txt reports/gate_outputs/wf0907_method/sha256_wf0908_p3_after.txt
+RESULT: 8/8 IDENTICAL（diff 空輸出；8 首曲目 sha256 逐一比對見
+reports/gate_outputs/wf0907_method/sha256_wf0908_p3_{before,after}.txt /
+render_wf0908_p3_{before,after}.csv）。
+（理由：CLI 只連結 src/cli/RenderApp.cpp + score/physics/dsp/engines，本卡
+完全沒碰這些檔案，src/cli/RenderApp.cpp 的 #include 清單裡沒有
+PluginProcessor.h/PresetManager.h/PluginEditor.h/EffectChain.h/
+IRLibrary.h 任何一個。）
+
+--full：
+  python tools/physics_verify.py --full --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+--full summary:
+F1 eigenvalue anchors: PASS
+1b note-range scan   : PASS
+1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+1d velocity judgment : PASS
+2d amplitude judgment: PASS
+5b measured T60       : PASS
+F5 residual energy   : PASS (limit -60.0 dB re total)
+Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+ctest（先重建三個測試 target，見上方 GATE 1 的 cmake --build 命令，X4 規約）：
+  ctest --test-dir build-wf -C Release --output-on-failure
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+1/4 Test #1: audit_repro ...................... Passed 1.17 sec
+2/4 Test #2: tuner_repro ...................... Passed 0.54 sec
+3/4 Test #3: physics_models_repro ............. Passed 0.08 sec
+4/4 Test #4: spectrum_view_repro .............. Passed 0.02 sec
+100% tests passed, 0 tests failed out of 4
+
+======================================================================
+4. GATE 3：python -m pytest tests -q 全綠
+======================================================================
+
+  python -m pytest tests -q
+........................................................................ [ 27%]
+................s....................................................... [ 55%]
+................................................................ [ 82%]
+.............................................                            [100%]
+260 passed, 1 skipped in 71.70s (0:01:11)
+
+======================================================================
+5. GATE 4：git diff --stat 範圍檢查
+======================================================================
+
+  git diff --stat -- src/IRLibrary.h src/PresetManager.h src/PluginProcessor.h src/PluginProcessor.cpp src/effects/EffectChain.h src/PluginEditor.h src/PluginEditor.cpp tests/host_probe.cpp CMakeLists.txt
+
+ src/PluginEditor.cpp    | 118 ++++++++++++--
+ src/PluginEditor.h      |  13 +-
+ src/PluginProcessor.cpp | 225 ++++++++++++++++++++++---
+ src/PluginProcessor.h   |  74 ++++++++-
+ src/PresetManager.h     |  60 ++++++-
+ tests/host_probe.cpp    | 425 ++++++++++++++++++++++++++++++++----------------
+ 6 files changed, 724 insertions(+), 191 deletions(-)
+
+（src/effects/EffectChain.h、CMakeLists.txt 本卡零改動——EffectChain.h 既有
+的 clearImpulseResponse()/hasImpulseResponse() 已足夠，不需再改；IRLibrary.h
+的 SHA-256 自帶實作刻意避開新增 juce_cryptography 模組連結，CMakeLists.txt
+因此完全不用動。src/IRLibrary.h 為新檔，git status 顯示 "?? src/IRLibrary.h"。）
+
+其餘改動檔（依卡 §5 允許範圍）：
+  docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md（§1 第二列、§4-C 標已修）
+  reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md（§8 補「落地記錄」）
+  reports/gate_outputs/wf0908_P3_f03.txt（本證據檔）
+  reports/gate_outputs/wf0907_method/render_wf0908_p3_{before,after}.csv
+  reports/gate_outputs/wf0907_method/sha256_wf0908_p3_{before,after}.txt
+
+未觸碰非本卡責任範圍檔案（依上級指示忽略，本卡也沒有動它們）：
+  docs/EXTERNAL_ANCHOR_SOURCES.md、src/physics/RadiationModel.h、
+  reports/gate_outputs/wf0908_P4_a8.txt、
+  reports/gate_outputs/wf0907_method/render_wf0908_p4_after.csv、
+  reports/gate_outputs/wf0907_method/sha256_wf0908_p4_after.txt
+  （以及施工開始前已是 unstaged 且與本卡無關的 .gitignore、
+  reports/decision_packets/K02_reverb_wet_scale.zh-TW.md、
+  src/physics/HammerImpulse.h、tests/physics_models_repro.cpp——
+  這些不是本卡動的，本卡也沒有再碰它們）
+
+======================================================================
+6. 禁止事項自查（卡 §4）
+======================================================================
+
+- 未補任何響度係數：退回 algorithmic 的音量差（K-02 的 0.15）沿用既有
+  SimpleReverb/EffectChain 行為，警告文字只講明「音量會和 IR 模式不同」，
+  未新增任何未溯源常數（R4）。
+- 未改 SimpleReverb.h（git diff --stat 未列出該檔）。
+- 未刪除使用者既有 IR 檔：importFile() 只複製到庫內，resolve()/
+  restoreReverbIR() 從未對來源檔案呼叫刪除；H7 測試對庫內「自己建立」的
+  fixture 才呼叫 deleteFile() 清理。
+- 未新增 CMake target：三情境測試進 host_probe.cpp 既有 TsukiSynthHostProbe
+  target，未新增任何 add_executable/add_test。

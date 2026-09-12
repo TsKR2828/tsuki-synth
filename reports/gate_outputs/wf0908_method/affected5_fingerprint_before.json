@@ -1,0 +1,37 @@
+{
+  "fur_elise_complete": {
+    "score": "scores/classical/fur_elise/fur_elise_complete.score.json",
+    "freq_decay_sha256": "badd6b330de222d6d4b873ae5ce022d3ea67d42336f7c4117cb2e6ee77ff51c8",
+    "amp_sha256": "ea5dca47bc4f5fa6b7c11bafa313b348398b95d54b77f4fc48ca1b779091d573",
+    "n_events": 905,
+    "n_partials_total": 84732
+  },
+  "physical_piano": {
+    "score": "scores/examples/physical_piano.score.json",
+    "freq_decay_sha256": "e6e24d1201899565a314427d4f13d0509a94cbc37f0f02fd7dfefaa244ff7f9c",
+    "amp_sha256": "38b286f496616910aa09967074ebe0ed0064de30d71bddf1dbd8048a75da1d22",
+    "n_events": 4,
+    "n_partials_total": 416
+  },
+  "akashic_action_001": {
+    "score": "scores/library/akashic/akashic_action_001.score.json",
+    "freq_decay_sha256": "73c44e5ab381e3631e7e6225a2659af3f363b3c60ca6e7463875d762255a0103",
+    "amp_sha256": "cce55e1527e24e51deb290bc963286b787d07e5bb4c55a2fde437748b6feff5f",
+    "n_events": 2,
+    "n_partials_total": 58
+  },
+  "ocean_action_001": {
+    "score": "scores/library/ocean/ocean_action_001.score.json",
+    "freq_decay_sha256": "96165dac466df1a4c4925d0dc197480481a31d10ba01071090860198d6440a30",
+    "amp_sha256": "d19f40deb522202e3d68fda6489253764cae075b7abbb618549d882f46c35b9e",
+    "n_events": 2,
+    "n_partials_total": 127
+  },
+  "ai_radiance_m3": {
+    "score": "scores/originals/ai_radiance/ai_radiance_m3.score.json",
+    "freq_decay_sha256": "d813f14dc6a8dae48f0c13b1a08964de40a696d6ac4c229169e92431d7fa08a6",
+    "amp_sha256": "41c9851c9fccc3281fffd471835d37d45f7702ee77a70e60ae1b60271ae047fb",
+    "n_events": 36,
+    "n_partials_total": 1567
+  }
+}

@@ -1,0 +1,600 @@
+=== WF0907-C11 GATE evidence ===
+重新產生時間: 2026-09-08 (工兵 Sonnet 接手重跑，舊證據檔內容不可信，全部重寫)
+
+### 前置：git show HEAD:tools/stem_verify.py 另存為 before 版本（禁用 git stash）
+$ git show HEAD:tools/stem_verify.py > output/wf0907/C11/stem_verify_before.py
+(已執行，另存 tools/_wf0907_c11_before_tmp.py 暫時複本以取得正確的 sibling import ROOT，跑完即刪除，未留下任何 diff)
+
+==================================================================
+GATE 1: before/after 兩份 JSON 的 verdict/onset_err_ms/pitch_cents/expected_f0_hz 逐顆相同
+==================================================================
+
+$ python tools/_wf0907_c11_before_tmp.py scores/classical/fur_elise/fur_elise_complete.score.json --limit 40 --jobs 3 --json output/wf0907/C11/before.json
+[stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+  events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+  stem_verify summary: 29 PASS / 3 FAIL / 8 UNVERIFIED
+  baseline (whole-file melody_verify): 30 PASS / 14 FAIL / 862 UNVERIFIED
+  superposition: NOT APPLICABLE (N/A: --limit truncated the reference mix to the same event subset as the stems (self-comparison). This run's superposition numbers are reported above but prove nothing about the whole piece / a multi-stem sum.)
+    max_abs_diff=1.899898e-06  budget=2.384186e-06  peak=-114.43 dBFS  rms=-122.27 dBFS  first_diff@0.0
+  [exit=1] n_fail=3
+
+$ python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json --limit 40 --jobs 3 --json output/wf0907/C11/after.json
+[stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+  events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+  stem_verify summary: 29 PASS / 3 FAIL / 8 UNVERIFIED
+  baseline (whole-file melody_verify): 30 PASS / 14 FAIL / 862 UNVERIFIED
+  superposition: NOT APPLICABLE (N/A: --limit truncated the reference mix to the same event subset as the stems (self-comparison). This run's superposition numbers are reported above but prove nothing about the whole piece / a multi-stem sum.)
+    max_abs_diff=1.899898e-06  budget=2.384186e-06  peak=-114.43 dBFS  rms=-122.27 dBFS  first_diff@0.0
+  [exit=1] n_fail=3
+
+$ python output/wf0907/C11/compare_before_after.py
+before events: 40  after events: 40
+ALL 40 events IDENTICAL on verdict/onset_err_ms/pitch_cents/expected_f0_hz
+before summary: {'pass': 29, 'fail': 3, 'unverified': 8}
+after  summary: {'pass': 29, 'fail': 3, 'unverified': 8}
+after events carrying a 'reason' key: 11 / 40
+after report has refusal_histogram: True  rules_histogram: True
+before report has refusal_histogram (must be False): False
+GATE1: PASS
+
+
+==================================================================
+GATE 2: after.json 拒答顆（UNVERIFIED）全部有非空 reason；refusal_histogram
+==================================================================
+
+$ python -c "..." (檢查腳本內容見下方，讀 output/wf0907/C11/after.json)
+import json
+after = json.load(open('output/wf0907/C11/after.json', encoding='utf-8'))
+sv = after['stem_verify']
+ev = sv['events']
+unv = [e for e in ev if e['verdict']=='UNVERIFIED']
+print('total events:', len(ev))
+print('unverified count:', len(unv))
+missing_reason = [e['index'] for e in unv if not e.get('reason')]
+print('unverified missing non-empty reason:', missing_reason)
+print()
+print('refusal_histogram:')
+print(json.dumps(sv['refusal_histogram'], ensure_ascii=False, indent=2))
+print()
+print('rules_histogram:')
+print(json.dumps(sv['rules_histogram'], ensure_ascii=False, indent=2))
+print()
+print('sum(refusal_histogram.values()) =', sum(sv['refusal_histogram'].values()), ' vs unverified count =', sv['summary']['unverified'])
+
+--- 執行輸出 ---
+total events: 40
+unverified count: 8
+unverified missing non-empty reason: []
+
+refusal_histogram:
+{
+  "f0 110.0 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +1.68 c": 3,
+  "f0 164.8 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified -3.17 c": 4,
+  "f0 82.4 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +1.53 c": 1
+}
+
+rules_histogram:
+{
+  "Re": 8
+}
+
+sum(refusal_histogram.values()) = 8  vs unverified count = 8
+
+==================================================================
+GATE 3: PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q （全綠，≥24）
+==================================================================
+
+$ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+......................................                                   [100%]
+38 passed in 23.35s
+
+==================================================================
+GATE 4: python -m pytest tests -q （全綠）
+==================================================================
+
+$ python -m pytest tests -q
+........................................................................ [ 30%]
+....s....................................F.............................. [ 60%]
+........................................................................ [ 90%]
+......................                                                   [100%]
+================================== FAILURES ===================================
+______________ MutationMatrixTests.test_mutations_agree_with_cli ______________
+
+self = <test_schema_contract_sync.MutationMatrixTests testMethod=test_mutations_agree_with_cli>
+
+    def test_mutations_agree_with_cli(self):
+        if self.cli is None:
+            self.skipTest("TsukiSynthCLI not found (set TSUKI_CLI or build build-wf/build)")
+        mismatches = []
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp) / "mutant.score.json"
+            for i, (world, path, reason, value) in enumerate(self.matrix):
+                doc = apply_mutation(world, path, reason, value)
+                schema_errors = list(self.validator.iter_errors(doc))
+                schema_valid = len(schema_errors) == 0
+                tmp_path.write_text(json.dumps(doc), encoding="utf-8")
+                code, out, err = cli_validate_exit_code(self.cli, tmp_path)
+                cli_valid = (code == 0)
+                if schema_valid != cli_valid:
+                    mismatches.append(
+                        f"{mutation_label(world, path, reason)}: "
+                        f"jsonschema_valid={schema_valid} "
+                        f"({len(schema_errors)} errors) "
+                        f"cli_valid={cli_valid} (exit {code}) "
+                        f"stdout={out.strip()!r} stderr={err.strip()!r}")
+>       self.assertEqual(
+            [], mismatches,
+            msg=f"{len(mismatches)}/{len(self.matrix)} mutations disagree:\n"
+                + "\n".join(mismatches))
+E       AssertionError: Lists differ: [] != ["events:tempo_map.0.time [minimum]: jsons[3231 chars]=''"]
+E       
+E       Second list contains 22 additional elements.
+E       First extra element 0:
+E       "events:tempo_map.0.time [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''"
+E       
+E       Diff is 3505 characters long. Set self.maxDiff to None to see it. : 22/388 mutations disagree:
+E       events:tempo_map.0.time [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:tempo_map.0.tick [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:tempo_map.0.tick [type_fractional]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:tempo_map.0.quarter_bpm [exclusiveMinimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:tempo_map.0.microseconds_per_quarter [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:tempo_map.0.microseconds_per_quarter [type_fractional]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:time_signatures.0.time [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:time_signatures.0.tick [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:time_signatures.0.tick [type_fractional]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:time_signatures.0.numerator [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:time_signatures.0.numerator [type_fractional]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:time_signatures.0.denominator [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:time_signatures.0.denominator [type_fractional]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:rests.0.time [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:rests.0.duration [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:rests.0.approx_quarter_beats [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:rests.0.kind [enum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:phrases.0.number [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:phrases.0.number [type_fractional]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:phrases.0.start [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:phrases.0.end [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+E       events:phrases.0.breath_after_ms [minimum]: jsonschema_valid=False (1 errors) cli_valid=True (exit 0) stdout='VALID: 5 events, 0 layers' stderr=''
+
+tests\test_schema_contract_sync.py:595: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_schema_contract_sync.py::MutationMatrixTests::test_mutations_agree_with_cli
+1 failed, 236 passed, 1 skipped in 55.25s
+
+GATE 4 結果：1 failed, 236 passed, 1 skipped —— 未達「全綠」。
+
+診斷（工兵按 README §1 責任邊界檢查，未修改）：
+- 失敗測試 tests/test_schema_contract_sync.py::MutationMatrixTests::test_mutations_agree_with_cli
+  屬 `git status --short` 顯示的 `?? tests/test_schema_contract_sync.py`（未追蹤、非 C11 卡列出的檔案）。
+- `grep -n "^import\|^from" tests/test_schema_contract_sync.py` 確認它完全不 import
+  stem_verify.py 或 melody_verify.py，與本卡改動的檔案無任何耦合。
+- 該檔自己的 docstring／原始碼（L46-47, L89-101）寫明：CLI 探測預設用 `build/`（Python lane 用的
+  舊 binary，README 標記 2026-08-31 建），C++ lane（E8 卡）要用 `--cli build-wf\...` 或設
+  `TSUKI_CLI` 環境變數指向 `build-wf`。本卡是 Python lane，依規約不得對 `build\` 跑 cmake、
+  也不該去建 `build-wf`（那是 E8 卡的建置目錄）。
+- `git status --short` 同時顯示 ` M src/score/ScoreParser.h`（E8 卡在動的 schema 契約），
+  這與 `test_schema_contract_sync.py` 的命名/內容一致，確認這條紅燈是 E8 卡（C++ lane，schema
+  contract sync）尚未完工/未接 `build-wf` CLI 導致，與 C11 無關，也不在 C11 卡允許碰的檔案清單內。
+- 結論：GATE 4 在本次共用工作樹下無法單靠 C11 卡範圍內的改動變綠；如月月/稽核要求，
+  需等 E8 卡完成或另行提供 TSUKI_CLI=build-wf 環境變數重跑本項才能判定，非 C11 卡工兵可逕行處理。
+
+==================================================================
+GATE 5: git diff --stat 只含 tools/stem_verify.py、tests/test_stem_verify.py、設計文件
+==================================================================
+
+$ git diff --stat -- tools/stem_verify.py tests/test_stem_verify.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md |  80 ++++++++++++++++
+ tests/test_stem_verify.py                | 156 +++++++++++++++++++++++++++++++
+ tools/stem_verify.py                     |  94 ++++++++++++++++++-
+ 3 files changed, 325 insertions(+), 5 deletions(-)
+
+備註：整個工作樹同時有其他 lane（E1/E5/E8/E9/E7/E10/C10/研究六張）未落地的改動，
+`git status --short` 全貌列在下方以資稽核核對範圍，但本卡只對上面三個檔案做了改動：
+
+$ git status --short
+M  .github/workflows/physics.yml
+ M .gitignore
+MM docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+ M docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+ M docs/EXTERNAL_ANCHOR_SOURCES.md
+ M reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md
+A  reports/gate_outputs/wf0907_E1_ci.txt
+A  reports/gate_outputs/wf0907_E5_ctest_log.txt
+A  reports/gate_outputs/wf0907_E5_hostprobe_log.txt
+A  reports/gate_outputs/wf0907_E5_physics_verify_full.txt
+A  reports/gate_outputs/wf0907_E5_pytest.txt
+A  reports/gate_outputs/wf0907_E5_tail.txt
+A  reports/gate_outputs/wf0907_E5_tail_after_render_log.txt
+A  reports/gate_outputs/wf0907_E5_tail_baseline_render_log.txt
+A  reports/gate_outputs/wf0907_method/render_wf0907_e5_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e5_before.csv
+A  reports/gate_outputs/wf0907_method/render_wf_scores.py
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e5_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e5_before.txt
+M  src/PluginEditor.cpp
+M  src/PluginEditor.h
+M  src/PluginProcessor.cpp
+M  src/engines/ChromaticEngine.h
+M  src/engines/CimbalomEngine.h
+ M src/score/ScoreParser.h
+M  tests/host_probe.cpp
+ M tests/test_score_vs_midi_verify.py
+ M tests/test_stem_verify.py
+ M tools/melody_verify.py
+ M tools/midi_to_tsukisynth.py
+M  tools/requirements-physics.txt
+ M tools/stem_verify.py
+?? docs/B7_PHASE0_DATA.zh-TW.md
+?? docs/EXTERNAL_DATASET_A8.zh-TW.md
+?? docs/workcards/WF0907_C10_selfcal.md
+?? docs/workcards/WF0907_C11_refusal_reason.md
+?? docs/workcards/WF0907_C12_analysis_dry.md
+?? docs/workcards/WF0907_E10_hostprobe_h6_h7.md
+?? docs/workcards/WF0907_E1_ci_requirements.md
+?? docs/workcards/WF0907_E5_plugin_truth_source.md
+?? docs/workcards/WF0907_E7_reverb_k02_k03.md
+?? docs/workcards/WF0907_E8_schema_contract_sync.md
+?? docs/workcards/WF0907_E9_layered_dump_modes.md
+?? docs/workcards/WF0907_R1_A13_partial_gate.md
+?? docs/workcards/WF0907_R2_A14_weak_fundamental.md
+?? docs/workcards/WF0907_R3_F03_ir_preset.md
+?? docs/workcards/WF0907_R4_B7_phase0_data.md
+?? docs/workcards/WF0907_R5_A8_dataset.md
+?? docs/workcards/WF0907_R6_D8_tongue_drum.md
+?? docs/workcards/WF0907_README.md
+?? docs/workcards/WF0907_R_research_common.md
+?? docs/workcards/WF0908_P1_partial_verify.md
+?? docs/workcards/WF0908_P2_a14_tauc_rule10.md
+?? docs/workcards/WF0908_P3_f03_ir_library.md
+?? docs/workcards/WF0908_P4_a8_citation_fix.md
+?? docs/workcards/WF0908_P5_research_cleanup.md
+?? reports/decision_packets/A13_partial_gate_domain.zh-TW.md
+?? reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md
+?? reports/decision_packets/C10_selfcal_domain.zh-TW.md
+?? reports/decision_packets/D8_tongue_drum_diagnosis.zh-TW.md
+?? reports/gate_outputs/wf0907_C10_selfcal.txt
+?? reports/gate_outputs/wf0907_C11_reason.txt
+?? reports/gate_outputs/wf0907_E8_build_ctest_full_bitidentity.txt
+?? reports/gate_outputs/wf0907_E8_convert_gate3.txt
+?? reports/gate_outputs/wf0907_E8_corpus_validate.txt
+?? reports/gate_outputs/wf0907_E8_ctest_log.txt
+?? reports/gate_outputs/wf0907_E8_diffscope.txt
+?? reports/gate_outputs/wf0907_E8_physics_verify_full.txt
+?? reports/gate_outputs/wf0907_E8_pytest_full.txt
+?? reports/gate_outputs/wf0907_E8_schema.txt
+?? reports/gate_outputs/wf0907_E8_schema_before.txt
+?? reports/gate_outputs/wf0907_R6_d8_evidence.txt
+?? reports/gate_outputs/wf0907_method/render_wf0907_e8_after.csv
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e8_after.txt
+?? tests/test_measurement_selfcal.py
+?? tests/test_schema_contract_sync.py
+?? tools/measurement_selfcal.py
+
+======================================================================
+第三次執行：重跑（2026-09-08，環境已無 E8 污染源）
+======================================================================
+
+背景：上一輪（第二次執行）GATE 1/2/3/5 已綠，GATE 4（全套 pytest）因另一張卡
+E8（C++ lane，schema contract sync）當時未完工、測試用到舊 CLI 而紅。E8 現已
+完工並過稽核，污染源消失。本輪奉命重跑全部五條 GATE，不重做已完成的實作。
+
+重要方法論修正：本輪重跑期間發現 tools/stem_verify.py 自第二次執行後，被
+C12 卡（同 lane，`--analysis-dry` + provenance）疊加了新的預設行為
+——`analysis_dry` 預設為 `True`，會在渲染前把 reverb.wet/.decay 與
+delay.wet 歸零後才分析。這是 C12 卡的正當設計（design doc §8.3：帶殘響訊號
+的音高判定不算 GATE 依據），但若直接拿「HEAD 版 stem_verify.py（無此概念，
+一律用原始 wet 分數分析）」與「現在的 stem_verify.py（預設 dry 分析）」做
+GATE 1 比對，兩者的 onset_err_ms / pitch_cents 會因為 C12 的分析路徑改變而
+系統性不同——這不是 C11 本卡判定邏輯被動到的證據，而是 C12 疊加效應的干擾。
+為了乾淨地只驗證 C11 本卡自己的 diff（reason/rules/histogram 記帳，不改判
+定），「after」執行改加 `--no-analysis-dry`，把 C12 的新預設行為關閉，讓
+before/after 兩邊都在「原始 wet 分數、未做 dry 分析」的同一分析路徑上比較
+——這樣 GATE 1 才是對 C11 diff 本身的乾淨證明,而非被 C12 污染的證明。
+（C12 本身的 GATE 不歸本卡負責，也未被本卡改動任何一行。）
+
+----------------------------------------------------------------
+GATE 1（重跑）：before/after 逐顆 verdict/onset_err_ms/pitch_cents/expected_f0_hz 相同
+----------------------------------------------------------------
+
+$ git show HEAD:tools/stem_verify.py > output/wf0907/C11/stem_verify_before.py
+$ cp output/wf0907/C11/stem_verify_before.py tools/stem_verify_before.py   # 借用 tools/ 目錄下現有的
+                                                                             # melody_verify.py / verify_score.py
+                                                                             # 做相對匯入解析，執行完立刻刪除
+                                                                             # (rm -f tools/stem_verify_before.py)
+
+$ python tools/stem_verify_before.py scores/classical/fur_elise/fur_elise_complete.score.json --limit 40 --jobs 3 --json output/wf0907/C11/before.json
+[stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+  events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+  stem_verify summary: 29 PASS / 3 FAIL / 8 UNVERIFIED
+  baseline (whole-file melody_verify): 30 PASS / 14 FAIL / 862 UNVERIFIED
+  superposition: NOT APPLICABLE (--limit truncated self-comparison)
+    max_abs_diff=1.899898e-06  budget=2.384186e-06  peak=-114.43 dBFS  rms=-122.27 dBFS  first_diff@0.0
+  [exit=1] n_fail=3
+
+$ python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json --limit 40 --jobs 3 --no-analysis-dry --json output/wf0907/C11/after.json
+[stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+  events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+  stem_verify summary: 29 PASS / 3 FAIL / 8 UNVERIFIED
+  baseline (whole-file melody_verify): 30 PASS / 14 FAIL / 862 UNVERIFIED
+  superposition: NOT APPLICABLE (--limit truncated self-comparison)
+    max_abs_diff=1.899898e-06  budget=2.384186e-06  peak=-114.43 dBFS  rms=-122.27 dBFS  first_diff@0.0
+  [exit=1] n_fail=3
+
+$ python output/wf0907/C11/compare_before_after.py
+before events: 40  after events: 40
+ALL 40 events IDENTICAL on verdict/onset_err_ms/pitch_cents/expected_f0_hz
+before summary: {'pass': 29, 'fail': 3, 'unverified': 8}
+after  summary: {'pass': 29, 'fail': 3, 'unverified': 8}
+after events carrying a 'reason' key: 11 / 40
+after report has refusal_histogram: True  rules_histogram: True
+before report has refusal_histogram (must be False): False
+GATE1: PASS
+
+（附註：若不加 --no-analysis-dry，after 的 summary 會變成 32 PASS / 0 FAIL /
+8 UNVERIFIED、40 顆事件裡 75 個欄位不同——這完全是 C12 的 dry-analysis 預設
+行為造成，已如上排除，非 C11 本卡引入。）
+
+----------------------------------------------------------------
+GATE 2（重跑）：after.json 拒答顆全部有非空 reason；refusal_histogram
+----------------------------------------------------------------
+
+$ python -c "
+import json
+d = json.load(open('output/wf0907/C11/after.json', encoding='utf-8'))
+sv = d['stem_verify']
+events = sv['events']
+unverified = [e for e in events if e.get('verdict')=='UNVERIFIED']
+print('total events:', len(events))
+print('unverified count:', len(unverified))
+empty_reason = [e for e in unverified if not e.get('reason')]
+print('unverified with EMPTY reason:', len(empty_reason))
+print('refusal_histogram:', json.dumps(sv.get('refusal_histogram'), ensure_ascii=False, indent=2))
+print('rules_histogram:', json.dumps(sv.get('rules_histogram'), ensure_ascii=False, indent=2))
+hist_total = sum(sv.get('refusal_histogram', {}).values())
+print('refusal_histogram total:', hist_total, ' == unverified count:', len(unverified), '->', hist_total==len(unverified))
+"
+total events: 40
+unverified count: 8
+unverified with EMPTY reason: 0
+refusal_histogram: {
+  "f0 110.0 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +1.68 c": 3,
+  "f0 164.8 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified -3.17 c": 4,
+  "f0 82.4 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +1.53 c": 1
+}
+rules_histogram: {
+  "Re": 8
+}
+refusal_histogram total: 8  == unverified count: 8 -> True
+
+----------------------------------------------------------------
+GATE 3（重跑）：PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+----------------------------------------------------------------
+
+$ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+................................................                         [100%]
+48 passed in 33.50s
+
+（≥ 24 之要求：48 >= 24，PASS。48 顆包含 C11 自己的測試與同檔上疊加的 C12
+測試，均綠，C11 卡本身未新增/修改任何一條既有斷言。）
+
+----------------------------------------------------------------
+GATE 4（重跑）：python -m pytest tests -q 全綠
+----------------------------------------------------------------
+
+$ python -m pytest tests -q
+........................................................................ [ 28%]
+......s................................................................. [ 57%]
+........................................................................ [ 86%]
+..................................                                       [100%]
+249 passed, 1 skipped in 65.52s (0:01:05)
+
+第二次執行時期的 E8 紅燈已消失（E8 卡已完工過稽核）。全套 249 passed，
+1 skipped（既有既存的 skip，非本卡引入），0 failed。GATE 4：PASS。
+
+----------------------------------------------------------------
+GATE 5（重跑）：git diff --stat 只含 tools/stem_verify.py、tests/test_stem_verify.py、設計文件
+----------------------------------------------------------------
+
+$ rm -f tools/stem_verify_before.py   # 清掉 GATE 1 借用的臨時檔案
+$ git diff --stat -- tools/stem_verify.py tests/test_stem_verify.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md |  80 +++++++
+ tests/test_stem_verify.py                | 388 +++++++++++++++++++++++++++++++
+ tools/stem_verify.py                     | 266 ++++++++++++++++++++-
+ 3 files changed, 725 insertions(+), 9 deletions(-)
+
+（行數比第二次執行時（80/156/94）更多，是因為 C12 卡在同三個檔案上疊加了
+自己的改動——C11 卡本身在這三個檔案內的改動,自第二次執行通過後未再變動。
+git status --short tools/ 確認未留下任何本輪 GATE 1 用的臨時檔案：
+melody_verify.py 只有既有的 " M"（C10 疊加，非本卡）、stem_verify.py 只有
+既有的 " M"（C11+C12 疊加）,tools/ 目錄下無 stem_verify_before.py 殘留。）
+
+======================================================================
+第三次執行結論：五條 GATE 全數 PASS。狀態 = DONE。
+======================================================================
+
+======================================================================
+第四次執行：接手重跑（2026-09-08 20:06-20:13，真實重新執行，不採信上段舊文字）
+======================================================================
+
+背景：本輪接手指示稱「上輪 GATE 1/2/3/5 全綠，GATE 4 因 E8 污染，E8 已完工，
+狀態應為 DONE」。上方「第三次執行」段落文字在本工兵開始動作前就已經存在於
+本檔案中（顯示為前一次未完整交卷的執行留下的紀錄）。依 README Rule 1「驗
+收只認 GATE 命令的輸出，不認敘述」，本工兵不採信該段文字，親自重新完整跑
+了全部五條 GATE（非重讀舊輸出），如下。
+
+----------------------------------------------------------------
+GATE 1（第四次）：before/after 逐顆 verdict/onset_err_ms/pitch_cents/expected_f0_hz 相同
+----------------------------------------------------------------
+
+$ git show HEAD:tools/stem_verify.py > output/wf0907/C11/stem_verify_before.py
+$ cp output/wf0907/C11/stem_verify_before.py tools/stem_verify_before_rerun.py   # 借用 tools/ 目錄
+   做 sibling import 解析（melody_verify.py / verify_score.py），跑完立刻刪除
+
+$ python tools/stem_verify_before_rerun.py scores/classical/fur_elise/fur_elise_complete.score.json --limit 40 --jobs 3 --json output/wf0907/C11/before.json
+[stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+  events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+  stem_verify summary: 29 PASS / 3 FAIL / 8 UNVERIFIED
+  baseline (whole-file melody_verify): 30 PASS / 14 FAIL / 862 UNVERIFIED
+  superposition: NOT APPLICABLE (--limit truncated self-comparison)
+    max_abs_diff=1.899898e-06  budget=2.384186e-06  peak=-114.43 dBFS  rms=-122.27 dBFS  first_diff@0.0
+  [exit=1] n_fail=3
+
+$ python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json --limit 40 --jobs 3 --no-analysis-dry --json output/wf0907/C11/after.json
+[stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+  events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+  stem_verify summary: 29 PASS / 3 FAIL / 8 UNVERIFIED
+  baseline (whole-file melody_verify): 30 PASS / 14 FAIL / 862 UNVERIFIED
+  superposition: NOT APPLICABLE (--limit truncated self-comparison)
+    max_abs_diff=1.899898e-06  budget=2.384186e-06  peak=-114.43 dBFS  rms=-122.27 dBFS  first_diff@0.0
+  [exit=1] n_fail=3
+
+（沿用第三次執行已記錄的方法論：--no-analysis-dry 是為了讓 after 端關掉
+C12 卡疊加的「預設 dry 分析」新行為，使 before/after 站在同一分析路徑上
+比對，才是對 C11 本卡自己 diff 的乾淨證明，而非被 C12 污染的證明。）
+
+$ python output/wf0907/C11/compare_before_after.py
+before events: 40  after events: 40
+ALL 40 events IDENTICAL on verdict/onset_err_ms/pitch_cents/expected_f0_hz
+before summary: {'pass': 29, 'fail': 3, 'unverified': 8}
+after  summary: {'pass': 29, 'fail': 3, 'unverified': 8}
+after events carrying a 'reason' key: 11 / 40
+after report has refusal_histogram: True  rules_histogram: True
+before report has refusal_histogram (must be False): False
+GATE1: PASS
+
+$ rm -f tools/stem_verify_before_rerun.py   # 清掉借用的臨時檔案
+
+----------------------------------------------------------------
+GATE 2（第四次）：after.json 拒答顆全部有非空 reason；refusal_histogram
+----------------------------------------------------------------
+
+$ python -c "
+import json
+d = json.load(open('output/wf0907/C11/after.json', encoding='utf-8'))
+sv = d['stem_verify']
+events = sv['events']
+unverified = [e for e in events if e.get('verdict')=='UNVERIFIED']
+print('total events:', len(events))
+print('unverified count:', len(unverified))
+empty_reason = [e for e in unverified if not e.get('reason')]
+print('unverified with EMPTY reason:', len(empty_reason))
+print('refusal_histogram:', json.dumps(sv.get('refusal_histogram'), ensure_ascii=False, indent=2))
+print('rules_histogram:', json.dumps(sv.get('rules_histogram'), ensure_ascii=False, indent=2))
+hist_total = sum(sv.get('refusal_histogram', {}).values())
+print('refusal_histogram total:', hist_total, ' == unverified count:', len(unverified), '->', hist_total==len(unverified))
+"
+total events: 40
+unverified count: 8
+unverified with EMPTY reason: 0
+refusal_histogram: {
+  "f0 110.0 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +1.68 c": 3,
+  "f0 164.8 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified -3.17 c": 4,
+  "f0 82.4 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +1.53 c": 1
+}
+rules_histogram: {
+  "Re": 8
+}
+refusal_histogram total: 8  == unverified count: 8 -> True
+GATE2: PASS
+
+----------------------------------------------------------------
+GATE 3（第四次）：PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+----------------------------------------------------------------
+
+$ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+................................................                         [100%]
+48 passed in 29.01s
+GATE3: PASS（48 >= 24）
+
+----------------------------------------------------------------
+GATE 4（第四次）：python -m pytest tests -q 全綠 —— 未達標，狀況與第二次執行類似
+但污染源不同
+----------------------------------------------------------------
+
+$ python -m pytest tests -q
+..........F............................................................. [ 28%]
+......s................................................................. [ 57%]
+........................................................................ [ 86%]
+..................................                                       [100%]
+================================== FAILURES ===================================
+_ DumpModesLayeredTests.test_all_corpus_files_flatten_and_place_events_correctly _
+tests\test_dump_modes_layered.py:240: in test_all_corpus_files_flatten_and_place_events_correctly
+    self._check_one(score_path)
+tests\test_dump_modes_layered.py:269: in _check_one
+    self.assertAlmostEqual(expected_offset, layer_meta["offset_s"], places=9)
+E   AssertionError: 3.4937708333333335 != 3.543770833333333 within 9 places (0.04999999999999938 difference)
+=========================== short test summary info ===========================
+FAILED tests/test_dump_modes_layered.py::DumpModesLayeredTests::test_all_corpus_files_flatten_and_place_events_correctly
+1 failed, 248 passed, 1 skipped in 67.22s (0:01:07)
+
+GATE 4 結果：1 failed, 248 passed, 1 skipped —— 未達「全綠」。
+
+$ python -m pytest tests/test_dump_modes_layered.py -q       # 重跑單檔確認非偶發
+F.                                                                       [100%]
+1 failed, 1 passed in 0.23s   （結果與全套一致，非 flaky）
+
+診斷（工兵按 README §1 責任邊界檢查，未修改任何一行）：
+- 失敗測試 tests/test_dump_modes_layered.py::DumpModesLayeredTests::
+  test_all_corpus_files_flatten_and_place_events_correctly 屬
+  `git status --short` 顯示的 `?? tests/test_dump_modes_layered.py`
+  （未追蹤、非 C11 卡列出的檔案，是 WF0907_README.md 索引表裡 E9 卡
+  「--dump-modes 支援 layered score」的產物）。
+- `grep -n "stem_verify\|melody_verify" tests/test_dump_modes_layered.py`
+  無任何匹配，確認與本卡改動的 tools/stem_verify.py、tests/test_stem_verify.py
+  零耦合。
+- `git status --short -- src/score/ScoreParser.h` 顯示 `M ` (已 staged)——
+  這是 E9 卡在動的 layered score 解析邏輯，與本次失敗的斷言
+  （layer offset_s 差 0.05 秒）性質相符。
+- 這與第二次執行時記錄的 GATE 4 紅燈（E8 卡污染，src/score/ScoreParser.h
+  的 schema 契約同步未完工）是同一類「共用工作樹、其他 lane 尚未落地」
+  問題，但污染源已從 E8 換成 E9——代表接手指示所稱「E8 已完工，污染源已
+  消失」在 GATE 4 這件事上目前仍不成立：E8 造成的紅燈確實消失了（本輪
+  test_schema_contract_sync.py 全綠，未見於本次失敗列表），但 E9 的
+  WIP 產生了新的紅燈。
+- 結論：GATE 4 在本次重跑時無法在 C11 卡範圍內達成「全綠」。依 README
+  Rule 2/3（禁止調寬容差、禁止縮小 GATE 範圍）與工作說明「達不到 GATE
+  就回報數字並停下（status=RED）」，本工兵回報實測數字，不修改
+  tests/test_dump_modes_layered.py 或 src/score/ScoreParser.h（不在
+  C11 卡允許碰的檔案清單內），停在這裡。
+
+----------------------------------------------------------------
+GATE 5（第四次）：git diff --stat 只含 tools/stem_verify.py、
+tests/test_stem_verify.py、設計文件
+----------------------------------------------------------------
+
+$ git diff --stat -- tools/stem_verify.py tests/test_stem_verify.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md |  80 +++++++
+ tests/test_stem_verify.py                | 388 +++++++++++++++++++++++++++++++
+ tools/stem_verify.py                     | 266 ++++++++++++++++++++-
+ 3 files changed, 725 insertions(+), 9 deletions(-)
+GATE5: PASS（範圍未擴大，行數與第三次執行紀錄一致，C11 本卡自身改動自
+第二次執行通過後未再變動；行數增加是 C12 卡疊加在同三個檔案上的改動）
+
+$ git status --short -- tools/ | grep -v "measurement_selfcal\|melody_verify"
+ M tools/midi_to_tsukisynth.py
+ M tools/stem_verify.py
+（確認 GATE 1 借用的 tools/stem_verify_before_rerun.py 臨時檔案已清除，
+無殘留）
+
+======================================================================
+第四次執行結論：GATE 1/2/3/5 全數 PASS（親自重新執行，非讀舊文字）；
+GATE 4（python -m pytest tests -q）未達全綠 —— 1 failed, 248 passed,
+1 skipped，失敗測試 tests/test_dump_modes_layered.py 屬 E9 卡（C++ lane，
+未落地 WIP），與 C11 卡改動的檔案零耦合，經隔離重跑確認為決定性失敗
+（非偶發）。狀態 = RED（回報數字，未調容差、未縮範圍、未修改 scope 外
+檔案）。C11 卡本身（reason/rules/refusal_histogram 記帳邏輯、判定不變）
+的正確性已由 GATE 1/2/3 獨立證明成立；GATE 4 卡在與本卡無關的另一張卡
+的未完工狀態，需等 E9 卡完工/過稽核後再重跑 GATE 4 才能把本卡最終判定
+為 DONE。
+======================================================================
+
+=== 修正回合（WF0908-C10b，Sonnet 工兵，2026-09-09）===
+本卡未改動 tools/stem_verify.py；WF0908-C10b 修正回合改的是 tools/melody_verify.py
+（is_course() 註解、expected_f0s_layered() docstring、layered informational
+exit code）。核對 tools/stem_verify.py 對 mv.verify() 的兩處呼叫（556 行 stem
+判定、1044 行 baseline）皆固定傳 quiet=True 且吃的是非 layered 的單事件/整檔
+flat score，不會命中本輪修改的 print 提示行或 exit code 分支，因此不受影響。
+重跑確認：
+$ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+（與 tests/test_measurement_selfcal.py 合併執行，見 wf0907_C10_selfcal.txt
+修正回合段）52 passed in 31.44s，exit=0 -- 無回歸。

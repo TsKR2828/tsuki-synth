@@ -1,0 +1,241 @@
+=== WF0909 INTEGRATION AUDIT (Opus) 2026-09-09 ===
+--- git status --short ---
+M  .github/workflows/physics.yml
+ M .gitignore
+M  CMakeLists.txt
+ M DEVLOG.md
+MM HANDOVER.md
+ M TODO.md
+M  docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+A  docs/B7_PHASE0_DATA.zh-TW.md
+MM docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+M  docs/EXTERNAL_ANCHOR_SOURCES.md
+A  docs/EXTERNAL_DATASET_A8.zh-TW.md
+A  docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md
+M  docs/RADIATION_POWER_SOURCES.md
+M  docs/workcards/B7.md
+A  reports/a14_tauc_keytrack_b2.patch
+A  reports/a14_tauc_keytrack_before_after.md
+A  reports/c10b_estimator_before_after.md
+A  reports/d8_tongue_drum_exciter_before_after.md
+A  reports/decision_packets/A13_partial_gate_domain.zh-TW.md
+A  reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md
+AM reports/decision_packets/C10_selfcal_domain.zh-TW.md
+M  reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md
+AM reports/decision_packets/K02_reverb_wet_scale.zh-TW.md
+A  reports/gate_outputs/b6_method/render_before_post_d8.csv
+A  reports/gate_outputs/b6_method/sha256_before_post_d8.txt
+A  reports/gate_outputs/wf0907_C10_selfcal.txt
+A  reports/gate_outputs/wf0907_C11_reason.txt
+A  reports/gate_outputs/wf0907_C12_dry.txt
+A  reports/gate_outputs/wf0907_E1_ci.txt
+A  reports/gate_outputs/wf0907_E5_ctest_log.txt
+A  reports/gate_outputs/wf0907_E5_hostprobe_log.txt
+A  reports/gate_outputs/wf0907_E5_physics_verify_full.txt
+A  reports/gate_outputs/wf0907_E5_pytest.txt
+A  reports/gate_outputs/wf0907_E5_tail.txt
+A  reports/gate_outputs/wf0907_E5_tail_after_render_log.txt
+A  reports/gate_outputs/wf0907_E5_tail_baseline_render_log.txt
+A  reports/gate_outputs/wf0907_E7_reverb.txt
+A  reports/gate_outputs/wf0907_E8_build_ctest_full_bitidentity.txt
+A  reports/gate_outputs/wf0907_E8_build_main.txt
+A  reports/gate_outputs/wf0907_E8_build_tests.txt
+A  reports/gate_outputs/wf0907_E8_configure.txt
+A  reports/gate_outputs/wf0907_E8_convert_gate3.txt
+A  reports/gate_outputs/wf0907_E8_corpus_pytest.txt
+A  reports/gate_outputs/wf0907_E8_corpus_validate.txt
+A  reports/gate_outputs/wf0907_E8_ctest_log.txt
+A  reports/gate_outputs/wf0907_E8_diffscope.txt
+A  reports/gate_outputs/wf0907_E8_physics_verify_full.txt
+A  reports/gate_outputs/wf0907_E8_pytest_full.txt
+A  reports/gate_outputs/wf0907_E8_schema.txt
+A  reports/gate_outputs/wf0907_E8_schema_before.txt
+A  reports/gate_outputs/wf0907_E8_schema_contract_sync_pytest.txt
+A  reports/gate_outputs/wf0907_E9_layered.txt
+A  reports/gate_outputs/wf0907_INTEGRATION.txt
+A  reports/gate_outputs/wf0907_method/render_audit_wf0909_p4b.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e5_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e5_before.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e7_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e8_fixround_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e8_takeover.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_e9_takeover2.csv
+A  reports/gate_outputs/wf0907_method/render_wf0907_integration.csv
+A  reports/gate_outputs/wf0907_method/render_wf0908_e10b_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0908_e10b_before.csv
+A  reports/gate_outputs/wf0907_method/render_wf0908_p2_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0908_p2_after_recheck.csv
+A  reports/gate_outputs/wf0907_method/render_wf0908_p2_baseline.csv
+A  reports/gate_outputs/wf0907_method/render_wf0908_p2_final_revert.csv
+A  reports/gate_outputs/wf0907_method/render_wf0908_p3_after.csv
+A  reports/gate_outputs/wf0907_method/render_wf0908_p3_before.csv
+A  reports/gate_outputs/wf0907_method/render_wf0909_p4b_after2.csv
+A  reports/gate_outputs/wf0907_method/render_wf_scores.py
+A  reports/gate_outputs/wf0907_method/sha256_audit_wf0909_p4b.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e5_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e5_before.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e7_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e8_fixround_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e8_takeover.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_e9_takeover2.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0907_integration.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0908_e10b_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0908_e10b_before.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0908_p2_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0908_p2_after_recheck.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0908_p2_baseline.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0908_p2_final_revert.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0908_p3_after.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0908_p3_before.txt
+A  reports/gate_outputs/wf0907_method/sha256_wf0909_p4b_after2.txt
+A  reports/gate_outputs/wf0908_E10b_glide_h7.txt
+A  reports/gate_outputs/wf0908_P1_b_ratio_report.txt
+A  reports/gate_outputs/wf0908_P1_partial.txt
+A  reports/gate_outputs/wf0908_P2_tauc.txt
+A  reports/gate_outputs/wf0908_P2_tauc_baseline_ctest.txt
+A  reports/gate_outputs/wf0908_P2_tauc_build_main.txt
+A  reports/gate_outputs/wf0908_P2_tauc_build_tests.txt
+A  reports/gate_outputs/wf0908_P2_tauc_ctest.txt
+A  reports/gate_outputs/wf0908_P2_tauc_final_revert_ctest.txt
+A  reports/gate_outputs/wf0908_P2_tauc_physics_verify_full.txt
+A  reports/gate_outputs/wf0908_P2_tauc_pytest.txt
+A  reports/gate_outputs/wf0908_P3_f03.txt
+A  reports/gate_outputs/wf0908_method/a14_b2_probe_after.json
+A  reports/gate_outputs/wf0908_method/a14_b2_probe_before.json
+A  reports/gate_outputs/wf0908_method/a14_b2_tauc_probe.py
+A  reports/gate_outputs/wf0908_method/affected5_before_after.py
+A  reports/gate_outputs/wf0908_method/affected5_fingerprint_after.json
+A  reports/gate_outputs/wf0908_method/affected5_fingerprint_before.json
+A  reports/gate_outputs/wf0908_method/affected5_render_after.csv
+A  reports/gate_outputs/wf0908_method/affected5_render_before.csv
+A  reports/gate_outputs/wf0908_method/affected5_verify_after.txt
+A  reports/gate_outputs/wf0908_method/affected5_verify_before.txt
+A  reports/gate_outputs/wf0909_C10B_estimator.txt
+A  reports/gate_outputs/wf0909_D8_exciter.txt
+A  reports/gate_outputs/wf0909_P4b_citation.txt
+A  reports/gate_outputs/wf0909_P6_supplement.txt
+M  reports/product_sheets/moonlight_batch1_PRODUCT_SHEET.md
+M  scores/examples/moonlight_sonata_movement1_tongue_drum.score.json
+M  scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json
+A  scores/tests/wf0907_e9_cycle_a.score.json
+A  scores/tests/wf0907_e9_cycle_b.score.json
+A  src/IRLibrary.h
+A  src/ParameterLayout.cpp
+A  src/ParameterLayout.h
+M  src/PluginEditor.cpp
+M  src/PluginEditor.h
+M  src/PluginProcessor.cpp
+M  src/PluginProcessor.h
+M  src/PresetManager.h
+M  src/cli/RenderApp.cpp
+M  src/effects/EffectChain.h
+M  src/engines/ChromaticEngine.h
+M  src/engines/CimbalomEngine.h
+M  src/physics/HammerImpulse.h
+M  src/physics/RadiationModel.h
+M  src/score/ScoreParser.h
+M  src/score/ScoreRenderer.h
+M  tests/audit_repro.cpp
+M  tests/host_probe.cpp
+A  tests/test_dump_modes_layered.py
+AM tests/test_measurement_selfcal.py
+A  tests/test_partial_verify.py
+A  tests/test_schema_contract_sync.py
+M  tests/test_score_vs_midi_verify.py
+M  tests/test_stem_verify.py
+AM tools/measurement_selfcal.py
+MM tools/melody_verify.py
+M  tools/midi_to_tsukisynth.py
+A  tools/partial_verify.py
+M  tools/requirements-physics.txt
+M  tools/stem_verify.py
+?? docs/EXTERNAL_DATASET_ALTERNATIVES.zh-TW.md
+?? docs/workcards/WF0907_C10_selfcal.md
+?? docs/workcards/WF0907_C11_refusal_reason.md
+?? docs/workcards/WF0907_C12_analysis_dry.md
+?? docs/workcards/WF0907_E10_hostprobe_h6_h7.md
+?? docs/workcards/WF0907_E1_ci_requirements.md
+?? docs/workcards/WF0907_E5_plugin_truth_source.md
+?? docs/workcards/WF0907_E7_reverb_k02_k03.md
+?? docs/workcards/WF0907_E8_schema_contract_sync.md
+?? docs/workcards/WF0907_E9_layered_dump_modes.md
+?? docs/workcards/WF0907_R1_A13_partial_gate.md
+?? docs/workcards/WF0907_R2_A14_weak_fundamental.md
+?? docs/workcards/WF0907_R3_F03_ir_preset.md
+?? docs/workcards/WF0907_R4_B7_phase0_data.md
+?? docs/workcards/WF0907_R5_A8_dataset.md
+?? docs/workcards/WF0907_R6_D8_tongue_drum.md
+?? docs/workcards/WF0907_README.md
+?? docs/workcards/WF0907_R_research_common.md
+?? docs/workcards/WF0908_C10b_audit_only.md
+?? docs/workcards/WF0908_E10b_glide_h7.md
+?? docs/workcards/WF0908_P1_partial_verify.md
+?? docs/workcards/WF0908_P2_a14_tauc_rule10.md
+?? docs/workcards/WF0908_P3_f03_ir_library.md
+?? docs/workcards/WF0908_P4_a8_citation_fix.md
+?? docs/workcards/WF0908_P5_research_cleanup.md
+?? docs/workcards/WF0909_C10B_estimator.md
+?? docs/workcards/WF0909_C10Baudit_honest_revert.md
+?? docs/workcards/WF0909_C10C_timedomain_estimator.md
+?? docs/workcards/WF0909_D8_wood_mallet.md
+?? docs/workcards/WF0909_P4b_citation_fix_finish.md
+?? docs/workcards/WF0909_P6_a8_supplement.md
+?? reports/c10c_nls_estimator_before_after.md
+?? reports/decision_packets/D8_tongue_drum_diagnosis.zh-TW.md
+?? reports/gate_outputs/b6_method/render_audit_d8.csv
+?? reports/gate_outputs/b6_method/sha256_audit_d8.txt
+?? reports/gate_outputs/wf0907_E10_hostprobe.txt
+?? reports/gate_outputs/wf0907_R6_d8_evidence.txt
+?? reports/gate_outputs/wf0907_method/render_audit_e9.csv
+?? reports/gate_outputs/wf0907_method/render_audit_integration.csv
+?? reports/gate_outputs/wf0907_method/render_audit_wf0908_e10b_after.csv
+?? reports/gate_outputs/wf0907_method/render_audit_wf0908_integration_opus.csv
+?? reports/gate_outputs/wf0907_method/render_audit_wf0908_p3.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e8_after.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e8_audit.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e8_auditor.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e9_after.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e9_auditor.csv
+?? reports/gate_outputs/wf0907_method/render_wf0907_e9_verify.csv
+?? reports/gate_outputs/wf0907_method/render_wf0908_integration.csv
+?? reports/gate_outputs/wf0907_method/render_wf0908_p4_after.csv
+?? reports/gate_outputs/wf0907_method/render_wf0909_integration.csv
+?? reports/gate_outputs/wf0907_method/render_wf0909_p4b_after.csv
+?? reports/gate_outputs/wf0907_method/sha256_audit_e9.txt
+?? reports/gate_outputs/wf0907_method/sha256_audit_integration.txt
+?? reports/gate_outputs/wf0907_method/sha256_audit_wf0908_e10b_after.txt
+?? reports/gate_outputs/wf0907_method/sha256_audit_wf0908_integration_opus.txt
+?? reports/gate_outputs/wf0907_method/sha256_audit_wf0908_p3.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e8_after.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e8_audit.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e8_auditor.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e9_after.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e9_auditor.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0907_e9_verify.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0908_integration.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0908_p4_after.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0909_integration.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0909_p4b_after.txt
+?? reports/gate_outputs/wf0908_INTEGRATION.txt
+?? reports/gate_outputs/wf0908_P4_a8.txt
+?? reports/gate_outputs/wf0909_C10C_nls.txt
+?? reports/gate_outputs/wf0909_INTEGRATION.txt
+?? reports/gate_outputs/wf0909_audit_method/
+--- git diff --cached --stat (tail) ---
+ tools/midi_to_tsukisynth.py                        |   56 +
+ tools/partial_verify.py                            |  843 ++++++++
+ tools/requirements-physics.txt                     |    4 +
+ tools/stem_verify.py                               |  321 ++-
+ 146 files changed, 28942 insertions(+), 2748 deletions(-)
+--- git diff --stat (unstaged) ---
+ .gitignore                                         |   5 +
+ DEVLOG.md                                          |  62 +++
+ HANDOVER.md                                        |  13 +-
+ TODO.md                                            |  38 +-
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md           |  73 ++-
+ .../decision_packets/C10_selfcal_domain.zh-TW.md   |  94 ++++
+ .../decision_packets/K02_reverb_wet_scale.zh-TW.md |  20 +
+ tests/test_measurement_selfcal.py                  | 365 ++++++++++----
+ tools/measurement_selfcal.py                       | 182 +++++--
+ tools/melody_verify.py                             | 561 +++++++++++++++------
+ 10 files changed, 1129 insertions(+), 284 deletions(-)

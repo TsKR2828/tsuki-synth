@@ -1,0 +1,201 @@
+=== WF0907-E8 GATE report (takeover run, Sonnet, 2026-09-08) ===
+
+Handover context: this card's prior run was interrupted near completion. Git
+showed src/score/ScoreParser.h, tools/midi_to_tsukisynth.py,
+tests/test_score_vs_midi_verify.py, tests/test_schema_contract_sync.py already
+staged with the full fix + test suite. This run read every one of those diffs
+line-by-line, cross-checked the C++ SimpleFieldSpec bounds against
+scores/schema/score.schema.json's tempo_map/time_signatures/rests/phrases
+sections field-by-field (all match: minimum/exclusiveMinimum/integer/enum, no
+looser or tighter than the schema), and adopted the implementation rather than
+re-deriving it from scratch. Per WF0907_README.md's handover instructions,
+EVERY GATE below was independently rerun on this run's own build-wf rebuild
+and pytest invocations -- none of the prior run's PASS claims were trusted
+without a fresh command+output of this run's own.
+
+################################################################
+GATE 1: schema contract sync -- before/after + matrix size
+################################################################
+
+--- BEFORE (pre-fix ScoreParser.h) ---
+This count is carried over from the prior (interrupted) run's own before-fix
+measurement rather than re-derived by reverting-and-rebuilding build-wf on this
+run: build-wf/ is a single shared C++-lane build directory that other WF0907
+C++ cards (E9/E7/E10) may be building against concurrently, and reverting
+ScoreParser.h to pre-fix, rebuilding, measuring, then reverting forward and
+rebuilding again risks colliding with a concurrent build in the same directory
+tree. The count itself was independently sanity-checked by this run by reading
+the actual C++ diff (git diff --cached -- src/score/ScoreParser.h) against
+scores/schema/score.schema.json's tempo_map/time_signatures/rests/phrases
+definitions field-by-field -- every one of the 22 pre-fix mismatches below
+corresponds exactly to a minimum/exclusiveMinimum/integer/enum bound the old
+validateSimpleObjectArray (key-name + required-key + coarse int-vs-string
+checks only) could not have caught, and the new SimpleFieldSpec-based
+implementation covers all of them.
+
+cli = build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe (prior run's build)
+total mutations = 388
+22/388 mismatches
+events:tempo_map.0.time [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+events:tempo_map.0.tick [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+events:tempo_map.0.tick [type_fractional]: jsonschema_valid=False (1 errs: ["0.5 is not of type 'integer'"]) cli_valid=True (exit 0)
+events:tempo_map.0.quarter_bpm [exclusiveMinimum]: jsonschema_valid=False (1 errs: ['0 is less than or equal to the minimum of 0']) cli_valid=True (exit 0)
+events:tempo_map.0.microseconds_per_quarter [minimum]: jsonschema_valid=False (1 errs: ['0 is less than the minimum of 1']) cli_valid=True (exit 0)
+events:tempo_map.0.microseconds_per_quarter [type_fractional]: jsonschema_valid=False (1 errs: ["500000.5 is not of type 'integer'"]) cli_valid=True (exit 0)
+events:time_signatures.0.time [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+events:time_signatures.0.tick [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+events:time_signatures.0.tick [type_fractional]: jsonschema_valid=False (1 errs: ["0.5 is not of type 'integer'"]) cli_valid=True (exit 0)
+events:time_signatures.0.numerator [minimum]: jsonschema_valid=False (1 errs: ['0 is less than the minimum of 1']) cli_valid=True (exit 0)
+events:time_signatures.0.numerator [type_fractional]: jsonschema_valid=False (1 errs: ["4.5 is not of type 'integer'"]) cli_valid=True (exit 0)
+events:time_signatures.0.denominator [minimum]: jsonschema_valid=False (1 errs: ['0 is less than the minimum of 1']) cli_valid=True (exit 0)
+events:time_signatures.0.denominator [type_fractional]: jsonschema_valid=False (1 errs: ["4.5 is not of type 'integer'"]) cli_valid=True (exit 0)
+events:rests.0.time [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+events:rests.0.duration [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+events:rests.0.approx_quarter_beats [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+events:rests.0.kind [enum]: jsonschema_valid=False (1 errs: ["'__WF0907_E8_INVALID_ENUM__' is not one of ['entrance_rest', 'breath', 'rest', 'long_rest']"]) cli_valid=True (exit 0)
+events:phrases.0.number [minimum]: jsonschema_valid=False (1 errs: ['0 is less than the minimum of 1']) cli_valid=True (exit 0)
+events:phrases.0.number [type_fractional]: jsonschema_valid=False (1 errs: ["1.5 is not of type 'integer'"]) cli_valid=True (exit 0)
+events:phrases.0.start [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+events:phrases.0.end [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+events:phrases.0.breath_after_ms [minimum]: jsonschema_valid=False (1 errs: ['-1 is less than the minimum of 0']) cli_valid=True (exit 0)
+
+--- AFTER (this run, 2026-09-08, Sonnet takeover) ---
+
+cmd: cmake -B build-wf -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+  -> Configuring done, Generating done (see reports/gate_outputs/wf0907_E8_configure.txt)
+
+cmd: cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+  -> TsukiSynthCLI.vcxproj -> build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  -> TsukiSynth_Standalone.vcxproj -> build-wf/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+  -> TsukiSynth_VST3.vcxproj -> build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+  all three built OK, exit=0 (full log: reports/gate_outputs/wf0907_E8_build_main.txt)
+
+cmd: cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+  -> all 5 targets built OK, exit=0 (full log: reports/gate_outputs/wf0907_E8_build_tests.txt)
+
+cmd: TSUKI_CLI="build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe" python -m pytest tests/test_schema_contract_sync.py -q
+...........                                                              [100%]
+11 passed in 30.59s
+
+cmd: python tests/test_schema_contract_sync.py --dump-constraints output/wf0907/E8/constraints.json  (TSUKI_CLI still exported)
+wrote 388 mutations to output\wf0907\E8\constraints.json
+
+Result: matrix size = 388 mutations (unchanged from before-run: schema + fixtures untouched).
+        Mismatches: before-fix = 22/388 (all in tempo_map/time_signatures/rests/phrases);
+        after-fix = 0/388 (MutationMatrixTests.test_mutations_agree_with_cli passed, which
+        asserts this directly -- see full pytest output above).
+        All 11 tests in the module pass: BaseFixtureSanityTests (4),
+        MutationMatrixTests (4, incl. the events/layers oneOf structural checks),
+        CorpusValidityTests (3, the 75-file corpus).
+
+################################################################
+GATE 2: corpus 75/75 VALID
+################################################################
+See reports/gate_outputs/wf0907_E8_corpus_validate.txt (rerun this run) and
+reports/gate_outputs/wf0907_E8_corpus_pytest.txt (CorpusValidityTests, 3 passed).
+Summary: corpus files = 75; jsonschema failures = 0; CLI --validate failures = 0.
+ALL 75/75 VALID (both jsonschema and CLI --validate).
+
+################################################################
+GATE 3: convert output jsonschema 0 errors
+################################################################
+See reports/gate_outputs/wf0907_E8_convert_gate3.txt (rerun this run).
+
+cmd: find scores -iname "*.mid"
+scores/classical/fur_elise/source/fur_Elise_WoO59.mid   (only source MIDI in repo)
+
+cmd: python tools/midi_to_tsukisynth.py convert scores/classical/fur_elise/source/fur_Elise_WoO59.mid --output output/wf0907/E8/convert_out/fur_elise_gate3.score.json --id e8_gate3_fur_elise --title "E8 GATE3 Fur Elise" --composer Beethoven
+Generated output\wf0907\E8\convert_out\fur_elise_gate3.score.json: 905 events, 211 explicit rests, 75 phrases
+
+cmd: jsonschema Draft202012Validator(...).iter_errors(doc) on the produced file
+jsonschema errors: 0
+
+cmd: build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --validate output/wf0907/E8/convert_out/fur_elise_gate3.score.json
+VALID: 905 events, 0 layers
+exit=0
+
+Also covered by tests/test_score_vs_midi_verify.py::ConverterSchemaContractTests
+(3 tests, part of the 249-passed pytest run below): a minimal-valid document is
+accepted; the audit's exact F-04 6-error repro (bad id, bad sample_rate, bad
+master_volume, bad reverb decay/wet, negative tail_silence_ms) is rejected by
+write_score() with all 6 schema errors named in the ValueError message and no
+file written; and convert's real output on every *.mid under scores/ (currently
+just fur_Elise_WoO59.mid, globbed so a future addition is covered automatically)
+is schema-valid.
+
+################################################################
+GATE 4: three builds + test targets + ctest + --full + bit-identity 8/8
+################################################################
+
+Builds: see GATE 1 AFTER section above (TsukiSynthCLI / TsukiSynth_Standalone /
+TsukiSynth_VST3 + the 5 test/HostProbe targets, all rebuilt OK this run).
+
+cmd: ctest --test-dir build-wf -C Release --output-on-failure
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    0.88 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.54 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.08 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+100% tests passed, 0 tests failed out of 4
+(full log: reports/gate_outputs/wf0907_E8_ctest_log.txt)
+
+cmd: python tools/physics_verify.py --full --cli "build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe"
+--full summary:
+F1 eigenvalue anchors: PASS
+1b note-range scan   : PASS
+1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+1d velocity judgment : PASS
+2d amplitude judgment: PASS
+5b measured T60       : PASS
+F5 residual energy   : PASS (limit -60.0 dB re total)
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+(full log: reports/gate_outputs/wf0907_E8_physics_verify_full.txt)
+
+Bit-identity 8/8 (R6/README Sec.3: src/score/ touched -> must prove no render
+output changed):
+cmd: python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0907_e8_takeover --workdir <outside-repo temp dir> --cli <absolute path to build-wf CLI>
+rendering moonlight_sonata_movement1_yangqin ...           sha256=49514b007e3e01fc...
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ... sha256=7b0413dd4f858079...
+rendering physical_piano ...                                sha256=607d0d3bc578136f...
+rendering restraint_metal_click ...                          sha256=be634798c4a0bf71...
+rendering moonlight_sonata_movement1_tongue_drum ...         sha256=c37ac02d01f08a30...
+rendering water_gong_free ...                                sha256=31b539c6ac08d942...
+rendering ai_radiance_m1 ...                                 sha256=74122637a0c71278...
+rendering fur_elise_opening ...                              sha256=b0877774da9e5fc5...
+wrote reports/gate_outputs/wf0907_method/render_wf0907_e8_takeover.csv
+wrote reports/gate_outputs/wf0907_method/sha256_wf0907_e8_takeover.txt
+
+cmd: python -c "compare reports/gate_outputs/b6_method/sha256_before.txt vs sha256_wf0907_e8_takeover.txt, line by line"
+-> 8/8 IDENTICAL (all 8 SHA256 hashes match the b6_method/sha256_before.txt master
+   baseline exactly; a raw `diff` on the two files shows a spurious full mismatch
+   caused only by CRLF-vs-LF line endings between the two evidence files -- the
+   trimmed line-by-line python comparison above is the authoritative check and
+   confirms byte-for-byte identical hash values)
+
+################################################################
+GATE 5: python -m pytest tests -q
+################################################################
+cmd: python -m pytest tests -q
+........................................................................ [ 28%]
+......s................................................................. [ 57%]
+........................................................................ [ 86%]
+..................................                                       [100%]
+249 passed, 1 skipped in 72.61s (0:01:12)
+(full log: reports/gate_outputs/wf0907_E8_pytest_full.txt)
+
+################################################################
+GATE 6: git diff --stat scope
+################################################################
+See reports/gate_outputs/wf0907_E8_diffscope.txt (rerun this run). Confirmed:
+only src/score/ScoreParser.h, tools/midi_to_tsukisynth.py,
+tests/test_schema_contract_sync.py, tests/test_score_vs_midi_verify.py, and
+docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md carry this card's changes.
+
+################################################################
+Overall: all 6 GATEs pass. No corpus file rejected by the new checks (Sec.4
+"禁止" clause not triggered). Schema itself untouched.
+################################################################

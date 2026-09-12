@@ -1,0 +1,253 @@
+WF0907-C10 GATE evidence -- 量測器自身的合成哨兵（≤1 cent 自證）
+Card: docs/workcards/WF0907_C10_selfcal.md
+Run date: 2026-09-07/08 (working tree, python 3.13.3, CLI: build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe)
+
+=== GATE 1: extract-before/extract-after JSON identity ===
+$ build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe scores/tests/melody_sentinel.score.json --output output/wf0907/C10/render
+  (rendered once, reused for both before/after runs so the diff isolates the code refactor, not render noise)
+
+$ python tools/melody_verify.py scores/tests/melody_sentinel.score.json --wav output/wf0907/C10/render/melody_sentinel.wav --json output/wf0907/C10/before.json   # BEFORE extracting measure_pitch_cents
+$ python tools/melody_verify.py scores/tests/melody_sentinel.score.json --wav output/wf0907/C10/render/melody_sentinel.wav --json output/wf0907/C10/after.json    # AFTER extracting measure_pitch_cents
+
+$ diff output/wf0907/C10/before.json output/wf0907/C10/after.json
+(exit code: 0, empty diff = every cents/onset number identical before and after the pure-function extraction)
+
+=== GATE 2: python tools/melody_verify.py --selftest ===
+$ python tools/melody_verify.py --selftest
+[PASS] sentinel A: unmodified fixture verifies clean (max |onset err| = 0.33 ms, tol 10 ms)
+[PASS] sentinel B: +100 ms time shift is caught -> 1 FAIL as required
+[PASS] sentinel C: +1 semitone transposition is caught -> 1 FAIL as required
+[PASS] sentinel D: undeclared (extra) note is caught -> 1 FAIL as required
+[PASS] sentinel E: declared-but-absent (phantom) note is caught -> 1 FAIL as required
+SELFTEST PASS (5/5)
+(exit code: 0)
+NOTE: card text says '12 PASS'; actual selftest emits 5 named sentinels (A-E) -> 'SELFTEST PASS (5/5)',
+exit code 0, 0 FAIL. This is the tool's own actual output (unmodified by this card's changes) -- the card's
+'12 PASS' figure appears stale relative to the current selftest() body; GATE reads as PASS regardless
+(exit 0, 0 FAIL) since the card's acceptance line is 'melody_verify.py --selftest' passing clean.
+
+=== GATE 3: PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q ===
+$ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+..............................                                           [100%]
+30 passed in 20.15s
+(exit code: 0)
+NOTE: card text says '21 passed'; actual is 30 passed, 0 failed. Stale count in the card (other cards/lanes
+have added tests to test_stem_verify.py since it was written) -- 0 FAIL, exit 0, GATE reads as PASS.
+
+=== GATE 4: python tools/measurement_selfcal.py ===
+$ python tools/measurement_selfcal.py
+measurement_selfcal: synthesizing grid (MIDI 36..100 x 3 variants x 3 levels x sr 48000,44100)
+  grid points: 1170  (fail_reason on 0)
+  by f0 band (max |error_cents|):
+    <167Hz       1.1721 c
+    167-500Hz    0.6758 c
+    500-2000Hz   0.9836 c
+    >2000Hz      1.1386 c
+  by level (max |error_cents|):
+      -6.0 dBFS  1.0707 c
+     -30.0 dBFS  1.0737 c
+     -60.0 dBFS  1.1721 c
+  max_abs_error_cents = 1.1721  (limit 1.0)
+  sensitivity anti-false-green (grid cell MIDI69/harmonic/-6dBFS/48kHz):
+    offset +3.0c -> measured +2.9818c  [OK]
+    offset -3.0c -> measured -2.9936c  [OK]
+  onset error (informational, no exit-code effect): max |err| = 37.0000 ms over 1170 points
+RESULT: FAIL
+  (R2: no tolerance in this file may be widened to reach PASS -- a miss here is reported, not patched around.)
+(exit code: 1)
+
+=== GATE 5: python -m pytest tests -q ===
+$ python -m pytest tests -q
+........................................................................ [ 33%]
+....s................................................................... [ 66%]
+........................................................................ [100%]
+215 passed, 1 skipped in 28.35s
+(exit code: 0)
+
+=== GATE 6: git diff --stat scoped to this card's files ===
+$ git diff --stat -- tools/melody_verify.py tools/measurement_selfcal.py tests/test_measurement_selfcal.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md | 73 ++++++++++++++++++++++++++++++++
+ tools/melody_verify.py                   | 48 ++++++++++++++-------
+ 2 files changed, 105 insertions(+), 16 deletions(-)
+
+(measurement_selfcal.py and test_measurement_selfcal.py are NEW files, so plain 'git diff' shows no lines for
+ them -- 'git diff --stat' only reports changes to already-tracked paths. Their presence and full content is
+ confirmed below via 'git status --porcelain', scoped to this card's touched paths + the decision packet +
+ this evidence file. NOTE: this working tree is shared by other WF0907 lanes running concurrently per README
+ Sec.1 -- an UNSCOPED 'git diff --stat' also shows other cards' in-progress files; this card touched only
+ what is listed below.)
+
+$ git status --porcelain -- tools/melody_verify.py tools/measurement_selfcal.py tests/test_measurement_selfcal.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md reports/decision_packets/C10_selfcal_domain.zh-TW.md reports/gate_outputs/wf0907_C10_selfcal.txt
+ M docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+ M tools/melody_verify.py
+?? reports/decision_packets/C10_selfcal_domain.zh-TW.md
+?? tests/test_measurement_selfcal.py
+?? tools/measurement_selfcal.py
+
+=== 重新驗證（2026-09-08，同一份工作樹，確認上述數字未因其他 lane 同時施工而漂移）===
+
+$ diff output/wf0907/C10/before.json output/wf0907/C10/after.json
+(exit 0, empty -- GATE1 仍成立)
+
+$ python tools/melody_verify.py --selftest
+SELFTEST PASS (5/5), exit 0 -- 與原記錄一致。
+
+$ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+38 passed in 22.70s, exit 0.
+NOTE: 原記錄為 30 passed；現在是 38 passed。差異來自 C11 lane（`docs/workcards/WF0907_C11_refusal_reason.md`，
+同時段在同一工作樹修改 `tests/test_stem_verify.py`）新增的測試，不是 C10 造成。0 FAIL、exit 0，GATE 仍 PASS。
+
+$ python tools/measurement_selfcal.py
+(exit code: 1) -- 逐行數字與原記錄的 GATE 4 完全相同（max_abs_error_cents = 1.1721，各分組數字、
+最差網格點、靈敏度反例 +2.9818c / -2.9936c 皆逐字相同）。合成網格是純數學、無隨機成分，
+確認具決定性、可重現，非一次性僥倖數字。
+
+$ python -m pytest tests/test_measurement_selfcal.py -q
+3 passed in 1.62s -- 卡上第 3 步要求的 (a)(b)(c) 三個測試全過。
+
+$ python -m pytest tests -q
+1 failed, 236 passed, 1 skipped in 60.06s
+FAILED tests/test_schema_contract_sync.py::MutationMatrixTests::test_mutations_agree_with_cli
+說明：`tests/test_schema_contract_sync.py` 是 E8 卡（C++ lane，`docs/workcards/WF0907_E8_schema_contract_sync.md`）
+的新測試檔，不在 C10 施工範圍內（C10 只碰 tools/melody_verify.py、tools/measurement_selfcal.py、
+tests/test_measurement_selfcal.py、design 文件）。失敗原因是該測試呼叫的 TsukiSynthCLI 二進位檔
+（build/ 或 build-wf/ 下）尚未針對 E8 同時段改動的 `src/score/ScoreParser.h` 重新編譯，屬於 E8 lane
+自己尚未跑 X4 規約（改 src 後重建三個 target）留下的暫時性紅燈，與 C10 的 measure_pitch_cents 抽取
+或 measurement_selfcal.py 無關（C10 完全不碰 src/、不碰 schema、不碰 CLI 二進位）。此檔案不屬本卡
+files_touched，依規約不得修改；已列入 open_items 供稽核/月月知悉，不算作 C10 的 GATE 5 失敗。
+原始 215 passed / 1 skipped（本卡自己完工當下）已在上方留檔為證；此紅燈是之後、其他 lane 造成的。
+
+上述重新驗證確認：C10 自身六條 GATE 的結論不變 -- GATE1/2/3/4(數字)/6 與原記錄逐字一致；
+GATE 5 的全域綠燈目前被 C10 範圍外的 E8 lane 暫時性紅燈打斷，已如實記錄、未觸碰 E8 檔案。
+GATE 4 仍是 FAIL（1.1721 > 1.0），本卡狀態維持 BLOCKED，裁決包見
+reports/decision_packets/C10_selfcal_domain.zh-TW.md，未修改任何容差、未修改 measure_pitch_cents 判定邏輯。
+
+=== 第三輪獨立重跑（2026-09-08，工兵 Sonnet 交接後親自重跑，不採信前一輪自報）===
+
+$ diff output/wf0907/C10/before.json output/wf0907/C10/after.json
+diff exit=0（空 diff，GATE1 仍成立）
+
+$ python tools/melody_verify.py --selftest
+SELFTEST PASS (5/5), exit=0 -- 與原記錄一致。
+
+$ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+48 passed in 31.36s, exit=0
+NOTE：計數又從 38 漲到 48，同一原因（C11/C12 lane 同時在改 tests/test_stem_verify.py，
+本卡未觸碰該檔案）。0 FAIL、exit 0，GATE 仍 PASS。
+
+$ python tools/measurement_selfcal.py
+exit=1；逐行數字與前兩輪記錄逐字相同：max_abs_error_cents = 1.1721（<167Hz 1.1721 /
+167-500Hz 0.6758 / 500-2000Hz 0.9836 / >2000Hz 1.1386；-6dBFS 1.0707 / -30dBFS 1.0737 /
+-60dBFS 1.1721；靈敏度反例 +2.9818c / -2.9936c；onset informational max 37.0000 ms）。
+三次獨立執行（不同時間、不同 lane 並行狀態下）數字逐字不變，確認合成網格無隨機成分、
+結果具決定性。
+
+$ python -m pytest tests/test_measurement_selfcal.py -q
+3 passed in 1.72s -- (a)(b)(c) 三個測試全過，與前一輪一致。
+
+$ python -m pytest tests -q
+249 passed, 1 skipped in 66.59s, exit=0
+NOTE：前一輪記錄的 1 failed（test_schema_contract_sync.py，E8 lane 尚未重建 CLI 造成）
+此輪已消失（E8 lane 之後自行重建完成），全域回到純綠燈。249 passed 高於前兩輪的
+215/236，同樣是其他 lane（E1/C11/C12/E8...）持續在同一工作樹新增測試所致，
+與 C10 的改動無關（C10 只新增了 tests/test_measurement_selfcal.py 這 3 個測試）。
+
+$ git diff --stat -- tools/melody_verify.py tools/measurement_selfcal.py tests/test_measurement_selfcal.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md | 80 ++++++++++++++++++++++++++++++++
+ tools/melody_verify.py                   | 48 ++++++++++++-------
+ 2 files changed, 112 insertions(+), 16 deletions(-)
+（measurement_selfcal.py / test_measurement_selfcal.py 為新檔，git status --porcelain
+確認為 ?? 狀態，內容如上兩輪所附。）
+
+$ git diff --stat -- tools/stem_verify.py
+tools/stem_verify.py | 266 +++++++++++++++++++++++++++++++++++++++++++++++++--
+（確認：這是 C11/C12 lane 的改動，非本卡所為；本卡 files_touched 不含 stem_verify.py。）
+
+結論不變：C10 六條 GATE 中 GATE1/2/3/6 PASS，GATE5 現已全綠（249 passed, 1 skipped），
+GATE4 仍是唯一的 FAIL（max_abs_error_cents = 1.1721 > 1.0 門檻），且三輪獨立重跑數字
+逐字相同、非偶然。依卡上第 4 步規定：不改估計器、不調容差，status = BLOCKED，
+裁決包見 reports/decision_packets/C10_selfcal_domain.zh-TW.md，等月月選 A/B。
+
+=== 修正回合（WF0908-C10b，Sonnet 工兵，2026-09-09）===
+稽核 FAIL 後的修正，處理稽核 findings 的 1 條 major + 3 條 minor：
+
+1. [major] tools/melody_verify.py 的 is_course()（extra-scan）在 layered
+   事件上恆用預設 num_strings=3/detuning_cents=5.0（因為 layered 事件無
+   "params" 欄位），fail-open 放寬 refused_rises，但程式註解與設計文件都
+   沒誠實標註 -- 已在 is_course() 定義處加詳細機制註解，並在
+   expected_f0s_layered() docstring 補上第三條已知降級（原本只列 velocity
+   gate 與 FM ratio 兩項）。
+
+2. [minor] docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §10（E10, WF0908-E10b
+   卡的稽核範圍）與本卡的 §9（C10）混在同一檔案 -- 未動 §10 內容（不動別的
+   lane 的檔案，依 README §1「只碰你這張卡列出的檔案」），已記入
+   open_items 交規劃者/稽核決定如何 stage（例如 git add -p 只挑 §9 hunk）。
+
+3. [minor] layered 路徑（verify() 的 is_layered 分支）程式註解宣稱
+   "informational only, never GATE-judged"，但實際 print 輸出（[FAIL]）與
+   main() 的 exit code 跟正式 GATE 完全相同 -- 已修正行為使其名實相符：
+     * verify() 對 layered 分數在 report dict 加 "informational": True
+       （只在 is_layered 時加，flat 分數的 report 結構完全不變 -- 見下方
+       GATE1 重驗，確保不破壞 C10 §9.1 的 JSON 逐位元組相同證明）；
+     * print 輸出在 layered 分數最前面加一行明示
+       "(informational only -- layered score.json, NOT GATE-judged; ...)"；
+     * main() 讀 rep.get("informational") 為真時強制 sys.exit(0)，不再讓
+       layered 分數的 FAIL 事件把 process exit code 弄成 1。
+   稽核已確認目前沒有呼叫端依賴這個 exit code（stem_verify.py 對 layers
+   直接拒答，未呼叫 melody_verify 的 layered 路徑；.github/workflows/
+   physics.yml 未呼叫 melody_verify.py），故此行為修正安全。
+
+4. [minor] §9.2 結尾補上卡文第 6 步要求的措辭
+   「1.1721 cents，待月月裁決 C10 A/B」（原文只寫「自證 FAIL」+ 裁決包連結，
+   讀者不點進裁決包看不出還有 A/B 兩案）。
+
+=== 修正回合重跑全部 GATE ===
+
+$ python tools/melody_verify.py --selftest
+[PASS] sentinel A/B/C/D/E，SELFTEST PASS (5/5)，exit=0（與修正前一致）
+
+$ PYTHONPATH=tools python -m pytest tests/test_measurement_selfcal.py tests/test_stem_verify.py -q
+52 passed in 31.44s，exit=0
+
+$ python tools/measurement_selfcal.py
+max_abs_error_cents = 1.1721（<167Hz 1.1721 / 167-500Hz 0.6758 / 500-2000Hz
+0.9836 / >2000Hz 1.1386；-6dBFS 1.0707 / -30dBFS 1.0737 / -60dBFS 1.1721；
+靈敏度反例 +2.9818c[OK] / -2.9936c[OK]）。exit=1（RESULT: FAIL，數字與前三輪
+逐字相同，未改估計器）。
+
+三個 layered corpus 檔（E9b，informational）：
+  scores/examples/layered_transition.score.json -> 0 PASS/4 FAIL/0 UNVERIFIED，
+    exit=0（原為 exit=1；修正後 informational 一致）
+  scores/tests/test_layer.score.json -> 2 PASS/1 FAIL/0 UNVERIFIED，exit=0
+    （原為 exit=1）
+  scores/originals/ai_radiance/ai_radiance_complete.score.json -> 6 PASS/
+    46 FAIL/209 UNVERIFIED，exit=0（原為 exit=1）
+三檔輸出最前面都印出新的 "(informational only -- layered score.json, NOT
+GATE-judged; ...)" 提示行；每事件的 verdict/pitch/onset 數字與修正前逐項相同
+（只有 exit code 與新增提示行改變，判定內容未變）。
+
+牙齒測試（重跑）：把 measure_pitch_cents() 臨時改成 `return 0.0, None`：
+  measurement_selfcal.py -> max_abs_error_cents = 0.0000（假網格全綠），但
+  sensitivity anti-false-green: offset +3.0c -> measured +0.0000c [FAIL]；
+  offset -3.0c -> measured +0.0000c [FAIL] -- 反例確實抓到。
+  還原後 sha256sum tools/melody_verify.py = 與還原前完全相同
+  （9a15cea5...c09a3823），確認 mutant 未殘留。
+
+GATE1 重驗（C10 §9.1 的 JSON 逐位元組相同證明，確認新增的 "informational"
+key 沒有破壞它 -- 只在 is_layered 時才加這個 key，flat 分數 report 結構不變）：
+$ python tools/melody_verify.py scores/tests/melody_sentinel.score.json \
+    --wav output/wf0907/C10/render/melody_sentinel.wav \
+    --json output/wf0907/C10b_fix/after_extract_samewav.json
+$ diff output/wf0907/C10/after.json output/wf0907/C10b_fix/after_extract_samewav.json
+（exit code: 0，empty diff -- 修正回合的改動不影響 flat 分數的判定 JSON，
+GATE1 的位元不變證明仍成立）
+
+$ python -m pytest tests -q
+250 passed, 1 skipped in 67.09s，exit=0（全域回綠燈，數量與上一輪稽核記錄
+的 250 passed/1 skipped 一致）
+
+結論：4 條 findings 中 1 major + 2 minor（#1/#3/#4）已在本輪修正；#2（§10
+混檔）未動別的 lane 檔案，記入 open_items。GATE4（1.1721 cents）依卡文本來
+就不是本卡 FAIL 條件，維持 BLOCKED 待月月裁決 C10 A/B，其餘 GATE 全數重跑
+通過，數字與修正前逐位元組/逐字一致（除新增的 informational 提示與 exit
+code 修正本身之外）。

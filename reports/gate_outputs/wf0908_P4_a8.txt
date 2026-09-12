@@ -1,0 +1,160 @@
+WF0908-P4：A8 引用更正（選項 X）— GATE 證據
+卡：docs/workcards/WF0908_P4_a8_citation_fix.md
+執行：2026-09-09（工兵 Sonnet）
+
+============================================================
+狀態摘要（先講結論）
+============================================================
+卡上「1. 要改的」三項裡，只完成了第 1、2 項（純文字更正，渲染輸出零改變，
+已證 8/8 位元不變）。第 3 項（docs/RADIATION_POWER_SOURCES.md §5 加一句
+「S = M/(ρh) 反推路線不可行——Ege & Boutillon 兩篇全文皆無音板總質量 M」）
+**沒有照卡上文字執行，因為那句話已被本 repo 自己更晚、更完整查證的文件
+推翻，是假的**。
+
+證據：docs/B7_PHASE0_DATA.zh-TW.md §5「已知缺口」表格「Ege & Boutillon
+的音板總質量 M」那一列，2026-09-07 複核更正後寫：
+  「已找到：M = 9 kg（arXiv:1210.5688，直立琴）——上一版誤報「查不到」，
+  2026-09-07 複核更正」
+並且明確建議 RADIATION_POWER_SOURCES.md §5 該加的是「兩點」而不是「不可行」：
+  「(1) 該 M 是等效均向板質量，用生雲杉密度反推會高估 2.22 倍；
+  (2) 直立琴不必反推（尺寸原文直接給），平台琴則連 M 都沒有」
+（同一篇論文 arXiv:1210.5688 正是 RADIATION_POWER_SOURCES.md §6 引用清單
+#2「Ege & Boutillon, Synthetic description of the piano soundboard
+mechanical mobility, ISMA 2010」——就是卡上說「兩篇」裡的其中一篇。）
+
+也就是說「Ege & Boutillon 兩篇全文皆無音板總質量 M」這句話對其中一篇
+（arXiv:1210.5688）不成立，若寫入文件會是一個違反本專案「不得宣稱未量測
+的東西」原則的假陳述。這件事牽涉哪個查證結果才是最新、要不要改寫成
+B7_PHASE0_DATA 建議的「兩點」版本，是規劃者/月月的裁決，本卡工兵不擅自
+判斷該用哪個版本落地——依規約回報 BLOCKED，見 open_items。
+
+第 1、2 項本身完整跑完並通過全部 GATE（見下）。
+
+============================================================
+GATE 1：三 target build（build-wf）+ 位元不變 8/8 + ctest
+============================================================
+
+--- 指令 1a：configure ---
+$ cmake -B build-wf -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+EXIT=0
+（尾段）
+-- Configuring done (2.5s)
+-- Generating done (0.8s)
+-- Build files have been written to: C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+
+--- 指令 1b：三主要 target ---
+$ cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+EXIT=0
+（尾段）
+  TsukiSynthCLI.vcxproj -> ...\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  TsukiSynth_Standalone.vcxproj -> ...\build-wf\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+  TsukiSynth_VST3.vcxproj -> ...\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  creating C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+
+--- 指令 1c：五個測試/HostProbe target（X4 規約：ctest 前必先重建） ---
+$ cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+EXIT=0
+（尾段）
+  TsukiSynthAuditTest.vcxproj -> ...\build-wf\Release\TsukiSynthAuditTest.exe
+  TsukiSynthTunerTest.vcxproj -> ...\build-wf\Release\TsukiSynthTunerTest.exe
+  TsukiSynthPhysicsModelsTest.vcxproj -> ...\build-wf\Release\TsukiSynthPhysicsModelsTest.exe
+  TsukiSynthSpectrumViewTest.vcxproj -> ...\build-wf\Release\TsukiSynthSpectrumViewTest.exe
+  TsukiSynthHostProbe.vcxproj -> ...\build-wf\Release\TsukiSynthHostProbe.exe
+
+--- 指令 1d：ctest ---
+$ ctest --test-dir build-wf -C Release --output-on-failure
+EXIT=0
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.19 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.55 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.12 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+100% tests passed, 0 tests failed out of 4
+Total Test time (real) =   1.95 sec
+
+--- 指令 1e：位元不變證明（8 首代表曲，baseline 用上一輪已稽核的
+    reports/gate_outputs/wf0907_method/sha256_audit_integration.txt，
+    因為本卡只改註解，理論上音訊零改變，重跑同一份 8 曲 harness 比對） ---
+$ python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0908_p4_after --workdir <TEMP>/wf0908_p4_render --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+EXIT=0
+rendering moonlight_sonata_movement1_yangqin ...            sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...  sha256=7b0413dd4f858079
+rendering physical_piano ...                                 sha256=607d0d3bc578136f
+rendering restraint_metal_click ...                           sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...          sha256=c37ac02d01f08a30
+rendering water_gong_free ...                                 sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...                                  sha256=74122637a0c71278
+rendering fur_elise_opening ...                                sha256=b0877774da9e5fc5
+wrote reports\gate_outputs\wf0907_method\render_wf0908_p4_after.csv
+wrote reports\gate_outputs\wf0907_method\sha256_wf0908_p4_after.txt
+
+$ diff <(awk '{print $1}' reports/gate_outputs/wf0907_method/sha256_audit_integration.txt) \
+       <(awk '{print $1}' reports/gate_outputs/wf0907_method/sha256_wf0908_p4_after.txt)
+（無輸出，即完全相同）
+=> 8/8 IDENTICAL
+
+--- 指令 1f：pytest 全綠（README §3 硬性檢查） ---
+$ python -m pytest tests -q
+EXIT=0
+250 passed, 1 skipped in 64.35s (0:01:04)
+（README 寫「現況 213 collected」是上一輪基準，本輪 250 passed / 1 skipped
+是 WF0907 多輪新增測試後的現況，非本卡改動所致——本卡未動任何測試檔）
+
+============================================================
+GATE 2：grep -n '1.05' docs/EXTERNAL_ANCHOR_SOURCES.md
+============================================================
+$ grep -n '1.05' docs/EXTERNAL_ANCHOR_SOURCES.md
+50:> 本專案 `radius_m=1.05` 是自訂觀測距離，與該資料庫無關。
+77:| 麥克風位置語意 | ❌ 無 | ✅ 資料庫定義了明確的球面半徑 **2.06 m**（本專案 `radius_m=1.05` 是自訂觀測距離，與該資料庫無關，兩者不可混用） |
+81:明確的量測面定義（資料庫本身的 2.06 m 球面；本專案 `radius_m=1.05` 是自訂觀測距離，兩者無關）
+217:| 1 | *A Database with Directivities of Musical Instruments*（arXiv:2307.02110），資料集典藏於 DepositOnce，CC BY-SA 4.0（該授權說法已被本文件 §1 更正為 CC BY-NC-SA 4.0，見上） | ✅ 論文開放全文；**已下載子集（2026-09-07，撥弦：吉他＋豎琴＋說明＋指向性 SOFA，3.77 GB），見 `docs/EXTERNAL_DATASET_A8.zh-TW.md`——該文件以資料檔內部 metadata 推翻本文件 §1 舊版寫的「CC BY-SA 4.0」與「半徑 1.05 m」（1.05 m 是本專案自訂觀測距離，與該資料庫無關，資料庫實際半徑為 2.06 m），§1 已據此更正** | §1 全部：樂器清單、陣列幾何、**絕對校準 1.0 ≡ 1 Pa ≡ 94 dB**、格式、頻率範圍、授權 |
+218:| 2 | Ege & Boutillon, *Vibroacoustics of the piano soundboard…*, J. Sound Vib. 332 (2013)（arXiv:1305.3057） | ✅ 開放全文 | §3 的 `fc ≈ 1.8 kHz`、`fc` 公式、`fga`、`η ≈ 2%±1%` |
+=> 每一處都附了「本專案自訂觀測距離／與該資料庫無關」的說明句，符合 GATE 2 要求。
+
+============================================================
+GATE 3：git diff --stat 只含卡上列出的檔案 + 證據檔
+============================================================
+$ git diff --stat -- docs/EXTERNAL_ANCHOR_SOURCES.md src/physics/RadiationModel.h docs/RADIATION_POWER_SOURCES.md
+ docs/EXTERNAL_ANCHOR_SOURCES.md | 34 ++++++++++++++++++++--------------
+ src/physics/RadiationModel.h    | 14 +++++++++-----
+ 2 files changed, 29 insertions(+), 19 deletions(-)
+（docs/RADIATION_POWER_SOURCES.md 未出現，因為第 3 項未落地，見上方狀態摘要）
+
+註：整個工作樹的 `git diff --stat`（不加 -- 篩選）還會列出其他並行 WF0907
+lane 的既有 unstaged 改動（.gitignore、EARFREE_MELODY_GATE_DESIGN.zh-TW.md、
+F03_IR_PRESET_RECALL.zh-TW.md、wf0907_C11_reason.txt、host_probe.cpp、
+melody_verify.py、AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md）——這些不是
+本卡動的，本卡開工前就已存在於工作樹，範圍檢查以 `-- <本卡檔案>` 篩選版為準。
+
+============================================================
+本卡實際改動內容（第 1、2 項）
+============================================================
+1. docs/EXTERNAL_ANCHOR_SOURCES.md：
+   - §1 表格：陣列半徑 1.05 m → 2.06 m（SOFA ReceiverPosition + 說明PDF式(4)反推
+     2.085 m 佐證），加出處欄（arXiv／JAES／資料檔）
+   - 消音室下限 fc=63 Hz 加出處註記（僅 arXiv 全文有，說明 PDF 無）
+   - 授權 CC BY-SA 4.0 → CC BY-NC-SA 4.0（四源不一致說明）
+   - §2 兩處「1.05 m 球面」改為「2.06 m 球面（本專案 1.05 m 是自訂觀測距離）」
+   - §5.1 揚琴量測「非消音室」→「消音室」（Sinin et al. 2026 p.1087 原句引述）
+     + 加註 Table 3 只報兩位小數、未報 FFT 解析度
+   - DOI：depositonce-5861.3（404）→ 建議改用可解析的 depositonce-19858
+   - §6 引用清單第 1 列同步更正措辭（原文「半徑 1.05 m」是舊版，已據 §1 更正）
+2. src/physics/RadiationModel.h：kMeasurementRadiusM 註解改寫，明說 1.05 m 是
+   本專案 DECIDED CONVENTION、外部資料庫實際半徑 2.06 m、兩者無關；**數值
+   `1.05f` 完全未動**（位元不變已證，見 GATE 1）。
+
+============================================================
+open_items
+============================================================
+1. 【需月月/規劃者裁決】docs/RADIATION_POWER_SOURCES.md §5 未落地，因為卡上
+   指定的文字（「S=M/(ρh) 反推路線不可行——Ege & Boutillon 兩篇全文皆無音板
+   總質量 M」）與本 repo 已有的更完整查證（docs/B7_PHASE0_DATA.zh-TW.md §5，
+   2026-09-07 複核更正）矛盾：arXiv:1210.5688（RADIATION_POWER_SOURCES.md §6
+   引用#2）原文其實有「total mass M = 9 kg」。B7_PHASE0_DATA 建議改加的是
+   「兩點」（M 是等效均向板質量、生雲杉密度反推會高估 2.22 倍；直立琴不必
+   反推、平台琴仍無 M），不是「不可行」。工兵未擅自選一個版本落地，回報
+   BLOCKED，請規劃者/月月裁決要寫哪個版本進 RADIATION_POWER_SOURCES.md §5。

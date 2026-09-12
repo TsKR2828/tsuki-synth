@@ -1,0 +1,336 @@
+== WF0907-E9 evidence file created Tue Sep  8 20:31:43     2026 ==
+
+## 步驟 1：renderLayered() 套用的欄位清單（ScoreRenderer.h 行號，接手時逐行核對）
+
+ScoreLayer 結構（src/score/ScoreParser.h:113-119）只有 4 個欄位，
+沒有 mute/solo/pan/time-stretch —— renderLayered() 也沒實作這些，
+故 dumpModesLayered() 不發明這些欄位（符合卡 §2.5「renderLayered 沒實作，dump 也不要發明」）。
+
+- layer.source            ScoreRenderer.h:601-615（layerAllowedRoot 白名單 + .score.json 副檔名 + 存在性）
+- layer.regionStart/End   ScoreRenderer.h:679-684（trim 後裁切一段，region JSON key，來自 ScoreParser.h:453-466）
+- layer.gain              ScoreRenderer.h:694  rl.buffer.applyGain(layer.gain)（純線性乘）
+- score.crossfadeMs（頂層，非逐 layer） ScoreRenderer.h:587,700-705,745-761,768
+  - 700-705：crossfadeSamples 先夾到 min(所有 layer 長度)-1，再夾到 >=0
+  - 731-768：cumulative 疊放，writePos += rl.numSamples - crossfadeSamples（線 768，最後一個 layer 除外）
+  - 745-761：實際 waveform 交叉淡入淡出（振幅 fade，不影響事件「絕對時間」定義，dump 不需模擬 fade 曲線本身）
+- subScore.exportSettings.startPosition/endPosition/tailSilenceMs（每個 leaf 自己的 export 設定）
+  ScoreRenderer.h:643-676（subDuration 累加 tailSilenceMs）、trimBuffer() formula 於 ScoreRenderer.h:1678-1699
+- subScore.global.effects（wallDelaySeconds/effectTailSeconds，每個 leaf 自己的 effects）
+  ScoreRenderer.h:648-649
+
+接手判斷：半成品程式碼已忠實鏡射以上全部欄位，唯一發現的落差是
+offsetSeconds 累加公式漏了 crossfadeSamples 的扣除（半成品第 940 行原寫
+`writePos += placements[i].numSamples;` 且標註 `// AUDIT MUTATION`，
+與 renderLayered() 第 768 行 `writePos += rl.numSamples - crossfadeSamples;`
+不符——本張卡三個 corpus 檔與循環 fixture 的 crossfade_ms 皆為預設 0，
+此差異不會讓既有 GATE 現形，但若未來 layered score 用非 0 crossfade_ms，
+offset 會系統性偏大。已修正為與 renderLayered() 一致：
+`writePos += placements[i].numSamples - crossfadeSamples;`（見 git diff）。
+其餘半成品邏輯（trimBuffer 公式、region 裁切、amp 欄位縮放）逐行核對後與
+renderLayered() 一致，予以接手續作。
+
+## GATE 4（先做，作為後續 GATE 的建置基礎）：三 target + 測試 target build + ctest
+
+### cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+（完整輸出略，重點：三個 target 均編譯連結成功，無 error，見下方尾段）
+  TsukiSynthCLI.vcxproj -> ...\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  TsukiSynth_Standalone.vcxproj -> ...\build-wf\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+  TsukiSynth_VST3.vcxproj -> ...\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\...\TsukiSynth.vst3
+（無編譯錯誤，0 warning-as-error 中止）
+
+### cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+  TsukiSynthAuditTest.vcxproj -> ...\build-wf\Release\TsukiSynthAuditTest.exe
+  TsukiSynthTunerTest.vcxproj -> ...\build-wf\Release\TsukiSynthTunerTest.exe
+  TsukiSynthPhysicsModelsTest.vcxproj -> ...\build-wf\Release\TsukiSynthPhysicsModelsTest.exe
+  TsukiSynthSpectrumViewTest.vcxproj -> ...\build-wf\Release\TsukiSynthSpectrumViewTest.exe
+  TsukiSynthHostProbe.vcxproj -> ...\build-wf\Release\TsukiSynthHostProbe.exe
+（全部成功，無編譯錯誤）
+
+### ctest --test-dir build-wf -C Release --output-on-failure
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    0.84 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.52 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.08 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   1.49 sec
+
+## GATE 1：三個 layered corpus 檔 --dump-modes exit 0 + 展平事件數
+
+命令：build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes <file>
+
+- scores/examples/layered_transition.score.json
+  exit=0, layered=true, dumped_event_count=4, events_len=4
+  layers=[(akashic_bell.score.json, offset_s=0.0, gain=1.0, event_count=2),
+          (restraint_metal_click.score.json, offset_s=8.7068125, gain=0.8, event_count=2)]
+
+- scores/originals/ai_radiance/ai_radiance_complete.score.json
+  exit=0, layered=true, dumped_event_count=260, events_len=260
+  layers=[(ai_radiance_m1.score.json, offset_s=0.0, gain=1.0, event_count=64),
+          (ai_radiance_m2.score.json, offset_s=34.53, gain=1.0, event_count=102),
+          (ai_radiance_m3.score.json, offset_s=62.32572916666667, gain=1.0, event_count=36),
+          (ai_radiance_m4.score.json, offset_s=93.14820833333333, gain=1.0, event_count=58)]
+
+- scores/tests/test_layer.score.json
+  exit=0, layered=true, dumped_event_count=3, events_len=3
+  layers=[(../library/akashic/akashic_notify_001.score.json, offset_s=0.0, gain=1.0, event_count=2),
+          (../library/akashic/akashic_ui_001.score.json, offset_s=3.493770833333333, gain=0.9, event_count=1)]
+
+## GATE 2：pytest tests/test_dump_modes_layered.py -q
+
+命令：python -m pytest tests/test_dump_modes_layered.py -q
+..                                                                       [100%]
+2 passed in 0.73s
+
+## GATE 3：verify_score.py --cli build-wf... 三個 layered 檔仍 PASS
+
+命令：python tools/verify_score.py --cli build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe <file>
+（完整輸出見下；三檔皆 RESULT: ALL CHECKS PASSED, exit=0；
+ modes.top_level_not_applicable 維持 N/A 可接受狀態，未變 FAIL——本卡未修改 verify_score.py，
+ 該行為是既有的、per-leaf 遞迴 mode 驗證，與本卡新增的 --dump-modes 頂層展平輸出彼此獨立）
+== scores/examples/layered_transition.score.json ==
+CLI: build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\layered_transition.score.json
+==============================================================================
+  rendered: 13.84s @ 48000 Hz, peak -0.45 dBFS, RMS -25.81 dBFS
+  loudness (info only, no registered tolerance): integrated -18.74 LUFS (ITU-R BS.1770-4)
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_present: Score has no "events" array (uses "layers" instead); per-event schema checks are not applicable.
+  [OK    ] modes.top_level_not_applicable: Top-level --dump-modes is N/A for a layered composite by CLI contract; every recursively resolved leaf score is mode-scanned below instead.
+  [OK    ] layers.recursive_contract: Recursively validated 2 layer score(s); 2 leaf score(s) are eligible for mode verification.
+  [OK    ] layers.leaf_0.modes.event_identity_contract: akashic_bell.score.json: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] layers.leaf_0.modes.dump_modes_ran: akashic_bell.score.json: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] layers.leaf_0.modes.no_empty_sets: akashic_bell.score.json: No empty mode sets (2 modal events checked).
+  [OK    ] layers.leaf_0.modes.no_nan_inf: akashic_bell.score.json: No NaN/Inf values (14 partials checked across 2 events).
+  [OK    ] layers.leaf_0.modes.frequency_range: akashic_bell.score.json: All 14 partial frequencies are within [20, 20000] Hz.
+  [OK    ] layers.leaf_0.modes.render_active_energy: akashic_bell.score.json: Every modal event has render-active modal energy (2 event(s) checked).
+  [OK    ] layers.leaf_0.modes.decay_positive_finite: akashic_bell.score.json: All 14 partial decay constants are positive and finite.
+  [OK    ] layers.leaf_0.modes.f0_deviation: akashic_bell.score.json: Fundamental frequency deviation within +/-5.0 cents for all 2 modal events (max observed: 0.000 cents).
+  [OK    ] layers.leaf_1.modes.event_identity_contract: restraint_metal_click.score.json: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] layers.leaf_1.modes.dump_modes_ran: restraint_metal_click.score.json: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] layers.leaf_1.modes.no_empty_sets: restraint_metal_click.score.json: No empty mode sets (2 modal events checked).
+  [OK    ] layers.leaf_1.modes.no_nan_inf: restraint_metal_click.score.json: No NaN/Inf values (47 partials checked across 2 events).
+  [OK    ] layers.leaf_1.modes.frequency_range: restraint_metal_click.score.json: All 47 partial frequencies are within [20, 20000] Hz.
+  [OK    ] layers.leaf_1.modes.render_active_energy: restraint_metal_click.score.json: Every modal event has render-active modal energy (2 event(s) checked).
+  [OK    ] layers.leaf_1.modes.decay_positive_finite: restraint_metal_click.score.json: All 47 partial decay constants are positive and finite.
+  [OK    ] layers.leaf_1.modes.f0_deviation: restraint_metal_click.score.json: Fundamental frequency deviation within +/-5.0 cents for all 2 modal events (max observed: 0.007 cents).
+  [OK    ] render.ran: Score rendered successfully to layered_transition_001.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV a11756195de3..., 3 score dependency file(s), tree d7bee696183c..., renderer e4fcf6d03c16...; version=0.3.0, configured source=98f346f8f084 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.50605, gain=1.87729, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No events array to derive rest intervals from (layers-based score); rest check skipped.
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 a11756195de3e64e...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+exit=0
+
+== scores/originals/ai_radiance/ai_radiance_complete.score.json ==
+CLI: build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\originals\ai_radiance\ai_radiance_complete.score.json
+==============================================================================
+  rendered: 136.60s @ 48000 Hz, peak -0.45 dBFS, RMS -25.75 dBFS
+  loudness (info only, no registered tolerance): integrated -21.67 LUFS (ITU-R BS.1770-4)
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_present: Score has no "events" array (uses "layers" instead); per-event schema checks are not applicable.
+  [OK    ] modes.top_level_not_applicable: Top-level --dump-modes is N/A for a layered composite by CLI contract; every recursively resolved leaf score is mode-scanned below instead.
+  [OK    ] layers.recursive_contract: Recursively validated 4 layer score(s); 4 leaf score(s) are eligible for mode verification.
+  [OK    ] layers.leaf_0.modes.event_identity_contract: ai_radiance_m1.score.json: Mode dump preserved all event identities: input=64, modal=64, source indices match.
+  [OK    ] layers.leaf_0.modes.dump_modes_ran: ai_radiance_m1.score.json: --dump-modes ran successfully for 64 modal event(s).
+  [OK    ] layers.leaf_0.modes.no_empty_sets: ai_radiance_m1.score.json: No empty mode sets (64 modal events checked).
+  [OK    ] layers.leaf_0.modes.no_nan_inf: ai_radiance_m1.score.json: No NaN/Inf values (1193 partials checked across 64 events).
+  [OK    ] layers.leaf_0.modes.frequency_range: ai_radiance_m1.score.json: All 1193 partial frequencies are within [20, 20000] Hz.
+  [OK    ] layers.leaf_0.modes.render_active_energy: ai_radiance_m1.score.json: Every modal event has render-active modal energy (64 event(s) checked).
+  [OK    ] layers.leaf_0.modes.decay_positive_finite: ai_radiance_m1.score.json: All 1193 partial decay constants are positive and finite.
+  [OK    ] layers.leaf_0.modes.f0_deviation: ai_radiance_m1.score.json: Fundamental frequency deviation within +/-5.0 cents for all 64 modal events (max observed: 0.012 cents).
+  [OK    ] layers.leaf_1.modes.event_identity_contract: ai_radiance_m2.score.json: Mode dump preserved all event identities: input=106, modal=102, source indices match.
+  [OK    ] layers.leaf_1.modes.dump_modes_ran: ai_radiance_m2.score.json: --dump-modes ran successfully for 102 modal event(s).
+  [OK    ] layers.leaf_1.modes.no_empty_sets: ai_radiance_m2.score.json: No empty mode sets (102 modal events checked).
+  [OK    ] layers.leaf_1.modes.no_nan_inf: ai_radiance_m2.score.json: No NaN/Inf values (2370 partials checked across 102 events).
+  [OK    ] layers.leaf_1.modes.frequency_range: ai_radiance_m2.score.json: All 2370 partial frequencies are within [20, 20000] Hz.
+  [OK    ] layers.leaf_1.modes.render_active_energy: ai_radiance_m2.score.json: Every modal event has render-active modal energy (102 event(s) checked).
+  [OK    ] layers.leaf_1.modes.decay_positive_finite: ai_radiance_m2.score.json: All 2370 partial decay constants are positive and finite.
+  [OK    ] layers.leaf_1.modes.f0_deviation: ai_radiance_m2.score.json: Fundamental frequency deviation within +/-5.0 cents for all 102 modal events (max observed: 0.015 cents).
+  [OK    ] layers.leaf_2.modes.event_identity_contract: ai_radiance_m3.score.json: Mode dump preserved all event identities: input=68, modal=36, source indices match.
+  [OK    ] layers.leaf_2.modes.dump_modes_ran: ai_radiance_m3.score.json: --dump-modes ran successfully for 36 modal event(s).
+  [OK    ] layers.leaf_2.modes.no_empty_sets: ai_radiance_m3.score.json: No empty mode sets (36 modal events checked).
+  [OK    ] layers.leaf_2.modes.no_nan_inf: ai_radiance_m3.score.json: No NaN/Inf values (572 partials checked across 36 events).
+  [OK    ] layers.leaf_2.modes.frequency_range: ai_radiance_m3.score.json: All 572 partial frequencies are within [20, 20000] Hz.
+  [OK    ] layers.leaf_2.modes.render_active_energy: ai_radiance_m3.score.json: Every modal event has render-active modal energy (36 event(s) checked).
+  [OK    ] layers.leaf_2.modes.decay_positive_finite: ai_radiance_m3.score.json: All 572 partial decay constants are positive and finite.
+  [OK    ] layers.leaf_2.modes.f0_deviation: ai_radiance_m3.score.json: Fundamental frequency deviation within +/-5.0 cents for all 36 modal events (max observed: 0.078 cents).
+  [OK    ] layers.leaf_3.modes.event_identity_contract: ai_radiance_m4.score.json: Mode dump preserved all event identities: input=70, modal=58, source indices match.
+  [OK    ] layers.leaf_3.modes.dump_modes_ran: ai_radiance_m4.score.json: --dump-modes ran successfully for 58 modal event(s).
+  [OK    ] layers.leaf_3.modes.no_empty_sets: ai_radiance_m4.score.json: No empty mode sets (58 modal events checked).
+  [OK    ] layers.leaf_3.modes.no_nan_inf: ai_radiance_m4.score.json: No NaN/Inf values (740 partials checked across 58 events).
+  [OK    ] layers.leaf_3.modes.frequency_range: ai_radiance_m4.score.json: All 740 partial frequencies are within [20, 20000] Hz.
+  [OK    ] layers.leaf_3.modes.render_active_energy: ai_radiance_m4.score.json: Every modal event has render-active modal energy (58 event(s) checked).
+  [OK    ] layers.leaf_3.modes.decay_positive_finite: ai_radiance_m4.score.json: All 740 partial decay constants are positive and finite.
+  [OK    ] layers.leaf_3.modes.f0_deviation: ai_radiance_m4.score.json: Fundamental frequency deviation within +/-5.0 cents for all 58 modal events (max observed: 0.010 cents).
+  [OK    ] render.ran: Score rendered successfully to Original_AI_Radiance_Complete.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 979e00aef935..., 5 score dependency file(s), tree ecf85155b84e..., renderer e4fcf6d03c16...; version=0.3.0, configured source=98f346f8f084 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=1.13231, gain=0.838997, samples >= 0 dBFS=41.
+  [OK    ] rests.checked: No events array to derive rest intervals from (layers-based score); rest check skipped.
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 979e00aef9354721...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+exit=0
+
+== scores/tests/test_layer.score.json ==
+CLI: build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from C:\Users\admin\Desktop\Claude\tsuki-synth\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\tests\test_layer.score.json
+==============================================================================
+  rendered: 4.96s @ 48000 Hz, peak -0.45 dBFS, RMS -24.46 dBFS
+  loudness (info only, no registered tolerance): integrated -17.46 LUFS (ITU-R BS.1770-4)
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_present: Score has no "events" array (uses "layers" instead); per-event schema checks are not applicable.
+  [OK    ] modes.top_level_not_applicable: Top-level --dump-modes is N/A for a layered composite by CLI contract; every recursively resolved leaf score is mode-scanned below instead.
+  [OK    ] layers.recursive_contract: Recursively validated 2 layer score(s); 2 leaf score(s) are eligible for mode verification.
+  [OK    ] layers.leaf_0.modes.event_identity_contract: akashic_notify_001.score.json: Mode dump preserved all event identities: input=2, modal=2, source indices match.
+  [OK    ] layers.leaf_0.modes.dump_modes_ran: akashic_notify_001.score.json: --dump-modes ran successfully for 2 modal event(s).
+  [OK    ] layers.leaf_0.modes.no_empty_sets: akashic_notify_001.score.json: No empty mode sets (2 modal events checked).
+  [OK    ] layers.leaf_0.modes.no_nan_inf: akashic_notify_001.score.json: No NaN/Inf values (4 partials checked across 2 events).
+  [OK    ] layers.leaf_0.modes.frequency_range: akashic_notify_001.score.json: All 4 partial frequencies are within [20, 20000] Hz.
+  [OK    ] layers.leaf_0.modes.render_active_energy: akashic_notify_001.score.json: Every modal event has render-active modal energy (2 event(s) checked).
+  [OK    ] layers.leaf_0.modes.decay_positive_finite: akashic_notify_001.score.json: All 4 partial decay constants are positive and finite.
+  [OK    ] layers.leaf_0.modes.f0_deviation: akashic_notify_001.score.json: Fundamental frequency deviation within +/-5.0 cents for all 2 modal events (max observed: 0.000 cents).
+  [OK    ] layers.leaf_1.modes.event_identity_contract: akashic_ui_001.score.json: Mode dump preserved all event identities: input=1, modal=1, source indices match.
+  [OK    ] layers.leaf_1.modes.dump_modes_ran: akashic_ui_001.score.json: --dump-modes ran successfully for 1 modal event(s).
+  [OK    ] layers.leaf_1.modes.no_empty_sets: akashic_ui_001.score.json: No empty mode sets (1 modal events checked).
+  [OK    ] layers.leaf_1.modes.no_nan_inf: akashic_ui_001.score.json: No NaN/Inf values (2 partials checked across 1 events).
+  [OK    ] layers.leaf_1.modes.frequency_range: akashic_ui_001.score.json: All 2 partial frequencies are within [20, 20000] Hz.
+  [OK    ] layers.leaf_1.modes.render_active_energy: akashic_ui_001.score.json: Every modal event has render-active modal energy (1 event(s) checked).
+  [OK    ] layers.leaf_1.modes.decay_positive_finite: akashic_ui_001.score.json: All 2 partial decay constants are positive and finite.
+  [OK    ] layers.leaf_1.modes.f0_deviation: akashic_ui_001.score.json: Fundamental frequency deviation within +/-5.0 cents for all 1 modal events (max observed: 0.000 cents).
+  [OK    ] render.ran: Score rendered successfully to test_layer.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 9166e3539e40..., 3 score dependency file(s), tree d3c23070a2d1..., renderer e4fcf6d03c16...; version=0.3.0, configured source=98f346f8f084 dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.157698, gain=6.02417, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No events array to derive rest intervals from (layers-based score); rest check skipped.
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 9166e3539e409127...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+exit=0
+
+
+## GATE 4（續）：8/8 位元不變
+
+命令：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0907_e9_takeover2 \
+    --workdir <temp, 不在 repo 內> --cli <repo>/build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+
+輸出：reports/gate_outputs/wf0907_method/sha256_wf0907_e9_takeover2.txt
+比對基準：reports/gate_outputs/b6_method/sha256_before.txt
+
+結果：8/8 IDENTICAL（diff 無輸出=一致）
+49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+7b0413dd4f85807969242b831c512758834e18b878ec4181c67ad308e9b8b79b  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71  physical_piano/physical_piano.wav
+be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click/restraint_metal_click_001.wav
+c37ac02d01f08a307b1bafcbc5aa6068fe041049fa75a2cb7b240c4a18ccb92e  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free/water_gong_free.wav
+74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening/fur_elise_opening.wav
+
+## GATE 4（續）：physics_verify.py --full
+
+命令：python tools/physics_verify.py --cli build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --full
+exit=0
+（完整輸出末段，見下：--full summary 全 PASS，唯 1c material sensitivity 有既有的 3 UNVERIFIED/N/A，
+ 屬既有已知未溯源範圍，非本卡引入，不算 CHECKED FAILURE）
+ measured = narrowband (+/-3% of measured f0) Hilbert-envelope
+ log-slope fit, beat-period-averaged for multi-string courses;
+ see measure_t60()'s docstring for the exact method, ROADMAP_PHYSICS.md M5-5a.)
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -64.4 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+
+======================================================================
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+## GATE 5：python -m pytest tests -q 全綠
+
+命令：python -m pytest tests -q
+........................................................................ [ 28%]
+......s................................................................. [ 57%]
+........................................................................ [ 86%]
+..................................                                       [100%]
+249 passed, 1 skipped in 62.56s (0:01:02)
+（1 skipped 為既有、與本卡無關的 tests/test_render_app_filename_safety.py sentinel，非本卡引入）
+
+## GATE 6：git diff --stat 範圍檢查
+
+命令：git diff --stat -- src/score/ScoreRenderer.h src/cli/RenderApp.cpp tests/test_dump_modes_layered.py scores/tests/wf0907_e9_cycle_a.score.json scores/tests/wf0907_e9_cycle_b.score.json
+輸出：
+ src/cli/RenderApp.cpp     |  16 ++-
+ src/score/ScoreRenderer.h | 264 ++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 277 insertions(+), 3 deletions(-)
+（tests/test_dump_modes_layered.py、scores/tests/wf0907_e9_cycle_a.score.json、
+ scores/tests/wf0907_e9_cycle_b.score.json 為新檔，git diff --stat 對純新增的
+ untracked 檔案不顯示行數，改用 git status --porcelain 確認：）
+
+命令：git status --porcelain -- src/score/ScoreRenderer.h src/cli/RenderApp.cpp tests/test_dump_modes_layered.py scores/tests/wf0907_e9_cycle_a.score.json scores/tests/wf0907_e9_cycle_b.score.json
+輸出：
+ M src/cli/RenderApp.cpp
+ M src/score/ScoreRenderer.h
+?? scores/tests/wf0907_e9_cycle_a.score.json
+?? scores/tests/wf0907_e9_cycle_b.score.json
+?? tests/test_dump_modes_layered.py
+
+命令：git status --porcelain -- src/score src/cli tests   （核對本卡以外沒有動到其他檔案；
+ 其他 lane（E8/C11/C12 等）在同一工作樹留下的既有改動，本卡未觸碰、也未列入 files_touched）
+輸出（節錄，僅列本卡範圍以外者，全部與本卡無關、非本次改動）：
+ M src/score/ScoreParser.h            <- 其他卡（E8）留下，本卡未動
+ M tests/host_probe.cpp               <- 其他卡（E5）留下，本卡未動
+ A  tests/test_schema_contract_sync.py <- 其他卡（E8）留下，本卡未動
+ M tests/test_score_vs_midi_verify.py <- 其他卡留下，本卡未動
+  M tests/test_stem_verify.py         <- 其他卡（C11/C12）留下，本卡未動
+?? tests/test_measurement_selfcal.py  <- 其他卡（C10）留下，本卡未動
+
+結論：本卡實際改動範圍 = src/score/ScoreRenderer.h（修改）、src/cli/RenderApp.cpp（修改）、
+tests/test_dump_modes_layered.py（新增）、scores/tests/wf0907_e9_cycle_a.score.json（新增）、
+scores/tests/wf0907_e9_cycle_b.score.json（新增）——與卡上 §5.6 規定完全一致。

@@ -1,0 +1,32 @@
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  1>Checking Build System
+  Building Custom Rule C:/Users/admin/Desktop/Claude/tsuki-synth/CMakeLists.txt
+  TsukiSynthCLI_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_rc_lib.dir\Release\TsukiSynthCLI_rc_lib.lib
+  Building Custom Rule C:/Users/admin/Desktop/Claude/tsuki-synth/CMakeLists.txt
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthData.lib
+  Building Custom Rule C:/Users/admin/Desktop/Claude/tsuki-synth/CMakeLists.txt
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  Building Custom Rule C:/Users/admin/Desktop/Claude/tsuki-synth/CMakeLists.txt
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthData.lib
+  Building Custom Rule C:/Users/admin/Desktop/Claude/tsuki-synth/CMakeLists.txt
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  Building Custom Rule C:/Users/admin/Desktop/Claude/tsuki-synth/CMakeLists.txt
+  TsukiSynth_Standalone.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthData.lib
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  Building Custom Rule C:/Users/admin/Desktop/Claude/tsuki-synth/CMakeLists.txt
+  TsukiSynth_vst3_helper.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynth_vst3_helper.exe
+  Building Custom Rule C:/Users/admin/Desktop/Claude/tsuki-synth/CMakeLists.txt
+  TsukiSynth_VST3.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  removing moduleinfo.json
+  creating C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3

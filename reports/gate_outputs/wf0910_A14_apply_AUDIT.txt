@@ -1,0 +1,561 @@
+======================================================================
+WF0910 A14 B-2 落地 —— 稽核（Opus）親自複驗證據
+稽核日期：2026-09-10 深夜 ~ 2026-09-11 凌晨（本機 Windows）
+稽核對象：工兵 Sonnet 的 `git apply reports/a14_tauc_keytrack_b2.patch`
+          + build\ 重建 + GATE + staged 檔（自報見 reports/gate_outputs/wf0910_A14_apply.txt）
+原則：不採信工兵自報，每條 GATE 親自重跑。
+======================================================================
+
+======================================================================
+[A1] git diff --cached -- src/physics/HammerImpulse.h
+======================================================================
+diff --git a/src/physics/HammerImpulse.h b/src/physics/HammerImpulse.h
+index 5e7f57e..a22122c 100644
+--- a/src/physics/HammerImpulse.h
++++ b/src/physics/HammerImpulse.h
+@@ -7,9 +7,17 @@
+  *
+  * ── 物理模型 ──
+  *
+- * 槌頭接觸弦/梁/板期間，接觸力近似半正弦脈衝（Chaigne & Askenfelt 1994,
+- * JASA 95(2), "Numerical simulations of piano strings I"；該文以力-時間曲線
+- * 半高寬定義接觸時間 tau_c，並描述槌頭非線性：接觸時間隨衝擊力增大而縮短）：
++ * 槌頭接觸弦/梁/板期間，接觸力近似半正弦脈衝（半正弦模型出自 Woodhouse,
++ * 《Euphonics》§2.2.6 "Frequency spectrum of a hammer tap"："a half-cycle
++ * of a cosine wave"；§12.1.2 說明此脈衝形狀的作用是低通濾波）。**上一版
++ * 把這個模型掛在 Chaigne & Askenfelt 1994（JASA 95(2), "Numerical
++ * simulations of piano strings I"）名下是誤引**——該文明文反對半正弦
++ * 假設，其槌力是非線性冪次律 F=K|y|^p 動態解出的結果，接觸時間 tau_c
++ * 是模型求解的輸出、不是預先給定的已知量（溯源查核見
++ * reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md §3.11，
++ * 2026-09-08）。真實鋼琴氈槌非線性、接觸時間隨衝擊力增大而縮短這件事
++ * 仍然成立，此處半正弦仍是本檔案採用的簡化近似，tau_c 作為輸入參數，
++ * 數值來源見下方：
+  *
+  *   F(t) = F_max * sin(pi * t / tau_c),   0 <= t <= tau_c
+  *   F(t) = 0                              其他時間
+@@ -278,27 +286,45 @@ public:
+ 
+     /** Felt（鋼琴氈槌）專用：由 F=K·δ^α、槌質量、撞速解出的接觸時間（秒）。
+      *
+-     *   tau_c_piano(note, v) = kTauCFelt * g(note, v) / g(69, 0.5)
++     *   tau_c_piano(note, v) = kTauCFelt * keytrackScale(note) * [ g(note, v) / g(note, 0.5) ]
+      *
+-     * 錨定選擇（**B4 卡的設計決策，不是文獻數字**，登記供月月覆核）：
++     * A14 B-2（`reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md`
++     * §3.2–3.5、§4 選項 B）：B4 原公式把音高形狀與力度形狀混在同一個
++     * g(note, v)（相對於固定的 g(69, 0.5) 錨點）裡，音高形狀因此是
++     * K/α/質量三張錨點表隱含推出的副產品——等效冪次 k ≈ 0.212（A14 §3.3），
++     * 比文獻量測（Askenfelt & Jansson，本檔頂端已引用：A0 ~4 ms → C8 <1 ms，
++     * k ≈ 0.276～0.32）平，高音 τc 拖得太長，基頻正好落進
++     * forceSpectrumMagnitude() 的力脈衝零點（A14 §3.2：G5 x=2.910 幾乎正中
++     * x=3 零點、G6 x=5.063 正中 x=5 零點），造成 G5/G6 第二泛音反超基頻
++     * 30～51 dB（A14 §3.9 對 Fletcher, Blackham & Stratton 1962 消聲室逐音
++     * 量測），而 g 這個比例式本身只在半正弦脈衝模型成立的 x<1 區域有物理
++     * 意義（A14 §3.3 第 3 點）——用它的音高形狀去外插到 x=7 沒有依據。
++     *
++     * 改法：音高形狀換成本檔已溯源、量測擬合的 keytrackScale()（k=0.32，
++     * A4=1.0，clamp [0.4, 2.6]，不改動——README §0 禁止項）；力度形狀保留
++     * B4 的物理推導 g(note, v)/g(note, 0.5)，但分母改成**同一個 note**
++     * （原本是固定的 g(69, 0.5)），讓它只描述「同一音高上，力度怎麼影響
++     * 接觸時間」，音高的部分完全交給 keytrackScale()，不再重複計入。
++     *
++     * 錨定不變（**B4 卡的設計決策，此輪未動**，登記供月月覆核）：
+      * 文獻只給比例關係（HAMMER_CONTACT_SOURCES.md §3），沒有給絕對前置
+      * 係數（那需要解 F=Kδ^α 運動方程的相位積分，文件未提供、Rule 4 禁止
+      * 編造）。因此把比例關係錨定在既有、已溯源的絕對量級上：kTauCFelt
+-     * = 2.0 ms（Askenfelt & Jansson 量測，本檔頂端已引用）在 A4（MIDI 69）、
+-     * velocity=0.5 這一點。新公式在該點與舊校準完全重合；其餘音高/力度的
+-     * 「相對形狀」才是本函式真正換成物理推導的部分。
++     * = 2.0 ms（Askenfelt & Jansson 量測）在 A4（MIDI 69）、velocity=0.5
++     * 這一點——keytrackScale(69) = 1、g(69,0.5)/g(69,0.5) = 1，新公式在
++     * 該點與舊校準完全重合，不變。
+      *
+      * velocity 的定義沿用既有 tauCForStrike() 的 jlimit(0.02, 1.0)
+      * （0-1 正規化 MIDI velocity proxy，不是真實 m/s——既有架構限制，
+-     * B4 不解決，只沿用）。輸出經 kPianoTauCMinS/MaxS 工程安全 clamp
++     * 本輪不解決，只沿用）。輸出經 kPianoTauCMinS/MaxS 工程安全 clamp
+      * （見該常數註解：非文獻值、非容差）。
+      */
+     static float pianoHammerTauC (int midiNote, float velocity)
+     {
+         const float v    = juce::jlimit (0.02f, 1.0f, velocity);
+         const float g    = pianoHammerG (midiNote, v);
+-        const float gRef = pianoHammerG (69, 0.5f);   // A4 / v=0.5 錨點
++        const float gRef = pianoHammerG (midiNote, 0.5f);   // same-note velocity-shape reference
+         return juce::jlimit (kPianoTauCMinS, kPianoTauCMaxS,
+-                             kTauCFelt * (g / gRef));
++                             kTauCFelt * keytrackScale (midiNote) * (g / gRef));
+     }
+ };
+
+======================================================================
+[A2] git diff --cached -- tests/physics_models_repro.cpp
+======================================================================
+diff --git a/tests/physics_models_repro.cpp b/tests/physics_models_repro.cpp
+index 1ac7940..021de7b 100644
+--- a/tests/physics_models_repro.cpp
++++ b/tests/physics_models_repro.cpp
+@@ -957,6 +957,76 @@ void testPianoHammerContactSolver()
+                "Velocity exponents at C2/C4/C7 match -0.394/-0.429/-0.500 (< 1e-3)");
+     }
+ 
++    // A14 B-2 (2026-09-09): pitch shape re-anchored to the measured
++    // keytrackScale() curve, replacing the K/alpha/mass-derived pitch shape
++    // (reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md
++    // §3.2-3.5, §4 option B; docs/workcards/WF0908_P2_a14_tauc_rule10.md).
++    //   tau_c_piano(note, v) = kTauCFelt * keytrackScale(note)
++    //                        * [ g(note, v) / g(note, 0.5) ]
++
++    // §A14-1: A4/v=0.5 anchor still reproduces kTauCFelt exactly
++    // (keytrackScale(69)=1, g(69,0.5)/g(69,0.5)=1) -- restated here for
++    // locality with the rest of the A14 B-2 checks (already covered above).
++    CHECK (std::abs (HammerImpulse::pianoHammerTauC (69, 0.5f)
++                     - HammerImpulse::kTauCFelt) < 1.0e-4f,
++           "A14 B-2: A4/v=0.5 anchor unchanged after re-anchoring pitch shape");
++
++    // §A14-2: C8 (MIDI 108) tau_c must drop under 1 ms at v=0.5, matching the
++    // literature range cited in keytrackScale()'s doc comment (Askenfelt &
++    // Jansson: A0 ~4 ms -> C8 <1 ms). Before this fix the B4-only pitch
++    // shape gave C8 ~1.46 ms (A14 report §3.3).
++    {
++        const float tauC8 = HammerImpulse::pianoHammerTauC (108, 0.5f);
++        CHECK (tauC8 < 0.001f,
++               "A14 B-2: C8 tau_c < 1 ms at v=0.5 (was ~1.46 ms pre-fix)");
++        std::cout << "       C8 tau_c @ v=0.5 = " << (tauC8 * 1000.0f) << " ms\n";
++    }
++
++    // §A14-3: the equivalent keytrack exponent over C2->C7, computed the same
++    // way A14 report §3.3 computes it (k = -log(tauC7/tauC2)/log(f7/f2) at
++    // fixed velocity), must land at keytrackScale()'s own k=0.32 (+/-0.01) --
++    // pitch shape now comes entirely from keytrackScale(), so this should
++    // reproduce it exactly modulo float rounding.
++    {
++        const float v = 0.5f;
++        const float tauC2 = HammerImpulse::pianoHammerTauC (36, v);
++        const float tauC7 = HammerImpulse::pianoHammerTauC (96, v);
++        const float f2 = 440.0f * std::pow (2.0f, (36 - 69) / 12.0f);
++        const float f7 = 440.0f * std::pow (2.0f, (96 - 69) / 12.0f);
++        const double k = -std::log ((double) tauC7 / (double) tauC2)
++                        / std::log ((double) f7 / (double) f2);
++        CHECK (std::abs (k - 0.32) < 0.01,
++               "A14 B-2: C2->C7 equivalent keytrack exponent k = 0.32 +/- 0.01");
++        std::cout << "       C2->C7 equivalent k = " << k << " (expected 0.32)\n";
++    }
++
++    // §A14-4: velocity law at fixed pitch must stay numerically bit-equivalent
++    // to B4's -- keytrackScale(note) is velocity-independent and cancels in
++    // the ratio new(note,v)/new(note,0.5), which reduces to exactly the same
++    // g(note,v)/g(note,0.5) that B4's old formula's ratio also reduced to
++    // (workcard §3 step 2). This is a unit-test numeric-equivalence check,
++    // not a §6-registered tolerance (R2).
++    {
++        const int   notes[] = { 36, 60, 69, 96 };
++        const float vs[]    = { 0.2f, 0.35f, 0.65f, 0.9f };
++        bool allOk = true;
++        for (int note : notes)
++        {
++            for (float v : vs)
++            {
++                const double ratioNew = (double) HammerImpulse::pianoHammerTauC (note, v)
++                                       / (double) HammerImpulse::pianoHammerTauC (note, 0.5f);
++                const double ratioG   = (double) HammerImpulse::pianoHammerG (note, v)
++                                       / (double) HammerImpulse::pianoHammerG (note, 0.5f);
++                const double rel = std::abs (ratioNew - ratioG)
++                                  / std::max (std::abs (ratioG), 1e-12);
++                allOk = allOk && rel < 1.0e-6;
++            }
++        }
++        CHECK (allOk,
++               "A14 B-2: velocity law at fixed pitch bit-equivalent to B4 (rel < 1e-6)");
++    }
++
+     // §7.4 interpolation monotonicity: alpha(note) non-decreasing across the
+     // full anchored span (the documented physical ordering, sources §2.1).
+     {
+
+======================================================================
+[A3] diff 範圍稽核（逐行讀 A1/A2 的結論）
+======================================================================
+命令：git diff --cached -U0 -- src/physics/HammerImpulse.h   （hunk 標頭）
+輸出：
+  @@ -10,3 +10,11 @@
+  @@ -281 +289 @@ public:
+  @@ -283 +291,19 @@ public:
+  @@ -287,3 +313,3 @@ public:
+  @@ -293 +319 @@ public:
+  @@ -300 +326 @@ public:
+  @@ -302 +328 @@ public:
+
+結論（親眼比對 A1 全文）：
+(a) HammerImpulse.h 只有兩個 hunk：
+    - @@ -7,9 +7,17 @@   檔頭引註修正（半正弦模型改掛 Woodhouse《Euphonics》§2.2.6，
+      並註明上一版誤引 Chaigne & Askenfelt 1994）——這是先前另一張卡已 staged 的內容，
+      不在 A14 patch 裡（見 [A4] 的 patch 對照）。
+    - @@ -278,27 +286,45 @@  pianoHammerTauC() 本體 + 其正上方的 doc 註解。
+    tests/physics_models_repro.cpp 只有一個 hunk：@@ -957,6 +957,76 @@，
+    在 testPianoHammerContactSolver() 內新增 §A14-1～§A14-4 四項單元測試，未刪改任何既有測試。
+(b) keytrackScale() / forceSpectrumMagnitude() / tauCForNote() / tauCForStrike() / pianoHammerG()
+    的函式本體，以及 kPianoTauCMinS / kPianoTauCMaxS / kTauCFelt 常數，
+    HEAD 版與 index 版逐字元相同（以 Python 取出各函式大括號配對區段做 == 比對）：
+    keytrackScale()            HEAD vs index identical = True  (len=262)
+    forceSpectrumMagnitude()   HEAD vs index identical = True  (len=676)
+    tauCForNote()              HEAD vs index identical = True  (len=158)
+    tauCForStrike()            HEAD vs index identical = True  (len=293)
+    pianoHammerG()             HEAD vs index identical = True  (len=393)
+    kPianoTauCMinS             identical = True   static constexpr float kPianoTauCMinS = 0.0003f;   // 0.3 ms
+    kPianoTauCMaxS             identical = True   static constexpr float kPianoTauCMaxS = 0.0080f;   // 8.0 ms
+    kTauCFelt                  identical = True   static constexpr float kTauCFelt   = 0.0020f;   // 2.0 ms
+    （其餘檔案內容不在那兩個 hunk 範圍內，依 diff 定義即逐字元相同；錨點表、clamp 未動。）
+(c) 新增常數檢查：
+      git diff --cached -- <兩檔> | grep -E "^\+.*(constexpr|#define)"   → 無輸出
+    = 沒有新增任何常數（Rule 4：無新增未溯源常數）。
+
+======================================================================
+[A4] staged diff 與 patch 檔的一致性（機器比對）
+======================================================================
+命令：
+  git diff --cached -- src/physics/HammerImpulse.h tests/physics_models_repro.cpp > staged_a14.diff
+  Python：移除 staged_a14.diff 的第一個 hunk（檔頭引註）與 index 行後，與
+          reports/a14_tauc_keytrack_b2.patch 逐行比對
+輸出：
+  staged 行數 = 160   patch 行數 = 139   差 = 21
+  被移除的檔頭引註 hunk = 21 行，標頭：@@ -7,9 +7,17 @@
+  移除檔頭 hunk + index 行後，兩者逐行完全相同 = False
+  唯一差異（unified diff，前 8 行）：
+    --- patch
+    +++ staged-minus-header
+    @@ -1,7 +1,7 @@
+     diff --git a/src/physics/HammerImpulse.h b/src/physics/HammerImpulse.h
+     --- a/src/physics/HammerImpulse.h
+     +++ b/src/physics/HammerImpulse.h
+    -@@ -278,27 +278,45 @@ public:
+    +@@ -278,27 +286,45 @@ public:
+  結論：staged diff == patch + 檔頭引註 hunk。唯一差異是 patch 的 hunk 起始行號
+  「@@ -278,27 +278,45 @@」在 staged 版變成「@@ -278,27 +286,45 @@」，位移量 +8
+  恰好等於檔頭 hunk 造成的行數增加（9 行 → 17 行）。內容零差異。
+
+  patch sha256（sha256sum reports/a14_tauc_keytrack_b2.patch）：
+  5f5cce8d137bede2b2c70e3ef47793f7d01ff1c0dfabf144c7b867e6b9d489de *reports/a14_tauc_keytrack_b2.patch
+  git apply --check --reverse reports/a14_tauc_keytrack_b2.patch ->
+    exit 0（工作樹內容 == patch 施作後的內容）
+
+======================================================================
+[A5] 親自重跑 GATE（全部在 build\ 上跑，未對 build\ 執行任何 cmake）
+======================================================================
+
+-- [A5-1] ctest --test-dir build -C Release --output-on-failure
+  Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build
+      Start 1: audit_repro
+  1/4 Test #1: audit_repro ......................   Passed    1.23 sec
+      Start 2: tuner_repro
+  2/4 Test #2: tuner_repro ......................   Passed    0.59 sec
+      Start 3: physics_models_repro
+  3/4 Test #3: physics_models_repro .............   Passed    0.08 sec
+      Start 4: spectrum_view_repro
+  4/4 Test #4: spectrum_view_repro ..............   Passed    0.03 sec
+  
+  100% tests passed, 0 tests failed out of 4
+  
+  Total Test time (real) =   1.93 sec
+
+-- [A5-2] build\Release\TsukiSynthPhysicsModelsTest.exe 直接執行（確認 §A14 四項）
+   （完整輸出 340+ 行，此處摘 A14 段落與總結；exit code 0）
+  [PASS] A14 B-2: A4/v=0.5 anchor unchanged after re-anchoring pitch shape
+  [PASS] A14 B-2: C8 tau_c < 1 ms at v=0.5 (was ~1.46 ms pre-fix)
+         C8 tau_c @ v=0.5 = 0.972655 ms
+  [PASS] A14 B-2: C2->C7 equivalent keytrack exponent k = 0.32 +/- 0.01
+         C2->C7 equivalent k = 0.32 (expected 0.32)
+  [PASS] A14 B-2: velocity law at fixed pitch bit-equivalent to B4 (rel < 1e-6)
+  PASS (0 failures)
+  [FAIL] 行數統計 = 0
+0
+
+-- [A5-3] python tools/physics_verify.py --full     (exit 0)
+  
+  ======================================================================
+  --full summary:
+     F1 eigenvalue anchors: PASS
+     1b note-range scan   : PASS
+     1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+     1d velocity judgment : PASS
+     2d amplitude judgment: PASS
+     5b measured T60       : PASS
+     F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+     Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+  
+  ======================================================================
+  RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+   F3 / 1d velocity 判定（piano 那一列）：
+     engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+     piano         60    -44.6    -36.6      +8.0      +8.0  PASS
+        tau_c(v) claim domain [2026-08-27 ruling (b), reports/decision_packets/B4_f3_velocity_ruling.md]: Felt-hammer contact time is velocity-solved (HammerImpulse::pianoHammerTauC), so the fixed-tau_c 6.0206 dB law is not asserted here; JUDGED claim = render matches the model's own prediction. Honest report: predicted f0-band delta +7.99 dB, deviation from the fixed-tau_c reference +1.97 dB (informational).
+        broadband RMS delta = +9.18 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+
+-- [A5-4] python -m pytest tests -q     (exit 0)
+  ...................................................                      [100%]
+  263 passed, 1 skipped, 3 xfailed in 196.06s (0:03:16)
+
+======================================================================
+[A6] 位元不變親自重渲（8 首代表曲，用 build\ 的 CLI）
+======================================================================
+命令：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py \
+      --label wf0910_a14_AUDIT \
+      --workdir <repo 外 scratchpad>/render_audit_a14 \
+      --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+輸出：
+  rendering moonlight_sonata_movement1_yangqin ...
+    len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+  rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+    len=325.869s  RMS=-23.899 dBFS  sha256=280cbdac3c117c14
+  rendering physical_piano ...
+    len=7.575s  RMS=-18.485 dBFS  sha256=1233b53f1e8660bc
+  rendering restraint_metal_click ...
+    len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+  rendering moonlight_sonata_movement1_tongue_drum ...
+    len=327.289s  RMS=-21.589 dBFS  sha256=f539aefa91919cbf
+  rendering water_gong_free ...
+    len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+  rendering ai_radiance_m1 ...
+    len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+  rendering fur_elise_opening ...
+    len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+  wrote C:\Users\admin\Desktop\Claude\tsuki-synth\reports\gate_outputs\wf0907_method\render_wf0910_a14_AUDIT.csv
+  wrote C:\Users\admin\Desktop\Claude\tsuki-synth\reports\gate_outputs\wf0907_method\sha256_wf0910_a14_AUDIT.txt
+
+比對結果（Python 逐首比對）：
+  對 sha256_before_post_d8.txt（D8 舊基準）：7/8 IDENTICAL
+     改變：physical_piano/physical_piano.wav
+        舊 607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71
+        新 1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b
+  對 sha256_before_post_a14.txt（A14 新基準）：8/8 IDENTICAL
+     無任何一首改變
+
+  期望值核對：physical_piano 新 sha256 應為
+    1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b
+  實測 = 1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b
+  相符 = True
+
+  與工兵自報的 sha 檔逐行比對：
+    diff <(git show :reports/gate_outputs/wf0907_method/sha256_wf0910_a14_after.txt) \
+         reports/gate_outputs/wf0907_method/sha256_wf0910_a14_AUDIT.txt
+    → 無差異（工兵的 after sha 檔與稽核重渲逐首相同）
+
+======================================================================
+[A7] 受影響 5 檔 verify_score.py（--cli build\...），各一次
+======================================================================
+  ===== scores/classical/fur_elise/fur_elise_complete.score.json =====
+  RESULT: ALL CHECKS PASSED
+  ===== scores/examples/physical_piano.score.json =====
+  RESULT: ALL CHECKS PASSED
+  ===== scores/library/akashic/akashic_action_001.score.json =====
+  RESULT: ALL CHECKS PASSED
+  ===== scores/library/ocean/ocean_action_001.score.json =====
+  RESULT: ALL CHECKS PASSED
+  ===== scores/originals/ai_radiance/ai_radiance_m3.score.json =====
+  RESULT: ALL CHECKS PASSED
+  （每檔 exit code 0；完整輸出見稽核 session 的 audit_verify5.txt，逐檔皆 "RESULT: ALL CHECKS PASSED"）
+
+======================================================================
+[A8] 牙齒測試（mutation test）—— 全部在 build-wf\ 進行，build\ 全程未被 cmake 觸碰
+======================================================================
+方法：三段。先在未變異的樹上建 build-wf 當對照組（證明 build-wf 這條 lane 能重現 build\ 的
+      位元結果），再做兩種變異，最後從備份還原並重建確認回綠。
+      physical_piano 的 sha256 用與 render_wf_scores.py 完全相同的定義
+      （CLI <score> --output <dir>，對產出的 .wav 整檔取 SHA256）。
+
+-- [A8-0] 對照組：未變異（= index 內容）、cmake --build build-wf ... CLI + PhysicsModelsTest
+     wav= physical_piano.wav
+     sha256= 1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b
+     [PASS] A14 B-2: A4/v=0.5 anchor unchanged after re-anchoring pitch shape
+     [PASS] A14 B-2: C8 tau_c < 1 ms at v=0.5 (was ~1.46 ms pre-fix)
+     [PASS] A14 B-2: C2->C7 equivalent keytrack exponent k = 0.32 +/- 0.01
+     [PASS] A14 B-2: velocity law at fixed pitch bit-equivalent to B4 (rel < 1e-6)
+     PASS (0 failures)
+     → build-wf 重現 build\ 的 1233b53f...fc55b，對照組成立。
+
+-- [A8-1] 變異 A：只把 pianoHammerTauC() 裡的 keytrackScale 乘法拿掉
+     -                             kTauCFelt * keytrackScale (midiNote) * (g / gRef));
+     +                             kTauCFelt * (g / gRef));
+     cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynthPhysicsModelsTest  (exit 0)
+     測試結果：
+     [PASS] A14 B-2: A4/v=0.5 anchor unchanged after re-anchoring pitch shape
+     [FAIL] A14 B-2: C8 tau_c < 1 ms at v=0.5 (was ~1.46 ms pre-fix)
+            C8 tau_c @ v=0.5 = 2 ms
+     [FAIL] A14 B-2: C2->C7 equivalent keytrack exponent k = 0.32 +/- 0.01
+            C2->C7 equivalent k = -0 (expected 0.32)
+     [PASS] A14 B-2: velocity law at fixed pitch bit-equivalent to B4 (rel < 1e-6)
+     FAIL (2 failures)
+     wav= physical_piano.wav
+     sha256= 686092df380fafa115882b28f530c842693d4c14bcb625a72bd5f18ea98e4765
+     → §A14-2（C8 < 1 ms）與 §A14-3（k = 0.32）**紅**，測試確實咬得住 keytrackScale 這個因子。
+     → 注意：此變異**不等於**舊行為。舊 B4 公式的分母是固定的 g(69, 0.5)，本變異的分母仍是
+       同音高的 g(note, 0.5)，所以音高律被完全抹平（k = -0），sha 跑出第三個值
+       686092df380fafa115882b28f530c842693d4c14bcb625a72bd5f18ea98e4765，
+       既不是新值也不是舊值。要回到舊 sha 必須連分母一起還原 → 見 [A8-2]。
+
+-- [A8-2] 變異 B：完整還原成 B4 舊公式（keytrackScale 拿掉 + gRef 改回 g(69, 0.5)）
+     -        const float gRef = pianoHammerG (midiNote, 0.5f);
+     +        const float gRef = pianoHammerG (69, 0.5f);
+     cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynthPhysicsModelsTest  (exit 0)
+     測試結果：
+     [PASS] A14 B-2: A4/v=0.5 anchor unchanged after re-anchoring pitch shape
+     [FAIL] A14 B-2: C8 tau_c < 1 ms at v=0.5 (was ~1.46 ms pre-fix)
+            C8 tau_c @ v=0.5 = 1.3833 ms
+     [FAIL] A14 B-2: C2->C7 equivalent keytrack exponent k = 0.32 +/- 0.01
+            C2->C7 equivalent k = 0.214817 (expected 0.32)
+     [PASS] A14 B-2: velocity law at fixed pitch bit-equivalent to B4 (rel < 1e-6)
+     FAIL (2 failures)
+     wav= physical_piano.wav
+     sha256= 607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71
+     → sha256 = 607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71
+       **與 sha256_before_post_d8.txt 記錄的舊 physical_piano 值逐字元相同**：
+       確認 physical_piano 的改變完全由這個 patch 造成，沒有其他來源。
+     → 同時量到舊行為的數字：C8 τc @ v=0.5 = 1.3833 ms、C2→C7 等效 k = 0.214817
+       （對照 A14 決策包 §3.3 記錄的 k = 0.212、C8 1.4581 ms —— 決策包那張表不是取 v=0.5
+       ／該表 A4 = 2.0967 ms ≠ 舊公式在 v=0.5 必然給出的 2.0 ms，故為另一個 velocity 下的值；
+       兩者同號同量級、都遠大於 1 ms，結論不受影響。詳見 [A10] finding 3。）
+
+-- [A8-3] 還原（用施工前的位元備份 cp 回去，不是 git checkout）
+     cp <scratchpad>/HammerImpulse.h.PRE_TEETH_20260911_001211 src/physics/HammerImpulse.h
+     git diff -- src/physics/HammerImpulse.h  ->
+        （空輸出 = 工作樹相對 index 零差異，還原完成）
+     git status --porcelain -- src/physics/HammerImpulse.h tests/physics_models_repro.cpp ->
+        M  src/physics/HammerImpulse.h
+        M  tests/physics_models_repro.cpp
+        （'M ' = 只有 index 有改動、工作樹乾淨）
+
+     再建一次 build-wf 確認回綠：
+     wav= physical_piano.wav
+     sha256= 1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b
+     [PASS] A14 B-2: A4/v=0.5 anchor unchanged after re-anchoring pitch shape
+     [PASS] A14 B-2: C8 tau_c < 1 ms at v=0.5 (was ~1.46 ms pre-fix)
+     [PASS] A14 B-2: C2->C7 equivalent keytrack exponent k = 0.32 +/- 0.01
+     [PASS] A14 B-2: velocity law at fixed pitch bit-equivalent to B4 (rel < 1e-6)
+     PASS (0 failures)
+     → 四項全 PASS、sha 回到 1233b53f...fc55b，還原確認。
+
+     build\ 的 binary mtime（全程未被本次稽核重建）：
+        -rwxr-xr-x 1 admin 197609 7679488 2026-09-10 23:47:23.837295800 +0800 build/Release/TsukiSynthPhysicsModelsTest.exe
+        -rwxr-xr-x 1 admin 197609 7132160 2026-09-10 23:44:56.739297400 +0800 build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+
+======================================================================
+[A9] 文件核對
+======================================================================
+
+-- [A9-1] reports/a14_tauc_keytrack_before_after.md 文末「落地記錄（2026-09-10）」
+   逐項與稽核重跑對照：
+
+   | 落地記錄寫的                              | 稽核親自重跑                        | 相符 |
+   |------------------------------------------|------------------------------------|------|
+   | 7/8 IDENTICAL，只有 physical_piano 改變   | [A6] 對 post_d8 = 7/8，只 piano 變 | 是   |
+   | 舊 607d0d3b...52f71 → 新 1233b53f...fc55b | [A6] 實測新值逐字元相同；[A8-2]     |      |
+   |                                          | 變異回舊公式重現舊值 607d0d3b...    | 是   |
+   | 新基準 sha256_before_post_a14.txt         | [A6] 對新基準 8/8 IDENTICAL        | 是   |
+   | ctest 4/4 Passed                          | [A5-1] 4/4 Passed (100%)           | 是   |
+   | §A14-1～§A14-4 四項新單元測試 PASS        | [A5-2] 四項 PASS、0 failures       | 是   |
+   | physics_verify --full NO CHECKED FAILURES | [A5-3] 同字串；F3/1d piano PASS；   | 是   |
+   | F3 piano PASS、3 筆 rubber UNVERIFIED     | UNVERIFIED = cimbalom/tongue_drum/ |      |
+   |                                          | water_gong 的 rubber 三筆           | 是   |
+   | 受影響 5 檔 verify_score.py 全 PASS       | [A7] 5/5 ALL CHECKS PASSED         | 是   |
+   | pytest 263 passed / 1 skipped / 3 xfailed | [A5-4] 完全相同                     | 是   |
+   | patch sha256 5f5cce8d...b9d489d           | 實測 5f5cce8d...b9d489de（64 字元） | 否，見 finding 1 |
+
+   （HostProbe PASS 一項未列入本次重跑範圍——本卡稽核指令未要求；工兵證據檔
+     reports/gate_outputs/wf0910_A14_apply.txt 有完整 HostProbe 輸出，PASS (0 failures)。）
+
+-- [A9-2] docs/workcards/WF0907_README.md §1 / §3 的基準說明句：兩處都在。
+   §1（路徑與環境，位元不變基準檔那條）：
+     45:  2026-09-10 A14 B-2 放行後改用 `sha256_before_post_a14.txt`（`physical_piano` 改變）。
+     72:  **2026-09-10 A14 B-2 放行後改用 `sha256_before_post_a14.txt`（physical_piano 改變）**：
+   §3（每張卡都適用的硬性檢查）：
+       **2026-09-10 A14 B-2 放行後改用 `sha256_before_post_a14.txt`（physical_piano 改變）**：
+       8 首中只有 `physical_piano` 因 `HammerImpulse::pianoHammerTauC()` 音高律錨定到 `keytrackScale()`
+       而 SHA 改變（`reports/a14_tauc_keytrack_before_after.md`），屬預期落地、非 R10 意外觸發；其餘 7 首逐位元不變。
+       舊基準 `sha256_before_post_d8.txt` 保留存檔，新卡一律比對 `sha256_before_post_a14.txt`（7/8 vs 8/8：判定標準不變，只是比對對象與相同項目數換了）。
+   → 兩處都明確寫「新基準 sha256_before_post_a14.txt、只有 physical_piano 改變、
+     其餘 7 首逐位元不變、屬預期落地非 R10 意外觸發」，與 [A6] 實測一致。
+
+-- [A9-3] docs/workcards/WF0908_P2_a14_tauc_rule10.md：**文末沒有「落地記錄」段**
+   （全檔 57 行，最後一段是 §5 GATE；grep 「落地記錄」在此檔無命中）。見 finding 2。
+
+======================================================================
+[A10] findings
+======================================================================
+
+finding 1 — severity: low（已由稽核修正）
+  location: reports/a14_tauc_keytrack_before_after.md:302
+  claim   : 落地記錄寫「patch sha256：5f5cce8d137bede2b2c70e3ef47793f7d01ff1c0dfabf144c7b867e6b9d489d」
+  evidence: sha256sum reports/a14_tauc_keytrack_b2.patch
+            = 5f5cce8d137bede2b2c70e3ef47793f7d01ff1c0dfabf144c7b867e6b9d489de（64 hex）
+            文件寫的只有 63 hex，尾字元 'e' 被漏掉，是實際值的前綴。
+            這是一個「月月要拿來核對 patch 身分」的數字，寫成 63 字元就核不了。
+  處置    : 稽核直接補上漏掉的 'e'（原檔先位元備份到稽核 scratchpad
+            a14_report.md.PRE_AUDITFIX_*）。改動範圍 = 1 行 1 字元，
+            git diff --stat 為 "1 file changed, 1 insertion(+), 1 deletion(-)"。
+            不影響任何 GATE 判定。
+
+finding 2 — severity: low（不改，回報給月月）
+  location: docs/workcards/WF0908_P2_a14_tauc_rule10.md（全檔 57 行）
+  claim   : 稽核指令要求「核對兩份文件文末落地記錄」，但這張施工卡文末沒有落地記錄段，
+            仍停在 BLOCKED 時期的原文——§0 還寫「這張卡的合法終點是 BLOCKED(R10)…不 stage src/」，
+            §4 禁止事項還寫「不 stage src/（src 留 unstaged 給月月）」。
+  evidence: grep -n 落地記錄 docs/workcards/WF0908_P2_a14_tauc_rule10.md → 無命中；
+            tail -12 顯示最後一段是 §5 GATE。
+  影響    : 卡片文字與 2026-09-10 月月放行後的事實（src 已 staged）矛盾。落地事實
+            在 reports/a14_tauc_keytrack_before_after.md §落地記錄 與
+            docs/workcards/WF0907_README.md §1/§3 都有正確記載，所以不是資訊遺失，
+            是施工卡沒回填。**這不影響本次 patch 的正確性，稽核不因此判 FAIL**，
+            但建議補一行「2026-09-10 月月放行、已落地、見 <報告>」，
+            否則下一個讀卡的人會以為 src 不該被 stage。
+
+finding 3 — severity: info（不需處置）
+  location: tests/physics_models_repro.cpp §A14-2 註解 "(was ~1.46 ms pre-fix)"
+  claim   : 註解說改前 C8 τc ≈ 1.46 ms。
+  evidence: [A8-2] 把程式碼完整還原成 B4 舊公式後直接量：C8 @ v=0.5 = 1.3833 ms、
+            C2→C7 等效 k = 0.214817。1.46 ms / k=0.212 是 A14 決策包 §3.3 表格的值，
+            但該表 A4 = 2.0967 ms，而舊公式在 v=0.5 必然給出 2.0 ms（kTauCFelt 錨點），
+            可見那張表不是 v=0.5 的切片。
+  結論    : 註解引的是決策包的數字、測試量的是 v=0.5 的數字，兩者 velocity 不同故略有出入
+            （1.46 vs 1.383 ms，差 5%）。測試主張「改前 > 1 ms、改後 < 1 ms」在兩種
+            velocity 下都成立，測試本身沒問題。純屬註解措辭不夠精確，
+            不觸發 R1/R2/R4，登記備查。
+
+觀察（非 finding）：
+  - 工兵證據檔 reports/gate_outputs/wf0910_A14_apply.txt 文末只有 GATE 總結，
+    沒有列出它 git add 了哪 9 個檔（grep "git add" 無命中）。稽核改以
+    「staged 內容 vs patch 逐行比對 + 各證據檔內容比對」認定範圍，結論不受影響。
+  - 稽核期間本工作樹有其他 lane 同時在作業（C10A/C10C 相關檔案 mtime 落在
+    2026-09-11 00:08–00:10），但 src/physics/HammerImpulse.h 與
+    tests/physics_models_repro.cpp 在稽核全程只有稽核自己動過（且已位元還原），
+    本卡的判定不受影響。
+
+======================================================================
+[A11] verdict
+======================================================================
+verdict = PASS
+
+理由：
+  1. staged 的 src 改動 == patch 內容（逐行機器比對，唯一差異是行號位移 +8，
+     來自另一張卡已 staged 的檔頭引註 hunk）；禁改的 keytrackScale()／
+     forceSpectrumMagnitude()／tauCForNote()／錨點表／clamp 逐字元未動；無新增常數。
+  2. ctest 4/4、§A14 四項單元測試 PASS、physics_verify --full NO CHECKED FAILURES
+     （F3 piano velocity PASS）、pytest 263 passed，全部由稽核親自重跑重現。
+  3. 位元不變：對 D8 舊基準 7/8、唯一改變的 physical_piano sha 等於預期值
+     1233b53f...fc55b；對 A14 新基準 8/8。受影響 5 檔 verify_score 全 PASS。
+  4. 牙齒測試證明測試與 sha 都咬得住這個改動：把公式還原成 B4 舊版後，
+     §A14-2/§A14-3 轉紅、physical_piano sha 精準回到舊值 607d0d3b...52f71。
+  5. 兩處文件基準說明句齊全，落地記錄數字逐項與重跑一致（唯一例外 finding 1，
+     63 字元 hash 已由稽核補正）。
+
+稽核依 WF0907_README §2.3 執行 git add：
+  reports/gate_outputs/wf0910_A14_apply_AUDIT.txt（本檔）
+  reports/a14_tauc_keytrack_before_after.md（finding 1 的一字元修正）
+  reports/gate_outputs/wf0907_method/sha256_wf0910_a14_AUDIT.txt
+  reports/gate_outputs/wf0907_method/render_wf0910_a14_AUDIT.csv
+（後兩者是稽核自己重渲的原始輸出，依 wf0909 稽核的既有慣例
+  sha256_audit_* / render_audit_* 一併入版控當證據。）
+未執行 git restore --staged（無 FAIL 項）。
+======================================================================

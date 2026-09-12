@@ -1,0 +1,797 @@
+================================================================================
+WF0909-C10C GATE EVIDENCE -- time-domain NLS pitch estimator
+card : docs/workcards/WF0909_C10C_timedomain_estimator.md
+date : 2026-09-09      worker: Opus
+STATUS: RED -- the candidate clears every SYNTHETIC bar and is REJECTED on
+        real rendered audio. The production estimator is UNCHANGED (still
+        the legacy hard-edge centroid, byte-identical behaviour), so no
+        existing pitch evidence in this repo changes.
+plain-language report : reports/c10c_nls_estimator_before_after.md
+design doc            : docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S9.6
+decision packet       : reports/decision_packets/C10_selfcal_domain.zh-TW.md S6
+================================================================================
+
+================================================================================
+STEP 1 -- card S2 step 1: reproduce (and CORRECT) the card's S0 premise
+================================================================================
+
+The card's S0 says MIDI 37's band is 'ten times narrower than one bin'.
+That is true of the N_FFT=2048 Spectrogram used for ONSET detection, but
+NOT of the pitch estimator, which takes its own rfft over the whole 1.23 s
+PITCH_SEG_S segment (bin 0.813008 Hz). Measured, not assumed:
+
+  $ python <scratch>/step1_bins.py     # melody_verify.band_of + PITCH_SEG_S
+    MIDI  36 f0=  65.4064 Hz  band=[  63.4442,  67.3686] w=  3.9244 Hz | pitch-estimator rfft L=59040 bin=0.813008 Hz ->  4.827 bins | Spectrogram N_FFT=2048 bin=23.4375 Hz -> 0.1674 bins
+    MIDI  37 f0=  69.2957 Hz  band=[  67.2168,  71.3745] w=  4.1577 Hz | pitch-estimator rfft L=59040 bin=0.813008 Hz ->  5.114 bins | Spectrogram N_FFT=2048 bin=23.4375 Hz -> 0.1774 bins
+    MIDI  48 f0= 130.8128 Hz  band=[ 126.8884, 134.7372] w=  7.8488 Hz | pitch-estimator rfft L=59040 bin=0.813008 Hz ->  9.654 bins | Spectrogram N_FFT=2048 bin=23.4375 Hz -> 0.3349 bins
+    MIDI  60 f0= 261.6256 Hz  band=[ 253.7768, 269.4743] w= 15.6975 Hz | pitch-estimator rfft L=59040 bin=0.813008 Hz -> 19.308 bins | Spectrogram N_FFT=2048 bin=23.4375 Hz -> 0.6698 bins
+    MIDI  69 f0= 440.0000 Hz  band=[ 426.8000, 453.2000] w= 26.4000 Hz | pitch-estimator rfft L=59040 bin=0.813008 Hz -> 32.472 bins | Spectrogram N_FFT=2048 bin=23.4375 Hz -> 1.1264 bins
+    MIDI 100 f0=2637.0205 Hz  band=[2557.9098,2716.1311] w=158.2212 Hz | pitch-estimator rfft L=59040 bin=0.813008 Hz -> 194.612 bins | Spectrogram N_FFT=2048 bin=23.4375 Hz -> 6.7508 bins
+    
+    Actual bins the legacy centroid sums over, MIDI 37 clean -6 dBFS, sr=48000:
+      seg samples=59040  band=[67.2168,71.3745]  n_bins_in_band=5
+        bin    83  f= 67.479675 Hz  |X|=5.159242e+01  weight=0.051530  (offset from f0 =  -45.974 cents)
+        bin    84  f= 68.292683 Hz  |X|=1.859749e+02  weight=0.185749  (offset from f0 =  -25.241 cents)
+        bin    85  f= 69.105691 Hz  |X|=3.785846e+02  weight=0.378126  (offset from f0 =   -4.753 cents)
+        bin    86  f= 69.918699 Hz  |X|=2.916941e+02  weight=0.291340  (offset from f0 =  +15.496 cents)
+        bin    87  f= 70.731707 Hz  |X|=9.336799e+01  weight=0.093255  (offset from f0 =  +35.511 cents)
+      centroid f=69.259383 Hz -> -0.9065 cents (true offset 0)
+      measure_pitch_cents -> -0.9065056027492312, fail=None
+
+=> The bias mechanism is NOT 'narrower than one bin'; it is the hard 0/1
+   truncation of a 5-bin, asymmetrically weighted band. The centroid reads
+   -0.9065 cents on a tone that is exactly on pitch. The card's premise is
+   corrected here rather than repeated; the CONCLUSION it drew (a time-
+   domain method escapes the bin geometry) still holds and is what STEP 2
+   measures.
+
+================================================================================
+STEP 2 -- synthetic bars, C10C candidate (measure_pitch_cents_nls)
+================================================================================
+
+Derivations that are NOT free parameters (card S1.3 requires the model-
+order rule to be derived from the synthetic residual distribution and
+written down):
+
+  (i) BIC sample count. Scoring BIC on the ZERO-PADDED residual length
+      lets it buy parameters it has not earned (padding oversamples the
+      same continuous residual). Measured on the 1170-point development
+      grid:
+        BIC on padded length : max |error| = 12.9143 c   (worst cell:
+            sr=48000 midi=38 inharm_1e-3 -60 dBFS, order-3 fit spending
+            its extra partials on band-edge leakage at -52.7 / +0.04 /
+            -34.4 cents)
+        BIC on n_eff         : max |error| =  0.2868 c
+      n_eff = 2 x (un-padded rfft bins inside the band) = independent DOF.
+
+  (ii) NLS_MIN_DOF_PER_PARAM (K >= 2 requires n_eff >= value * 4K). Swept
+      on the synthetic corpus, watching BOTH the spurious-partial cells and
+      the refusal count:
+        1.5 -> every spurious-partial cell fixed, 0 refusals
+        2.0 -> every spurious-partial cell fixed, 0 refusals   <-- chosen
+        3.0 -> fixed, but REFUSES MIDI 36 (only ~5 in-band bins)
+        4.0 -> fixed, but REFUSES MIDI 36 and MIDI 38/40
+      2.0 is the larger of the two values that keep refusals at zero.
+
+  (iii) NLS_MIN_R2 (fail-closed refusal). Over the development grid plus
+      the gain-fidelity scan, the two populations are four orders of
+      magnitude apart:
+        every cell the fit got right : R^2 >= 0.9928
+        every degenerate cell        : R^2 <= 9.4e-5
+            (MIDI 100 at -60 dBFS, 158 Hz-wide band, tone buried; the
+             legacy centroid is 12.6 cents off on the same signal)
+      0.5 sits in the middle of that empty gap.
+
+  $ python tools/measurement_selfcal.py            # candidate live
+    measurement_selfcal: synthesizing grid (MIDI 36..100 x 3 variants x 3 levels x sr 48000,44100)
+      grid points: 1170  (fail_reason on 0)
+      by f0 band (max |error_cents|):
+        <167Hz       0.1968 c
+        167-500Hz    0.2868 c
+        500-2000Hz   0.0504 c
+        >2000Hz      0.0127 c
+      by level (max |error_cents|):
+          -6.0 dBFS  0.0246 c
+         -30.0 dBFS  0.1428 c
+         -60.0 dBFS  0.2868 c
+      max_abs_error_cents = 0.2868  (limit 1.0)
+      sensitivity anti-false-green (grid cell MIDI69/harmonic/-6dBFS/48kHz):
+        offset +3.0c -> measured +3.0000c  [OK]
+        offset -3.0c -> measured -3.0000c  [OK]
+      onset error (informational, no exit-code effect): max |err| = 37.0000 ms over 1170 points
+      gain-fidelity scan (WF0909-C10C ---1.1: PASS/FAIL, exit-code affecting -- module docstring 'Gain-fidelity scan'): |measured - TRUE offset| over 308 cells (MIDI 37,45,60,69,80,90,100 x offsets +0,-40,-25,-12,-5,-3,+3,+5,+12,+25,+40), limit 1.0 c:
+        worst |measured - true| = 0.0090 c (midi=45 inharm_1e-3 -30dBFS offset=+40c measured=+39.9910c)
+        worst gain (informational) = 0.9980 (midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+2.9939c)
+      course-semantics check (WF0909-C10C ---1.3: PASS/FAIL, exit-code affecting): 3 strings at -5/+0/+5 cents, amplitude sets equal/unequal, must report the CENTRE within 1.0 c:
+        max |offset from course centre| = 0.0064 c over 18 cells
+    RESULT (development grid): PASS
+    EXIT=0
+
+  $ python tools/measurement_selfcal.py --holdout  # candidate live
+  (card S2 step 3 / S4: the hold-out grid was run ONCE, after the
+   estimator was final, and no parameter was touched afterwards.)
+    measurement_selfcal --holdout: synthesizing hold-out grid (MIDI 36..100 x 2 offsets x 2 B values x 2 levels x sr 48000,44100)
+      grid points: 1040  (fail_reason on 0)
+      by f0 band (max |error_cents|):
+        <167Hz       0.0581 c
+        167-500Hz    0.0816 c
+        500-2000Hz   0.0098 c
+        >2000Hz      0.0062 c
+      by level (max |error_cents|):
+         -12.0 dBFS  0.0816 c
+         -45.0 dBFS  0.0581 c
+      max_abs_error_cents = 0.0816  (limit 1.0)
+      sensitivity anti-false-green (grid cell MIDI69/harmonic/-6dBFS/48kHz):
+        offset +3.0c -> measured +3.0000c  [OK]
+        offset -3.0c -> measured -3.0000c  [OK]
+      onset error (informational, no exit-code effect): max |err| = 40.0197 ms over 1040 points
+      gain-fidelity scan (WF0909-C10C ---1.1: PASS/FAIL, exit-code affecting -- module docstring 'Gain-fidelity scan'): |measured - TRUE offset| over 308 cells (MIDI 37,45,60,69,80,90,100 x offsets +0,-40,-25,-12,-5,-3,+3,+5,+12,+25,+40), limit 1.0 c:
+        worst |measured - true| = 0.0090 c (midi=45 inharm_1e-3 -30dBFS offset=+40c measured=+39.9910c)
+        worst gain (informational) = 0.9980 (midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+2.9939c)
+      course-semantics check (WF0909-C10C ---1.3: PASS/FAIL, exit-code affecting): 3 strings at -5/+0/+5 cents, amplitude sets equal/unequal, must report the CENTRE within 1.0 c:
+        max |offset from course centre| = 0.0064 c over 18 cells
+    RESULT (hold-out grid): PASS
+    EXIT=0
+
+================================================================================
+STEP 3 -- the same four bars, PRODUCTION estimator (for the comparison)
+================================================================================
+
+  $ python tools/measurement_selfcal.py
+    measurement_selfcal: synthesizing grid (MIDI 36..100 x 3 variants x 3 levels x sr 48000,44100)
+      grid points: 1170  (fail_reason on 0)
+      by f0 band (max |error_cents|):
+        <167Hz       1.1721 c
+        167-500Hz    0.6758 c
+        500-2000Hz   0.9836 c
+        >2000Hz      1.1386 c
+      by level (max |error_cents|):
+          -6.0 dBFS  1.0707 c
+         -30.0 dBFS  1.0737 c
+         -60.0 dBFS  1.1721 c
+      max_abs_error_cents = 1.1721  (limit 1.0)
+      sensitivity anti-false-green (grid cell MIDI69/harmonic/-6dBFS/48kHz):
+        offset +3.0c -> measured +2.9818c  [OK]
+        offset -3.0c -> measured -2.9936c  [OK]
+      onset error (informational, no exit-code effect): max |err| = 37.0000 ms over 1170 points
+      gain-fidelity scan (WF0909-C10C ---1.1: PASS/FAIL, exit-code affecting -- module docstring 'Gain-fidelity scan'): |measured - TRUE offset| over 308 cells (MIDI 37,45,60,69,80,90,100 x offsets +0,-40,-25,-12,-5,-3,+3,+5,+12,+25,+40), limit 1.0 c:
+        worst |measured - true| = 16.8647 c (midi=37 inharm_1e-3 -30dBFS offset=+40c measured=+23.1353c)
+        worst gain (informational) = 0.4513 (midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+1.3539c)
+        [ERR] midi=37 harmonic -6dBFS offset=-40c measured=-29.6814c -> |err| 10.3186 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=-25c measured=-20.6625c -> |err| 4.3375 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=-12c measured=-10.6152c -> |err| 1.3848 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+3c measured=+1.5234c -> |err| 1.4766 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+5c measured=+3.1372c -> |err| 1.8628 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+12c measured=+8.6202c -> |err| 3.3798 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+25c measured=+17.2870c -> |err| 7.7130 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+40c measured=+23.7578c -> |err| 16.2422 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=-40c measured=-29.6895c -> |err| 10.3105 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=-25c measured=-20.6639c -> |err| 4.3361 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=-12c measured=-10.6143c -> |err| 1.3857 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+3c measured=+1.5205c -> |err| 1.4795 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+5c measured=+3.1342c -> |err| 1.8658 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+12c measured=+8.6181c -> |err| 3.3819 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+25c measured=+17.2877c -> |err| 7.7123 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+40c measured=+23.7574c -> |err| 16.2426 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+0c measured=-1.0707c -> |err| 1.0707 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=-40c measured=-30.1248c -> |err| 9.8752 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=-25c measured=-20.9089c -> |err| 4.0911 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=-12c measured=-10.7807c -> |err| 1.2193 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+3c measured=+1.3574c -> |err| 1.6426 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+5c measured=+2.9664c -> |err| 2.0336 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+12c measured=+8.4022c -> |err| 3.5978 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+25c measured=+16.9093c -> |err| 8.0907 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+40c measured=+23.1359c -> |err| 16.8641 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+0c measured=-1.0737c -> |err| 1.0737 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=-40c measured=-30.1343c -> |err| 9.8657 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=-25c measured=-20.9102c -> |err| 4.0898 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=-12c measured=-10.7798c -> |err| 1.2202 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+1.3539c -> |err| 1.6461 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+5c measured=+2.9629c -> |err| 2.0371 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+12c measured=+8.4000c -> |err| 3.6000 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+25c measured=+16.9102c -> |err| 8.0898 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+40c measured=+23.1353c -> |err| 16.8647 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=-40c measured=-32.0834c -> |err| 7.9166 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=-25c measured=-22.1844c -> |err| 2.8156 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=-12c measured=-10.8535c -> |err| 1.1465 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=+25c measured=+22.9659c -> |err| 2.0341 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=+40c measured=+34.3632c -> |err| 5.6368 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=-40c measured=-32.0855c -> |err| 7.9145 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=-25c measured=-22.1864c -> |err| 2.8136 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=-12c measured=-10.8561c -> |err| 1.1439 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=+25c measured=+22.9688c -> |err| 2.0312 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=+40c measured=+34.3643c -> |err| 5.6357 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=-40c measured=-32.5414c -> |err| 7.4586 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=-25c measured=-22.3296c -> |err| 2.6704 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=-12c measured=-10.9271c -> |err| 1.0729 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=+25c measured=+22.8471c -> |err| 2.1529 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=+40c measured=+33.9959c -> |err| 6.0041 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=-40c measured=-32.5438c -> |err| 7.4562 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=-25c measured=-22.3322c -> |err| 2.6678 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=-12c measured=-10.9299c -> |err| 1.0701 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=+25c measured=+22.8510c -> |err| 2.1490 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=+40c measured=+33.9971c -> |err| 6.0029 c > 1.0
+        [ERR] midi=60 harmonic -6dBFS offset=-40c measured=-38.5295c -> |err| 1.4705 c > 1.0
+        [ERR] midi=60 harmonic -6dBFS offset=+40c measured=+38.7593c -> |err| 1.2407 c > 1.0
+        [ERR] midi=60 harmonic -30dBFS offset=-40c measured=-38.5223c -> |err| 1.4777 c > 1.0
+        [ERR] midi=60 harmonic -30dBFS offset=+40c measured=+38.7555c -> |err| 1.2445 c > 1.0
+        [ERR] midi=60 inharm_1e-3 -6dBFS offset=-40c measured=-38.6501c -> |err| 1.3499 c > 1.0
+        [ERR] midi=60 inharm_1e-3 -6dBFS offset=+40c measured=+38.6447c -> |err| 1.3553 c > 1.0
+        [ERR] midi=60 inharm_1e-3 -30dBFS offset=-40c measured=-38.6403c -> |err| 1.3597 c > 1.0
+        [ERR] midi=60 inharm_1e-3 -30dBFS offset=+40c measured=+38.6379c -> |err| 1.3621 c > 1.0
+      course-semantics check (WF0909-C10C ---1.3: PASS/FAIL, exit-code affecting): 3 strings at -5/+0/+5 cents, amplitude sets equal/unequal, must report the CENTRE within 1.0 c:
+        max |offset from course centre| = 0.3337 c over 18 cells
+    RESULT (development grid): FAIL
+      (R2: no tolerance in this file may be widened to reach PASS -- a miss here is reported, not patched around.)
+    EXIT=1
+
+  $ python tools/measurement_selfcal.py --holdout
+    measurement_selfcal --holdout: synthesizing hold-out grid (MIDI 36..100 x 2 offsets x 2 B values x 2 levels x sr 48000,44100)
+      grid points: 1040  (fail_reason on 0)
+      by f0 band (max |error_cents|):
+        <167Hz       1.0840 c
+        167-500Hz    0.1187 c
+        500-2000Hz   0.1768 c
+        >2000Hz      0.3634 c
+      by level (max |error_cents|):
+         -12.0 dBFS  1.0840 c
+         -45.0 dBFS  1.0777 c
+      max_abs_error_cents = 1.0840  (limit 1.0)
+      sensitivity anti-false-green (grid cell MIDI69/harmonic/-6dBFS/48kHz):
+        offset +3.0c -> measured +2.9818c  [OK]
+        offset -3.0c -> measured -2.9936c  [OK]
+      onset error (informational, no exit-code effect): max |err| = 40.0197 ms over 1040 points
+      gain-fidelity scan (WF0909-C10C ---1.1: PASS/FAIL, exit-code affecting -- module docstring 'Gain-fidelity scan'): |measured - TRUE offset| over 308 cells (MIDI 37,45,60,69,80,90,100 x offsets +0,-40,-25,-12,-5,-3,+3,+5,+12,+25,+40), limit 1.0 c:
+        worst |measured - true| = 16.8647 c (midi=37 inharm_1e-3 -30dBFS offset=+40c measured=+23.1353c)
+        worst gain (informational) = 0.4513 (midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+1.3539c)
+        [ERR] midi=37 harmonic -6dBFS offset=-40c measured=-29.6814c -> |err| 10.3186 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=-25c measured=-20.6625c -> |err| 4.3375 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=-12c measured=-10.6152c -> |err| 1.3848 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+3c measured=+1.5234c -> |err| 1.4766 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+5c measured=+3.1372c -> |err| 1.8628 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+12c measured=+8.6202c -> |err| 3.3798 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+25c measured=+17.2870c -> |err| 7.7130 c > 1.0
+        [ERR] midi=37 harmonic -6dBFS offset=+40c measured=+23.7578c -> |err| 16.2422 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=-40c measured=-29.6895c -> |err| 10.3105 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=-25c measured=-20.6639c -> |err| 4.3361 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=-12c measured=-10.6143c -> |err| 1.3857 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+3c measured=+1.5205c -> |err| 1.4795 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+5c measured=+3.1342c -> |err| 1.8658 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+12c measured=+8.6181c -> |err| 3.3819 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+25c measured=+17.2877c -> |err| 7.7123 c > 1.0
+        [ERR] midi=37 harmonic -30dBFS offset=+40c measured=+23.7574c -> |err| 16.2426 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+0c measured=-1.0707c -> |err| 1.0707 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=-40c measured=-30.1248c -> |err| 9.8752 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=-25c measured=-20.9089c -> |err| 4.0911 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=-12c measured=-10.7807c -> |err| 1.2193 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+3c measured=+1.3574c -> |err| 1.6426 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+5c measured=+2.9664c -> |err| 2.0336 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+12c measured=+8.4022c -> |err| 3.5978 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+25c measured=+16.9093c -> |err| 8.0907 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -6dBFS offset=+40c measured=+23.1359c -> |err| 16.8641 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+0c measured=-1.0737c -> |err| 1.0737 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=-40c measured=-30.1343c -> |err| 9.8657 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=-25c measured=-20.9102c -> |err| 4.0898 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=-12c measured=-10.7798c -> |err| 1.2202 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+1.3539c -> |err| 1.6461 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+5c measured=+2.9629c -> |err| 2.0371 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+12c measured=+8.4000c -> |err| 3.6000 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+25c measured=+16.9102c -> |err| 8.0898 c > 1.0
+        [ERR] midi=37 inharm_1e-3 -30dBFS offset=+40c measured=+23.1353c -> |err| 16.8647 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=-40c measured=-32.0834c -> |err| 7.9166 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=-25c measured=-22.1844c -> |err| 2.8156 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=-12c measured=-10.8535c -> |err| 1.1465 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=+25c measured=+22.9659c -> |err| 2.0341 c > 1.0
+        [ERR] midi=45 harmonic -6dBFS offset=+40c measured=+34.3632c -> |err| 5.6368 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=-40c measured=-32.0855c -> |err| 7.9145 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=-25c measured=-22.1864c -> |err| 2.8136 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=-12c measured=-10.8561c -> |err| 1.1439 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=+25c measured=+22.9688c -> |err| 2.0312 c > 1.0
+        [ERR] midi=45 harmonic -30dBFS offset=+40c measured=+34.3643c -> |err| 5.6357 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=-40c measured=-32.5414c -> |err| 7.4586 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=-25c measured=-22.3296c -> |err| 2.6704 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=-12c measured=-10.9271c -> |err| 1.0729 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=+25c measured=+22.8471c -> |err| 2.1529 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -6dBFS offset=+40c measured=+33.9959c -> |err| 6.0041 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=-40c measured=-32.5438c -> |err| 7.4562 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=-25c measured=-22.3322c -> |err| 2.6678 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=-12c measured=-10.9299c -> |err| 1.0701 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=+25c measured=+22.8510c -> |err| 2.1490 c > 1.0
+        [ERR] midi=45 inharm_1e-3 -30dBFS offset=+40c measured=+33.9971c -> |err| 6.0029 c > 1.0
+        [ERR] midi=60 harmonic -6dBFS offset=-40c measured=-38.5295c -> |err| 1.4705 c > 1.0
+        [ERR] midi=60 harmonic -6dBFS offset=+40c measured=+38.7593c -> |err| 1.2407 c > 1.0
+        [ERR] midi=60 harmonic -30dBFS offset=-40c measured=-38.5223c -> |err| 1.4777 c > 1.0
+        [ERR] midi=60 harmonic -30dBFS offset=+40c measured=+38.7555c -> |err| 1.2445 c > 1.0
+        [ERR] midi=60 inharm_1e-3 -6dBFS offset=-40c measured=-38.6501c -> |err| 1.3499 c > 1.0
+        [ERR] midi=60 inharm_1e-3 -6dBFS offset=+40c measured=+38.6447c -> |err| 1.3553 c > 1.0
+        [ERR] midi=60 inharm_1e-3 -30dBFS offset=-40c measured=-38.6403c -> |err| 1.3597 c > 1.0
+        [ERR] midi=60 inharm_1e-3 -30dBFS offset=+40c measured=+38.6379c -> |err| 1.3621 c > 1.0
+      course-semantics check (WF0909-C10C ---1.3: PASS/FAIL, exit-code affecting): 3 strings at -5/+0/+5 cents, amplitude sets equal/unequal, must report the CENTRE within 1.0 c:
+        max |offset from course centre| = 0.3337 c over 18 cells
+    RESULT (hold-out grid): FAIL
+      (R2: no tolerance in this file may be widened to reach PASS -- a miss here is reported, not patched around.)
+    EXIT=1
+
+SUMMARY OF STEPS 2-3 (limit 1.0 cent throughout -- the month-lead's
+2026-08-30 bar, no new tolerance anywhere):
+
+  bar                                   production      C10C candidate
+  development grid (1170 pts)           1.1721 c FAIL   0.2868 c PASS
+  hold-out grid (1040 pts, once)        1.0840 c FAIL   0.0816 c PASS
+  gain fidelity (308 cells)            16.8647 c FAIL   0.0090 c PASS
+  course centre (18 cells)              0.3337 c PASS   0.0064 c PASS
+  +/-3 c sensitivity counter-example    PASS            PASS
+
+================================================================================
+STEP 4 -- REAL AUDIO: the card S4 evidence rerun (this is where it fails)
+================================================================================
+
+4.1 PRODUCT GATE PATH -- stem_verify, dry per-event stems, Fur Elise
+    first 300 events. This is the path the +/-5-cent GATE actually runs on
+    (design doc S8.3: polyphonic whole-file pitch is NOT GATE evidence).
+
+  $ python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json \
+        --limit 300 --jobs 3 --out-dir output/wf0909/C10C/stem/nls300 \
+        --json output/wf0909/C10C/stem/nls300.json          # candidate live
+  $ <same command, sv.mv.measure_pitch_cents monkeypatched to
+     measure_pitch_cents_legacy, out-dir/json .../legacy300>  # production
+
+    legacy(production) summary: {'pass': 251, 'fail': 13, 'unverified': 36}
+    nls candidate  summary: {'pass': 244, 'fail': 20, 'unverified': 36}
+      ev65   t=12.083    F5   PASS        -> FAIL           -0.585 ->   -5.036   pitch off by -5.04 cents (limit 5.0)
+      ev86   t=15.833    E5   PASS        -> FAIL           -0.205 ->   -5.214   pitch off by -5.21 cents (limit 5.0)
+      ev88   t=16.250    E5   PASS        -> FAIL           +0.701 ->   +5.070   pitch off by +5.07 cents (limit 5.0)
+      ev92   t=17.083    E5   PASS        -> FAIL           +0.701 ->   +5.070   pitch off by +5.07 cents (limit 5.0)
+      ev96   t=17.917    E5   PASS        -> FAIL           +0.701 ->   +5.070   pitch off by +5.07 cents (limit 5.0)
+      ev197  t=32.917    F5   PASS        -> FAIL           -0.585 ->   -5.036   pitch off by -5.04 cents (limit 5.0)
+      ev237  t=37.083    F5   PASS        -> FAIL           -0.585 ->   -5.036   pitch off by -5.04 cents (limit 5.0)
+    measured by both n=287  max|legacy|=1.8707 max|nls|=5.2139 max|delta|=5.0094 mean|legacy|=0.3166 mean|nls|=0.4762
+    legacy refusal_histogram: {
+     "f0 110.0 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +1.39 c": 11,
+     "f0 164.8 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified -0.80 c": 17,
+     "f0 82.4 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +1.40 c": 5,
+     "f0 130.8 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +0.57 c": 1,
+     "f0 98.0 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified -0.28 c": 1,
+     "f0 146.8 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +1.70 c": 1
+    }
+    nls    refusal_histogram: {
+     "f0 110.0 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified -0.30 c": 11,
+     "f0 164.8 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +0.11 c": 17,
+     "f0 82.4 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +0.05 c": 5,
+     "f0 130.8 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified -0.11 c": 1,
+     "f0 98.0 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified -0.27 c": 1,
+     "f0 146.8 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re); pitch verified +0.08 c": 1
+    }
+
+  Determinism check: the candidate run was executed twice, independently
+  (output/wf0909/C10C/stem/nls300.json and nls300_rerun_determinism.json)
+  and produced identical summaries and superposition numbers.
+
+4.2 WHY it fails -- measured per stem, not inferred. Each of the changed
+    events was rebuilt as a ONE-EVENT dry score, re-rendered, and the fit's
+    internals dumped (K, BIC, R^2, every component's cents/tau/amplitude,
+    and the band's own bin distribution):
+
+  $ python <scratch>/diag_stems.py
+    === ev65 PASS->FAIL F5 note=F5 vel=0.427 dur=0.215 ===
+       verdict=PASS nls_pitch=-0.5804 reason=None
+       f0=698.4139 n_eff=94 centroid_init=-0.5804c tau_init=0.1200
+         band peaks (cents, rel amp): [(-13.806, 0.8405), (-11.574, 0.9479), (-9.344, 1.0), (-7.117, 0.9925), (-4.894, 0.9348), (-2.673, 0.8514), (8.39, 0.8729), (10.594, 0.8675)]
+         K=1 bic=   203.56 r2=0.689317 comps(cents,tau,amp)=[(np.float64(-3.3324), 0.03035, 1.412294)]
+         K=2 bic=    93.11 r2=0.920914 comps(cents,tau,amp)=[(np.float64(-9.6922), 0.03954, 0.595411), (np.float64(10.5094), 0.0382, 0.555714)]
+         K=3 bic=    43.46 r2=0.961567 comps(cents,tau,amp)=[(np.float64(-20.1711), 0.04659, 0.186485), (np.float64(12.338), 0.04235, 0.376897), (np.float64(-7.8411), 0.02951, 1.345998)]
+    === ev88 PASS->FAIL E5 note=E5 vel=0.278 dur=0.231 ===
+       verdict=PASS nls_pitch=+0.7065 reason=None
+       f0=659.3157 n_eff=90 centroid_init=+0.7065c tau_init=0.1225
+         band peaks (cents, rel amp): [(-10.984, 0.845), (-8.659, 0.8497), (-6.336, 0.8016), (2.922, 0.8339), (5.228, 0.9373), (7.532, 1.0), (9.833, 0.9966), (12.13, 0.9219)]
+         K=1 bic=   159.25 r2=0.674125 comps(cents,tau,amp)=[(np.float64(4.5068), 0.03351, 0.874583)]
+         K=2 bic=    53.93 r2=0.917213 comps(cents,tau,amp)=[(np.float64(-10.7661), 0.04217, 0.342795), (np.float64(9.5453), 0.04358, 0.382944)]
+         K=3 bic=     8.25 r2=0.959198 comps(cents,tau,amp)=[(np.float64(8.3034), 0.03377, 0.782339), (np.float64(-12.1685), 0.0463, 0.245085), (np.float64(20.3815), 0.05192, 0.108688)]
+    === ev86 PASS->FAIL E5 note=E5 vel=0.437 dur=0.231 ===
+       verdict=PASS nls_pitch=-0.1996 reason=None
+       f0=659.2298 n_eff=90 centroid_init=-0.1996c tau_init=0.1223
+         band peaks (cents, rel amp): [(-13.087, 0.8833), (-10.758, 0.9765), (-8.433, 1.0), (-6.111, 0.9548), (-3.792, 0.8622), (7.758, 0.8988), (10.058, 0.9113), (12.356, 0.8584)]
+         K=1 bic=   302.19 r2=0.660087 comps(cents,tau,amp)=[(np.float64(-3.0819), 0.0319, 2.120948)]
+         K=2 bic=   193.00 r2=0.917279 comps(cents,tau,amp)=[(np.float64(-9.8454), 0.04329, 0.814725), (np.float64(10.4441), 0.04253, 0.764757)]
+         K=3 bic=   151.53 r2=0.957277 comps(cents,tau,amp)=[(np.float64(-20.6424), 0.05134, 0.243353), (np.float64(-8.5392), 0.03292, 1.754208), (np.float64(11.8111), 0.04634, 0.558981)]
+    === ev0 stayed PASS E5 note=E5 vel=0.462 dur=0.215 ===
+       verdict=PASS nls_pitch=-0.3688 reason=None
+       f0=659.2336 n_eff=88 centroid_init=-0.3688c tau_init=0.1210
+         band peaks (cents, rel amp): [(-10.588, 0.9199), (-8.234, 0.979), (-5.884, 1.0), (-3.536, 0.9934), (-1.192, 0.9746), (1.149, 0.9576), (3.487, 0.9472), (5.822, 0.9361)]
+         K=1 bic=   264.02 r2=0.788248 comps(cents,tau,amp)=[(np.float64(-0.9398), 0.03251, 2.280106)]
+         K=2 bic=   161.85 r2=0.945897 comps(cents,tau,amp)=[(np.float64(-9.2175), 0.03779, 1.12061), (np.float64(9.0606), 0.03607, 1.18244)]
+         K=3 bic=   100.55 r2=0.978007 comps(cents,tau,amp)=[(np.float64(-16.6223), 0.04385, 0.440539), (np.float64(-2.2089), 0.0267, 3.036573), (np.float64(14.4319), 0.04198, 0.538383)]
+    === ev1 control note=D#5 vel=0.427 dur=0.215 ===
+       verdict=PASS nls_pitch=-0.3089 reason=None
+       f0=622.2346 n_eff=84 centroid_init=-0.3089c tau_init=0.1172
+         band peaks (cents, rel amp): [(-10.244, 0.8262), (-7.758, 0.9109), (-5.276, 0.9671), (-2.798, 0.9958), (-0.323, 1.0), (2.148, 0.9825), (4.616, 0.9445), (7.081, 0.8857)]
+         K=1 bic=   259.55 r2=0.851815 comps(cents,tau,amp)=[(np.float64(-0.5033), 0.0358, 2.278833)]
+         K=2 bic=   152.17 r2=0.966582 comps(cents,tau,amp)=[(np.float64(-8.6783), 0.03792, 1.311635), (np.float64(7.8404), 0.0363, 1.460033)]
+         K=3 bic=    78.17 r2=0.988785 comps(cents,tau,amp)=[(np.float64(-16.2126), 0.04281, 0.50326), (np.float64(-1.0404), 0.02993, 3.022199), (np.float64(14.7145), 0.04074, 0.601261)]
+    === ev2 control note=E5 vel=0.427 dur=0.215 ===
+       verdict=PASS nls_pitch=-0.4452 reason=None
+       f0=659.2279 n_eff=88 centroid_init=-0.4452c tau_init=0.1210
+         band peaks (cents, rel amp): [(-10.573, 0.9205), (-8.219, 0.9796), (-5.869, 1.0), (-3.521, 0.9917), (-1.177, 0.9702), (1.164, 0.9498), (3.502, 0.9362), (5.837, 0.9229)]
+         K=1 bic=   234.87 r2=0.788963 comps(cents,tau,amp)=[(np.float64(-1.1331), 0.03257, 1.926948)]
+         K=2 bic=   133.01 r2=0.945890 comps(cents,tau,amp)=[(np.float64(-9.2258), 0.03796, 0.946387), (np.float64(9.0388), 0.03587, 1.01098)]
+         K=3 bic=    71.32 r2=0.978099 comps(cents,tau,amp)=[(np.float64(-16.842), 0.04403, 0.365709), (np.float64(-2.5816), 0.02692, 2.542694), (np.float64(14.2946), 0.04178, 0.463447)]
+
+  READING: the Fur Elise notes here have duration 0.215-0.231 s inside a
+  1.23 s PITCH_SEG_S window -- the note is DAMPED AT RELEASE, so its
+  envelope is not one exponential, which is exactly what the NLS model
+  assumes. The fitted tau comes out at 0.030-0.052 s => linewidth
+  1/(pi*tau) ~ 6-10 Hz ~ 16-26 cents at E5/F5, while the K=2/K=3
+  components the fit picks are only ~20 cents apart: they are INSIDE each
+  other's linewidths and are not resolvable partials at all, just a
+  flexible basis for one broad non-Lorentzian resonance (R^2 0.67 -> 0.96,
+  so BIC keeps buying them). The amplitude-weighted mean of an
+  unidentifiable decomposition is unstable: on ev65/ev86/ev88 the band is
+  a SINGLE broad peak centred within ~1 cent of the declared f0 (bins
+  spanning -13..+12 cents at relative amplitude 0.84-1.00), and the
+  candidate reports -5.04 / -5.21 / +5.07 c where the centroid reports
+  -0.59 / -0.21 / +0.71 c. The centroid is the closer of the two to the
+  declared pitch. Controls (ev0/ev1/ev2, still PASS) show the contrast:
+  a clean single peak, K=1 already at R^2 0.79-0.85.
+
+4.3 30-file 'strong domain, all green' corpus (recorded invariant:
+    '0 FAIL maintained'). 21 of 30 identical, 9 changed:
+
+    corpus30_akashic_action_001                legacy    0/   0/   2 -> nls    0/   0/   2   IDENTICAL counts
+    corpus30_akashic_ui_001                    legacy    1/   0/   0 -> nls    1/   0/   0   IDENTICAL counts
+          measured by both: n=1  max|legacy|=1.8041  max|nls|=2.1940  max|delta|=0.3899
+    corpus30_clockwork_ambient_001             legacy    0/   0/   8 -> nls    0/   1/   7   CHANGED
+          verdict transitions: UNVERIFIED->FAIL x1
+            ev3     t=1.000    note=C3   UNVERIFIED  -> FAIL         pitch   -4.639 ->  -21.909   pitch off by -21.91 cents (limit 5.0)
+          measured by both: n=1  max|legacy|=4.6394  max|nls|=21.9086  max|delta|=17.2692
+    corpus30_clockwork_loop_001                legacy    2/   0/   8 -> nls    1/   1/   8   CHANGED
+          verdict transitions: PASS->FAIL x1
+            ev8     t=3.250    note=E6   PASS        -> FAIL         pitch   +0.520 ->   -5.591   pitch off by -5.59 cents (limit 5.0)
+          measured by both: n=2  max|legacy|=3.0104  max|nls|=5.5907  max|delta|=6.1107
+    corpus30_clockwork_notify_001              legacy    1/   0/   0 -> nls    1/   0/   0   IDENTICAL counts
+          measured by both: n=1  max|legacy|=3.0064  max|nls|=2.6775  max|delta|=0.3289
+    corpus30_clockwork_notify_var01            legacy    1/   0/   1 -> nls    1/   0/   1   IDENTICAL counts
+          measured by both: n=1  max|legacy|=2.6231  max|nls|=2.7104  max|delta|=0.0874
+    corpus30_clockwork_transition_001          legacy    4/   0/   1 -> nls    3/   1/   1   CHANGED
+          verdict transitions: PASS->FAIL x1
+            ev1     t=0.120    note=E4   PASS        -> FAIL         pitch   -4.186 ->  -10.078   pitch off by -10.08 cents (limit 5.0)
+          measured by both: n=4  max|legacy|=4.1862  max|nls|=10.0776  max|delta|=5.8914
+    corpus30_forest_notify_var01               legacy    1/   0/   2 -> nls    0/   0/   3   CHANGED
+          verdict transitions: PASS->UNVERIFIED x1
+            ev2     t=0.160    note=G#7  PASS        -> UNVERIFIED   pitch   +0.638 ->    None    pitch fit residual too large
+    corpus30_forest_ui_001                     legacy    1/   0/   0 -> nls    0/   1/   0   CHANGED
+          verdict transitions: PASS->FAIL x1
+            ev0     t=0.000    note=F5   PASS        -> FAIL         pitch   +2.342 ->   +9.930   pitch off by +9.93 cents (limit 5.0)
+          measured by both: n=1  max|legacy|=2.3420  max|nls|=9.9300  max|delta|=7.5881
+    corpus30_melody_sentinel                   legacy    5/   0/   0 -> nls    5/   0/   0   IDENTICAL counts
+          measured by both: n=5  max|legacy|=1.6007  max|nls|=1.3282  max|delta|=2.5500
+    corpus30_moonlight_sonata_movement1_yangqin_tongue_mix legacy    0/   0/2285 -> nls    0/   0/2285   IDENTICAL counts
+    corpus30_ocean_action_001                  legacy    0/   0/   2 -> nls    0/   0/   2   IDENTICAL counts
+    corpus30_ocean_ui_001                      legacy    1/   0/   0 -> nls    0/   1/   0   CHANGED
+          verdict transitions: PASS->FAIL x1
+            ev0     t=0.000    note=A5   PASS        -> FAIL         pitch   -3.134 ->   -5.571   pitch off by -5.57 cents (limit 5.0)
+          measured by both: n=1  max|legacy|=3.1335  max|nls|=5.5705  max|delta|=2.4370
+    corpus30_rabbit_action_001                 legacy    0/   0/   1 -> nls    0/   1/   0   CHANGED
+          verdict transitions: UNVERIFIED->FAIL x1
+            ev0     t=0.000    note=E2   UNVERIFIED  -> FAIL         pitch   -4.933 ->  -49.599   pitch off by -49.60 cents (limit 5.0)
+          measured by both: n=1  max|legacy|=4.9327  max|nls|=49.5985  max|delta|=44.6658
+    corpus30_rabbit_loop_001                   legacy    5/   0/   4 -> nls    5/   0/   4   IDENTICAL counts
+          measured by both: n=5  max|legacy|=1.6175  max|nls|=2.9976  max|delta|=2.1537
+    corpus30_rabbit_notify_001                 legacy    1/   0/   0 -> nls    1/   0/   0   IDENTICAL counts
+          measured by both: n=1  max|legacy|=0.4724  max|nls|=0.3975  max|delta|=0.0749
+    corpus30_rabbit_notify_var01               legacy    1/   0/   0 -> nls    1/   0/   0   IDENTICAL counts
+          measured by both: n=1  max|legacy|=1.0565  max|nls|=0.2169  max|delta|=1.2734
+    corpus30_rabbit_transition_001             legacy    3/   0/   0 -> nls    3/   0/   0   IDENTICAL counts
+          measured by both: n=3  max|legacy|=0.6670  max|nls|=1.2258  max|delta|=0.6935
+    corpus30_rabbit_warning                    legacy    2/   0/   0 -> nls    2/   0/   0   IDENTICAL counts
+          measured by both: n=2  max|legacy|=1.5592  max|nls|=2.1360  max|delta|=0.9187
+    corpus30_restraint_ambient_001             legacy    0/   0/   4 -> nls    0/   0/   4   IDENTICAL counts
+          measured by both: n=3  max|legacy|=2.4227  max|nls|=1.5317  max|delta|=3.8874
+    corpus30_restraint_loop_001                legacy    1/   0/   8 -> nls    1/   1/   7   CHANGED
+          verdict transitions: UNVERIFIED->FAIL x1
+            ev4     t=2.400    note=D2   UNVERIFIED  -> FAIL         pitch   -3.333 ->   +9.649   pitch off by +9.65 cents (limit 5.0)
+          measured by both: n=2  max|legacy|=3.3329  max|nls|=9.6487  max|delta|=12.9816
+    corpus30_restraint_notify_001              legacy    2/   0/   0 -> nls    1/   1/   0   CHANGED
+          verdict transitions: PASS->FAIL x1
+            ev0     t=0.000    note=E4   PASS        -> FAIL         pitch   -1.480 ->   -6.490   pitch off by -6.49 cents (limit 5.0)
+          measured by both: n=2  max|legacy|=1.4796  max|nls|=6.4895  max|delta|=5.0100
+    corpus30_restraint_transition_001          legacy    0/   0/   4 -> nls    0/   0/   4   IDENTICAL counts
+          measured by both: n=3  max|legacy|=2.3440  max|nls|=4.6191  max|delta|=6.5791
+    corpus30_restraint_ui_001                  legacy    1/   0/   0 -> nls    1/   0/   0   IDENTICAL counts
+          measured by both: n=1  max|legacy|=0.4715  max|nls|=3.1115  max|delta|=2.6400
+    corpus30_test_distortion                   legacy    1/   0/   0 -> nls    1/   0/   0   IDENTICAL counts
+          measured by both: n=1  max|legacy|=0.5100  max|nls|=0.1032  max|delta|=0.6132
+    corpus30_test_distortion_bitcrush          legacy    1/   0/   0 -> nls    1/   0/   0   IDENTICAL counts
+          measured by both: n=1  max|legacy|=0.7941  max|nls|=1.2947  max|delta|=0.5006
+    corpus30_test_engine_levels                legacy    1/   0/   2 -> nls    1/   0/   2   IDENTICAL counts
+          measured by both: n=1  max|legacy|=0.1355  max|nls|=0.0005  max|delta|=0.1360
+    corpus30_test_trim                         legacy    1/   0/   0 -> nls    1/   0/   0   IDENTICAL counts
+          measured by both: n=1  max|legacy|=0.2214  max|nls|=0.2580  max|delta|=0.4794
+    corpus30_water_gong_clamped                legacy    2/   0/   0 -> nls    2/   0/   0   IDENTICAL counts
+          measured by both: n=2  max|legacy|=0.1096  max|nls|=3.4227  max|delta|=3.5323
+    corpus30_water_gong_free                   legacy    2/   0/   0 -> nls    2/   0/   0   IDENTICAL counts
+          measured by both: n=2  max|legacy|=1.6267  max|nls|=3.6160  max|delta|=1.9892
+
+4.4 Remaining S3 evidence items (sentinel, H6 x5, moonlight v4, Fur Elise
+    whole-file baseline). melody_sentinel and all five H6 block sizes keep
+    5 PASS / 0 FAIL / 0 UNVERIFIED under BOTH estimators; moonlight and the
+    whole-file baseline are the design doc's own weak / non-GATE domains
+    and move in both directions:
+
+    sentinel                                   legacy    5/   0/   0 -> nls    5/   0/   0   IDENTICAL counts
+          measured by both: n=5  max|legacy|=1.6007  max|nls|=1.3282  max|delta|=2.5500
+    h6_block_64                                legacy    5/   0/   0 -> nls    5/   0/   0   IDENTICAL counts
+          measured by both: n=5  max|legacy|=1.3888  max|nls|=2.5874  max|delta|=3.9762
+    h6_block_256                               legacy    5/   0/   0 -> nls    5/   0/   0   IDENTICAL counts
+          measured by both: n=5  max|legacy|=1.3888  max|nls|=2.5874  max|delta|=3.9762
+    h6_block_512                               legacy    5/   0/   0 -> nls    5/   0/   0   IDENTICAL counts
+          measured by both: n=5  max|legacy|=1.3888  max|nls|=2.5874  max|delta|=3.9762
+    h6_block_1024                              legacy    5/   0/   0 -> nls    5/   0/   0   IDENTICAL counts
+          measured by both: n=5  max|legacy|=1.3888  max|nls|=2.5874  max|delta|=3.9762
+    h6_block_4096                              legacy    5/   0/   0 -> nls    5/   0/   0   IDENTICAL counts
+          measured by both: n=5  max|legacy|=1.3888  max|nls|=2.5874  max|delta|=3.9762
+    moonlight_yangqin                          legacy    2/  40/1101 -> nls    6/  43/1094   CHANGED
+          verdict transitions: FAIL->PASS x4, FAIL->UNVERIFIED x18, UNVERIFIED->FAIL x25
+            ev0     t=0.000    note=37   FAIL        -> UNVERIFIED   pitch   -7.924 ->   -1.887   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev14    t=4.480    note=35   UNVERIFIED  -> FAIL         pitch   +0.528 ->   +8.930   pitch off by +8.93 cents (limit 5.0)
+            ev60    t=17.920   note=37   FAIL        -> UNVERIFIED   pitch   -8.680 ->   -2.323   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev95    t=26.880   note=37   FAIL        -> UNVERIFIED   pitch   -8.146 ->   -1.852   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev113   t=31.360   note=35   UNVERIFIED  -> FAIL         pitch   +0.194 ->   +8.722   pitch off by +8.72 cents (limit 5.0)
+            ev132   t=35.840   note=40   UNVERIFIED  -> FAIL         pitch   -3.009 ->   -8.053   pitch off by -8.05 cents (limit 5.0)
+            ev162   t=44.800   note=38   UNVERIFIED  -> FAIL         pitch   +2.757 ->   +7.987   pitch off by +7.99 cents (limit 5.0)
+            ev185   t=50.400   note=35   UNVERIFIED  -> FAIL         pitch   +2.867 ->   +9.838   pitch off by +9.84 cents (limit 5.0)
+            ev190   t=51.520   note=34   UNVERIFIED  -> FAIL         pitch   -4.668 ->   -5.040   pitch off by -5.04 cents (limit 5.0)
+            ev208   t=56.000   note=40   UNVERIFIED  -> FAIL         pitch   -1.936 ->   -8.105   pitch off by -8.10 cents (limit 5.0)
+            ev235   t=62.720   note=35   UNVERIFIED  -> FAIL         pitch   +0.400 ->   +8.918   pitch off by +8.92 cents (limit 5.0)
+            ev254   t=68.320   note=40   UNVERIFIED  -> FAIL         pitch   -2.541 ->   -7.981   pitch off by -7.98 cents (limit 5.0)
+            ev267   t=70.560   note=70   FAIL        -> PASS         pitch   -8.525 ->   -2.645
+            ev270   t=71.680   note=35   UNVERIFIED  -> FAIL         pitch   +0.771 ->   +8.928   pitch off by +8.93 cents (limit 5.0)
+            ev290   t=77.280   note=40   UNVERIFIED  -> FAIL         pitch   -2.500 ->   -7.978   pitch off by -7.98 cents (limit 5.0)
+            ev303   t=79.520   note=70   FAIL        -> PASS         pitch   -9.003 ->   -2.684
+            ev306   t=80.640   note=35   UNVERIFIED  -> FAIL         pitch   +0.791 ->   +8.928   pitch off by +8.93 cents (limit 5.0)
+            ev342   t=89.600   note=35   UNVERIFIED  -> FAIL         pitch   +0.117 ->   +8.676   pitch off by +8.68 cents (limit 5.0)
+            ev360   t=94.080   note=37   FAIL        -> UNVERIFIED   pitch   -7.709 ->   -1.859   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev427   t=110.880  note=37   FAIL        -> UNVERIFIED   pitch   -8.426 ->   -1.202   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev496   t=127.680  note=57   UNVERIFIED  -> FAIL         pitch   -2.889 ->  -11.164   pitch off by -11.16 cents (limit 5.0)
+            ev499   t=128.800  note=54   UNVERIFIED  -> FAIL         pitch   +2.312 ->   -9.889   pitch off by -9.89 cents (limit 5.0)
+            ev520   t=135.520  note=61   FAIL        -> PASS         pitch   -6.594 ->   -3.979
+            ev533   t=139.627  note=54   UNVERIFIED  -> FAIL         pitch   +2.312 ->   +6.528   pitch off by +6.53 cents (limit 5.0)
+            ev575   t=153.067  note=69   UNVERIFIED  -> FAIL         pitch   -1.346 ->  -11.069   pitch off by -11.07 cents (limit 5.0)
+            ev604   t=163.893  note=51   UNVERIFIED  -> FAIL         pitch   +1.647 ->  +12.278   pitch off by +12.28 cents (limit 5.0)
+            ev606   t=164.640  note=49   UNVERIFIED  -> FAIL         pitch   +0.197 ->   +7.189   pitch off by +7.19 cents (limit 5.0)
+            ev669   t=183.680  note=37   FAIL        -> UNVERIFIED   pitch   -8.625 ->   -2.259   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev704   t=192.640  note=37   FAIL        -> UNVERIFIED   pitch   -8.166 ->   -1.813   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev722   t=197.120  note=35   UNVERIFIED  -> FAIL         pitch   +0.190 ->   +8.717   pitch off by +8.72 cents (limit 5.0)
+            ev741   t=201.600  note=40   UNVERIFIED  -> FAIL         pitch   -3.011 ->   -8.059   pitch off by -8.06 cents (limit 5.0)
+            ev774   t=210.560  note=40   UNVERIFIED  -> FAIL         pitch   -2.630 ->   -8.072   pitch off by -8.07 cents (limit 5.0)
+            ev789   t=213.920  note=37   FAIL        -> UNVERIFIED   pitch   -8.448 ->   -1.218   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev833   t=224.000  note=37   FAIL        -> UNVERIFIED   pitch   -7.977 ->   -1.817   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev866   t=231.840  note=72   FAIL        -> UNVERIFIED   pitch   -7.807 ->    None    pitch fit residual too large
+            ev869   t=232.960  note=37   FAIL        -> UNVERIFIED   pitch   -8.243 ->   -1.384   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev902   t=240.800  note=72   FAIL        -> PASS         pitch   -7.537 ->   -4.823
+            ev905   t=241.920  note=37   FAIL        -> UNVERIFIED   pitch   -8.261 ->   -1.391   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev935   t=249.760  note=40   UNVERIFIED  -> FAIL         pitch   -2.688 ->   -8.049   pitch off by -8.05 cents (limit 5.0)
+            ev941   t=250.880  note=37   FAIL        -> UNVERIFIED   pitch   -8.380 ->   -1.326   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev1004  t=264.320  note=37   FAIL        -> UNVERIFIED   pitch   -8.448 ->   -2.124   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev1037  t=273.280  note=37   FAIL        -> UNVERIFIED   pitch   -8.509 ->   -1.472   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev1067  t=281.867  note=54   UNVERIFIED  -> FAIL         pitch   +2.476 ->   +6.649   pitch off by +6.65 cents (limit 5.0)
+            ev1069  t=282.240  note=37   FAIL        -> UNVERIFIED   pitch   -8.635 ->   -1.457   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev1100  t=290.827  note=54   UNVERIFIED  -> FAIL         pitch   +2.792 ->   +6.611   pitch off by +6.61 cents (limit 5.0)
+            ev1102  t=291.200  note=37   FAIL        -> UNVERIFIED   pitch   -8.589 ->   -1.613   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+            ev1129  t=300.160  note=37   FAIL        -> UNVERIFIED   pitch   -6.913 ->   -1.210   f0 69.3 Hz < 167 Hz: band too narrow for +/-10 ms onset refinement (Re
+          measured by both: n=107  max|legacy|=12.1588  max|nls|=26.7567  max|delta|=19.9948
+    fur_elise_whole_file_baseline              legacy    8/  34/ 864 -> nls    7/  10/ 889   CHANGED
+          verdict transitions: FAIL->UNVERIFIED x32, PASS->FAIL x1, UNVERIFIED->FAIL x7
+            ev6     t=1.250    note=D5   FAIL        -> UNVERIFIED   pitch   -5.620 ->    None    pitch fit residual too large
+            ev12    t=2.292    note=C4   FAIL        -> UNVERIFIED   pitch   -7.645 ->    None    pitch fit residual too large
+            ev18    t=3.333    note=G#3  FAIL        -> UNVERIFIED   pitch   +8.852 ->    None    pitch fit residual too large
+            ev39    t=7.292    note=C4   FAIL        -> UNVERIFIED   pitch   -7.647 ->    None    pitch fit residual too large
+            ev45    t=8.333    note=G#3  FAIL        -> UNVERIFIED   pitch   +8.883 ->    None    pitch fit residual too large
+            ev61    t=11.250   note=C3   UNVERIFIED  -> FAIL         pitch   +1.682 ->  +12.749   pitch off by +12.75 cents (limit 5.0)
+            ev68    t=12.500   note=G2   UNVERIFIED  -> FAIL         pitch   +0.094 ->  -11.042   pitch off by -11.04 cents (limit 5.0)
+            ev71    t=13.125   note=F4   FAIL        -> UNVERIFIED   pitch   -8.013 ->    None    pitch fit residual too large
+            ev110   t=20.625   note=C4   FAIL        -> UNVERIFIED   pitch   -7.646 ->    None    pitch fit residual too large
+            ev116   t=21.667   note=G#3  FAIL        -> UNVERIFIED   pitch   +8.860 ->    None    pitch fit residual too large
+            ev137   t=25.625   note=C4   FAIL        -> UNVERIFIED   pitch   -7.648 ->    None    pitch fit residual too large
+            ev143   t=26.667   note=G#3  FAIL        -> UNVERIFIED   pitch   +8.890 ->    None    pitch fit residual too large
+            ev229   t=36.042   note=D#5  FAIL        -> UNVERIFIED   pitch  +11.171 ->    None    pitch fit residual too large
+            ev232   t=36.250   note=E3   UNVERIFIED  -> FAIL         pitch   -1.857 ->   -6.899   pitch off by -6.90 cents (limit 5.0)
+            ev287   t=40.833   note=B3   PASS        -> FAIL         pitch   +4.951 ->   +7.420   pitch off by +7.42 cents (limit 5.0)
+            ev362   t=49.583   note=D5   FAIL        -> UNVERIFIED   pitch   -5.594 ->    None    pitch fit residual too large
+            ev368   t=50.625   note=C4   FAIL        -> UNVERIFIED   pitch   -7.611 ->    None    pitch fit residual too large
+            ev374   t=51.667   note=G#3  FAIL        -> UNVERIFIED   pitch   +8.840 ->    None    pitch fit residual too large
+            ev395   t=55.625   note=C4   FAIL        -> UNVERIFIED   pitch   -7.652 ->    None    pitch fit residual too large
+            ev401   t=56.667   note=G#3  FAIL        -> UNVERIFIED   pitch   +8.891 ->    None    pitch fit residual too large
+            ev413   t=58.750   note=C3   UNVERIFIED  -> FAIL         pitch   +1.687 ->  +12.609   pitch off by +12.61 cents (limit 5.0)
+            ev420   t=60.000   note=G2   UNVERIFIED  -> FAIL         pitch   +0.080 ->  -11.109   pitch off by -11.11 cents (limit 5.0)
+            ev423   t=60.625   note=F4   FAIL        -> UNVERIFIED   pitch   -8.027 ->    None    pitch fit residual too large
+            ev462   t=68.125   note=C4   FAIL        -> UNVERIFIED   pitch   -7.650 ->    None    pitch fit residual too large
+            ev468   t=69.167   note=G#3  FAIL        -> UNVERIFIED   pitch   +8.847 ->    None    pitch fit residual too large
+            ev489   t=73.125   note=C4   FAIL        -> UNVERIFIED   pitch   -7.643 ->    None    pitch fit residual too large
+            ev495   t=74.167   note=G#3  FAIL        -> UNVERIFIED   pitch   +7.550 ->    None    pitch fit residual too large
+            ev550   t=81.250   note=F4   FAIL        -> UNVERIFIED   pitch  -11.232 ->    None    pitch fit residual too large
+            ev663   t=92.292   note=C5   FAIL        -> UNVERIFIED   pitch   -6.753 ->    None    pitch fit residual too large
+            ev771   t=105.625  note=C4   FAIL        -> UNVERIFIED   pitch   -7.640 ->    None    pitch fit residual too large
+            ev777   t=106.667  note=G#3  FAIL        -> UNVERIFIED   pitch   +8.839 ->    None    pitch fit residual too large
+            ev798   t=110.625  note=C4   FAIL        -> UNVERIFIED   pitch   -7.636 ->    None    pitch fit residual too large
+            ev804   t=111.667  note=G#3  FAIL        -> UNVERIFIED   pitch   +8.879 ->    None    pitch fit residual too large
+            ev816   t=113.750  note=C3   UNVERIFIED  -> FAIL         pitch   +1.686 ->  +12.620   pitch off by +12.62 cents (limit 5.0)
+            ev823   t=115.000  note=G2   UNVERIFIED  -> FAIL         pitch   +0.084 ->  -11.011   pitch off by -11.01 cents (limit 5.0)
+            ev826   t=115.625  note=F4   FAIL        -> UNVERIFIED   pitch   -8.020 ->    None    pitch fit residual too large
+            ev865   t=123.125  note=C4   FAIL        -> UNVERIFIED   pitch   -7.645 ->    None    pitch fit residual too large
+            ev871   t=124.167  note=G#3  FAIL        -> UNVERIFIED   pitch   +8.857 ->    None    pitch fit residual too large
+            ev892   t=128.125  note=C4   FAIL        -> UNVERIFIED   pitch   -7.649 ->    None    pitch fit residual too large
+            ev898   t=129.167  note=G#3  FAIL        -> UNVERIFIED   pitch  +10.805 ->    None    pitch fit residual too large
+          measured by both: n=25  max|legacy|=4.9506  max|nls|=12.7487  max|delta|=11.1895
+
+4.5 Item 9, partial_verify (informational, non-GATE). Production reproduces
+    the numbers already on record in wf0908_P1_partial.txt exactly:
+
+  $ python <scratch>/partial_pair.py production
+    [production/weak] estimator = measure_pitch_cents
+    [stem_verify] output\wf0908\P1\weak_fundamental_subset.score.json
+      events total=23  velocity>0=23  used=23
+      stem_verify summary: 1 PASS / 22 FAIL / 0 UNVERIFIED
+      baseline (whole-file melody_verify): 4 PASS / 2 FAIL / 18 UNVERIFIED
+      superposition: NOT bit-exact / ESTABLISHED (criterion: see report json)
+        max_abs_diff=2.346933e-07  budget=1.370907e-06  peak=-132.59 dBFS  rms=-158.18 dBFS  first_diff@32.7083125
+      stems kept at: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0909\C10C\partial\production\weak\stems
+      [exit=1] n_fail=22
+    [production/weak] partial estimator = measure_pitch_cents
+    [partial_verify] C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0909\C10C\partial\production\weak.json
+      events=23  stem_available=23  stem_missing=0
+      partials verified=137 refused=0  max|cents|=10.8158
+      pitch_via_partials: eligible=22 measured=22 (pass=22 fail=0) unverified=0
+    [production/general40] estimator = measure_pitch_cents
+    [stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+      events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+      stem_verify summary: 32 PASS / 0 FAIL / 8 UNVERIFIED
+      baseline (whole-file melody_verify): 8 PASS / 34 FAIL / 864 UNVERIFIED
+      superposition: NOT APPLICABLE (N/A: --limit truncated the reference mix to the same event subset as the stems (self-comparison). This run's superposition numbers are reported above but prove nothing about the whole piece / a multi-stem sum.)
+        max_abs_diff=4.563481e-07  budget=2.384186e-06  peak=-126.81 dBFS  rms=-138.54 dBFS  first_diff@0.0
+      stems kept at: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0909\C10C\partial\production\general40\stems
+    [production/general40] partial estimator = measure_pitch_cents
+    [partial_verify] C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0909\C10C\partial\production\general40.json
+      events=40  stem_available=40  stem_missing=0
+      partials verified=237 refused=3  max|cents|=10.1099
+      pitch_via_partials: eligible=0 measured=0 (pass=0 fail=0) unverified=0
+    DONE production
+    EXIT=0
+
+  $ python <scratch>/partial_pair.py nls
+    [nls/weak] estimator = measure_pitch_cents_nls
+    [stem_verify] output\wf0908\P1\weak_fundamental_subset.score.json
+      events total=23  velocity>0=23  used=23
+      stem_verify summary: 1 PASS / 22 FAIL / 0 UNVERIFIED
+      baseline (whole-file melody_verify): 3 PASS / 1 FAIL / 20 UNVERIFIED
+      superposition: NOT bit-exact / ESTABLISHED (criterion: see report json)
+        max_abs_diff=2.346933e-07  budget=1.370907e-06  peak=-132.59 dBFS  rms=-158.18 dBFS  first_diff@32.7083125
+      stems kept at: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0909\C10C\partial\nls\weak\stems
+      [exit=1] n_fail=22
+    [nls/weak] partial estimator = measure_pitch_cents_nls
+    [partial_verify] C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0909\C10C\partial\nls\weak.json
+      events=23  stem_available=23  stem_missing=0
+      partials verified=131 refused=6  max|cents|=9.7368
+      pitch_via_partials: eligible=22 measured=22 (pass=22 fail=0) unverified=0
+    [nls/general40] estimator = measure_pitch_cents_nls
+    [stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+      events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+      stem_verify summary: 32 PASS / 0 FAIL / 8 UNVERIFIED
+      baseline (whole-file melody_verify): 7 PASS / 10 FAIL / 889 UNVERIFIED
+      superposition: NOT APPLICABLE (N/A: --limit truncated the reference mix to the same event subset as the stems (self-comparison). This run's superposition numbers are reported above but prove nothing about the whole piece / a multi-stem sum.)
+        max_abs_diff=4.563481e-07  budget=2.384186e-06  peak=-126.81 dBFS  rms=-138.54 dBFS  first_diff@0.0
+      stems kept at: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0909\C10C\partial\nls\general40\stems
+    [nls/general40] partial estimator = measure_pitch_cents_nls
+    [partial_verify] C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0909\C10C\partial\nls\general40.json
+      events=40  stem_available=40  stem_missing=0
+      partials verified=237 refused=3  max|cents|=12.9900
+      pitch_via_partials: eligible=0 measured=0 (pass=0 fail=0) unverified=0
+    DONE nls
+    EXIT=0
+
+4.6 Item 6, the L3b Cubase export WAV: the file was produced 2026-08-22
+    into gitignored output/ and is no longer on disk, so per the card's own
+    condition ('if it is in repo/reports') it is skipped, not substituted.
+
+4.7 Item 4 scope note: the card asks for --limit 300 rather than the whole
+    905-event score because stem_verify's memory footprint grows with event
+    count (WF0909-C10B observed >28 GB on the full score). The 300-event
+    runs here peaked around 6.3 GB RSS and completed normally. The
+    whole-piece superposition proof is therefore NOT ESTABLISHED by these
+    runs (stem_verify says so itself in the output above) -- they are a
+    verdict comparison between two estimators on the same 300 events, which
+    is what this card needs, and nothing more is claimed from them.
+
+================================================================================
+STEP 5 -- final state, GATE 3 (tests) and GATE 4 (diff scope)
+================================================================================
+
+DECISION: the candidate is NOT promoted. measure_pitch_cents() still
+returns measure_pitch_cents_legacy(); the candidate is kept, out of the
+product path, as measure_pitch_cents_nls() so every number above stays
+reproducible. Kept from this card as honest tooling, not as conclusions:
+measurement_selfcal.py's gain-fidelity scan promoted to a pass/fail
+condition (card S1.1, same ratified 1.0 c, no new number) and the new
+course_semantics_check() (card S1.3). With the production estimator those
+make the tool exit 1 honestly -- see STEP 3.
+
+  $ python tools/melody_verify.py --selftest
+    [PASS] sentinel A: unmodified fixture verifies clean (max |onset err| = 0.33 ms, tol 10 ms)
+    [PASS] sentinel B: +100 ms time shift is caught -> 1 FAIL as required
+    [PASS] sentinel C: +1 semitone transposition is caught -> 1 FAIL as required
+    [PASS] sentinel D: undeclared (extra) note is caught -> 1 FAIL as required
+    [PASS] sentinel E: declared-but-absent (phantom) note is caught -> 1 FAIL as required
+    SELFTEST PASS (5/5)
+    EXIT=0
+
+  $ PYTHONPATH=tools python -m pytest tests/test_measurement_selfcal.py -q
+    ...xxx.......                                                            [100%]
+    10 passed, 3 xfailed in 435.47s (0:07:15)
+    EXIT=0
+
+  $ python -m pytest tests -q
+    ...............xxx...................................................... [ 26%]
+    ..........................s............................................. [ 53%]
+    ........................................................................ [ 79%]
+    .......................................................                  [100%]
+    267 passed, 1 skipped, 3 xfailed in 526.45s (0:08:46)
+    EXIT=0
+
+  $ PYTHONPATH=tools python -m pytest tests/test_measurement_selfcal.py tests/test_stem_verify.py tests/test_partial_verify.py -q
+  (the three modules that share measure_pitch_cents; re-run after the
+   scipy import was moved inside measure_pitch_cents_nls)
+    ...xxx.................................................................. [100%]
+    69 passed, 3 xfailed in 487.78s (0:08:07)
+    EXIT=0
+
+  Production-path equivalence (the reason no existing evidence changes):
+    measure_pitch_cents() == measure_pitch_cents_legacy() on 40 randomised decaying-partial signals: True
+    (the same equivalence is asserted over the full 1170-point development grid by
+     tests/test_measurement_selfcal.py::test_measure_pitch_cents_matches_legacy_after_revert)
+    melody_verify module-level imports still numpy-only (scipy is imported lazily inside
+     measure_pitch_cents_nls, so CI jobs that install numpy alone keep working): True
+
+  $ git diff --stat
+    warning: in the working copy of 'reports/decision_packets/C10_selfcal_domain.zh-TW.md', LF will be replaced by CRLF the next time Git touches it
+    warning: in the working copy of 'reports/decision_packets/K02_reverb_wet_scale.zh-TW.md', LF will be replaced by CRLF the next time Git touches it
+    warning: in the working copy of 'tests/test_measurement_selfcal.py', LF will be replaced by CRLF the next time Git touches it
+    warning: in the working copy of 'tools/measurement_selfcal.py', LF will be replaced by CRLF the next time Git touches it
+     .gitignore                                         |   5 +
+     DEVLOG.md                                          |  62 +++
+     HANDOVER.md                                        |  13 +-
+     TODO.md                                            |  38 +-
+     docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md           |  73 ++-
+     .../decision_packets/C10_selfcal_domain.zh-TW.md   |  94 ++++
+     .../decision_packets/K02_reverb_wet_scale.zh-TW.md |  20 +
+     tests/test_measurement_selfcal.py                  | 365 ++++++++++----
+     tools/measurement_selfcal.py                       | 182 +++++--
+     tools/melody_verify.py                             | 561 +++++++++++++++------
+     10 files changed, 1129 insertions(+), 284 deletions(-)
+
+  GATE 4 scope reading. Files THIS CARD touched (all on the card's S5 list):
+    tools/melody_verify.py
+    tools/measurement_selfcal.py
+    tests/test_measurement_selfcal.py
+    docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md      (new S9.6 + S9 header)
+    reports/decision_packets/C10_selfcal_domain.zh-TW.md   (new S6)
+    HANDOVER.md                                   (S4 item 2)
+    reports/c10c_nls_estimator_before_after.md    (new, untracked)
+    reports/gate_outputs/wf0909_C10C_nls.txt      (this file, new, untracked)
+
+  The other four unstaged paths in the stat above -- .gitignore, DEVLOG.md,
+  TODO.md and reports/decision_packets/K02_reverb_wet_scale.zh-TW.md -- were
+  ALREADY unstaged when this card started (they belong to other lanes) and
+  were not touched here. Verified at card start:
+    $ git diff --stat        # before any C10C edit
+      .gitignore   | 5 ++
+      DEVLOG.md    | 62 ++++++
+      TODO.md      | 38 ++++---
+      .../K02_reverb_wet_scale.zh-TW.md | 20 +++
+      4 files changed, 117 insertions(+), 8 deletions(-)
+
+  b6 bit-identity check: NOT required and NOT run. README S3 scopes it to
+  cards that touch src/; this card touched only tools/ and tests/ and no
+  score, so no render output can change. Nothing in R10's scope was reached.
+
+================================================================================
+END OF WF0909-C10C EVIDENCE
+================================================================================
