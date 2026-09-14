@@ -51,7 +51,7 @@ jobs:
         run: cmake --build build --config Release --target TsukiSynth_VST3
 
       - name: Build regression tests
-        run: cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+        run: cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest
 
       - name: Run C++ audit and tuner regression tests
         run: ctest --test-dir build -C Release --output-on-failure
@@ -262,7 +262,7 @@ jobs:
       - name: Build AddressSanitizer regression tests
         run: >-
           cmake --build build-asan --config RelWithDebInfo --target
-          TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+          TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest
 
       - name: Run AddressSanitizer regression tests
         shell: pwsh
