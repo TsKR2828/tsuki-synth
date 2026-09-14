@@ -38,6 +38,90 @@
 //                    (the DAW semantic -- "reload the project, play from
 //                    bar 1, get the same audio every time"; see the comment
 //                    at the H5 block for why live-vs-fresh is NOT the claim).
+//   H6 variable block size (WF0907-E10) the sentinel melody is rendered
+//                    through FRESH instances at host block sizes
+//                    {64, 256, 512(=kBlockSize), 1024, 4096}; each size's WAV
+//                    is judged by the SAME tools/melody_verify.py used for H3
+//                    (GATE step, not this program's exit code) -- onset ms /
+//                    pitch cents must hold at every size. This program only
+//                    PRINTS max-sample-delta (LSB @ 24-bit) and RMS delta
+//                    (dB re signal) of each size against the 64-sample
+//                    baseline -- informational, no new tolerance (per
+//                    WF0907_E10 design doc, R2). It also renders (WAV only,
+//                    informational, NOT melody_verify-judged -- there is no
+//                    validated --dump-modes expected-pitch fixture for these
+//                    two combinations yet, and inventing one is out of this
+//                    card's scope) a water_gong note with Pitch Glide macro
+//                    at max, and a high FM-Piano note, at the same five sizes
+//                    -- the two engine paths named in the WF0907-E10 design
+//                    doc as needing coverage, notably ChromaticEngine.h's
+//                    glide-phase-advance fix (cdf2017) whose whole point was
+//                    block-size independence.
+//   H7 user preset round-trip (WF0908-E10b design doc §10.2 option B; IR
+//                    three-state hardened to real CHECKs by WF0908-P3).
+//                    SAVE side: PresetManager::saveUserPreset()/loadPreset()
+//                    are TsukiSynthProcessor members reached, in production,
+//                    only by PluginEditor's Save-preset button running
+//                    IN-PROCESS with the AudioProcessor -- but this probe, by
+//                    its own stated design above ("loads the BUILT .vst3
+//                    bundle ... not linked-in source"), only holds a generic
+//                    juce::AudioPluginInstance across the VST3 ABI boundary,
+//                    which exposes no host-callable "save current state as a
+//                    new named user preset" operation. WF0908-E10b's answer
+//                    (design doc §10.2 option B): build a "shadow" AudioProcessor
+//                    (ShadowProcessor below) around src/ParameterLayout.h's
+//                    createTsukiParameterLayout() -- the REAL product
+//                    parameter layout, extracted there specifically so a
+//                    GUI-free target can build one -- and attach the REAL,
+//                    header-only PresetManager (src/PresetManager.h) to it,
+//                    so saveUserPreset() runs for real without linking
+//                    PluginProcessor.cpp / the GUI module chain. LOAD side:
+//                    setCurrentProgram() on a real VST3 instance, same
+//                    already-verified real code path every other H-check in
+//                    this file uses (TsukiSynthProcessor::setCurrentProgram()
+//                    routes it to presetManager.loadPreset()).
+//                    WF0908-P3 adds the managed IR library (IRLibrary.h,
+//                    also header-only/GUI-free) and its three-state load
+//                    contract (F03_IR_PRESET_RECALL.zh-TW.md §2.3/§7.2): the
+//                    SAVE side supplies a "reverb_ir" extra block directly
+//                    (PresetManager stays IR-agnostic per its own §2.5
+//                    design -- see PresetManager.h's getExtraStateBlock/
+//                    applyExtraStateBlock comment), and each LOAD-side
+//                    instance's getStateInformation() is byte-searched (this
+//                    file's existing memoryBlockContainsAscii() technique)
+//                    for the reverb_ir block and the ir_missing/ir_mismatch
+//                    flags TsukiSynthProcessor::getStateInformation() now
+//                    embeds -- the only window this opaque-ABI probe has into
+//                    TsukiSynthProcessor's internal IRStatus, since it cannot
+//                    call getIRStatus() directly across the VST3 boundary.
+//                    The row-2 "使用者在 GUI 指了別的檔" scenario has no GUI
+//                    here either, so it is simulated the way the card
+//                    documents: after row-3's missing-file resolve failure,
+//                    the test itself overwrites the library's sha-named
+//                    entry with different IR content ("改寫 IR 庫索引指向
+//                    另一檔") -- behaviourally identical to a user picking a
+//                    different file, since both leave the processor having
+//                    loaded audio whose content hash disagrees with what the
+//                    preset recorded.
+//   H8 tail length   (WF0907-E5) the loaded VST3's getTailLengthSeconds()
+//                    must be >= the corresponding physics engine's own
+//                    worstCaseTailSeconds() at that preset's DEFAULT
+//                    parameter state, for each of cimbalom/tongue_drum/
+//                    water_gong (FM Piano excluded -- out of physics scope,
+//                    ROADMAP_PHYSICS.md §0). The comparison value is computed
+//                    by an INDEPENDENTLY COMPILED instance of the same
+//                    engine header (CimbalomEngine.h / ChromaticEngine.h,
+//                    included directly -- this program does not link the
+//                    product's compiled objects, consistent with the "loads
+//                    the BUILT binary, does not trust linked-in source"
+//                    design above; here it is instead a same-formula
+//                    cross-check, exactly like bandRmsDb()/melody_verify.py
+//                    independently judging the rendered WAV rather than
+//                    trusting the plug-in's own claims). It also renders a
+//                    held tongue_drum MIDI 40 note and checks the tail
+//                    is still audible (RMS > -60 dBFS relative to peak) at
+//                    10 s, tying the host-facing NUMBER to something that
+//                    actually still needs to be there.
 //
 // HONEST SCOPE: this is a JUCE host, not Cubase. It proves VST3-contract
 // behaviour of the shipped binary; Cubase-specific behaviour is L3
@@ -50,6 +134,12 @@
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_events/juce_events.h>
 #include <juce_dsp/juce_dsp.h>
+#include "physics/MaterialDB.h"
+#include "engines/CimbalomEngine.h"
+#include "engines/ChromaticEngine.h"
+#include "ParameterLayout.h"
+#include "PresetManager.h"
+#include "IRLibrary.h"
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -85,11 +175,14 @@ juce::AudioProcessorParameter* findParam (juce::AudioPluginInstance& inst,
     return nullptr;
 }
 
-// Renders kMelody through `inst`. If eqGain != nullptr, ramps it linearly
-// 0 -> 1 (normalised) across the render, one step per block, BEFORE each
-// processBlock -- a deterministic stand-in for a DAW automation lane.
-juce::AudioBuffer<float> renderMelody (juce::AudioPluginInstance& inst,
-                                       juce::AudioProcessorParameter* eqGain)
+// Renders an arbitrary note list through `inst` at `blockSize`. If
+// eqGain != nullptr, ramps it linearly 0 -> 1 (normalised) across the
+// render, one step per block, BEFORE each processBlock -- a deterministic
+// stand-in for a DAW automation lane.
+juce::AudioBuffer<float> renderNotes (juce::AudioPluginInstance& inst,
+                                      juce::AudioProcessorParameter* eqGain,
+                                      const NoteSpec* notes, size_t numNotes,
+                                      double lengthS, int blockSize)
 {
     // The sentinel score declares an FX-FREE render (reverb/delay wet 0),
     // but the plug-in's APVTS default is fx_reverb_mix = 0.2 -- a creative
@@ -99,28 +192,29 @@ juce::AudioBuffer<float> renderMelody (juce::AudioPluginInstance& inst,
     // exactly as a DAW project for this test would.
     if (auto* rev = findParam (inst, "Reverb Mix"))
         rev->setValue (0.0f);
-    const int totalSamples = (int) (kRenderLenS * kSampleRate);
-    const int numBlocks = (totalSamples + kBlockSize - 1) / kBlockSize;
+    const int totalSamples = (int) (lengthS * kSampleRate);
+    const int numBlocks = (totalSamples + blockSize - 1) / blockSize;
     inst.setNonRealtime (true);
-    inst.prepareToPlay (kSampleRate, kBlockSize);
+    inst.prepareToPlay (kSampleRate, blockSize);
     const int chans = juce::jmax (2, inst.getTotalNumOutputChannels());
-    juce::AudioBuffer<float> out (2, numBlocks * kBlockSize);
+    juce::AudioBuffer<float> out (2, numBlocks * blockSize);
     out.clear();
-    juce::AudioBuffer<float> block (chans, kBlockSize);
+    juce::AudioBuffer<float> block (chans, blockSize);
     juce::MidiBuffer midi;
 
     for (int b = 0; b < numBlocks; ++b)
     {
-        const int blockStart = b * kBlockSize;
+        const int blockStart = b * blockSize;
         midi.clear();
-        for (const auto& n : kMelody)
+        for (size_t i = 0; i < numNotes; ++i)
         {
+            const auto& n = notes[i];
             const int on  = (int) std::llround (n.time * kSampleRate);
             const int off = (int) std::llround ((n.time + n.durS) * kSampleRate);
-            if (on >= blockStart && on < blockStart + kBlockSize)
+            if (on >= blockStart && on < blockStart + blockSize)
                 midi.addEvent (juce::MidiMessage::noteOn  (1, n.midi, n.vel),
                                on - blockStart);
-            if (off >= blockStart && off < blockStart + kBlockSize)
+            if (off >= blockStart && off < blockStart + blockSize)
                 midi.addEvent (juce::MidiMessage::noteOff (1, n.midi),
                                off - blockStart);
         }
@@ -138,10 +232,86 @@ juce::AudioBuffer<float> renderMelody (juce::AudioPluginInstance& inst,
         inst.processBlock (block, midi);
         for (int c = 0; c < 2; ++c)
             out.copyFrom (c, blockStart, block,
-                          juce::jmin (c, chans - 1), 0, kBlockSize);
+                          juce::jmin (c, chans - 1), 0, blockSize);
     }
     inst.releaseResources();
     return out;
+}
+
+// kMelody through `inst` at the host's normal block size -- unchanged
+// behaviour/signature-compatible wrapper kept so every existing H1-H5/H8
+// call site is untouched.
+juce::AudioBuffer<float> renderMelody (juce::AudioPluginInstance& inst,
+                                       juce::AudioProcessorParameter* eqGain,
+                                       int blockSize = kBlockSize)
+{
+    return renderNotes (inst, eqGain, kMelody,
+                        sizeof (kMelody) / sizeof (kMelody[0]),
+                        kRenderLenS, blockSize);
+}
+
+// H6 helper: max |sample delta| (in LSB @ 24-bit signed, i.e. delta * 2^23)
+// and RMS delta (dB re the reference signal's own RMS) between two renders,
+// compared over the common core length (both buffers may be padded to
+// different block-size multiples of the same nominal render length).
+// Informational only -- WF0907-E10 design forbids a new pass/fail tolerance
+// here; judging is melody_verify.py's job (GATE step 2).
+void printBlockSizeDelta (const juce::AudioBuffer<float>& reference,
+                          const juce::AudioBuffer<float>& other,
+                          int refBlockSize, int otherBlockSize,
+                          double nominalLenS)
+{
+    const int n = juce::jmin ((int) (nominalLenS * kSampleRate),
+                              reference.getNumSamples(),
+                              other.getNumSamples());
+    double maxAbs = 0.0, sumSq = 0.0, refSumSq = 0.0;
+    for (int c = 0; c < 2; ++c)
+    {
+        const float* a = reference.getReadPointer (c);
+        const float* b = other.getReadPointer (c);
+        for (int i = 0; i < n; ++i)
+        {
+            const double d = (double) a[i] - (double) b[i];
+            maxAbs = juce::jmax (maxAbs, std::abs (d));
+            sumSq += d * d;
+            refSumSq += (double) a[i] * (double) a[i];
+        }
+    }
+    const double maxLsb24 = maxAbs * 8388608.0; // 2^23
+    const long   denom    = juce::jmax (1, n * 2);
+    const double rms      = std::sqrt (sumSq / (double) denom);
+    const double refRms   = std::sqrt (refSumSq / (double) denom);
+    const double rmsDb    = 20.0 * std::log10 (juce::jmax (rms, 1e-12)
+                                              / juce::jmax (refRms, 1e-12));
+    std::cout << "  [INFO] block " << otherBlockSize << " vs " << refBlockSize
+               << ": max|delta|=" << juce::String (maxLsb24, 3)
+               << " LSB@24bit, RMS delta=" << juce::String (rmsDb, 2)
+               << " dB re signal (n=" << n << " samples/ch)\n";
+}
+
+// H6 hardening (WF0908-E10b 2.3): max |sample delta| over the common core
+// length, as a plain double the caller can assert on -- same computation as
+// printBlockSizeDelta()'s maxAbs above, exposed separately so the water_gong
+// glide CHECK below can require it to be EXACTLY 0.0 (byte-identical), the
+// SAME judgment the plain kMelody sweep already reaches at every block size
+// (0.000 LSB@24bit, per reports/gate_outputs/wf0907_E10_hostprobe.txt) --
+// not a new tolerance (R2).
+double maxAbsDeltaOverCore (const juce::AudioBuffer<float>& reference,
+                           const juce::AudioBuffer<float>& other,
+                           double nominalLenS)
+{
+    const int n = juce::jmin ((int) (nominalLenS * kSampleRate),
+                              reference.getNumSamples(),
+                              other.getNumSamples());
+    double maxAbs = 0.0;
+    for (int c = 0; c < 2; ++c)
+    {
+        const float* a = reference.getReadPointer (c);
+        const float* b = other.getReadPointer (c);
+        for (int i = 0; i < n; ++i)
+            maxAbs = juce::jmax (maxAbs, std::abs ((double) a[i] - (double) b[i]));
+    }
+    return maxAbs;
 }
 
 // Direct byte comparison -- stronger than any hash, and needs no
@@ -196,6 +366,256 @@ bool writeWav (const juce::AudioBuffer<float>& buf, const juce::File& file)
     stream.release();   // writer owns it now
     return writer->writeFromAudioSampleBuffer (buf, 0, buf.getNumSamples());
 }
+
+// H7 (WF0908-P3): a short synthetic "impulse response" fixture -- an
+// exponentially-decaying noise burst, deterministic per `seed` via a
+// trivial LCG (no <random> dependency needed for a throwaway test WAV).
+// Real spectral content is irrelevant here; this only needs to be a valid,
+// non-empty, short stereo WAV so IRLibrary::importFile()/EffectChain
+// actually accept it, and two different seeds must hash differently so the
+// H7 mismatch scenario (§2.3 row 2) has genuinely different content to
+// place at the same library path.
+juce::AudioBuffer<float> makeImpulseFixture (int numSamples, uint32_t seed)
+{
+    juce::AudioBuffer<float> buf (2, numSamples);
+    uint32_t state = seed == 0 ? 1u : seed;
+    auto nextRand = [&state] () -> float
+    {
+        state = state * 1664525u + 1013904223u;
+        return ((float) (state >> 8) / (float) (1u << 24)) * 2.0f - 1.0f;
+    };
+    for (int c = 0; c < 2; ++c)
+    {
+        auto* w = buf.getWritePointer (c);
+        for (int i = 0; i < numSamples; ++i)
+        {
+            const float envelope = std::exp (-3.0f * (float) i / (float) numSamples);
+            w[i] = nextRand() * envelope;
+        }
+    }
+    return buf;
+}
+
+void setChoiceParam (juce::AudioPluginInstance& inst, const juce::String& nameContains,
+                     int index, int numChoices)
+{
+    if (auto* p = findParam (inst, nameContains))
+        p->setValue ((float) index / (float) juce::jmax (1, numChoices - 1));
+}
+
+// H2 evidence (WF0908-E10b GATE 5.5): dumps id|name|numSteps|defaultValue for
+// the first `numProductParams` parameters to a plain text file. Run against
+// the pre-refactor build\ VST3 and the post-refactor build-wf\ VST3 with the
+// SAME literal `numProductParams` and diffed, this is the "pure move, not a
+// rewrite" proof for src/ParameterLayout.h's createTsukiParameterLayout()
+// (WF0908-E10b design doc §2.2: "參數 id/範圍/預設一字不改"). numProductParams
+// is 60 (see the H7 comment block: a live name dump of a VST3-hosted
+// instance's parameter indices 0-64 showed 0-59 are the product's own 60
+// parameters in createTsukiParameterLayout()'s declaration order, then
+// 60=Bypass, 61=Program, 62+="MIDI CC n|c" -- JUCE-VST3-wrapper-synthesised
+// extras that are NOT part of the product layout this check is verifying).
+void dumpParameterLayout (juce::AudioPluginInstance& inst, int numProductParams,
+                          const juce::File& outFile)
+{
+    juce::StringArray lines;
+    auto& params = inst.getParameters();
+    for (int i = 0; i < numProductParams && i < params.size(); ++i)
+    {
+        auto* p = params[i];
+        auto* hp = dynamic_cast<juce::HostedAudioProcessorParameter*> (p);
+        lines.add ((hp != nullptr ? hp->getParameterID() : juce::String ("?"))
+                   + "|" + p->getName (64) + "|"
+                   + juce::String (p->getNumSteps()) + "|"
+                   + juce::String (p->getDefaultValue(), 6));
+    }
+    outFile.replaceWithText (lines.joinIntoString ("\n") + "\n");
+}
+
+// H8 helper: independently-computed worst-case tail for the DEFAULT preset
+// of each physics engine, mirroring the exact defaults declared in
+// PluginProcessor.cpp::createParameterLayout() (cim_material=0/"steel",
+// cim_strike_pos=0.3, cim_diameter=0.8mm, cim_num_strings=3,
+// cim_detuning=5.0 cents; chr_material=0/"steel", chr_strike_pos=0.35,
+// chr_thickness=3.0mm, chr_size=20.0mm; all macros default 0.5). If those
+// defaults ever change in PluginProcessor.cpp, they must change here too --
+// there is no programmatic way to read a VST3-hosted plugin's plain
+// parameter defaults back through the generic AudioProcessorParameter
+// interface (VST3 only exchanges normalised [0,1] values with the host).
+double defaultCimbalomWorstCaseTail (MaterialDB& db)
+{
+    std::atomic<float> material { 0.0f }, strikePos { 0.3f }, diameter { 0.8f },
+                        numStrings { 3.0f }, detuning { 5.0f },
+                        mMaterial { 0.5f }, mTension { 0.5f }, mDamping { 0.5f },
+                        mStrike { 0.5f }, mBody { 0.5f };
+    CimbalomVoice voice;
+    voice.setMaterialDB (&db);
+    voice.pMaterial      = &material;
+    voice.pStrikePos     = &strikePos;
+    voice.pDiameter      = &diameter;
+    voice.pNumStrings    = &numStrings;
+    voice.pDetuning      = &detuning;
+    voice.pMacroMaterial = &mMaterial;
+    voice.pMacroTension  = &mTension;
+    voice.pMacroDamping  = &mDamping;
+    voice.pMacroStrike   = &mStrike;
+    voice.pMacroBody     = &mBody;
+    return voice.worstCaseTailSeconds();
+}
+
+double defaultChromaticWorstCaseTail (MaterialDB& db, int subEngine)
+{
+    std::atomic<float> sub { (float) subEngine }, material { 0.0f },
+                        strikePos { 0.35f }, thickness { 3.0f }, size { 20.0f },
+                        mMaterial { 0.5f }, mTension { 0.5f }, mDamping { 0.5f },
+                        mStrike { 0.5f }, mBody { 0.5f };
+    ChromaticVoice voice;
+    voice.setCurrentPlaybackSampleRate (kSampleRate);
+    voice.setMaterialDB (&db);
+    voice.pSubEngine     = &sub;
+    voice.pMaterial      = &material;
+    voice.pStrikePos     = &strikePos;
+    voice.pThickness     = &thickness;
+    voice.pSize          = &size;
+    voice.pMacroMaterial = &mMaterial;
+    voice.pMacroTension  = &mTension;
+    voice.pMacroDamping  = &mDamping;
+    voice.pMacroStrike   = &mStrike;
+    voice.pMacroBody     = &mBody;
+    return voice.worstCaseTailSeconds();
+}
+
+// Renders a single struck note with NO note-off inside the render window --
+// a physically struck string/beam/plate keeps ringing on its own after the
+// strike; sending note-off would instead engage the damper
+// (CimbalomVoice::applyDamp() / ChromaticVoice's resonator.damp(0.08f)),
+// which accelerates decay and would defeat the "does the natural tail
+// really last as long as advertised" check below.
+juce::AudioBuffer<float> renderSustainedNote (juce::AudioPluginInstance& inst,
+                                              int midiNote, float velocity,
+                                              double lengthS)
+{
+    const int totalSamples = (int) (lengthS * kSampleRate);
+    const int numBlocks = (totalSamples + kBlockSize - 1) / kBlockSize;
+    inst.setNonRealtime (true);
+    inst.prepareToPlay (kSampleRate, kBlockSize);
+    const int chans = juce::jmax (2, inst.getTotalNumOutputChannels());
+    juce::AudioBuffer<float> out (2, numBlocks * kBlockSize);
+    out.clear();
+    juce::AudioBuffer<float> block (chans, kBlockSize);
+    juce::MidiBuffer midi;
+
+    for (int b = 0; b < numBlocks; ++b)
+    {
+        midi.clear();
+        if (b == 0)
+            midi.addEvent (juce::MidiMessage::noteOn (1, midiNote, velocity), 0);
+        block.clear();
+        inst.processBlock (block, midi);
+        for (int c = 0; c < 2; ++c)
+            out.copyFrom (c, b * kBlockSize, block, juce::jmin (c, chans - 1), 0, kBlockSize);
+    }
+    inst.releaseResources();
+    return out;
+}
+
+// ── H7 user preset round-trip (WF0908-E10b, design doc §10.2 option B) ────
+// A minimal, GUI-free juce::AudioProcessor used only to host a "shadow"
+// AudioProcessorValueTreeState built from src/ParameterLayout.h's
+// createTsukiParameterLayout() -- the REAL product parameter layout, moved
+// there specifically so this GUI-free target can build one -- so that
+// PresetManager (header-only, needs only an AudioProcessorValueTreeState&,
+// src/PresetManager.h) can be attached to it for real and its real
+// saveUserPreset() called for real. This is deliberately NOT
+// TsukiSynthProcessor: it carries none of the product's DSP/engine members,
+// and implements nothing beyond the pure-virtual juce::AudioProcessor
+// contract, because H7's SAVE side only needs a working APVTS +
+// PresetManager pair to exist (same architecture-conflict reasoning that
+// blocked calling saveUserPreset() on the opaque VST3-loaded `inst` used
+// everywhere else in this file -- see the H7 comment block at the top of
+// this file).
+class ShadowProcessor : public juce::AudioProcessor
+{
+public:
+    ShadowProcessor()
+        : juce::AudioProcessor (BusesProperties()
+                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+          apvts (*this, nullptr, "PARAMETERS", createTsukiParameterLayout())
+    {}
+
+    const juce::String getName() const override { return "TsukiSynthShadow"; }
+    void prepareToPlay (double, int) override {}
+    void releaseResources() override {}
+    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override {}
+    double getTailLengthSeconds() const override { return 0.0; }
+    bool acceptsMidi() const override { return true; }
+    bool producesMidi() const override { return false; }
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+    bool hasEditor() const override { return false; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram (int) override {}
+    const juce::String getProgramName (int) override { return {}; }
+    void changeProgramName (int, const juce::String&) override {}
+    void getStateInformation (juce::MemoryBlock&) override {}
+    void setStateInformation (const void*, int) override {}
+
+    // Declaration order matters: apvts must be fully constructed (via the
+    // constructor's mem-initializer list above) before presetManager's
+    // in-class initializer runs -- exactly mirroring
+    // TsukiSynthProcessor.h's `apvts` / `presetManager` member order.
+    juce::AudioProcessorValueTreeState apvts;
+    PresetManager presetManager { apvts };
+};
+
+void setApvtsParamPlain (juce::AudioProcessorValueTreeState& vts,
+                         const juce::String& paramID, float plainValue)
+{
+    if (auto* p = vts.getParameter (paramID))
+        p->setValueNotifyingHost (p->convertTo0to1 (plainValue));
+}
+
+
+// H7 (WF0908-P3): AudioPluginInstance::getStateInformation() (the opaque
+// VST3-ABI call every H-check in this file uses) does NOT return
+// TsukiSynthProcessor::getStateInformation()'s bytes directly -- JUCE's VST3
+// client wrapper (juce_VST3PluginFormatImpl.h's getStateInformation())
+// wraps them in an outer <VST3PluginState><IComponent>BASE64...</IComponent>
+// ...</VST3PluginState> XML (itself also AudioProcessor::copyXmlToBinary'd),
+// where the <IComponent> text is the wrapped processor's own state,
+// base64-encoded (confirmed by reading that header's appendStateFrom() /
+// getStateInformation(), which calls component->getState() then
+// info.toBase64Encoding() into that child element). A plain byte-substring
+// search over the RAW block therefore never finds "reverb_ir" -- it exists,
+// but only inside that base64 text, whose encoding does not preserve ASCII
+// substrings. This decodes down to the actual TsukiSynthProcessor state
+// bytes so memoryBlockContainsAscii() below is searching the right thing.
+juce::MemoryBlock decodeVst3ProcessorState (const juce::MemoryBlock& outerBlock)
+{
+    juce::MemoryBlock inner;
+    if (auto xml = juce::AudioProcessor::getXmlFromBinary (outerBlock.getData(),
+                                                            (int) outerBlock.getSize()))
+        if (auto* comp = xml->getChildByName ("IComponent"))
+            inner.fromBase64Encoding (comp->getAllSubText());
+    return inner;
+}
+
+// Raw byte-pattern search over a MemoryBlock. Used on H7's IR checks instead
+// of building a juce::String from the block: JUCE's copyXmlToBinary (used by
+// TsukiSynthProcessor::getStateInformation()) prefixes the UTF-8 XML text
+// with a small binary magic/size header, so a byte-level substring search is
+// well-defined where a String reinterpretation of the header bytes would not
+// be.
+bool memoryBlockContainsAscii (const juce::MemoryBlock& block, const char* needle)
+{
+    const auto* data = static_cast<const char*> (block.getData());
+    const size_t dataLen = block.getSize();
+    const size_t needleLen = std::strlen (needle);
+    if (needleLen == 0 || dataLen < needleLen) return false;
+    for (size_t i = 0; i + needleLen <= dataLen; ++i)
+        if (std::memcmp (data + i, needle, needleLen) == 0)
+            return true;
+    return false;
+}
 } // namespace
 
 int main (int argc, char** argv)
@@ -235,6 +655,13 @@ int main (int argc, char** argv)
     CHECK (inst != nullptr, "H2 instantiate: instance created"
            << (err.isEmpty() ? juce::String() : (" (error: " + err + ")")));
     if (inst == nullptr) return 1;
+
+    // WF0908-E10b GATE 5.5 evidence (see dumpParameterLayout() comment):
+    // written unconditionally so the SAME command, run against the
+    // pre-refactor build\ VST3 and the post-refactor build-wf\ VST3, produces
+    // a diffable pair of files proving createTsukiParameterLayout() is a pure
+    // move.
+    dumpParameterLayout (*inst, 60, outDir.getChildFile ("h2_parameter_layout.txt"));
 
     // -- H3 MIDI render ------------------------------------------------------
     auto render1 = renderMelody (*inst, nullptr);
@@ -335,6 +762,438 @@ int main (int argc, char** argv)
                 CHECK (buffersEqual (ra, rb),
                        "H5 state: two restores of the same state render byte-identically");
             }
+        }
+    }
+
+    // -- H6 variable block size (WF0907-E10) ---------------------------------
+    {
+        // 64 first: it is the baseline every other size is diffed against
+        // (WF0907-E10 design 2.1).
+        constexpr int kSizes[] = { 64, 256, kBlockSize, 1024, 4096 };
+        juce::AudioBuffer<float> baseline;
+        std::cout << "\n-- H6 variable block size (sentinel melody) --\n";
+        for (int size : kSizes)
+        {
+            auto sInst = fm.createPluginInstance (desc, kSampleRate, size, err);
+            CHECK (sInst != nullptr,
+                   "H6: fresh instance created for block size " << size);
+            if (sInst == nullptr) continue;
+            auto rendered = renderMelody (*sInst, nullptr, size);
+            const auto wavFile = outDir.getChildFile (
+                "h6_block_" + juce::String (size) + ".wav");
+            CHECK (writeWav (rendered, wavFile),
+                   "H6: WAV written for block size " << size << ": "
+                   << wavFile.getFullPathName()
+                   << " -- judged by melody_verify.py (GATE step, not this"
+                      " program's exit code)");
+            if (size == kSizes[0])
+                baseline = rendered;
+            else
+                printBlockSizeDelta (baseline, rendered, kSizes[0], size,
+                                     kRenderLenS);
+        }
+
+        // Hardened CHECK (WF0908-E10b 2.3; was informational-only under
+        // WF0907-E10 -- see the H6 header comment's history). ChromaticEngine.h's
+        // glide phase now advances and re-scales the resonator ONE SAMPLE AT
+        // A TIME (block-size independent by construction), so this water_gong
+        // Pitch Glide=1.0 sweep is now judged by the SAME "byte identical"
+        // bar the plain kMelody sweep above already reaches -- not a new
+        // tolerance (R2).
+        std::cout << "\n-- H6 water_gong Pitch Glide=1.0 (hardened to CHECK,"
+                     " WF0908-E10b) --\n";
+        {
+            static constexpr NoteSpec glideNote[] = { { 0.0, 55, 4.4, 0.7f } };
+            juce::AudioBuffer<float> glideBaseline;
+            for (int size : kSizes)
+            {
+                auto gInst = fm.createPluginInstance (desc, kSampleRate, size, err);
+                CHECK (gInst != nullptr,
+                       "H6 glide: fresh instance created for block size " << size);
+                if (gInst == nullptr) continue;
+                setChoiceParam (*gInst, "Engine", 1, 4);       // Chromatic
+                setChoiceParam (*gInst, "Sub-Engine", 1, 3);   // Water Gong
+                if (auto* glide = findParam (*gInst, "Pitch Glide"))
+                    glide->setValue (1.0f);
+                auto rendered = renderNotes (*gInst, nullptr, glideNote, 1,
+                                             kRenderLenS, size);
+                writeWav (rendered, outDir.getChildFile (
+                    "h6_glide_block_" + juce::String (size) + ".wav"));
+                if (size == kSizes[0])
+                {
+                    glideBaseline = rendered;
+                }
+                else
+                {
+                    printBlockSizeDelta (glideBaseline, rendered, kSizes[0],
+                                         size, kRenderLenS);
+                    const double maxAbs = maxAbsDeltaOverCore (glideBaseline,
+                                                               rendered, kRenderLenS);
+                    CHECK (maxAbs == 0.0,
+                           "H6 glide: block " << size << " vs " << kSizes[0]
+                           << " water_gong Pitch Glide=1.0 render is byte-identical"
+                              " (max|delta|="
+                           << juce::String (maxAbs * 8388608.0, 6)
+                           << " LSB@24bit, require 0)");
+                }
+            }
+        }
+        std::cout << "\n-- H6 supplementary (informational only, not"
+                     " melody_verify-judged): FM Piano high note (MIDI 96) --\n";
+        {
+            static constexpr NoteSpec pianoNote[] = { { 0.0, 96, 1.5, 0.7f } };
+            juce::AudioBuffer<float> pianoBaseline;
+            constexpr double kPianoLenS = 2.0;
+            for (int size : kSizes)
+            {
+                auto pInst = fm.createPluginInstance (desc, kSampleRate, size, err);
+                if (pInst == nullptr) continue;
+                setChoiceParam (*pInst, "Engine", 2, 4);       // FM Piano
+                auto rendered = renderNotes (*pInst, nullptr, pianoNote, 1,
+                                             kPianoLenS, size);
+                writeWav (rendered, outDir.getChildFile (
+                    "h6_piano_block_" + juce::String (size) + ".wav"));
+                if (size == kSizes[0])
+                    pianoBaseline = rendered;
+                else
+                    printBlockSizeDelta (pianoBaseline, rendered, kSizes[0],
+                                         size, kPianoLenS);
+            }
+        }
+    }
+
+    // -- H7 user preset round-trip, IR three-state hardened (WF0908-P3) -----
+    // See the H7 comment block at the top of this file for the full
+    // architecture rationale (why SAVE goes through a shadow APVTS, why LOAD
+    // goes through a real VST3 instance, and how the no-GUI mismatch
+    // scenario is simulated).
+    std::cout << "\n-- H7 user preset round-trip --\n";
+    {
+        ShadowProcessor shadow;
+
+        // >=10 non-default parameters spread across several groups (global /
+        // macro / cimbalom / chromatic / reverb / eq) so the round-trip
+        // check below is not trivially satisfied by defaults surviving
+        // untouched.
+        struct ParamSet { const char* id; float plainValue; };
+        static const ParamSet kNonDefaults[] = {
+            { "engine",           1.0f },    // Chromatic         (default 0)
+            { "macro_material",   0.20f },   //                   (default 0.5)
+            { "macro_tension",    0.85f },   //                   (default 0.5)
+            { "macro_damping",    0.15f },   //                   (default 0.5)
+            { "cim_strike_pos",   0.62f },   //                   (default 0.3)
+            { "cim_diameter",     1.40f },   //                   (default 0.8)
+            { "cim_detuning",    11.50f },   //                   (default 5.0)
+            { "chr_strike_pos",   0.90f },   //                   (default 0.35)
+            { "chr_thickness",    6.50f },   //                   (default 3.0)
+            { "chr_pitch_glide",  0.77f },   //                   (default 0.0)
+            { "fx_reverb_mix",    0.55f },   //                   (default 0.2)
+            { "fx_reverb_mode",   1.0f },    // Impulse Response  (default 0; see IR checks below)
+            { "fx_eq_gain",       9.00f },   //                   (default 0.0)
+        };
+        for (const auto& p : kNonDefaults)
+            setApvtsParamPlain (shadow.apvts, p.id, p.plainValue);
+
+        // Import a real (synthesized) IR fixture into the managed library so
+        // SAVE can reference a genuine content hash and LOAD (through a real
+        // VST3 instance) can resolve it via IRLibrary.h -- header-only, no
+        // GUI dependency, same as PresetManager.h.
+        const juce::File irSource = outDir.getChildFile ("h7_ir_source.wav");
+        writeWav (makeImpulseFixture (2400, 1), irSource);
+        juce::String importErr;
+        const auto irRef = IRLibrary::importFile (irSource, importErr);
+        CHECK (! irRef.sha256.isEmpty(),
+               "H7: IR fixture imported into managed library (" << importErr << ")");
+
+        // SAVE side: PresetManager stays IR-agnostic (PresetManager.h's
+        // getExtraStateBlock/applyExtraStateBlock comment, WF0908-P3 §2.5)
+        // -- this probe supplies the "reverb_ir" extra block directly,
+        // exactly what TsukiSynthProcessor::buildReverbIRBlock() constructs
+        // in the real product for the same imported IRRef.
+        shadow.presetManager.getExtraStateBlock = [&irRef] () -> juce::ValueTree
+        {
+            juce::ValueTree v ("reverb_ir");
+            v.setProperty ("kind", irRef.kind, nullptr);
+            v.setProperty ("sha256", irRef.sha256, nullptr);
+            v.setProperty ("original_name", irRef.originalName, nullptr);
+            return v;
+        };
+
+        const juce::File presetDir = juce::File::getSpecialLocation (
+                                          juce::File::userApplicationDataDirectory)
+                                          .getChildFile ("TsukiSynth")
+                                          .getChildFile ("Presets");
+        std::cout << "  [INFO] preset directory: "
+                  << presetDir.getFullPathName() << '\n';
+        std::cout << "  [INFO] IR library directory: "
+                  << IRLibrary::getDirectory().getFullPathName() << '\n';
+
+        // allowOverwrite=true: survive a leftover file from a previous
+        // interrupted probe run without a manual cleanup step.
+        const bool saved = shadow.presetManager.saveUserPreset ("wf0908_h7", true);
+        CHECK (saved, "H7: shadow PresetManager::saveUserPreset(\"wf0908_h7\","
+                      " true) succeeded");
+
+        const juce::File presetFile = presetDir.getChildFile ("wf0908_h7.tsukipreset");
+        CHECK (presetFile.existsAsFile(),
+               "H7: preset file written: " << presetFile.getFullPathName());
+
+        const juce::String presetXmlText = presetFile.loadFileAsString();
+        CHECK (presetXmlText.contains ("reverb_ir") && presetXmlText.contains (irRef.sha256),
+               "H7: saved user preset's reverb_ir block records the imported IR's sha256"
+               " (fx_reverb_mode was saved as Impulse Response)");
+
+        // Fresh VST3 instance whose ctor-time PresetManager::scanUserPresets()
+        // sees the file just saved above, finds "wf0908_h7" by name, and
+        // loads it via the real TsukiSynthProcessor::setCurrentProgram() ->
+        // presetManager.loadPreset() code path.
+        auto loadIntoFreshInstance = [&] () -> std::unique_ptr<juce::AudioPluginInstance>
+        {
+            juce::String createErr;
+            auto instL = fm.createPluginInstance (desc, kSampleRate, kBlockSize, createErr);
+            CHECK (instL != nullptr, "H7: fresh real VST3 instance created for LOAD side");
+            if (instL == nullptr)
+                return nullptr;
+            int foundIndex = -1;
+            const int numPrograms = instL->getNumPrograms();
+            for (int i = 0; i < numPrograms; ++i)
+                if (instL->getProgramName (i) == "wf0908_h7") { foundIndex = i; break; }
+            CHECK (foundIndex >= 0,
+                   "H7: \"wf0908_h7\" user preset visible to a fresh real VST3"
+                   " instance's getProgramName() (scanned " << numPrograms << " programs)");
+            if (foundIndex >= 0)
+                instL->setCurrentProgram (foundIndex);
+            return instL;
+        };
+
+        // -- scenario 1: 吻合 (resolve succeeds, content hash matches) -------
+        std::cout << "\n  -- H7 scenario 1: matched --\n";
+        if (auto instMatch = loadIntoFreshInstance())
+        {
+            // Index-based comparison over the shadow's own parameter COUNT
+            // only (not requiring the loaded side's count to match): a
+            // VST3-hosted juce::AudioPluginInstance's getParameters() is NOT
+            // just the product's 60 parameters -- JUCE's VST3 wrapper
+            // appends a synthesised Bypass parameter, a Program parameter,
+            // and (with MIDI-CC-as-parameter support enabled) 16 channels x
+            // 128 CCs = 2048 more (a probe run measured exactly
+            // 60 + 2 + 2080 = 2142 total). Index 0..59 on BOTH sides is
+            // guaranteed to be the SAME 60 product parameters in the SAME
+            // order, because both shadow.apvts and the real plugin's apvts
+            // are built by the identical
+            // src/ParameterLayout.h::createTsukiParameterLayout(). The name
+            // check below additionally guards against silent reordering.
+            auto& shadowParams = shadow.getParameters();
+            auto& loadedParams = instMatch->getParameters();
+            CHECK (loadedParams.size() >= shadowParams.size(),
+                   "H7: loaded real instance exposes at least the shadow's"
+                   " " << shadowParams.size() << " product parameters ("
+                   << loadedParams.size() << " total, incl. VST3-wrapper"
+                   " extras -- Bypass/Program/MIDI CC)");
+
+            int mismatches = 0, nameMismatches = 0;
+            const int n = shadowParams.size();
+            for (int i = 0; i < n && i < loadedParams.size(); ++i)
+            {
+                if (shadowParams[i]->getName (64) != loadedParams[i]->getName (64))
+                {
+                    ++nameMismatches;
+                    std::cout << "    [name-diff] index " << i << ": shadow='"
+                              << shadowParams[i]->getName (64) << "' loaded='"
+                              << loadedParams[i]->getName (64) << "'\n";
+                }
+                const float a = shadowParams[i]->getValue();
+                const float b = loadedParams[i]->getValue();
+                if (std::abs (a - b) > 1.0e-6f)
+                {
+                    ++mismatches;
+                    std::cout << "    [diff] index " << i << " '"
+                              << shadowParams[i]->getName (64)
+                              << "': shadow=" << a << " loaded=" << b << '\n';
+                }
+            }
+            CHECK (nameMismatches == 0 && mismatches == 0
+                   && loadedParams.size() >= shadowParams.size(),
+                   "H7: setCurrentProgram(\"wf0908_h7\") on a real VST3"
+                   " instance restores every one of " << n
+                   << " product parameters bit-identical to the shadow"
+                   " APVTS that saved it (" << mismatches << " value"
+                   " mismatches, " << nameMismatches << " name mismatches)");
+
+            juce::MemoryBlock state1raw;
+            instMatch->getStateInformation (state1raw);
+            const auto state1 = decodeVst3ProcessorState (state1raw);
+            CHECK (memoryBlockContainsAscii (state1, "reverb_ir")
+                   && memoryBlockContainsAscii (state1, irRef.sha256.toRawUTF8())
+                   && memoryBlockContainsAscii (state1, "ir_missing=\"0\"")
+                   && memoryBlockContainsAscii (state1, "ir_mismatch=\"0\""),
+                   "H7 scenario 1 (matched): getStateInformation() carries a reverb_ir"
+                   " block with the imported sha256, ir_missing=0, ir_mismatch=0 --"
+                   " getIRStatus().loaded == effectChain.hasImpulseResponse() by"
+                   " construction (PluginProcessor.h's IRStatus comment: single field,"
+                   " not a second independently-tracked bool)");
+            instMatch->releaseResources();
+        }
+
+        // -- scenario 3: 缺檔，無 GUI (resolve fails: the library's
+        // filename-addressed file is removed) -----------------------------
+        std::cout << "\n  -- H7 scenario 3: missing (no GUI) --\n";
+        const auto libFile = IRLibrary::resolve (irRef);
+        CHECK (libFile.existsAsFile(),
+               "H7: IR fixture present in library before missing simulation");
+        const auto hiddenFile = libFile.getSiblingFile (
+            libFile.getFileNameWithoutExtension() + "_hidden.wav");
+        const bool movedAway = libFile.existsAsFile() && libFile.moveFileTo (hiddenFile);
+        CHECK (movedAway, "H7: library IR file moved aside to simulate a missing file");
+
+        if (auto instMissing = loadIntoFreshInstance())
+        {
+            auto* modeParam = findParam (*instMissing, "Reverb Mode");
+            CHECK (modeParam != nullptr && modeParam->getValue() < 0.5f,
+                   "H7 scenario 3: fx_reverb_mode forced back to Algorithmic (0) --"
+                   " red line 1, never keeps the instance's previous IR");
+
+            juce::MemoryBlock state3raw;
+            instMissing->getStateInformation (state3raw);
+            const auto state3 = decodeVst3ProcessorState (state3raw);
+            CHECK (! memoryBlockContainsAscii (state3, "reverb_ir")
+                   && memoryBlockContainsAscii (state3, "ir_missing=\"1\""),
+                   "H7 scenario 3 (missing, no GUI): getStateInformation() carries NO"
+                   " reverb_ir block (red line 1: nothing is remembered as loaded) and"
+                   " ir_missing=1 -- UI shows \"not loaded\", never claims IR while"
+                   " audio silently runs algorithmic (red line 2)");
+            instMissing->releaseResources();
+        }
+
+        // -- scenario 2: 指了別的檔 / 庫被改寫 (resolve finds A file by that
+        // name, but its content hash no longer matches -- this card's
+        // documented no-GUI simulation of "使用者指了別的檔", §2.5) --------
+        std::cout << "\n  -- H7 scenario 2: mismatch (library index rewritten) --\n";
+        const juce::File otherSource = outDir.getChildFile ("h7_ir_other.wav");
+        writeWav (makeImpulseFixture (3600, 2), otherSource);
+        const bool rewrote = otherSource.copyFileTo (libFile);
+        CHECK (rewrote, "H7: library index rewritten -- different IR content placed at"
+                        " the sha-named path the preset expects (simulates \"使用者指了"
+                        "別的檔\", behaviourally identical from the processor's point of"
+                        " view: loaded content whose hash disagrees with the recorded"
+                        " identity)");
+
+        if (auto instMismatch = loadIntoFreshInstance())
+        {
+            auto* modeParam = findParam (*instMismatch, "Reverb Mode");
+            CHECK (modeParam != nullptr && modeParam->getValue() >= 0.5f,
+                   "H7 scenario 2: fx_reverb_mode stays Impulse Response -- loaded anyway"
+                   " per §2.3 row 2, mismatch does not silently fall back to algorithmic");
+
+            juce::MemoryBlock state2raw;
+            instMismatch->getStateInformation (state2raw);
+            const auto state2 = decodeVst3ProcessorState (state2raw);
+            CHECK (memoryBlockContainsAscii (state2, "reverb_ir")
+                   && memoryBlockContainsAscii (state2, "ir_mismatch=\"1\""),
+                   "H7 scenario 2 (mismatch): getStateInformation() carries a reverb_ir"
+                   " block (something IS loaded, audio truth == UI truth) and"
+                   " ir_mismatch=1 (UI would flag \"not the same IR as the preset\")");
+            instMismatch->releaseResources();
+        }
+
+        // -- cleanup: remove everything this run created --------------------
+        hiddenFile.deleteFile();
+        libFile.deleteFile();
+        IRLibrary::sidecarForSha (irRef.sha256).deleteFile();
+        irSource.deleteFile();
+        otherSource.deleteFile();
+
+        const int cleanupIndex = shadow.presetManager.getCurrentIndex();
+        const bool deleted = cleanupIndex >= 0
+                                 && shadow.presetManager.deleteUserPreset (cleanupIndex);
+        CHECK (deleted, "H7: cleanup -- PresetManager::deleteUserPreset() removed"
+                        " \"wf0908_h7\" (" << presetFile.getFullPathName() << ")");
+        CHECK (! presetFile.existsAsFile(),
+               "H7: cleanup -- preset file no longer on disk");
+    }
+
+    // -- H8 tail length (WF0907-E5) ------------------------------------------
+    {
+        MaterialDB matDB;
+        const juce::File materialsFile = juce::File::getCurrentWorkingDirectory()
+                                             .getChildFile ("data/materials.json");
+        const bool matLoaded = matDB.loadFromFile (materialsFile);
+        CHECK (matLoaded, "H8 tail: MaterialDB loads " << materialsFile.getFullPathName());
+
+        struct Preset { const char* label; int engineIdx; bool isChromatic; int subEngineIdx; };
+        const Preset presets[] = {
+            { "cimbalom",    0, false, 0 },
+            { "tongue_drum", 1, true,  0 },
+            { "water_gong",  1, true,  1 },
+        };
+
+        for (const auto& preset : presets)
+        {
+            auto pinst = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err);
+            CHECK (pinst != nullptr,
+                   juce::String ("H8 tail: instance created for ") + preset.label);
+            if (pinst == nullptr) continue;
+
+            setChoiceParam (*pinst, "Engine", preset.engineIdx, 4);
+            if (preset.isChromatic)
+                setChoiceParam (*pinst, "Sub-Engine", preset.subEngineIdx, 3);
+            pinst->prepareToPlay (kSampleRate, kBlockSize);
+
+            const double hostTail = pinst->getTailLengthSeconds();
+            const double engineWorst = matLoaded
+                ? (preset.isChromatic
+                       ? defaultChromaticWorstCaseTail (matDB, preset.subEngineIdx)
+                       : defaultCimbalomWorstCaseTail (matDB))
+                : -1.0;
+            CHECK (matLoaded && hostTail >= engineWorst,
+                   "H8 tail: " << preset.label << " getTailLengthSeconds()=" << hostTail
+                   << "s >= engine worstCaseTailSeconds()=" << engineWorst << "s");
+            pinst->releaseResources();
+        }
+
+        // Tongue Drum default preset measured T60 30.18 s
+        // (docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md §1). Confirm a
+        // held note (no note-off -- see renderSustainedNote()) is genuinely
+        // still audible at 10 s AND that the host-facing number promises at
+        // least that much, tying the two together rather than trusting
+        // either in isolation.
+        auto tdInst = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err);
+        CHECK (tdInst != nullptr, "H8 tail: tongue_drum sustain instance created");
+        if (tdInst != nullptr)
+        {
+            setChoiceParam (*tdInst, "Engine", 1, 4);
+            setChoiceParam (*tdInst, "Sub-Engine", 0, 3);
+
+            const auto sustainRender = renderSustainedNote (*tdInst, 40, 0.7f, 11.0);
+            const float peak = sustainRender.getMagnitude (0, sustainRender.getNumSamples());
+            const int tailStartSample = (int) (10.0 * kSampleRate);
+            const int tailLenSamples  = sustainRender.getNumSamples() - tailStartSample;
+            double tailRms = 0.0;
+            if (tailLenSamples > 0)
+            {
+                double acc = 0.0;
+                for (int c = 0; c < sustainRender.getNumChannels(); ++c)
+                {
+                    const float* d = sustainRender.getReadPointer (c, tailStartSample);
+                    for (int i = 0; i < tailLenSamples; ++i)
+                        acc += (double) d[i] * d[i];
+                }
+                tailRms = std::sqrt (acc / (double) (tailLenSamples * sustainRender.getNumChannels()));
+            }
+            const double tailRelDb = 20.0 * std::log10 (juce::jmax (tailRms, 1e-12)
+                                                        / juce::jmax ((double) peak, 1e-12));
+            CHECK (tailRelDb > -60.0,
+                   "H8 tail: tongue_drum MIDI 40 tail RMS at 10s = "
+                   << juce::String (tailRelDb, 2)
+                   << " dB relative to peak (require > -60, -60dB IS the T60 definition)");
+
+            const double tdHostTail = tdInst->getTailLengthSeconds();
+            CHECK (tdHostTail > 10.0,
+                   "H8 tail: tongue_drum still audibly ringing at 10s -> "
+                   "getTailLengthSeconds()=" << tdHostTail << "s (require > 10)");
+
+            writeWav (sustainRender, outDir.getChildFile ("hostprobe_tail_tongue_drum.wav"));
+            tdInst->releaseResources();
         }
     }
 

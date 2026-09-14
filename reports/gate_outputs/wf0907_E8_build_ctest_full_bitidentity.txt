@@ -1,0 +1,105 @@
+=== WF0907-E8 GATE 4: 3 build targets + test targets + ctest + --full + bit-identity 8/8 (takeover run, 2026-09-08) ===
+
+--- X4: rebuild 3 main targets ---
+cmd: cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+  -> TsukiSynthCLI.vcxproj OK / TsukiSynth_Standalone.vcxproj OK / TsukiSynth_VST3.vcxproj OK (see full MSBuild log; all three produced fresh artefacts)
+
+--- X4: rebuild 3 test targets + HostProbe before ctest ---
+cmd: cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+  -> all 5 target vcxproj builds OK
+
+--- ctest ---
+cmd: ctest --test-dir build-wf -C Release --output-on-failure
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    0.80 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.53 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.08 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   1.43 sec
+
+--- --full physics_verify (rebuilt build-wf CLI) ---
+cmd: python tools/physics_verify.py --full --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -64.4 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+
+======================================================================
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+--- bit-identity 8/8 (R6/README Sec.3; --validate touches src/score/ but must not change rendering) ---
+cmd: python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0907_e8_after --workdir <tmp-outside-repo> --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+piece,score_path,wav,len_s,rms_dbfs,sha256
+moonlight_sonata_movement1_yangqin,scores/examples/moonlight_sonata_movement1_yangqin.score.json,moonlight_sonata_i_yangqin.wav,317.495,-23.906,49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e
+moonlight_sonata_movement1_yangqin_tongue_mix,scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json,moonlight_sonata_i_yangqin_tongue_mix.wav,325.869,-23.409,7b0413dd4f85807969242b831c512758834e18b878ec4181c67ad308e9b8b79b
+physical_piano,scores/examples/physical_piano.score.json,physical_piano.wav,7.575,-18.579,607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71
+restraint_metal_click,scores/examples/restraint_metal_click.score.json,restraint_metal_click_001.wav,4.929,-32.151,be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a
+moonlight_sonata_movement1_tongue_drum,scores/examples/moonlight_sonata_movement1_tongue_drum.score.json,moonlight_sonata_i_tongue_drum.wav,327.289,-20.222,c37ac02d01f08a307b1bafcbc5aa6068fe041049fa75a2cb7b240c4a18ccb92e
+water_gong_free,scores/examples/water_gong_free.score.json,water_gong_free.wav,10.075,-25.021,31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9
+ai_radiance_m1,scores/originals/ai_radiance/ai_radiance_m1.score.json,Original_AI_Radiance_Movement1.wav,35.930,-22.380,74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d
+fur_elise_opening,scores/examples/fur_elise_opening.score.json,fur_elise_opening.wav,6.780,-17.549,b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5
+
+cmd: diff reports/gate_outputs/wf0907_method/sha256_wf0907_e5_before.txt reports/gate_outputs/wf0907_method/sha256_wf0907_e8_after.txt
+(no diff output = identical) -> 8/8 IDENTICAL
+
+Note: sha256_wf0907_e5_before.txt is the pre-existing E5-card baseline (E5 already PASSed and is the immediate prior state of src/ before this E8 card's ScoreParser.h edit); comparing against it proves E8's --validate-only change did not alter any of the 8 representative renders.
+
+################################################################
+修正回合 (2026-09-08)：--full 與 8/8 位元不變重新確認
+################################################################
+cmd: python tools/physics_verify.py --full --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+（同前一輪既有、未溯源的 3 個 rubber 案例，非本卡新增，非本卡修正範圍。）
+
+cmd: python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0907_e8_fixround_after \
+  --workdir <repo外tmp> --cli <build-wf 絕對路徑>
+（注意：render_wf_scores.py 的 subprocess.run 在本機用相對路徑 forward-slash 傳給 --cli 時，Windows
+CreateProcess 找不到檔案 [WinError 2]；改傳絕對路徑（backslash）即正常執行，純屬呼叫方式問題，
+與 build-wf 二進位本身或本卡程式碼無關，未改動 render_wf_scores.py。）
+8 首全部渲染成功：
+  moonlight_sonata_movement1_yangqin             sha256=49514b007e3e01fc...
+  moonlight_sonata_movement1_yangqin_tongue_mix  sha256=7b0413dd4f858079...
+  physical_piano                                 sha256=607d0d3bc578136f...
+  restraint_metal_click                          sha256=be634798c4a0bf71...
+  moonlight_sonata_movement1_tongue_drum         sha256=c37ac02d01f08a30...
+  water_gong_free                                sha256=31b539c6ac08d942...
+  ai_radiance_m1                                 sha256=74122637a0c71278...
+  fur_elise_opening                              sha256=b0877774da9e5fc5...
+
+cmd: diff reports/gate_outputs/wf0907_method/sha256_wf0907_e5_before.txt reports/gate_outputs/wf0907_method/sha256_wf0907_e8_fixround_after.txt
+(no output, exit 0 -- 8/8 IDENTICAL vs E5 基準)
+
+cmd: diff reports/gate_outputs/wf0907_method/sha256_wf0907_e8_after.txt reports/gate_outputs/wf0907_method/sha256_wf0907_e8_fixround_after.txt
+(no output, exit 0 -- 8/8 IDENTICAL vs 第一輪 E8 after)
+
+結論：本回合修正（測試檔 resolve_cli()/暫存檔位置 + converter 註解與截斷邏輯）皆不觸及渲染路徑，
+8/8 位元不變、--full 無新增失敗，R6/R10 均未觸發。

@@ -1,0 +1,474 @@
+WF0907-E7 GATE 證據檔：K-03 超過 maxBlock 分塊處理（修）+ K-02 ALGO/IR wet 增益差（量化，不修）
+==============================================================================
+日期：2026-09-08
+工作樹 branch fix/deep-physics-audit-20260716，HEAD 98f346f（本卡未 commit/push）
+建置目錄：build-wf（C++ lane 專用，未動 build\）
+工兵：Sonnet
+
+------------------------------------------------------------------------------
+步驟 1（工作卡 §3-1）：超過 maxBlock 時「現行路徑」的 file:line 說明（修前）
+------------------------------------------------------------------------------
+
+修前 src/effects/EffectChain.h（git HEAD 98f346f 版本，行號為修前行號）：
+
+  L35   void prepare (double sampleRate, int maxBlockSize = 2048)
+  L43       maxBlock = juce::jmax (16, maxBlockSize);
+  ...
+  L108  void processBlock (juce::AudioBuffer<float>& buffer)
+  L123      int numSamples  = buffer.getNumSamples();
+  ...
+  L129-135  // IR mode replaces the algorithmic reverb with convolution. Fall back
+            // to algorithmic when no IR is loaded, and skip IR on any block larger
+            // than the prepared maximum (never allocate on the audio thread).
+            const bool irMode = pReverbMode != nullptr
+                             && pReverbMode->load() >= 0.5f
+                             && hasImpulseResponse()
+                             && numSamples <= maxBlock;
+
+現行路徑（修前）：processBlock() 對 numSamples 完全沒有上限檢查或分塊——
+它就地把整段 buffer（不論多長）逐 sample 跑過 L144 起的迴圈。唯一因
+numSamples > maxBlock 而改變的是 L132-135 的 irMode 判斷式：一旦
+numSamples > maxBlock，irMode 強制為 false，即使 pReverbMode 選了 IR
+且 hasImpulseResponse() 為 true，也會靜默改用 L200-201 的
+`if (! irMode) reverb.processStereo (left, right);`（algorithmic 路徑），
+不會呼叫 L211 起的 convolution.process()，且不會有任何錯誤/警告回報給呼叫端。
+這就是稽核文件 §2「K-03 超過 maxBlock 靜默換演算法」與 §4-E 舊版描述的現行缺陷。
+CLI 的 ScoreRenderer 不使用 EffectChain 的 IR 分支（ScoreRenderer 只用
+SimpleReverb 直接介面，見 grep 結果：EffectChain.h 只被 PluginProcessor.h 與
+tests/physics_models_repro.cpp include），所以此缺陷只影響 plugin/host 執行
+路徑，不影響 CLI corpus 渲染——這也是為什麼 K-03 的修法對 8/8 位元不變 GATE
+是安全的（見下方 GATE 3）。
+
+修法（見 git diff -- src/effects/EffectChain.h）：processBlock() 開頭新增
+「numSamples > maxBlock 時以 maxBlock 為步長切子 block，對每個子 block 遞迴
+呼叫同一個 processBlock()」，不改 irMode 判斷式本身、不改 convolution 參數、
+不改 reverb 演算法——只是讓每次真正執行到 L132 判斷式的 numSamples 保證
+<= maxBlock，讓該判斷式的「skip IR on any block larger than maxBlock」分支
+在实際執行中不再被觸發（結構仍留著，作為防禦性 fallback）。
+
+------------------------------------------------------------------------------
+GATE 1：audit test 新增項目全 PASS（含反例被抓到的證據）
+------------------------------------------------------------------------------
+
+命令：
+  build-wf\Release\TsukiSynthAuditTest.exe
+
+完整輸出（節錄至新增的 K-03 三項；前面 92 項既有測試全部 [PASS]，與本卡無關，
+完整清單見本檔末尾附錄）：
+
+  [PASS] K-03(a): IR-mode EffectChain::processBlock on one 1537-sample call is bit-identical to three externally chunked 512+512+513 calls
+  [PASS] K-03(c): a mutant chunking that drops one input sample at a chunk boundary is NOT bit-identical to the correct reference -- proving the bit-exact comparison in (a)/(b) has teeth
+  [PASS] K-03(b): ALGO-mode EffectChain::processBlock on one 1537-sample call is bit-identical to three externally chunked 512+512+513 calls
+  PASS (0 failures)
+
+說明：
+- (a)：sampleRate=48000, maxBlock=512, 合成 1 秒指數衰減白噪 IR（T60=0.3s，
+  種子 909090），輸入 1537-sample 固定種子（12345）白噪。IR-mode 下，
+  一次 1537-sample 呼叫（觸發本卡新增的內部自動分塊）vs 三次外部呼叫
+  512+512+513（模擬 host 逐 callback 呼叫），從兩個獨立、以相同參數指標
+  prepare() 過的全新 EffectChain 實例出發（同一初始狀態），逐 sample 逐聲道
+  比對 `==`（非容差比較）——位元相同，PASS。
+- (b)：同一組輸入，ALGO 模式（不設 pReverbMode，convolution 完全不參與）下
+  重複同一比較，PASS。
+- (c) 反例：第三個獨立 EffectChain 實例，故意用 511+512+513（=1536，短少
+  1 sample）餵，等效於「分塊邊界丟掉全域索引 511 的輸入樣本後直接接續」——
+  這正是工作卡描述的失敗模式。比對此 mutant 輸出與 (a) 的正確參考輸出，
+  在重疊的 1536 個樣本內存在不相等的樣本（mismatches > 0），證明 (a)/(b)
+  用的「位元相同」比較方式確實有能力偵測這類 bug，不是空比對。
+  （此 mutant 完全在測試程式碼裡模擬，未修改 src/ 的任何邏輯去注入 bug。）
+
+------------------------------------------------------------------------------
+GATE 2：K-02 數字表
+------------------------------------------------------------------------------
+
+命令（同一次 TsukiSynthAuditTest.exe 執行，main() 尾端呼叫
+reportReverbWetGainQuantification()，不判 PASS/FAIL，僅印數字）：
+
+  WF0907-E7 K-02 quantification (informational, no PASS/FAIL):
+  [K-02] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+  [K-02] IR   wet output (matched-T60 IR = 1.173 s): steady-state RMS = -26.626 dBFS, measured T60 = 1.173333 s
+  [K-02] RMS difference (IR - ALGO) = -28.483 dB
+  [K-02] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+
+方法：48 kHz，固定種子（271828）白噪 2 s burst + 12 s 靜音尾段，mix=1.0。
+ALGO 用 reverb 預設（roomSize=0.5，未 author decay），先用「burst 結束後
+512-sample 滑動窗 RMS 相對 burst 穩態電平掉到 -60 dB 的第一個時間點」量出
+它的實際（emergent）T60 = 1.173333 s；再合成一顆「白噪 × 指數衰減 envelope」
+IR，把 envelope 的 -60 dB 點對齊到這個實測 T60（"T60 由上一步實測值反推"），
+餵同一段噪音進 IR 模式量，量到的 T60 = 1.173333 s（確認對齊成功）。
+
+完整裁決分析（實測差 -28.483 dB 與理論差 16.478 dB 方向、量級都不同的原因，
+以及三個選項的 Rule 10 衝擊）：見
+reports/decision_packets/K02_reverb_wet_scale.zh-TW.md（本卡不修 DSP，
+本節只負責把數字釘死）。
+
+------------------------------------------------------------------------------
+GATE 3：三 build + 測試 target + ctest；--full NO CHECKED FAILURES；8/8 IDENTICAL
+------------------------------------------------------------------------------
+
+--- 3.1 configure ---
+命令：
+  cmake -B build-wf -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+
+輸出：
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+  -- Configuring juceaide
+  -- Building juceaide
+  -- Exporting juceaide
+  -- Testing juceaide
+  -- Finished setting up juceaide
+  -- Configuring done (2.1s)
+  -- Generating done (0.7s)
+  -- Build files have been written to: C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+
+--- 3.2 三個主 target ---
+命令：
+  cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+
+輸出（節錄各 target 完成行）：
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  TsukiSynth_Standalone.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+  TsukiSynth_VST3.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  creating C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+  [exited with code 0]
+
+--- 3.3 四個測試 target + HostProbe（X4 規約：ctest 前先重建）---
+命令：
+  cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+
+輸出（節錄）：
+  audit_repro.cpp
+  juce_dsp.cpp
+  TsukiSynthAuditTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthAuditTest.exe
+  TsukiSynthTunerTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthTunerTest.exe
+  physics_models_repro.cpp
+  TsukiSynthPhysicsModelsTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthPhysicsModelsTest.exe
+  TsukiSynthSpectrumViewTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthSpectrumViewTest.exe
+  TsukiSynthHostProbe.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthHostProbe.exe
+  [exited with code 0]
+
+（`juce_dsp.cpp` 出現在 TsukiSynthAuditTest 的編譯清單中，證明 CMakeLists.txt
+新增的 `juce::juce_dsp` link 生效——這是必要變更，見本檔末「CMakeLists.txt
+變更說明」。）
+
+--- 3.4 ctest ---
+命令：
+  ctest --test-dir build-wf -C Release --output-on-failure
+
+輸出：
+  Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+      Start 1: audit_repro
+  1/4 Test #1: audit_repro ......................   Passed    1.20 sec
+      Start 2: tuner_repro
+  2/4 Test #2: tuner_repro ......................   Passed    0.54 sec
+      Start 3: physics_models_repro
+  3/4 Test #3: physics_models_repro .............   Passed    0.11 sec
+      Start 4: spectrum_view_repro
+  4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+
+  100% tests passed, 0 tests failed out of 4
+
+  Total Test time (real) =   1.95 sec
+
+--- 3.5 8/8 位元不變（B6 method，--cli 指向 build-wf 的 CLI）---
+命令：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0907_e7_after --workdir <scratch, repo 外> --cli C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+輸出：
+  rendering moonlight_sonata_movement1_yangqin ...
+    len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+  rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+    len=325.869s  RMS=-23.409 dBFS  sha256=7b0413dd4f858079
+  rendering physical_piano ...
+    len=7.575s  RMS=-18.579 dBFS  sha256=607d0d3bc578136f
+  rendering restraint_metal_click ...
+    len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+  rendering moonlight_sonata_movement1_tongue_drum ...
+    len=327.289s  RMS=-20.222 dBFS  sha256=c37ac02d01f08a30
+  rendering water_gong_free ...
+    len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+  rendering ai_radiance_m1 ...
+    len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+  rendering fur_elise_opening ...
+    len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+  wrote reports/gate_outputs/wf0907_method/render_wf0907_e7_after.csv
+  wrote reports/gate_outputs/wf0907_method/sha256_wf0907_e7_after.txt
+
+比對命令：
+  diff <(sort reports/gate_outputs/b6_method/sha256_before.txt | tr -d '\r' | cut -d' ' -f1) \
+       <(sort reports/gate_outputs/wf0907_method/sha256_wf0907_e7_after.txt | tr -d '\r' | cut -d' ' -f1)
+
+輸出：（無 diff 輸出，兩邊 8 個 SHA256 逐一相同）
+  8/8 IDENTICAL (hash-only compare)
+
+（唯一差異是 baseline 檔案是 CRLF、新產出是 LF 行尾——不影響雜湊值本身，
+雜湊欄逐行完全相同。）
+
+--- 3.6 physics_verify --full ---
+命令：
+  python tools/physics_verify.py --full --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+輸出（節錄尾端 summary，完整逐音/逐引擎表格見本檔附錄二）：
+  ======================================================================
+  --full summary:
+     F1 eigenvalue anchors: PASS
+     1b note-range scan   : PASS
+     1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+     1d velocity judgment : PASS
+     2d amplitude judgment: PASS
+     5b measured T60       : PASS
+     F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+     Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+  ======================================================================
+  RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+  [exited with code 0]
+
+（3 個 UNVERIFIED/rubber 案例是既有、與本卡改動無關的量測域限制，非本卡新增。）
+
+------------------------------------------------------------------------------
+GATE 4：python -m pytest tests -q 全綠
+------------------------------------------------------------------------------
+
+命令：
+  python -m pytest tests -q
+
+輸出：
+  ........................................................................ [ 28%]
+  ......s................................................................. [ 57%]
+  ........................................................................ [ 86%]
+  ..................................                                       [100%]
+  249 passed, 1 skipped in 67.79s (0:01:07)
+
+  [exited with code 0]
+
+------------------------------------------------------------------------------
+GATE 5：git diff --stat
+------------------------------------------------------------------------------
+
+命令：
+  git diff --stat -- src/effects/EffectChain.h tests/audit_repro.cpp CMakeLists.txt \
+      reports/decision_packets/K02_reverb_wet_scale.zh-TW.md \
+      docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+
+輸出：
+   CMakeLists.txt                                     |   6 +
+   docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md |  35 ++-
+   src/effects/EffectChain.h                          |  26 ++
+   tests/audit_repro.cpp                              | 323 +++++++++++++++++++++
+   4 files changed, 385 insertions(+), 5 deletions(-)
+
+（K02_reverb_wet_scale.zh-TW.md 是新檔，git diff --stat 對新增的 untracked
+檔案不列出行數摘要；用 `git status --short` 確認它與其它三個未追蹤/已修改
+檔案的完整清單見下方「CMakeLists.txt 變更說明」段落之後。）
+
+------------------------------------------------------------------------------
+CMakeLists.txt 變更說明（超出工作卡 GATE 5 原列清單，特此標註供稽核核實）
+------------------------------------------------------------------------------
+
+工作卡 GATE 5 原列的預期 diff 範圍是 src/effects/EffectChain.h、
+tests/audit_repro.cpp、裁決包、稽核文件四項，未列 CMakeLists.txt。
+但 tests/audit_repro.cpp 新增的 `#include "effects/EffectChain.h"` 會無條件
+拉入 `<juce_dsp/juce_dsp.h>`（EffectChain 內有一個
+`juce::dsp::Convolution convolution;` 成員，不論 reverb 模式為何都會被建構），
+而 juce_Convolution.cpp 裡有非 template 的實作（建構子/loadImpulseResponse/
+process 等），不掛進該 module 就沒有這些符號，連結會失敗。
+TsukiSynthAuditTest 原本沒有連結 juce::juce_dsp（其他三個既有測試 target 裡，
+只有 TsukiSynthPhysicsModelsTest / TsukiSynthSpectrumViewTest 有連結）。
+
+因此在 CMakeLists.txt 的 TsukiSynthAuditTest target 新增一行
+`juce::juce_dsp`（連同一段說明註解），這是讓工作卡 2.1 節指定的測試設計
+（EffectChain + 真實 convolution IR）能夠編譯連結的必要條件，不是新增
+CMake target（維持工作卡「不要新增 CMake target」的限制），也不影響 CI yaml。
+若稽核認為這個變更超出授權範圍，請於 findings 中標出，工兵可回退並改用其他
+方式驗證 K-03（例如改測 SimpleReverb 直接介面而非 EffectChain，但那樣就
+測不到 EffectChain::processBlock() 本身的分塊邏輯，不符合工作卡 2.1 節的
+測試設計意圖）。
+
+git status --short（本卡新增/修改的檔案完整清單）：
+   M CMakeLists.txt
+   M src/effects/EffectChain.h
+   M tests/audit_repro.cpp
+  ?? docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md（本卡在既有、其他
+     lane 已 staged 的修改之上，再疊加 §4-E 的更新——git status 因為該檔
+     "Changes to be committed" 已存在而不會顯示為 M/??，實際內容變更已由
+     上方 git diff --stat 證實為 +35/-5）
+  ?? reports/decision_packets/K02_reverb_wet_scale.zh-TW.md
+  ?? reports/gate_outputs/wf0907_method/render_wf0907_e7_after.csv（8/8 位元
+     不變佐證，GATE 3.5 產出）
+  ?? reports/gate_outputs/wf0907_method/sha256_wf0907_e7_after.txt（同上）
+  ?? reports/gate_outputs/wf0907_E7_reverb.txt（本檔）
+
+==============================================================================
+附錄一：TsukiSynthAuditTest.exe 完整輸出（92 項既有 + 3 項新增 K-03，皆 PASS）
+==============================================================================
+TsukiSynth regression tests
+[PASS] Envelope remains active before release time
+[PASS] Envelope ends at the configured release time
+[PASS] AudioFIFO reports the readable sample count
+[PASS] AudioFIFO overwrites stale samples and keeps newest history
+[PASS] Test material database loads
+[PASS] MaterialDB rejects non-physical material constants
+[PASS] Failed material reload preserves the last known-good database
+[PASS] MaterialDB refuses the retired frequency-independent alpha schema
+[PASS] MaterialDB refuses a damping block carrying both alpha and eta
+[PASS] MaterialDB accepts the renamed beam_plate_* schema (positive control)
+[PASS] MaterialDB refuses the retired bare beta_air/gamma_radiation schema (beta_air)
+[PASS] MaterialDB refuses the retired bare beta_air/gamma_radiation schema (gamma_radiation)
+[PASS] Rejected legacy reloads keep the last known-good beam_plate_* database
+[PASS] Orthotropic: full valid block with explicit-null ratio_GRT_EL loads
+[PASS] Orthotropic: present == true after a valid block loads
+[PASS] Orthotropic: explicit null ratio_GRT_EL yields hasGRT == false
+[PASS] Orthotropic: source_species read back verbatim
+[PASS] Orthotropic: moisture_content_pct read back (±1e-6)
+[PASS] Orthotropic: mp_percent read back (±1e-6)
+[PASS] Orthotropic: ratio_ET_EL read back (±1e-6)
+[PASS] Orthotropic: ratio_ER_EL read back (±1e-6)
+[PASS] Orthotropic: ratio_GLR_EL read back (±1e-6)
+[PASS] Orthotropic: ratio_GLT_EL read back (±1e-6)
+[PASS] Orthotropic: all 6 poisson ratios read back (±1e-6)
+[PASS] Test material database loads
+[PASS] Orthotropic: absent key yields present == false (legal, not an error)
+[PASS] Orthotropic: non-wood material (steel) with a valid block loads (schema allows it)
+[PASS] Orthotropic: non-null ratio_GRT_EL yields hasGRT == true with correct value
+[PASS] Orthotropic: ratio_ET_EL = 1.5 (out of (0,1)) is rejected -- whole file fails closed
+[PASS] Orthotropic: ratio_ET_EL = 0 (excluded boundary) is rejected -- whole file fails closed
+[PASS] Orthotropic: poisson_LR = -0.1 (negative) is rejected -- whole file fails closed
+[PASS] Orthotropic: ratio_GRT_EL = "n/a" (string, not a legal null) is rejected
+[PASS] Orthotropic: source_species = "" (empty) is rejected -- whole file fails closed
+[PASS] Test material database loads
+[PASS] Orthotropic: (setup for transactional check) bad block is rejected
+[PASS] Orthotropic: a failed reload preserves the last known-good database intact
+[PASS] Chromatic fundamental is tuned to the requested MIDI note
+[PASS] Chromatic mode ratios are preserved and ultrasonic modes removed
+[PASS] Temporary score file is writable
+[PASS] ScoreParser accepts a valid score
+[PASS] ScoreParser reads export filename and format
+[PASS] ScoreParser reads wall reflection settings
+[PASS] ScoreParser reads an exact deterministic random seed
+[PASS] ScoreParser accepts the shared 192 kHz render contract
+[PASS] ScoreParser reads an optional stable event_id
+[PASS] Note names are exact and out-of-range notes are rejected
+[PASS] unknown engine
+[PASS] trailing note junk
+[PASS] fractional MIDI
+[PASS] out-of-range velocity
+[PASS] unknown event field
+[PASS] unimplemented membrane
+[PASS] rejected no-op parameter
+[PASS] wrong scalar type
+[PASS] irrelevant engine parameter
+[PASS] irrelevant frequency mode
+[PASS] unknown beam boundary
+[PASS] duplicate event_id
+[PASS] overlong event_id
+[PASS] Test material database loads
+[PASS] Custom score passes renderer preflight
+[PASS] Custom dump reports authored 1:1.5:2.25 ratios
+[PASS] Mode dump v2 carries explicit observable and event identity metadata
+[PASS] Test material database loads
+[PASS] Dump-leak repro: never-dumped baseline renders successfully
+[PASS] Dump-leak repro: dumpModes() produced output
+[PASS] capturePhysicsOnlyModes reads back false immediately after dumpModes() returns (RAII guard restored it, not left permanently true)
+[PASS] Dump-leak repro: post-dump render on the same instance succeeds
+[PASS] Calling dumpModes() before render() produces byte-identical WAV output to a render that never called dumpModes() at all -- capturePhysicsOnlyModes does not leak from the diagnostic dump path into a subsequent render in the same process
+[PASS] Test material database loads
+[PASS] Renderer refuses a modal event whose geometry is entirely below 20 Hz
+[PASS] Attack-only refusal reports the renderable-frequency reason
+[PASS] Test material database loads
+[PASS] Semantic-order regression fixtures render successfully
+[PASS] Permuting simultaneous events preserves the exact WAV bytes
+[PASS] Inserting a zero-velocity event preserves the exact WAV bytes
+[PASS] Test material database loads
+[PASS] Physical renderer writes valid audio at every shared sample rate through 192 kHz
+[PASS] Test material database loads
+[PASS] Renderer is causal: an event produces no samples before its authored time
+[PASS] Adding a future event leaves every earlier rendered sample bit-exact
+[PASS] FX-off renderer obeys linear superposition within PCM quantization error
+[PASS] Extreme valid-duration input is rejected by the 1 GiB buffer budget
+[PASS] Full-wet short reverb renders successfully
+[PASS] Full-wet reverb includes its delayed response instead of all-zero output
+[PASS] FLAC writer creates an output file
+[PASS] FLAC output can be read back with the requested format
+[PASS] ScoreRenderer renders an FM event with no material database entry
+[PASS] FM release and wall reflection are included in output duration
+[PASS] Temporary layer test directory is writable
+[PASS] Layer source score is writable
+[PASS] Layered renderer accepts a valid source score
+[PASS] Layer source trim controls the mixed region length
+[PASS] Layer source master volume is applied before mixing
+[PASS] K-03(a): IR-mode EffectChain::processBlock on one 1537-sample call is bit-identical to three externally chunked 512+512+513 calls
+[PASS] K-03(c): a mutant chunking that drops one input sample at a chunk boundary is NOT bit-identical to the correct reference -- proving the bit-exact comparison in (a)/(b) has teeth
+[PASS] K-03(b): ALGO-mode EffectChain::processBlock on one 1537-sample call is bit-identical to three externally chunked 512+512+513 calls
+PASS (0 failures)
+
+WF0907-E7 K-02 quantification (informational, no PASS/FAIL):
+[K-02] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+[K-02] IR   wet output (matched-T60 IR = 1.173 s): steady-state RMS = -26.626 dBFS, measured T60 = 1.173333 s
+[K-02] RMS difference (IR - ALGO) = -28.483 dB
+[K-02] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+
+==============================================================================
+附錄二：python tools/physics_verify.py --full 完整輸出（尾段，逐引擎/逐音表格）
+==============================================================================
+   cimbalom    material=wood_maple   T60(model)=   0.613s freq=5/5 amp=4 PASS [stiff-string oracle max error 0.0001%]
+   cimbalom    material=glass        T60(model)=   3.387s freq=6/6 amp=5 PASS [stiff-string oracle max error 0.0000%]
+   cimbalom    material=rubber       T60(model)=   0.028s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+   cimbalom    material T60 sensitivity spread=273.32x -> PASS (no-op threshold 1.10x)
+   tongue_drum material=steel        T60(model)=  16.390s freq=2/2 amp=1 PASS
+   tongue_drum material=copper       T60(model)=   2.030s freq=2/2 amp=1 PASS
+   tongue_drum material=bronze       T60(model)=   3.961s freq=2/2 amp=1 PASS
+   tongue_drum material=aluminum     T60(model)=  30.135s freq=2/2 amp=1 PASS
+   tongue_drum material=brass        T60(model)=   2.686s freq=2/2 amp=1 PASS
+   tongue_drum material=wood_spruce  T60(model)=   0.589s freq=2/2 amp=1 PASS
+   tongue_drum material=wood_maple   T60(model)=   0.347s freq=2/2 amp=1 PASS
+   tongue_drum material=glass        T60(model)=   2.756s freq=2/2 amp=1 PASS
+   tongue_drum material=rubber       T60(model)=   0.014s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+   tongue_drum material T60 sensitivity spread=2153.12x -> PASS (no-op threshold 1.10x)
+   water_gong  material=steel        T60(model)=  26.860s freq=6/6 amp=5 PASS
+   water_gong  material=copper       T60(model)=   3.927s freq=6/6 amp=5 PASS
+   water_gong  material=bronze       T60(model)=   7.486s freq=6/6 amp=5 PASS
+   water_gong  material=aluminum     T60(model)=  46.965s freq=6/6 amp=5 PASS
+   water_gong  material=brass        T60(model)=   5.155s freq=6/6 amp=5 PASS
+   water_gong  material=wood_spruce  T60(model)=   1.155s freq=6/6 amp=5 PASS
+   water_gong  material=wood_maple   T60(model)=   0.687s freq=6/6 amp=5 PASS
+   water_gong  material=glass        T60(model)=   5.422s freq=6/6 amp=5 PASS
+   water_gong  material=rubber       T60(model)=   0.028s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+   water_gong  material T60 sensitivity spread=1679.96x -> PASS (no-op threshold 1.10x)
+   Scope note: this is an implementation/no-op gate. It does not prove that JSON material constants match a measured specimen.
+   UNVERIFIED/N/A: 3 case(s): cimbalom/rubber, tongue_drum/rubber, water_gong/rubber
+
+Modal decay T60 - measured (audio) vs model ground truth (--dump-modes):
+   engine      MIDI    model     meas  ratio
+   cimbalom      60    4.14s    4.35s   1.05  (beat 1.51 Hz)  (span 51.5dB, probe 5.0s)
+   cimbalom      72    2.11s    2.22s   1.05  (beat 3.02 Hz)  (span 51.8dB, probe 5.0s)
+   tongue_drum   60   30.14s   30.18s   1.00  (span 26.0dB, probe 15.1s)
+   tongue_drum   72   12.93s   12.91s   1.00  (span 25.0dB, probe 6.5s)
+   water_gong    60    7.49s    7.47s   1.00  (span 32.4dB, probe 5.0s)
+   water_gong    72    3.51s    3.51s   1.00  (span 57.7dB, probe 5.0s)
+   water_gong_free   60    7.49s    7.48s   1.00  (span 32.4dB, probe 5.0s)
+   water_gong_free   72    3.51s    3.51s   1.00  (span 57.6dB, probe 5.0s)
+   piano         60    4.14s    4.34s   1.05  (beat 1.51 Hz)  (span 51.6dB, probe 5.0s)
+   piano         72    2.11s    2.22s   1.05  (beat 3.02 Hz)  (span 51.8dB, probe 5.0s)
+
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -64.4 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+
+======================================================================
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED

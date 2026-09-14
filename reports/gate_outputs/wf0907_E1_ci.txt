@@ -1,0 +1,87 @@
+# WF0907-E1 GATE 證據
+# 卡：docs/workcards/WF0907_E1_ci_requirements.md
+# 執行日期：2026-09-08（本機 Windows, cd 到 repo 根目錄後執行）
+
+===== GATE 1: python -m pip install --dry-run -r tools/requirements-physics.txt =====
+$ cd C:\Users\admin\Desktop\Claude\tsuki-synth
+$ python -m pip install --dry-run -r tools/requirements-physics.txt
+WARNING: Cache entry deserialization failed, entry ignored
+Collecting numpy==2.1.3 (from -r tools/requirements-physics.txt (line 2))
+  Downloading numpy-2.1.3-cp313-cp313-win_amd64.whl.metadata (60 kB)
+WARNING: Cache entry deserialization failed, entry ignored
+Collecting scipy==1.14.1 (from -r tools/requirements-physics.txt (line 3))
+  Downloading scipy-1.14.1-cp313-cp313-win_amd64.whl.metadata (60 kB)
+WARNING: Cache entry deserialization failed, entry ignored
+Collecting jsonschema==4.23.0 (from -r tools/requirements-physics.txt (line 4))
+  Downloading jsonschema-4.23.0-py3-none-any.whl.metadata (7.9 kB)
+Requirement already satisfied: pytest==8.4.2 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from -r tools/requirements-physics.txt (line 6)) (8.4.2)
+Requirement already satisfied: mido==1.3.3 in C:\Users\admin\AppData\Roaming\Python\Python313\site-packages (from -r tools/requirements-physics.txt (line 8)) (1.3.3)
+Requirement already satisfied: attrs>=22.2.0 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from jsonschema==4.23.0->-r tools/requirements-physics.txt (line 4)) (26.1.0)
+Requirement already satisfied: jsonschema-specifications>=2023.03.6 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from jsonschema==4.23.0->-r tools/requirements-physics.txt (line 4)) (2025.9.1)
+Requirement already satisfied: referencing>=0.28.4 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from jsonschema==4.23.0->-r tools/requirements-physics.txt (line 4)) (0.37.0)
+Requirement already satisfied: rpds-py>=0.7.1 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from jsonschema==4.23.0->-r tools/requirements-physics.txt (line 4)) (0.30.0)
+Requirement already satisfied: colorama>=0.4 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pytest==8.4.2->-r tools/requirements-physics.txt (line 6)) (0.4.6)
+Requirement already satisfied: iniconfig>=1 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pytest==8.4.2->-r tools/requirements-physics.txt (line 6)) (2.3.0)
+Requirement already satisfied: packaging>=20 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pytest==8.4.2->-r tools/requirements-physics.txt (line 6)) (26.2)
+Requirement already satisfied: pluggy<2,>=1.5 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pytest==8.4.2->-r tools/requirements-physics.txt (line 6)) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pytest==8.4.2->-r tools/requirements-physics.txt (line 6)) (2.20.0)
+Would install jsonschema-4.23.0 numpy-2.1.3 scipy-1.14.1
+
+[notice] A new release of pip is available: 26.1 -> 26.2.1
+[notice] To update, run: python.exe -m pip install --upgrade pip
+EXIT:0
+
+===== GATE 2: python -m pytest tests -q =====
+$ python -m pytest tests -q
+........................................................................ [ 33%]
+.s...................................................................... [ 67%]
+.....................................................................    [100%]
+212 passed, 1 skipped in 78.87s (0:01:18)
+
+(附：-rs 顯示唯一 1 個 skip 的原因，非本卡新增，屬既有 sentinel 的既有 skip)
+SKIPPED [1] tests\test_render_app_filename_safety.py:135: unreachable through export.filename: ScoreParser::readString() (src/score/ScoreParser.h:1153) calls .trim() on every string field at parse time, so a trailing space never survives to reach isSafeOutputName() through this entry point. The fallback path (scoreFile.getFileNameWithoutExtension(), used when export.filename is absent) *could* carry a trailing space, but constructing such a file on Windows requires an NT '\\?\' path to bypass Win32's own trailing-space stripping -- out of scope for this sentinel. The isSafeOutputName() rejection branch for a trailing space still exists in the fix (see src/cli/RenderApp.cpp) as defense-in-depth for any future caller that skips ScoreParser's trim.
+212 passed, 1 skipped in 78.64s (0:01:18)
+
+===== GATE 3: python -c "import yaml,sys; yaml.safe_load(open('.github/workflows/physics.yml', encoding='utf-8'))" =====
+(本機有 PyYAML；預設 open() 在此機器走 cp950 會 UnicodeDecodeError，故顯式指定 encoding='utf-8' 讀檔——僅為讀檔編碼修正，不影響 YAML 語法檢查本身)
+$ python -c "import yaml,sys; yaml.safe_load(open('.github/workflows/physics.yml', encoding='utf-8')); print('YAML_OK')"
+YAML_OK
+EXIT:0
+
+===== GATE 4: git diff --stat =====
+$ git diff --stat
+ .github/workflows/physics.yml  | 6 +-----
+ tools/requirements-physics.txt | 4 ++++
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+EXIT:0
+
+----- full diff for the record -----
+diff --git a/.github/workflows/physics.yml b/.github/workflows/physics.yml
+index 63527fd..326af95 100644
+--- a/.github/workflows/physics.yml
++++ b/.github/workflows/physics.yml
+@@ -58,11 +58,7 @@ jobs:
+ 
+       - name: Run spectral and T60 metrology self-tests
+         run: |
+-          python -m unittest tests/test_physics_verify.py -v
+-          python -m unittest tests/test_consonance_contract.py -v
+-          python -m unittest tests/test_verify_score_contract.py -v
+-          python -m unittest tests/test_specimen_verify.py -v
+-          python -m unittest tests/test_specimen_pipeline.py -v
++          python -m pytest tests -q
+           python tools/physics_verify.py --selftest
+ 
+       - name: Run standalone T60 gate
+diff --git a/tools/requirements-physics.txt b/tools/requirements-physics.txt
+index 333b7c7..ec3868e 100644
+--- a/tools/requirements-physics.txt
++++ b/tools/requirements-physics.txt
+@@ -2,3 +2,7 @@
+ numpy==2.1.3
+ scipy==1.14.1
+ jsonschema==4.23.0
++# pytest runs the tests/ suite in CI (see .github/workflows/physics.yml).
++pytest==8.4.2
++# mido is used by tools/midi_to_tsukisynth.py and its test_midi_type0 test.
++mido==1.3.3

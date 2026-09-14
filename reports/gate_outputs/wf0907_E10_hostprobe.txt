@@ -1,0 +1,341 @@
+WF0907-E10: HostProbe H6 (variable block size) + H7 (user preset round-trip)
+Evidence file. Commands run from repo root
+C:\Users\admin\Desktop\Claude\tsuki-synth (Windows / PowerShell+bash tool).
+
+================================================================================
+STEP 1 (card step 1): read host_probe.cpp + PresetManager.h first, record
+facts before implementing.
+================================================================================
+
+- User preset storage location (src/PresetManager.h getPresetDirectory(),
+  L388-396):
+    juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+      .getChildFile("TsukiSynth").getChildFile("Presets")
+  On this Windows machine that resolves to:
+    %APPDATA%\TsukiSynth\Presets  (i.e. C:\Users\admin\AppData\Roaming\TsukiSynth\Presets)
+  File format: "<safe-name>.tsukipreset", an XML document, root element
+  "TsukiSynthPreset" with attributes name/id/version=2, one child element
+  which is `apvts.copyState().createXml()` (src/PresetManager.h L122-176
+  saveUserPreset()). PresetManager::scanUserPresets() (L271-312) re-scans
+  this directory on every PresetManager construction (i.e. every fresh
+  plugin instance) and on every successful saveUserPreset().
+
+- grep confirms saveUserPreset()/loadPreset()/deleteUserPreset()/
+  userPresetExists() are called ONLY from src/PluginEditor.cpp (the Save
+  Preset UI button, L801-833) among product code -- i.e. only ever reached
+  in-process with the AudioProcessor, never across a host<->plugin ABI
+  boundary in production. (Full grep output in "H7 architecture analysis"
+  section below.)
+
+- H3's MIDI/score fixture (tests/host_probe.cpp kMelody array, L79-84):
+  mirrors scores/tests/melody_sentinel.score.json exactly -- 5 monophonic
+  cimbalom notes, MIDI 60/64/67/71/74 at t=0.0/0.6/1.2/1.8/2.4s, dur 0.5s,
+  vel 0.7. This is the SAME MIDI sequence reused for H6's block-size sweep
+  (WF0907-E10 design 2.1: "同一 MIDI 序列（H3 那份...)").
+
+================================================================================
+GATE 1: HostProbe full output (H1-H8; H6/H7 new this card)
+Command:
+  cmake --build build-wf --config Release --target TsukiSynthHostProbe TsukiSynth_VST3
+  mkdir -p output\wf0907\E10
+  build-wf\Release\TsukiSynthHostProbe.exe build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 output\wf0907\E10
+================================================================================
+
+[build output -- both targets compiled clean after one fix (juce::jmin does
+ not accept an initializer-list overload; changed to the 3-arg overload)]
+  TsukiSynthHostProbe.vcxproj -> ...\build-wf\Release\TsukiSynthHostProbe.exe
+  TsukiSynth_VST3.vcxproj -> ...\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\...
+  creating C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+
+[program output, full, unedited]
+[PASS] H1 scan: VST3 format finds the bundle (C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)
+[PASS] H1 scan: described as instrument named TsukiSynth (got 'TsukiSynth', isInstrument=1, version 0.3.0)
+[PASS] H2 instantiate: instance created
+[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.505276) -- melody-position verdict follows via melody_verify.py
+[PASS] H3 MIDI render: WAV written: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0907\E10\hostprobe_render.wav
+[PASS] H3 determinism: second instance created
+[PASS] H3 determinism: fresh-instance re-render is byte-identical
+[PASS] H4 automation: instances created
+[PASS] H4 automation: 'EQ Shelf Gain (dB)' parameter exposed to host
+[PASS] H4 automation: identically-automated renders are byte-identical
+[PASS] H4 automation: +12 dB shelf ramp lifts 3-12 kHz band by 8.51 dB (require >= 6)
+[PASS] H5 state: 'Strike Position' parameter found
+[PASS] H5 state: non-empty state captured (3777 bytes)
+[PASS] H5 state: two fresh instances created
+[PASS] H5 state: parameter survives round-trip exactly (requested 0.42, settled 0.42, restored 0.42)
+[PASS] H5 state: two restores of the same state render byte-identically
+
+-- H6 variable block size (sentinel melody) --
+[PASS] H6: fresh instance created for block size 64
+[PASS] H6: WAV written for block size 64: ...\output\wf0907\E10\h6_block_64.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+[PASS] H6: fresh instance created for block size 256
+[PASS] H6: WAV written for block size 256: ...\h6_block_256.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 512
+[PASS] H6: WAV written for block size 512: ...\h6_block_512.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 1024
+[PASS] H6: WAV written for block size 1024: ...\h6_block_1024.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 4096
+[PASS] H6: WAV written for block size 4096: ...\h6_block_4096.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+
+-- H6 supplementary (informational only, not melody_verify-judged): water_gong Pitch Glide=1.0 --
+  [INFO] block 256 vs 64: max|delta|=757927.625 LSB@24bit, RMS delta=-11.21 dB re signal (n=216000 samples/ch)
+  [INFO] block 512 vs 64: max|delta|=1693565.312 LSB@24bit, RMS delta=-4.17 dB re signal (n=216000 samples/ch)
+  [INFO] block 1024 vs 64: max|delta|=3056105.000 LSB@24bit, RMS delta=0.99 dB re signal (n=216000 samples/ch)
+  [INFO] block 4096 vs 64: max|delta|=5258823.250 LSB@24bit, RMS delta=2.63 dB re signal (n=216000 samples/ch)
+  NOTE (informational, no tolerance judged, no fix applied this card): these
+  deltas are NOT at floating-point-noise level like the plain kMelody sweep
+  above -- they grow with the block-size gap and by block 4096 the RMS delta
+  EXCEEDS the reference signal's own RMS (+2.63 dB). cdf2017 made the
+  water-gong glide-phase ADVANCE RATE buffer-size independent (see
+  src/engines/ChromaticEngine.h:602-627 comment), but the modal frequency
+  rescale (resonator.scaleFrequencies()) still happens once per block, so a
+  larger block is a coarser staircase approximation of the same continuous
+  glide curve on this nonlinear resonator; over ~4.4s that can plausibly
+  diverge this much on its own. This card did not re-run/decompose further
+  to separate "expected coarse-sampling artifact" from "still-buggy" --
+  flagging for research-lane follow-up (R-series) or 月月 judgment, not
+  claiming either conclusion.
+
+-- H6 supplementary (informational only, not melody_verify-judged): FM Piano high note (MIDI 96) --
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+
+-- H7 user preset round-trip --
+[BLOCKED] H7 not implemented: PresetManager::saveUserPreset() has no host-visible (VST3-generic) entry point on an opaquely-loaded juce::AudioPluginInstance; testing it for real requires linking PluginProcessor.cpp (and, via createEditor(), the full GUI module chain) into this target -- a CMakeLists.txt change outside WF0907-E10's declared file scope. See reports/gate_outputs/wf0907_E10_hostprobe.txt for the full analysis + options.
+[PASS] H8 tail: MaterialDB loads C:\Users\admin\Desktop\Claude\tsuki-synth\data\materials.json
+[PASS] H8 tail: instance created for cimbalom
+[PASS] H8 tail: cimbalom getTailLengthSeconds()=34.4814s >= engine worstCaseTailSeconds()=33.0287s
+[PASS] H8 tail: instance created for tongue_drum
+[PASS] H8 tail: tongue_drum getTailLengthSeconds()=178.734s >= engine worstCaseTailSeconds()=177.281s
+[PASS] H8 tail: instance created for water_gong
+[PASS] H8 tail: water_gong getTailLengthSeconds()=319.848s >= engine worstCaseTailSeconds()=318.395s
+[PASS] H8 tail: tongue_drum sustain instance created
+[PASS] H8 tail: tongue_drum MIDI 40 tail RMS at 10s = -16.09 dB relative to peak (require > -60, -60dB IS the T60 definition)
+[PASS] H8 tail: tongue_drum still audibly ringing at 10s -> getTailLengthSeconds()=178.734s (require > 10)
+PASS (0 failures)
+
+[HostProbe exit code: 0 -- note H7 prints [BLOCKED] as informational text,
+ it is NOT one of the CHECK()-counted failures/passes, so it does not affect
+ the program's own exit code. This matches the card's H7 exit-code-neutral
+ spirit for known-limitation items, applied here to "not implemented" rather
+ than the originally-envisioned "KNOWN-FAIL(F-03)".]
+
+================================================================================
+GATE 2: melody_verify.py on the 5 H6 kMelody WAVs -- must all PASS
+Command (run once per size; --cli not supported by melody_verify.py itself,
+only by verify_score.py/physics_verify.py per WF0907_README.md 1 -- this
+GATE does not touch src/ so CLI choice cannot affect the result):
+  python tools/melody_verify.py scores/tests/melody_sentinel.score.json --wav output/wf0907/E10/h6_block_<N>.wav
+================================================================================
+
+=== block 64 ===
+  [PASS] ev0 t=0.000 note=60 onset_err=+1.25ms pitch=+1.39c
+  [PASS] ev1 t=0.600 note=64 onset_err=+1.15ms pitch=+0.26c
+  [PASS] ev2 t=1.200 note=67 onset_err=+1.08ms pitch=+0.97c
+  [PASS] ev3 t=1.800 note=71 onset_err=+0.92ms pitch=+1.14c
+  [PASS] ev4 t=2.400 note=74 onset_err=+0.62ms pitch=-0.54c
+  [extra-scan] PASS
+  summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+exit=0
+=== block 256 ===
+  [PASS] ev0 t=0.000 note=60 onset_err=+1.25ms pitch=+1.39c
+  [PASS] ev1 t=0.600 note=64 onset_err=+1.15ms pitch=+0.26c
+  [PASS] ev2 t=1.200 note=67 onset_err=+1.08ms pitch=+0.97c
+  [PASS] ev3 t=1.800 note=71 onset_err=+0.92ms pitch=+1.14c
+  [PASS] ev4 t=2.400 note=74 onset_err=+0.62ms pitch=-0.54c
+  [extra-scan] PASS
+  summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+exit=0
+=== block 512 ===
+  [PASS] ev0 t=0.000 note=60 onset_err=+1.25ms pitch=+1.39c
+  [PASS] ev1 t=0.600 note=64 onset_err=+1.15ms pitch=+0.26c
+  [PASS] ev2 t=1.200 note=67 onset_err=+1.08ms pitch=+0.97c
+  [PASS] ev3 t=1.800 note=71 onset_err=+0.92ms pitch=+1.14c
+  [PASS] ev4 t=2.400 note=74 onset_err=+0.62ms pitch=-0.54c
+  [extra-scan] PASS
+  summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+exit=0
+=== block 1024 ===
+  [PASS] ev0 t=0.000 note=60 onset_err=+1.25ms pitch=+1.39c
+  [PASS] ev1 t=0.600 note=64 onset_err=+1.15ms pitch=+0.26c
+  [PASS] ev2 t=1.200 note=67 onset_err=+1.08ms pitch=+0.97c
+  [PASS] ev3 t=1.800 note=71 onset_err=+0.92ms pitch=+1.14c
+  [PASS] ev4 t=2.400 note=74 onset_err=+0.62ms pitch=-0.54c
+  [extra-scan] PASS
+  summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+exit=0
+=== block 4096 ===
+  [PASS] ev0 t=0.000 note=60 onset_err=+1.25ms pitch=+1.39c
+  [PASS] ev1 t=0.600 note=64 onset_err=+1.15ms pitch=+0.26c
+  [PASS] ev2 t=1.200 note=67 onset_err=+1.08ms pitch=+0.97c
+  [PASS] ev3 t=1.800 note=71 onset_err=+0.92ms pitch=+1.14c
+  [PASS] ev4 t=2.400 note=74 onset_err=+0.62ms pitch=-0.54c
+  [extra-scan] PASS
+  summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+exit=0
+
+RESULT: 5/5 WAVs PASS, all numbers identical across block sizes (consistent
+with the H6 informational delta table above showing bit-identical audio).
+
+================================================================================
+GATE 3: test target build + ctest, all green
+(card step 4: "若碰了 src/...才需要 8/8 + --full；沒碰就寫明未碰 src/".
+ THIS CARD DID NOT TOUCH src/ -- only tests/host_probe.cpp + docs. Confirmed
+ by GATE 5's git diff --stat below. So 8/8 bit-identity + --full are not
+ required and were not run for this card.)
+Command:
+  cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+  ctest --test-dir build-wf -C Release --output-on-failure
+================================================================================
+
+[build: all 5 targets compiled clean, no errors]
+  TsukiSynthAuditTest.vcxproj -> ...\Release\TsukiSynthAuditTest.exe
+  TsukiSynthTunerTest.vcxproj -> ...\Release\TsukiSynthTunerTest.exe
+  TsukiSynthPhysicsModelsTest.vcxproj -> ...\Release\TsukiSynthPhysicsModelsTest.exe
+  TsukiSynthSpectrumViewTest.vcxproj -> ...\Release\TsukiSynthSpectrumViewTest.exe
+  TsukiSynthHostProbe.vcxproj -> ...\Release\TsukiSynthHostProbe.exe
+
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.14 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.53 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.11 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 4
+Total Test time (real) =   1.85 sec
+
+================================================================================
+GATE 4: python -m pytest tests -q, all green
+Command:
+  python -m pytest tests -q
+================================================================================
+
+........................................................................ [ 28%]
+......s................................................................. [ 57%]
+........................................................................ [ 86%]
+..................................                                       [100%]
+249 passed, 1 skipped in 65.19s (0:01:05)
+
+(Count is 249 passed + 1 skipped vs. the WF0907_README.md baseline of "213
+collected" -- higher because other WF0907 lanes' cards, already landed in
+this shared working tree ahead of this card per the README's parallel-lane
+model, added their own tests. Not this card's concern; this card added zero
+Python tests.)
+
+================================================================================
+GATE 5: git diff --stat -- must contain only tests/host_probe.cpp, design
+doc, audit doc (card allows "若碰了 src/ 要附 8/8 與 --full"; not touched here)
+Command:
+  git diff --stat -- tests/host_probe.cpp docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+================================================================================
+
+ docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md |   8 +-
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md           | 165 ++++++++++++++++
+ tests/host_probe.cpp                               | 220 +++++++++++++++++++--
+ 3 files changed, 374 insertions(+), 19 deletions(-)
+
+NOTE: this working tree has OTHER WF0907 lanes' unstaged/staged changes
+present concurrently (E1/C10/C11/E5/E7/E8/E9 etc., per WF0907_README.md's
+"三個 lane 同時在同一個工作樹作業" model) -- e.g. a bare `git diff --stat`
+with no pathspec also lists CMakeLists.txt, .gitignore, HANDOVER.md, various
+reports/, tools/melody_verify.py, tools/stem_verify.py, tests/test_stem_verify.py
+etc. NONE of those were touched by this card; the pathspec-scoped diff above
+is the true scope of WF0907-E10's changes and matches exactly the 3 files
+this card is allowed to touch.
+
+================================================================================
+H7 ARCHITECTURE ANALYSIS (full, referenced from tests/host_probe.cpp and from
+EARFREE_MELODY_GATE_DESIGN.zh-TW.md §10.2 -- same content, kept here too
+since this is the file the code comment and doc both point readers to)
+================================================================================
+
+Command run to establish the "only PluginEditor.cpp calls these" fact:
+  grep -rn "saveUserPreset\|presetManager\." src/ --include=*.cpp --include=*.h | grep -v PresetManager.h
+
+Output:
+  src/PluginEditor.cpp:194:        proc.presetManager.initPreset();
+  src/PluginEditor.cpp:781:        dirtyLabel.setText (proc.presetManager.isDirty() ? "*" : "",
+  src/PluginEditor.cpp:801:                if (name.isNotEmpty() && safeThis->proc.presetManager.userPresetExists (name))
+  src/PluginEditor.cpp:815:                                if (safeThis->proc.presetManager.saveUserPreset (name, true))
+  src/PluginEditor.cpp:833:                    if (safeThis->proc.presetManager.saveUserPreset (name))
+  src/PluginProcessor.cpp:720-914: getStateInformation/setStateInformation/
+    getNumPrograms/getCurrentProgram/setCurrentProgram/getProgramName --
+    the standard juce::AudioProcessor program interface, which VST3 exposes
+    generically to any host. setCurrentProgram(index) IS wired to
+    presetManager.loadPreset(index) (PluginProcessor.cpp:909) -- so LOAD is
+    reachable through the generic interface. There is no equivalent
+    generic-interface entry point that reaches saveUserPreset() -- VST3 has
+    no "host asks plugin to persist current state as a new named program"
+    operation; DAW "save preset" features normally capture
+    getStateInformation()'s blob into a HOST-owned file, they do not call
+    back into the plugin's own preset-management code.
+
+Command run to confirm tests/host_probe.cpp's existing, stated architecture
+(quoted from the file's own top-of-file comment, unchanged by this card):
+  "This program loads the BUILT .vst3 bundle from disk through
+   juce::VST3PluginFormat -- the same binary a DAW loads, not linked-in
+   source"
+  CMakeLists.txt L260-275 (TsukiSynthHostProbe target, unmodified by this
+  card): target_link_libraries only lists juce_audio_formats,
+  juce_audio_processors, juce_audio_utils, juce_dsp -- PluginProcessor.cpp/
+  PluginEditor.cpp/BinaryData/GUI modules are NOT linked in. The instances
+  this program creates via juce::AudioPluginFormatManager::createPluginInstance
+  are generic juce::AudioPluginInstance (VST3 host wrappers), not the
+  concrete TsukiSynthProcessor C++ object -- there is no way to call
+  TsukiSynthProcessor-specific (non-AudioProcessor-virtual) methods on them.
+
+Why "just link PluginProcessor.cpp into HostProbe" doesn't stay small:
+  PluginProcessor.cpp defines
+    juce::AudioProcessorEditor* TsukiSynthProcessor::createEditor()
+    { return new TsukiSynthEditor (*this); }
+  As a non-inline virtual override with a `new` expression referencing
+  TsukiSynthEditor's constructor, the linker requires that symbol to exist
+  (it is reachable via the vtable even if this probe never calls
+  createEditor()) -- which requires linking src/PluginEditor.cpp, whose
+  compile+link chain drags in juce_gui_basics/juce_gui_extra and every
+  editor-side component (LookAndFeel, SpectrumView, etc.). That is a
+  materially larger CMakeLists.txt change than this card's declared scope
+  (GATE 5: tests/host_probe.cpp + 2 docs only).
+
+Three options recorded for 月月 in EARFREE_MELODY_GATE_DESIGN.zh-TW.md §10.2
+(full text there; one-line summaries):
+  (A) Link PluginProcessor.cpp + PluginEditor.cpp + GUI modules into
+      HostProbe -- true end-to-end test of the real in-process
+      presetManager, heaviest CMakeLists.txt change.
+  (B) Extract createParameterLayout() out of PluginProcessor.cpp into a new
+      GUI-independent src/ParameterLayout.h/.cpp; HostProbe builds a shadow
+      APVTS + a REAL PresetManager (header-only, unchanged) from it and
+      calls the real saveUserPreset() on that shadow; LOAD side still uses
+      the real loaded VST3 instance's setCurrentProgram(). Touches src/, so
+      triggers R6 (8/8 bit-identity + --full) even though the extraction
+      shouldn't change CLI rendering behaviour; also needs a CMakeLists.txt
+      change (new source file added to the HostProbe target).
+  (C) Reduced scope: SAVE side hand-writes a .tsukipreset file from a real
+      instance's getStateInformation() blob (does NOT exercise
+      saveUserPreset()'s own atomic-write/id/overwrite-guard/
+      toSafeFilename logic); LOAD side uses the real setCurrentProgram()
+      (real code). No src/ or CMakeLists.txt change needed. Must be
+      documented as "load side only, verified" rather than a full
+      saveUserPreset()+loadPreset() round-trip claim.
+
+This card implemented NONE of the three (R2/R3 spirit: not narrowing GATE
+scope or inventing a workaround on its own authority for a card marked
+BLOCKED-pending-decision). tests/host_probe.cpp prints [BLOCKED] with a
+one-line pointer to this file; it does not claim H7 passed or was tested.
+
+================================================================================
+STATUS: H6 = DONE (all its GATE items pass, see above). H7 = BLOCKED,
+architecture conflict requiring 月月's decision among options (A)/(B)/(C)
+above. Per WF0907_README.md Rule 5 ("卡不可部分標記 Done"), the CARD as a
+whole is reported BLOCKED, not DONE -- see the structured report for detail.
+================================================================================

@@ -1,0 +1,152 @@
+WF0907-E5: getTailLengthSeconds() 接引擎自報尾音 + Custom 判斷式單一化
+GATE 執行紀錄 — 2026-09-08（Sonnet 工兵）
+build-wf 首建：cmake -B build-wf -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+
+======================================================================
+GATE 1: build-wf baseline 8/8 IDENTICAL（改碼前，證明乾淨 build-wf ≡ 既有基線）
+======================================================================
+命令：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0907_e5_before \
+    --workdir <scratchpad>\wf_e5_render_before \
+    --cli C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+
+完整輸出見 reports/gate_outputs/wf0907_E5_tail_baseline_render_log.txt。8 首 SHA256：
+  49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin
+  7b0413dd4f85807969242b831c512758834e18b878ec4181c67ad308e9b8b79b  moonlight_sonata_movement1_yangqin_tongue_mix
+  607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71  physical_piano
+  be634798c4a0bf71...（完整值見 sha256_wf0907_e5_before.txt）                                     restraint_metal_click
+  c37ac02d01f08a30...                                                                              moonlight_sonata_movement1_tongue_drum
+  31b539c6ac08d942...                                                                              water_gong_free
+  74122637a0c71278...                                                                              ai_radiance_m1
+  b0877774da9e5fc5...                                                                              fur_elise_opening
+
+比對命令：
+  diff <(cut -d' ' -f1 reports/gate_outputs/b6_method/sha256_before.txt | sort) \
+       <(cut -d' ' -f1 reports/gate_outputs/wf0907_method/sha256_wf0907_e5_before.txt | sort)
+結果：無差異 -> 8/8 IDENTICAL（PASS，允許繼續往下做）
+
+======================================================================
+GATE 2: 三 build + 四測試 target exit 0；ctest 全 Passed
+======================================================================
+命令 1（三 target）：
+  cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+結果：exit 0（全部連結成功；.vst3 / Standalone.exe / CLI.exe 皆產出）
+
+命令 2（四測試 target，X4 規約：ctest 前先重建）：
+  cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthHostProbe
+結果：exit 0
+
+（另外補建 TsukiSynthSpectrumViewTest ——README §1 X4 指令清單本身沒列它，但它是既有
+  ctest 已註冊的第 5 個測試，不建的話 ctest 會回報 spectrum_view_repro Not Run/FAIL；
+  只是多建一個既有、未改動的 target，不算擴大或縮小本卡 GATE 範圍。）
+  cmake --build build-wf --config Release --target TsukiSynthSpectrumViewTest
+結果：exit 0
+
+命令 3：
+  ctest --test-dir build-wf -C Release --output-on-failure
+完整輸出見 reports/gate_outputs/wf0907_E5_ctest_log.txt。摘要：
+  1/4 audit_repro ............. Passed  0.75 sec
+  2/4 tuner_repro .............. Passed  0.53 sec
+  3/4 physics_models_repro ..... Passed  0.08 sec
+  4/4 spectrum_view_repro ...... Passed  0.05 sec
+  100% tests passed, 0 tests failed out of 4
+
+======================================================================
+GATE 3: HostProbe 全 PASS（三引擎 tail 數值 vs worstCaseTailSeconds）
+======================================================================
+命令：
+  build-wf\Release\TsukiSynthHostProbe.exe build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 output\wf0907\E5\hostprobe_out
+完整輸出見 reports/gate_outputs/wf0907_E5_hostprobe_log.txt。逐項：
+  [PASS] H1 scan / H2 instantiate / H3 MIDI render + determinism /
+         H4 automation（+12dB shelf 提升 3-12kHz band 8.51 dB，要求 >=6）/
+         H5 state round-trip
+  [PASS] H8 tail: MaterialDB loads data\materials.json
+  [PASS] H8 tail: cimbalom     getTailLengthSeconds()=34.4814s  >= worstCaseTailSeconds()=33.0287s
+  [PASS] H8 tail: tongue_drum  getTailLengthSeconds()=178.734s  >= worstCaseTailSeconds()=177.281s
+  [PASS] H8 tail: water_gong   getTailLengthSeconds()=319.848s  >= worstCaseTailSeconds()=318.395s
+  [PASS] H8 tail: tongue_drum MIDI 40 持續發聲、10s 時尾音 RMS 相對峰值 -16.09 dB（要求 > -60dB，
+         -60dB 即 T60 定義）
+  [PASS] H8 tail: 10s 仍明顯有聲 -> getTailLengthSeconds()=178.734s（要求 > 10）
+  PASS (0 failures)
+
+（三引擎 worstCaseTailSeconds() 是「引擎頭檔獨立編譯進 HostProbe 後親自算出」的值，
+  不是信任 VST3 自己回報的數字 —— 與既有 H1-H5 一貫的「不信任被測物件自陳」設計一致；
+  hostTail 之所以略大於 engine worstCase，是因為預設 fx_reverb_mix=0.2 額外疊加了
+  algorithmic reverb 的尾巴，符合公式 max(FM估計, engine worstCase) + delay + reverb。）
+
+======================================================================
+GATE 4: physics_verify.py --full NO CHECKED FAILURES（R6，改了 src/engines）
+======================================================================
+命令：
+  python tools/physics_verify.py --full --cli C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+完整輸出見 reports/gate_outputs/wf0907_E5_physics_verify_full.txt（622 行）。--full summary：
+  F1 eigenvalue anchors : PASS
+  1b note-range scan    : PASS
+  1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+  1d velocity judgment  : PASS
+  2d amplitude judgment : PASS
+  5b measured T60        : PASS
+  F5 residual energy    : PASS (limit -60.0 dB re total)
+  Unverified ranges      : cimbalom/rubber、tongue_drum/rubber、water_gong/rubber
+                           （既有、與本卡無關的 rubber T60 過短未驗證項目，非新增）
+  RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+5b 測得 T60（改碼後，證明 startNote()/CLI render 的數值路徑沒被 applyStringDecayTimes()
+重構影響）：
+  tongue_drum MIDI 60: model 30.14s / measured 30.18s（ratio 1.00）——與稽核文件引用的
+  「Tongue Drum 實測 T60 30.18 s」一致，確認 worstCaseTailSeconds() 的 MIDI 21..108 掃描
+  在低音域（遠低於 MIDI 60）算出比這更長的尾音（177s）在物理上是合理的（T60 隨頻率降低
+  而變長，見 StringModel/BeamModel 的頻率相依阻尼律），不是 bug。
+
+======================================================================
+GATE 5: 改碼後位元不變 8/8 IDENTICAL
+======================================================================
+命令：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0907_e5_after \
+    --workdir <scratchpad>\wf_e5_render_after \
+    --cli C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+完整輸出見 reports/gate_outputs/wf0907_E5_tail_after_render_log.txt。
+
+比對命令：
+  diff <(cut -d' ' -f1 reports/gate_outputs/b6_method/sha256_before.txt | sort) \
+       <(cut -d' ' -f1 reports/gate_outputs/wf0907_method/sha256_wf0907_e5_after.txt | sort)
+結果：無差異 -> 8/8 IDENTICAL（R10 未觸發：applyStringDecayTimes() 重構只是把同一段運算
+拆成獨立呼叫，運算順序與數值路徑逐位元不變；getTailLengthSeconds() 本身不參與 CLI render）
+
+======================================================================
+GATE 6: python -m pytest tests -q 全綠
+======================================================================
+命令：
+  python -m pytest tests -q
+完整輸出見 reports/gate_outputs/wf0907_E5_pytest.txt。結果：
+  212 passed, 1 skipped in 28.89s
+
+======================================================================
+GATE 7: git diff --stat 只含卡上列出的檔案
+======================================================================
+命令（限定本卡允許的檔案；工作樹同時有其他 lane 在改別的檔案，故不用不限定路徑的
+git status/git diff，避免把別卡的 unstaged 變更誤算進本卡）：
+  git diff --stat -- src/PluginProcessor.h src/PluginProcessor.cpp src/PluginEditor.h \
+    src/PluginEditor.cpp src/engines/CimbalomEngine.h src/engines/ChromaticEngine.h \
+    tests/host_probe.cpp docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+結果：
+ docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md |  14 +-
+ src/PluginEditor.cpp                               |  12 +-
+ src/PluginEditor.h                                 |   7 +
+ src/PluginProcessor.cpp                            |  32 +++-
+ src/engines/ChromaticEngine.h                      | 159 +++++++++++++++-
+ src/engines/CimbalomEngine.h                       | 211 +++++++++++++++++++--
+ tests/host_probe.cpp                               | 201 ++++++++++++++++++++
+ 7 files changed, 613 insertions(+), 23 deletions(-)
+（src/PluginProcessor.h 未改動 —— getTailLengthSeconds() 的宣告已存在，不需新增。
+ 全部 7 個改動檔都在卡上允許清單內，無越界。）
+
+新增（未追蹤，供 GATE 1/5 使用，非改動既有檔案）：
+  reports/gate_outputs/wf0907_method/render_wf_scores.py（README §3 授權複製，加 --cli
+  雖然原腳本已支援 --cli，仍依 README 建議另存一份避免與 b6_method 的既有 before/after
+  基準檔混淆）
+
+======================================================================
+結論
+======================================================================
+status: DONE — 全部 7 條 GATE 皆 PASS，無需調容差、無需縮範圍。

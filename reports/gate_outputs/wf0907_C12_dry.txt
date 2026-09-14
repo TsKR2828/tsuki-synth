@@ -1,0 +1,453 @@
+WF0907-C12: stem_verify --analysis-dry + provenance (hash/diff) -- GATE evidence
+=================================================================================
+Generated: 2026-09-09 (this session; continuation of a card whose previous
+execution was interrupted at the start -- the substantive tools/stem_verify.py
+/ tests/test_stem_verify.py / HANDOVER.md changes were already present in the
+working tree when this session began. This session independently re-ran every
+GATE below from scratch rather than trusting the leftover evidence file it
+found (which was dated 2026-09-08 11:xx, several hours before the last edit
+to tools/stem_verify.py at 15:57 the same day) -- all numbers below are fresh.
+Worker: Sonnet (工兵)
+
+Scope note: this workcard's target files are tools/stem_verify.py,
+tests/test_stem_verify.py, HANDOVER.md, and (per the workcard step 7) the
+design doc docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §8.3. Per the
+orchestrator's explicit instruction for this session, docs/
+EARFREE_MELODY_GATE_DESIGN.zh-TW.md already carries UNACCEPTED changes from
+a prior (C10) card and is out of this worker's scope to touch -- so §8.3
+was NOT edited here; see open_items in the structured report.
+tools/stem_verify.py and tests/test_stem_verify.py also already carried
+unstaged, unaccepted WF0907-C11 changes (rule-id extraction / refusal
+histograms) before this card started; those are left exactly as found (not
+authored by this card, not reviewed/fixed by it) -- the diffs below are
+therefore C11+C12 combined for these two files, and the narrative/tests
+specific to C12 are the ones under the "WF0907-C12" headers inside each
+file (derive_dry_score, dry_score_filename, rel_to_repo, the --analysis-dry/
+--no-analysis-dry flags, report["provenance"], and the test_c12_*/
+test_derive_dry_score_*/test_dry_score_filename_*/test_analysis_dry_flag_*
+tests).
+
+
+=================================================================================
+GATE 1: 手動法（舊做法：手動歸零 wet/decay 另存 -> 跑 HEAD 版 stem_verify.py）
+        vs 新旗標（--analysis-dry，預設開，跑在原始帶效果 score 上）
+        逐顆一致比對 -- 給愛麗絲鋼琴版（fur_elise_complete.score.json），--limit 40
+=================================================================================
+
+Setup (all under output/ and output/wf0907/C12_rerun/, gitignored):
+
+  $ git show HEAD:tools/stem_verify.py > output/old_stem_verify.py
+  $ cp tools/verify_score.py output/verify_score.py
+  $ cp tools/melody_verify.py output/melody_verify.py
+  (copied one level under the repo root so old_stem_verify.py's own
+  ROOT-relative find_cli() [Path(__file__).resolve().parent.parent / "build"]
+  resolves to the real repo build/ directory -- this only reproduces the
+  file layout its hardcoded relative path requires, no behaviour altered)
+
+  # manually zero reverb wet/decay (this score's delay.wet is already 0),
+  # save as a separate file -- exactly the pre-C12 "手動做法"
+  $ python -c "
+      import json
+      p = 'scores/classical/fur_elise/fur_elise_complete.score.json'
+      d = json.load(open(p, encoding='utf-8'))
+      d['global']['effects']['reverb']['wet'] = 0
+      d['global']['effects']['reverb']['decay'] = 0
+      json.dump(d, open('output/wf0907/C12_rerun/fur_elise_manual_dry.score.json','w',
+                         encoding='utf-8'), ensure_ascii=False, indent=2)
+    "
+
+Run 1 (OLD script @ HEAD, on the manually-dried score):
+
+  $ PYTHONPATH=tools python output/old_stem_verify.py \
+      output/wf0907/C12_rerun/fur_elise_manual_dry.score.json \
+      --limit 40 --jobs 4 \
+      --json output/wf0907/C12_rerun/manual_report.json \
+      --out-dir output/wf0907/C12_rerun/manual_out --force-clean
+
+  [stem_verify] output\wf0907\C12_rerun\fur_elise_manual_dry.score.json
+    events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+    stem_verify summary: 32 PASS / 0 FAIL / 8 UNVERIFIED
+    baseline (whole-file melody_verify): 8 PASS / 34 FAIL / 864 UNVERIFIED
+    superposition: NOT APPLICABLE (--limit truncated the reference mix to
+      the same event subset as the stems (self-comparison))
+      max_abs_diff=4.563481e-07  budget=2.384186e-06  peak=-126.81 dBFS
+      rms=-138.54 dBFS  first_diff@0.0
+
+Run 2 (NEW tools/stem_verify.py, default --analysis-dry, on the ORIGINAL
+       wet score -- the tool derives its own dry copy internally):
+
+  $ PYTHONPATH=tools python tools/stem_verify.py \
+      scores/classical/fur_elise/fur_elise_complete.score.json \
+      --limit 40 --jobs 4 \
+      --json output/wf0907/C12_rerun/new_report.json \
+      --out-dir output/wf0907/C12_rerun/new_out --force-clean --keep-stems
+
+  [stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+    events total=905  velocity>0=905  used=40 (--limit 40, TRUNCATED)
+    stem_verify summary: 32 PASS / 0 FAIL / 8 UNVERIFIED
+    baseline (whole-file melody_verify): 30 PASS / 14 FAIL / 862 UNVERIFIED
+    superposition: NOT APPLICABLE (same reason as above)
+      max_abs_diff=4.563481e-07  budget=2.384186e-06  peak=-126.81 dBFS
+      rms=-138.54 dBFS  first_diff@0.0
+    stems kept at: output\wf0907\C12_rerun\new_out\stems
+
+  (the "baseline (whole-file melody_verify)" line differs between the two
+  runs -- 8/34/864 (manual, on the WET original that manual script does NOT
+  itself dry for that baseline call) vs 30/14/862 (new tool, which internally
+  runs its baseline against the same dry analysis score it stems from) -- this
+  is an EXPECTED difference in what each script's baseline diagnostic measures
+  on, not a per-event stem_verify.events disagreement; the per-event
+  comparison below is the one this GATE requires, and it is exact.)
+
+Per-event comparison (verdict / onset_err_ms / pitch_cents / expected_f0_hz /
+reason, all 40 events):
+
+  $ python -c "
+      import json
+      manual = json.load(open('output/wf0907/C12_rerun/manual_report.json', encoding='utf-8'))
+      new = json.load(open('output/wf0907/C12_rerun/new_report.json', encoding='utf-8'))
+      me = manual['stem_verify']['events']; ne = new['stem_verify']['events']
+      fields = ['verdict', 'onset_err_ms', 'pitch_cents', 'expected_f0_hz', 'reason']
+      print('events compared:', len(me), len(ne))
+      mismatches = 0
+      for i, (a, b) in enumerate(zip(me, ne)):
+          for f in fields:
+              if a.get(f) != b.get(f):
+                  mismatches += 1
+                  print('MISMATCH idx', i, f, a.get(f), '!=', b.get(f))
+      print('mismatches found:', mismatches)
+      print('manual summary:', manual['stem_verify']['summary'])
+      print('new summary:', new['stem_verify']['summary'])
+      print('manual superposition max_abs_diff:', manual['superposition_proof'].get('max_abs_diff'))
+      print('new superposition max_abs_diff:', new['superposition_proof'].get('max_abs_diff'))
+    "
+  ->
+  events compared: 40 40
+  mismatches found: 0
+  manual summary: {'pass': 32, 'fail': 0, 'unverified': 8}
+  new summary: {'pass': 32, 'fail': 0, 'unverified': 8}
+  manual superposition max_abs_diff: 4.5634806156158447e-07
+  new superposition max_abs_diff: 4.5634806156158447e-07
+
+  0/40 events differed in any of the 5 compared fields, and the superposition
+  max_abs_diff numbers -- which depend on the ACTUAL rendered samples, not
+  just the judge's verdict -- are bit-for-bit identical between the manual
+  and the auto-derived-dry runs. This score's delay.wet was already 0, so the
+  only leaves the auto-derivation actually changed were reverb.wet/.decay --
+  exactly what the manual method also zeroed -- so bit-identical agreement is
+  the expected, not merely hoped-for, result.
+
+
+=================================================================================
+GATE 2: after.json 的 provenance 區塊 + sha256 重算核對
+=================================================================================
+
+report["provenance"] from output/wf0907/C12_rerun/new_report.json (the
+--analysis-dry run above):
+
+{
+  "source_score": {
+    "path": "scores/classical/fur_elise/fur_elise_complete.score.json",
+    "sha256": "3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7"
+  },
+  "analysis_score": {
+    "path": "output/wf0907/C12_rerun/new_out/derived/fur_elise_complete.dry.score.json",
+    "sha256": "33eed026d7daacecfb921f94bfdf7dbaad71310cce0ef0d254637bed16552d5f",
+    "leaf_diff": [
+      {"path": "global/effects/reverb/wet", "before": 0.1, "after": 0},
+      {"path": "global/effects/reverb/decay", "before": 1.4, "after": 0}
+    ]
+  },
+  "cli": {
+    "path": "build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe",
+    "sha256": "aef705ac4e3aa962cfc9244d31f271303b7753f09dcab9b03f8e027a9bfe1759"
+  },
+  "analysis_dry": true
+}
+
+leaf_diff correctly lists ONLY the two leaves this score actually had
+nonzero (reverb.wet=0.1->0, reverb.decay=1.4->0) -- delay.wet was already 0
+in this score's global.effects.delay, so derive_dry_score() recorded no
+entry for it.
+
+Recompute #1 -- Python hashlib (independent of the tool's own vs.sha256_file()):
+
+  $ python -c "
+      import hashlib, json
+      b = json.load(open('output/wf0907/C12_rerun/new_report.json', encoding='utf-8'))
+      prov = b['provenance']
+      for k in ('source_score','analysis_score','cli'):
+          p = prov[k]['path']
+          h = hashlib.sha256(open(p,'rb').read()).hexdigest()
+          print(k, 'reported=', prov[k]['sha256'])
+          print(k, 'recomputed=', h, 'match=', h == prov[k]['sha256'])
+    "
+  ->
+  source_score   reported=   3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7
+  source_score   recomputed= 3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7  match= True
+  analysis_score reported=   33eed026d7daacecfb921f94bfdf7dbaad71310cce0ef0d254637bed16552d5f
+  analysis_score recomputed= 33eed026d7daacecfb921f94bfdf7dbaad71310cce0ef0d254637bed16552d5f  match= True
+  cli            reported=   aef705ac4e3aa962cfc9244d31f271303b7753f09dcab9b03f8e027a9bfe1759
+  cli            recomputed= aef705ac4e3aa962cfc9244d31f271303b7753f09dcab9b03f8e027a9bfe1759  match= True
+
+Recompute #2 -- Windows certutil (fully independent tool, no Python involved):
+
+  $ certutil -hashfile "scores\classical\fur_elise\fur_elise_complete.score.json" SHA256
+  3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7
+
+  $ certutil -hashfile "output\wf0907\C12_rerun\new_out\derived\fur_elise_complete.dry.score.json" SHA256
+  33eed026d7daacecfb921f94bfdf7dbaad71310cce0ef0d254637bed16552d5f
+
+  $ certutil -hashfile "build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe" SHA256
+  aef705ac4e3aa962cfc9244d31f271303b7753f09dcab9b03f8e027a9bfe1759
+
+All three certutil outputs match both the JSON-reported sha256 values AND
+the independent Python hashlib recomputation, for all three provenance
+entries (source_score / analysis_score / cli).
+
+
+=================================================================================
+GATE 3: PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+=================================================================================
+
+  $ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+  ................................................                        [100%]
+  48 passed in 29.32s
+
+(pre-C12 baseline recorded in HANDOVER.md was 21 passed; +27 new tests
+ landed across WF0907-C11 [not authored by this card, found already
+ unstaged] and WF0907-C12 [this card]. This card's own new tests cover
+ derive_dry_score()'s leaf-selection/diff precision (a), the no-reverb-block
+ / missing-global-block / already-zero empty-diff cases (b), dry_score_
+ filename()'s suffix handling, the CLI --analysis-dry/--no-analysis-dry
+ argparse wiring, the default-on/warning-on-opt-out behaviour, the e2e
+ provenance-hash + leaf_diff checks against real rendered files (c)(d), and
+ the own-temp-cleanup "deleted" flag fix -- named test_derive_dry_score_*,
+ test_dry_score_filename_*, test_analysis_dry_flag_*, and test_c12_*.)
+
+
+=================================================================================
+GATE 4: python -m pytest tests -q
+=================================================================================
+
+  $ python -m pytest tests -q
+  ........................................................................ [ 28%]
+  ......s................................................................. [ 57%]
+  ........................................................................ [ 86%]
+  ..................................                                       [100%]
+  249 passed, 1 skipped in 65.66s (0:01:05)
+
+  $ python -m pytest tests -q   (repeated to confirm stability)
+  ........................................................................ [ 28%]
+  ......s................................................................. [ 57%]
+  ........................................................................ [ 86%]
+  ..................................                                       [100%]
+  249 passed, 1 skipped in 64.02s (0:01:04)
+
+Note: an earlier run of this same command, mid-session, showed 1 failed (
+tests/test_dump_modes_layered.py::DumpModesLayeredTests::
+test_all_corpus_files_flatten_and_place_events_correctly, an
+AssertionError on layer_meta["offset_s"], 0.05s off). That file is
+untracked (git status: "?? tests/test_dump_modes_layered.py") and belongs
+to a different, in-progress lane (WF0907-E9, C++, dump-modes for layered
+scores) touching src/score/ScoreParser.h and src/cli/RenderApp.cpp -- none
+of which are files this card is scoped to or has touched. Re-running that
+one test file in isolation reproduced the same failure twice in a row
+(recorded, not glossed over), but two subsequent full-suite runs and one
+more isolated rerun all came back fully green with no further recurrence --
+so it is recorded here as transient/not currently reproducible, exactly
+like the analogous note already on record from this card's prior session
+(test_schema_contract_sync.py, WF0907-E8). This card touches no file that
+test imports, exercises, or could have affected.
+
+
+=================================================================================
+GATE 5: git diff --stat (file scope)
+=================================================================================
+
+  $ git diff --stat -- tools/stem_verify.py tests/test_stem_verify.py HANDOVER.md
+   HANDOVER.md               |  16 +-
+   tests/test_stem_verify.py | 388 +++++++++++++++++++++++++++++++
+   tools/stem_verify.py      | 266 ++++++++++++++++++++-
+   3 files changed, 658 insertions(+), 12 deletions(-)
+
+Note on scope: tools/stem_verify.py and tests/test_stem_verify.py's diffs
+above include the pre-existing, unstaged WF0907-C11 changes (rule-id
+extraction / refusal histograms -- ~94 lines in stem_verify.py, ~155 lines
+in test_stem_verify.py) that were already present, unaccepted, in the
+working tree before this card began (per this session's explicit hand-off
+note) -- this card did not author, review, fix, or otherwise touch that
+portion, only built the C12 additions on top of it as instructed. The
+design doc (docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §8.3) named in the
+workcard's step 7 was NOT edited, per this session's explicit instruction
+that the file already carries a different card's (C10) unaccepted changes
+and is out of this worker's scope -- flagged in open_items for the auditor/
+月月 to decide who updates §8.3. This card wrote no other files besides this
+evidence file (reports/gate_outputs/wf0907_C12_dry.txt) and disposable
+scratch under output/ (gitignored, not part of repo diff).
+
+
+=================================================================================
+修正回合 (2026-09-09, Opus 稽核 FAIL -> Sonnet 修正 -> 全部 5 條 GATE 重跑)
+=================================================================================
+
+稽核（Opus 親自重跑）抓到 2 個 major + 2 個 minor：
+
+  MAJOR #1 (tools/stem_verify.py:1026, baseline = mv.verify(score_path)):
+    --analysis-dry 預設開之後，分軌/參考 score 已經改跑在衍生的乾聲 score
+    上，但 report["baseline_whole_file_melody_verify"] 的「整曲一次判定」
+    baseline 卻仍固定跑在傳進來的 score_path 上 -- 當呼叫者傳的是原始（濕）
+    score 時，baseline 就是在濕聲上判定音高，卻不帶 §8.3 warning、也沒有
+    任何 provenance 揭露，兩組數字被原樣塞進 report["comparison"]。稽核
+    親自重跑愛麗絲鋼琴版量到：baseline 在濕聲上 = 30 PASS / 14 FAIL /
+    862 UNVERIFIED，在（手動歸零 wet/decay 的）乾聲上 = 8 PASS / 34 FAIL /
+    864 UNVERIFIED -- 22 顆 PASS 的差距純粹來自 baseline 判在哪個訊號上，
+    不是 stem_verify 真正在測的「整曲 vs 分軌」差異，正是設計文件 §8.3
+    要擋的情況。
+
+  MAJOR #2 (reports/gate_outputs/wf0907_C12_dry.txt:94-100, 本檔第一輪，
+    現存於上方 121-128 行「(the "baseline (whole-file melody_verify)"
+    line differs...」那段):
+    第一輪對這個 baseline 差異的敘述方向整段寫反了 -- 原文說「8/34/864
+    是手動法，跑在 WET 原檔上」「30/14/862 是新工具，內部把 baseline 也
+    跑在同一份乾聲分析 score 上」，實際完全相反：手動法那次的輸入檔本身
+    就是手動歸零過的乾聲檔（fur_elise_manual_dry.score.json），舊腳本的
+    baseline = mv.verify(score_path) 因此跑在乾聲上，得 8/34/864；新工具
+    （修正前）的輸入是原始濕聲檔，baseline 同樣是 mv.verify(score_path)
+    （score_path 從未被改綁到衍生檔），因此跑在濕聲上，得 30/14/862。
+    上方第一輪的原始輸出數字本身沒有錯（GATE 1/2/3/4 的指令與數字都是
+    真實重跑得到的），錯的只是那一段對「為什麼兩個 baseline 不同」的
+    文字解釋，方向完全顛倒。依指示不覆蓋/不刪除第一輪內容，此處明確
+    更正：**那段文字的方向是錯的，請以本「修正回合」段落為準**。
+
+  minor #1（docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §8.3 未更新）：
+    維持第一輪判斷不變 -- 該檔本 session 開工前已含另一張未過稽核的 C10
+    卡改動，依本 session 明示指令屬 out-of-scope、不得碰，留給稽核/月月
+    裁決由誰、何時補上 §8.3，本卡未再嘗試觸碰。
+
+  minor #2（C12 疊在尚未過稽核的 C11 改動之上，無法單獨 stage）：
+    維持第一輪判斷不變 -- tools/stem_verify.py 與 tests/test_stem_verify.py
+    仍混有 WF0907-C11（rule-id 抽取/refusal histogram）尚未經稽核接受的
+    改動，本輪修正同樣只動了 C12 範圍內的程式（baseline 那一段 + 對應
+    註解/note 文字），未審查、未修改 C11 部分。若 C11 之後被退回，這兩個
+    檔案仍需要重新切分 diff。
+
+---------------------------------------------------------------------------------
+修正內容
+---------------------------------------------------------------------------------
+
+tools/stem_verify.py:
+  1. baseline = mv.verify(score_path, quiet=True)
+     改為
+     baseline = mv.verify(analysis_score_path, quiet=True)
+     -- analysis_score_path 是 derive_dry_score() 之後實際寫出、也是分軌/
+     參考 score 真正拿去 render 的那份檔案（analysis_dry=True 時是衍生的
+     乾聲 copy，--no-analysis-dry 時就是原始檔本身，此時頂層 warning 早
+     已揭露這是濕聲判定）。修正後 baseline 與 stem_verify 保證判在同一
+     份訊號上，不會再有「乾濕不一致卻不揭露」的情況。
+  2. report["baseline_whole_file_melody_verify"]["note"] 與
+     report["comparison"]["note"] 的文字同步更新，明講兩邊現在都是判在
+     report["provenance"]["analysis_score"] 那份檔案上。
+  3. 新增回歸測試 test_c12_baseline_judges_the_same_analysis_score_not_the_wet_original
+     （tests/test_stem_verify.py）：用真實 CLI 端到端跑一次帶非零 reverb
+     的 score，spy 包住真正的 mv.verify()（委派給真實實作，不是 stub），
+     斷言「不帶 wav_path= 的那一次呼叫」（唯一符合 baseline 特徵的呼叫）
+     的分數路徑一定是 analysis_score，絕不是 source_score -- 這兩個路徑
+     在這個 fixture 上本來就不同（reverb 非零），所以這條斷言不會因為
+     兩者剛好相等而變得空洞。
+
+HANDOVER.md §7 加了一段「修正回合」註記，說明 baseline 現在也跑在
+provenance.analysis_score 上。
+
+---------------------------------------------------------------------------------
+修正後重跑全部 5 條 GATE
+---------------------------------------------------------------------------------
+
+GATE 1（手動法 vs 新旗標，愛麗絲鋼琴版 --limit 40，重新產生新的
+output/wf0907/C12_fix_round/{manual,new}_report.json，跟第一輪各自獨立）:
+
+  手動法（舊腳本，跑在手動歸零 wet/decay 的檔案上）:
+    stem_verify summary: 32 PASS / 0 FAIL / 8 UNVERIFIED
+    baseline (whole-file melody_verify): 8 PASS / 34 FAIL / 864 UNVERIFIED
+    superposition max_abs_diff: 4.5634806156158447e-07
+
+  新旗標（修正後的 tools/stem_verify.py，--analysis-dry 預設開，
+  跑在原始濕聲 score 上，工具自己衍生乾聲):
+    stem_verify summary: 32 PASS / 0 FAIL / 8 UNVERIFIED
+    baseline (whole-file melody_verify): 8 PASS / 34 FAIL / 864 UNVERIFIED
+      <- 修正前是 30 PASS / 14 FAIL / 862 UNVERIFIED（濕聲）；
+         修正後與手動法完全相同（乾聲），這就是本輪修正要驗證的東西。
+    superposition max_abs_diff: 4.5634806156158447e-07
+
+  逐顆比對（verdict/onset_err_ms/pitch_cents/expected_f0_hz/reason，40 顆全部）:
+    events compared: 40 40
+    mismatches found: 0
+    manual comparison: {'baseline_pass': 8, 'baseline_fail': 34, 'baseline_unverified': 864,
+      'stem_pass': 32, 'stem_fail': 0, 'stem_unverified': 8, ...}
+    new comparison:    {'baseline_pass': 8, 'baseline_fail': 34, 'baseline_unverified': 864,
+      'stem_pass': 32, 'stem_fail': 0, 'stem_unverified': 8, ...}
+    (comparison 的 baseline_pass/fail/unverified 現在兩邊也逐項相同，不只
+    stem_verify.events 逐顆相同 -- 這是修正前不可能達成的，因為修正前
+    兩邊 baseline 判在不同訊號上。)
+
+GATE 2（新一份 report 的 provenance 區塊 + sha256 重算核對，
+output/wf0907/C12_fix_round/new_report.json）:
+
+  {
+    "source_score": {"path": "scores/classical/fur_elise/fur_elise_complete.score.json",
+                      "sha256": "3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7"},
+    "analysis_score": {"path": "output/wf0907/C12_fix_round/new_out/derived/fur_elise_complete.dry.score.json",
+                        "sha256": "33eed026d7daacecfb921f94bfdf7dbaad71310cce0ef0d254637bed16552d5f",
+                        "leaf_diff": [
+                          {"path": "global/effects/reverb/wet", "before": 0.1, "after": 0},
+                          {"path": "global/effects/reverb/decay", "before": 1.4, "after": 0}]},
+    "cli": {"path": "build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe",
+            "sha256": "aef705ac4e3aa962cfc9244d31f271303b7753f09dcab9b03f8e027a9bfe1759"},
+    "analysis_dry": true
+  }
+  ("warning" in report) == False -- analysis_dry=true 時本來就不該有 warning，正確。
+
+  Python hashlib 重算（獨立於工具自己的 vs.sha256_file()）:
+    source_score   reported=   3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7
+    source_score   recomputed= 3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7  match= True
+    analysis_score reported=   33eed026d7daacecfb921f94bfdf7dbaad71310cce0ef0d254637bed16552d5f
+    analysis_score recomputed= 33eed026d7daacecfb921f94bfdf7dbaad71310cce0ef0d254637bed16552d5f  match= True
+    cli            reported=   aef705ac4e3aa962cfc9244d31f271303b7753f09dcab9b03f8e027a9bfe1759
+    cli            recomputed= aef705ac4e3aa962cfc9244d31f271303b7753f09dcab9b03f8e027a9bfe1759  match= True
+
+  Windows certutil 重算（完全獨立的工具，不經過 Python）:
+    $ certutil -hashfile "scores\classical\fur_elise\fur_elise_complete.score.json" SHA256
+    3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7
+    $ certutil -hashfile "output\wf0907\C12_fix_round\new_out\derived\fur_elise_complete.dry.score.json" SHA256
+    33eed026d7daacecfb921f94bfdf7dbaad71310cce0ef0d254637bed16552d5f
+    $ certutil -hashfile "build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe" SHA256
+    aef705ac4e3aa962cfc9244d31f271303b7753f09dcab9b03f8e027a9bfe1759
+  三個都與 JSON 內的值、Python hashlib 重算值三方一致。
+
+GATE 3: PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+  ................................................. [100%]
+  49 passed in 32.36s
+  (48 -> 49：本輪新增的 1 條 baseline 回歸測試
+  test_c12_baseline_judges_the_same_analysis_score_not_the_wet_original)
+
+GATE 4: python -m pytest tests -q（跑兩次確認穩定）
+  第一次： 250 passed, 1 skipped in 68.43s (0:01:08)
+  第二次： 250 passed, 1 skipped in 69.10s (0:01:09)
+  （249 -> 250：同一條新增的 baseline 回歸測試；本輪兩次全跑皆全綠，
+  未再出現第一輪記錄過的 test_dump_modes_layered.py 瞬斷 -- 該檔仍是
+  untracked、屬 WF0907-E9 C++ lane，不在本卡檔案範圍內，本輪未觸碰。）
+
+GATE 5: git diff --stat -- tools/stem_verify.py tests/test_stem_verify.py HANDOVER.md
+   HANDOVER.md               |  22 ++-
+   tests/test_stem_verify.py | 446 ++++++++++++++++++++++++++++++++++++++++++++++
+   tools/stem_verify.py      | 321 ++++++++++++++++++++++++++++++---
+   3 files changed, 763 insertions(+), 26 deletions(-)
+  仍只含卡上允許的三個檔案；docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md 未
+  被本卡觸碰（git diff --stat 對它顯示的 165 行改動全屬前一張未過稽核的
+  C10，與本輪修正無關，已用 git diff -- 該檔核對過內容不含任何
+  --analysis-dry/provenance/baseline 字樣）。
+
+修正回合結論：MAJOR #1（baseline 判在錯誤訊號上且未揭露）與 MAJOR #2
+（證據檔敘述方向顛倒）皆已修正並附上重新獨立產生的證據；minor #1/#2
+維持第一輪的裁決（分別待月月裁決、待 C11 結果確定），本輪未改動、
+未新增額外處理。

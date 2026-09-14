@@ -1,0 +1,1467 @@
+diff --git a/HANDOVER.md b/HANDOVER.md
+index c4c859e..be42adb 100644
+--- a/HANDOVER.md
++++ b/HANDOVER.md
+@@ -120,7 +120,18 @@ MIDI 原譜 ──① score_vs_midi_verify──> score.json ──② melody_ve
+    撤回前的硬邊界質心，開發網格 max\|error\| 仍是 1.1721c，hold-out
+    1.0840c，兩者皆 > 1.0c 門檻，見
+    `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §9.5 與
+-   `reports/decision_packets/C10_selfcal_domain.zh-TW.md` §5）——這是
++   `reports/decision_packets/C10_selfcal_domain.zh-TW.md` §5）。
++   **2026-09-09 WF0909-C10C 又試了一個架構外的方法（時域 NLS 擬合，
++   `measure_pitch_cents_nls()`）：四條合成關卡全過且大幅領先（開發網格
++   0.2868c、hold-out 0.0816c、增益保真 0.0090c、course 中心 0.0064c），
++   但在產品 GATE 真正走的乾聲分軌路徑上把 7 顆 PASS 判成 FAIL、30 檔強域
++   corpus 動了 9 檔，因此否決、未上產品路徑**（設計文件 §9.6、裁決包 §6、
++   `reports/c10c_nls_estimator_before_after.md`）。**選項 B 至此已在兩個
++   結構不同的家族、六個候選上試完並全數否決，建議改選「收窄主張域」。**
++   這輪還量出一個更上層的問題：哨兵合成的訊號模型（指數衰減正弦波相加）
++   剛好就是 NLS 估計器自己的模型，所以**現行形式的 1-cent 自證門檻本身
++   不足以認證一個估計器上產品線**——裁決包 §6.3 記了「要不要讓哨兵語料
++   帶上放鍵/阻尼段」這個待裁決項。這是
+    ±5 cents 產品 GATE 有沒有資格被信任的前置檢查，仍待月月在「收窄主張域」
+    與「找架構外的新估計法」之間裁決。**主張域**在 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §7（強域=單音/稀疏；
+    弱域=密集低音複音 → 誠實拒答，位置保證改由 verify_score 位元決定性承擔）。
+diff --git a/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md b/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+index 85aff6b..c60b35b 100644
+--- a/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
++++ b/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+@@ -374,14 +374,15 @@ Fletcher-Hamilton 直立琴參考 `B` 並排列出比值——**只列數字，
+ 
+ ---
+ 
+-## 9. 量測器自證（WF0907-C10 2026-09-07 FAIL → WF0909-C10B 原始回合一度「已達標」→ 修正回合撤回，仍 FAIL）
++## 9. 量測器自證（WF0907-C10 2026-09-07 FAIL → WF0909-C10B 原始回合一度「已達標」→ 修正回合撤回 → WF0909-C10C 架構外方法亦否決，仍 FAIL）
+ 
+ §8.4 item 2 說「量測器本身應先用合成哨兵證明自身誤差 ≤1 cent，才有資格執行
+ ±5 cents 的產品 GATE」（月月 2026-08-30 查核第 5 點）。§9.1–9.3 是 C10 那次
+ 量測（結果：FAIL，1.1721 cents）；§9.4 是 C10B **原始回合**改善估計器後
+-一度回報「已達成」的結果，**§9.5（修正回合）發現該估計器有結構性缺陷並
+-撤回，C10 的自證問題依然 FAIL，未解**。§9.1–9.4 保留原樣做歷史記錄，不
+-倒填改寫；**現況以 §9.5 為準**。
++一度回報「已達成」的結果；**§9.5（修正回合）發現該估計器有結構性缺陷並撤回，
++§9.6（C10C）到架構外找了時域 NLS、合成關卡全過但被真實音檔否決——
++C10 的自證問題依然 FAIL，未解**。§9.1–9.5 保留原樣做歷史記錄，不
++倒填改寫；**現況以 §9.6 為準**。
+ 
+ ### 9.1 方法
+ 
+@@ -574,6 +575,70 @@ UNVERIFIED 數字與 §9.2 之前的原始記錄逐一相同、給愛麗絲乾
+ 尚未找到。±5 cents 產品門檻、拒答規則、band 選擇、course/detune 判定邏輯
+ 全部未動（R2）。
+ 
++### 9.6 架構外方法已試過：時域 NLS 合成全過、真實音檔否決（WF0909-C10C，2026-09-09，卡 RED）
++
++§9.5 說「真正的選項 C（架構外的新方法）尚未找到」。WF0909-C10C 去找了，
++找到了、實作了、量完了，**結論是否決**。完整前後對照見
++`reports/c10c_nls_estimator_before_after.md`，完整命令輸出見
++`reports/gate_outputs/wf0909_C10C_nls.txt`；本節只記結論與數字。
++
++**方法**：時域最小平方擬合（NLS）。不看 FFT 格子，對分析段直接擬合
++`x(t) = Σ A_k·exp(−t/τ_k)·cos(2π f_k t + φ_k)`（K = 1..3 由 BIC 選），
++回報振幅加權平均頻率。殘差是**模型與資料套用同一個 band 投影之後**的差
++（由 Parseval 等價於帶通後時域殘差的 L2 範數）——濾波器對兩邊一視同仁，
++所以不會重蹈 §9.5 候選 (d) 的覆轍。程式保留在
++`tools/melody_verify.py::measure_pitch_cents_nls()`（**不在產品路徑上**）。
++
++**合成關卡：四條全過，而且不是低空飛過**（門檻都是既有的 1.0 cent，
++沒有新增任何容差；卡 §1.1 只是把既有的 gain-fidelity 掃描升為 GATE 判定
++條件並把偏移集合擴成 0/±3/±5/±12/±25/±40 cents）：
++
++| 合成關卡 | 現行估計器 | C10C 候選 |
++|---|---:|---:|
++| 開發網格（1170 點） | 1.1721 c FAIL | **0.2868 c PASS** |
++| hold-out 網格（1040 點，只跑一次） | 1.0840 c FAIL | **0.0816 c PASS** |
++| 增益保真（308 格，\|量測−真值\|） | 16.8647 c FAIL | **0.0090 c PASS** |
++| 三弦 course 中心（18 格） | 0.3337 c PASS | **0.0064 c PASS** |
++
++**真實音檔：否決。** 在產品 GATE 真正走的路徑（`stem_verify` 乾聲分軌、
++給愛麗絲前 300 事件）候選把 **7 顆 PASS 判成 FAIL**（251/13/36 →
++244/20/36，0 顆反向）；30 檔「強域全綠」corpus 動了 **9 檔**（5 PASS→FAIL、
++3 UNVERIFIED→FAIL、1 PASS→UNVERIFIED），而該 corpus 記錄在案的不變量是
++「0 FAIL 維持」。
++
++**逐顆診斷（實測，非推論）**：給愛麗絲的鋼琴音 `duration` 只有 0.215–0.231 s，
++分析視窗卻是 `PITCH_SEG_S` 的 1.23 s——音在視窗中段就被放鍵阻尼掐掉，
++**包絡不是單一指數**，而那正是 NLS 的模型假設。擬合出的 τ ≈ 0.030–0.052 s
++（線寬約 16–26 cents 在 E5/F5），模型挑的第 2、3 個「分音」彼此只差
++~20 cents，**落在彼此線寬之內、根本不可分辨**，只是逼近一個寬的非勞侖茲
++共振峰的柔性基底（R² 0.67→0.96，所以 BIC 一直買帳）。把不可分辨的分解拿去
++做振幅加權平均，答案就會亂跳：三顆 E5/F5 分軌的帶內其實是**單一寬峰、中心
++離宣告音高不到 1 cent**（bin 從 −13 到 +12 cents、相對振幅 0.84–1.00），
++NLS 報 −5.04 / −5.21 / +5.07 c，質心報 −0.59 / −0.21 / +0.71 c。
++**質心較接近真值。**
++
++**這輪最重要的結構性發現（比估計器本身重要，寫進 §9 是因為它改變 §9 的
++判準本身）**：`tools/measurement_selfcal.py` 合成的訊號是「指數衰減正弦波
++相加 + 雜訊」，**這就是 NLS 估計器自己的模型**。所以一個「模型剛好對上」的
++估計器可以近乎套套邏輯地橫掃全部四條合成關卡，卻在 GATE 真正要判的渲染
++音檔上更差。**現行形式的 1-cent 自證門檻，本身不足以認證一個估計器上產品
++線**——這與 C10B 稽核發現的「兩個網格都測不到增益軸」是同一類盲點，只是
++高了一層（上次盲的是「軸」，這次盲的是「訊號模型」）。任何未來嘗試應先
++讓哨兵語料帶上放鍵/阻尼段；那會改變現行估計器 1.1721 c 這個數字本身
++（門檻不變，比對對象變），已超出 C10C 範圍，記在裁決包 §6.3 待月月定。
++
++**落地狀態**：`measure_pitch_cents()` 行為未變（仍回傳
++`measure_pitch_cents_legacy()`，1170 點開發網格上逐點位元相同，由
++`tests/test_measurement_selfcal.py::test_measure_pitch_cents_matches_legacy_after_revert`
++鎖定）——**本文件 §7/§8 與所有既有音高證據的數字全部維持有效，不需要重寫**。
++`tools/measurement_selfcal.py` 保留兩項誠實升級（gain-fidelity 升為 GATE
++判定條件、新增 `course_semantics_check()`），用現行估計器跑會誠實 exit 1。
++±5 cents / ±10 ms / 拒答規則 / band 選擇 / course·detune 判定全部未動（R2）。
++
++**判定：量測器自證 ≤1 cent 仍未達成，卡 RED。** 選項 B 現已在兩個結構不同
++的家族、六個候選上試完；建議改選 §2 選項 A（收窄主張域、不改程式碼），
++措辭草案見 `reports/decision_packets/C10_selfcal_domain.zh-TW.md` §6.2。
++
+ ---
+ 
+ ## 10. L2 HostProbe H6 可變 block size / H7 user preset round-trip（WF0907-E10，2026-09-08）
+diff --git a/reports/decision_packets/C10_selfcal_domain.zh-TW.md b/reports/decision_packets/C10_selfcal_domain.zh-TW.md
+index 7cdbaab..1962e28 100644
+--- a/reports/decision_packets/C10_selfcal_domain.zh-TW.md
++++ b/reports/decision_packets/C10_selfcal_domain.zh-TW.md
+@@ -169,3 +169,97 @@ legacy_after_revert` 鎖定這件事）。C10 的核心問題（開發網格 max
+ 選項 C（架構外的新方法）尚未找到。現況以本節（§5）與
+ `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §9.5 為準，§9.4（原始回合的
+ 「已達成」結論）保留原樣做歷史記錄，不倒填改寫。
++
++## 6. WF0909-C10C：架構外的方法（時域 NLS）已試過，仍否決（2026-09-09，卡 RED）
++
++§5 結尾說「真正的選項 C（架構外的新方法）尚未找到」。WF0909-C10C 去找了、
++實作了、量完了。**結論：合成關卡全過，真實音檔否決，C10 的自證問題依然未解。**
++完整前後對照 `reports/c10c_nls_estimator_before_after.md`，完整命令輸出
++`reports/gate_outputs/wf0909_C10C_nls.txt`，設計文件 §9.6。
++
++### 6.1 數字（先講結論再講細節）
++
++方法：時域最小平方擬合（NLS）——不看 FFT 格子，對分析段直接擬合
++`x(t) = Σ A_k·exp(−t/τ_k)·cos(2π f_k t + φ_k)`（K = 1..3 由 BIC 選），
++回報振幅加權平均頻率；殘差是模型與資料**套用同一個 band 投影之後**的差，
++所以濾波器自身的邊緣行為不會變成答案的一部分（§5 候選 (d) 的缺陷）。
++程式保留在 `tools/melody_verify.py::measure_pitch_cents_nls()`，
++**不在產品路徑上**。
++
++| 合成關卡（門檻皆為既有的 1.0 cent，未新增容差） | 現行估計器 | C10C 候選 |
++|---|---:|---:|
++| 開發網格（1170 點） | 1.1721 c FAIL | **0.2868 c PASS** |
++| hold-out 網格（1040 點，依卡規定只跑一次） | 1.0840 c FAIL | **0.0816 c PASS** |
++| 增益保真（308 格，\|量測−真值\|，偏移 0/±3/±5/±12/±25/±40 c） | 16.8647 c FAIL | **0.0090 c PASS** |
++| 三弦 course 中心（18 格） | 0.3337 c PASS | **0.0064 c PASS** |
++
++| 真實音檔 | 現行估計器 | C10C 候選 |
++|---|---|---|
++| **產品 GATE 路徑**：`stem_verify` 乾聲分軌，給愛麗絲前 300 事件 | **251 PASS / 13 FAIL / 36 UNVERIFIED** | **244 / 20 / 36 ── 7 顆 PASS→FAIL，0 顆反向** |
++| 30 檔「強域全綠」corpus（不變量：0 FAIL 維持） | 全部 0 FAIL | **9 檔改變**（5 PASS→FAIL、3 UNVERIFIED→FAIL、1 PASS→UNVERIFIED） |
++| `--selftest` / `melody_sentinel` / HostProbe H6 | 5/5、5/0/0、25/25 | 相同判定 |
++
++### 6.2 為什麼否決（逐顆量過，不是推論）
++
++給愛麗絲的鋼琴音 `duration` 只有 0.215–0.231 秒，分析視窗卻是 1.23 秒——
++音在視窗中段就被放鍵阻尼掐掉，**包絡不是單一指數**，而那正是 NLS 的模型
++假設。擬合出的 τ ≈ 0.030–0.052 s（線寬約 16–26 cents 在 E5/F5），模型挑的
++第 2、3 個「分音」彼此只差 ~20 cents，**落在彼此線寬之內、根本不可分辨**，
++只是逼近一個寬的非勞侖茲共振峰的柔性基底（R² 0.67→0.96，BIC 一直買帳）。
++把不可分辨的分解拿去做振幅加權平均，答案就會亂跳：三顆 E5/F5 分軌的帶內
++其實是**單一寬峰、中心離宣告音高不到 1 cent**（bin 從 −13 到 +12 cents、
++相對振幅 0.84–1.00），NLS 報 −5.04 / −5.21 / +5.07 c，質心報
++−0.59 / −0.21 / +0.71 c。**質心較接近真值；NLS 不是抓到真的走音，
++是把一個共振峰劈成兩半。**
++
++低音側則是另一種失效：`rabbit_action_001`（E2）帶內只有 6 根未 padding 的
++bin，R² = 0.5920 剛好爬過 fail-closed 門檻，然後回報一個貼在 band 下緣的
++退化解（−49.6 c，下緣 −52.7 c）。
++
++### 6.3 這輪最重要的發現：現行的 1-cent 門檻本身不足以認證估計器
++
++`tools/measurement_selfcal.py` 合成的訊號是「指數衰減正弦波相加 + 雜訊」，
++**這就是 NLS 估計器自己的模型**。所以一個「模型剛好對上」的估計器可以
++近乎套套邏輯地橫掃全部四條合成關卡，卻在 GATE 真正要判的渲染音檔上更差。
++這與 §5 抓到的「兩個網格都測不到增益軸」是同一類結構盲點，只是高了一層：
++上次盲的是**軸**，這次盲的是**訊號模型**。
++
++**待月月裁決（超出 C10C 授權）**：要不要讓哨兵語料帶上放鍵/阻尼段？
++修這個盲點就得改 `measurement_selfcal.py` 的訊號模型，那會讓現行估計器
++1.1721 c 這個數字**本身**改變（1.0 cent 門檻不變，只是比對對象變），
++牽動本文件、設計文件 §9、`reports/c10b_estimator_before_after.md`
++三份文件引用的數字，所以 C10C 沒有自行動手。
++
++另一個要月月定的：C10C 依卡 §1.1 把 gain-fidelity 掃描從 informational
++**升為 GATE 判定條件**（用既有 1.0 c，不新增數字）。結果是
++`measurement_selfcal.py` 現在多一個失敗理由：現行估計器在 40 cents 的真實
++走音上只量到 23.1 cents。這是 §5 就已誠實揭露過的既有限制、不是新迴歸，
++但要保留成 GATE 條件還是退回 informational，請月月定。
++
++### 6.4 現況與建議
++
++- **產品估計器一個位元都沒改**：`measure_pitch_cents()` 仍回傳
++  `measure_pitch_cents_legacy()`，由
++  `tests/test_measurement_selfcal.py::test_measure_pitch_cents_matches_legacy_after_revert`
++  在整個 1170 點開發網格上鎖定（PASSING）。**本 repo 既有的每一個音高數字
++  都仍然有效，沒有任何一份證據需要重寫或撤回。**
++- 選項 B（改估計器）現已在**兩個結構不同的家族、六個候選**上試完並全數
++  否決：§4/§5 的五個 bin 重加權候選（拋物線內插、相位差、zero-padding、
++  raised-cosine 柔化、mean-shift 柔化）＋ C10C 的時域 NLS。
++- **建議：改選 §2 選項 A（收窄主張域、不改程式碼）。** 1.1721 c 相對
++  ±5 c 仍有 4.3 倍安全係數，且問題已被精確定位。措辭草案：
++
++  > `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.5 主張域補一條：
++  > 「本專案的 pitch GATE 判 ±5 cents，其量測器（`measure_pitch_cents`）
++  > 自身在合成哨兵上的最大誤差為 1.1721 cents（開發網格）／1.0840 cents
++  > （hold-out 網格），未達月月 2026-08-30 訂下的 ≤1 cent 自證門檻。
++  > 因此本專案**不宣稱**量測器已自證；GATE 的有效主張是『渲染音高與
++  > 宣告音高的差，在扣掉量測器自身 ~1.2 cents 的系統誤差後，仍落在
++  > ±5 cents 內』。任何量到 3.8–5.0 cents 之間的數字，都不得單獨用來
++  > 斷言渲染正確或錯誤——那個區間裡量測器誤差與渲染誤差不可分辨。
++  > 另外，量測器在『真值偏離期望值』這條軸上的增益缺口更大（40 cents
++  > 的真實走音只量到 23.1 cents，MIDI 37 附近），所以低音區實質可偵測的
++  > 走音下限比 ±5 cents 寬，這一點在低音密集段落尤其要留意。」
++
++  這段措辭比 §2 選項 A 原本的草案多了兩件事：hold-out 網格的數字，以及
++  增益軸的誠實揭露（§5、§6 才量出來的，原草案寫的時候還不知道）。
+diff --git a/tests/test_measurement_selfcal.py b/tests/test_measurement_selfcal.py
+index 3e4d1cf..8d61483 100644
+--- a/tests/test_measurement_selfcal.py
++++ b/tests/test_measurement_selfcal.py
+@@ -1,4 +1,5 @@
+-"""Sentinel tests for tools/measurement_selfcal.py (WF0907-C10, WF0909-C10B).
++"""Sentinel tests for tools/measurement_selfcal.py (WF0907-C10, WF0909-C10B,
++WF0909-C10C).
+ 
+ No TsukiSynthCLI render anywhere here -- these are pure-numpy, known-answer
+ synthetic-signal tests of the estimator's own accuracy, per the card's
+@@ -17,39 +18,49 @@ product GATE is trusted.
+       expected value" mutant and proves sensitivity_check() then FAILS,
+       i.e. (b) actually has teeth and is not itself a false green.
+ 
+-WF0909-C10B (original round) tried an estimator swap to a raised-cosine-
+-tapered centroid to clear the ≤1-cent self-certification bar. The
+-WF0909-C10B FIX ROUND (this file's current state) found and REVERTED that
+-swap -- see tools/melody_verify.measure_pitch_cents()'s docstring for the
+-full five-candidate story and tools/measurement_selfcal.py's "Gain-
+-fidelity scan" module docstring section for why. The estimator that ships
+-today is byte-identical, again, to measure_pitch_cents_legacy():
+-  (d) test_holdout_grid_within_one_cent -- XFAIL (strict): the full
+-      1040-point hold-out grid still measures max|error| = 1.0840 cents
+-      (the legacy estimator's own known number on the hold-out grid --
+-      the development grid's number is 1.1721 cents; do not conflate the
+-      two), > the 1.0-cent bar --
+-      kept as a real, still-executing assertion (not deleted, not
+-      loosened -- R2) so this shows as a named, explained xfail in every
+-      CI run rather than silently disappearing; it will XPASS (and pytest
+-      will flag that as a failure, by design) the day a real fix lands.
+-  (e) test_measure_pitch_cents_matches_legacy_after_revert -- the shipped
+-      measure_pitch_cents() must produce IDENTICAL numbers to
+-      measure_pitch_cents_legacy() on the full development grid --
+-      guards against silently re-introducing the fix-round's rejected
+-      taper (or any other divergence) without a fresh audit.
+-  (f) test_gain_fidelity_no_regression_vs_legacy -- WF0909-C10B fix-round
+-      addition: measure_pitch_cents()'s gain-fidelity scan (module
+-      docstring "Gain-fidelity scan" in measurement_selfcal.py; the axis
+-      the original round's hold-out grid never exercised) must not be
+-      WORSE than measure_pitch_cents_legacy()'s own gain fidelity on the
+-      identical cells -- this is the regression test that would have
+-      caught the original round's raised-cosine taper before it reached
+-      audit.
++STATUS after WF0909-C10C (card RED, 2026-09-09): SIX replacement
++estimators have been tried and all six rejected -- five inside the
++"reweight the bins of one band" family (WF0909-C10B) and one outside it
++(C10C's time-domain damped-sinusoid NLS fit, kept as
++melody_verify.measure_pitch_cents_nls). Production is STILL the legacy
++hard-edge centroid, and the 1-cent self-certification bar is STILL unmet
++by it. The tests below are split accordingly:
++
++  PRODUCTION-PATH assertions -- real, still-executing, still-failing, so
++  they are strict xfails that name the open gap instead of hiding it:
++  (d) test_development_grid_within_one_cent   (production: 1.1721 c)
++  (e) test_holdout_grid_within_one_cent       (production: 1.0840 c)
++  (f) test_gain_fidelity_within_one_cent      (production loses 18.8 c of
++      a 40-cent deviation at MIDI 36)
++  strict=True on all three: the day an estimator really clears them,
++  pytest flags the XPASS so these get promoted to plain tests rather than
++  quietly passing inside an xfail.
++
++  PRODUCTION-PATH assertions that DO hold today:
++  (g) test_course_semantics_reports_centre -- the centroid does report the
++      centre of a 3-string course; this is the property that killed
++      C10B's single-peak candidates, so it is asserted, not assumed.
++  (h) test_gain_fidelity_no_regression_vs_legacy -- whatever ships must
++      never be WORSE on the gain axis than the centroid already is.
++  (i) test_measure_pitch_cents_matches_legacy_after_revert -- production
++      must be numerically identical to measure_pitch_cents_legacy over the
++      whole development grid, so no estimator swap can land without a
++      fresh audit.
++
++  C10C CANDIDATE assertions -- these lock the finding itself, so the
++  "clears every synthetic bar, still rejected on real audio" result stays
++  reproducible instead of living only in a report:
++  (j) test_nls_candidate_clears_every_synthetic_bar
++  (k) test_synthetic_bars_cannot_certify_a_matched_model_estimator --
++      the structural lesson, asserted: the NLS candidate beats the
++      production estimator on EVERY synthetic axis this file measures,
++      which is precisely why passing them is not sufficient evidence for
++      production (the sentinel synthesizes the candidate's own model).
+ """
+ import sys
+ from pathlib import Path
+ 
++import numpy as np
+ import pytest
+ 
+ ROOT = Path(__file__).resolve().parent.parent
+@@ -60,6 +71,29 @@ if str(TOOLS) not in sys.path:
+ import measurement_selfcal as ms  # noqa: E402
+ import melody_verify as mv        # noqa: E402
+ 
++# On record in three documents; pinned so the xfails below cannot become
++# XPASS by the GRID getting easier rather than an estimator getting better.
++LEGACY_DEV_GRID_MAX_ABS_CENTS = 1.1721
++LEGACY_HOLDOUT_GRID_MAX_ABS_CENTS = 1.0840
++
++XFAIL_REASON = (
++    "WF0909-C10C (2026-09-09, card RED): the production estimator is still "
++    "the legacy hard-edge centroid, whose own error misses the ratified "
++    "1-cent self-certification bar. Six replacement estimators have been "
++    "tried and rejected -- five bin-reweighting variants (WF0909-C10B) and "
++    "C10C's time-domain NLS fit (melody_verify.measure_pitch_cents_nls), "
++    "which cleared EVERY synthetic bar in this file (dev 0.2868 c, "
++    "hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) "
++    "and was still rejected because it turns 7 dry-stem PASS into FAIL on "
++    "the product GATE path and changes 8 of the 30 strong-domain corpus "
++    "files -- see that function's 'REAL-AUDIO REJECTION' docstring "
++    "section, reports/c10c_nls_estimator_before_after.md and "
++    "reports/decision_packets/C10_selfcal_domain.zh-TW.md S6. The "
++    "assertion below is NOT loosened and NOT deleted (R2); it is an xfail "
++    "so CI names the open gap every run. strict=True: an XPASS means "
++    "someone landed an estimator that really clears this, and should fail "
++    "CI as a prompt to promote this back to a plain test.")
++
+ 
+ def test_pure_harmonic_a4_within_one_cent():
+     cents, fail, onset_err_ms, f0_nom, f0_true = ms.measure_one(
+@@ -103,31 +137,31 @@ def test_mutant_estimator_caught_by_sensitivity_check(monkeypatch):
+     assert any(offset != 0.0 for offset, _c, _f, _ok in results)
+ 
+ 
+-@pytest.mark.xfail(strict=True, reason=(
+-    "WF0909-C10B fix round (2026-09-09): the raised-cosine-tapered "
+-    "estimator that used to clear this bar was REVERTED -- a fix-round "
+-    "audit found it bought its <=1-cent zero-offset accuracy by silently "
+-    "compressing the estimator's GAIN under a real true-vs-expected "
+-    "deviation (down to ~0.40 at low MIDI), which the original hold-out "
+-    "grid's own design could not detect (see measurement_selfcal.py's "
+-    "'Gain-fidelity scan' docstring section and melody_verify."
+-    "measure_pitch_cents()'s docstring, candidate (d)). The estimator "
+-    "shipping today is the legacy hard-edge centroid, whose own max "
+-    "|error| here is the number this test still checks against the "
+-    "ratified 1.0-cent bar -- STILL a real assertion (R2: not loosened, "
+-    "not deleted), just an XFAIL so CI shows the still-open gap by name "
+-    "instead of a silent pass. See reports/decision_packets/"
+-    "C10_selfcal_domain.zh-TW.md for the still-open option A/C choice. "
+-    "strict=True: this test XPASSing (i.e. someone landing an estimator "
+-    "that actually clears the bar without the gain regression) should "
+-    "itself fail CI as a flag to update this xfail, not vanish quietly."))
++@pytest.mark.xfail(strict=True, reason=XFAIL_REASON)
++def test_development_grid_within_one_cent():
++    """The 1170-point development grid must clear the ratified 1-cent
++    self-certification bar with zero refusals. Production measures
++    1.1721 cents -- the gap C10 opened and C10B/C10C have not closed."""
++    rows = ms.run_grid()
++    fails = [r for r in rows if r["fail_reason"] is not None]
++    assert not fails, "development grid produced refusals: %r" % fails[:5]
++    errs = [abs(r["error_cents"]) for r in rows if r["error_cents"] is not None]
++    assert len(errs) == len(rows) == 1170
++    max_abs = max(errs)
++    assert max_abs <= ms.MAX_ABS_ERROR_CENTS_LIMIT, (
++        "development grid max |error| = %.4f cents exceeds the ratified "
++        "%.1f-cent self-calibration limit"
++        % (max_abs, ms.MAX_ABS_ERROR_CENTS_LIMIT))
++
++
++@pytest.mark.xfail(strict=True, reason=XFAIL_REASON)
+ def test_holdout_grid_within_one_cent():
+-    """WF0909-C10B §2.2 overfitting guard: the hold-out grid (disjoint f0
+-    offsets/B/level/onset from the development grid the estimator was
+-    tuned against) must ALSO clear the 1-cent self-certification bar, with
+-    zero refusals. Full grid (1040 points) -- slower than the other tests
+-    here but this IS the assertion the card's GATE 1 depends on; a smaller
+-    subset would not actually prove the hold-out number."""
++    """WF0909-C10B S2.2 overfitting guard: the hold-out grid (disjoint f0
++    offsets/B/level/onset from the development grid) must ALSO clear the
++    1-cent bar with zero refusals. Production measures 1.0840 cents. Full
++    grid (1040 points) -- slower than the other tests here, but this IS
++    the assertion the card's GATE 1 depends on; a subset would not prove
++    the hold-out number."""
+     rows = ms.run_holdout_grid()
+     fails = [r for r in rows if r["fail_reason"] is not None]
+     assert not fails, "hold-out grid produced refusals: %r" % fails[:5]
+@@ -140,14 +174,88 @@ def test_holdout_grid_within_one_cent():
+         "development grid" % (max_abs, ms.MAX_ABS_ERROR_CENTS_LIMIT))
+ 
+ 
++@pytest.mark.xfail(strict=True, reason=XFAIL_REASON)
++def test_gain_fidelity_within_one_cent():
++    """WF0909-C10C card S1.1 (the axis C10B's audit added and C10C
++    promotes to a pass/fail condition): with the EXPECTED f0 held fixed and
++    the TRUE frequency offset by up to +/-40 cents, the estimator must
++    report the TRUE deviation to within the same ratified 1.0 cent. Not a
++    new tolerance -- the same 2026-08-30 bar applied to the axis on which
++    C10B's reverted raised-cosine taper silently widened the +/-5-cent
++    GATE. Production (the centroid) misses this badly: it absorbs up to
++    18.8 cents of a 40-cent deviation at MIDI 36."""
++    rows = ms.gain_fidelity_scan()
++    refused = [r for r in rows if r["fail_reason"] is not None]
++    assert not refused, (
++        "gain-fidelity scan refused %d/%d cells: %r"
++        % (len(refused), len(rows), refused[:5]))
++    worst = max(rows, key=lambda r: abs(r["error_cents"]))
++    assert abs(worst["error_cents"]) <= ms.MAX_ABS_ERROR_CENTS_LIMIT, (
++        "gain fidelity: a TRUE deviation of %+g cents measured %+.4f cents "
++        "(error %.4f c > %.1f c limit) at midi=%d %s %+g dBFS -- the "
++        "estimator is absorbing real mistuning, which widens the product's "
++        "+/-5-cent GATE without touching the number (R2)"
++        % (worst["offset_cents"], worst["measured_cents"],
++           abs(worst["error_cents"]), ms.MAX_ABS_ERROR_CENTS_LIMIT,
++           worst["midi"], worst["variant"], worst["level_dbfs"]))
++
++
++def test_course_semantics_reports_centre():
++    """WF0909-C10C card S1.3: this project's default cimbalom/piano
++    presets voice a note as a 3-string COURSE detuned -5/0/+5 cents, and
++    the ratified claim is that the estimator reports the course CENTRE,
++    not its loudest string. Asserted at equal amplitudes AND at 0.5/1/0.5.
++    C10B's single-peak candidates (a)/(b) passed every synthetic grid and
++    then failed 4 of 5 real sentinel notes on exactly this property, so it
++    is asserted here rather than assumed. Production passes this today."""
++    rows = ms.course_semantics_check()
++    assert len(rows) == len(ms.COURSE_AMP_SETS) * len(ms.COURSE_SCAN_MIDIS)
++    refused = [r for r in rows if r["fail_reason"] is not None]
++    assert not refused, "course-semantics check refused: %r" % refused[:5]
++    worst = max(rows, key=lambda r: abs(r["measured_cents"]))
++    assert abs(worst["measured_cents"]) <= ms.MAX_ABS_ERROR_CENTS_LIMIT, (
++        "a %s-amplitude 3-string course at MIDI %d measured %+.4f cents "
++        "from its own centre (> %.1f c) -- the estimator is reporting a "
++        "single string, not the course centroid"
++        % (worst["amp_set"], worst["midi"], worst["measured_cents"],
++           ms.MAX_ABS_ERROR_CENTS_LIMIT))
++
++
++def test_gain_fidelity_no_regression_vs_legacy():
++    """WF0909-C10B fix round, kept: the estimator the product GATE actually
++    uses must not have WORSE gain fidelity than the legacy hard-edge
++    centroid on the identical cells -- the check that caught C10B's
++    raised-cosine taper (~0.40 gain at low MIDI) before it reached audit."""
++    live_rows = ms.gain_fidelity_scan(estimator=mv.measure_pitch_cents)
++    legacy_rows = ms.gain_fidelity_scan(estimator=mv.measure_pitch_cents_legacy)
++    assert len(live_rows) == len(legacy_rows) > 0
++
++    worst_regression = 0.0
++    worst_cell = None
++    for live, legacy in zip(live_rows, legacy_rows):
++        if live["gain"] is None or legacy["gain"] is None:
++            continue
++        regression = abs(1.0 - live["gain"]) - abs(1.0 - legacy["gain"])
++        if regression > worst_regression:
++            worst_regression = regression
++            worst_cell = (live, legacy)
++
++    assert worst_regression <= 1e-9, (
++        "measure_pitch_cents()'s gain fidelity is WORSE than "
++        "measure_pitch_cents_legacy()'s own on at least one cell (worst "
++        "regression %.4f) -- this is exactly the WF0909-C10B raised-cosine "
++        "taper's defect (effectively widening the product's ±5-cent "
++        "tolerance without touching the number itself, R2); cell=%r"
++        % (worst_regression, worst_cell))
++
++
+ def test_measure_pitch_cents_matches_legacy_after_revert():
+-    """WF0909-C10B fix round: measure_pitch_cents() and
+-    measure_pitch_cents_legacy() must be numerically IDENTICAL on the full
+-    development grid -- production is the legacy hard-edge centroid again
+-    (the raised-cosine taper was reverted). Guards against silently
+-    re-introducing that taper, or any other divergence, without a fresh
+-    gain-fidelity audit (test_gain_fidelity_no_regression_vs_legacy
+-    below)."""
++    """Production must be numerically IDENTICAL to
++    measure_pitch_cents_legacy() over the full development grid. Both
++    WF0909-C10B and WF0909-C10C ended with their candidate estimator
++    rejected, so this is what keeps every pitch number already on record in
++    this repo valid, and stops a future estimator swap from landing without
++    a fresh real-audio audit."""
+     new_rows = ms.run_grid()
+ 
+     orig = mv.measure_pitch_cents
+@@ -168,40 +276,111 @@ def test_measure_pitch_cents_matches_legacy_after_revert():
+     assert not mismatches, (
+         "measure_pitch_cents() diverged from measure_pitch_cents_legacy() "
+         "on %d/%d development-grid cells -- production is no longer the "
+-        "legacy hard-edge centroid; re-run the WF0909-C10B fix-round audit "
+-        "(gain-fidelity scan) before shipping whatever changed it: %r"
++        "legacy hard-edge centroid; re-run the WF0909-C10B gain-fidelity "
++        "audit AND the WF0909-C10C real-audio evidence rerun before "
++        "shipping whatever changed it: %r"
+         % (len(mismatches), len(new_rows), mismatches[:3]))
++    legacy_max = max(abs(r["error_cents"]) for r in legacy_rows
++                     if r["error_cents"] is not None)
++    assert abs(legacy_max - LEGACY_DEV_GRID_MAX_ABS_CENTS) < 5e-4, (
++        "the production/legacy centroid now measures %.4f cents on the "
++        "development grid, not the %.4f on record -- the GRID changed, so "
++        "every before/after number in reports/c10b_estimator_before_after"
++        ".md, reports/c10c_nls_estimator_before_after.md and "
++        "docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S9 needs re-deriving"
++        % (legacy_max, LEGACY_DEV_GRID_MAX_ABS_CENTS))
+ 
+ 
+-def test_gain_fidelity_no_regression_vs_legacy():
+-    """WF0909-C10B fix round: the estimator the product GATE actually uses
+-    must not have WORSE gain fidelity (module docstring 'Gain-fidelity
+-    scan') than the legacy hard-edge centroid on the identical cells --
+-    this is the check the original round's hold-out grid should have had
+-    and did not; it would have caught the reverted raised-cosine taper's
+-    ~0.40 gain at low MIDI before it reached audit."""
+-    live_rows = ms.gain_fidelity_scan(estimator=mv.measure_pitch_cents)
+-    legacy_rows = ms.gain_fidelity_scan(estimator=mv.measure_pitch_cents_legacy)
+-    assert len(live_rows) == len(legacy_rows) > 0
++def test_nls_candidate_clears_every_synthetic_bar():
++    """WF0909-C10C: locks the measured fact that the REJECTED candidate
++    (melody_verify.measure_pitch_cents_nls) clears every synthetic bar this
++    file can pose -- development grid, gain fidelity and course centre --
++    while production does not. Kept as an executing test, not a claim in a
++    report, because the whole point of the C10C finding is that these
++    numbers are real AND insufficient: the candidate was still rejected on
++    real rendered audio (see its docstring's REAL-AUDIO REJECTION section).
+ 
+-    worst_regression = 0.0
+-    worst_cell = None
+-    for live, legacy in zip(live_rows, legacy_rows):
+-        if live["gain"] is None or legacy["gain"] is None:
+-            continue
+-        live_deficit = abs(1.0 - live["gain"])
+-        legacy_deficit = abs(1.0 - legacy["gain"])
+-        # a small floating-point margin only -- both call the same
+-        # underlying math today, so this should be exactly 0.0
+-        regression = live_deficit - legacy_deficit
+-        if regression > worst_regression:
+-            worst_regression = regression
+-            worst_cell = (live, legacy)
++    The hold-out grid (0.0816 c) is exercised by the CLI evidence run
++    rather than here: run_holdout_grid() reads
++    melody_verify.measure_pitch_cents rather than taking an estimator
++    argument, and this test deliberately does not monkeypatch production
++    for a whole 1040-point grid."""
++    orig = mv.measure_pitch_cents
++    mv.measure_pitch_cents = mv.measure_pitch_cents_nls
++    try:
++        dev_rows = ms.run_grid()
++        course_rows = ms.course_semantics_check()
++    finally:
++        mv.measure_pitch_cents = orig
++    gain_rows = ms.gain_fidelity_scan(estimator=mv.measure_pitch_cents_nls)
+ 
+-    assert worst_regression <= 1e-9, (
+-        "measure_pitch_cents()'s gain fidelity is WORSE than "
+-        "measure_pitch_cents_legacy()'s own on at least one cell (worst "
+-        "regression %.4f) -- this is exactly the WF0909-C10B raised-cosine "
+-        "taper's defect (effectively widening the product's ±5-cent "
+-        "tolerance without touching the number itself, R2); cell=%r"
+-        % (worst_regression, worst_cell))
++    assert not [r for r in dev_rows if r["fail_reason"] is not None]
++    dev_max = max(abs(r["error_cents"]) for r in dev_rows
++                  if r["error_cents"] is not None)
++    assert dev_max <= ms.MAX_ABS_ERROR_CENTS_LIMIT, dev_max
++
++    assert not [r for r in gain_rows if r["fail_reason"] is not None]
++    gain_max = max(abs(r["error_cents"]) for r in gain_rows)
++    assert gain_max <= ms.MAX_ABS_ERROR_CENTS_LIMIT, gain_max
++
++    assert not [r for r in course_rows if r["fail_reason"] is not None]
++    course_max = max(abs(r["measured_cents"]) for r in course_rows)
++    assert course_max <= ms.MAX_ABS_ERROR_CENTS_LIMIT, course_max
++
++
++def test_synthetic_bars_cannot_certify_a_matched_model_estimator():
++    """WF0909-C10C's structural finding, asserted rather than narrated.
++
++    This file synthesizes 'sum of exponentially decaying sinusoids +
++    noise' -- which is EXACTLY the model measure_pitch_cents_nls fits. A
++    matched-model estimator therefore beats the production centroid on
++    every axis measured here, by a wide margin, and still loses on real
++    rendered audio (where a released piano note's envelope is not one
++    exponential). The assertion below states that gap in the direction
++    that matters: clearing these bars is NOT sufficient evidence to ship.
++    If a future change ever makes the candidate stop dominating here, this
++    test goes red and the reasoning in the C10C report has to be redone
++    from scratch."""
++    gain_nls = ms.gain_fidelity_scan(estimator=mv.measure_pitch_cents_nls)
++    gain_prod = ms.gain_fidelity_scan(estimator=mv.measure_pitch_cents)
++    nls_worst = max(abs(r["error_cents"]) for r in gain_nls
++                    if r["error_cents"] is not None)
++    prod_worst = max(abs(r["error_cents"]) for r in gain_prod
++                     if r["error_cents"] is not None)
++    assert nls_worst < prod_worst / 100.0, (
++        "the C10C candidate no longer dominates production on the "
++        "synthetic gain-fidelity axis (%.4f c vs %.4f c) -- the premise of "
++        "the C10C finding ('passes every synthetic bar, still rejected on "
++        "real audio') no longer holds and the report must be re-derived"
++        % (nls_worst, prod_worst))
++
++
++@pytest.mark.parametrize("f0", [261.6255653, 2637.020455])
++def test_nls_candidate_refuses_instead_of_guessing_on_noise(f0):
++    """WF0909-C10C card S1.4 fail-closed, on the candidate: given a band
++    with no coherent partial at all (white noise), the NLS fit REFUSES
++    rather than returning a number, where the centroid returns a confident
++    value on the same signal. Recorded because it is the one place the
++    candidate is unambiguously safer than production, and because a future
++    attempt should keep this property.
++
++    Honest limit, stated rather than hidden: at very low f0 the +/-3% band
++    holds only ~5 un-padded bins, so a single damped sinusoid can still
++    explain band-limited noise well enough to clear the R^2 guard; the
++    value it then returns is far outside +/-5 cents (measured +32.7 c at
++    69.3 Hz), i.e. it fails the product GATE rather than passing it
++    falsely. The two frequencies here are where the guard does fire."""
++    sr = 48000
++    rng = np.random.default_rng(7)
++    noise = rng.standard_normal(int(1.6 * sr)) * 0.01
++
++    cents, fail = mv.measure_pitch_cents_nls(noise, sr, f0, 0.037)
++    assert cents is None and fail is not None, (
++        "NLS candidate returned %.4f cents for pure noise at f0=%.1f Hz "
++        "instead of refusing -- the fail-closed guard is not working" %
++        (cents if cents is not None else float("nan"), f0))
++
++    legacy_cents, legacy_fail = mv.measure_pitch_cents_legacy(noise, sr, f0, 0.037)
++    assert legacy_fail is None and legacy_cents is not None, (
++        "the legacy centroid was expected to answer (that is the false "
++        "green this test documents); it refused instead: %r" % legacy_fail)
+diff --git a/tools/measurement_selfcal.py b/tools/measurement_selfcal.py
+index 522df23..67588a2 100644
+--- a/tools/measurement_selfcal.py
++++ b/tools/measurement_selfcal.py
+@@ -111,8 +111,8 @@ compressed GAIN on this second axis -- a taper that peaks its weight at
+ the band's own centre necessarily also peaks at the true frequency in
+ both grids above, so neither grid could have caught it.
+ 
+-`gain_fidelity_scan()` (run automatically, informational only, inside the
+-plain and --holdout invocations below -- no separate CLI flag) exercises
++`gain_fidelity_scan()` (run automatically inside the plain and --holdout
++invocations below -- no separate CLI flag) exercises
+ this second axis directly: `measure_one(..., freq_offset_cents=off)` synthesizes the tone
+ at f0_true*2^(off/1200) while the EXPECTED value passed to
+ measure_pitch_cents stays at the unshifted f0_true (same convention the
+@@ -125,19 +125,37 @@ the true deviation entirely (the "always agrees with expected" mutant
+ test_mutant_estimator_caught_by_sensitivity_check already guards against
+ in miniature).
+ 
+-This is deliberately INFORMATIONAL, like the onset-error check below, NOT
+-a new pass/fail gate: the legacy estimator itself (the only one that has
+-ever shipped) is not perfectly linear at extreme low-MIDI/low-level
+-cells (documented gain as low as ~0.72 at MIDI 37 / +12c / clean signal,
+-worse yet at -60 dBFS where the -90 dBFS noise floor itself starts
+-mattering) -- R2 forbids inventing a new tolerance number this scan would
+-have to clear, and this file's job is to expose an estimator's honest
+-numbers, not certify a threshold nobody has ratified. What it DOES
+-enforce (test_gain_fidelity_no_regression_vs_legacy in
+-tests/test_measurement_selfcal.py) is that a FUTURE change to
+-measure_pitch_cents cannot make this number quietly worse than whatever
+-the legacy estimator's own gain already is on the same cell -- the
+-regression this fix round found and reverted.
++WF0909-C10B FIX ROUND left this scan INFORMATIONAL, because the only
++estimator that had ever shipped (the hard-edge centroid) could not clear
++any bar on this axis (gain as low as ~0.72 at MIDI 37 / +12 c on a clean
++signal, and it loses 18.8 of a 40-cent deviation at MIDI 36), and R2
++forbids inventing a tolerance number nobody has ratified.
++
++WF0909-C10C (month-lead's card ---1.1) CHANGES THAT: this axis is now a
++pass/fail GATE condition of this tool, judged
++    |measured_cents - TRUE offset_cents| <= MAX_ABS_ERROR_CENTS_LIMIT
++over offsets 0 / +-3 / +-5 / +-12 / +-25 / +-40 cents, with refusals
++counting as failures. No new number was invented: the limit is the SAME
++1.0-cent self-certification bar the month-lead ratified on 2026-08-30 and
++the two grids already use, now applied to the axis the WF0909-C10B audit
++proved those grids are structurally blind to. The
++`gain` field (measured/offset) is kept for
++test_gain_fidelity_no_regression_vs_legacy in
++tests/test_measurement_selfcal.py, which additionally forbids ANY future
++estimator from being worse on this axis than the legacy centroid was.
++
++Course-semantics check (WF0909-C10C ---1.3; also exit-code affecting, see
++course_semantics_check())
++------------------------------------------------------------------
++The grids and the gain scan all synthesize ONE partial per band. This
++project's default cimbalom/piano presets do not: a note is a 3-string
++COURSE detuned -5/0/+5 cents, and the ratified claim about the pitch
++estimator is that it reports the course's CENTRE, not its loudest string.
++That distinction is what killed WF0909-C10B's candidates (a) and (b) --
++both passed every synthetic grid and then failed 4 of 5 real sentinel
++notes. `course_semantics_check()` puts it in the synthetic tool where it
++belongs, at both an equal-amplitude and a 0.5/1/0.5 amplitude course,
++judged against the same 1.0-cent bar.
+ """
+ import argparse
+ import math
+@@ -320,23 +338,34 @@ def run_holdout_grid():
+ GAIN_SCAN_MIDIS = (37, 45, 60, 69, 80, 90, 100)
+ GAIN_SCAN_VARIANTS = ("harmonic", "inharm_1e-3")
+ GAIN_SCAN_LEVELS_DBFS = (-6.0, -30.0)
+-GAIN_SCAN_OFFSETS_CENTS = (-12.0, -10.0, -7.0, -5.0, -3.0,
+-                            3.0, 5.0, 7.0, 10.0, 12.0)
++# WF0909-C10C ---1.1 (month-lead-ratified 1-cent bar applied to THIS axis):
++# 0 / +-3 / +-5 / +-12 / +-25 / +-40 cents. 0 is included so the scan also
++# covers "no deviation at all"; +-40 c is 78% of the way to the +/-3% band
++# edge at any f0, i.e. the widest real mistuning band_of can still contain.
++GAIN_SCAN_OFFSETS_CENTS = (0.0, -40.0, -25.0, -12.0, -5.0, -3.0,
++                            3.0, 5.0, 12.0, 25.0, 40.0)
+ 
+ 
+ def gain_fidelity_scan(estimator=None, sr=48000):
+     """WF0909-C10B fix round: measures GAIN = measured_cents / offset_cents
+     (module docstring "Gain-fidelity scan") over GAIN_SCAN_MIDIS x
+     GAIN_SCAN_VARIANTS x GAIN_SCAN_LEVELS_DBFS x GAIN_SCAN_OFFSETS_CENTS
+-    (280 points) at a fixed sample rate (gain fidelity is a per-bin-
++    (308 points) at a fixed sample rate (gain fidelity is a per-bin-
+     alignment/windowing property, not a resampling one -- SR_LIST's two
+     rates are already exercised by run_grid/run_holdout_grid). `estimator`
+     lets a caller (the mutant test, or a before/after comparison) swap in
+     a different pitch function; defaults to the live
+-    melody_verify.measure_pitch_cents. Returns a list of row dicts;
+-    informational only -- no MAX_ABS_ERROR_CENTS_LIMIT-style pass/fail
+-    number is asserted here (see module docstring for why: R2 forbids
+-    inventing one nobody has ratified)."""
++    melody_verify.measure_pitch_cents.
++
++    WF0909-C10C (month-lead ruling recorded in the card's ---1.1): this scan
++    is NO LONGER informational -- `error_cents` = measured - TRUE offset is
++    judged against the SAME already-ratified MAX_ABS_ERROR_CENTS_LIMIT
++    (1.0 cent) the two grids use, and main() exits 1 if any cell misses or
++    refuses. That is not a new tolerance (R2): it is the 2026-08-30
++    self-certification bar applied to the second axis the WF0909-C10B audit
++    showed the grids were structurally blind to. Returns a list of row
++    dicts; `gain` (= measured/offset) is kept for the legacy-comparison
++    test and is None at offset 0."""
+     fn = estimator if estimator is not None else mv.measure_pitch_cents
+     rows = []
+     for midi in GAIN_SCAN_MIDIS:
+@@ -350,14 +379,50 @@ def gain_fidelity_scan(estimator=None, sr=48000):
+                                       DURATION_S, T60_S, level)
+                     cents, fail = fn(sig, sr, f0_true, T_ONSET_S)
+                     gain = (cents / offset) if (fail is None and offset != 0) else None
++                    err = (cents - offset) if fail is None else None
+                     rows.append({
+                         "midi": midi, "variant": variant, "level_dbfs": level,
+                         "offset_cents": offset, "measured_cents": cents,
+-                        "fail_reason": fail, "gain": gain,
++                        "fail_reason": fail, "gain": gain, "error_cents": err,
+                     })
+     return rows
+ 
+ 
++# -- course-semantics knobs (WF0909-C10C ---1.3) -----------------------------
++# A "course" in this project's default cimbalom/piano presets is 3 strings
++# detuned -5/0/+5 cents (see melody_verify.PITCH_SEG_S's own note). The
++# ratified claim the pitch estimator makes about a course is that it reports
++# the course's CENTRE, not its loudest string -- so both an equal-amplitude
++# course and a 0.5/1/0.5 one must measure the centre.
++COURSE_DETUNE_CENTS = (-5.0, 0.0, 5.0)
++COURSE_AMP_SETS = (("equal", (1.0, 1.0, 1.0)),
++                    ("unequal", (0.5, 1.0, 0.5)))
++COURSE_SCAN_MIDIS = (36, 44, 48, 55, 60, 69, 80, 90, 100)
++
++
++def course_semantics_check(estimator=None, sr=48000, level_dbfs=-6.0):
++    """WF0909-C10C ---1.3: synthesize a 3-string course (COURSE_DETUNE_CENTS)
++    around each COURSE_SCAN_MIDIS note, at both amplitude sets, and require
++    the estimator to report the course CENTRE within
++    MAX_ABS_ERROR_CENTS_LIMIT. No decay/inharmonicity variation here -- this
++    check is about the course-centroid SEMANTIC, which is what the
++    single-peak candidates (a)/(b) of WF0909-C10B broke on real audio while
++    passing every synthetic grid. Returns a list of row dicts."""
++    fn = estimator if estimator is not None else mv.measure_pitch_cents
++    rows = []
++    for label, amp_set in COURSE_AMP_SETS:
++        for midi in COURSE_SCAN_MIDIS:
++            f0 = midi_to_hz(midi)
++            freqs = np.array([f0 * 2.0 ** (c / 1200.0) for c in COURSE_DETUNE_CENTS])
++            amps = np.array(amp_set, dtype=float)
++            sig = synth_tone(freqs, amps, sr, T_ONSET_S, DURATION_S, T60_S,
++                              level_dbfs)
++            cents, fail = fn(sig, sr, f0, T_ONSET_S)
++            rows.append({"amp_set": label, "midi": midi, "f0_centre": f0,
++                          "measured_cents": cents, "fail_reason": fail})
++    return rows
++
++
+ def band_label(f0):
+     for label, lo, hi in F0_BANDS:
+         if lo <= f0 < hi:
+@@ -500,27 +565,76 @@ def main():
+              if summ["onset_max_abs_ms"] is not None else "N/A",
+              summ["onset_n"]))
+ 
+-    print("  gain-fidelity scan (WF0909-C10B fix round, informational, no "
+-          "exit-code effect -- module docstring 'Gain-fidelity scan'): "
+-          "GAIN = measured_cents / true_offset_cents over %d cells "
+-          "(MIDI %s x offsets %s):"
++    print("  gain-fidelity scan (WF0909-C10C ---1.1: PASS/FAIL, exit-code "
++          "affecting -- module docstring 'Gain-fidelity scan'): "
++          "|measured - TRUE offset| over %d cells (MIDI %s x offsets %s), "
++          "limit %.1f c:"
+           % (len(GAIN_SCAN_MIDIS) * len(GAIN_SCAN_VARIANTS)
+              * len(GAIN_SCAN_LEVELS_DBFS) * len(GAIN_SCAN_OFFSETS_CENTS),
+              ",".join(str(m) for m in GAIN_SCAN_MIDIS),
+-             ",".join("%+g" % o for o in GAIN_SCAN_OFFSETS_CENTS)))
++             ",".join("%+g" % o for o in GAIN_SCAN_OFFSETS_CENTS),
++             MAX_ABS_ERROR_CENTS_LIMIT))
+     gain_rows = gain_fidelity_scan(sr=48000)
++    n_gain_refuse = sum(1 for r in gain_rows if r["fail_reason"] is not None)
++    gain_errs = [r for r in gain_rows if r["error_cents"] is not None]
++    gain_max = max((abs(r["error_cents"]) for r in gain_errs), default=None)
++    if gain_errs:
++        worst_err_row = max(gain_errs, key=lambda r: abs(r["error_cents"]))
++        print("    worst |measured - true| = %.4f c (midi=%d %s %+gdBFS "
++              "offset=%+gc measured=%+.4fc)"
++              % (abs(worst_err_row["error_cents"]), worst_err_row["midi"],
++                 worst_err_row["variant"], worst_err_row["level_dbfs"],
++                 worst_err_row["offset_cents"], worst_err_row["measured_cents"]))
+     gains = [r for r in gain_rows if r["gain"] is not None]
+     if gains:
+         worst_deficit_row = max(gains, key=lambda r: abs(1.0 - r["gain"]))
+-        print("    worst gain = %.4f (midi=%d %s %+gdBFS offset=%+gc measured=%+.4fc)"
++        print("    worst gain (informational) = %.4f (midi=%d %s %+gdBFS "
++              "offset=%+gc measured=%+.4fc)"
+               % (worst_deficit_row["gain"], worst_deficit_row["midi"],
+                  worst_deficit_row["variant"], worst_deficit_row["level_dbfs"],
+                  worst_deficit_row["offset_cents"], worst_deficit_row["measured_cents"]))
+-    n_gain_refuse = sum(1 for r in gain_rows if r["fail_reason"] is not None)
+-    if n_gain_refuse:
+-        print("    (%d/%d cells refused measurement)" % (n_gain_refuse, len(gain_rows)))
+-
+-    passed = grid_ok and sens_ok
++    for r in gain_rows:
++        if r["fail_reason"] is not None:
++            print("    [ERR] midi=%d %s %+gdBFS offset=%+gc REFUSED: %s"
++                  % (r["midi"], r["variant"], r["level_dbfs"],
++                     r["offset_cents"], r["fail_reason"]))
++        elif abs(r["error_cents"]) > MAX_ABS_ERROR_CENTS_LIMIT:
++            print("    [ERR] midi=%d %s %+gdBFS offset=%+gc measured=%+.4fc "
++                  "-> |err| %.4f c > %.1f"
++                  % (r["midi"], r["variant"], r["level_dbfs"],
++                     r["offset_cents"], r["measured_cents"],
++                     abs(r["error_cents"]), MAX_ABS_ERROR_CENTS_LIMIT))
++    gain_ok = (n_gain_refuse == 0 and gain_max is not None
++               and gain_max <= MAX_ABS_ERROR_CENTS_LIMIT)
++
++    print("  course-semantics check (WF0909-C10C ---1.3: PASS/FAIL, "
++          "exit-code affecting): 3 strings at %s cents, amplitude sets %s, "
++          "must report the CENTRE within %.1f c:"
++          % ("/".join("%+g" % c for c in COURSE_DETUNE_CENTS),
++             "/".join(lbl for lbl, _ in COURSE_AMP_SETS),
++             MAX_ABS_ERROR_CENTS_LIMIT))
++    course_rows = course_semantics_check()
++    course_ok = True
++    course_max = None
++    for r in course_rows:
++        if r["fail_reason"] is not None:
++            course_ok = False
++            print("    [ERR] %s midi=%d REFUSED: %s"
++                  % (r["amp_set"], r["midi"], r["fail_reason"]))
++            continue
++        e = abs(r["measured_cents"])
++        course_max = e if course_max is None else max(course_max, e)
++        if e > MAX_ABS_ERROR_CENTS_LIMIT:
++            course_ok = False
++            print("    [ERR] %s midi=%d measured %+.4f c from the course "
++                  "centre (> %.1f)"
++                  % (r["amp_set"], r["midi"], r["measured_cents"],
++                     MAX_ABS_ERROR_CENTS_LIMIT))
++    print("    max |offset from course centre| = %s c over %d cells"
++          % (("%.4f" % course_max) if course_max is not None else "N/A",
++             len(course_rows)))
++
++    passed = grid_ok and sens_ok and gain_ok and course_ok
+     print("RESULT (%s grid): %s"
+           % ("hold-out" if a.holdout else "development", "PASS" if passed else "FAIL"))
+     if not passed:
+diff --git a/tools/melody_verify.py b/tools/melody_verify.py
+index 13b7294..0e0274c 100644
+--- a/tools/melody_verify.py
++++ b/tools/melody_verify.py
+@@ -228,16 +228,46 @@ def measure_pitch_cents_legacy(mono, sr, f0, t_exp):
+     in reports/c10b_estimator_before_after.md stay reproducible.
+ 
+     WF0909-C10B tried to replace this with a raised-cosine-tapered variant
+-    (see measure_pitch_cents() below) to clear the self-cal sentinel's
+-    1-cent self-certification bar (this function's own error: max |error|
+-    = 1.1721 cents over the 1170-point development grid,
+-    reports/decision_packets/C10_selfcal_domain.zh-TW.md) -- that attempt
+-    was REVERTED (see measure_pitch_cents()'s docstring for the full
+-    numbers and why), so as of the WF0909-C10B fix round this function and
+-    measure_pitch_cents() are byte-identical in behaviour again. Both names
+-    are kept: this one for historical/comparison clarity, the other
+-    because it is the name every caller (verify(), stem_verify.py,
+-    partial_verify.py, measurement_selfcal.py) actually uses.
++    to clear the self-cal sentinel's 1-cent self-certification bar (this
++    function's own error: max |error| = 1.1721 cents over the 1170-point
++    development grid, reports/decision_packets/C10_selfcal_domain.zh-TW.md)
++    -- that attempt, and four other candidates in the same
++    "reweight the bins of one band" family, were all REJECTED; the five
++    candidates and their numbers are kept below because WF0909-C10C's
++    method was chosen against them.
++
++    AS OF WF0909-C10C this is STILL what measure_pitch_cents() returns.
++    C10C tried a sixth candidate from outside the bin-reweighting family
++    (measure_pitch_cents_nls() below, a band-restricted time-domain
++    damped-sinusoid NLS fit): it cleared every synthetic bar decisively and
++    was rejected on real rendered audio -- see its docstring's "REAL-AUDIO
++    REJECTION" section. So this function's numbers remain the numbers every
++    piece of pitch evidence in this repo was produced with, byte for byte.
++
++    THE FIVE REJECTED WF0909-C10B CANDIDATES (kept as the record of why
++    the bin-reweighting family was abandoned; full numbers in
++    reports/gate_outputs/wf0909_C10B_estimator.txt):
++      (a) 3-bin log-magnitude parabolic interpolation at the spectral peak
++          -- passed both synthetic grids (dev 0.2228 c, hold-out 0.0832 c),
++          REJECTED on real rendered audio: a 3-string course separated by a
++          fraction of one FFT bin makes the peak bin lock onto whichever
++          string momentarily dominates, 4 of 5 melody_sentinel notes went
++          PASS -> FAIL (to -8.95 c).
++      (b) two-frame phase-difference instantaneous frequency at the peak
++          bin -- dev 0.3923 c, REJECTED for the identical reason (4/5
++          sentinel notes FAIL, to -8.04 c).
++      (c) zero-padding the same window before the same hard-edge centroid
++          (8x/16x/32x/64x) -- REJECTED, does not converge below 1 cent at
++          all (1.1796 / 1.1727 / 1.1693 / 1.1710 c).
++      (d) raised-cosine edge taper (briefly shipped, PITCH_EDGE_TAPER_FRAC
++          =0.75) -- passed both grids (dev 0.2924 c, hold-out 0.2465 c) but
++          REJECTED by audit on gain fidelity: at MIDI 37 a true +12.0-cent
++          deviation measured only +4.806 c (gain 0.40), i.e. it widened the
++          EFFECTIVE tolerance without touching the +/-5-cent number.
++      (e) mean-shift (self-referential) taper -- dev 0.7167 c, worst-case
++          gain deficit improved to ~0.31 but still worse than this
++          centroid's own at the same cell (0.687 vs 0.885) -- REJECTED as a
++          smaller version of (d)'s defect.
+ 
+     Returns (cents, fail_reason): on success fail_reason is None; on
+     failure cents is None and fail_reason is the same string verify() used
+@@ -258,143 +288,386 @@ def measure_pitch_cents_legacy(mono, sr, f0, t_exp):
+     return cents, None
+ 
+ 
++# -- WF0909-C10C: time-domain NLS estimator knobs -----------------------------
++# (numerical knobs of the frequency-estimation math ONLY -- none of these is a
++# product tolerance; +/-5 cents, +/-10 ms and the 1-cent self-certification bar
++# are untouched.  Provenance for every value is in measure_pitch_cents()'s
++# docstring, section "NUMERICAL KNOBS".)
++NLS_PAD_FACTOR        = 4      # zero-pad factor for the band-restricted DFT
++NLS_MAX_RESID_BINS    = 192    # cap on residual length (uniform sub-sampling)
++NLS_K_MAX             = 3      # max sinusoids in the band (course = 3 strings)
++NLS_TAU_MIN_S         = 0.005
++NLS_TAU_MAX_S         = 100.0
++NLS_MIN_DOF_PER_PARAM = 2.0    # required for K >= 2 (derived, see docstring)
++NLS_MIN_R2            = 0.5    # fail-closed guard (derived, see docstring)
++NLS_INIT_SPREAD_CENTS = 5.0    # K>1 start spread = the default course detune
++NLS_TAU_INIT_BOUNDS_S = (0.02, 5.0)
++
++
++def _nls_geometric_sum(z, n_terms):
++    """sum_{k=0}^{n_terms-1} z^k, elementwise, with the removable
++    singularity at z == 1 handled explicitly (there the sum is n_terms)."""
++    d = 1.0 - z
++    degenerate = np.abs(d) < 1e-13
++    safe = np.where(degenerate, 1.0, d)
++    return np.where(degenerate, complex(n_terms), (1.0 - z ** n_terms) / safe)
++
++
++def _nls_basis_cols(cents, log_tau, f0, sr, n_seg, bin_phasor, hann_phasor):
++    """Exact windowed, zero-padded DFT (sampled at the band bins) of the two
++    real basis waveforms of ONE damped partial at f0*2^(cents/1200) with time
++    constant exp(log_tau):
++        col_a[n] = hann[n] * exp(-n/(tau*sr)) * cos(2*pi*f*n/sr)
++        col_b[n] = hann[n] * exp(-n/(tau*sr)) * -sin(2*pi*f*n/sr)
++    so that a*col_a + b*col_b spans every amplitude/phase of that partial.
++    np.hanning(L) = 0.5 - 0.5*cos(2*pi*n/(L-1)) splits into three complex
++    exponentials, so each DFT sample is three geometric sums -- computed in
++    closed form instead of an FFT per iteration (that is the only reason this
++    is analytic; the quantity is exactly the DFT numpy would return)."""
++    f = f0 * 2.0 ** (cents / 1200.0)
++    decay = math.exp(-1.0 / (math.exp(log_tau) * sr))
++    out = []
++    for sign in (1.0, -1.0):
++        z = (decay * np.exp(sign * 2j * np.pi * f / sr)) * bin_phasor
++        out.append(0.5 * _nls_geometric_sum(z, n_seg)
++                   - 0.25 * _nls_geometric_sum(z * hann_phasor, n_seg)
++                   - 0.25 * _nls_geometric_sum(z / hann_phasor, n_seg))
++    s_pos, s_neg = out
++    return 0.5 * (s_pos + s_neg), 0.5j * (s_pos - s_neg)
++
++
++def _nls_design(params, f0, sr, n_seg, bin_phasor, hann_phasor):
++    cols = []
++    for k in range(len(params) // 2):
++        col_a, col_b = _nls_basis_cols(params[2 * k], params[2 * k + 1], f0, sr,
++                                       n_seg, bin_phasor, hann_phasor)
++        cols.append(col_a)
++        cols.append(col_b)
++    return np.stack(cols, axis=1)
++
++
++def _nls_varpro(params, data_ri, f0, sr, n_seg, bin_phasor, hann_phasor):
++    """Variable projection: the amplitudes/phases enter LINEARLY, so for any
++    trial (frequency, decay) they are solved exactly by linear least squares
++    and only 2K nonlinear parameters are left to the optimiser."""
++    design = _nls_design(params, f0, sr, n_seg, bin_phasor, hann_phasor)
++    design_ri = np.vstack([design.real, design.imag])
++    coef, _res, _rank, _sv = np.linalg.lstsq(design_ri, data_ri, rcond=None)
++    return coef, design_ri @ coef - data_ri
++
++
++def measure_pitch_cents_nls(mono, sr, f0, t_exp):
++    """WF0909-C10C candidate estimator -- NOT the production path (see
++    measure_pitch_cents() below, and "REAL-AUDIO REJECTION" at the end of
++    this docstring).  TIME-DOMAIN damped-sinusoid model fitted by
++    band-restricted nonlinear least squares.  Same signature,
++    same segment (PITCH_SEG_S relative to `t_exp`), same band (`band_of`),
++    same return contract as the production estimator.
++
++    MODEL (card WF0909-C10C S0/S2):
++        x(t) = sum_{k=1..K} A_k * exp(-t/tau_k) * cos(2*pi*f_k*t + phi_k)
++    fitted to the analysis segment, with K in 1..3 chosen by BIC (see "MODEL
++    ORDER" below).  The reported value is the AMPLITUDE-WEIGHTED MEAN of the
++    fitted f_k -- i.e. the same "course centroid" claim the amplitude-centroid
++    estimator made (a 3-string course detuned -5/0/+5 cents reports its
++    CENTRE, not its loudest string), now estimated from the partials
++    themselves instead of from a spectral first moment.
++
++    WHY THIS INSTEAD OF THE CENTROID.  The centroid
++    (measure_pitch_cents_legacy, kept above and still used as this fit's
++    starting value) misses the 1-cent self-certification bar the month-lead
++    ruled the +/-5-cent product GATE needs (max |error| 1.1721 cents over the
++    1170-point development grid of tools/measurement_selfcal.py), and
++    WF0909-C10B showed the miss is structural, not a tuning problem: five
++    candidates inside the "reweight the bins of one STFT band" family were
++    tried and all rejected (full numbers in measure_pitch_cents_legacy()'s
++    docstring and reports/c10b_estimator_before_after.md).  A parametric
++    time-domain fit leaves that family entirely: its resolution is set by the
++    segment length and the SNR, not by how the +/-3% band happens to land on
++    the DFT lattice.
++
++      (Correction to this card's S0 premise, measured and recorded rather
++      than repeated: S0 asserts the band is "ten times narrower than one
++      bin".  That is true of the N_FFT=2048 Spectrogram used for ONSET
++      detection (bin 23.4375 Hz; MIDI 37's band is 4.1577 Hz = 0.177 bin),
++      but NOT of the pitch estimator, which takes its own rfft over the whole
++      1.23 s segment (bin 0.813 Hz -> MIDI 37's band spans 5.11 bins, MIDI
++      100's spans 194.6).  The observed bias mechanism is therefore not
++      "narrower than one bin" but the hard 0/1 truncation of an
++      asymmetrically-populated 5-bin band: at MIDI 37 the five in-band bins
++      sit at -45.97/-25.24/-4.75/+15.50/+35.51 cents with weights
++      0.052/0.186/0.378/0.291/0.093, and their weighted mean lands -0.9065
++      cents off a tone that is exactly on pitch.  Numbers in
++      reports/gate_outputs/wf0909_C10C_nls.txt STEP 1.)
++
++    BAND-RESTRICTED RESIDUAL (the part that makes this unbiased).  The fit
++    does NOT band-pass the DATA and then fit an unfiltered model -- that
++    would make the filter's own edge behaviour part of the answer, which at
++    MIDI 37 (band half-width 2.08 Hz, damped-partial half-width ~0.73 Hz)
++    would bias a genuinely mistuned partial back toward the band centre, the
++    exact defect WF0909-C10B's candidate (d) was reverted for.  Instead the
++    SAME linear band projection is applied to model and data: the residual is
++    the difference of their windowed (np.hanning, as the centroid used),
++    zero-padded DFTs sampled over `band_of(f0)`.  By Parseval that is the L2
++    norm of the band-pass-filtered time-domain residual, so this is the
++    card's "fit the band-passed segment" with the filter applied to both
++    sides.  Because the projection is applied identically to both, a partial
++    sitting anywhere inside the band -- including 40 cents off centre, where
++    the centroid loses more than half of the deviation -- is recovered
++    without the projection biasing it (see "GAIN FIDELITY" below).
++
++    VARIABLE PROJECTION.  A_k and phi_k enter linearly (a_k*cos + b_k*sin),
++    so they are solved exactly by linear least squares for each trial
++    (f_k, tau_k) and only 2K nonlinear parameters go to scipy's
++    least_squares.  Nonlinear parameters are carried as (cents offset from
++    f0, log tau) so both are O(1)-scaled; bounds are the band edges and
++    NLS_TAU_MIN_S..NLS_TAU_MAX_S.  Starting values: the legacy centroid for
++    the frequency (K>1 spreads the starts by +/-NLS_INIT_SPREAD_CENTS, the
++    default course detune), and tau from the band-filtered energy ratio of
++    the segment's two halves.
++
++    MODEL ORDER.  K = 1..3 by BIC, computed on n_eff = 2 x (number of
++    UN-padded rfft bins inside the band), i.e. the independent data DOF --
++    zero-padding oversamples the same continuous residual and adds no
++    information, so scoring BIC on the padded length would let it buy
++    parameters it has not earned.  Measured, not asserted: with BIC on the
++    padded length the development grid's max |error| was 12.9143 cents
++    (low-f0 / -60 dBFS cells where an order-3 fit spent its extra partials on
++    band-edge leakage, e.g. MIDI 38 fitting components at -52.7/+0.04/-34.4
++    cents); on n_eff it is 0.2868 cents.  K >= 2 additionally requires
++    n_eff >= NLS_MIN_DOF_PER_PARAM * 4K.  That constant was swept on the
++    synthetic corpus (1.5 / 2.0 / 3.0 / 4.0): 1.5 and 2.0 both remove every
++    spurious-partial cell, while 3.0 and 4.0 start REFUSING the lowest notes
++    (MIDI 36 has only ~5 in-band bins) -- 2.0 is the larger of the two values
++    that keep zero refusals on the grid.  Full sweep in
++    reports/gate_outputs/wf0909_C10C_nls.txt STEP 2.
++
++    REFUSALS (fail-closed; card S1.4 -- band_of, refined_onset, the Ra-Re
++    rules and the collision/delay/fm_ratio refusals are untouched, this
++    function only adds the "the fit itself did not stand up" path the card
++    asks for):
++      * "segment too short for pitch" / "no measurable band energy for
++        pitch" -- unchanged, same strings, same conditions as the centroid.
++      * "pitch fit did not converge" -- least_squares raised or returned no
++        usable in-band component for any K.
++      * "pitch fit residual too large" -- band-restricted R^2 below
++        NLS_MIN_R2.  Derived from the synthetic residual distribution, as the
++        card requires: over the development grid plus the gain-fidelity scan,
++        every cell the fit got right had R^2 >= 0.9928 while every degenerate
++        cell (MIDI 100 at -60 dBFS, where the band is 158 Hz wide and the
++        tone is buried -- the legacy centroid is 12.6 cents off on the same
++        signal) had R^2 <= 9.4e-5.  Four orders of magnitude of empty space;
++        NLS_MIN_R2 = 0.5 sits in the middle of it and is not near either
++        population.  Numbers in the evidence file STEP 2.
++
++    MEASURED ON SYNTHETIC CORPORA -- every bar cleared, by a wide margin
++    (all reproduced in reports/gate_outputs/wf0909_C10C_nls.txt):
++      * development grid (1170 points): max |error| 0.2868 c, 0 refusals
++        (centroid: 1.1721 c, the miss this card set out to close).
++      * hold-out grid (1040 points, disjoint f0 offsets / B / level /
++        onset, run ONCE at the end as the card requires): 0.0816 c,
++        0 refusals (centroid: 1.0840 c).
++      * GAIN FIDELITY, the axis WF0909-C10B's audit added and this card
++        promotes to a pass/fail condition (expected f0 held fixed, TRUE
++        frequency offset by 0 / +/-3 / +/-5 / +/-12 / +/-25 / +/-40 cents,
++        judged |measured - TRUE| <= 1.0 c): worst 0.0090 c over 308 cells,
++        0 refusals.  The centroid on the same axis loses up to 18.8 cents of
++        a 40-cent deviation (gain 0.53) at MIDI 36.
++      * course semantics (card S1.3): 3 strings at -5/0/+5 cents, equal
++        amplitudes and 0.5/1/0.5 amplitudes -- both report the CENTRE
++        (worst 0.0064 c over 18 cells).
++
++    REAL-AUDIO REJECTION (why this is not the production estimator).  On
++    the card's S4 evidence rerun this estimator moves GATE verdicts on real
++    rendered audio, in the direction that matters: on the PRODUCT GATE path
++    (stem_verify, dry per-event stems, Fur Elise first 300 events) it turns
++    7 PASS into FAIL -- 251/13/36 becomes 244/20/36 -- and on the 30-file
++    "strong domain, all green" corpus it changes 9 of the 30 files
++    (5 PASS->FAIL, 3 UNVERIFIED->FAIL, 1 PASS->UNVERIFIED) against a
++    recorded invariant of "0 FAIL maintained".  Diagnosed on the individual stems rather than
++    guessed (evidence file STEP 4): a Fur Elise piano note is ~0.22 s long
++    inside a 1.23 s analysis window, so the note is DAMPED AT RELEASE and
++    its envelope is not one exponential.  The fitted time constants come
++    out at tau ~ 0.030-0.052 s, i.e. a linewidth of ~26 cents at E5, so the
++    K=2/K=3 components the fit chooses (separated by ~20 cents) sit far
++    INSIDE each other's linewidths and are not resolvable partials at all
++    -- they are a flexible basis approximating one broad, non-Lorentzian
++    resonance (R^2 rises 0.67 -> 0.96 as they are added, so BIC keeps
++    buying them).  The amplitude-weighted mean of an unidentifiable
++    decomposition is not stable: on three E5/F5 stems whose band spectrum
++    is a single broad peak centred within ~1 cent of the declared f0 (bins
++    spanning -13..+12 cents at relative amplitude 0.84-1.00), it lands at
++    -5.04 / -5.21 / +5.07 cents while the centroid reads -0.59 / -0.21 /
++    +0.71.  The centroid is the closer of the two to the declared pitch
++    there; this estimator is not detecting real mistuning, it is splitting
++    one resonance.
++
++    THE STRUCTURAL LESSON, recorded because it outlives this card: the
++    self-cal sentinel synthesizes exactly "sum of exponentially decaying
++    sinusoids + noise", which is THIS ESTIMATOR'S OWN MODEL.  A matched-
++    model estimator can therefore clear all four synthetic bars almost
++    tautologically while being less accurate than the centroid on the
++    renders the GATE actually judges.  The 1-cent self-certification bar,
++    as the sentinel currently constructs it, cannot by itself certify an
++    estimator for production -- the same class of blind spot the
++    WF0909-C10B audit found on the gain axis, one level up.  Any future
++    attempt needs the sentinel corpus to include a release/damping stage
++    first.
++
++    NUMERICAL KNOBS.  NLS_PAD_FACTOR=4 oversamples the band residual so the
++    discrete sum approximates the continuous band-limited L2 norm (it changes
++    the residual's sampling, never the model).  NLS_MAX_RESID_BINS=192 caps
++    the residual length by uniform sub-sampling of those bins, for runtime on
++    wide (high-f0) bands; both are applied identically to model and data, so
++    neither can bias the estimate.  NLS_K_MAX=3 is the string count of this
++    project's default courses.  NLS_TAU_MIN_S/MAX_S only keep the optimiser
++    inside physically meaningful decay times.
++
++    Returns (cents, fail_reason): on success fail_reason is None; on failure
++    cents is None and fail_reason is the same kind of string verify() uses as
++    r["reason"]."""
++    # scipy is imported HERE, not at module scope, so the production
++    # path (measure_pitch_cents -> measure_pitch_cents_legacy) keeps the
++    # numpy-only dependency surface melody_verify has always had -- some
++    # CI jobs install numpy alone on purpose (.github/workflows/
++    # physics.yml, cross-platform-emit/compare).
++    from scipy.optimize import least_squares
++
++    seg_start = int((t_exp + PITCH_SEG_S[0]) * sr)
++    seg_end = min(len(mono), int((t_exp + PITCH_SEG_S[1]) * sr))
++    seg = mono[seg_start:seg_end]
++    if len(seg) < 2048:
++        return None, "segment too short for pitch"
++    n_seg = len(seg)
++    lo, hi = band_of(f0)
++    windowed = seg * np.hanning(n_seg)
++
++    # -- starting frequency: the legacy centroid, on the legacy transform ----
++    spec = np.abs(np.fft.rfft(windowed))
++    fr = np.fft.rfftfreq(n_seg, 1.0 / sr)
++    in_band = (fr >= lo) & (fr <= hi)
++    if not in_band.any() or float(np.sum(spec[in_band])) <= 0:
++        return None, "no measurable band energy for pitch"
++    f_init = float(np.sum(fr[in_band] * spec[in_band]) / np.sum(spec[in_band]))
++    n_eff = 2 * int(np.count_nonzero(in_band))
++
++    # -- starting decay: band-filtered energy ratio of the two half-segments -
++    band_time = np.fft.irfft(np.where(in_band, np.fft.rfft(windowed), 0), n=n_seg)
++    half = n_seg // 2
++    e_first = float(np.sum(band_time[:half] ** 2)) + 1e-300
++    e_second = float(np.sum(band_time[half:] ** 2)) + 1e-300
++    ratio = max(e_second / e_first, 1e-12)
++    tau_init = 1.0 if ratio >= 1.0 else (-2.0 * (half / sr) / math.log(ratio))
++    tau_init = float(np.clip(tau_init, *NLS_TAU_INIT_BOUNDS_S))
++
++    # -- band-restricted, zero-padded DFT of the data -----------------------
++    n_pad = int(NLS_PAD_FACTOR * n_seg)
++    spec_pad = np.fft.rfft(windowed, n=n_pad)
++    fr_pad = np.fft.rfftfreq(n_pad, 1.0 / sr)
++    idx = np.nonzero((fr_pad >= lo) & (fr_pad <= hi))[0]
++    if len(idx) == 0:
++        return None, "no measurable band energy for pitch"
++    if len(idx) > NLS_MAX_RESID_BINS:
++        idx = idx[np.round(np.linspace(0, len(idx) - 1,
++                                       NLS_MAX_RESID_BINS)).astype(int)]
++    data = spec_pad[idx]
++    data_ri = np.concatenate([data.real, data.imag])
++    bin_phasor = np.exp(-2j * np.pi * idx.astype(float) / n_pad)
++    hann_phasor = complex(np.exp(2j * np.pi / (n_seg - 1)))
++
++    cents_lo = 1200.0 * math.log2(lo / f0)
++    cents_hi = 1200.0 * math.log2(hi / f0)
++    cents_init = float(np.clip(vs.cents_between(f_init, f0), cents_lo, cents_hi))
++
++    best = None
++    for k_order in range(1, NLS_K_MAX + 1):
++        need = (4 * k_order + 2) if k_order == 1 \
++            else (NLS_MIN_DOF_PER_PARAM * 4 * k_order)
++        if n_eff < need:
++            break
++        p0, lower, upper = [], [], []
++        for k in range(k_order):
++            spread = 0.0 if k_order == 1 else \
++                (2.0 * k / (k_order - 1) - 1.0) * NLS_INIT_SPREAD_CENTS
++            p0 += [float(np.clip(cents_init + spread, cents_lo, cents_hi)),
++                   math.log(tau_init)]
++            lower += [cents_lo, math.log(NLS_TAU_MIN_S)]
++            upper += [cents_hi, math.log(NLS_TAU_MAX_S)]
++        try:
++            fit = least_squares(
++                lambda p: _nls_varpro(p, data_ri, f0, sr, n_seg,
++                                      bin_phasor, hann_phasor)[1],
++                np.array(p0), bounds=(lower, upper),
++                xtol=1e-12, ftol=1e-12, gtol=1e-12, max_nfev=150 * k_order)
++        except Exception:
++            continue
++        coef, resid = _nls_varpro(fit.x, data_ri, f0, sr, n_seg,
++                                  bin_phasor, hann_phasor)
++        rss = float(np.sum(resid ** 2))
++        if not np.isfinite(rss):
++            continue
++        bic = (n_eff * math.log(max(rss, 1e-300) / len(data_ri))
++               + 4 * k_order * math.log(n_eff))
++        cand = {"p": fit.x, "coef": coef, "rss": rss, "k": k_order, "bic": bic}
++        if best is None or bic < best["bic"]:
++            best = cand
++        elif k_order > best["k"]:
++            break
++    if best is None:
++        return None, "pitch fit did not converge"
++
++    data_energy = float(np.sum(data_ri ** 2))
++    r2 = 1.0 - best["rss"] / data_energy if data_energy > 0 else float("nan")
++    if not np.isfinite(r2) or r2 < NLS_MIN_R2:
++        return None, "pitch fit residual too large"
++
++    freqs, amps = [], []
++    for k in range(best["k"]):
++        cents_k = best["p"][2 * k]
++        amp_k = float(math.hypot(best["coef"][2 * k], best["coef"][2 * k + 1]))
++        if cents_lo - 1e-9 <= cents_k <= cents_hi + 1e-9 and amp_k > 0.0:
++            freqs.append(f0 * 2.0 ** (cents_k / 1200.0))
++            amps.append(amp_k)
++    if not freqs or sum(amps) <= 0:
++        return None, "pitch fit did not converge"
++    f_meas = float(np.dot(freqs, amps) / np.sum(amps))
++    return vs.cents_between(f_meas, f0), None
++
++
+ def measure_pitch_cents(mono, sr, f0, t_exp):
+-    """Pitch estimator: band-limited amplitude centroid of `mono` (sr Hz)
+-    over PITCH_SEG_S relative to onset time `t_exp` (already carrying
+-    whatever offset the caller's timeline uses -- verify() passes the
+-    +PAD_S analysis time), judged in cents against expected fundamental
+-    `f0`. This is the function verify(), stem_verify.py and
+-    partial_verify.py all call for the product GATE.
+-
+-    AS OF THE WF0909-C10B FIX ROUND this is byte-identical to
+-    measure_pitch_cents_legacy() above (hard +/-3% rectangular band,
+-    band_of, no edge taper) -- the attempted replacement was tried,
+-    measured on BOTH the self-cal sentinel's accuracy axis and (this
+-    round's addition, WF0909-C10B fix round) its GAIN-FIDELITY axis, and
+-    REVERTED because every configuration found traded one for the other.
+-    Full story below, all numbers in
+-    reports/gate_outputs/wf0909_C10B_estimator.txt (step 1 = original
+-    round, step 2 = fix round).
+-
+-    WHY THE ATTEMPT WAS MADE: the self-cal sentinel
+-    (tools/measurement_selfcal.py, 1170-point development grid) measures
+-    this hard-edge centroid's own error, AT ZERO true-vs-expected offset,
+-    at max |error| = 1.1721 cents -- above the 1-cent self-certification
+-    threshold the month-lead ruled the +/-5-cent product GATE needs before
+-    it can be trusted (C10 decision packet,
+-    reports/decision_packets/C10_selfcal_domain.zh-TW.md). Root cause
+-    (decision packet §0): summing energy over the WHOLE band with a HARD
+-    0/1 cutoff at its edges makes the result sensitive to exactly which
+-    bins the discrete FFT grid happens to place on which side of the
+-    boundary -- asymmetric Hann-window sidelobe leakage across that
+-    boundary then pulls the weighted mean off the true partial, worst
+-    where the band spans few bins (low f0, e.g. MIDI 37) or an inharmonic
+-    partial sits close to the edge (high f0, e.g. MIDI 100).
+-
+-    FIVE CANDIDATES WERE TRIED AND ALL REJECTED, honestly recorded here
+-    rather than silently discarded (docs/workcards/WF0909_C10B_estimator
+-    .md §2.1 a/b/c for the first three; the fourth was the estimator this
+-    project briefly shipped before the fix-round audit caught it; the
+-    fifth was tried during the fix round itself):
+-      (a) 3-bin log-magnitude PARABOLIC interpolation around the single
+-          spectral peak (Smith & Serra 1987): passed both self-cal grids
+-          on ZERO-offset accuracy (dev max 0.2228 c, hold-out max 0.0832
+-          c) -- REJECTED on real rendered audio (melody_sentinel,
+-          --selftest): a course is 3 strings detuned +/-5 cents, i.e.
+-          separated by a FRACTION of one FFT bin at this window length, so
+-          within one partial beat cycle the peak bin locks onto whichever
+-          string's phase constructively dominates at that instant instead
+-          of the course's actual centre -- 4 of 5 sentinel notes went from
+-          PASS (<=1.6 c) to FAIL (up to -8.95 c, past the +/-5 c product
+-          GATE). The synthetic self-cal grid has no course/detuning model
+-          at all, so it could not have caught this.
+-      (b) two-frame PHASE-DIFFERENCE instantaneous frequency at the peak
+-          bin (phase-vocoder convention): passed both self-cal grids on
+-          zero-offset accuracy (dev max 0.3923 c) -- REJECTED for the
+-          IDENTICAL reason as (a): still a single-peak-bin method, same
+-          course failure on melody_sentinel (4/5 notes FAIL, up to
+-          -8.04 c).
+-      (c) zero-padding the SAME window before the SAME hard-edge centroid,
+-          swept 8x/16x/32x/64x -- REJECTED, does not converge below the
+-          1-cent line at all (max |error| 1.1796 / 1.1727 / 1.1693 /
+-          1.1710 c, asymptoting toward the un-padded 1.1721 c). Confirms
+-          the bias is real in-band sidelobe ENERGY, not a discrete-bin
+-          sampling artifact finer FFT sampling could interpolate away.
+-      (d) RAISED-COSINE EDGE TAPER (the estimator this project briefly
+-          shipped, PITCH_EDGE_TAPER_FRAC=0.75): a whole-band weighted mean
+-          -- same family as (c) -- but softening only the outer 75% of
+-          each band edge before summing, so course/detuning robustness is
+-          inherited (unlike (a)/(b)) while removing the hard 0/1 cutoff
+-          (c) never touched. On the zero-offset axis this WORKED: dev grid
+-          max |error| 0.2924 c, INDEPENDENT hold-out grid (off-lattice f0
+-          offsets, disjoint B/level/onset) 0.2465 c, melody_sentinel real
+-          audio improved 1.6007 c -> 0.4890 c with no PASS->FAIL
+-          regression. REJECTED by the fix-round audit on a SECOND axis the
+-          original round's hold-out grid never tested: gain fidelity when
+-          the TRUE frequency actually deviates from the EXPECTED one (the
+-          exact situation the +/-5-cent product GATE exists to catch).
+-          Both self-cal grids only ever centre the band on the SYNTHESIZED
+-          (already-shifted) frequency, so a taper that peaks its weight at
+-          the band's own centre necessarily also peaks at the true
+-          frequency in BOTH grids -- structurally blind to its own
+-          matched-filter behaviour. Measured with the sentinel's own
+-          measure_one(freq_offset_cents=...) (true frequency shifted away
+-          from the value passed as `f0`, mirroring real product use): at
+-          MIDI 37 (~69 Hz), harmonic, -6 dBFS, a true +12.0-cent deviation
+-          measured as only +4.806 c (gain 0.40, legacy's own +8.620 c on
+-          the SAME signal is gain 0.72) -- i.e. WITHOUT touching the
+-          +/-5-cent tolerance number, this taper shrank the EFFECTIVE
+-          tolerance at low f0 to roughly +/-12.5 cents worth of real
+-          mistuning before the GATE would catch it. A full taper-fraction
+-          sweep (0.75 down to 0.0 in 13 steps, same MIDI-36..100 sweep,
+-          offsets +-3/+-5/+-10/+-12 c, clean -6 dBFS signal) found the
+-          trade is CONTINUOUS and monotonic in the taper width -- no
+-          fraction gets the dev-grid error under 1.0 cent without a worst-
+-          case gain deficit at low MIDI staying above ~0.34 (34% of a real
+-          deviation silently absorbed); the fraction (~0.15-0.20) where
+-          dev-grid error first crosses 1.0 cent still carries a ~0.35-0.40
+-          gain deficit, no better than the shipped 0.75.
+-      (e) MEAN-SHIFT (self-referential) taper, tried during the fix round
+-          as a way to decouple (d)'s taper from the fixed hypothesis `f0`:
+-          start from the plain hard-cutoff centroid as a first estimate,
+-          then iterate the SAME raised-cosine taper re-centred on the
+-          CURRENT estimate (not on `f0`) until it converges (5 iterations
+-          is enough; 15 gives identical numbers). This measurably helps --
+-          at taper fraction 0.5 the worst-case gain deficit on the same
+-          offset sweep drops from (d)'s ~0.55-0.66 to ~0.31, with dev-grid
+-          max |error| = 0.7167 c (still < 1.0 c) -- but converges to a
+-          fixed point that is STILL worse than the legacy estimator's own
+-          gain fidelity at the same worst cell (MIDI 37, -12 c: mean-shift
+-          measures gain 0.687 vs legacy's own 0.885 on the identical
+-          signal) -- REJECTED for the same reason as (d), a smaller
+-          version of the identical defect, not a fix of it.
+-    CONCLUSION (fix round, WF0909-C10B): within the scope this card
+-    allows -- change only the frequency-estimation math inside this one
+-    function, leave band_of's +/-3% band selection untouched -- no
+-    variant of (c)/(d)/(e) achieves BOTH the self-cal sentinel's <=1-cent
+-    zero-offset bar AND gain fidelity at least as good as the legacy
+-    estimator's own (already imperfect, but not silently regressed)
+-    behaviour under a real deviation. Per this card's own §5 ("try three
+-    methods, if none reach <=1.0 including hold-out, stop and report the
+-    numbers"): five methods across two structurally different families
+-    were tried and none qualify -- this function REVERTS to the legacy
+-    hard-edge math (byte-identical to measure_pitch_cents_legacy() above)
+-    rather than ship a change that improves one number the sentinel
+-    checks while quietly weakening the number the product GATE actually
+-    depends on. The zero-offset bias this card set out to fix (1.1721 c
+-    > 1.0 c) remains UNFIXED; docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §9
+-    and the C10 decision packet record this outcome and the still-open
+-    choice between the decision packet's original option A (narrow the
+-    claim domain, no code change) and a genuinely new option C (a method
+-    outside this family, not yet found).
+-
+-    Band selection (band_of's +/-3% width itself), onset refinement
+-    (refined_onset), the Ra-Re refusal rules and course/detune handling
+-    were never touched by any of the five attempts above.
++    """THE production pitch estimator -- the function verify(),
++    stem_verify.py and partial_verify.py all call for the +/-5-cent product
++    GATE.  It is the band-limited amplitude centroid
++    (measure_pitch_cents_legacy above); this wrapper exists so the two
++    candidates that have been tried can be swapped and compared in one
++    place.
++
++    STATUS 2026-09-09 (WF0909-C10C, card status RED): the 1-cent
++    self-certification bar (C10, decision packet
++    reports/decision_packets/C10_selfcal_domain.zh-TW.md) is STILL NOT MET
++    by the production estimator -- its own error is 1.1721 cents on the
++    1170-point development grid and 1.0840 cents on the hold-out grid.
++    Six replacement estimators have now been tried and all six rejected:
++    five inside the "reweight the bins of one band" family (WF0909-C10B,
++    listed in measure_pitch_cents_legacy()'s docstring) and, in this card,
++    one OUTSIDE it -- the time-domain damped-sinusoid NLS fit kept above as
++    measure_pitch_cents_nls().  That sixth candidate cleared every
++    SYNTHETIC bar decisively (dev 0.2868 c, hold-out 0.0816 c, gain
++    fidelity 0.0090 c, course centre 0.0064 c) and was rejected on REAL
++    RENDERED AUDIO, where it turns 7 dry-stem PASS into FAIL on the product
++    GATE path and changes 9 of the 30 strong-domain corpus files -- see
++    "REAL-AUDIO REJECTION" in its docstring for the measured mechanism.
++
++    Nothing here is a tolerance change (R2): +/-5 cents, +/-10 ms,
++    PITCH_TOL_CENTS, ONSET_TOL_S, BAND_REL_WIDTH, the Ra-Re refusal rules
++    and the course/detune handling are all untouched by this card, and the
++    production numbers this file produces are byte-identical to the ones on
++    record before it (test_measure_pitch_cents_matches_legacy_after_revert
++    checks that over the whole development grid).
+ 
+     Returns (cents, fail_reason): on success fail_reason is None; on
+-    failure cents is None and fail_reason is the same string verify() uses
+-    to inline as r["reason"]."""
++    failure cents is None and fail_reason is the string verify() uses as
++    r["reason"]."""
+     return measure_pitch_cents_legacy(mono, sr, f0, t_exp)
+ 
+ 

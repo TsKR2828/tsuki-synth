@@ -1,0 +1,422 @@
+WF0909-P6 證據檔：A8 裁決記錄 + 兩個可商用補充來源入庫（Weinzierl 2018 / Iowa MIS 泰國鑼）
+執行：2026-09-09  Opus（研究卡）  卡：docs/workcards/WF0909_P6_a8_supplement.md
+所有命令在 C:\Users\admin\Desktop\Claude\tsuki-synth 下執行（PYTHONIOENCODING=utf-8）。
+本卡未動 src/ tools/、未跑 cmake、未改任何容差、未重建任何 binary。
+
+================ G1. 下載前大小確認（HTTP HEAD） ================
+$ curl -sIL "https://api-depositonce.tu-berlin.de/server/api/core/bitstreams/d7d0f7af-e49b-4b86-8e7d-4293aef0440a/content"
+HTTP/1.1 200 200
+Content-Disposition: inline; filename="1.5053113.pdf"; filename*=UTF-8''1.5053113.pdf
+Content-Type: application/pdf;charset=UTF-8
+(該 endpoint 為 chunked，未回 Content-Length；實際落地大小見 G2。卡上預估 ~1 MB，實際 2.09 MB。)
+
+$ curl -sIL ".../gongs%20&%20tamtams/thaigongs/thaigong.ff.zip"
+HTTP/1.1 200 OK
+Content-Length: 14996504
+Last-Modified: Tue, 07 Jun 2016 20:07:49 GMT
+$ curl -sIL ".../gongs%20&%20tamtams/thaigongs/thaigong.mf.zip"
+HTTP/1.1 200 OK
+Content-Length: 11998206
+Last-Modified: Tue, 07 Jun 2016 20:08:17 GMT
+$ curl -sIL ".../gongs%20&%20tamtams/thaigongs/thaigong.pp.zip"
+HTTP/1.1 200 OK
+Content-Length: 8983165
+Last-Modified: Tue, 07 Jun 2016 20:08:47 GMT
+(三包合計 35,977,875 bytes = 約 36.0 MB。卡上預估 ~90 MB，實際較小；『三包』= ff/mf/pp 三個力度，對得上。)
+
+================ G2. 下載結果、SHA256、gitignore 確認 ================
+$ ls -l external_data/weinzierl_2018_jasa external_data/iowa_mis_thai_gong
+external_data/iowa_mis_thai_gong:
+total 35144
+-rw-r--r-- 1 admin 197609 14996504 Sep  9 06:04 thaigong.ff.zip
+-rw-r--r-- 1 admin 197609 11998206 Sep  9 06:05 thaigong.mf.zip
+-rw-r--r-- 1 admin 197609  8983165 Sep  9 06:05 thaigong.pp.zip
+
+external_data/weinzierl_2018_jasa:
+total 2048
+-rw-r--r-- 1 admin 197609 2094542 Sep  9 06:04 weinzierl_2018_jasa_1.5053113.pdf
+
+$ sha256sum external_data/weinzierl_2018_jasa/*.pdf external_data/iowa_mis_thai_gong/*.zip
+d3e07db54505dc73c929d61202bced4ef0488b2649eb6e1634741126af3dc91b *external_data/weinzierl_2018_jasa/weinzierl_2018_jasa_1.5053113.pdf
+790bf82f3ebf654ce02df488131a425b8dcbd334e807e27e28a69e506392b3a7 *external_data/iowa_mis_thai_gong/thaigong.ff.zip
+59e081df62f5539e0086947a6f818e4e770156ac063ade843bf4f4472e6f588d *external_data/iowa_mis_thai_gong/thaigong.mf.zip
+cc8d543dd8555e4eed259f461e2f9e6b74949686e8cba00fda70c5b1bcca8bda *external_data/iowa_mis_thai_gong/thaigong.pp.zip
+
+$ git check-ignore -v <兩個資料檔>
+.gitignore:28:external_data/	external_data/weinzierl_2018_jasa/weinzierl_2018_jasa_1.5053113.pdf
+.gitignore:28:external_data/	external_data/iowa_mis_thai_gong/thaigong.ff.zip
+(=> 皆被 .gitignore 的 external_data/ 涵蓋：資料檔不進版控。)
+
+================ G3. 授權原文（親自打開來源逐字讀出） ================
+$ python  # 從本機 PDF 抽出授權句（PDF p.2 = 期刊 p.1347）
+   rd orchestral instruments. V C 2018 Author(s). All arti- cle content, except where otherwise noted, is licensed under a Creative Commons Attribution (CC BY) license (http://creativecommons.org/licenses/by/4.0/). https://doi.org/10.1121/1.5053113 [AM]
+
+$ curl -s "https://api.crossref.org/works/10.1121/1.5053113"   # 授權欄交叉驗證
+   title  : Sound power and timbre as cues for the dynamic strength of orchestral instruments
+   journal: The Journal of the Acoustical Society of America 144 (3) 1347-1355 [[2018, 9, 1]]
+   license: [('https://creativecommons.org/licenses/by/4.0/', 'vor'), ('https://creativecommons.org/licenses/by/4.0/', 'tdm')]
+
+$ python  # Iowa 官網授權句逐字（https://theremin.music.uiowa.edu/MIS.html）
+   usic Studios and Professor of Composition at the University of Iowa. Since 1997, these recordings have been freely available on this website and may be downloaded and used for any projects, without restrictions. The
+
+$ python  # Weinzierl 校準／設定原句（PDF p.5 = 期刊 p.1350；PDF p.3 = 期刊 p.1348）
+   [PDF p.5 = journal p.1350] key='pistonphone'
+     stru- ment, to ensure that neither overload nor low modulation of the inputs would occur. After the calibration of the electrical measurement chain (microphone input), a pistonphone cali- brator (B&K 4230, 94 dB @ 1 kHz) was used with the most accessible microphone in the sphere to obtain the absolute sensitivity of the measurement setup. These transfer func
+   [PDF p.3 = journal p.1348] key='radius of approximately'
+     calibration The sound power measurements were performed using the enveloping surface method according to ISO 3745 (2012), using a quasi-spherical microphone array with a radius of approximately r ¼ 2.1 m, and 32 Sennheiser KE4- 211-2 electret microphones with a nearly uniform frequency response from 20 Hz to 20 kHz [cf. Fig. 1(c)], located on the faces of a 
+   [PDF p.3 = journal p.1348] key='d0 > r/2'
+     r at TU Berlin has a lower limiting frequency of f ¼ 63 Hz. None of the musical instruments recorded exhibited a characteristic dimension of the sound radiating parts of d0 > r/2 ¼ 1.05 m. The criterion r  k/4 is violated only for a few notes with a pitch below E1, corresponding to a fundamental frequency of 41 Hz at a tuning frequency of 440 Hz for A4. Thi
+   [PDF p.5 = journal p.1350] key='54:63'
+     g surface as Lp ¼ 10 log10 1 M X M m¼1 100:1Lp; m   ! dB ½ ; (3) where M ¼ 32, thus yielding a sound power level of LW ¼ Lp þ 10 log10 S1 S0   dB ½ ; (4) with S1 ¼ 54:63 m2 and S0 ¼ 1 m2: To obtain perceptually meaningful values for the tran- sient sounds (plucked guitar, harp), the sound pressures p[n] in Eq. (2) were subject to time-weighted ﬁltering
+
+================ G4. Weinzierl TABLE I 逐字重建（PyMuPDF 座標對齊，避免 pdftotext 欄位錯位） ================
+$ python  # 表頭 + TABLE I 中與本專案相關的列
+   --- local PDF p.7  (= journal p.1352)
+      Instrument LW_ff_max LW_pp_min LW_ff_av LW_pp_av
+   --- local PDF p.8  (= journal p.1353)
+      Instrument LW_ff_max LW_pp_min LW_ff_av LW_pp_av
+      Timpani
+      Hand crank 108 60
+      Pedal 108 58
+      Harp 91 54
+      Guitar 88 59
+
+$ python  # 全文搜尋 piano / gong / dulcimer / cimbalom（確認 TABLE I 無這些樂器）
+   'piano': 1 hit(s)
+      ...5052173 Structural contributions to phantom partial generation in the piano The Journal of the Acoustical Society of America 144, 1564 (2018
+   'gong': 0 hit(s)
+   'dulcimer': 0 hit(s)
+   'cimbalom': 0 hit(s)
+   => TABLE I 無鋼琴、無鑼、無揚琴；'piano' 唯一命中是參考文獻標題，非量測列。
+
+================ G5. LW -> Lp 換算（用論文自己的式 (4)） ================
+$ python output/wf0909/P6/weinzierl_lw_to_lp.py
+10*log10(S1/S0) = 17.374 dB   (equivalent sphere radius = 2.085 m)
+instrument              LWff  LWpp   Lp_ff   Lp_pp  p_ff(Pa)  p_pp(Pa)
+Timpani, hand crank      108    60   90.63   42.63    0.6797   0.00271
+Timpani, pedal           108    58   90.63   40.63    0.6797   0.00215
+Harp                      91    54   73.63   36.63    0.0960   0.00136
+Guitar                    88    59   70.63   41.63    0.0680   0.00241
+
+================ G6. 引擎側：water_gong --dump-modes（唯讀，用 build\ 現成 exe） ================
+$ build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --dump-modes scores\examples\water_gong_free.score.json
+   contract: TsukiSynth Mode Dump v2 | sample_rate_hz: 48000
+   unsupported_observables: ['complex_phase', 'absolute_spl', 'radiation_directivity']
+   -- engine=water_gong note=C4 midi=60 partials=7
+      P1    261.626 Hz  ratio  1.0000  amp 0.10611  t60 7.486 s
+      P2    454.817 Hz  ratio  1.7384  amp 0.70891  t60 4.104 s
+      P3    609.232 Hz  ratio  2.3286  amp 0.03888  t60 2.954 s
+      P4   1026.953 Hz  ratio  3.9253  amp 0.67490  t60 1.596 s
+      P5   1071.727 Hz  ratio  4.0964  amp 0.01275  t60 1.515 s
+      P6   1762.971 Hz  ratio  6.7385  amp 0.23352  t60 0.8037 s
+      P7   1927.647 Hz  ratio  7.3679  amp 0.09098  t60 0.7134 s
+   -- engine=water_gong note=G4 midi=67 partials=7
+      P1    391.995 Hz  ratio  1.0000  amp 0.12783  t60 4.836 s
+      P2    681.455 Hz  ratio  1.7384  amp 0.83027  t60 2.597 s
+      P3    912.816 Hz  ratio  2.3286  amp 0.04398  t60 1.841 s
+      P4   1538.692 Hz  ratio  3.9253  amp 0.65147  t60 0.9606 s
+      P5   1605.776 Hz  ratio  4.0964  amp 0.01202  t60 0.9087 s
+      P6   2641.472 Hz  ratio  6.7385  amp 0.10219  t60 0.4617 s
+      P7   2888.207 Hz  ratio  7.3680  amp 0.02369  t60 0.4064 s
+   (原始 JSON 在 output/wf0909/P6/water_gong_free_modes.json，gitignore)
+
+================ G7. Iowa 泰國鑼 FFT（未校準，只比頻率比值） ================
+$ python output/wf0909/P6/analyze_iowa_gong.py
+--- Thai gong C4 (ff)  bin=0.0421 Hz
+  P1    266.366 Hz   ratio  1.0000      0.00 dB
+  P2    427.443 Hz   ratio  1.6047    -21.60 dB
+  P3    532.756 Hz   ratio  2.0001     -6.49 dB
+  P4    538.924 Hz   ratio  2.0232    -11.43 dB
+  P5    547.264 Hz   ratio  2.0546    -12.36 dB
+  P6   1381.324 Hz   ratio  5.1858    -21.08 dB
+  P7   1597.532 Hz   ratio  5.9975    -13.30 dB
+  P8   1726.539 Hz   ratio  6.4818    -11.48 dB
+--- Thai gong G4 (ff)  bin=0.0421 Hz
+  P1    395.056 Hz   ratio  1.0000      0.00 dB
+  P2    588.361 Hz   ratio  1.4893    -29.30 dB
+  P3    790.069 Hz   ratio  1.9999    -14.67 dB
+  P4    804.013 Hz   ratio  2.0352    -33.40 dB
+  P5    983.339 Hz   ratio  2.4891    -30.72 dB
+  P6   2329.722 Hz   ratio  5.8972    -33.65 dB
+  P7   2423.276 Hz   ratio  6.1340    -22.89 dB
+  P8   2480.151 Hz   ratio  6.2780    -32.61 dB
+
+$ python  # 檔案格式與音高偏移
+   C4: PCM_24 44100 Hz 2ch 13.364 s | f1=266.366 Hz vs A440 261.626 Hz -> +31.1 cent
+   G4: PCM_24 44100 Hz 2ch 10.767 s | f1=395.056 Hz vs A440 391.995 Hz -> +13.5 cent
+
+================ G8. 本卡改到的版控檔（只有文字，無 src/ tools/） ================
+$ git status --porcelain -- docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md docs/EXTERNAL_DATASET_A8.zh-TW.md docs/EXTERNAL_ANCHOR_SOURCES.md reports/gate_outputs/wf0909_P6_supplement.txt
+ M docs/EXTERNAL_ANCHOR_SOURCES.md
+AM docs/EXTERNAL_DATASET_A8.zh-TW.md
+?? docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md
+?? reports/gate_outputs/wf0909_P6_supplement.txt
+
+$ git diff --stat   # 全工作樹 unstaged（含其他 lane 的改動，本卡只負責上面四個路徑）
+warning: in the working copy of 'docs/EXTERNAL_DATASET_A8.zh-TW.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/workcards/B7.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'reports/decision_packets/K02_reverb_wet_scale.zh-TW.md', LF will be replaced by CRLF the next time Git touches it
+ .gitignore                                         |    5 +
+ DEVLOG.md                                          |   62 +
+ TODO.md                                            |   38 +-
+ docs/EXTERNAL_ANCHOR_SOURCES.md                    |   35 +-
+ docs/EXTERNAL_DATASET_A8.zh-TW.md                  |   57 +
+ docs/RADIATION_POWER_SOURCES.md                    |   24 +
+ docs/workcards/B7.md                               |   13 +-
+ .../decision_packets/K02_reverb_wet_scale.zh-TW.md |   20 +
+ ...onlight_sonata_movement1_tongue_drum.score.json | 2284 ++++++++++----------
+ ..._sonata_movement1_yangqin_tongue_mix.score.json | 2284 ++++++++++----------
+ src/physics/HammerImpulse.h                        |   14 +-
+ src/physics/RadiationModel.h                       |   14 +-
+ tools/melody_verify.py                             |  112 +-
+ 13 files changed, 2629 insertions(+), 2333 deletions(-)
+
+================ G9. 收尾快照（本卡最後一次確認） ================
+$ git status --porcelain -- <本卡負責的四個路徑>
+ M docs/EXTERNAL_ANCHOR_SOURCES.md
+AM docs/EXTERNAL_DATASET_A8.zh-TW.md
+?? docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md
+?? reports/gate_outputs/wf0909_P6_supplement.txt
+
+$ git diff --stat -- docs/EXTERNAL_ANCHOR_SOURCES.md   # 本卡只加一行；上方 34 行差異屬 WF0908-P4 lane
+21	14	docs/EXTERNAL_ANCHOR_SOURCES.md
+
+$ git status --porcelain -- <WF0908-P4 / WF0909-P4b 的五個檔>  # 供 A8 §4.2 裁決記錄佐證
+ M docs/EXTERNAL_ANCHOR_SOURCES.md
+ M docs/RADIATION_POWER_SOURCES.md
+MM docs/workcards/B7.md
+ M src/physics/HammerImpulse.h
+ M src/physics/RadiationModel.h
+$ ls reports/gate_outputs/ | grep -iE "P4b|wf0908_P4"
+wf0908_P4_a8.txt
+(=> wf0909_P4b_citation.txt 尚未產生，與 A8 §4.2 裁決記錄所寫一致)
+
+================ 本卡的邊界（明確聲明） ================
+- 未動 src/、未動 tools/、未動任何容差、未跑 cmake、未重建任何 binary。
+- 未觸發 R10：本卡沒有任何會改變既有 score 渲染輸出的修改。
+- 未發任何信（A8 §4.1 選項 B 屬月月自行決定的後續）。
+- 未主張『模型與實測吻合』；docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md §2 全部標為 informational。
+- 資料檔留在 external_data/（gitignore），只有文件與本證據檔進版控。
+
+================ G10. 獨立複核（2026-09-09 第二輪，Opus 自己重打一次，不採信第一輪自報） ================
+複核原則：每一條外部主張都親自重新打開來源；每一個引擎/分析數字都親自重跑。
+以下每一項都是本輪「重新做一次」的結果，不是抄第一輪的。
+
+--- G10.1 資料檔完整性（重算 SHA256） ---
+$ sha256sum external_data/weinzierl_2018_jasa/*.pdf external_data/iowa_mis_thai_gong/*.zip
+d3e07db54505dc73c929d61202bced4ef0488b2649eb6e1634741126af3dc91b  weinzierl_2018_jasa_1.5053113.pdf   (2,094,542 bytes)
+790bf82f3ebf654ce02df488131a425b8dcbd334e807e27e28a69e506392b3a7  thaigong.ff.zip                     (14,996,504 bytes)
+59e081df62f5539e0086947a6f818e4e770156ac063ade843bf4f4472e6f588d  thaigong.mf.zip                     (11,998,206 bytes)
+cc8d543dd8555e4eed259f461e2f9e6b74949686e8cba00fda70c5b1bcca8bda  thaigong.pp.zip                     (8,983,165 bytes)
+=> 與 §G2 及文件 §1／附錄 A 逐字相同。
+
+--- G10.2 PDF 來源可重現性（重新下載一次，比 SHA） ---
+$ python urllib GET "https://api-depositonce.tu-berlin.de/server/api/core/bitstreams/d7d0f7af-.../content"
+status 200  bytes 2094542  sha256 d3e07db54505dc73c929d61202bced4ef0488b2649eb6e1634741126af3dc91b
+Content-Disposition: inline; filename="1.5053113.pdf"; filename*=UTF-8''1.5053113.pdf
+=> 重新下載的位元組與本機檔**完全相同**：來源 URL 與本機 PDF 確為同一份。
+
+--- G10.3 PDF 內 A 級原文（本輪自己用 PyMuPDF 重抽，全文正規化後 regex 命中數） ---
+"Creative Commons Attribution"  1 hit : "...is licensed under a Creative Commons Attribution (CC BY) license (http://creativecommons.org/licenses/by/4.0/)..."
+"pistonphone"                   1 hit : "...a pistonphone cali- brator (B&K 4230, 94 dB @ 1 kHz) was used with the most accessible microphone in the sphere..."
+"radius of approximately"       1 hit : "...quasi-spherical microphone array with a radius of approximately r = 2.1 m, and 32 Sennheiser KE4- 211-2 electret microphones..."
+"d0 > r/2"                      1 hit : "...None of the musical instruments recorded exhibited a characteristic dimension of the sound radiating parts of d0 > r/2 = 1.05 m..."
+"54:63"                         1 hit : "...LW = Lp + 10 log10 S1/S0 dB ; (4) with S1 = 54:63 m2 and S0 = 1 m2..."
+"Timpani"                       1 hit : "...TABLE I. (Continued) Instrument LW_ff_max LW_pp_min LW_ff_av LW_pp_av Saxophone Alto 111 82 Tenor 113 82 Timpani Hand crank 108 60 Pedal 108 58 Harp 91 54 Guitar 88 59..."
+"piano"    1 hit（參考文獻標題 "Structural contributions to phantom partial generation in the piano"）
+"gong" 0 hit ／ "dulcimer" 0 hit ／ "cimbalom" 0 hit
+=> 文件 §1.1／§2.1 引用的每一句 A 級原文都在 PDF 裡，逐字相符；TABLE I 確實沒有鋼琴/鑼/揚琴。
+=> 換算複驗：10*log10(54.63)=17.3743 dB；108-17.374=90.63 dB；54.63=4*pi*r^2 -> r=2.0850 m（與論文 r≈2.1 m 一致）。
+
+--- G10.4 Crossref 授權欄（本輪自己重打） ---
+$ python urllib GET "https://api.crossref.org/works/10.1121/1.5053113"   -> status 200
+  title    : Sound power and timbre as cues for the dynamic strength of orchestral instruments
+  container: The Journal of the Acoustical Society of America  vol 144  issue 3  pages 1347-1355
+  license  : [('https://creativecommons.org/licenses/by/4.0/', 'vor'), ('https://creativecommons.org/licenses/by/4.0/', 'tdm')]
+=> 與 §G3 相同：CC BY 4.0，可商用。
+
+--- G10.5 Iowa 官網三頁（本輪自己重抓原始 HTML，逐字比對） ---
+$ GET https://theremin.music.uiowa.edu/MIS.html                                    -> 200 (16,906 bytes)
+  逐字："Since 1997, these recordings have been freely available on this website and may be downloaded and used for any projects, without restrictions."
+  逐字（本輪新發現，已補進文件 §3 缺口 4）："Beginning in 2011, recordings have been made at 24/96 with three Earthworks QTC-40 ... 5 feet in front of the performer."
+$ GET https://theremin.music.uiowa.edu/MISgongtamtams.html                         -> 200 (21,685 bytes)
+  器材表逐欄："Gongs & Tamtams | NA | Andrew Thierauf | March 20, 2013 | Anechoic Chamber | Daniel Frantz and Will Huff | 5 feet | Earthworks QTC40 | Metric Halo 2882 | 24-bit, 44.1 kHz, stereo"
+  zip 連結（頁內 href 逐字）：sound files/MIS/Percussion/gongs & tamtams/thaigongs/thaigong.{ff,mf,pp}.zip
+$ GET https://theremin.music.uiowa.edu/MIS-Pitches-2012/MISGongsTamTams2012.html   -> 200 (17,396 bytes)
+  同一張器材表逐欄相同 => 文件 §1.2「一字不差地同時掛在兩個頁面」屬實。
+$ HEAD 三個 zip URL
+  thaigong.ff.zip 200 Content-Length=14996504 Last-Modified=Tue, 07 Jun 2016 20:07:49 GMT
+  thaigong.mf.zip 200 Content-Length=11998206 Last-Modified=Tue, 07 Jun 2016 20:08:17 GMT
+  thaigong.pp.zip 200 Content-Length=8983165 Last-Modified=Tue, 07 Jun 2016 20:08:47 GMT
+=> 與 §G1 相同；合計 35,977,875 bytes。
+
+--- G10.6 S6（文件標「403，未取得原文」）重試 ---
+$ GET https://pubs.aip.org/asa/jasa/article/128/1/EL8/655833/...   -> HTTPError 403 Forbidden
+=> 「未取得原文」屬實，本輪同樣未取得，文件未依賴它做任何主張。
+
+--- G10.7 引擎側重跑（唯讀 build\ exe，未重建、未跑 cmake、未渲染音訊） ---
+$ build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --dump-modes scores\examples\water_gong_free.score.json
+  water_gong C4 midi 60 : 261.626 / 454.817 / 609.232 / 1026.953 / 1071.727 / 1762.971 / 1927.647 Hz
+                  ratios: 1.0000 / 1.7384 / 2.3286 / 3.9253 / 4.0964 / 6.7385 / 7.3679
+  water_gong G4 midi 67 : 391.995 / 681.455 / 912.816 / 1538.692 / 1605.776 / 2641.472 / 2888.207 Hz
+                  ratios: 1.0000 / 1.7384 / 2.3286 / 3.9253 / 4.0964 / 6.7385 / 7.3680
+$ diff <正規化後的 output/wf0909/P6/water_gong_free_modes.json> <本輪重跑輸出>
+  => IDENTICAL_JSON（第一輪存下的 dump 與本輪重跑逐格相同）
+  score 參數親自開檔核對：events[0..1].params = {material: bronze, thickness_mm: 4.0, strike_position: 0.3,
+  plate_free_edge: true, radius_mm: 150}，note = C4 / G4 => 與文件 §2.2 所寫相同。
+  meta.description 逐字 = "...Approximate eigenvalues (Leissa nu~0.33), ratios 1 : 1.73 : 2.33 : 3.91..."
+  => 文件 §2.2 原本寫「這一組數字 score 說明就寫了」略不精確（說明字串第 4 項是 3.91，引擎實算 3.9253），
+     本輪已把該句改成逐字引述 + 標明 0.015 的四捨五入差，見文件 §2.2。
+
+--- G10.8 Iowa 檔案來源鏈（zip 成員 SHA256 vs 第一輪解壓出來的分析檔） ---
+$ python zipfile: thaigong.ff.zip 內 13 個 .aif
+  thaigong.C4.ff.aif  3,536,200 bytes  sha256 999030e294b5f6c0...  == output/wf0909/P6/iowa_extract/ 的同名檔  True
+  thaigong.G4.ff.aif  2,849,170 bytes  sha256 205e59c6dddf48f6...  == output/wf0909/P6/iowa_extract/ 的同名檔  True
+=> 附錄 A 的逐檔 SHA256 與實際 zip 內容一致；第一輪分析用的檔案確實來自這三包。
+
+--- G10.9 §2.2 主張的參數敏感度測試（本輪新做；文件 §3 缺口 7 已據此改寫） ---
+window fn = Blackman-Harris (card used Hann); floor -45 dB (card -40); 40 Hz high-pass added
+--- Thai gong C4 ff ---
+  [0.20-1.20 s] bin=0.0841 Hz  f1=  266.481 Hz  strongest overtone=  532.923 Hz  ratio=1.9999  (-4.62 dB)
+  [0.15-2.15 s (card)] bin=0.0421 Hz  f1=  266.362 Hz  strongest overtone=  532.737 Hz  ratio=2.0001  (-6.75 dB)
+  [0.50-4.50 s] bin=0.0421 Hz  f1=  266.259 Hz  strongest overtone=  532.520 Hz  ratio=2.0000  (-13.38 dB)
+  [1.00-6.00 s] bin=0.0841 Hz  f1=  266.247 Hz  strongest overtone=  532.496 Hz  ratio=2.0000  (-18.36 dB)
+--- Thai gong G4 ff ---
+  [0.20-1.20 s] bin=0.0841 Hz  f1=  394.959 Hz  strongest overtone=  790.001 Hz  ratio=2.0002  (-12.04 dB)
+  [0.15-2.15 s (card)] bin=0.0421 Hz  f1=  395.071 Hz  strongest overtone=  790.106 Hz  ratio=1.9999  (-15.90 dB)
+  [0.50-4.50 s] bin=0.0421 Hz  f1=  395.225 Hz  strongest overtone=  790.401 Hz  ratio=1.9999  (-25.37 dB)
+  [1.00-6.00 s] bin=0.0841 Hz  f1=   42.561 Hz  strongest overtone=  395.261 Hz  ratio=9.2870  (+0.00 dB)   <== f1 mis-picked as room noise (script failure mode, logged in doc gap 7)
+
+=> 結論：「≈2.000 倍那一根泛音存在、而且是最強的泛音」在換窗函數、換門檻、換三個分析窗之後**依然成立**
+   （C4 四組、G4 三組，比值 1.9999–2.0002）。唯一例外是 G4 的 1.0–6.0 s 窗：該時段鑼已衰減到低於室內低頻，
+   分析腳本把 42.6 Hz 噪聲誤選為基頻——**這是腳本的失效模式，不是資料的性質**，已在文件 §3 缺口 7 誠實登記。
+
+--- G10.10 本輪抓到的一個算術錯誤（第一輪文件的實質錯誤，已更正） ---
+第一輪文件 §0 與 §2.2 事實 1 都寫：「引擎在 2.0 附近最接近的一根是 2.3286 倍，差 0.329」。
+$ python: |2.000 - 1.7384| = 0.2616   ；  |2.000 - 2.3286| = 0.3286
+=> **1.7384 才是離 2.000 最近的那一根**，第一輪把「最接近」判給了 2.3286，**算錯了**。
+本輪改寫成不依賴「誰最接近」的講法，並改用音分表述（比值差在聽感上不是線性的）：
+$ python: 1200*log2(2.0/1.7384) = 242.7 cent   ；  1200*log2(2.3286/2.0) = 263.4 cent
+=> 更正後的說法：「引擎在 2.000 倍上沒有任何一根；上下把它夾住的兩根分別低 243 音分、高 263 音分，
+   兩根都差了兩個全音以上。」**§2.2 的結論（引擎平板模型 != 泰國鑼）不受影響，只是數字改對了。**
+   【2026-09-09 稽核回合更正】上面這句更正稿裡的「兩個全音以上」**本身也是錯的**，正確是「兩個半音以上」。
+   詳見本檔 G11.1；文件與本段的最終說法以 G11.1 為準。
+
+--- G10.11 PDF 頁碼對應複核（文件所有「PDF p.N ＝期刊 p.M」的說法） ---
+$ python PyMuPDF: 逐頁列出頁尾「Weinzierl et al. <期刊頁碼>」與該頁關鍵字
+  local p1 : 封面／首頁
+  local p2 : 含 "Creative Commons Attribution"        => 期刊 p.1347（授權列）      ✅ 與文件 §1.1 相符
+  local p3 : 含 "radius of approximately"、"d0 > r/2" => 期刊 p.1348               ✅ 相符
+  local p4 : 頁尾 "Weinzierl et al. 1349"
+  local p5 : 含 "pistonphone"、"54:63"                => 期刊 p.1350               ✅ 相符
+  local p6 : 頁尾 "Weinzierl et al. 1351"
+  local p7 : 含 "TABLE I"                             => 期刊 p.1352               ✅ 相符
+  local p8 : 含 "TABLE I (Continued)"、"Timpani"，頁尾 "Weinzierl et al. 1353"     ✅ 相符
+=> 文件 §1.1／§2.1 標註的每一組頁碼對應都成立。
+
+--- G10.12 換算算術複核（本輪自己重算，不呼叫第一輪腳本） ---
+  10*log10(54.63)          = 17.3743 dB
+  Timpani  108 - 17.3743   = 90.63 dB  -> p = 2e-5 * 10^(90.63/20)  = 0.6797 Pa   ✅
+  Timpani   60 - 17.3743   = 42.63 dB  -> p = 0.00271 Pa                          ✅
+  Harp      91 - 17.3743   = 73.63 dB  -> p = 0.0960 Pa                           ✅
+  Guitar    88 - 17.3743   = 70.63 dB  -> p = 0.0680 Pa                           ✅
+  等效球半徑 sqrt(54.63/(4*pi)) = 2.0850 m（論文 r ≈ 2.1 m）                       ✅
+  §2.1「80.14–102.23 dB 跨在 90.63 上」：80.14 < 90.63 < 102.23                    ✅
+  §2.1 自洽檢查「單一正前方麥克風高 6.4 dB」：77.03 - 70.63 = 6.40 dB              ✅
+  §2.2 音高偏移：1200*log2(266.366/261.626) = 31.09 cent；
+                 1200*log2(395.056/391.995) = 13.47 cent                          ✅（文件寫 31.1／13.5）
+  A8 §3.3／§3.1 被引用的數字（80.14、102.23、58.69、77.03）已在 A8 內逐行核對存在  ✅
+
+--- G10.13 共同規約硬性檢查 ---
+$ python -m pytest tests -q
+262 passed, 1 skipped, 1 xfailed in 170.11s (0:02:50)   [exit 0]
+（README 現況記 213 collected；本輪 264 是其他 lane 新增測試後的數量，非本卡新增。本卡未新增任何測試。）
+
+$ git status --porcelain -- src tools     # 本卡在本輪未碰任何一個
+（列出的 src/ tools/ 變動全部屬其他 lane：WF0907 已 staged 的部分 + WF0908-P4／WF0909-P4b 的 unstaged 改動。）
+
+$ git status --porcelain -- <本卡四個路徑>（本輪收尾）
+ M docs/EXTERNAL_ANCHOR_SOURCES.md          （本卡只加 §1 表格一行；其餘 34 行差異屬 WF0908-P4 lane）
+A  docs/EXTERNAL_DATASET_A8.zh-TW.md        （§4.1／§4.2 裁決記錄，本輪未再修改）
+AM docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md（M = 本輪 G10.10 的三處精確化）
+AM reports/gate_outputs/wf0909_P6_supplement.txt（M = 本輪追加 G10）
+=> 位元不變基準檔（sha256_before_post_d8.txt）與本卡無關：本卡未碰 src/，未渲染任何音訊，未觸發 R10。
+
+--- G10.14 本輪對文件做的修改（共四處，皆為「改對／講得更精確」，無新主張） ---
+1. §0 與 §2.2 事實 1：更正上述「最接近的一根」算術錯誤，改用音分表述（見 G10.10）。
+2. §2.2「這代表什麼」第一點：平板比值的出處改為逐字引述 score 的 meta.description，並標明 3.91 vs 3.9253 的四捨五入差。
+3. §3 缺口 4：補登 Iowa 官網自相矛盾（總說明頁 24/96 vs 器材表 44.1 kHz vs 實際檔案 44.1 kHz），使該缺口更保守。
+4. §3 缺口 7：把「已交叉確認」換成本輪實跑的參數敏感度數字，並登記 G4 長窗的腳本失效模式。
+   （未新增任何外部主張、未改任何外部來源數字、未動 src/ tools/、未跑 cmake、未觸發 R10。）
+
+================================================================================
+G11. 稽核回合（2026-09-09，findings 修正）：逐條親自複算後落地
+================================================================================
+稽核給了兩條 finding（1 major / 1 minor）。兩條我都不採信自報，先自己重算／重跑，確認成立才改。
+
+--- G11.1 [major，成立，已修] 音分→音程的換算措辭寫錯（243／263 音分不是「兩個全音」） ---
+稽核主張：文件 :23 與 :195 把 243／263 音分說成「約兩個全音」「兩個全音以上」，但 2 個全音 = 400 音分。
+本輪親自重算（不引用稽核的數字）：
+$ python -c "import math; ..."
+  1200*log2(2.0/1.7384)    = 242.688 cent  -> 2.427 semitone  -> 1.213 whole tone
+  1200*log2(2.3286/2.0)    = 263.355 cent  -> 2.634 semitone  -> 1.317 whole tone
+  參考：1 semitone = 100 cent、1 whole tone = 200 cent、2 whole tone = 400 cent
+=> 243 cent 與 263 cent **都不到 400 cent**，說成「兩個全音以上」為假；
+   243 cent > 200 cent、263 cent > 200 cent，說成「兩個**半音**以上」才成立。
+   **稽含 finding 成立。** 錯的只有音程措辭；音分數字 243／263 本身（G10.10 算的）複算後仍正確。
+落地：
+  - 文件 §0（原 :23）：改為「低 243 音分／高 263 音分」，並補一段給月月看的白話註解
+    （鋼琴相鄰兩鍵 = 1 個半音 = 100 音分；243 音分 ≈ 2.4 個半音、263 音分 ≈ 2.6 個半音 = 兩個琴鍵以上）。
+  - 文件 §2.2 事實 1（原 :195）：粗體斷言改為「兩根都差了兩個**半音**以上（243 音分＝2.43 半音、263 音分＝2.63 半音）」，
+    並在原有的「複核更正一」下方新增「複核更正二」，把這次的措辭錯誤本身也留在文件裡，不掩蓋修改史。
+  - 本證據檔 G10.10 結尾加一行指回 G11.1（G10.10 的更正稿文字有誤，最終說法以 G11.1 為準）。
+=> **結論不受影響**：「引擎在 2.000 倍上沒有任何一根、上下兩根分別低 243／高 263 音分」這件事沒變，
+   §2.2「water_gong 平板模型 != 泰國鑼」以及 §3「先只登記、不改程式」的建議都不變。
+
+--- G11.2 [minor，成立，已修] G4 表漏列第 8 個峰，與同節方法敘述不一致 ---
+稽核主張：§2.2 方法寫「依振幅取前 8 個」，C4 表 8 列、G4 表只有 7 列。
+本輪親自重跑（不看稽核給的數字，直接跑第一輪腳本 + 讀原始 JSON）：
+$ python output/wf0909/P6/analyze_iowa_gong.py
+--- Thai gong G4 (ff)  bin=0.0421 Hz
+  P1    395.056 Hz   ratio  1.0000      0.00 dB
+  P2    588.361 Hz   ratio  1.4893    -29.30 dB
+  P3    790.069 Hz   ratio  1.9999    -14.67 dB
+  P4    804.013 Hz   ratio  2.0352    -33.40 dB
+  P5    983.339 Hz   ratio  2.4891    -30.72 dB
+  P6   2329.722 Hz   ratio  5.8972    -33.65 dB
+  P7   2423.276 Hz   ratio  6.1340    -22.89 dB
+  P8   2480.151 Hz   ratio  6.2780    -32.61 dB     <== 文件 G4 表原本停在 P7，漏了這一列
+$ python  # 直接讀 output/wf0909/P6/iowa_gong_partials.json
+  len(d['C4']['partials']) = 8 ; len(d['G4']['partials']) = 8
+=> 兩顆音都確實有 8 個峰，**文件 G4 表少列一列**，且與方法敘述矛盾。**稽核 finding 成立。**
+   重跑值與第一輪存檔（本檔 G7 區塊）逐格相同，資料本身沒問題，純粹是文件抄漏。
+落地：
+  - G4 表補上第 8 列「2480.151 Hz ／ 6.2780 ／ −32.61 dB ／ 引擎側 —」，並註明是本回合補列。
+  - 順帶補一句說明兩張表 water_gong 側都只有 7 列的原因：`--dump-modes` 對這兩顆音自報 `partials=7`
+    （見本檔 G6），是引擎自己就只有 7 根，不是文件截斷——避免讀者誤以為引擎側也被截。
+=> 該峰比基頻弱 32.61 dB，不參與 §2.2 任何一條結論；補列後表與方法敘述一致。
+
+--- G11.3 本回合的範圍與硬性檢查 ---
+本回合只改兩個檔（皆為本卡交付物）：
+  docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md   （G11.1 兩處 + G11.2 一處，共三處）
+  reports/gate_outputs/wf0909_P6_supplement.txt（G10.10 加一行指標 + 新增 G11）
+$ git status --porcelain -- src tools scores
+=> 本回合未碰 src/、tools/、scores/ 任何檔案（列出的變動全部屬其他 lane，與本卡無關）。
+未跑 cmake、未重建任何 exe、未渲染任何音訊、未改任何容差、未新增任何外部主張或外部數字。
+位元不變基準（sha256_before_post_d8.txt）與本卡無關：本卡從頭到尾沒有碰 src/，R10 未觸發。
+$ python -m pytest tests -q   （見 G11.4）
+
+--- G11.4 共同規約硬性檢查（本回合實跑） ---
+$ python -m pytest tests -q
+262 passed, 1 skipped, 1 xfailed in 161.15s (0:02:41)   [exit 0]
+（與 G10.13 同數字；本回合只改兩個 .md/.txt 交付物，測試數量本就不該變。）
+
+--- G11.5 本回合最終狀態（交給稽核 stage） ---
+$ git status --porcelain -- docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md docs/EXTERNAL_DATASET_A8.zh-TW.md \
+                            reports/gate_outputs/wf0909_P6_supplement.txt docs/EXTERNAL_ANCHOR_SOURCES.md
+AM docs/EXTERNAL_DATASET_SUPPLEMENT.zh-TW.md   （M = 本回合 G11.1／G11.2 三處修正，需重新 stage）
+A  docs/EXTERNAL_DATASET_A8.zh-TW.md           （本回合未改動，維持已 staged 的選項 A 裁決記錄）
+AM reports/gate_outputs/wf0909_P6_supplement.txt（M = 本回合新增 G11 + G10.10 一行指標，需重新 stage）
+M  docs/EXTERNAL_ANCHOR_SOURCES.md             （本回合實測為 "M " ＝已被其他 lane／稽核 stage；
+                                                 本卡只加 §1 表格一行，同檔其餘差異屬 WF0908-P4 lane，本卡未自行 stage）
+（上一輪回報此檔為 " M"；本回合實測已變成 "M "，是其他 lane 在本卡之外 stage 的結果，非本卡動作。）

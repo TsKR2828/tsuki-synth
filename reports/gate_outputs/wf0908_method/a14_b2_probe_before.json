@@ -1,0 +1,393 @@
+{
+  "label": "before",
+  "variant": "before",
+  "cli": "C:\\Users\\admin\\Desktop\\Claude\\tsuki-synth\\build-wf\\TsukiSynthCLI_artefacts\\Release\\TsukiSynthCLI.exe",
+  "tauc_table": [
+    {
+      "note": "C4",
+      "midi": 60,
+      "f1_hz": 261.626,
+      "tau_c_ms": 2.35353021621047,
+      "x": 1.2314893926925607,
+      "H_f1_db": -3.241759932666902,
+      "measured_p2_minus_p1_db": -8.17771387806649,
+      "measured_p1_amp": 0.39657,
+      "measured_p2_amp": 0.15468
+    },
+    {
+      "note": "A4",
+      "midi": 69,
+      "f1_hz": 440.0,
+      "tau_c_ms": 2.0967274174156283,
+      "x": 1.8451201273257527,
+      "H_f1_db": -7.880005365137665,
+      "measured_p2_minus_p1_db": -9.952234034979996,
+      "measured_p1_amp": 0.35673,
+      "measured_p2_amp": 0.11343
+    },
+    {
+      "note": "G5",
+      "midi": 79,
+      "f1_hz": 783.991,
+      "tau_c_ms": 1.855950968968665,
+      "x": 2.9100977122254257,
+      "H_f1_db": -34.4959405363334,
+      "measured_p2_minus_p1_db": 9.065559019555927,
+      "measured_p1_amp": 0.01666,
+      "measured_p2_amp": 0.04731
+    },
+    {
+      "note": "G6",
+      "midi": 91,
+      "f1_hz": 1567.982,
+      "tau_c_ms": 1.6145586962616303,
+      "x": 5.063197947363407,
+      "H_f1_db": -47.90920845548235,
+      "measured_p2_minus_p1_db": 10.909200300703624,
+      "measured_p1_amp": 0.00356,
+      "measured_p2_amp": 0.0125
+    },
+    {
+      "note": "D7",
+      "midi": 98,
+      "f1_hz": 2349.318,
+      "tau_c_ms": 1.5154177508331963,
+      "x": 7.120396399103886,
+      "H_f1_db": -48.44430614257873,
+      "measured_p2_minus_p1_db": -24.454329422951666,
+      "measured_p1_amp": 0.00334,
+      "measured_p2_amp": 0.0002
+    }
+  ],
+  "notecomp_table": [
+    {
+      "midi": 61,
+      "n_strings": 3,
+      "f1_hz": 277.183,
+      "p1_amp": 0.42113,
+      "tau_c_ref_ms": 2.219727431768465,
+      "gain": 1.59735358869955,
+      "note_comp_reverse_solved": 2.7666975732800996,
+      "saturated": false
+    },
+    {
+      "midi": 64,
+      "n_strings": 3,
+      "f1_hz": 329.628,
+      "p1_amp": 0.44748,
+      "tau_c_ref_ms": 2.133427182949127,
+      "gain": 1.9191772076264013,
+      "note_comp_reverse_solved": 3.324112432337091,
+      "saturated": false
+    },
+    {
+      "midi": 67,
+      "n_strings": 3,
+      "f1_hz": 391.995,
+      "p1_amp": 0.45471,
+      "tau_c_ref_ms": 2.0518918143651814,
+      "gain": 2.3094005418169203,
+      "note_comp_reverse_solved": 3.9999990734539996,
+      "saturated": true
+    },
+    {
+      "midi": 69,
+      "n_strings": 3,
+      "f1_hz": 440.0,
+      "p1_amp": 0.39174,
+      "tau_c_ref_ms": 2.0,
+      "gain": 2.30941708348254,
+      "note_comp_reverse_solved": 4.0000277244592946,
+      "saturated": true
+    },
+    {
+      "midi": 79,
+      "n_strings": 3,
+      "f1_hz": 783.991,
+      "p1_amp": 0.04684,
+      "tau_c_ref_ms": 1.7665378678202668,
+      "gain": 2.3094888497630044,
+      "note_comp_reverse_solved": 4.000152027303329,
+      "saturated": true
+    },
+    {
+      "midi": 91,
+      "n_strings": 3,
+      "f1_hz": 1567.982,
+      "p1_amp": 0.01188,
+      "tau_c_ref_ms": 1.5331311616274061,
+      "gain": 2.309468160293815,
+      "note_comp_reverse_solved": 4.000116192091511,
+      "saturated": true
+    },
+    {
+      "midi": 98,
+      "n_strings": 3,
+      "f1_hz": 2349.318,
+      "p1_amp": 0.00743,
+      "tau_c_ref_ms": 1.4376515097847284,
+      "gain": 2.3081608474523576,
+      "note_comp_reverse_solved": 3.99785185982872,
+      "saturated": false
+    }
+  ],
+  "sweep_rows": [
+    {
+      "midi": 37,
+      "peak_dbfs": -22.031,
+      "rms_dbfs": -39.412
+    },
+    {
+      "midi": 38,
+      "peak_dbfs": -22.175,
+      "rms_dbfs": -39.61
+    },
+    {
+      "midi": 39,
+      "peak_dbfs": -22.36,
+      "rms_dbfs": -39.803
+    },
+    {
+      "midi": 40,
+      "peak_dbfs": -22.534,
+      "rms_dbfs": -39.995
+    },
+    {
+      "midi": 41,
+      "peak_dbfs": -22.743,
+      "rms_dbfs": -40.193
+    },
+    {
+      "midi": 42,
+      "peak_dbfs": -22.95,
+      "rms_dbfs": -40.383
+    },
+    {
+      "midi": 43,
+      "peak_dbfs": -23.199,
+      "rms_dbfs": -40.576
+    },
+    {
+      "midi": 44,
+      "peak_dbfs": -23.46,
+      "rms_dbfs": -40.766
+    },
+    {
+      "midi": 45,
+      "peak_dbfs": -23.661,
+      "rms_dbfs": -40.961
+    },
+    {
+      "midi": 46,
+      "peak_dbfs": -23.847,
+      "rms_dbfs": -41.157
+    },
+    {
+      "midi": 47,
+      "peak_dbfs": -24.07,
+      "rms_dbfs": -41.353
+    },
+    {
+      "midi": 48,
+      "peak_dbfs": -24.281,
+      "rms_dbfs": -41.553
+    },
+    {
+      "midi": 49,
+      "peak_dbfs": -24.644,
+      "rms_dbfs": -41.759
+    },
+    {
+      "midi": 50,
+      "peak_dbfs": -24.706,
+      "rms_dbfs": -41.963
+    },
+    {
+      "midi": 51,
+      "peak_dbfs": -24.856,
+      "rms_dbfs": -42.161
+    },
+    {
+      "midi": 52,
+      "peak_dbfs": -25.075,
+      "rms_dbfs": -42.356
+    },
+    {
+      "midi": 53,
+      "peak_dbfs": -25.45,
+      "rms_dbfs": -42.543
+    },
+    {
+      "midi": 54,
+      "peak_dbfs": -25.821,
+      "rms_dbfs": -42.727
+    },
+    {
+      "midi": 55,
+      "peak_dbfs": -26.289,
+      "rms_dbfs": -42.914
+    },
+    {
+      "midi": 56,
+      "peak_dbfs": -26.387,
+      "rms_dbfs": -43.108
+    },
+    {
+      "midi": 57,
+      "peak_dbfs": -26.235,
+      "rms_dbfs": -43.31
+    },
+    {
+      "midi": 58,
+      "peak_dbfs": -26.176,
+      "rms_dbfs": -43.516
+    },
+    {
+      "midi": 59,
+      "peak_dbfs": -26.348,
+      "rms_dbfs": -43.726
+    },
+    {
+      "midi": 60,
+      "peak_dbfs": -26.671,
+      "rms_dbfs": -43.935
+    },
+    {
+      "midi": 61,
+      "peak_dbfs": -26.869,
+      "rms_dbfs": -44.143
+    },
+    {
+      "midi": 62,
+      "peak_dbfs": -27.105,
+      "rms_dbfs": -44.355
+    },
+    {
+      "midi": 63,
+      "peak_dbfs": -27.658,
+      "rms_dbfs": -44.568
+    },
+    {
+      "midi": 64,
+      "peak_dbfs": -28.346,
+      "rms_dbfs": -44.782
+    },
+    {
+      "midi": 65,
+      "peak_dbfs": -28.037,
+      "rms_dbfs": -45.004
+    },
+    {
+      "midi": 66,
+      "peak_dbfs": -27.749,
+      "rms_dbfs": -45.236
+    },
+    {
+      "midi": 67,
+      "peak_dbfs": -27.535,
+      "rms_dbfs": -45.535
+    },
+    {
+      "midi": 68,
+      "peak_dbfs": -27.859,
+      "rms_dbfs": -46.379
+    },
+    {
+      "midi": 69,
+      "peak_dbfs": -27.578,
+      "rms_dbfs": -47.282
+    },
+    {
+      "midi": 70,
+      "peak_dbfs": -27.77,
+      "rms_dbfs": -48.308
+    },
+    {
+      "midi": 71,
+      "peak_dbfs": -28.519,
+      "rms_dbfs": -49.54
+    },
+    {
+      "midi": 72,
+      "peak_dbfs": -30.261,
+      "rms_dbfs": -51.02
+    },
+    {
+      "midi": 73,
+      "peak_dbfs": -32.348,
+      "rms_dbfs": -52.752
+    },
+    {
+      "midi": 74,
+      "peak_dbfs": -34.148,
+      "rms_dbfs": -54.725
+    },
+    {
+      "midi": 75,
+      "peak_dbfs": -35.922,
+      "rms_dbfs": -56.952
+    },
+    {
+      "midi": 76,
+      "peak_dbfs": -37.485,
+      "rms_dbfs": -59.48
+    },
+    {
+      "midi": 77,
+      "peak_dbfs": -38.634,
+      "rms_dbfs": -62.319
+    },
+    {
+      "midi": 78,
+      "peak_dbfs": -39.658,
+      "rms_dbfs": -65.441
+    },
+    {
+      "midi": 79,
+      "peak_dbfs": -42.629,
+      "rms_dbfs": -68.389
+    },
+    {
+      "midi": 80,
+      "peak_dbfs": -43.193,
+      "rms_dbfs": -69.878
+    },
+    {
+      "midi": 81,
+      "peak_dbfs": -42.977,
+      "rms_dbfs": -69.439
+    },
+    {
+      "midi": 82,
+      "peak_dbfs": -42.542,
+      "rms_dbfs": -68.239
+    },
+    {
+      "midi": 83,
+      "peak_dbfs": -44.538,
+      "rms_dbfs": -67.241
+    },
+    {
+      "midi": 84,
+      "peak_dbfs": -42.103,
+      "rms_dbfs": -66.371
+    },
+    {
+      "midi": 85,
+      "peak_dbfs": -40.896,
+      "rms_dbfs": -66.227
+    },
+    {
+      "midi": 86,
+      "peak_dbfs": -41.935,
+      "rms_dbfs": -67.087
+    },
+    {
+      "midi": 87,
+      "peak_dbfs": -44.129,
+      "rms_dbfs": -66.871
+    }
+  ],
+  "sweep_peak_span_db": -22.098,
+  "sweep_rms_span_db": -27.458999999999996
+}

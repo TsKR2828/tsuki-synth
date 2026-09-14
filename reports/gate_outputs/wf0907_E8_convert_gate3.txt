@@ -1,0 +1,4 @@
+Generated output\wf0907\E8\convert_out\fur_elise_gate3.score.json: 905 events, 211 explicit rests, 75 phrases
+jsonschema errors: 0
+VALID: 905 events, 0 layers
+exit=0

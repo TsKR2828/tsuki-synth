@@ -1,0 +1,366 @@
+================================================================================
+WF0910-C10A  --  option A landing evidence (month-lead ruling 2026-09-10)
+================================================================================
+Card context : docs/workcards/WF0909_C10C_timedomain_estimator.md ended RED.
+               The month-lead ruled option A on 2026-09-10: narrow the claim
+               domain, accept the measured self-calibration gap, do NOT change
+               the production estimator, do not pursue option B any further.
+Landed files : tools/measurement_selfcal.py
+               tests/test_measurement_selfcal.py
+               docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md  (S8.4 item 5, S8.5,
+                                                          S9 header, S9.6, S9.7)
+               reports/decision_packets/C10_selfcal_domain.zh-TW.md (S6, S7)
+NOT landed   : melody_verify.measure_pitch_cents_nls() and its three tests --
+               kept unlanded in reports/c10c_nls_candidate.patch so that no
+               dead estimator sits in a product file.
+Untouched    : tools/melody_verify.py, tools/stem_verify.py,
+               tools/partial_verify.py; every tolerance (+-5 c / +-10 ms / 1 c).
+Run at       : 2026-09-11 00:08:57
+================================================================================
+
+================================================================================
+GATE 0 -- patch application (four-file subset of reports/c10c_nls_candidate.patch)
+================================================================================
+$ git apply --check --include=tools/measurement_selfcal.py \
+    --include=tests/test_measurement_selfcal.py \
+    --include=docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md \
+    --include=reports/decision_packets/C10_selfcal_domain.zh-TW.md \
+    reports/c10c_nls_candidate.patch
+EXIT=0        <- clean, no conflict, no hunk had to be applied by hand
+
+$ git apply <same four --include flags> reports/c10c_nls_candidate.patch
+APPLIED OK
+
+The other two files in that patch were deliberately NOT included:
+  tools/melody_verify.py  -- option A keeps the product estimator untouched and
+                             wants no dead candidate code in a product file.
+  HANDOVER.md             -- already rewritten by the planner.
+
+Post-apply hand edits (recorded, not hidden):
+  1. tests/test_measurement_selfcal.py -- the three tests that imported
+     melody_verify.measure_pitch_cents_nls were DELETED rather than skipped:
+     the symbol does not exist in this tree at all, so a skip would be a false
+     promise of coverage. A comment block at the bottom of the file names all
+     three, says why, and points at reports/c10c_nls_candidate.patch. The now
+     unused `import numpy as np` went with them. Module docstring and
+     XFAIL_REASON reworded for the option-A ruling.
+  2. XFAIL_REASON said the candidate changes 8 of the 30 strong-domain corpus
+     files; corrected to 9, which is what reports/c10c_nls_estimator_before_
+     after.md S3.3 and decision packet S6.1 both record.
+  3. The gain-axis number in two test docstrings said the production estimator
+     loses 18.8 c of a 40-cent deviation at MIDI 36 -- MIDI 36 is not even in
+     GAIN_SCAN_MIDIS. Corrected to the number measured in GATE 4a below:
+     MIDI 37, +40 c true deviation measures +23.14 c, error 16.86 c.
+  4. docs S9.6 and packet S6.1 said the candidate lives in
+     tools/melody_verify.py::measure_pitch_cents_nls(); rewritten to say it is
+     preserved unlanded in reports/c10c_nls_candidate.patch.
+  5. New content for the ruling itself: docs S8.4 item 5 (do not claim the
+     measuring instrument is inside 1 cent), docs S8.5 last bullet (the claim
+     domain), docs S9.7 (ruling record), packet S7.1-S7.4 (ruling, why option B
+     was rejected in one paragraph, why the tool now exits 1, and D15).
+
+================================================================================
+GATE 1 -- python tools/melody_verify.py --selftest   (expect 5/5, exit 0)
+================================================================================
+[PASS] sentinel A: unmodified fixture verifies clean (max |onset err| = 0.33 ms, tol 10 ms)
+[PASS] sentinel B: +100 ms time shift is caught -> 1 FAIL as required
+[PASS] sentinel C: +1 semitone transposition is caught -> 1 FAIL as required
+[PASS] sentinel D: undeclared (extra) note is caught -> 1 FAIL as required
+[PASS] sentinel E: declared-but-absent (phantom) note is caught -> 1 FAIL as required
+SELFTEST PASS (5/5)
+EXIT=0
+
+================================================================================
+GATE 2 -- PYTHONPATH=tools python -m pytest tests/test_measurement_selfcal.py tests/test_stem_verify.py -q -rxX
+================================================================================
+...xxx....................................................               [100%]
+=========================== short test summary info ===========================
+XFAIL tests/test_measurement_selfcal.py::test_development_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_holdout_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_gain_fidelity_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+55 passed, 3 xfailed in 175.27s (0:02:55)
+EXIT=0
+
+================================================================================
+GATE 3 -- python -m pytest tests -q
+================================================================================
+...............xxx...................................................... [ 26%]
+......................s................................................. [ 53%]
+........................................................................ [ 80%]
+...................................................                      [100%]
+263 passed, 1 skipped, 3 xfailed in 197.57s (0:03:17)
+EXIT=0
+
+================================================================================
+GATE 4a -- python tools/measurement_selfcal.py           (expect exit 1, 1.1721 c)
+================================================================================
+measurement_selfcal: synthesizing grid (MIDI 36..100 x 3 variants x 3 levels x sr 48000,44100)
+  grid points: 1170  (fail_reason on 0)
+  by f0 band (max |error_cents|):
+    <167Hz       1.1721 c
+    167-500Hz    0.6758 c
+    500-2000Hz   0.9836 c
+    >2000Hz      1.1386 c
+  by level (max |error_cents|):
+      -6.0 dBFS  1.0707 c
+     -30.0 dBFS  1.0737 c
+     -60.0 dBFS  1.1721 c
+  max_abs_error_cents = 1.1721  (limit 1.0)
+  sensitivity anti-false-green (grid cell MIDI69/harmonic/-6dBFS/48kHz):
+    offset +3.0c -> measured +2.9818c  [OK]
+    offset -3.0c -> measured -2.9936c  [OK]
+  onset error (informational, no exit-code effect): max |err| = 37.0000 ms over 1170 points
+  gain-fidelity scan (WF0909-C10C ---1.1: PASS/FAIL, exit-code affecting -- module docstring 'Gain-fidelity scan'): |measured - TRUE offset| over 308 cells (MIDI 37,45,60,69,80,90,100 x offsets +0,-40,-25,-12,-5,-3,+3,+5,+12,+25,+40), limit 1.0 c:
+    worst |measured - true| = 16.8647 c (midi=37 inharm_1e-3 -30dBFS offset=+40c measured=+23.1353c)
+    worst gain (informational) = 0.4513 (midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+1.3539c)
+    [ERR] midi=37 harmonic -6dBFS offset=-40c measured=-29.6814c -> |err| 10.3186 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=-25c measured=-20.6625c -> |err| 4.3375 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=-12c measured=-10.6152c -> |err| 1.3848 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+3c measured=+1.5234c -> |err| 1.4766 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+5c measured=+3.1372c -> |err| 1.8628 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+12c measured=+8.6202c -> |err| 3.3798 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+25c measured=+17.2870c -> |err| 7.7130 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+40c measured=+23.7578c -> |err| 16.2422 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=-40c measured=-29.6895c -> |err| 10.3105 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=-25c measured=-20.6639c -> |err| 4.3361 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=-12c measured=-10.6143c -> |err| 1.3857 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+3c measured=+1.5205c -> |err| 1.4795 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+5c measured=+3.1342c -> |err| 1.8658 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+12c measured=+8.6181c -> |err| 3.3819 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+25c measured=+17.2877c -> |err| 7.7123 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+40c measured=+23.7574c -> |err| 16.2426 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+0c measured=-1.0707c -> |err| 1.0707 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=-40c measured=-30.1248c -> |err| 9.8752 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=-25c measured=-20.9089c -> |err| 4.0911 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=-12c measured=-10.7807c -> |err| 1.2193 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+3c measured=+1.3574c -> |err| 1.6426 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+5c measured=+2.9664c -> |err| 2.0336 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+12c measured=+8.4022c -> |err| 3.5978 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+25c measured=+16.9093c -> |err| 8.0907 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+40c measured=+23.1359c -> |err| 16.8641 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+0c measured=-1.0737c -> |err| 1.0737 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=-40c measured=-30.1343c -> |err| 9.8657 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=-25c measured=-20.9102c -> |err| 4.0898 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=-12c measured=-10.7798c -> |err| 1.2202 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+1.3539c -> |err| 1.6461 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+5c measured=+2.9629c -> |err| 2.0371 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+12c measured=+8.4000c -> |err| 3.6000 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+25c measured=+16.9102c -> |err| 8.0898 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+40c measured=+23.1353c -> |err| 16.8647 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=-40c measured=-32.0834c -> |err| 7.9166 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=-25c measured=-22.1844c -> |err| 2.8156 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=-12c measured=-10.8535c -> |err| 1.1465 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=+25c measured=+22.9659c -> |err| 2.0341 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=+40c measured=+34.3632c -> |err| 5.6368 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=-40c measured=-32.0855c -> |err| 7.9145 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=-25c measured=-22.1864c -> |err| 2.8136 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=-12c measured=-10.8561c -> |err| 1.1439 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=+25c measured=+22.9688c -> |err| 2.0312 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=+40c measured=+34.3643c -> |err| 5.6357 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=-40c measured=-32.5414c -> |err| 7.4586 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=-25c measured=-22.3296c -> |err| 2.6704 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=-12c measured=-10.9271c -> |err| 1.0729 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=+25c measured=+22.8471c -> |err| 2.1529 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=+40c measured=+33.9959c -> |err| 6.0041 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=-40c measured=-32.5438c -> |err| 7.4562 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=-25c measured=-22.3322c -> |err| 2.6678 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=-12c measured=-10.9299c -> |err| 1.0701 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=+25c measured=+22.8510c -> |err| 2.1490 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=+40c measured=+33.9971c -> |err| 6.0029 c > 1.0
+    [ERR] midi=60 harmonic -6dBFS offset=-40c measured=-38.5295c -> |err| 1.4705 c > 1.0
+    [ERR] midi=60 harmonic -6dBFS offset=+40c measured=+38.7593c -> |err| 1.2407 c > 1.0
+    [ERR] midi=60 harmonic -30dBFS offset=-40c measured=-38.5223c -> |err| 1.4777 c > 1.0
+    [ERR] midi=60 harmonic -30dBFS offset=+40c measured=+38.7555c -> |err| 1.2445 c > 1.0
+    [ERR] midi=60 inharm_1e-3 -6dBFS offset=-40c measured=-38.6501c -> |err| 1.3499 c > 1.0
+    [ERR] midi=60 inharm_1e-3 -6dBFS offset=+40c measured=+38.6447c -> |err| 1.3553 c > 1.0
+    [ERR] midi=60 inharm_1e-3 -30dBFS offset=-40c measured=-38.6403c -> |err| 1.3597 c > 1.0
+    [ERR] midi=60 inharm_1e-3 -30dBFS offset=+40c measured=+38.6379c -> |err| 1.3621 c > 1.0
+  course-semantics check (WF0909-C10C ---1.3: PASS/FAIL, exit-code affecting): 3 strings at -5/+0/+5 cents, amplitude sets equal/unequal, must report the CENTRE within 1.0 c:
+    max |offset from course centre| = 0.3337 c over 18 cells
+RESULT (development grid): FAIL
+  (R2: no tolerance in this file may be widened to reach PASS -- a miss here is reported, not patched around.)
+EXIT=1
+
+================================================================================
+GATE 4b -- python tools/measurement_selfcal.py --holdout (expect exit 1, 1.0840 c)
+================================================================================
+measurement_selfcal --holdout: synthesizing hold-out grid (MIDI 36..100 x 2 offsets x 2 B values x 2 levels x sr 48000,44100)
+  grid points: 1040  (fail_reason on 0)
+  by f0 band (max |error_cents|):
+    <167Hz       1.0840 c
+    167-500Hz    0.1187 c
+    500-2000Hz   0.1768 c
+    >2000Hz      0.3634 c
+  by level (max |error_cents|):
+     -12.0 dBFS  1.0840 c
+     -45.0 dBFS  1.0777 c
+  max_abs_error_cents = 1.0840  (limit 1.0)
+  sensitivity anti-false-green (grid cell MIDI69/harmonic/-6dBFS/48kHz):
+    offset +3.0c -> measured +2.9818c  [OK]
+    offset -3.0c -> measured -2.9936c  [OK]
+  onset error (informational, no exit-code effect): max |err| = 40.0197 ms over 1040 points
+  gain-fidelity scan (WF0909-C10C ---1.1: PASS/FAIL, exit-code affecting -- module docstring 'Gain-fidelity scan'): |measured - TRUE offset| over 308 cells (MIDI 37,45,60,69,80,90,100 x offsets +0,-40,-25,-12,-5,-3,+3,+5,+12,+25,+40), limit 1.0 c:
+    worst |measured - true| = 16.8647 c (midi=37 inharm_1e-3 -30dBFS offset=+40c measured=+23.1353c)
+    worst gain (informational) = 0.4513 (midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+1.3539c)
+    [ERR] midi=37 harmonic -6dBFS offset=-40c measured=-29.6814c -> |err| 10.3186 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=-25c measured=-20.6625c -> |err| 4.3375 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=-12c measured=-10.6152c -> |err| 1.3848 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+3c measured=+1.5234c -> |err| 1.4766 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+5c measured=+3.1372c -> |err| 1.8628 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+12c measured=+8.6202c -> |err| 3.3798 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+25c measured=+17.2870c -> |err| 7.7130 c > 1.0
+    [ERR] midi=37 harmonic -6dBFS offset=+40c measured=+23.7578c -> |err| 16.2422 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=-40c measured=-29.6895c -> |err| 10.3105 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=-25c measured=-20.6639c -> |err| 4.3361 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=-12c measured=-10.6143c -> |err| 1.3857 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+3c measured=+1.5205c -> |err| 1.4795 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+5c measured=+3.1342c -> |err| 1.8658 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+12c measured=+8.6181c -> |err| 3.3819 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+25c measured=+17.2877c -> |err| 7.7123 c > 1.0
+    [ERR] midi=37 harmonic -30dBFS offset=+40c measured=+23.7574c -> |err| 16.2426 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+0c measured=-1.0707c -> |err| 1.0707 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=-40c measured=-30.1248c -> |err| 9.8752 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=-25c measured=-20.9089c -> |err| 4.0911 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=-12c measured=-10.7807c -> |err| 1.2193 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+3c measured=+1.3574c -> |err| 1.6426 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+5c measured=+2.9664c -> |err| 2.0336 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+12c measured=+8.4022c -> |err| 3.5978 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+25c measured=+16.9093c -> |err| 8.0907 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -6dBFS offset=+40c measured=+23.1359c -> |err| 16.8641 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+0c measured=-1.0737c -> |err| 1.0737 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=-40c measured=-30.1343c -> |err| 9.8657 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=-25c measured=-20.9102c -> |err| 4.0898 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=-12c measured=-10.7798c -> |err| 1.2202 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+3c measured=+1.3539c -> |err| 1.6461 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+5c measured=+2.9629c -> |err| 2.0371 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+12c measured=+8.4000c -> |err| 3.6000 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+25c measured=+16.9102c -> |err| 8.0898 c > 1.0
+    [ERR] midi=37 inharm_1e-3 -30dBFS offset=+40c measured=+23.1353c -> |err| 16.8647 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=-40c measured=-32.0834c -> |err| 7.9166 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=-25c measured=-22.1844c -> |err| 2.8156 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=-12c measured=-10.8535c -> |err| 1.1465 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=+25c measured=+22.9659c -> |err| 2.0341 c > 1.0
+    [ERR] midi=45 harmonic -6dBFS offset=+40c measured=+34.3632c -> |err| 5.6368 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=-40c measured=-32.0855c -> |err| 7.9145 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=-25c measured=-22.1864c -> |err| 2.8136 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=-12c measured=-10.8561c -> |err| 1.1439 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=+25c measured=+22.9688c -> |err| 2.0312 c > 1.0
+    [ERR] midi=45 harmonic -30dBFS offset=+40c measured=+34.3643c -> |err| 5.6357 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=-40c measured=-32.5414c -> |err| 7.4586 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=-25c measured=-22.3296c -> |err| 2.6704 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=-12c measured=-10.9271c -> |err| 1.0729 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=+25c measured=+22.8471c -> |err| 2.1529 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -6dBFS offset=+40c measured=+33.9959c -> |err| 6.0041 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=-40c measured=-32.5438c -> |err| 7.4562 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=-25c measured=-22.3322c -> |err| 2.6678 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=-12c measured=-10.9299c -> |err| 1.0701 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=+25c measured=+22.8510c -> |err| 2.1490 c > 1.0
+    [ERR] midi=45 inharm_1e-3 -30dBFS offset=+40c measured=+33.9971c -> |err| 6.0029 c > 1.0
+    [ERR] midi=60 harmonic -6dBFS offset=-40c measured=-38.5295c -> |err| 1.4705 c > 1.0
+    [ERR] midi=60 harmonic -6dBFS offset=+40c measured=+38.7593c -> |err| 1.2407 c > 1.0
+    [ERR] midi=60 harmonic -30dBFS offset=-40c measured=-38.5223c -> |err| 1.4777 c > 1.0
+    [ERR] midi=60 harmonic -30dBFS offset=+40c measured=+38.7555c -> |err| 1.2445 c > 1.0
+    [ERR] midi=60 inharm_1e-3 -6dBFS offset=-40c measured=-38.6501c -> |err| 1.3499 c > 1.0
+    [ERR] midi=60 inharm_1e-3 -6dBFS offset=+40c measured=+38.6447c -> |err| 1.3553 c > 1.0
+    [ERR] midi=60 inharm_1e-3 -30dBFS offset=-40c measured=-38.6403c -> |err| 1.3597 c > 1.0
+    [ERR] midi=60 inharm_1e-3 -30dBFS offset=+40c measured=+38.6379c -> |err| 1.3621 c > 1.0
+  course-semantics check (WF0909-C10C ---1.3: PASS/FAIL, exit-code affecting): 3 strings at -5/+0/+5 cents, amplitude sets equal/unequal, must report the CENTRE within 1.0 c:
+    max |offset from course centre| = 0.3337 c over 18 cells
+RESULT (hold-out grid): FAIL
+  (R2: no tolerance in this file may be widened to reach PASS -- a miss here is reported, not patched around.)
+EXIT=1
+
+================================================================================
+GATE 5 -- product estimator untouched
+================================================================================
+$ git diff --stat -- tools/melody_verify.py
+(exit 0)
+(an empty diff above = tools/melody_verify.py was not modified by this round;
+ its staged 'M' in git status predates this card -- the WF0909-C10B revert)
+
+$ git diff --stat -- tools/stem_verify.py tools/partial_verify.py
+(exit 0)
+(empty = the other two product verifiers were not touched either)
+
+$ git diff --stat -- tools/measurement_selfcal.py tests/test_measurement_selfcal.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md reports/decision_packets/C10_selfcal_domain.zh-TW.md
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md           | 124 ++++++++-
+ .../decision_packets/C10_selfcal_domain.zh-TW.md   | 160 +++++++++++
+ tests/test_measurement_selfcal.py                  | 307 ++++++++++++++-------
+ tools/measurement_selfcal.py                       | 182 +++++++++---
+ 4 files changed, 641 insertions(+), 132 deletions(-)
+(exit 0)
+(the four files this card is allowed to change, and nothing else)
+
+$ grep -c measure_pitch_cents_nls tools/melody_verify.py
+0
+(exit 1)
+(0 = the rejected candidate is absent from the product file)
+
+================================================================================
+GATE 6 -- teeth check: mutate the gain-fidelity limit to 100, test must go RED
+================================================================================
+Mutation applied to tools/measurement_selfcal.py line 173 (the constant the
+gain-fidelity pass/fail condition and its test both read):
+  -MAX_ABS_ERROR_CENTS_LIMIT = 1.0
+  +MAX_ABS_ERROR_CENTS_LIMIT = 100.0  # MUTANT (teeth check, to be reverted)
+
+$ PYTHONPATH=tools python -m pytest \
+    tests/test_measurement_selfcal.py::test_gain_fidelity_within_one_cent -q
+F                                                                        [100%]
+================================== FAILURES ===================================
+_____________________ test_gain_fidelity_within_one_cent ______________________
+[XPASS(strict)] WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+=========================== short test summary info ===========================
+FAILED tests/test_measurement_selfcal.py::test_gain_fidelity_within_one_cent
+1 failed in 5.99s
+EXIT=1
+
+--------------------------------------------------------------------------------
+Mutation REVERTED, exact same command re-run:
+x                                                                        [100%]
+1 xfailed in 6.44s
+EXIT=0
+
+Byte-level proof the revert is exact (a copy was taken before mutating; the
+mutant line was substituted back out of that copy in memory and compared):
+  IDENTICAL after un-mutating backup: True
+
+$ git diff --stat -- tools/melody_verify.py
+(exit 0)
+(empty = tools/melody_verify.py still untouched after the teeth check)
+
+================================================================================
+SUMMARY
+================================================================================
+GATE 1 selftest ................ PASS   5/5, exit 0
+GATE 2 selfcal+stem pytest ..... PASS   55 passed, 3 xfailed (named above)
+         xfail 1 test_development_grid_within_one_cent   (1.1721 c > 1.0)
+         xfail 2 test_holdout_grid_within_one_cent       (1.0840 c > 1.0)
+         xfail 3 test_gain_fidelity_within_one_cent      (16.8647 c > 1.0)
+GATE 3 full pytest ............. PASS   263 passed, 1 skipped, 3 xfailed
+GATE 4a selfcal dev grid ....... exit 1 AS EXPECTED  max|err| = 1.1721 c (limit 1.0)
+GATE 4b selfcal hold-out grid .. exit 1 AS EXPECTED  max|err| = 1.0840 c (limit 1.0)
+         gain-fidelity scan .... now exit-code affecting; worst |measured - true|
+                                 = 16.8647 c (midi=37 inharm_1e-3 -30 dBFS,
+                                 offset +40 c -> measured +23.1353 c); 62 of 308
+                                 cells over the 1.0 c limit, 0 refusals
+         course-semantics ...... max |offset from course centre| = 0.3337 c over
+                                 18 cells (<= 1.0 c, PASS -- the centroid does
+                                 report the course centre, not one string)
+GATE 5 melody_verify.py diff ... EMPTY  (product estimator not touched)
+GATE 6 teeth ................... PASS   mutant -> 1 failed (XPASS strict);
+                                 revert -> 1 xfailed; file byte-identical again
+
+The exit 1 on GATE 4a/4b is the ruling in machine-readable form: the tool now
+states out loud, on every run, that the ratified 1-cent self-certification bar
+is unmet by the production estimator. It is NOT a regression -- see
+docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S9.7 and
+reports/decision_packets/C10_selfcal_domain.zh-TW.md S7.3.
+No tolerance was widened and no GATE scope was narrowed (R2/R3): the only
+threshold change in this round is that an already-ratified 1.0 cent bar now
+also governs the gain-fidelity axis, which used to be informational.
+
+Open item registered for the month-lead: D15 -- give the sentinel corpus a
+key-release / damped segment. Doing so would change the 1.1721 c number itself
+(the bar stays 1.0 c; what it is compared against moves), so it is out of scope
+here. See packet S7.4.

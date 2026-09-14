@@ -957,6 +957,76 @@ void testPianoHammerContactSolver()
                "Velocity exponents at C2/C4/C7 match -0.394/-0.429/-0.500 (< 1e-3)");
     }
 
+    // A14 B-2 (2026-09-09): pitch shape re-anchored to the measured
+    // keytrackScale() curve, replacing the K/alpha/mass-derived pitch shape
+    // (reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md
+    // §3.2-3.5, §4 option B; docs/workcards/WF0908_P2_a14_tauc_rule10.md).
+    //   tau_c_piano(note, v) = kTauCFelt * keytrackScale(note)
+    //                        * [ g(note, v) / g(note, 0.5) ]
+
+    // §A14-1: A4/v=0.5 anchor still reproduces kTauCFelt exactly
+    // (keytrackScale(69)=1, g(69,0.5)/g(69,0.5)=1) -- restated here for
+    // locality with the rest of the A14 B-2 checks (already covered above).
+    CHECK (std::abs (HammerImpulse::pianoHammerTauC (69, 0.5f)
+                     - HammerImpulse::kTauCFelt) < 1.0e-4f,
+           "A14 B-2: A4/v=0.5 anchor unchanged after re-anchoring pitch shape");
+
+    // §A14-2: C8 (MIDI 108) tau_c must drop under 1 ms at v=0.5, matching the
+    // literature range cited in keytrackScale()'s doc comment (Askenfelt &
+    // Jansson: A0 ~4 ms -> C8 <1 ms). Before this fix the B4-only pitch
+    // shape gave C8 ~1.46 ms (A14 report §3.3).
+    {
+        const float tauC8 = HammerImpulse::pianoHammerTauC (108, 0.5f);
+        CHECK (tauC8 < 0.001f,
+               "A14 B-2: C8 tau_c < 1 ms at v=0.5 (was ~1.46 ms pre-fix)");
+        std::cout << "       C8 tau_c @ v=0.5 = " << (tauC8 * 1000.0f) << " ms\n";
+    }
+
+    // §A14-3: the equivalent keytrack exponent over C2->C7, computed the same
+    // way A14 report §3.3 computes it (k = -log(tauC7/tauC2)/log(f7/f2) at
+    // fixed velocity), must land at keytrackScale()'s own k=0.32 (+/-0.01) --
+    // pitch shape now comes entirely from keytrackScale(), so this should
+    // reproduce it exactly modulo float rounding.
+    {
+        const float v = 0.5f;
+        const float tauC2 = HammerImpulse::pianoHammerTauC (36, v);
+        const float tauC7 = HammerImpulse::pianoHammerTauC (96, v);
+        const float f2 = 440.0f * std::pow (2.0f, (36 - 69) / 12.0f);
+        const float f7 = 440.0f * std::pow (2.0f, (96 - 69) / 12.0f);
+        const double k = -std::log ((double) tauC7 / (double) tauC2)
+                        / std::log ((double) f7 / (double) f2);
+        CHECK (std::abs (k - 0.32) < 0.01,
+               "A14 B-2: C2->C7 equivalent keytrack exponent k = 0.32 +/- 0.01");
+        std::cout << "       C2->C7 equivalent k = " << k << " (expected 0.32)\n";
+    }
+
+    // §A14-4: velocity law at fixed pitch must stay numerically bit-equivalent
+    // to B4's -- keytrackScale(note) is velocity-independent and cancels in
+    // the ratio new(note,v)/new(note,0.5), which reduces to exactly the same
+    // g(note,v)/g(note,0.5) that B4's old formula's ratio also reduced to
+    // (workcard §3 step 2). This is a unit-test numeric-equivalence check,
+    // not a §6-registered tolerance (R2).
+    {
+        const int   notes[] = { 36, 60, 69, 96 };
+        const float vs[]    = { 0.2f, 0.35f, 0.65f, 0.9f };
+        bool allOk = true;
+        for (int note : notes)
+        {
+            for (float v : vs)
+            {
+                const double ratioNew = (double) HammerImpulse::pianoHammerTauC (note, v)
+                                       / (double) HammerImpulse::pianoHammerTauC (note, 0.5f);
+                const double ratioG   = (double) HammerImpulse::pianoHammerG (note, v)
+                                       / (double) HammerImpulse::pianoHammerG (note, 0.5f);
+                const double rel = std::abs (ratioNew - ratioG)
+                                  / std::max (std::abs (ratioG), 1e-12);
+                allOk = allOk && rel < 1.0e-6;
+            }
+        }
+        CHECK (allOk,
+               "A14 B-2: velocity law at fixed pitch bit-equivalent to B4 (rel < 1e-6)");
+    }
+
     // §7.4 interpolation monotonicity: alpha(note) non-decreasing across the
     // full anchored span (the documented physical ordering, sources §2.1).
     {

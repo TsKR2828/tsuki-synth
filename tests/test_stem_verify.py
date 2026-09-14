@@ -31,6 +31,7 @@ included too, since a bug there would quietly invalidate every
 superposition number without ever showing up as an obvious crash.
 """
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -738,3 +739,448 @@ def test_p2_ordinary_subdirs_inside_out_dir_still_pass_the_gate(
 
     # reaches the monkeypatched CLI-not-found stage => the gate let it through
     assert "TsukiSynthCLI executable not found" in report["error"]
+
+
+# ============================================================================
+# WF0907-C11: per-event `reason`/`rules` bring-through + report-level
+# refusal_histogram/rules_histogram. Judgment logic itself is untouched --
+# these only exercise the new bookkeeping.
+# ============================================================================
+
+def test_c11_extract_rule_ids_is_exact_string_only_never_guessed():
+    """extract_rule_ids() must recognize ONLY the exact tokens melody_verify
+    already embeds verbatim (its "(Rd)"/"(Re)" markers) -- never infer a
+    rule id from context/semantics, per the workcard's "抽不到給空陣列，不要猜"."""
+    assert sv.extract_rule_ids(
+        "pre-onset band floor -60.0 dBFS already energised (> -64.0): "
+        "rise unmeasurable (Rd)") == ["Rd"]
+    assert sv.extract_rule_ids(
+        "f0 120.0 Hz < 167 Hz: band too narrow for +/-10 ms onset "
+        "refinement (Re)") == ["Re"]
+    # semantically an "Ra" re-strike-masking refusal, but the literal string
+    # melody_verify actually produces for it has NO "(Ra)" token -- must
+    # come back empty, not guessed from the surrounding prose.
+    assert sv.extract_rule_ids(
+        "re-strike over ev3's ringing tail (predicted only 12.0 dB "
+        "decayed, need >= 18.0)") == []
+    assert sv.extract_rule_ids("") == []
+    assert sv.extract_rule_ids(None) == []
+    # dedup, first-seen order, multiple distinct tokens in one string
+    assert sv.extract_rule_ids("(Rd) ... same reason repeats (Rd)") == ["Rd"]
+    assert sv.extract_rule_ids("(Rd) and also (Re) both apply") == ["Rd", "Re"]
+
+
+def test_c11_judge_stem_passes_reason_through_verbatim_and_derives_rules(monkeypatch):
+    """judge_stem() must not reword melody_verify's own reason string, and
+    must derive `rules` from it via extract_rule_ids() when melody_verify's
+    event dict has no `rules` key of its own (the current, real case)."""
+    reason = ("pre-onset band floor -60.0 dBFS already energised (> -64.0): "
+               "rise unmeasurable (Rd)")
+    fake_report = {"events": [{"index": 0, "verdict": "UNVERIFIED",
+                                "reason": reason}]}
+    monkeypatch.setattr(sv.mv, "verify", lambda *a, **kw: fake_report)
+
+    result = sv.judge_stem("unused_score.json", "unused.wav")
+    assert result["reason"] == reason, "reason must be carried through VERBATIM"
+    assert result["rules"] == ["Rd"]
+
+
+def test_c11_judge_stem_never_overwrites_an_existing_rules_field(monkeypatch):
+    """If melody_verify's own event dict ever DOES carry a `rules` key
+    (it currently never does), judge_stem() must pass it through untouched,
+    not re-derive it from `reason` -- "原樣帶出" applies to both fields."""
+    fake_report = {"events": [{"index": 0, "verdict": "UNVERIFIED",
+                                "reason": "no rule tokens in this text at all",
+                                "rules": ["already-set"]}]}
+    monkeypatch.setattr(sv.mv, "verify", lambda *a, **kw: fake_report)
+
+    result = sv.judge_stem("unused_score.json", "unused.wav")
+    assert result["rules"] == ["already-set"]
+
+
+def test_c11_judge_stem_wrong_event_count_gets_empty_rules(monkeypatch):
+    """The pre-existing 'melody_verify returned N results' UNVERIFIED
+    fallback must also get the new `rules` field (extracted from its own
+    reason, which contains no rule token -> empty list, honestly)."""
+    monkeypatch.setattr(sv.mv, "verify", lambda *a, **kw: {"events": []})
+    result = sv.judge_stem("unused_score.json", "unused.wav")
+    assert result["verdict"] == "UNVERIFIED"
+    assert "melody_verify returned 0 results" in result["reason"]
+    assert result["rules"] == []
+
+
+def test_c11_refusal_histogram_counts_only_unverified_verbatim():
+    """build_refusal_histograms() must count ONLY verdict=='UNVERIFIED'
+    entries (拒答), keyed by the EXACT reason string (no re-wording), and
+    its total must equal the UNVERIFIED count -- PASS/FAIL entries (even
+    FAIL entries that carry a `reason`) must not be counted."""
+    stem_results = [
+        {"index": 0, "verdict": "PASS"},
+        {"index": 1, "verdict": "FAIL", "reason": "pitch off by +8.00 cents (limit 5.0)"},
+        {"index": 2, "verdict": "UNVERIFIED", "reason": "reason A", "rules": []},
+        {"index": 3, "verdict": "UNVERIFIED", "reason": "reason A", "rules": []},
+        {"index": 4, "verdict": "UNVERIFIED", "reason": "reason B (Rd)", "rules": ["Rd"]},
+    ]
+    refusal_histogram, rules_histogram = sv.build_refusal_histograms(stem_results)
+
+    assert refusal_histogram == {"reason A": 2, "reason B (Rd)": 1}
+    assert sum(refusal_histogram.values()) == 3  # == count of UNVERIFIED entries
+    assert rules_histogram == {"(untagged)": 2, "Rd": 1}
+
+
+def test_c11_refusal_histogram_empty_when_no_unverified_events():
+    stem_results = [{"index": 0, "verdict": "PASS"},
+                     {"index": 1, "verdict": "FAIL", "reason": "x"}]
+    refusal_histogram, rules_histogram = sv.build_refusal_histograms(stem_results)
+    assert refusal_histogram == {}
+    assert rules_histogram == {}
+
+
+def test_c11_e2e_run_wires_reason_rules_and_histograms_into_the_report(tmp_path):
+    """End-to-end (real CLI render) on the near-silent-note construction
+    already used by the BLOCKER regression test above (guaranteed FAIL, not
+    UNVERIFIED -- so this also proves refusal_histogram correctly excludes
+    a FAIL event's reason) PLUS the sentinel's own clean PASS events (which
+    must carry no `reason`/`rules` at all)."""
+    base = json.loads(SENTINEL_FIXTURE.read_text(encoding="utf-8"))
+    base["meta"]["id"] = "c11_histogram_wiring_check"
+    base["events"] = [dict(base["events"][0])]
+    base["events"][0]["velocity"] = 0.001  # -> real, guaranteed FAIL
+
+    score_path = tmp_path / "c11_check.score.json"
+    score_path.write_text(json.dumps(base), encoding="utf-8")
+
+    report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"), quiet=True)
+    assert report["status"] == "ok"
+    sv_block = report["stem_verify"]
+    ev = sv_block["events"][0]
+    assert ev["verdict"] == "FAIL"
+    assert ev.get("reason"), "a FAIL event must still carry a non-empty reason"
+    assert "rules" in ev  # extracted (empty list expected, honestly, for this reason)
+
+    # a FAIL, not an UNVERIFIED ("拒答"), so it must NOT appear in either
+    # histogram -- both must come back empty for this all-FAIL run.
+    assert sv_block["refusal_histogram"] == {}
+    assert sv_block["rules_histogram"] == {}
+    assert sv_block["summary"]["unverified"] == 0
+
+
+def test_c11_e2e_unverified_event_populates_refusal_histogram(tmp_path, monkeypatch):
+    """Forces a real UNVERIFIED verdict through run()'s actual orchestration
+    (monkeypatching only judge_stem, which run() calls once per stem -- the
+    render/superposition machinery around it is exercised for real) and
+    confirms the event's `reason`/`rules` and the report's histograms are
+    consistent with each other and with the summary count."""
+    score_path = tmp_path / "sentinel.score.json"
+    score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+
+    reason = ("f0 120.0 Hz < 167 Hz: band too narrow for +/-10 ms onset "
+               "refinement (Re)")
+
+    def fake_judge_stem(score_path_i, wav_path_i):
+        return {"verdict": "UNVERIFIED", "reason": reason,
+                "rules": sv.extract_rule_ids(reason)}
+
+    monkeypatch.setattr(sv, "judge_stem", fake_judge_stem)
+
+    report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"), quiet=True)
+    assert report["status"] == "ok"
+    sv_block = report["stem_verify"]
+    n_unv = sv_block["summary"]["unverified"]
+    assert n_unv == len(sv_block["events"]) > 0
+    for ev in sv_block["events"]:
+        assert ev["verdict"] == "UNVERIFIED"
+        assert ev["reason"] == reason
+        assert ev["rules"] == ["Re"]
+    assert sv_block["refusal_histogram"] == {reason: n_unv}
+    assert sum(sv_block["refusal_histogram"].values()) == n_unv
+    assert sv_block["rules_histogram"] == {"Re": n_unv}
+
+
+# ============================================================================
+# WF0907-C12: --analysis-dry derived score + provenance (hash/diff)
+# ============================================================================
+
+def _sha256_of(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def _resolve_repo_relative(p):
+    """Mirrors stem_verify.rel_to_repo()'s output shape: a path already
+    under ROOT (the repo root, same value as stem_verify.py's REPO_ROOT)
+    comes back relative+POSIX; anything else comes back as an absolute
+    path string -- either way, join it back to something Path() can open."""
+    pp = Path(p)
+    return pp if pp.is_absolute() else (ROOT / pp)
+
+
+def test_derive_dry_score_only_zeroes_three_leaves_diff_is_precise():
+    """(a): derive_dry_score() must change ONLY reverb.wet/.decay and
+    delay.wet, leave delay.time_ms/.feedback, distortion and eq alone, and
+    leaf_diff must list exactly (and only) the leaves that changed."""
+    score = {
+        "global": {
+            "effects": {
+                "reverb": {"wet": 0.3, "decay": 1.4},
+                "delay": {"wet": 0.2, "time_ms": 250, "feedback": 0.3},
+                "distortion": {"drive": 0.5, "wet": 0.1},
+                "eq": {"high_shelf_gain_db": 3.0},
+            }
+        },
+        "events": [{"time": 0.0, "note": 60, "velocity": 100}],
+    }
+    dry, leaf_diff = sv.derive_dry_score(score)
+
+    assert dry["global"]["effects"]["reverb"]["wet"] == 0
+    assert dry["global"]["effects"]["reverb"]["decay"] == 0
+    assert dry["global"]["effects"]["delay"]["wet"] == 0
+    # untouched leaves/blocks
+    assert dry["global"]["effects"]["delay"]["time_ms"] == 250
+    assert dry["global"]["effects"]["delay"]["feedback"] == 0.3
+    assert dry["global"]["effects"]["distortion"] == {"drive": 0.5, "wet": 0.1}
+    assert dry["global"]["effects"]["eq"] == {"high_shelf_gain_db": 3.0}
+    assert dry["events"] == score["events"]
+
+    assert leaf_diff == [
+        {"path": "global/effects/reverb/wet", "before": 0.3, "after": 0},
+        {"path": "global/effects/reverb/decay", "before": 1.4, "after": 0},
+        {"path": "global/effects/delay/wet", "before": 0.2, "after": 0},
+    ]
+    # pure function: the input must be untouched (deep copy, not mutated)
+    assert score["global"]["effects"]["reverb"]["wet"] == 0.3
+    assert score["global"]["effects"]["delay"]["wet"] == 0.2
+
+
+def test_derive_dry_score_no_reverb_block_diff_is_empty():
+    """(b): a score with no reverb block at all must come back with an
+    empty leaf_diff (no fabricated "0 -> 0" entries)."""
+    score = {"global": {"effects": {"delay": {"wet": 0}}}}
+    dry, leaf_diff = sv.derive_dry_score(score)
+    assert leaf_diff == []
+    assert dry == score
+
+
+def test_derive_dry_score_missing_global_block_diff_is_empty():
+    """Same guarantee when 'global' itself is absent."""
+    score = {"events": []}
+    dry, leaf_diff = sv.derive_dry_score(score)
+    assert leaf_diff == []
+    assert dry == score
+
+
+def test_derive_dry_score_already_zero_leaves_produce_no_diff():
+    """A leaf present but already exactly 0 must not appear in leaf_diff --
+    only leaves that ACTUALLY changed value are listed."""
+    score = {"global": {"effects": {"reverb": {"wet": 0, "decay": 0},
+                                     "delay": {"wet": 0}}}}
+    dry, leaf_diff = sv.derive_dry_score(score)
+    assert leaf_diff == []
+    assert dry == score
+
+
+def test_dry_score_filename_strips_score_json_suffix_only():
+    assert (sv.dry_score_filename("fur_elise_complete.score.json")
+            == "fur_elise_complete.dry.score.json")
+    assert (sv.dry_score_filename(Path("a") / "b" / "x.score.json")
+            == "x.dry.score.json")
+
+
+def test_analysis_dry_flag_default_true_and_no_flag_sets_false():
+    """CLI wiring: --analysis-dry defaults on; --no-analysis-dry flips it
+    off. Exercised directly against the real argparse object (no full run,
+    no rendering) so this cannot silently drift from main()'s actual wiring."""
+    ap = sv.build_arg_parser()
+    args_default = ap.parse_args(["some_score.json"])
+    assert args_default.analysis_dry is True
+    args_off = ap.parse_args(["some_score.json", "--no-analysis-dry"])
+    assert args_off.analysis_dry is False
+    args_on = ap.parse_args(["some_score.json", "--analysis-dry"])
+    assert args_on.analysis_dry is True
+
+
+def test_c12_default_analysis_dry_true_no_warning(tmp_path):
+    score_path = tmp_path / "sentinel.score.json"
+    score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"), quiet=True)
+    assert report["status"] == "ok"
+    assert report["provenance"]["analysis_dry"] is True
+    assert "warning" not in report
+    # SENTINEL_SCORE's own reverb/delay wet are already 0 -- no leaves change
+    assert report["provenance"]["analysis_score"]["leaf_diff"] == []
+
+
+def test_c12_no_analysis_dry_sets_false_and_adds_warning(tmp_path):
+    """(d): --no-analysis-dry (here exercised via run()'s own
+    analysis_dry=False, the same value main() passes through from the
+    flag) must mark provenance.analysis_dry=false, use the score exactly
+    as authored (leaf_diff empty, analysis_score == source_score), and add
+    the design-doc-8.3 top-level warning."""
+    score_path = tmp_path / "sentinel.score.json"
+    score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"),
+                           quiet=True, analysis_dry=False)
+    assert report["status"] == "ok"
+    prov = report["provenance"]
+    assert prov["analysis_dry"] is False
+    assert prov["analysis_score"]["leaf_diff"] == []
+    assert prov["analysis_score"]["path"] == prov["source_score"]["path"]
+    assert prov["analysis_score"]["sha256"] == prov["source_score"]["sha256"]
+    assert report.get("warning") == (
+        "pitch verdicts on wet signal are not GATE evidence (design doc §8.3)")
+
+
+def test_c12_e2e_provenance_hashes_and_leaf_diff_match_real_files(tmp_path):
+    """(c): both sha256 fields inside report["provenance"] must match the
+    actual bytes of the files they name (source score on disk, and the
+    derived dry score this run itself wrote out) -- not merely asserted.
+    Uses a score with NONZERO reverb so derive_dry_score() actually has
+    something to report in leaf_diff."""
+    base = json.loads(SENTINEL_FIXTURE.read_text(encoding="utf-8"))
+    base["meta"]["id"] = "c12_provenance_check"
+    base["global"]["effects"]["reverb"] = {"wet": 0.3, "decay": 1.2}
+    base["events"] = [dict(base["events"][0])]
+
+    score_path = tmp_path / "wet.score.json"
+    score_path.write_text(json.dumps(base), encoding="utf-8")
+
+    report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"),
+                           quiet=True, keep_stems=True)
+    assert report["status"] == "ok"
+    prov = report["provenance"]
+    assert prov["analysis_dry"] is True
+    assert prov["analysis_score"]["leaf_diff"] == [
+        {"path": "global/effects/reverb/wet", "before": 0.3, "after": 0},
+        {"path": "global/effects/reverb/decay", "before": 1.2, "after": 0},
+    ]
+    assert prov["analysis_score"]["path"] != prov["source_score"]["path"]
+
+    source_file = _resolve_repo_relative(prov["source_score"]["path"])
+    analysis_file = _resolve_repo_relative(prov["analysis_score"]["path"])
+    cli_file = _resolve_repo_relative(prov["cli"]["path"])
+
+    assert _sha256_of(source_file) == prov["source_score"]["sha256"]
+    assert _sha256_of(analysis_file) == prov["analysis_score"]["sha256"]
+    assert _sha256_of(cli_file) == prov["cli"]["sha256"]
+
+    # the derived file on disk must actually BE dry, and be the one the
+    # stems/reference were rendered from (not merely a side artifact)
+    derived_score = json.loads(analysis_file.read_text(encoding="utf-8"))
+    assert derived_score["global"]["effects"]["reverb"]["wet"] == 0
+    assert derived_score["global"]["effects"]["reverb"]["decay"] == 0
+    assert analysis_file.name == "wet.dry.score.json"
+    assert analysis_file.parent.name == "derived"
+
+    # -- teeth: prove the STEMS AND REFERENCE WERE ACTUALLY RENDERED from
+    #    the dry score, not merely that a correct dry file was written
+    #    somewhere as a side artifact. This is what step 3 of the workcard
+    #    ("分軌與參考 score 都從衍生 score 產生") requires -- a bug that
+    #    computes derive_dry_score() correctly but keeps rendering from the
+    #    original wet `score` object must fail here even though every
+    #    assertion above it still passes. ------------------------------------
+    out_dir = tmp_path / "out"
+    reference_score = json.loads(
+        (out_dir / "reference" / "score.json").read_text(encoding="utf-8"))
+    assert reference_score["global"]["effects"]["reverb"]["wet"] == 0
+    assert reference_score["global"]["effects"]["reverb"]["decay"] == 0
+
+    stem_dirs = sorted((out_dir / "stems").iterdir())
+    assert stem_dirs, "expected at least one rendered stem directory"
+    stem_score = json.loads((stem_dirs[0] / "score.json").read_text(encoding="utf-8"))
+    assert stem_score["global"]["effects"]["reverb"]["wet"] == 0
+    assert stem_score["global"]["effects"]["reverb"]["decay"] == 0
+
+
+def test_c12_baseline_judges_the_same_analysis_score_not_the_wet_original(
+        tmp_path, monkeypatch):
+    """Fix round (Opus audit, MAJOR finding on stem_verify.py:1026): the
+    whole-file baseline (report["baseline_whole_file_melody_verify"]) used
+    to ALWAYS call mv.verify(score_path, ...) -- the original, possibly-WET
+    score -- even when analysis_dry=True had already made every per-event
+    stem/reference judgment run on the derived DRY score. That silently put
+    a wet-signal pitch judgment into report["comparison"] with no warning
+    and no provenance flag (audit measured this on Fur Elise: baseline
+    30/14/862 on wet vs 8/34/864 on the same file manually dried -- a 22-event
+    swing entirely attributable to which signal the baseline ran on, not to
+    anything stem_verify actually measures). Wraps the REAL mv.verify with a
+    spy (delegates to the genuine implementation -- this is an end-to-end
+    render, not a stub) that records every score path it is called with;
+    judge_stem()'s per-stem calls always pass wav_path=..., so the ONE call
+    that does not is unambiguously the baseline call -- and it must name
+    report["provenance"]["analysis_score"]["path"]'s file, never
+    report["provenance"]["source_score"]["path"]'s (which differ here,
+    since this score has nonzero reverb -- see leaf_diff below)."""
+    base = json.loads(SENTINEL_FIXTURE.read_text(encoding="utf-8"))
+    base["meta"]["id"] = "c12_baseline_dry_check"
+    base["global"]["effects"]["reverb"] = {"wet": 0.3, "decay": 1.2}
+    base["events"] = [dict(base["events"][0])]
+
+    score_path = tmp_path / "wet_for_baseline.score.json"
+    score_path.write_text(json.dumps(base), encoding="utf-8")
+
+    calls = []
+    real_verify = sv.mv.verify
+
+    def spying_verify(path, *a, **kw):
+        calls.append((str(path), kw))
+        return real_verify(path, *a, **kw)
+
+    monkeypatch.setattr(sv.mv, "verify", spying_verify)
+
+    report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"), quiet=True)
+    assert report["status"] == "ok"
+    prov = report["provenance"]
+    assert prov["analysis_dry"] is True
+    # sanity: this score really did get dried (source != analysis), so the
+    # test below is not vacuously true because both paths happen to match
+    assert prov["analysis_score"]["path"] != prov["source_score"]["path"]
+
+    baseline_calls = [c for c in calls if "wav_path" not in c[1]]
+    assert len(baseline_calls) == 1, (
+        "expected exactly one mv.verify() call without wav_path= (the "
+        "baseline call) -- got %r" % (calls,))
+    baseline_path = baseline_calls[0][0]
+
+    source_file = _resolve_repo_relative(prov["source_score"]["path"])
+    analysis_file = _resolve_repo_relative(prov["analysis_score"]["path"])
+    assert Path(baseline_path).resolve() == analysis_file.resolve(), (
+        "baseline must run on the SAME (dry) analysis score the stems/"
+        "reference were rendered from, not on the original wet score")
+    assert Path(baseline_path).resolve() != source_file.resolve()
+
+
+def test_c12_own_temp_cleanup_marks_deleted_flag_not_path_suffix(tmp_path, monkeypatch):
+    """Fix round (Opus audit, minor finding on stem_verify.py:1220):
+    own_temp (--out-dir omitted) deletes derived/ and reference/ after the
+    run and used to APPEND ' (deleted after run)' onto
+    provenance.analysis_score.path itself, corrupting a field named `path`
+    into a string a caller can no longer feed back into Path()/open() even
+    though its sha256 is still a real fingerprint of the file that existed.
+    This must now be recorded as a separate `deleted` boolean, leaving
+    `path` a clean, still-parseable (if now-nonexistent) path string."""
+    fake_temp_root = tmp_path / "own_temp_root_c12"
+    fake_temp_root.mkdir()
+    monkeypatch.setattr(sv.tempfile, "mkdtemp", lambda *a, **kw: str(fake_temp_root))
+
+    base = json.loads(SENTINEL_FIXTURE.read_text(encoding="utf-8"))
+    base["meta"]["id"] = "c12_own_temp_dry_cleanup_check"
+    base["global"]["effects"]["reverb"] = {"wet": 0.3, "decay": 1.2}
+    base["events"] = [dict(base["events"][0])]
+    score_path = tmp_path / "own_temp_wet.score.json"
+    score_path.write_text(json.dumps(base), encoding="utf-8")
+
+    report, code = sv.run(str(score_path), quiet=True)  # out_dir=None -> own_temp
+    assert report["status"] == "ok"
+    prov = report["provenance"]
+    assert prov["analysis_dry"] is True
+    assert not fake_temp_root.exists(), (
+        "own_temp cleanup must still remove derived/ + reference/ + "
+        "out_root for an analysis_dry run, exactly as for a wet one")
+
+    analysis_path = prov["analysis_score"]["path"]
+    assert not analysis_path.endswith(")"), (
+        "path must not have a '(deleted after run)' suffix baked into it: "
+        "got %r" % analysis_path)
+    assert prov["analysis_score"]["deleted"] is True
+    # sha256 of the now-deleted file must still be the real fingerprint of
+    # what was written (recorded before cleanup ran) -- untouched by this fix.
+    assert len(prov["analysis_score"]["sha256"]) == 64

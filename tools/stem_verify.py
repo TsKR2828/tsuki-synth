@@ -53,7 +53,20 @@ cover):
 Usage:
   python tools/stem_verify.py <score.json> [--out-dir DIR] [--jobs N]
                               [--limit N] [--json REPORT.json] [--keep-stems]
-                              [--force-clean]
+                              [--force-clean] [--analysis-dry | --no-analysis-dry]
+
+  --analysis-dry (default ON, WF0907-C12): before rendering, derives a dry
+  copy of the score (global.effects.reverb.wet/.decay and
+  global.effects.delay.wet zeroed -- see derive_dry_score()) and renders
+  stems/reference from THAT, never from the score as authored -- design doc
+  §8.3: a pitch verdict measured on a wet (reverb/delay) signal is not GATE
+  evidence. `--no-analysis-dry` opts out explicitly and keeps the score's
+  own effects; the report then carries provenance.analysis_dry=false and a
+  top-level warning. Either way, report["provenance"] records the source
+  score's and the actual analysis score's paths + SHA256, the CLI's SHA256,
+  and (when dry) the exact leaf_diff that was applied -- so a report is
+  self-describing/traceable without needing the caller's --out-dir or temp
+  directory to still exist.
 Exit codes: 0 = ran to completion, no event FAILed, AND the superposition
             proof was ESTABLISHED (within its reported quantization budget)
             -- or, for a debugging --limit run, marked not-applicable rather
@@ -83,6 +96,7 @@ import copy
 import datetime
 import json
 import math
+import re
 import struct
 import sys
 import tempfile
@@ -92,6 +106,7 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent
+REPO_ROOT = ROOT.parent
 
 
 def _load_module(name, path):
@@ -303,6 +318,94 @@ def unnormalized_export(base_export, bit_depth=32, extra_tail_ms=0.0):
     return ex
 
 
+DRY_TARGET_LEAVES = (
+    ("global", "effects", "reverb", "wet"),
+    ("global", "effects", "reverb", "decay"),
+    ("global", "effects", "delay", "wet"),
+)
+
+
+def derive_dry_score(score):
+    """WF0907-C12 (design doc §8.3: "帶殘響訊號的音高判定不得作為 GATE
+    依據"). Pure function: returns (dry_score, leaf_diff) where dry_score
+    is a DEEP COPY of `score` with exactly the three leaves in
+    DRY_TARGET_LEAVES zeroed:
+      * global.effects.reverb.wet / .decay -- reverb smears energy from a
+        note's onset into the frames that follow it, biasing any frame-
+        based pitch measurement taken after the onset.
+      * global.effects.delay.wet -- delay does not smear, it FABRICATES a
+        second, phantom onset (a time-shifted, attenuated copy of the same
+        note) which onset/pitch measurement cannot distinguish from a real
+        re-strike.
+    Nothing else is touched -- in particular NOT distortion (a per-sample
+    nonlinearity; it does not move a note's spectral centroid in TIME the
+    way reverb/delay recirculation does) and NOT the EQ high-shelf (a
+    static per-sample filter, likewise time-invariant) -- see the
+    workcard's explicit "不要動" for both.
+
+    `leaf_diff` lists ONLY leaves that ACTUALLY changed value: a leaf that
+    is absent from `score` (nested dict path does not exist, or the key
+    itself is missing) or is already exactly 0 produces NO entry -- so a
+    score with no reverb block at all (or one already silent) comes back
+    with leaf_diff == [] rather than fabricating a "0 -> 0" no-op entry.
+    Each entry is {"path": "a/b/c/d", "before": <float>, "after": 0}.
+
+    Applies at the TOP level only (score['layers'], if present, is left
+    untouched by this function -- per-layer leaf expansion is out of this
+    card's scope, see the workcard step 2's "leaf 的展開不在本卡")."""
+    dry = copy.deepcopy(score)
+    leaf_diff = []
+    for path in DRY_TARGET_LEAVES:
+        node = dry
+        reachable = True
+        for key in path[:-1]:
+            if not isinstance(node, dict) or key not in node:
+                reachable = False
+                break
+            node = node[key]
+        if not reachable or not isinstance(node, dict):
+            continue
+        leaf_key = path[-1]
+        if leaf_key not in node:
+            continue
+        try:
+            before = float(node[leaf_key])
+        except (TypeError, ValueError):
+            continue
+        if before == 0.0:
+            continue
+        node[leaf_key] = 0
+        leaf_diff.append({"path": "/".join(path), "before": before, "after": 0})
+    return dry, leaf_diff
+
+
+def dry_score_filename(score_path):
+    """<原檔名>.dry.score.json -- strips a trailing '.score.json' (the
+    project's own score-file convention) rather than just the last
+    suffix, so 'fur_elise_complete.score.json' becomes
+    'fur_elise_complete.dry.score.json', not
+    'fur_elise_complete.score.dry.score.json'."""
+    name = Path(score_path).name
+    if name.endswith(".score.json"):
+        base = name[: -len(".score.json")]
+    else:
+        base = Path(score_path).stem
+    return base + ".dry.score.json"
+
+
+def rel_to_repo(path):
+    """Best-effort path relative to the repo root (this file's own
+    grandparent directory), POSIX separators, for provenance JSON -- so a
+    report is legible/greppable regardless of the machine or --out-dir it
+    was produced with. Falls back to the resolved absolute path unchanged
+    when `path` is not under the repo root (e.g. a CLI built elsewhere)."""
+    p = Path(path).resolve()
+    try:
+        return p.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return str(p)
+
+
 def make_stem_score(score, event, tag, export_override=None):
     """One derived score containing ONLY `event`, absolute time UNCHANGED
     (required so ScoreRenderer.h's startSample = floor(ev.time*sr) places
@@ -411,18 +514,93 @@ def render_many(cli, jobs, tasks):
 # tolerance logic)
 # ============================================================================
 
+# ============================================================================
+# rule-id extraction (WF0907-C11) -- exact-string only, NEVER inferred/
+# guessed. melody_verify.py itself has no separate rule-id field on its
+# event results; some of its `reason` strings happen to literally embed one
+# of the same rule-name tokens its own source comments use (e.g. the
+# "(Rd)"/"(Re)" markers next to skip_onset's assignments -- see
+# melody_verify.py's onset-refusal branches). This only recognizes those
+# EXACT tokens if and where they already appear verbatim in a reason string;
+# it does not re-derive, re-word, or attribute a rule id to a reason that
+# does not literally contain one -- such reasons get an empty `rules` list,
+# honestly, per the workcard's "抽不到給空陣列，不要猜".
+# ============================================================================
+
+KNOWN_RULE_IDS = ("Ra", "Rb", "Rc", "Rd", "Re")
+_RULE_ID_RE = re.compile(r"\b(?:%s)\b" % "|".join(KNOWN_RULE_IDS))
+
+
+def extract_rule_ids(reason):
+    """Returns the KNOWN_RULE_IDS tokens found verbatim in `reason`, in
+    first-seen order, deduplicated. Empty list if `reason` is falsy or
+    contains none -- never guessed from context."""
+    if not reason:
+        return []
+    seen = []
+    for m in _RULE_ID_RE.finditer(reason):
+        rid = m.group(0)
+        if rid not in seen:
+            seen.append(rid)
+    return seen
+
+
 def judge_stem(stem_score_path, wav_path):
     """Runs melody_verify.verify() on a single-event stem against its own
     (already-rendered) WAV. Returns the ONE event result dict it produces,
     i.e. {"verdict": ..., "reason": ..., ...} -- unmodified from
-    melody_verify's own judgment."""
+    melody_verify's own judgment, plus a `rules` key (WF0907-C11): passed
+    through as-is if melody_verify's own event dict already had one (it
+    currently never does), otherwise derived via extract_rule_ids() above --
+    never re-implementing or relaxing melody_verify's own judgment (R6)."""
     report = mv.verify(stem_score_path, wav_path=wav_path, quiet=True)
     events = report.get("events", [])
     if len(events) != 1:
-        return {"verdict": "UNVERIFIED",
-                "reason": "melody_verify returned %d results for a "
-                          "single-event stem (expected 1)" % len(events)}
-    return events[0]
+        reason = ("melody_verify returned %d results for a single-event "
+                   "stem (expected 1)" % len(events))
+        return {"verdict": "UNVERIFIED", "reason": reason,
+                "rules": extract_rule_ids(reason)}
+    result = dict(events[0])
+    if "rules" not in result:
+        result["rules"] = extract_rule_ids(result.get("reason"))
+    return result
+
+
+def build_refusal_histograms(stem_results):
+    """WF0907-C11: returns (refusal_histogram, rules_histogram) built from
+    `stem_results` (the same list run() assembles per-event, each entry
+    already carrying `verdict`/`reason`/`rules` -- see judge_stem() above).
+
+    "拒答" specifically means UNVERIFIED here (per this project's own usage,
+    e.g. docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md: 灰框=無法可靠判定=拒答,
+    distinct from 紅框=FAIL="沒對上") -- only UNVERIFIED entries are counted.
+    Every UNVERIFIED entry is guaranteed a non-empty `reason` (every branch
+    that sets verdict=UNVERIFIED, in melody_verify.verify() and in run()'s
+    own error paths, sets `reason` in the same statement/branch); this
+    function does not itself enforce that (callers/tests check it against
+    the real data) -- it only counts VERBATIM, never re-wording, so
+    identical reasons collapse into one bucket and distinct ones stay
+    distinct. rules_histogram counts the extract_rule_ids() tokens the same
+    population's reasons carried; a reason with no recognized token is
+    counted under "(untagged)" rather than dropped, so this histogram's own
+    total is still legible.
+
+    Pure function of stem_results (no I/O, no rendering) so it can be
+    exercised directly against synthetic event lists."""
+    refusal_histogram = {}
+    rules_histogram = {}
+    for r in stem_results:
+        if r.get("verdict") != "UNVERIFIED":
+            continue
+        reason_str = r.get("reason") or ""
+        refusal_histogram[reason_str] = refusal_histogram.get(reason_str, 0) + 1
+        rule_ids = r.get("rules") or []
+        if rule_ids:
+            for rid in rule_ids:
+                rules_histogram[rid] = rules_histogram.get(rid, 0) + 1
+        else:
+            rules_histogram["(untagged)"] = rules_histogram.get("(untagged)", 0) + 1
+    return refusal_histogram, rules_histogram
 
 
 # ============================================================================
@@ -556,7 +734,7 @@ def check_superposition_completeness(used, missing_from_sum, stem_list_len,
 # ============================================================================
 
 def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
-        quiet=False, force_clean=False):
+        quiet=False, force_clean=False, analysis_dry=True):
     score_path = Path(score_path)
     score = json.loads(score_path.read_text(encoding="utf-8"))
     report = {
@@ -653,6 +831,39 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
             print("[ERROR] " + report["error"])
         return report, 1
 
+    # -- WF0907-C12: derive the dry analysis score (default on) BEFORE any
+    #    stem/reference score is built from `score`, so every downstream
+    #    render/judge step below runs against whichever object `score` is
+    #    now bound to -- see derive_dry_score() docstring for exactly which
+    #    three leaves this zeroes and why. `--no-analysis-dry` (analysis_dry
+    #    False) explicitly opts OUT and keeps the original, possibly-wet
+    #    score, per design doc §8.3's requirement that this be an honest,
+    #    visible choice (both branches record a `provenance.analysis_dry`
+    #    flag; the wet branch additionally raises a top-level warning). --
+    if analysis_dry:
+        score, leaf_diff = derive_dry_score(score)
+        derived_dir = out_root / "derived"
+        derived_dir.mkdir(parents=True, exist_ok=True)
+        analysis_score_path = derived_dir / dry_score_filename(score_path)
+        analysis_score_path.write_text(
+            json.dumps(score, ensure_ascii=False, indent=2), encoding="utf-8")
+    else:
+        leaf_diff = []
+        analysis_score_path = score_path
+
+    report["provenance"] = {
+        "source_score": {"path": rel_to_repo(score_path),
+                          "sha256": vs.sha256_file(score_path)},
+        "analysis_score": {"path": rel_to_repo(analysis_score_path),
+                            "sha256": vs.sha256_file(analysis_score_path),
+                            "leaf_diff": leaf_diff},
+        "cli": {"path": rel_to_repo(cli), "sha256": vs.sha256_file(cli)},
+        "analysis_dry": analysis_dry,
+    }
+    if not analysis_dry:
+        report["warning"] = ("pitch verdicts on wet signal are not GATE "
+                              "evidence (design doc §8.3)")
+
     all_voiced = voiced_events(score)
     limited = limit is not None and limit < len(all_voiced)
     used = all_voiced[:limit] if limit is not None else all_voiced
@@ -715,6 +926,7 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
         if stem_key in render_errors:
             entry["verdict"] = "UNVERIFIED"
             entry["reason"] = "stem render failed: " + render_errors[stem_key]
+            entry["rules"] = extract_rule_ids(entry["reason"])
             entry["superposition_excluded"] = entry["reason"]
             stem_results.append(entry)
             continue
@@ -726,12 +938,15 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
             entry["verdict"] = r.get("verdict", "UNVERIFIED")
             if r.get("reason") is not None:
                 entry["reason"] = r["reason"]
+            if r.get("rules") is not None:
+                entry["rules"] = r["rules"]
             for k in ("onset_err_ms", "pitch_cents", "expected_f0_hz"):
                 if k in r:
                     entry[k] = r[k]
         except Exception as e:  # noqa: BLE001
             entry["verdict"] = "UNVERIFIED"
             entry["reason"] = "melody_verify raised %s: %s" % (type(e).__name__, e)
+            entry["rules"] = extract_rule_ids(entry["reason"])
         stem_results.append(entry)
 
         sr_i, ch_i, arr_i = read_wav_float(wav_path_i)
@@ -745,6 +960,8 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
     n_pass = sum(1 for r in stem_results if r["verdict"] == "PASS")
     n_fail = sum(1 for r in stem_results if r["verdict"] == "FAIL")
     n_unv = sum(1 for r in stem_results if r["verdict"] == "UNVERIFIED")
+
+    refusal_histogram, rules_histogram = build_refusal_histograms(stem_results)
 
     # -- superposition proof --------------------------------------------------
     # missing_from_sum and stem_list are computed via two INDEPENDENT
@@ -801,12 +1018,30 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
                                   "proof, only a partial one; see per-event "
                                   "reasons." % len(missing_from_sum))
 
-    # -- baseline: whole-file melody_verify on the ORIGINAL, unmodified score
-    #    (its own export settings, its own render) -- for the "before vs
-    #    after" comparison the task requires.
+    # -- baseline: whole-file melody_verify -- for the "before vs after"
+    #    comparison the task requires.
+    #
+    #    Fix round (Opus audit, major finding on stem_verify.py:1026): this
+    #    USED to always call mv.verify(score_path, ...) -- the ORIGINAL,
+    #    possibly-WET score -- even when analysis_dry=True had already made
+    #    every per-event stem/reference judgment run on the derived DRY
+    #    score. That silently mixed a wet-signal pitch judgment into
+    #    report["comparison"] with no warning and no provenance flag,
+    #    which is exactly what design doc §8.3 says GATE evidence must
+    #    never be built from. It also meant the "difference" between the
+    #    two numbers was mostly wet-vs-dry noise, not stem-isolation vs
+    #    whole-mix judging -- the thing this comparison is supposed to
+    #    measure. The baseline now runs on `analysis_score_path`, i.e. the
+    #    SAME score object the stems/reference were rendered from -- the
+    #    derived-dry copy when analysis_dry=True, or the original file
+    #    unchanged when --no-analysis-dry (in which case the top-level
+    #    §8.3 warning below already discloses the wet baseline). Either
+    #    way, baseline and stem_verify are now judged on the same signal,
+    #    and report["provenance"]["analysis_score"] already names exactly
+    #    which file/hash both of them ran on -- no separate flag needed.
     baseline = None
     try:
-        baseline = mv.verify(score_path, quiet=True)
+        baseline = mv.verify(analysis_score_path, quiet=True)
     except SystemExit as e:
         baseline = {"refused": True, "exit_code": e.code}
     except Exception as e:  # noqa: BLE001
@@ -824,11 +1059,20 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
     report["stem_verify"] = {
         "summary": {"pass": n_pass, "fail": n_fail, "unverified": n_unv},
         "events": stem_results,
+        "refusal_histogram": refusal_histogram,
+        "rules_histogram": rules_histogram,
     }
     report["baseline_whole_file_melody_verify"] = {
-        "note": ("melody_verify.verify() on the ORIGINAL score.json, unmodified "
-                 "export settings, own render -- this is the pre-existing "
-                 "whole-mix judge this tool is being compared against."),
+        "note": ("melody_verify.verify() on report[\"provenance\"]"
+                 "[\"analysis_score\"] (own export settings, own render) -- "
+                 "the SAME score the per-event stem/reference judgments "
+                 "above ran on (the derived-dry copy when analysis_dry is "
+                 "true, or the original file unmodified when it is false) "
+                 "-- this is the pre-existing whole-mix judge this tool is "
+                 "being compared against, now judged on the same signal "
+                 "instead of the original wet score (design doc §8.3: a "
+                 "wet-signal pitch judgment must never be silently mixed "
+                 "into this comparison)."),
         "result": (baseline.get("summary") if isinstance(baseline, dict)
                     and "summary" in baseline else baseline),
     }
@@ -841,13 +1085,15 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
             "stem_pass": n_pass,
             "stem_fail": n_fail,
             "stem_unverified": n_unv,
-            "note": ("baseline judges the whole mix in one pass (subject to "
-                     "band-collision/re-strike/concurrent-partial refusals); "
-                     "stem_verify judges the same events rendered in "
-                     "isolation, so band-collision-class refusals cannot "
-                     "occur -- comparable only when limited_run is false "
-                     "(baseline covers all events, stems may cover fewer "
-                     "under --limit)."),
+            "note": ("both sides judge report[\"provenance\"][\"analysis_score\"] "
+                     "(same file, see baseline_whole_file_melody_verify.note) "
+                     "-- baseline judges the whole mix in one pass (subject "
+                     "to band-collision/re-strike/concurrent-partial "
+                     "refusals); stem_verify judges the same events "
+                     "rendered in isolation, so band-collision-class "
+                     "refusals cannot occur -- comparable only when "
+                     "limited_run is false (baseline covers all events, "
+                     "stems may cover fewer under --limit)."),
         }
     report["tail_margin"] = {
         "requested_ms": requested_tail_ms,
@@ -992,11 +1238,21 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
     if own_temp and not keep_stems:
         # nothing user-facing left in out_root worth keeping either
         shutil.rmtree(ref_dir, ignore_errors=True)
+        if analysis_dry:
+            shutil.rmtree(derived_dir, ignore_errors=True)
         try:
             out_root.rmdir()
         except OSError:
             pass
         report["superposition_proof"]["reference_wav"] += " (deleted after run)"
+        if analysis_dry:
+            # WF0907-C12 fix round: do NOT mutate ["path"] with a suffix --
+            # that turns a field named `path` into something a caller can no
+            # longer feed back into Path()/open(), even though the sha256
+            # recorded alongside it is still a valid fingerprint of the file
+            # that existed. Record deletion as its own boolean instead so
+            # `path` stays a real (if now-nonexistent) path string.
+            report["provenance"]["analysis_score"]["deleted"] = True
 
     exit_issues = []
     if render_errors:
@@ -1013,7 +1269,7 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
     return report, (0 if not exit_issues else 1)
 
 
-def main():
+def build_arg_parser():
     ap = argparse.ArgumentParser(
         description="Per-event stem rendering + superposition proof for "
                     "polyphonic score verification (decision packet Option A).")
@@ -1030,12 +1286,31 @@ def main():
                      help="if --out-dir's stems/ subdirectory already exists "
                           "and is non-empty, delete it before rendering "
                           "(default: refuse and exit 1, see F-01)")
+    ap.add_argument("--analysis-dry", dest="analysis_dry", action="store_true",
+                     default=True,
+                     help="(default) derive a dry analysis score -- zero "
+                          "global.effects.reverb.wet/.decay and "
+                          "global.effects.delay.wet -- before rendering "
+                          "stems/reference, per design doc §8.3 (WF0907-C12; "
+                          "see derive_dry_score())")
+    ap.add_argument("--no-analysis-dry", dest="analysis_dry", action="store_false",
+                     help="use the score's own (possibly wet) effects as "
+                          "authored, unmodified; the report is marked "
+                          "provenance.analysis_dry=false and carries a "
+                          "top-level warning that pitch verdicts are not "
+                          "GATE evidence in that case (design doc §8.3)")
+    return ap
+
+
+def main():
+    ap = build_arg_parser()
     args = ap.parse_args()
 
     try:
         report, code = run(args.score, out_dir=args.out_dir, jobs=args.jobs,
                             limit=args.limit, keep_stems=args.keep_stems,
-                            force_clean=args.force_clean)
+                            force_clean=args.force_clean,
+                            analysis_dry=args.analysis_dry)
     except Exception as e:  # noqa: BLE001 -- surface as a clean error, not a traceback dump
         report = {"tool": "stem_verify.py", "score": args.score,
                   "status": "error", "error": "%s: %s" % (type(e).__name__, e)}

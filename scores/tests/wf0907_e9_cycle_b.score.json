@@ -1,0 +1,39 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "WF0907-E9 cycle fixture B",
+    "id": "wf0907_e9_cycle_b",
+    "author": "TsukiSynth",
+    "description": "WF0907-E9 GATE 3(c): back-reference to A, closing the A->B->A cycle. Never actually opened as a leaf render target -- validateLayeredScore() rejects it as soon as A's loader sees hasLayers()==true on this file.",
+    "created": "2026-09-07",
+    "tags": ["test", "layer", "wf0907-e9"],
+    "mood": "neutral",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Akashic",
+    "primary_type": "whoosh",
+    "sound_type": "oneshot",
+    "family_id": "wf0907_e9_cycle",
+    "character": ["metallic"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.8
+  },
+  "layers": [
+    {
+      "source": "wf0907_e9_cycle_a.score.json",
+      "region": [0.0, 1.0],
+      "gain": 1.0
+    }
+  ],
+  "crossfade_ms": 0,
+  "export": {
+    "filename": "wf0907_e9_cycle_b",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 100
+  }
+}

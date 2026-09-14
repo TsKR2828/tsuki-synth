@@ -894,9 +894,43 @@ private:
         return start < end ? true : fail (score, "export.start_position must be less than end_position");
     }
 
+    // Per-field spec for validateSimpleObjectArray: annotation arrays
+    // (tempo_map / time_signatures / rests / phrases) are simple flat
+    // objects, but the schema (scores/schema/score.schema.json) gives each
+    // of their fields its own minimum/enum, not just a name and a type.
+    // WF0907-E8 (F-04/F-05, reports/gate_outputs/stem_verify_fur_elise_run.txt):
+    // this used to check only allowed/required keys and int-vs-string
+    // shape, silently accepting e.g. negative tempo, zero time signatures,
+    // negative rests, or an unlisted rest "kind". A spec here mirrors the
+    // schema's own bound for that field -- it must reject exactly what the
+    // schema rejects, no more (R2/R3: no new/looser/tighter tolerance).
+    struct SimpleFieldSpec
+    {
+        const char* name;
+        bool required;
+        bool isString;
+        bool isEnum;
+        bool isInteger;
+        double minValue;
+        bool exclusiveMin;   // minValue itself is disallowed (schema exclusiveMinimum)
+        std::initializer_list<const char*> enumValues;
+
+        // Default arguments live here (constructor), not as non-static data
+        // member initializers on an aggregate -- MSVC (C2797) rejects a
+        // default member initializer on a std::initializer_list field
+        // combined with brace-init call sites below.
+        SimpleFieldSpec (const char* nameIn, bool requiredIn = false, bool isStringIn = false,
+                         bool isEnumIn = false, bool isIntegerIn = false,
+                         double minValueIn = -std::numeric_limits<double>::infinity(),
+                         bool exclusiveMinIn = false,
+                         std::initializer_list<const char*> enumValuesIn = {})
+            : name (nameIn), required (requiredIn), isString (isStringIn), isEnum (isEnumIn),
+              isInteger (isIntegerIn), minValue (minValueIn), exclusiveMin (exclusiveMinIn),
+              enumValues (enumValuesIn) {}
+    };
+
     static bool validateSimpleObjectArray (juce::DynamicObject& root, const char* name,
-                                           std::initializer_list<const char*> keys,
-                                           std::initializer_list<const char*> required,
+                                           std::initializer_list<SimpleFieldSpec> fields,
                                            Score& score)
     {
         if (! root.hasProperty (name)) return true;
@@ -906,19 +940,53 @@ private:
         {
             auto* object = (*array)[i].getDynamicObject();
             const auto path = std::string (name) + "[" + std::to_string (i) + "]";
-            if (object == nullptr || ! validateKeys (*object, keys, path, score))
-                return object != nullptr ? false : fail (score, path + " must be an object");
-            for (const auto* key : required)
-                if (! object->hasProperty (key)) return fail (score, path + "." + key + " is required");
+            if (object == nullptr) return fail (score, path + " must be an object");
+
             const auto& props = object->getProperties();
             for (int p = 0; p < props.size(); ++p)
             {
                 const auto key = props.getName (p).toString().toStdString();
+                const SimpleFieldSpec* spec = nullptr;
+                for (const auto& f : fields)
+                    if (key == f.name) { spec = &f; break; }
+                if (spec == nullptr)
+                    return fail (score, path + ": unknown property \"" + key + "\"");
+
                 const auto value = props.getValueAt (p);
-                const bool expectsString = key == "track" || key == "role" || key == "kind";
-                if (expectsString ? ! value.isString() : ! (value.isInt() || value.isInt64() || value.isDouble()))
-                    return fail (score, path + "." + key + " has wrong type");
+                if (spec->isString)
+                {
+                    if (! value.isString())
+                        return fail (score, path + "." + key + " must be a string");
+                    continue;
+                }
+                if (spec->isEnum)
+                {
+                    if (! value.isString())
+                        return fail (score, path + "." + key + " must be a string");
+                    const auto text = value.toString().toStdString();
+                    bool known = false;
+                    for (const auto* candidate : spec->enumValues)
+                        if (text == candidate) { known = true; break; }
+                    if (! known)
+                        return fail (score, path + "." + key + " has unsupported value \""
+                            + text + "\"");
+                    continue;
+                }
+                double numeric = 0.0;
+                if (! varToFiniteNumber (value, numeric))
+                    return fail (score, path + "." + key + " must be a finite number");
+                if (spec->isInteger && std::floor (numeric) != numeric)
+                    return fail (score, path + "." + key + " must be an integer");
+                const bool belowMin = spec->exclusiveMin ? numeric <= spec->minValue
+                                                          : numeric < spec->minValue;
+                if (belowMin)
+                    return fail (score, path + "." + key + " is below the minimum of "
+                        + std::to_string (spec->minValue));
             }
+
+            for (const auto& f : fields)
+                if (f.required && ! object->hasProperty (f.name))
+                    return fail (score, path + "." + std::string (f.name) + " is required");
         }
         return true;
     }
@@ -939,18 +1007,34 @@ private:
                 if (! props.getValueAt (i).isString())
                     return fail (score, "source fields must be strings");
         }
+        // Field bounds mirror scores/schema/score.schema.json exactly
+        // (tempo_map/time_signatures/rests/phrases sections) -- see the
+        // SimpleFieldSpec comment above validateSimpleObjectArray.
         if (! validateSimpleObjectArray (root, "tempo_map",
-                { "time", "tick", "quarter_bpm", "microseconds_per_quarter" },
-                { "time", "quarter_bpm" }, score)
+                { { "time", true, false, false, false, 0.0 },
+                  { "tick", false, false, false, true, 0.0 },
+                  { "quarter_bpm", true, false, false, false, 0.0, true },
+                  { "microseconds_per_quarter", false, false, false, true, 1.0 } }, score)
             || ! validateSimpleObjectArray (root, "time_signatures",
-                { "time", "tick", "numerator", "denominator" },
-                { "time", "numerator", "denominator" }, score)
+                { { "time", true, false, false, false, 0.0 },
+                  { "tick", false, false, false, true, 0.0 },
+                  { "numerator", true, false, false, true, 1.0 },
+                  { "denominator", true, false, false, true, 1.0 } }, score)
             || ! validateSimpleObjectArray (root, "rests",
-                { "track", "role", "time", "duration", "approx_quarter_beats", "kind" },
-                { "track", "time", "duration", "kind" }, score)
+                { { "track", true, true },
+                  { "role", false, true },
+                  { "time", true, false, false, false, 0.0 },
+                  { "duration", true, false, false, false, 0.0 },
+                  { "approx_quarter_beats", false, false, false, false, 0.0 },
+                  { "kind", true, false, true, false, 0.0, false,
+                    { "entrance_rest", "breath", "rest", "long_rest" } } }, score)
             || ! validateSimpleObjectArray (root, "phrases",
-                { "track", "role", "number", "start", "end", "breath_after_ms" },
-                { "track", "number", "start", "end" }, score)) return false;
+                { { "track", true, true },
+                  { "role", false, true },
+                  { "number", true, false, false, true, 1.0 },
+                  { "start", true, false, false, false, 0.0 },
+                  { "end", true, false, false, false, 0.0 },
+                  { "breath_after_ms", false, false, false, false, 0.0 } }, score)) return false;
         if (root.hasProperty ("timing_policy"))
         {
             auto* policy = root.getProperty ("timing_policy").getDynamicObject();

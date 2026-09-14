@@ -2,6 +2,88 @@
 
 ---
 
+## 2026-09-10 ~ 09-14 — 四裁決落地、五個 commit、VST3 部署、外部工具評估
+
+**月月 09-10 四裁決**：C10 選 A（收窄主張域）／A14 patch 放行／月光母帶等換源後一起出／兩封信要寫。
+- **C10 選 A**（Opus 自稽核）：設計文件 §8.5 新增「音高判定含量測器 ≤1.18 cent 已知誤差（開發 1.1721／hold-out 1.0840）」、§8.4 禁語加「不可宣稱量測器 ≤1 cent」、§9.7 裁決記錄；
+  C10C 的工具部分入庫（`measurement_selfcal.py` 增益保真掃描升 GATE、三弦 course 檢查、「增益保真不得比舊版差」迴歸測試）；
+  產品估計器 `measure_pitch_cents()` 一字未動；NLS 候選只存 `reports/c10c_nls_candidate.patch`。**B 路線結論**：STFT 五候選 + 時域 NLS 一候選全否決；更上層發現＝合成哨兵與 NLS 同模型（套套邏輯），登記 D15。
+- **A14 放行**（Sonnet 落地 + Opus 稽核 PASS）：`git apply reports/a14_tauc_keytrack_b2.patch`；ctest 4/4、§A14-1～4 單元測試（C8 τc 0.973 ms、k=0.32）、`--full` NO CHECKED FAILURES、5 檔 verify_score PASS、HostProbe 0 failures；
+  位元不變 7/8 只 physical_piano 607d0d3b→1233b53f（與報告事前值一致），新基準 `sha256_before_post_a14.txt`。
+  稽核牙齒：把公式連分母一起還原成 B4 舊版，sha 精準回舊值；單拿掉 keytrackScale 得另一值（分母已改同音 v=0.5）→ 兩處改動都被位元不變抓得到。
+- **兩封信**：`docs/correspondence/` 英文正文 + 中文對照 + 寄前檢查（TU Berlin 商業授權請求；Iowa MIS 器材/取樣率詢問）。AI 不代發。
+
+**09-13 五個 commit**（月月授權，工作樹自此乾淨；**未 push、未 merge**）：
+`5c9cdb3` 驗證工具與 CI（15 檔）／`31eb7ae` 引擎 plugin score（22）／`9ae8ce2` 研究與裁決包（22）／`27e8393` 施工卡與證據（180）／`49b8542` 交接文件（6）。
+教訓：Windows 寫出的路徑清單帶 CR，`git commit -- $(cat list)` 會把每個檔名尾巴多一個 `?` 全部認不出，第一次五個 commit 全空跑；`tr -d '\r'` 後才成功。
+
+**09-14**：VST3 bundle 複製到 `Desktop\TsukiSynth_VST3_2026-09-10\`（`.vst3` 在 Windows 是資料夾，月月一開始沒看到），月月自行覆蓋 Common Files 完成部署。
+Downloads 四個工具評估寫進 HANDOVER §11（Limbus Spatial Stage 值得裝；Yamaha Piano Sheet Converter β 限私人非商業；Orra Deverb 可有可無；Klanggeist 需金鑰）；重複與 Mac 版已進資源回收桶。
+
+---
+
+## 2026-09-07 ~ 09-09 — 三輪 Dynamic Workflow：稽核清單清空、F-03 落地、A13/A14/F-03 代決、月月四項裁決
+
+**授權框架**：月月 09-07 一次批六項（push+merge、requirements 加 pytest+mido、A8 下載、UI 等功能做完再送設計、
+A13/A14/F-03 由 AI 查外部資料（含 Reddit）決定、其餘全發包）；09-09 再批四項（C10=B、D8=wood_mallet、
+A8 無替代就私下對照、K-02 交 AI 評估）。分工：規劃者（Fable）寫施工卡 → Sonnet 工兵 → Opus 稽核親自重跑；
+**稽核 PASS 才 `git add`，三輪全部未 commit**。
+
+**流程事實**
+- WF0907（37 agents，跨三次 session limit 用 `resumeFromRunId` 續跑）、WF0908（20）、WF0909（進行中）。
+- 機器 6 核 → 同時 4 個 agent；每張 C++ 卡在 `build-wf/` 重建 + `--full` + 8 首位元不變，稽核再全部重跑一次。
+- **跨 lane 污染教訓**：同一工作樹並行時，未完成卡的新測試檔會讓別卡的全套 pytest 紅；工兵誠實回 RED 是對的，
+  下次全套 pytest 應放整合卡而非每卡 GATE。
+- **接手半成品**：被中斷的卡用 `RESUME_NOTES` 告知工兵「先 git diff 看做到哪，GATE 全部重跑」，證據檔重寫。
+
+**落地（staged）**
+- E1 CI 改跑全套 pytest（白名單 5 檔 → 全部）、pin `pytest==8.4.2`/`mido==1.3.3`。稽核 mutation 證明舊白名單抓不到 F-02。
+- E5 `getTailLengthSeconds()`：原本問的是 FM Piano 的 release，物理引擎模態 T60 從未參與；改為引擎 `worstCaseTailSeconds()`
+  （MIDI 21..108 最大模態 T60，快取），三引擎 3.45 s → 34.5 / 178.7 / 319.8 s。位元不變 8/8。Custom 判斷式抽單一函式。
+- E8 score 合法性單一真相：`tests/test_schema_contract_sync.py` 自動走訪 schema 產 388 突變體，C++ `--validate` 從 22 條不一致修到 0；
+  converter 改 raise 不 clamp；corpus 75/75 VALID。
+- E9 `--dump-modes` 支援 layered（鏡射 `renderLayered` 的 offset/gain/crossfade），三 layered corpus 檔 3/4/260 事件；
+  melody_verify 隨之移除「layer expansion is not implemented」拒答（E9b）。
+- E7 K-03：超過 maxBlock 的 block 改內部分塊，一次 1537 vs 512+512+513 位元相同。K-02 量化：**IR 比 ALGO 小 28.483 dB**
+  （不是 0.15 因子預測的「IR 大 16.5 dB」），主因是摺積 vs comb 回饋的固有增益差 → 裁決包。
+- C11/C12：stem_verify 每顆 `reason`/`rules` + 直方圖；`--analysis-dry` 預設 + `provenance` 三個 sha256 + leaf diff。
+- C10：`measure_pitch_cents()` 抽出（位元不變）+ `tools/measurement_selfcal.py` 1170 格點合成哨兵 → **1.1721 cents > 1 cent**
+  （MIDI 37/100 附近 bin 對齊系統偏差）→ 月月選 B 改估計器（WF0909-C10B）。
+- E10 H6：五種 host block size 下一般旋律**位元相同**；但水鑼 glide=1.0 差到 +2.6 dB（頻率更新逐 block 階梯）→ E10b 改逐取樣，
+  H6 水鑼段轉硬 CHECK 0 LSB。H7：HostProbe 是黑箱 VST3 host 碰不到 `saveUserPreset()` → 規劃者選 §10.2 選項 B：
+  抽 `src/ParameterLayout.h`（144 行純搬移，H2 參數清單前後 diff 空），影子 APVTS + 真 PresetManager；60/60 參數 round-trip。
+- **P3 F-03 落地**：`src/IRLibrary.h`（`%APPDATA%/TsukiSynth/IR/<sha256>.wav` 去重）、preset 存 `reverb_ir{kind,sha256,original_name}`、
+  缺檔三態（吻合／指別檔標 mismatch／無 GUI 強制切回 algorithmic + 警告）、`getIRStatus()` 單一真相（`loaded` 直接取自
+  `effectChain.hasImpulseResponse()`）、載入前一律 `clearImpulseResponse()`。HostProbe 67 PASS，KNOWN-FAIL(F-03) 移除。
+  行為改變：舊 DAW state 的 `reverb_ir_path` 無遷移（重開安靜留 algorithmic，登記 D12）。
+- P1 `tools/partial_verify.py`：partial 頻率內部一致性（±5 cents 既有容差）+ C13 `pitch_via_partials_*`（與 verdict 分離）+ `--b-report`；
+  `gate_ready=false` 直到 C10B。實跑弱基頻 23 顆 PASS 96/FAIL 41、一般 40 顆 199/38/3。
+- P2 A14 B-2：`pianoHammerTauC()` 音高形狀改錨 `keytrackScale()`（k=0.32 已溯源），力度形狀保留 B4 的 g(note,v)/g(note,0.5)，
+  零新常數。7/8 位元不變只 physical_piano 變；`--full` F3 仍 PASS；5 檔 corpus 10/10。**存成 patch、樹還原，等月月 Rule 10 放行。**
+  順帶發現 `HammerImpulse.h` 檔頭把半正弦力脈衝掛在 Chaigne & Askenfelt 1994 名下，該文其實反對此假設（P4b 修）。
+
+**研究卡（Opus 研究 → Opus 引用複核，Reddit 本機全抓不到）**
+- R1 A13：Fletcher 1964 模型-實測 RMS 0.86 c；引擎 B 比真鋼琴高 2.46/2.44/5.17×（弦長 0.35 m@A4 只有參考琴 72–83% ＋ corpus 固定 diameter 1.0 mm）→ **代決 B+**。
+- R2 A14：G5 τc 1.856 ms = 基頻半週期 2.9 倍，x=2.91 正中半正弦頻譜零點（H=−33.7 dB）；MIDI 69→80 電平掉 15.6 dB；
+  同引擎換 wood 槌斜率 22 → 2 dB＝決定性對照 → **代決「引擎缺陷」**。B4 的 k=0.212 比 B4 前的 0.32 更平（B4 在此項退步）。
+  順帶：`loudnessCompensationGain` 從 MIDI 67 起就頂 ×4 上限。
+- R3 F-03：查 9 個產品零個做靜默頂替；老牌四家非內嵌；新一代內嵌動機字面上就是本案失效 → **代決 B＋三態**。
+- R4 B7 Phase 0：Goebl 三錨點（MIDI 40→0.7、60→1.25、77→2.0 m/s，兩篇間 14% 校正差）；pp≈60/ff≈100 dB@1m 仍查無出處；
+  平台琴 S 查無、直立琴 1.2649 m²（M=9 kg 有出處 arXiv:1210.5688，上一版誤報查不到）。
+- R5 A8：下載吉他/豎琴子集（51 GB 全集只抓 ~2 GB）；**授權實為 CC BY-NC-SA**、**半徑 2.06 m 非 1.05**（我們文件抄錯 arXiv 預印本）；
+  DOI 5861.3 已 404 改 19858。複核抓到署名區塊的資料集標題是編的 → P5 修。替代搜尋：可商用校準資料集 = 0；
+  補充 Weinzierl 2018 JASA（CC BY，聲功率表）+ Iowa MIS 泰國鑼（明文無限制）。
+- R6 D8：**主因是樂譜 `exciter:"finger"`**（4.3–10.8 ms 超軟槌，力脈衝獨佔 −43.2 dB，補償被 ±12 dB 卡住只救 9.1 dB）；
+  改 wood_mallet 斜率 41.48 → 5.53 dB，200 Hz 以下能量 97.4% → 17.6%。`keytrackScale()` 是鋼琴槌質量律套在同一根手指上（無物理依據但目前在幫忙）。
+
+**規劃者代決（月月可推翻）**：A13=B+、A14=缺陷（B-2 先做）、F-03=B＋三態、K-02=C（A 更糟、B 動全 corpus；真解=IR 載入響度對齊，另立 D9）。
+**月月 09-09 裁決**：C10=B、D8=wood_mallet、A8=私下對照參考。
+
+**未做／不主張**：partial 振幅未驗；B-1 真槌力譜（Hall 1987 403、Chaigne & Askenfelt 付費牆）；A14 patch 未落地；
+UI 功能規格未送（等 WF0909 收尾 + A14 裁決）。
+
+---
+
 ## 2026-08-29 ~ 08-30 — UI 走向重設計、分支併回 main、密集複音驗證缺口補上一半
 
 **授權框架**：月月本輪三次明示——(1) 否決雙開門 UI 提案並裁定重做；

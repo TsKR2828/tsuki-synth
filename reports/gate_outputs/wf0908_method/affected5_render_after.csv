@@ -1,0 +1,6 @@
+piece,score_path,wav,len_s,rms_dbfs,centroid_hz,sha256
+fur_elise_complete,scores/classical/fur_elise/fur_elise_complete.score.json,fur_elise_complete.wav,133.389,-22.691,708.42,3a444ccfa346b6f9bf3cb9136202f7df29cc8968c52f59f367ca251d0aa84a79
+physical_piano,scores/examples/physical_piano.score.json,physical_piano.wav,7.575,-18.485,836.32,1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b
+akashic_action_001,scores/library/akashic/akashic_action_001.score.json,Foley_Soft_OneShot_D5.wav,3.248,-22.007,1167.73,591debffb54784c9d2a622751dc6a34b1d50bf7fb193bd23b85a6c08744326d5
+ocean_action_001,scores/library/ocean/ocean_action_001.score.json,Impact_Dark_OneShot_D1.wav,6.289,-23.160,206.81,445fa0cda2bb087d9eb746090fa32495a446cc5a564a409369f267bb9061471a
+ai_radiance_m3,scores/originals/ai_radiance/ai_radiance_m3.score.json,Original_AI_Radiance_Movement3.wav,32.222,-20.642,783.23,a67440a787388437b59e2e4f2d2a36e2bb3ab0437a30fe4f5de2fc222f125f85

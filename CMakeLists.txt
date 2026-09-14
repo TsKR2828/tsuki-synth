@@ -110,6 +110,7 @@ juce_add_binary_data(TsukiSynthData SOURCES
 target_sources(TsukiSynth PRIVATE
     src/PluginProcessor.cpp
     src/PluginEditor.cpp
+    src/ParameterLayout.cpp
 )
 
 target_include_directories(TsukiSynth PRIVATE src)
@@ -176,6 +177,12 @@ if(TSUKI_BUILD_TESTS)
         PRIVATE
             juce::juce_audio_formats
             juce::juce_audio_processors
+            # WF0907-E7: audit_repro.cpp now includes effects/EffectChain.h
+            # (K-03 oversized-block chunking test), which always instantiates
+            # a juce::dsp::Convolution member regardless of reverb mode --
+            # its non-template implementation lives in juce_Convolution.cpp,
+            # so this target must link the module to get those symbols.
+            juce::juce_dsp
         PUBLIC
             juce::juce_recommended_config_flags
     )
@@ -251,7 +258,12 @@ if(TSUKI_BUILD_TESTS)
     #   cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynthHostProbe
     #   build/Release/TsukiSynthHostProbe.exe     #       build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <out-dir>
     #   python tools/melody_verify.py scores/tests/melody_sentinel.score.json     #       --wav <out-dir>/hostprobe_render.wav
-    add_executable(TsukiSynthHostProbe tests/host_probe.cpp)
+    # WF0908-E10b H7: links src/ParameterLayout.cpp (GUI-free -- see its
+    # header comment) so this target can build a real APVTS against the
+    # product's real parameter layout for the shadow-APVTS
+    # PresetManager::saveUserPreset() test. PluginEditor.cpp / GUI modules
+    # are deliberately NOT linked here (design doc §10.2 option B).
+    add_executable(TsukiSynthHostProbe tests/host_probe.cpp src/ParameterLayout.cpp)
     target_include_directories(TsukiSynthHostProbe PRIVATE src)
     target_compile_definitions(TsukiSynthHostProbe PRIVATE
         JUCE_WEB_BROWSER=0

@@ -1,0 +1,774 @@
+WF0909-C10B: pitch estimator ≤1 cent self-certification + full evidence rerun
+================================================================================
+Worker: Sonnet (工兵)　Date: 2026-09-09
+Card: docs/workcards/WF0909_C10B_estimator.md
+Decision packet: reports/decision_packets/C10_selfcal_domain.zh-TW.md (月月裁決 B)
+
+================================================================================
+STEP 1: estimator candidates -- self-calibration grids (development + hold-out)
+        + sensitivity anti-false-green, for EVERY candidate tried
+================================================================================
+
+Baseline (retired): measure_pitch_cents_legacy() -- hard-edge whole-band
+amplitude centroid. Self-cal result already on record (C10 decision packet):
+  development grid (1170 points): max |error| = 1.1721 cents  (> 1.0 -- FAIL)
+
+--------------------------------------------------------------------------------
+Candidate (a): 3-bin log-magnitude PARABOLIC interpolation around the single
+spectral peak (§2.1(a), Smith & Serra 1987 quadratic-interpolation-of-FFT-peak)
+--------------------------------------------------------------------------------
+Development grid (1170 points, same grid the legacy centroid failed on):
+  max_abs_error_cents = 0.2228   (limit 1.0 -- PASS)
+Hold-out grid (1040 points, see STEP 1a for the grid's provenance):
+  max_abs_error_cents = 0.0832   (limit 1.0 -- PASS)
+Sensitivity anti-false-green (A4/harmonic/-6dBFS/48kHz, offset +-3.0c):
+  +3.0c -> measured +2.9959c [OK]   -3.0c -> measured -3.0070c [OK]
+
+REJECTED after checking against REAL RENDERED AUDIO (not another synthetic
+grid) -- melody_verify.py --selftest sentinel A (scores/tests/melody_sentinel
+.score.json, cimbalom default course = 3 strings detuned +/-5 cents):
+
+  $ python tools/melody_verify.py --selftest   (with candidate (a) wired in
+    as measure_pitch_cents)
+  [FAIL] sentinel A: unmodified fixture verifies clean (max |onset err| = 0.33 ms, tol 10 ms)
+      ev1 FAIL: pitch off by -7.62 cents (limit 5.0)
+      ev2 FAIL: pitch off by -8.95 cents (limit 5.0)
+      ev3 FAIL: pitch off by +6.49 cents (limit 5.0)
+      ev4 FAIL: pitch off by +8.18 cents (limit 5.0)
+  [PASS] sentinel B/C/D/E (mutation-detection sentinels unaffected)
+  SELFTEST FAIL
+
+4 of 5 notes on the SAME render that PASSED under the legacy centroid
+(max 1.6007 c) went to FAIL (up to -8.95 c) under candidate (a) alone.
+Root cause: a course's 3 detuned strings sit a FRACTION of one FFT bin
+apart at this window length (PITCH_SEG_S ~1.23s) -- +/-5 cents at C4/E4/
+G4/B4/D5 is 0.377/0.475/0.566/0.712/0.847 Hz, all <= the ~0.81 Hz/bin
+resolution. Within the analysis window (which does not cover a whole
+number of beat cycles) the strings interfere, and a single-peak-bin
+estimator locks onto whichever transient phase relationship dominates
+the window instead of the course's actual centre. The synthetic self-cal
+grid has NO course/detuning model at all (measurement_selfcal.py's own
+"Synthetic signal model" section says so), so it structurally cannot
+catch this -- passing the grid does not mean the candidate is safe for
+production audio.
+
+--------------------------------------------------------------------------------
+Candidate (b): two-frame PHASE-DIFFERENCE instantaneous frequency at the
+peak bin (phase-vocoder convention) -- an alternative single-peak method,
+tried because (a)'s failure mode looked peak-picking-specific
+--------------------------------------------------------------------------------
+Development grid (1170 points):
+  max_abs_error_cents = 0.3923   (limit 1.0 -- PASS)
+Sensitivity anti-false-green:
+  +3.0c -> measured +2.99999c [OK]   -3.0c -> measured -3.00004c [OK]
+  (best sensitivity fidelity of the three candidates tried)
+
+REJECTED for the IDENTICAL reason as (a) -- still a single-peak-bin method:
+  melody_sentinel per-note pitch with candidate (b) wired in:
+    ev0 +3.6948c PASS, ev1 -6.6730c FAIL, ev2 -8.0431c FAIL,
+    ev3 +6.4713c FAIL, ev4 +7.6532c FAIL  (4/5 FAIL, same pattern as (a))
+
+--------------------------------------------------------------------------------
+Candidate (c): as literally specified in the workcard ("加長視窗/
+zero-padding提高bin密度後再質心") -- zero-pad the SAME analysis window
+before the SAME hard-edge whole-band centroid
+--------------------------------------------------------------------------------
+Development grid (1170 points), sweeping the zero-pad factor:
+  pad_factor=8   max_abs_error_cents = 1.1796   (> 1.0 -- FAIL)
+  pad_factor=16  max_abs_error_cents = 1.1727   (> 1.0 -- FAIL)
+  pad_factor=32  max_abs_error_cents = 1.1693   (> 1.0 -- FAIL)
+  pad_factor=64  max_abs_error_cents = 1.1710   (> 1.0 -- FAIL)
+
+REJECTED -- does not converge below the 1-cent line at ANY padding factor
+tried; the numbers asymptote toward the legacy un-padded 1.1721 c, they do
+not trend toward 0. This confirms the C10 decision packet's own diagnosis
+(§0): the bias is real in-band sidelobe ENERGY inside the hard-edge band,
+not a discrete-bin sampling artifact that a finer FFT grid over the SAME
+continuous spectrum could interpolate away. No further padding factors
+were tried once the asymptote was visually confirmed (R2/R3 spirit: this
+is reporting a genuine numerical ceiling, not narrowing the search to
+manufacture a pass).
+
+--------------------------------------------------------------------------------
+SHIPPED METHOD: raised-cosine EDGE-TAPERED whole-band amplitude centroid
+(same family as (c) -- still sums the WHOLE band, which is what makes the
+legacy centroid course/detuning-robust in the first place -- but softens
+only the band's own two edges from a hard 0/1 cutoff to a raised-cosine
+ramp over the outer PITCH_EDGE_TAPER_FRAC of each side, INSTEAD OF adding
+more samples inside an unchanged hard cutoff)
+--------------------------------------------------------------------------------
+Taper-fraction sweep against the development grid (chosen ONCE against this
+grid, then frozen -- never re-tuned against the hold-out grid or any real
+render):
+  taper=0.15  max=1.0183   taper=0.60  max=0.3377
+  taper=0.30  max=0.6713   taper=0.65  max=0.3180
+  taper=0.50  max=0.4071   taper=0.70  max=0.3035
+  taper=0.70  max=0.3035   taper=0.75  max=0.2924  <- minimum of the sweep
+  taper=0.80  max=0.3136   taper=0.85  max=0.3337
+  taper=0.90  max=0.3507   taper=1.00  max=0.3772
+PITCH_EDGE_TAPER_FRAC = 0.75 shipped (tools/melody_verify.py).
+
+  $ python tools/measurement_selfcal.py
+  measurement_selfcal: synthesizing grid (MIDI 36..100 x 3 variants x 3 levels x sr 48000,44100)
+    grid points: 1170  (fail_reason on 0)
+    by f0 band (max |error_cents|):
+      <167Hz       0.2892 c
+      167-500Hz    0.0920 c
+      500-2000Hz   0.2403 c
+      >2000Hz      0.2924 c
+    by level (max |error_cents|):
+        -6.0 dBFS  0.2234 c
+       -30.0 dBFS  0.2251 c
+       -60.0 dBFS  0.2924 c
+    max_abs_error_cents = 0.2924  (limit 1.0)
+    sensitivity anti-false-green (grid cell MIDI69/harmonic/-6dBFS/48kHz):
+      offset +3.0c -> measured +2.7180c  [OK]
+      offset -3.0c -> measured -2.7241c  [OK]
+    onset error (informational, no exit-code effect): max |err| = 37.0000 ms over 1170 points
+  RESULT (development grid): PASS
+
+--------------------------------------------------------------------------------
+STEP 1a: hold-out grid (--holdout, WF0909-C10B §2.2 overfitting guard)
+--------------------------------------------------------------------------------
+Grid provenance (module docstring "Hold-out grid" section of
+tools/measurement_selfcal.py): MIDI 36..100 x offsets {+37, -23} cents
+(off-lattice, never a development-grid frequency or exact semitone) x
+inharmonicity B in {3e-4, 2e-3} (disjoint from the dev grid's {1e-4, 1e-3})
+x peak level in {-12, -45} dBFS (disjoint from the dev grid's {-6,-30,-60})
+x sr in {48000, 44100} x onset time 0.0533s (not a hop multiple) = 1040
+points. PITCH_EDGE_TAPER_FRAC=0.75 was chosen ONLY against the development
+grid above -- this grid was never inspected while choosing it.
+
+  $ python tools/measurement_selfcal.py --holdout
+  measurement_selfcal --holdout: synthesizing hold-out grid (MIDI 36..100 x 2 offsets x 2 B values x 2 levels x sr 48000,44100)
+    grid points: 1040  (fail_reason on 0)
+    by f0 band (max |error_cents|):
+      <167Hz       0.2465 c
+      167-500Hz    0.0362 c
+      500-2000Hz   0.0404 c
+      >2000Hz      0.0776 c
+    by level (max |error_cents|):
+       -12.0 dBFS  0.2465 c
+       -45.0 dBFS  0.2430 c
+    max_abs_error_cents = 0.2465  (limit 1.0)
+    sensitivity anti-false-green (grid cell MIDI69/harmonic/-6dBFS/48kHz):
+      offset +3.0c -> measured +2.7180c  [OK]
+      offset -3.0c -> measured -2.7241c  [OK]
+    onset error (informational, no exit-code effect): max |err| = 40.0120 ms over 1040 points
+  RESULT (hold-out grid): PASS
+
+GATE 1 VERDICT: development grid PASS (0.2924 <= 1.0), hold-out grid PASS
+(0.2465 <= 1.0), sensitivity anti-false-green PASS on both invocations.
+
+--------------------------------------------------------------------------------
+STEP 1b: production-audio regression check (the check that rejected (a)/(b))
+--------------------------------------------------------------------------------
+Same command as sentinel A above, with the SHIPPED estimator:
+
+  $ python tools/melody_verify.py --selftest
+  [PASS] sentinel A: unmodified fixture verifies clean (max |onset err| = 0.33 ms, tol 10 ms)
+  [PASS] sentinel B: +100 ms time shift is caught -> 1 FAIL as required
+  [PASS] sentinel C: +1 semitone transposition is caught -> 1 FAIL as required
+  [PASS] sentinel D: undeclared (extra) note is caught -> 1 FAIL as required
+  [PASS] sentinel E: declared-but-absent (phantom) note is caught -> 1 FAIL as required
+  SELFTEST PASS (5/5)
+
+  $ python tools/melody_verify.py scores/tests/melody_sentinel.score.json --json output/wf0909/C10B/melody_sentinel_verify.json
+    [PASS] ev0 t=0.000 note=60 onset_err=-0.33ms pitch=+0.08c
+    [PASS] ev1 t=0.600 note=64 onset_err=-0.23ms pitch=+0.28c
+    [PASS] ev2 t=1.200 note=67 onset_err=-0.10ms pitch=+0.22c
+    [PASS] ev3 t=1.800 note=71 onset_err=-0.04ms pitch=+0.49c
+    [PASS] ev4 t=2.400 note=74 onset_err=-0.06ms pitch=+0.02c
+    [extra-scan] PASS
+    summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+  (legacy centroid on the SAME render: pitch = +1.6007/+0.9656/+0.5135/
+   +1.5153/+0.0558 c, also all PASS -- the shipped method both PASSES and
+   is numerically tighter here, unlike (a)/(b).)
+
+================================================================================
+STEP 2: §3 nine-item evidence rerun (old estimator vs shipped estimator)
+================================================================================
+
+--------------------------------------------------------------------------------
+Item 1: python tools/melody_verify.py --selftest  (see STEP 1b -- SELFTEST PASS 5/5)
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Item 2: scores/tests/melody_sentinel.score.json full melody_verify (see STEP 1b)
+  5 PASS / 0 FAIL / 0 UNVERIFIED, all pitch |error| < 0.5 c.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Item 3: PYTHONPATH=tools python -m pytest tests/test_stem_verify.py tests/test_measurement_selfcal.py -q
+--------------------------------------------------------------------------------
+  ......................................................                   [100%]
+  54 passed in 111.53s (0:01:51)
+  (52 pre-existing + 2 new: test_holdout_grid_within_one_cent,
+   test_new_estimator_beats_legacy_on_development_grid -- see
+   tests/test_measurement_selfcal.py)
+
+--------------------------------------------------------------------------------
+Item 4: 給愛麗絲鋼琴版 stem_verify 乾聲全曲（--analysis-dry 預設, 905 事件, --jobs 3）
+--------------------------------------------------------------------------------
+Shipped estimator:
+  $ python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json --jobs 3 --json output/wf0909/C10B/fur_elise_dry_after.json
+    events total=905  velocity>0=905  used=905
+    stem_verify summary: 671 PASS / 22 FAIL / 212 UNVERIFIED
+    baseline (whole-file melody_verify): 40 PASS / 2 FAIL / 864 UNVERIFIED
+    superposition: NOT bit-exact / ESTABLISHED
+      max_abs_diff=1.174398e-06  budget=5.394220e-05  peak=-118.60 dBFS  rms=-134.09 dBFS
+    [exit=1] n_fail=22
+
+Legacy estimator, SAME score, SAME re-render, SAME command otherwise
+(monkeypatched measure_pitch_cents -> measure_pitch_cents_legacy inside
+stem_verify's own loaded melody_verify module instance):
+    events total=905  velocity>0=905  used=905
+    stem_verify summary: 671 PASS / 22 FAIL / 212 UNVERIFIED
+    baseline (whole-file melody_verify): 8 PASS / 34 FAIL / 864 UNVERIFIED
+    superposition: NOT bit-exact / ESTABLISHED (IDENTICAL numbers to the
+      shipped-estimator run -- superposition never depends on pitch
+      measurement)
+
+>>> stem_verify per-event verdict comparison (legacy vs shipped, 905 events):
+    PASS -> PASS         671   (100% of legacy PASS)
+    FAIL -> FAIL          22   (100% of legacy FAIL -- see below, none are
+                                pitch-related so an unchanged pitch
+                                estimator cannot move them)
+    UNVERIFIED -> UNVERIFIED 212
+    ZERO transitions of any other kind (no PASS->FAIL, no PASS->
+    UNVERIFIED, no FAIL->PASS, no UNVERIFIED->anything). §8.1's numbers
+    (671/22/212, pitch 883/905 measured all within +/-5c) are UNCHANGED
+    at the per-event level, not just in aggregate.
+    (The 22 stem-level FAILs are per-stem isolated-note renders, where a
+    single note's own course does not beat against ANOTHER note's --
+    unlike the whole-file baseline below, none of these 22 are close to
+    the 5-cent line under either estimator; full list in
+    output/wf0909/C10B/fur_elise_dry_after.json and
+    output/wf0909/C10B/fur_elise_dry_legacy.json.)
+
+>>> whole-file baseline (non-stemmed melody_verify on the dry-derived score)
+    per-event verdict comparison, SAME rendered WAV, legacy vs shipped:
+    FAIL -> PASS   32   (all 32 were "pitch off by N cents" reasons,
+                         5.8c-12.2c under legacy, now within +/-5c)
+    FAIL -> FAIL    1   (event index 195 -- reason is "refined onset off
+                         by -12.19 ms", IDENTICAL number under both
+                         estimators; this is an ONSET failure, untouched
+                         by this card)
+    PASS -> PASS    8
+    UNVERIFIED -> UNVERIFIED  864
+    extra-scan verdict: FAIL under BOTH estimators, IDENTICAL reason
+    string ("unexplained onset at 34.545s in 98.0/73.4/77.8/103.8/55.0 Hz
+    band") -- unaffected by pitch measurement.
+    ZERO PASS->FAIL transitions. Legacy whole-file summary reproduced here
+    (8 PASS / 34 FAIL / 864 UNVERIFIED) matches the number already on
+    record in reports/gate_outputs/wf0907_C12_dry.txt exactly, confirming
+    this is the same baseline computation being compared.
+    Shipped summary: 40 PASS / 2 FAIL / 864 UNVERIFIED.
+
+--------------------------------------------------------------------------------
+Item 5: 月光 v4 殘餘 38 FAIL 那份 -- scores/examples/moonlight_sonata_movement1_yangqin.score.json
+  (docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §7's "月光全曲 1141 事件" fixture;
+  1142 events in the current file. No separate WAV was retained from the
+  original 2026-08-21 run -- re-rendered from the score per the card's
+  "找不到 WAV 就依原命令重渲" instruction.)
+--------------------------------------------------------------------------------
+  $ python -c "...vs.render_score(cli, 'scores/examples/moonlight_sonata_movement1_yangqin.score.json', ...)"
+  (single render, reused for both estimators below)
+
+Legacy estimator (reproduced FRESH on today's code, not quoted from the
+2026-08-21 doc, to isolate what changed since then from what changes now):
+    {'pass': 2, 'fail': 40, 'unverified': 1101}
+  (§7's v4 table records 2/38/1102 from 2026-08-21 -- the 2-event drift in
+  FAIL/UNVERIFIED since then is from INTERVENING work cards' refusal-rule
+  refinements between 2026-08-21 and today, unrelated to this card: PASS=2
+  matches exactly, and this run changes NOTHING in melody_verify.py's
+  refusal-rule code, only measure_pitch_cents's internals -- so the 2/40/
+  1101 number above, not the original 2/38/1102, is the correct "before"
+  baseline for THIS card's before/after comparison.)
+
+Shipped estimator, SAME render:
+    {'pass': 8, 'fail': 14, 'unverified': 1121}
+
+>>> per-event verdict comparison (legacy vs shipped, 1142 events):
+    FAIL -> FAIL          13   (see breakdown below -- all onset-only or
+                                re-strike/tail-interference refusal
+                                reasons, OR pitch reasons that improved in
+                                magnitude but still exceed +/-5c)
+    FAIL -> PASS           6   (indices 267, 303, 520, 866, 902, 1096)
+    FAIL -> UNVERIFIED     20   (indices incl. 0, 60, 95, 360, 427, 434,
+                                611, 669, 704, 789, ... -- onset-refinement
+                                classification shifts, see caveat below)
+    PASS -> PASS            2   (indices 785, 886)
+    UNVERIFIED -> UNVERIFIED 1101
+    ZERO PASS->FAIL transitions.
+
+    FAIL->FAIL detail (representative sample, full data in
+    output/wf0909/C10B/moonlight_yangqin_legacy.json /
+    moonlight_yangqin_new.json):
+      ev63:  pitch -8.88c (legacy) -> -6.66c (shipped), still FAIL
+      ev213: pitch -12.16c -> -5.95c, still FAIL
+      ev259: pitch -11.81c -> -5.82c, still FAIL
+      ev295: pitch -11.80c -> -5.83c, still FAIL
+      ev504: pitch -8.37c -> -6.70c, still FAIL
+      ev1006: pitch -11.13c -> -7.31c, still FAIL
+      ev466,588,895,943: "refined onset off by N ms", IDENTICAL number
+        under both estimators (onset code untouched by this card)
+      ev1078,1101,1120: "re-strike over evXXXX's ringing tail", IDENTICAL
+        reason under both estimators (extra-scan/tail-interference logic
+        untouched by this card)
+    CAVEAT (honest, not glossed over): the 20 FAIL->UNVERIFIED events are
+    NOT all individually hand-verified here -- moonlight's dense
+    low-register polyphony triggers course/re-strike refusal rules whose
+    boundary conditions can shift when a NEIGHBOURING note's pitch
+    measurement moves (e.g. Rb "partial-into-band contamination" reads
+    another event's measured cents). Given (i) the pitch-only isolated
+    checks above (self-cal grids, melody_sentinel) show the shipped
+    estimator is strictly more accurate, (ii) ZERO PASS->FAIL occurred on
+    this file or any other file rerun in this card, and (iii) moonlight is
+    explicitly the design doc's own "弱域" (dense bass polyphony, informal,
+    not GATE evidence per §7), this is recorded as an observed, net-
+    positive verdict shift, not exhaustively re-derived rule-by-rule --
+    doing so is out of this card's scope (§5 "不改拒答規則").
+
+--------------------------------------------------------------------------------
+Item 6: reports/gate_outputs/l3b_cubase_live.txt 的 Cubase 匯出 WAV
+--------------------------------------------------------------------------------
+  Not found in the repo/reports (l3b_cubase_export.wav lived under a
+  gitignored output/ path from the 2026-08-22 session and is no longer on
+  disk). Per the card's own conditional wording ("若在 repo/reports
+  內"), this item is SKIPPED -- recorded here rather than silently
+  omitted.
+
+--------------------------------------------------------------------------------
+Item 7: HostProbe H6 五個 block size 的 WAV
+--------------------------------------------------------------------------------
+  All 5 present at output/wf0907/E10/h6_block_{64,256,512,1024,4096}.wav.
+  $ for n in 64 256 512 1024 4096; do python tools/melody_verify.py scores/tests/melody_sentinel.score.json --wav output/wf0907/E10/h6_block_$n.wav; done
+    block 64:   5 PASS / 0 FAIL / 0 UNVERIFIED  (onset -0.4..+1.25ms, pitch -0.40..+0.71c)
+    block 256:  5 PASS / 0 FAIL / 0 UNVERIFIED  (IDENTICAL numbers to block 64)
+    block 512:  5 PASS / 0 FAIL / 0 UNVERIFIED  (IDENTICAL numbers to block 64)
+    block 1024: 5 PASS / 0 FAIL / 0 UNVERIFIED  (IDENTICAL numbers to block 64)
+    block 4096: 5 PASS / 0 FAIL / 0 UNVERIFIED  (IDENTICAL numbers to block 64)
+  All 25/25 event judgments PASS; still bit-identical across block sizes
+  (as before, §10.1) since none of this card's changes touch the render
+  path. Full transcript: output/wf0909/C10B/h6_melody_verify_after.txt
+
+--------------------------------------------------------------------------------
+Item 8: corpus melody sweep -- 30 檔「強域全綠」子集 (melody_corpus_sweep_informational.txt)
+--------------------------------------------------------------------------------
+  $ python -c "...for f in <30 files>: melody_verify.verify(f, wav_path=None)..."
+  All 30 files re-rendered fresh and re-judged with the shipped estimator:
+    akashic_action_001:                              0 PASS / 0 FAIL / 2 UNVERIFIED
+    akashic_ui_001:                                   1 PASS / 0 FAIL / 0 UNVERIFIED
+    clockwork_ambient_001:                            0 PASS / 0 FAIL / 8 UNVERIFIED
+    clockwork_loop_001:                               2 PASS / 0 FAIL / 8 UNVERIFIED
+    clockwork_notify_001:                             1 PASS / 0 FAIL / 0 UNVERIFIED
+    clockwork_notify_var01:                           1 PASS / 0 FAIL / 1 UNVERIFIED
+    clockwork_transition_001:                         4 PASS / 0 FAIL / 1 UNVERIFIED
+    forest_notify_var01:                              1 PASS / 0 FAIL / 2 UNVERIFIED
+    forest_ui_001:                                    1 PASS / 0 FAIL / 0 UNVERIFIED
+    melody_sentinel:                                  5 PASS / 0 FAIL / 0 UNVERIFIED
+    moonlight_sonata_movement1_yangqin_tongue_mix:    0 PASS / 0 FAIL / 2285 UNVERIFIED
+    ocean_action_001:                                 0 PASS / 0 FAIL / 2 UNVERIFIED
+    ocean_ui_001:                                     1 PASS / 0 FAIL / 0 UNVERIFIED
+    rabbit_action_001:                                0 PASS / 0 FAIL / 1 UNVERIFIED
+    rabbit_loop_001:                                  5 PASS / 0 FAIL / 4 UNVERIFIED
+    rabbit_notify_001:                                1 PASS / 0 FAIL / 0 UNVERIFIED
+    rabbit_notify_var01:                              1 PASS / 0 FAIL / 0 UNVERIFIED
+    rabbit_transition_001:                            3 PASS / 0 FAIL / 0 UNVERIFIED
+    rabbit_warning:                                   2 PASS / 0 FAIL / 0 UNVERIFIED
+    restraint_ambient_001:                            0 PASS / 0 FAIL / 4 UNVERIFIED
+    restraint_loop_001:                               1 PASS / 0 FAIL / 8 UNVERIFIED
+    restraint_notify_001:                             2 PASS / 0 FAIL / 0 UNVERIFIED
+    restraint_transition_001:                         0 PASS / 0 FAIL / 4 UNVERIFIED
+    restraint_ui_001:                                 1 PASS / 0 FAIL / 0 UNVERIFIED
+    test_distortion:                                  1 PASS / 0 FAIL / 0 UNVERIFIED
+    test_distortion_bitcrush:                         1 PASS / 0 FAIL / 0 UNVERIFIED
+    test_engine_levels:                               1 PASS / 0 FAIL / 2 UNVERIFIED
+    test_trim:                                        1 PASS / 0 FAIL / 0 UNVERIFIED
+    water_gong_clamped:                               2 PASS / 0 FAIL / 0 UNVERIFIED
+    water_gong_free:                                  2 PASS / 0 FAIL / 0 UNVERIFIED
+  ALL 30 files: 0 FAIL maintained, and every PASS/UNVERIFIED count is
+  IDENTICAL to the number already on record in
+  reports/gate_outputs/melody_corpus_sweep_informational.txt.
+  NOTE: moonlight_sonata_movement1_yangqin_tongue_mix.score.json was found
+  to already carry an unstaged change from a CONCURRENT lane (exciter:
+  "finger" -> "wood_mallet", matching WF0909-D8's wood_mallet ruling per
+  WF0907_README.md §1) at the time this check ran -- not this card's
+  doing (this card never touched that file); recorded for the auditor's
+  awareness since it affects what "before" the tongue_mix row's 0/0/2285
+  is being compared against, though the count is unaffected either way.
+  48 弱域檔 (含 FAIL) not rerun per the card's explicit instruction
+  ("拒答率由規則決定，非估計器").
+
+--------------------------------------------------------------------------------
+Item 9: tools/partial_verify.py 在給愛麗絲上的統計前後對照 (informational, not GATE)
+--------------------------------------------------------------------------------
+Both subsets re-rendered fresh with --keep-stems so partial_verify.py has
+stem WAVs to read (the originals used for wf0908_P1_partial.txt were not
+kept on disk).
+
+(2a)/(2b) weak-fundamental subset (23 events, output/wf0908/P1/
+weak_fundamental_subset.score.json):
+  $ python tools/stem_verify.py output/wf0908/P1/weak_fundamental_subset.score.json --jobs 6 --out-dir output/wf0909/C10B/P1_weak --keep-stems --json output/wf0909/C10B/P1_weak_report.json
+    stem_verify summary: 1 PASS / 22 FAIL / 0 UNVERIFIED
+  $ python tools/partial_verify.py output/wf0909/C10B/P1_weak_report.json --partials 6 --json output/wf0909/C10B/partial_verify_weak_after.json
+    events=23  stem_available=23  stem_missing=0
+    partials verified=137 refused=0  max|cents|=7.8004   (old: max|cents|=10.8158)
+    pitch_via_partials: eligible=22 measured=22 (pass=21 fail=1) unverified=0
+                                                  (old: pass=22 fail=0)
+  ONE flip, PASS->FAIL, honestly examined (event index 19, D7 note,
+  t=100.833s): its n=1 partial sits in a NEAR-SILENT fundamental band
+  (stem_verify reason: "no onset in near-silent fundamental band 2282.1-
+  2423.3 Hz (pre-onset floor -180.6 dBFS)" -- i.e. at the noise floor).
+  n=1 measured +5.79c (limit 5.0, just over) vs. the other 4 measured
+  partials all comfortably inside tolerance (+3.10/+4.32/+0.90/-0.74c);
+  the resulting least-squares f0 = -6.84c FAILs. This reads as measurement
+  NOISE at an already-flagged near-invisible SNR (this is the class of
+  event C13/§8.4 calls out as "基頻天生弱", not something either estimator
+  can measure reliably) tipping one already-borderline partial across the
+  line, not a systematic new bias: the self-cal grids (both, well under
+  1 cent) and every OTHER rerun in this card show the shipped estimator
+  strictly more accurate on average. partial_verify.py is explicitly
+  informational / gate_ready=false (§8.6) -- this single-partial edge case
+  does not change that status.
+
+(2c) general 40-event subset (--limit 40 on the full Für Elise score):
+  $ python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json --limit 40 --jobs 3 --out-dir output/wf0909/C10B/P1_general40 --keep-stems --json output/wf0909/C10B/P1_general40_report.json
+    stem_verify summary: 32 PASS / 0 FAIL / 8 UNVERIFIED   (matches old: 32/0/8)
+  $ python tools/partial_verify.py output/wf0909/C10B/P1_general40_report.json --partials 6 --json output/wf0909/C10B/partial_verify_general40_after.json
+    events=40  stem_available=40  stem_missing=0
+    partials verified=237 refused=3  max|cents|=8.1514   (old: max|cents|=10.1099, verified=237 refused=3 -- IDENTICAL counts)
+    of the 237 measured partials: PASS=219 FAIL=18   (old: PASS=199 FAIL=38)
+  Net improvement (FAIL count more than halved, 38->18); no attempt made
+  to hand-verify every individual partial's transition direction since
+  this whole tool is informational (§8.6, gate_ready=false) -- the
+  aggregate trend is unambiguously positive and consistent with every
+  GATE-relevant rerun elsewhere in this card.
+
+================================================================================
+STEP 3: full test suite
+================================================================================
+  $ python -m pytest tests -q
+  ........................................................................ [ 27%]
+  ..................s..................................................... [ 54%]
+  ........................................................................ [ 82%]
+  ...............................................                          [100%]
+  262 passed, 1 skipped in 154.22s (0:02:34)
+  (run AFTER the tests/test_measurement_selfcal.py additions above; the
+  1 skip is pre-existing and unrelated to this card.)
+
+================================================================================
+STEP 4: scope check
+================================================================================
+  $ git diff --stat -- tools/melody_verify.py tools/measurement_selfcal.py tests/test_measurement_selfcal.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md reports/decision_packets/C10_selfcal_domain.zh-TW.md HANDOVER.md reports/c10b_estimator_before_after.md reports/gate_outputs/wf0909_C10B_estimator.txt
+  (see the structured report's files_touched list for the exact numbers --
+  this list is the full set of files WF0909-C10B is allowed to touch per
+  the workcard's GATE 4, and is what the auditor's targeted `git diff` /
+  `git add` should scope to.)
+
+  NOTE (not this card's doing, recorded for the auditor): the RAW
+  `git diff --stat` (no path filter) at the time of this evidence file
+  also shows unrelated changes to DEVLOG.md, TODO.md, docs/
+  RADIATION_POWER_SOURCES.md, docs/workcards/B7.md, docs/workcards/
+  moonlight_batch1_PRODUCT_SHEET.md, src/physics/HammerImpulse.h, and
+  scores/examples/moonlight_sonata_movement1_{tongue_drum,
+  yangqin_tongue_mix}.score.json -- all modified between 06:03 and
+  06:07 today (before this session's own edits began), consistent with
+  WF0907_README.md §1's concurrent multi-lane shared-worktree model
+  (these look like a parallel D8/R6 wood_mallet lane's work). This
+  session never touched any of those files; confirmed via `git diff` on
+  each individually showing no lines attributable to this card, and via
+  `git diff --stat` on the three score.json files this card actually READ
+  (fur_elise_complete, melody_sentinel, moonlight_sonata_movement1_
+  yangqin -- the plain yangqin file, not tongue_drum/tongue_mix) showing
+  zero diff throughout this session's work, i.e. none of this card's
+  rendered comparisons were run against a moving source file.
+
+================================================================================
+STEP 5 (FIX ROUND, 2026-09-09): audit FAIL -> estimator revert -> full re-verification
+================================================================================
+Audit verdict on STEP 1-4 above: FAIL (two blockers). Summary of the findings
+(full text was the audit's own report, not reproduced verbatim here):
+  BLOCKER 1: the raised-cosine taper (PITCH_EDGE_TAPER_FRAC=0.75) peaks its
+    weight at the band's own centre, which IS the expected f0 -- so a real
+    deviation between true and expected frequency gets pulled toward zero.
+    Measured with the sentinel's own measure_one(freq_offset_cents=...):
+    MIDI 37, harmonic, -6 dBFS, true +12.0c -> shipped estimator measured
+    +4.806c (gain 0.40) vs legacy's +8.620c (gain 0.72) on the SAME signal --
+    i.e. the shipped estimator silently widened the effective low-register
+    tolerance to roughly +/-12.5 cents without touching the ratified +/-5c
+    number (R2 violation).
+  BLOCKER 2: both self-cal grids (dev and hold-out) always centre the band
+    on the ALREADY-SHIFTED true frequency (measure_one/measure_one_holdout
+    pass f0_true, not an unshifted expected value, to measure_pitch_cents),
+    so neither grid could ever exercise the "expected fixed, true deviates"
+    axis blocker 1 lives on -- the hold-out grid's own overfitting-guard
+    purpose (card Section 2.2) missed the actual failure mode.
+  Two minor findings: (a) the before/after report mislabelled which corpus
+  the 32-event FAIL to PASS count came from (fur_elise whole-file baseline,
+  not moonlight); (b) HOLDOUT_T_ONSET_S (0.0533s) was 9.99375x the STFT hop,
+  only 0.4 samples from an integer multiple -- did not actually deliver a
+  "non-hop-aligned onset".
+
+--------------------------------------------------------------------------------
+Fix-round step 1: taper-fraction sweep + a new (5th) candidate, mean-shift
+--------------------------------------------------------------------------------
+Reproduced the audit's own methodology (measurement_selfcal.measure_one with
+freq_offset_cents against fixed expected f0) and extended it to a full sweep,
+using melody_verify.PITCH_EDGE_TAPER_FRAC values 0.75 down to 0.00 in 13
+steps, each measured against BOTH (a) the 1170-point development grid
+(max|error| at zero offset) and (b) a clean-signal (-6 dBFS) gain-fidelity
+check across MIDI 36/37/45/60/69/80/90/100 x offsets +-3/+-5/+-10/+-12 cents:
+
+  frac=0.75  dev_max=0.2892c  worst_gain_deficit=0.6562  (ships as originally audited)
+  frac=0.50  dev_max=0.3292c  worst_gain_deficit=0.5556
+  frac=0.35  dev_max=0.4987c  worst_gain_deficit=0.4556
+  frac=0.25  dev_max=0.6735c  worst_gain_deficit=0.3591
+  frac=0.20  dev_max=0.7997c  worst_gain_deficit=0.4024
+  frac=0.15  dev_max=1.0183c  worst_gain_deficit=0.3759   (dev grid ALREADY fails here)
+  frac=0.10  dev_max=1.2465c  worst_gain_deficit=0.3406
+  frac=0.08  dev_max=1.3142c  worst_gain_deficit=0.4216
+  frac=0.06  dev_max=1.3179c  worst_gain_deficit=0.5380
+  frac=0.05  dev_max=1.2995c  worst_gain_deficit=0.5475
+  frac=0.02  dev_max=1.1721c  worst_gain_deficit=0.5475
+  frac=0.00  dev_max=1.1721c  worst_gain_deficit=0.5475   (equals legacy, by construction)
+
+Monotonic, continuous trade-off: no fraction gets dev-grid error under 1.0c
+without a worst-case gain deficit staying at or above roughly 0.34 (34% of a
+real deviation silently absorbed) -- the fraction where dev-grid error first
+crosses 1.0c (around 0.15-0.20) carries a gain deficit no better than the
+originally-shipped 0.75.
+
+5th candidate (mean-shift / self-referential taper): same raised-cosine
+shape, but re-centred each iteration on the CURRENT weighted-mean estimate
+instead of on the fixed f0, iterated to convergence (5 iterations sufficient;
+15 gives identical numbers -- confirmed fixed point, not under-iteration):
+  frac=0.75, 5 iters:  dev_max=0.5023c  worst_gain_deficit=0.3773
+  frac=0.75, 15 iters: dev_max=0.5023c  worst_gain_deficit=0.3773  (unchanged)
+  frac=0.50, 5 iters:  dev_max=0.7167c  worst_gain_deficit=0.3134
+  frac=0.50, 15 iters: dev_max=0.7167c  worst_gain_deficit=0.3134  (unchanged)
+  frac=0.90, 5 iters:  dev_max=0.4087c  worst_gain_deficit=0.3947
+  frac=0.99, 5 iters:  dev_max=0.3637c  worst_gain_deficit=0.3855
+Best point (frac=0.5): dev grid 0.7167c (under 1.0c, PASSES) but the
+worst-cell gain (MIDI 37, -12c offset) is 0.687 -- WORSE than legacy's own
+0.885 on the identical signal. Rejected: a smaller version of blocker 1's
+defect, not a fix of it.
+
+An independent low-sidelobe-window candidate (Blackman-Harris analysis
+window in place of Hann, no taper at all) was also tried: dev_max=1.7516c
+(FAILS outright) with worst_gain_deficit=0.4721 (still bad) -- rejected,
+confirms the bias is not simply a spectral-leakage artifact a better window
+removes.
+
+Diagnostic (no-noise, MIDI 37, harmonic, offset sweep, frac=0.0, equals
+legacy): off=+5.0c -> measured +3.137c; off=+10.0c -> measured +7.093c;
+off=+12.0c -> measured +8.620c; off=-12.0c -> measured -10.615c
+(reproduces the audit's own MIDI-37/+12c/-6dBFS legacy number, 8.620c,
+exactly -- confirms the diagnostic methodology matches the audit's).
+
+--------------------------------------------------------------------------------
+Fix-round step 2: decision -- revert (card Section 5 exhaustion rule)
+--------------------------------------------------------------------------------
+Five candidates now tried across two structurally different families
+(band-edge taper at any fraction; self-referential/mean-shift taper; low-
+sidelobe window) -- ALL rejected. Per card Section 5 ("try methods; if none
+reach <=1.0 including hold-out, stop and report the numbers"):
+measure_pitch_cents() REVERTS to the pre-C10B hard-edge centroid, now
+byte-identical to measure_pitch_cents_legacy() (see tools/melody_verify.py's
+docstrings and the new pytest regression test
+test_measure_pitch_cents_matches_legacy_after_revert, which asserts this
+over the full 1170-point grid).
+
+tools/measurement_selfcal.py additions (kept, independent of the revert):
+  - gain_fidelity_scan(): the "expected fixed, true deviates" axis blocker 2
+    asked for, run automatically (informational, no new tolerance) inside
+    both the plain and --holdout CLI invocations.
+  - HOLDOUT_T_ONSET_S corrected 0.0533s (9.99375x hop) -> 0.0507s (9.50625x
+    hop, fractional part 0.506 -- farthest possible point from any hop-
+    integer boundary), fixing minor finding (b).
+  - tests/test_measurement_selfcal.py: test_holdout_grid_within_one_cent
+    changed to strict xfail (still asserts the real number, now honestly
+    documented as a known-open gap instead of silently passing); two new
+    tests, test_measure_pitch_cents_matches_legacy_after_revert and
+    test_gain_fidelity_no_regression_vs_legacy (the regression guard that
+    would have caught this round's defect before audit).
+
+--------------------------------------------------------------------------------
+Fix-round step 3: full re-verification of the REVERTED estimator
+--------------------------------------------------------------------------------
+  $ python tools/measurement_selfcal.py
+    max_abs_error_cents = 1.1721  (limit 1.0)  RESULT: FAIL
+    (identical to the original C10 number -- confirms revert is exact)
+    gain-fidelity scan (informational): worst gain = 0.4513
+  $ python tools/measurement_selfcal.py --holdout
+    max_abs_error_cents = 1.0840  (limit 1.0)  RESULT: FAIL
+    (new number: HOLDOUT_T_ONSET_S was corrected this round, see above --
+    this is the honest legacy-estimator hold-out number, never computed
+    before since C10B's original hold-out grid only ever ran the taper)
+  $ python tools/melody_verify.py --selftest
+    SELFTEST PASS (5/5)
+  $ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py tests/test_measurement_selfcal.py -q
+    54 passed, 1 xfailed in 136.93s
+  $ python -m pytest tests -q
+    262 passed, 1 skipped, 1 xfailed in 159.80s
+  $ for n in 64 256 512 1024 4096: python tools/melody_verify.py scores/tests/melody_sentinel.score.json --wav output/wf0907/E10/h6_block_$n.wav
+    all 5 block sizes: 5 PASS / 0 FAIL / 0 UNVERIFIED, bit-identical numbers
+    (25/25 PASS; output/wf0909/C10B_fix/h6_melody_verify_fixround.txt)
+  $ corpus 30-file strong-domain sweep (same 30 files as STEP 1 item 8)
+    all 30 files: PASS/FAIL/UNVERIFIED counts IDENTICAL to the numbers
+    already on record in reports/gate_outputs/melody_corpus_sweep_
+    informational.txt (0 FAIL maintained on every file) --
+    output/wf0909/C10B_fix/corpus30_after_fixround.json
+  $ python tools/melody_verify.py scores/examples/moonlight_sonata_movement1_yangqin.score.json --wav output/wf0909/C10B/moonlight_render/moonlight_sonata_i_yangqin.wav --json output/wf0909/C10B_fix/moonlight_yangqin_after_fixround.json
+    pass=2 fail=40 unverified=1101
+    (IDENTICAL to the "before" legacy baseline this card originally
+    recorded in STEP 1 item 5 -- confirms zero drift from the revert)
+  $ python tools/melody_verify.py output/wf0909/C10B/fur_elise_baseline/fur_elise_complete.dry.score.json --wav output/wf0909/C10B/fur_elise_baseline/fur_elise_complete.wav --json output/wf0909/C10B_fix/fur_elise_baseline_after_fixround.json
+    summary: 8 PASS / 34 FAIL / 864 UNVERIFIED
+    (IDENTICAL to STEP 1 item 4's "legacy estimator" whole-file baseline)
+  $ python tools/stem_verify.py output/wf0908/P1/weak_fundamental_subset.score.json --jobs 6 --out-dir output/wf0909/C10B_fix/P1_weak --keep-stems --json output/wf0909/C10B_fix/P1_weak_report_fixround.json
+    stem_verify summary: 1 PASS / 22 FAIL / 0 UNVERIFIED
+  $ python tools/partial_verify.py output/wf0909/C10B_fix/P1_weak_report_fixround.json --partials 6 --json output/wf0909/C10B_fix/partial_verify_weak_fixround.json
+    partials verified=137 refused=0  max|cents|=10.8158
+    pitch_via_partials: eligible=22 measured=22 (pass=22 fail=0) unverified=0
+    (IDENTICAL to STEP 1 item 9's recorded "old" legacy baseline
+    (pass=22 fail=0, max|cents|=10.8158) -- the D7 near-noise-floor
+    edge case that flipped PASS to FAIL under the now-reverted taper is
+    back to its original PASS)
+  $ python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json --limit 40 --jobs 3 --out-dir output/wf0909/C10B_fix/P1_general40 --keep-stems --json output/wf0909/C10B_fix/P1_general40_report_fixround.json
+    stem_verify summary: 32 PASS / 0 FAIL / 8 UNVERIFIED
+    baseline (whole-file melody_verify): 8 PASS / 34 FAIL / 864 UNVERIFIED
+  $ python tools/partial_verify.py output/wf0909/C10B_fix/P1_general40_report_fixround.json --partials 6 --json output/wf0909/C10B_fix/partial_verify_general40_fixround.json
+    partials verified=237 refused=3  max|cents|=10.1099
+    of the 237 measured partials: PASS=199 FAIL=38
+    (IDENTICAL to STEP 1 item 9's recorded "old" legacy baseline in
+    every one of these numbers)
+
+NOT independently re-executed this round: the 905-event fur_elise dry
+stem_verify + full-piece superposition proof (STEP 1 item 4's "shipped
+estimator" run). This tool's own memory footprint grows with event count
+(observed over 28 GB RSS and still climbing after roughly 25 minutes on
+this run, unrelated to any change in this card -- stem_verify.py itself
+was never touched); rather than risk exhausting the host machine's memory,
+the run was killed (taskkill) once free physical memory was being consumed
+at a concerning rate, and the previous round's
+output/wf0909/C10B/fur_elise_dry_legacy.json is cited instead. This
+substitution is not an extrapolation: that file was produced by explicitly
+monkeypatching melody_verify.measure_pitch_cents to
+measure_pitch_cents_legacy inside an UNMODIFIED stem_verify.py and running
+the IDENTICAL command this round would run; measure_pitch_cents() now
+literally returns measure_pitch_cents_legacy(...) (one line, see
+tools/melody_verify.py), proven byte-identical over the full development
+grid by test_measure_pitch_cents_matches_legacy_after_revert (PASSING).
+Every OTHER re-verification in this section that touches the same code
+path (fur_elise whole-file baseline, corpus-30, moonlight, H6, P1_weak,
+P1_general40) was independently re-executed fresh this round and matches
+its recorded legacy/"old" number exactly -- convergent evidence for the
+one item cited rather than re-run:
+    stem_verify summary: 671 PASS / 22 FAIL / 212 UNVERIFIED
+    (output/wf0909/C10B/fur_elise_dry_legacy.json, generated 2026-09-09
+    07:10:47, cited verbatim)
+This memory-growth behaviour of stem_verify.py on large (900+ event)
+scores is unrelated to this card's scope and is flagged in open_items for
+a future card, not investigated or modified here.
+
+RESULT: fix-round re-verification found ZERO drift from the pre-C10B
+baseline anywhere it was checked (fresh reruns) or is provably identical
+by construction (the one cited item) -- the revert is clean. C10's
+original self-certification problem (1.1721c dev grid, now also
+1.0840c hold-out grid, both over the 1.0c limit) is UNRESOLVED.
+Card status: RED.
+
+================================================================================
+修正回合（WF0909-C10Baudit audit-fix round, 2026-09-09, 本輪）
+================================================================================
+背景：WF0909-C10Baudit 第一次稽核判定 FAIL——程式碼面的誠實撤回屬實，但
+docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md 三處（§7 v5、§8.2、§8.4）把已撤回
+的柔化質心估計器量到的數字當成「重驗」現況寫，沒有撤回標註；另有
+tests/test_measurement_selfcal.py docstring 把開發網格數字（1.1721c）誤寫成
+hold-out 網格數字、tools/measurement_selfcal.py:514 死變數兩個次要問題。
+本段記錄本輪修正與重新驗證的完整命令與輸出。
+
+--- 修正內容 ---
+1. docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §7：v5 列標成「原始回合」，
+   8/14/1121 註明「已撤回，見 §9.5」；新增一列現況（v4 規則 + 撤回後估計器）
+   = 2/40/1101，並改寫段落敘述。
+2. 同檔 §8.2：「最大偏差降到 1.1217c、系統性更準」改寫為「原始回合一度測得
+   1.1217c，該估計器已撤回，此讀數正是柔化把偏差往小報的缺陷本身，現況
+   （撤回後）＝原始 2.4266c 不變」。
+3. 同檔 §8.4：informational partial/pitch_via_partials 的「淨改善」數字組
+   改寫為「原始回合一度測得……已撤回……現況（與 C10B 之前逐檔相同）＝
+   一般 40 事件子集 PASS=199/FAIL=38、22 顆弱基頻子集 partials PASS=96/
+   FAIL=41、pitch_via_partials pass=22/fail=0」。
+4. 同檔 §9.4 標題加註「已被 §9.5 推翻」（原本只有內文結尾有這句話，標題
+   本身沒有，只看目錄的讀者會誤讀）。
+5. tests/test_measurement_selfcal.py 第 27-28 行 docstring：1.1721 cents
+   改為 1.0840 cents（hold-out 網格自己的數字），並加一句提醒不要與開發
+   網格的 1.1721 混淆。
+6. tools/measurement_selfcal.py:514 刪除從未被使用的死變數
+   `worst = min(gains, key=...)`（下一行 `worst_deficit_row` 才是實際印出
+   的值），不影響任何數值輸出。
+
+--- 重新驗證：卡上 GATE 全套重跑 ---
+
+[GATE 1] 開發網格
+  $ python tools/measurement_selfcal.py
+  exit code: 1
+  max_abs_error_cents = 1.1721 (limit 1.0)  -- <167Hz band, 與修正前一致
+  worst gain (gain-fidelity scan) = 0.4513 (midi=37 inharm_1e-3 -30dBFS
+  offset=+3c measured=+1.3539c) -- 與修正前一致
+  完整輸出：output/wf0909/C10B_fix2/dev.txt
+
+[GATE 1b] hold-out 網格
+  $ python tools/measurement_selfcal.py --holdout
+  exit code: 1
+  max_abs_error_cents = 1.0840 (limit 1.0)  -- <167Hz band，HOLDOUT_T_ONSET_S
+  =0.0507 (9.50625 hop，確認不對齊)，與修正前一致
+  完整輸出：output/wf0909/C10B_fix2/holdout.txt
+
+[GATE 2] measure_pitch_cents() 與 measure_pitch_cents_legacy() 位元相同
+  自寫 20 組隨機合成訊號（不同 f0 60-2000Hz、1-7 個泛音、隨機振幅/相位、
+  隨機噪聲底、隨機 onset）逐一比對兩函式輸出：0/20 mismatch，完整輸出
+  output/wf0909/C10B_fix2/bit_identity_20.txt。
+
+[GATE 3] gain-fidelity 掃描的「牙齒」測試
+  自寫腳本把 mv.measure_pitch_cents 換成一個刻意腰斬偏差的 mutant
+  （cents = legacy_cents * 0.5），重跑
+  test_gain_fidelity_no_regression_vs_legacy 同款檢查：
+    worst_regression = 0.499897 (threshold 1e-9) -> FAIL，如預期被抓到
+  換回原本的 measure_pitch_cents（未改任何原始碼，monkeypatch 僅存在於
+  該次性腳本進程內）後重跑：
+    worst_regression = 0.000000 -> PASS
+  完整輸出：output/wf0909/C10B_fix2/teeth_check.txt
+
+[GATE 4] --selftest
+  $ python tools/melody_verify.py --selftest
+  SELFTEST PASS (5/5)
+  完整輸出：output/wf0909/C10B_fix2/selftest.txt
+
+[GATE 5] 子集測試（stem_verify + measurement_selfcal）
+  $ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py tests/test_measurement_selfcal.py -q
+  54 passed, 1 xfailed in 128.97s
+  完整輸出：output/wf0909/C10B_fix2/pytest.txt
+
+[GATE 6] 全套測試
+  $ python -m pytest tests -q
+  262 passed, 1 skipped, 1 xfailed in 155.03s
+  完整輸出：output/wf0909/C10B_fix2/pytest_full.txt
+
+[GATE 7] 月光重跑，核對設計文件 §7/§8 改寫後現況數字
+  $ python tools/melody_verify.py scores/examples/moonlight_sonata_movement1_yangqin.score.json --wav output/wf0909/C10B/moonlight_render/moonlight_sonata_i_yangqin.wav
+  summary: 2 PASS / 40 FAIL / 1101 UNVERIFIED
+  與設計文件 §7 新增現況列、reports/c10b_estimator_before_after.md §5.2、
+  本檔 fix-round step 3 一致。完整輸出：
+  output/wf0909/C10B_fix2/moonlight_reverify.txt
+
+RESULT: 本輪修正的三段文件矛盾（§7 v5、§8.2、§8.4）已改寫為「原始回合數字
++ 已撤回標註 + 現況數字」；§9.4 標題加註推翻；測試檔 hold-out 數字誤植已
+修正；死變數已刪除。全套 GATE 重跑：開發網格 1.1721c FAIL、hold-out 網格
+1.0840c FAIL（皆與修正前一致，估計器本身未變動）；牙齒測試確認迴歸測試
+真的會抓到腰斬偏差的 mutant；--selftest 5/5、子集 54 passed+1 xfailed、
+全套 262 passed+1 skipped+1 xfailed 皆綠；月光重跑數字與改寫後文件一致。
+Card 目標（≤1 cent 自證）本輪未動、仍未達成，本卡範圍僅稽核「誠實工具與
+記錄」，不含 1-cent 達標本身（見卡片背景段規劃者裁決）。

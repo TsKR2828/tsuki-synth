@@ -14,12 +14,24 @@ import sys
 import tempfile
 import unittest
 
+from jsonschema import Draft202012Validator
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 SPEC = importlib.util.spec_from_file_location(
     "score_vs_midi_verify", ROOT / "tools" / "score_vs_midi_verify.py")
 svm = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(svm)
+
+# WF0907-E8 (F-04): tools/midi_to_tsukisynth.py declares module-level
+# @dataclass classes whose forward-referenced annotations are resolved via
+# sys.modules[cls.__module__] -- register before exec_module (same
+# constraint documented in tests/test_midi_type0.py).
+_MTS_SPEC = importlib.util.spec_from_file_location(
+    "midi_to_tsukisynth", ROOT / "tools" / "midi_to_tsukisynth.py")
+mts = importlib.util.module_from_spec(_MTS_SPEC)
+sys.modules[_MTS_SPEC.name] = mts
+_MTS_SPEC.loader.exec_module(mts)
 
 
 # ---------------------------------------------------------------------------
@@ -298,6 +310,92 @@ class SelftestSentinelTests(unittest.TestCase):
         if not svm.GOOD_MIDI.is_file() or not svm.GOOD_SCORE.is_file():
             self.skipTest(f"fixture not present: {svm.GOOD_MIDI} / {svm.GOOD_SCORE}")
         self.assertEqual(0, svm.selftest())
+
+
+class ConverterSchemaContractTests(unittest.TestCase):
+    """WF0907-E8 (F-04, reports/gate_outputs/stem_verify_fur_elise_run.txt):
+    tools/midi_to_tsukisynth.py's write_score() used to only check its own
+    renderer-timing invariants (event sort order, release-time math, rest
+    thresholds), never the canonical scores/schema/score.schema.json bounds
+    -- so it could and did write files the schema itself rejects. write_score()
+    now runs the schema validator first; these tests prove that both for a
+    hand-crafted invalid document (the audit's exact repro) and for the real
+    `convert` subcommand's output on every source MIDI shipped in the repo."""
+
+    SCHEMA_PATH = ROOT / "scores" / "schema" / "score.schema.json"
+    MIDI = ROOT / "scores" / "classical" / "fur_elise" / "source" / "fur_Elise_WoO59.mid"
+
+    @classmethod
+    def setUpClass(cls):
+        with open(cls.SCHEMA_PATH, encoding="utf-8") as fh:
+            cls.validator = Draft202012Validator(json.load(fh))
+
+    def _minimal_valid_score(self):
+        return {
+            "$schema": "TsukiSynth Score v1",
+            "meta": {"title": "x", "id": "x"},
+            "global": {"bpm": 120, "sample_rate": 48000, "master_volume": 0.8},
+            "events": [{
+                "time": 0.0, "duration": 0.5, "engine": "cimbalom", "note": 60,
+                "velocity": 0.7,
+                "performance": {"intended_release_time": 0.45},
+            }],
+            "export": {"filename": "x"},
+        }
+
+    def test_write_score_accepts_a_schema_valid_document(self):
+        score = self._minimal_valid_score()
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "ok.score.json"
+            mts.write_score(score, out)  # must not raise
+            self.assertTrue(out.is_file())
+
+    def test_write_score_rejects_the_f04_repro_with_all_six_schema_errors(self):
+        """Exact repro from the audit: id has a space, sample_rate is not a
+        supported rate, master_volume/reverb decay/reverb wet exceed their
+        maxima, tail_silence_ms is negative -- 6 schema errors, previously
+        written to disk anyway."""
+        score = self._minimal_valid_score()
+        score["meta"]["id"] = "INVALID ID"
+        score["global"]["sample_rate"] = 123
+        score["global"]["master_volume"] = 2
+        score["global"]["effects"] = {"reverb": {"decay": 99, "wet": 9}}
+        score["export"]["tail_silence_ms"] = -1
+
+        schema_errors = list(self.validator.iter_errors(score))
+        self.assertEqual(6, len(schema_errors), msg=[e.message for e in schema_errors])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "bad.score.json"
+            with self.assertRaises(ValueError) as ctx:
+                mts.write_score(score, out)
+            self.assertFalse(out.exists(), "write_score must not write an invalid file")
+            message = str(ctx.exception)
+            for fragment in ("id", "sample_rate", "master_volume", "decay", "wet",
+                              "tail_silence_ms"):
+                self.assertIn(fragment, message, msg=message)
+
+    def test_convert_output_is_schema_valid_for_every_repo_midi(self):
+        """WF0907-E8 GATE 3: `find scores -name "*.mid"` -> convert -> 0
+        jsonschema errors. Repo currently ships exactly one source MIDI
+        (fur_Elise_WoO59.mid); this test globs for the pattern rather than
+        hard-coding it, so a newly added .mid is covered automatically."""
+        midi_files = sorted((ROOT / "scores").rglob("*.mid"))
+        self.assertGreaterEqual(len(midi_files), 1,
+            "expected at least fur_Elise_WoO59.mid under scores/")
+        with tempfile.TemporaryDirectory() as tmp:
+            for midi_path in midi_files:
+                score = mts.generic_piano_score_document(
+                    midi_path, score_id="e8_contract_" + midi_path.stem.lower(),
+                    title="E8 contract check", engine="piano",
+                    profile_set_name="piano_two_hand",
+                )
+                out = Path(tmp) / (midi_path.stem + ".score.json")
+                mts.write_score(score, out)  # must not raise
+                with open(out, encoding="utf-8") as fh:
+                    doc = json.load(fh)
+                errors = list(self.validator.iter_errors(doc))
+                self.assertEqual([], [e.message for e in errors], msg=str(midi_path))
 
 
 if __name__ == "__main__":

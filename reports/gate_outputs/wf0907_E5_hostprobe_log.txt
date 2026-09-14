@@ -1,0 +1,27 @@
+[PASS] H1 scan: VST3 format finds the bundle (C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)
+[PASS] H1 scan: described as instrument named TsukiSynth (got 'TsukiSynth', isInstrument=1, version 0.3.0)
+[PASS] H2 instantiate: instance created
+[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.505276) -- melody-position verdict follows via melody_verify.py
+[PASS] H3 MIDI render: WAV written: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0907\E5\hostprobe_out\hostprobe_render.wav
+[PASS] H3 determinism: second instance created
+[PASS] H3 determinism: fresh-instance re-render is byte-identical
+[PASS] H4 automation: instances created
+[PASS] H4 automation: 'EQ Shelf Gain (dB)' parameter exposed to host
+[PASS] H4 automation: identically-automated renders are byte-identical
+[PASS] H4 automation: +12 dB shelf ramp lifts 3-12 kHz band by 8.51 dB (require >= 6)
+[PASS] H5 state: 'Strike Position' parameter found
+[PASS] H5 state: non-empty state captured (3777 bytes)
+[PASS] H5 state: two fresh instances created
+[PASS] H5 state: parameter survives round-trip exactly (requested 0.42, settled 0.42, restored 0.42)
+[PASS] H5 state: two restores of the same state render byte-identically
+[PASS] H8 tail: MaterialDB loads C:\Users\admin\Desktop\Claude\tsuki-synth\data\materials.json
+[PASS] H8 tail: instance created for cimbalom
+[PASS] H8 tail: cimbalom getTailLengthSeconds()=34.4814s >= engine worstCaseTailSeconds()=33.0287s
+[PASS] H8 tail: instance created for tongue_drum
+[PASS] H8 tail: tongue_drum getTailLengthSeconds()=178.734s >= engine worstCaseTailSeconds()=177.281s
+[PASS] H8 tail: instance created for water_gong
+[PASS] H8 tail: water_gong getTailLengthSeconds()=319.848s >= engine worstCaseTailSeconds()=318.395s
+[PASS] H8 tail: tongue_drum sustain instance created
+[PASS] H8 tail: tongue_drum MIDI 40 tail RMS at 10s = -16.09 dB relative to peak (require > -60, -60dB IS the T60 definition)
+[PASS] H8 tail: tongue_drum still audibly ringing at 10s -> getTailLengthSeconds()=178.734s (require > 10)
+PASS (0 failures)

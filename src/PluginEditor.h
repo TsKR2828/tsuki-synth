@@ -108,6 +108,13 @@ private:
     void setVisible  (ComboParam&, bool);
     void updateEngine();
     int  currentEngine() const;
+    /// WF0907-E5: single source of truth for "is the editor currently
+    /// showing Custom Harmonics" -- previously computed independently at
+    /// two call sites (updateEngine() and the engine-section layout code),
+    /// which had drifted into agreement by coincidence
+    /// (docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md §5). Pure
+    /// refactor: same two APVTS reads, same condition.
+    bool isCustomHarmonicsMode() const;
     juce::Colour accentForEngine (int eng) const;
 
     // Localization
@@ -177,11 +184,18 @@ private:
     KnobParam fxDlyTime, fxDlyFeedback, fxDlyMix;
     KnobParam fxCompThresh, fxCompRatio;
 
-    // Reverb profile / IR loading
-    juce::TextButton revLoadButton { "Load" };
+    // Reverb IR / profile loading (WF0908-P3: split into two buttons -- a
+    // single shared "Load" button previously accepted both .wav (impulse
+    // response) and .json (algorithmic profile) files, which the structural
+    // audit named as a mental-model mix-up alongside the IR truth-source bug
+    // this card fixes; see docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+    // §1's first table row).
+    juce::TextButton revLoadButton { "Load" };          // .wav impulse response -> managed IR library
+    juce::TextButton revLoadProfileButton { "FX" };     // .json algorithmic reverb profile
     juce::TextButton revModeButton { "ALGO" };
     std::unique_ptr<juce::FileChooser> revChooser;
-    void launchReverbFileChooser();
+    void launchReverbIRFileChooser();
+    void launchReverbProfileFileChooser();
     void refreshReverbModeButton();
 
     // Distortion

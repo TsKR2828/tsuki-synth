@@ -1,15 +1,18 @@
 #include "dsp/AudioFIFO.h"
 #include "dsp/DiagnosticOverrides.h"
 #include "dsp/Envelope.h"
+#include "effects/EffectChain.h"
 #include "engines/ChromaticEngine.h"
 #include "score/ScoreParser.h"
 #include "score/ScoreRenderer.h"
 #include "score/WavWriter.h"
 
+#include <atomic>
 #include <cmath>
 #include <cstdio>
 #include <limits>
 #include <memory>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
@@ -983,6 +986,321 @@ void testLayerSourceMasterAndTrim()
 
     directory.deleteRecursively();
 }
+
+// ---------------------------------------------------------------------------
+// WF0907-E7 helpers (K-03 oversized-block chunking, K-02 wet-gain quantifier)
+// ---------------------------------------------------------------------------
+
+// Deterministic fixed-seed white noise. std::mt19937 (not JUCE's Random) so
+// the sequence is portable and traceable to a documented standard PRNG
+// rather than an internal, undocumented algorithm.
+juce::AudioBuffer<float> generateWhiteNoise (int numSamples, int numChannels,
+                                             unsigned seed)
+{
+    juce::AudioBuffer<float> buffer (numChannels, numSamples);
+    std::mt19937 rng (seed);
+    std::uniform_real_distribution<float> dist (-1.0f, 1.0f);
+    for (int ch = 0; ch < numChannels; ++ch)
+    {
+        float* data = buffer.getWritePointer (ch);
+        for (int i = 0; i < numSamples; ++i)
+            data[i] = dist (rng);
+    }
+    return buffer;
+}
+
+// Synthetic exponential-decay white-noise impulse response, written to a
+// temp WAV file for EffectChain::loadImpulseResponse(). Purely a test
+// fixture (no physical measurement backs this shape); t60Seconds only
+// controls where the envelope crosses -60 dB: env(t) = 10^(-3 t / t60).
+juce::File writeExponentialDecayIr (double sampleRate, double t60Seconds,
+                                    double lengthSeconds, unsigned seed)
+{
+    const int numSamples = std::max (1, (int) std::lround (sampleRate * lengthSeconds));
+    auto ir = generateWhiteNoise (numSamples, 2, seed);
+    for (int ch = 0; ch < 2; ++ch)
+    {
+        float* data = ir.getWritePointer (ch);
+        for (int i = 0; i < numSamples; ++i)
+        {
+            const double t = (double) i / sampleRate;
+            const double env = std::pow (10.0, -3.0 * t / t60Seconds);
+            data[i] = (float) (data[i] * env);
+        }
+    }
+    auto file = juce::File::createTempFile (".wav");
+    WavWriter::write (file, ir, sampleRate, 32, false);
+    return file;
+}
+
+// Wires the reverb-mode/mix pointers, prepares the chain, and -- when an IR
+// file is supplied -- loads it and prepares a SECOND time. juce_Convolution.h
+// documents that prepare() blocks until the IR from the most recent
+// loadImpulseResponse() call is fully initialised, so the second prepare()
+// is the synchronisation point that makes the background-thread IR load
+// deterministic for a bit-exact comparison; without it, process() could run
+// against a not-yet-ready convolution engine depending on thread timing.
+void prepareChainWithOptionalIr (EffectChain& chain, double sampleRate,
+                                 int maxBlockSize, std::atomic<float>* modePtr,
+                                 std::atomic<float>* mixPtr, const juce::File* irFile)
+{
+    chain.pReverbMode = modePtr;
+    chain.pReverbMix  = mixPtr;
+    chain.prepare (sampleRate, maxBlockSize);
+    if (irFile != nullptr)
+    {
+        chain.loadImpulseResponse (*irFile);
+        chain.prepare (sampleRate, maxBlockSize);
+    }
+}
+
+// Runs `chain.processBlock` once per (startSample, count) range in `ranges`,
+// each range copied out of `source` into its own sub-buffer and processed
+// independently, then concatenated into the returned buffer. Passing a
+// single range spanning the whole signal exercises EffectChain's internal
+// oversized-block chunking; passing several smaller ranges simulates a host
+// calling processBlock once per host-sized callback.
+juce::AudioBuffer<float> processInChunks (
+    EffectChain& chain, const juce::AudioBuffer<float>& source,
+    const std::vector<std::pair<int, int>>& ranges)
+{
+    int total = 0;
+    for (auto& r : ranges) total += r.second;
+    juce::AudioBuffer<float> out (source.getNumChannels(), total);
+    int dstPos = 0;
+    for (auto& r : ranges)
+    {
+        juce::AudioBuffer<float> sub (source.getNumChannels(), r.second);
+        for (int ch = 0; ch < source.getNumChannels(); ++ch)
+            sub.copyFrom (ch, 0, source, ch, r.first, r.second);
+        chain.processBlock (sub);
+        for (int ch = 0; ch < source.getNumChannels(); ++ch)
+            out.copyFrom (ch, dstPos, sub, ch, 0, r.second);
+        dstPos += r.second;
+    }
+    return out;
+}
+
+bool buffersBitExact (const juce::AudioBuffer<float>& a,
+                      const juce::AudioBuffer<float>& b, int numSamples)
+{
+    if (a.getNumChannels() != b.getNumChannels()) return false;
+    for (int ch = 0; ch < a.getNumChannels(); ++ch)
+    {
+        const float* da = a.getReadPointer (ch);
+        const float* db = b.getReadPointer (ch);
+        for (int i = 0; i < numSamples; ++i)
+            if (da[i] != db[i])
+                return false;
+    }
+    return true;
+}
+
+int countMismatches (const juce::AudioBuffer<float>& a,
+                     const juce::AudioBuffer<float>& b, int startSample,
+                     int numSamples)
+{
+    int mismatches = 0;
+    for (int ch = 0; ch < a.getNumChannels(); ++ch)
+    {
+        const float* da = a.getReadPointer (ch);
+        const float* db = b.getReadPointer (ch);
+        for (int i = startSample; i < startSample + numSamples; ++i)
+            if (da[i] != db[i])
+                ++mismatches;
+    }
+    return mismatches;
+}
+
+// K-03: EffectChain::processBlock() called once with a block larger than the
+// maxBlock negotiated in prepare() must produce output bit-identical to a
+// host that instead calls processBlock() once per <=maxBlock chunk. Before
+// this workcard's fix, EffectChain silently fell back to the algorithmic
+// reverb whenever numSamples > maxBlock even in IR mode (EffectChain.h's
+// irMode guard), which this test would have caught as a mismatch between
+// once-call and chunked-call output.
+void testEffectChainOversizedBlockMatchesExternalChunking()
+{
+    const double sampleRate = 48000.0;
+    const int maxBlock = 512;
+    const int totalSamples = 1537; // 512 + 512 + 513, per the workcard spec
+
+    const auto irFile = writeExponentialDecayIr (sampleRate, 0.3, 1.0, 909090);
+    const auto noise = generateWhiteNoise (totalSamples, 2, 12345);
+
+    std::atomic<float> irModeOn { 1.0f };
+    std::atomic<float> wetMix { 1.0f };
+
+    // (a) IR mode: one 1537-sample call (internal auto-chunking) vs three
+    // externally chunked 512+512+513 calls, from identically prepared
+    // fresh chain instances (same initial state).
+    EffectChain onceIr;
+    prepareChainWithOptionalIr (onceIr, sampleRate, maxBlock, &irModeOn, &wetMix, &irFile);
+    const auto onceIrOut = processInChunks (onceIr, noise, { { 0, totalSamples } });
+
+    EffectChain chunkedIr;
+    prepareChainWithOptionalIr (chunkedIr, sampleRate, maxBlock, &irModeOn, &wetMix, &irFile);
+    const auto chunkedIrOut = processInChunks (
+        chunkedIr, noise, { { 0, 512 }, { 512, 512 }, { 1024, 513 } });
+
+    CHECK (buffersBitExact (onceIrOut, chunkedIrOut, totalSamples),
+          "K-03(a): IR-mode EffectChain::processBlock on one 1537-sample call is "
+          "bit-identical to three externally chunked 512+512+513 calls");
+
+    // (c) Mutant: silently drop the input sample at global index 511 (the
+    // last sample the first 512-sample chunk should have processed) by
+    // feeding only 511 samples for that chunk, then resuming at the correct
+    // source offset for the remaining chunks. This is exactly the failure
+    // mode "chunk boundary drops the last sample" -- if the comparison in
+    // (a) could not detect a missing sample, it would be meaningless.
+    EffectChain mutantIr;
+    prepareChainWithOptionalIr (mutantIr, sampleRate, maxBlock, &irModeOn, &wetMix, &irFile);
+    const auto mutantOut = processInChunks (
+        mutantIr, noise, { { 0, 511 }, { 512, 512 }, { 1024, 513 } });
+    const int overlap = std::min (onceIrOut.getNumSamples(), mutantOut.getNumSamples());
+    const int mismatches = countMismatches (onceIrOut, mutantOut, 0, overlap);
+    CHECK (mismatches > 0,
+          "K-03(c): a mutant chunking that drops one input sample at a chunk "
+          "boundary is NOT bit-identical to the correct reference -- proving "
+          "the bit-exact comparison in (a)/(b) has teeth");
+
+    // (b) Same one-call-vs-external-chunking check in ALGO mode (no IR
+    // pointer, so EffectChain's irMode guard is false regardless of size).
+    EffectChain onceAlgo;
+    prepareChainWithOptionalIr (onceAlgo, sampleRate, maxBlock, nullptr, &wetMix, nullptr);
+    const auto onceAlgoOut = processInChunks (onceAlgo, noise, { { 0, totalSamples } });
+
+    EffectChain chunkedAlgo;
+    prepareChainWithOptionalIr (chunkedAlgo, sampleRate, maxBlock, nullptr, &wetMix, nullptr);
+    const auto chunkedAlgoOut = processInChunks (
+        chunkedAlgo, noise, { { 0, 512 }, { 512, 512 }, { 1024, 513 } });
+
+    CHECK (buffersBitExact (onceAlgoOut, chunkedAlgoOut, totalSamples),
+          "K-03(b): ALGO-mode EffectChain::processBlock on one 1537-sample call is "
+          "bit-identical to three externally chunked 512+512+513 calls");
+
+    irFile.deleteFile();
+}
+
+// K-02: quantifies (does not PASS/FAIL) how many dB louder EffectChain's IR
+// wet path is than its ALGO wet path for a matched-T60 reverb, because
+// SimpleReverb.h:155-156 multiplies wet output by an extra 0.15 that the
+// convolution path (EffectChain.h) does not. Numbers feed
+// reports/decision_packets/K02_reverb_wet_scale.zh-TW.md; this function
+// asserts nothing.
+struct DecayMeasurement { double referenceDb; double t60Seconds; bool measured; };
+
+DecayMeasurement measureNoiseBurstDecay (const juce::AudioBuffer<float>& buffer,
+                                         int burstSamples, double sampleRate)
+{
+    const int win = 512;
+    auto windowRmsDb = [&] (int start) -> double
+    {
+        double sumSq = 0.0;
+        int count = 0;
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            const float* data = buffer.getReadPointer (ch);
+            for (int i = start; i < start + win && i < buffer.getNumSamples(); ++i)
+            {
+                sumSq += (double) data[i] * (double) data[i];
+                ++count;
+            }
+        }
+        if (count == 0) return -300.0;
+        const double rms = std::sqrt (sumSq / (double) count);
+        return rms > 1.0e-12 ? 20.0 * std::log10 (rms) : -300.0;
+    };
+
+    // Reference level: average windowed RMS (dB) over the steady-state
+    // portion just before the burst ends.
+    const int refStart = std::max (0, burstSamples - win * 8);
+    double refSum = 0.0;
+    int refCount = 0;
+    for (int s = refStart; s + win <= burstSamples; s += win)
+    {
+        refSum += windowRmsDb (s);
+        ++refCount;
+    }
+    const double referenceDb = refCount > 0
+        ? refSum / (double) refCount
+        : windowRmsDb (std::max (0, burstSamples - win));
+
+    // Walk forward from the burst's end until the level falls 60 dB below
+    // the reference (interrupted-noise T60 method).
+    const double target = referenceDb - 60.0;
+    for (int s = burstSamples; s + win <= buffer.getNumSamples(); s += win)
+    {
+        if (windowRmsDb (s) <= target)
+            return { referenceDb, (double) (s - burstSamples) / sampleRate, true };
+    }
+    return { referenceDb, -1.0, false };
+}
+
+void reportReverbWetGainQuantification()
+{
+    const double sampleRate = 48000.0;
+    const int burstSamples = (int) std::lround (sampleRate * 2.0);   // 2 s noise
+    const int tailSamples  = (int) std::lround (sampleRate * 12.0);  // 12 s decay tail
+    const int totalSamples = burstSamples + tailSamples;
+
+    juce::AudioBuffer<float> input (2, totalSamples);
+    input.clear();
+    {
+        const auto burst = generateWhiteNoise (burstSamples, 2, 271828);
+        for (int ch = 0; ch < 2; ++ch)
+            input.copyFrom (ch, 0, burst, ch, 0, burstSamples);
+    }
+
+    std::atomic<float> wetMix { 1.0f };
+
+    // ALGO, reverb defaults (pReverbSize/pReverbDecay left null -> roomSize
+    // 0.5, no authored decay -- SimpleReverb.h's default emergent T60).
+    EffectChain algoChain;
+    prepareChainWithOptionalIr (algoChain, sampleRate, 2048, nullptr, &wetMix, nullptr);
+    juce::AudioBuffer<float> algoOut = input;
+    algoChain.processBlock (algoOut);
+    const auto algoDecay = measureNoiseBurstDecay (algoOut, burstSamples, sampleRate);
+
+    std::printf ("[K-02] ALGO wet output: steady-state RMS = %.3f dBFS, "
+                "measured T60 = %s\n", algoDecay.referenceDb,
+                algoDecay.measured
+                    ? (std::to_string (algoDecay.t60Seconds) + " s").c_str()
+                    : "NOT FOUND within 12 s tail");
+
+    const double algoT60 = algoDecay.measured ? algoDecay.t60Seconds : 1.0;
+    if (! algoDecay.measured)
+        std::printf ("[K-02] WARNING: falling back to an assumed 1.0 s T60 for "
+                    "the IR match step because measurement did not converge.\n");
+
+    // IR: synthetic exponential-decay IR whose T60 is reverse-engineered
+    // from the ALGO measurement above, so the only intended difference
+    // between the two wet outputs is the 0.15 scale factor (and whatever
+    // residual spectral/diffusion differences the two algorithms carry).
+    const double irLengthSeconds = std::max (1.0, algoT60 * 1.5);
+    const auto irFile = writeExponentialDecayIr (sampleRate, algoT60, irLengthSeconds, 555111);
+
+    std::atomic<float> irModeOn { 1.0f };
+    EffectChain irChain;
+    prepareChainWithOptionalIr (irChain, sampleRate, 2048, &irModeOn, &wetMix, &irFile);
+    juce::AudioBuffer<float> irOut = input;
+    irChain.processBlock (irOut);
+    const auto irDecay = measureNoiseBurstDecay (irOut, burstSamples, sampleRate);
+
+    std::printf ("[K-02] IR   wet output (matched-T60 IR = %.3f s): steady-state RMS = "
+                "%.3f dBFS, measured T60 = %s\n", algoT60, irDecay.referenceDb,
+                irDecay.measured
+                    ? (std::to_string (irDecay.t60Seconds) + " s").c_str()
+                    : "NOT FOUND within 12 s tail");
+
+    const double rmsDiffDb = irDecay.referenceDb - algoDecay.referenceDb;
+    const double theoreticalDb = 20.0 * std::log10 (1.0 / 0.15);
+    std::printf ("[K-02] RMS difference (IR - ALGO) = %.3f dB\n", rmsDiffDb);
+    std::printf ("[K-02] Theoretical difference if ALGO's 0.15 factor were absent "
+                "(20*log10(1/0.15)) = %.3f dB\n", theoreticalDb);
+
+    irFile.deleteFile();
+}
 }
 
 int main()
@@ -1005,10 +1323,15 @@ int main()
     testFlacWriter();
     testFmRenderTailAndWall();
     testLayerSourceMasterAndTrim();
+    testEffectChainOversizedBlockMatchesExternalChunking();
 
     std::printf ("%s (%d failure%s)\n",
                  failures == 0 ? "PASS" : "FAIL",
                  failures,
                  failures == 1 ? "" : "s");
+
+    std::printf ("\nWF0907-E7 K-02 quantification (informational, no PASS/FAIL):\n");
+    reportReverbWetGainQuantification();
+
     return failures == 0 ? 0 : 1;
 }

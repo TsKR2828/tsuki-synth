@@ -1,0 +1,42 @@
+=== WF0907-E8 GATE 6: git diff --stat scope check (rerun by Sonnet, takeover run 2026-09-08) ===
+
+Context: at takeover time, this card's four target files (src/score/ScoreParser.h,
+tools/midi_to_tsukisynth.py, tests/test_schema_contract_sync.py,
+tests/test_score_vs_midi_verify.py) plus docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+were already staged (git status shows "M "/"A ", not " M"/"??") -- inherited from the
+interrupted prior run. Per WF0907_README.md Sec.2 step 3, staging after PASS is the
+auditor's job, not the worker's; this run does not re-stage or unstage anything, only
+verifies scope with `git diff --cached` since that is where the content already sits.
+
+cmd: git status --short -- src/score/ScoreParser.h tools/midi_to_tsukisynth.py tests/test_schema_contract_sync.py tests/test_score_vs_midi_verify.py docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+M  docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+M  src/score/ScoreParser.h
+A  tests/test_schema_contract_sync.py
+M  tests/test_score_vs_midi_verify.py
+M  tools/midi_to_tsukisynth.py
+
+cmd: git diff --cached --stat -- src/score/ScoreParser.h tools/midi_to_tsukisynth.py tests/test_schema_contract_sync.py tests/test_score_vs_midi_verify.py docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+ docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md |  36 +-
+ src/score/ScoreParser.h                            | 118 +++-
+ tests/test_schema_contract_sync.py                 | 726 +++++++++++++++++++++
+ tests/test_score_vs_midi_verify.py                 |  98 +++
+ tools/midi_to_tsukisynth.py                        |  56 ++
+ 5 files changed, 1014 insertions(+), 20 deletions(-)
+
+cmd: git diff --stat -- src/score/ScoreParser.h tools/midi_to_tsukisynth.py tests/test_schema_contract_sync.py tests/test_score_vs_midi_verify.py docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md
+(empty -- no unstaged changes on top of the staged content for any of these 5 paths)
+
+Card GATE 6 requirement: "git diff --stat 只含 src/score/ScoreParser.h、
+tools/midi_to_tsukisynth.py、tests/test_schema_contract_sync.py、既有測試檔、稽核文件".
+Confirmed: exactly those 5 paths carry E8's changes (ScoreParser.h = the C++ fix,
+midi_to_tsukisynth.py = the converter fix, test_schema_contract_sync.py = the new
+cross-validation suite, test_score_vs_midi_verify.py = existing test file extended with
+ConverterSchemaContractTests, AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md SS4-D = audit
+doc updated to point at the new tests/evidence). No other file's staged or unstaged diff
+belongs to this card -- the many other staged/unstaged paths visible in a repo-wide
+`git status` (PluginEditor.cpp/.h, ChromaticEngine.h, CimbalomEngine.h, host_probe.cpp,
+RenderApp.cpp, ScoreRenderer.h, stem_verify.py, melody_verify.py, requirements-physics.txt,
+docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md, HANDOVER.md, .gitignore, reports/gate_outputs/*
+from other cards, etc.) belong to other WF0907 lanes/cards (E1/E5/E9/E7/E10/C10/C11/C12)
+working the same shared tree concurrently, per WF0907_README.md Sec.1 "只碰你這張卡列出的
+檔案" -- untouched by this E8 takeover run.

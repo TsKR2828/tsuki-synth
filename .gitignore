@@ -22,6 +22,11 @@ xcuserdata/
 exports/
 output/
 
+# External reference datasets (A8 / WF0907-R5): downloaded third-party research
+# data kept out of version control on purpose -- see docs/EXTERNAL_DATASET_A8.zh-TW.md
+# (licence is CC BY-NC-SA 4.0; repo keeps only DOI + SHA256 + derived numbers).
+external_data/
+
 # Verification evidence: keep logs/reports/json, exclude rendered audio (up to 90 MB each)
 reports/**/*.wav
 

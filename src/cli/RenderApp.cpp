@@ -564,9 +564,19 @@ int main (int argc, char* argv[])
         renderer.setBaseDir (scoreFile.getParentDirectory());
         if (score.hasLayers())
         {
-            std::cerr << "ERROR: --dump-modes requires an event score; "
-                         "layer expansion is not implemented" << std::endl;
-            return 1;
+            // WF0907-E9: layered scores now get a flattened, absolute-time
+            // --dump-modes instead of the former blanket refusal -- see
+            // ScoreRenderer::dumpModesLayered() for the offset/gain
+            // derivation (renderLayered() itself is untouched).
+            juce::String layeredJson;
+            if (! renderer.dumpModesLayered (score, layeredJson))
+            {
+                for (const auto& error : renderer.getWarnings())
+                    std::cerr << "ERROR: " << error << std::endl;
+                return 1;
+            }
+            std::cout << layeredJson.toStdString();
+            return 0;
         }
         if (! renderer.validateScore (score))
         {

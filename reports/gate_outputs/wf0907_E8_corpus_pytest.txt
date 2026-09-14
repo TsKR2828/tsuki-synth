@@ -1,0 +1,12 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\admin\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\admin\Desktop\Claude\tsuki-synth
+plugins: anyio-4.13.0, cov-7.1.0, mock-3.15.1
+collecting ... collected 3 items
+
+tests/test_schema_contract_sync.py::CorpusValidityTests::test_corpus_has_75_files PASSED [ 33%]
+tests/test_schema_contract_sync.py::CorpusValidityTests::test_corpus_is_cli_valid PASSED [ 66%]
+tests/test_schema_contract_sync.py::CorpusValidityTests::test_corpus_is_schema_valid PASSED [100%]
+
+============================= 3 passed in 18.23s ==============================

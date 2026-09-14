@@ -1,0 +1,9 @@
+partial_verify.py --b-report -- A13 選項 B+ 第二項交付：B 對照真鋼琴
+只列數字，不設通過條件（reference B values copied verbatim from reports/decision_packets/A13_partial_gate_domain.zh-TW.md §3.3 (Fletcher 1964 JASA 36(1), Hamilton upright piano, Table I/III/IV). This report sets NO pass/fail condition -- A13 §4 選項 B+: the engine's string geometry is known to disagree with this reference (2.4-5.4x), fixing it would change every corpus render's bit-identical output (Rule 10), so this is reported, not gated.)
+cli: build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe (sha256 ed1da2196c6c0b9715385d7a8b51ab832e358dc8524d2646c1357c4dbdd4e28e)
+
+A4    engine B=1.3609e-03  Hamilton-ref B=5.5300e-04  ratio=2.461x
+G5    engine B=4.3212e-03  Hamilton-ref B=1.7700e-03  ratio=2.441x
+F#6   engine B=1.5399e-02  Hamilton-ref B=3.0700e-03  ratio=5.016x
+G6    engine B=1.7284e-02  Hamilton-ref B=3.3400e-03  ratio=5.175x
+D7    engine B=3.8802e-02  Hamilton-ref B=7.2000e-03  ratio=5.389x

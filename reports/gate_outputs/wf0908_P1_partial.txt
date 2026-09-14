@@ -1,0 +1,307 @@
+================================================================================
+WF0908-P1 -- partial 頻率內部一致性驗證器（A13 選 B+ + C13 harmonic-aware）
+GATE 證據檔　新增檔案：tools/partial_verify.py、tests/test_partial_verify.py
+文件：docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §8.6
+日期：2026-09-09　工兵：Sonnet
+================================================================================
+
+--------------------------------------------------------------------------------
+GATE 1 -- pytest tests/test_partial_verify.py -q 全綠（>=5）
+--------------------------------------------------------------------------------
+
+$ python -m pytest tests/test_partial_verify.py -q
+..........                                                               [100%]
+10 passed in 2.00s
+
+10 個哨兵全過（要求 >=5）：
+  test_a_exact_synthetic_signal_all_partials_pass          -- (a) 已知 partial 全對齊 -> 全 PASS
+  test_b_single_partial_shifted_8_cents_only_that_partial_fails -- (b) 只偏第 3 顆 +8c -> 只有 n=3 FAIL
+  test_c_silent_partial_is_unverified_not_pass             -- (c) 缺 partial -> UNVERIFIED，不是 PASS
+  test_d_amplitude_boost_does_not_change_frequency_verdict -- (d) 振幅 x10 -> 頻率 verdict 不變、振幅欄如實記錄 ~+20dB
+  test_e_gate_ready_is_always_false                        -- (e) gate_ready 恆 false（走 run() 真實拒答路徑）
+  test_infer_B_and_least_squares_roundtrip                 -- B 反推 + 最小平方 f0 往返精度 <1e-6 相對誤差
+  test_infer_B_handles_bad_input                           -- B 反推/最小平方對壞輸入回 None，不拋例外
+  test_is_weak_fundamental_class_matches_literal_marker_only -- 字面標記比對，不誤判其他 reason
+  test_c13_pitch_via_partials_recovers_f0_when_fundamental_unmeasurable
+                                                             -- C13 端到端：n=1 因太安靜被拒答，仍能用 n=2..6 重建 f0（PASS, |cents|<2）
+  test_is_weak_fundamental_class_marker_matches_melody_verify_source_string
+                                                             -- 防呆：常數字串若與 melody_verify.py 原文漂移，測試會先炸
+
+--------------------------------------------------------------------------------
+GATE 2 -- 實跑統計
+--------------------------------------------------------------------------------
+
+方法說明：全曲 905 事件的 stem_verify（--keep-stems）第一次嘗試因記憶體用量隨事件數
+近乎失控（見下方「附註：全曲 905 事件嘗試」）中途放棄；改用兩個較小但涵蓋卡上要求
+統計的子集：(2a)+(2b) 專門涵蓋 A13/stem_verify_fur_elise_run.txt 記載的 22 顆弱基頻
+高音（G5x20/D7x1/G6x1/F#6x1，全曲僅此 23 顆符合這 4 個音名，其中 22 顆已知落在弱基頻
+FAIL 類）；(2c) 一個既有、獨立產生的 40 事件一般子集（WF0907-C12 稽核留下、非本卡新造，
+--keep-stems 已到位），用來看「非弱基頻的一般音」的 partials_verified/refused 比例。
+
+--- (2a) stem_verify.py：23 顆弱基頻候選音子集（G5/D7/G6/F#6 全曲出現次數） ---
+
+子集來源（唯讀重用既有 corpus，不新增/不修改任何 score 檔內容，只挑子集）：
+$ python -c "
+import json
+d = json.load(open('scores/classical/fur_elise/fur_elise_complete.score.json', encoding='utf-8'))
+target_notes = {'G5','D7','G6','F#6'}
+subset = [ev for ev in d['events'] if ev.get('note') in target_notes and float(ev.get('velocity',0))>0]
+# subset count = 23 (G5 x20, D7 x1, G6 x1, F#6 x1); events/global/export 皆原樣照抄，只換 events
+"
+-> output/wf0908/P1/weak_fundamental_subset.score.json（events=23：Counter(G5=20, D7=1, G6=1, F#6=1)）
+
+$ python tools/stem_verify.py output/wf0908/P1/weak_fundamental_subset.score.json --jobs 6 --out-dir output/wf0908/P1/stem_verify_weak --keep-stems --json output/wf0908/P1/stem_verify_weak_report.json
+[stem_verify] output\wf0908\P1\weak_fundamental_subset.score.json
+  events total=23  velocity>0=23  used=23
+  stem_verify summary: 1 PASS / 22 FAIL / 0 UNVERIFIED
+  baseline (whole-file melody_verify): 4 PASS / 2 FAIL / 18 UNVERIFIED
+  superposition: NOT bit-exact / ESTABLISHED (criterion: see report json)
+    max_abs_diff=2.346933e-07  budget=1.370907e-06  peak=-132.59 dBFS  rms=-158.18 dBFS  first_diff@32.7083125
+  stems kept at: output\wf0908\P1\stem_verify_weak\stems
+  [exit=1] n_fail=22
+
+-> 22 FAIL 精確吻合 reports/gate_outputs/stem_verify_fur_elise_run.txt「發現 2」記載的
+   22 顆弱基頻高音（G5x19/D7x1/G6x1/F#6x1）；本子集的 1 PASS 即該份既有記錄裡沒進
+   FAIL 類的那顆 G5（20 顆 G5 裡有 19 顆進 FAIL）。
+
+--- (2b) partial_verify.py：對 (2a) 的報告跑 partial 頻率 + C13 ---
+
+$ python tools/partial_verify.py output/wf0908/P1/stem_verify_weak_report.json --partials 6 --json output/wf0908/P1/partial_verify_weak_report.json
+[partial_verify] output\wf0908\P1\stem_verify_weak_report.json
+  events=23  stem_available=23  stem_missing=0
+  partials verified=137 refused=0  max|cents|=10.8158
+  pitch_via_partials: eligible=22 measured=22 (pass=22 fail=0) unverified=0
+
+逐項數字（output/wf0908/P1/partial_verify_weak_report.json 全文）：
+  - summary.partials_verified_total = 137, partials_refused_total = 0
+    （23 事件 x 最多 6 partial，D7 因 Nyquist/dump-modes 只給出 5 個 partial，
+    137 = 22*6 + 1*5；本輪 REFUSED=0，即這 23 事件的 dump-modes partial 沒有一顆被
+    own-event band collision 或本工具自己的能量閘門拒答，全部進入 ±5c 頻率判定）
+  - summary.max_abs_partial_cents = 10.8158（單一 partial 層級的最大偏差，只是記錄，
+    不是本卡的 GATE 門檻；本工具沒有整體 PASS/FAIL）
+  - 22 顆弱基頻音的 pitch_via_partials（本卡步驟 3 明確要的欄位）：
+      eligible = 22（全數符合 reason 含 "near-silent fundamental band" 字面標記）
+      measured = 22（全數取得 >=2 顆已量測 partial 可供最小平方回推）
+      pitch_via_partials_verdict: PASS x22 / FAIL x0 / UNVERIFIED x0
+    以 index=0（第一顆 G5）為例：
+      partials: n1 PASS(-0.90c) n2 PASS(4.26c) n3 FAIL(6.75c) n4 PASS(4.50c)
+                n5 FAIL(5.15c) n6 FAIL(6.04c)
+      pitch_via_partials_cents = +2.12c, verdict = PASS, n_used=[1,2,3,4,5,6]
+      -- stem_verify 原本這顆的 verdict/reason（FAIL, "no onset in near-silent
+      fundamental band ..."）完全原樣照抄，未被本欄位覆蓋或合併。
+    D7（index=19，過去唯一「主導即基頻」那顆）：pitch_via_partials = PASS, +/-4.81c，
+    n_used=[1,2,3,4,5]（本工具自己對 partial-1 的頻率判定是 FAIL @ +7.04c，但最小平方
+    用全部 5 顆一起回推後落回 tolerance 內 -- 兩者是不同的量，這正是本卡要的「兩個維度
+    分開報」）。
+
+--- (2c) partial_verify.py：既有 40 事件一般子集（非弱基頻，WF0907-C12 稽核既有產物） ---
+
+$ python tools/partial_verify.py output/wf0907/C12_audit/new_report.json --partials 6 --json output/wf0908/P1/partial_verify_general40_report.json
+[partial_verify] output\wf0907\C12_audit\new_report.json
+  events=40  stem_available=40  stem_missing=0
+  partials verified=237 refused=3  max|cents|=10.1099
+  pitch_via_partials: eligible=0 measured=0 (pass=0 fail=0) unverified=0
+
+3 顆被拒答的全部是同一顆事件（index=0, E5, t=0.000s -- 全曲第一個事件，沒有 pre-onset
+可比較的靜音段，退回本工具的絕對地板 fallback BAND_GATE_DBFS=-70dBFS）：partial n=2/5/6
+的頻帶電平分別 -77.9/-97.4/-81.1 dBFS，皆低於 -70dBFS。其餘 39 顆事件（有 pre-onset
+可比對）237 顆 partial 全數用 RISE_DB(=15.0dB) 相對本事件自己起音前靜音段的判定通過，
+0 顆因 own-event band collision 被拒。eligible=0 是因為這 40 顆都不屬於 22 顆弱基頻
+FAIL 類（stem_verify 判定裡沒有一顆 reason 含 "near-silent fundamental band"）。
+
+--- --b-report（A13 選項 B+ 第二項交付，不當 GATE） ---
+
+$ python tools/partial_verify.py --b-report reports/gate_outputs/wf0908_P1_b_ratio_report.txt
+[partial_verify] --b-report written to reports/gate_outputs/wf0908_P1_b_ratio_report.txt
+
+輸出檔內容（見 reports/gate_outputs/wf0908_P1_b_ratio_report.txt）五音比值：
+  A4    ratio=2.461x   G5  ratio=2.441x   F#6  ratio=5.016x
+  G6    ratio=5.175x   D7  ratio=5.389x
+-- 與 A13 裁決包 §3.3 記載的 2.46x/2.44x/5.01x/5.17x/5.39x 一致（本工具獨立重跑
+--dump-modes + 同一 n=1/n=2 比值反推法，數字對得上，交叉驗證了 A13 §3.3 的方法）。
+
+--------------------------------------------------------------------------------
+附註：全曲 905 事件嘗試（放棄，非本卡正式證據，記入 open_items 供未來參考）
+--------------------------------------------------------------------------------
+
+$ python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json --jobs 6 --out-dir output/wf0908/P1/stem_verify_dry --keep-stems --json output/wf0908/P1/stem_verify_dry_report.json
+
+905 顆 stem 全部渲染完成（~4 分鐘），但接下來 stem_verify.py 自己的 compare_superposition
+步驟需要把 905 顆個別 stem 全部讀進記憶體（每顆 stem 都是從 t=0 開始渲染到它自己的
+eventEnd+margin，愈晚出現的事件 buffer 愈長，905 顆同時持有），觀察到常駐記憶體從
+~2GB 一路長到 ~41GB（本機共 64GB，可用記憶體一度剩不到 2.5GB），跑了 ~19 分鐘仍未寫出
+report.json（stem_verify.py 本身，不是本卡新增的 partial_verify.py，此工具完全沒被
+執行到）。為保護系統穩定性強制終止該行程並清空產生的 ~17GB 暫存（output/wf0908/P1/
+stem_verify_dry/，已刪除，未進版控）。**這是 stem_verify.py 既有的記憶體 scaling
+特性（O(events) 個別陣列同時持有），不是本卡動到的程式碼；本卡完全沒有碰
+tools/stem_verify.py**，故未列入 files_touched，只記入 open_items 供未來若要跑全曲
+905 事件參考（建議：改用更大記憶體機器、分批跑、或請 stem_verify.py 增加串流式加總——
+後者需要新工作卡，本卡不擅自動手）。
+
+--------------------------------------------------------------------------------
+GATE 3 -- python -m pytest tests -q 全綠
+--------------------------------------------------------------------------------
+
+$ python -m pytest tests -q
+........................................................................ [ 27%]
+................s....................................................... [ 55%]
+........................................................................ [ 82%]
+.............................................                            [100%]
+260 passed, 1 skipped in 71.63s (0:01:11)
+
+（1 skipped 為既有 skip，非本卡引入；260 = WF0907 baseline 213 + 其他 lane 平行新增
++ 本卡 10 個新哨兵）
+
+--------------------------------------------------------------------------------
+GATE 4 -- git diff --stat 範圍檢查
+--------------------------------------------------------------------------------
+
+$ git diff --stat -- tools/partial_verify.py tests/test_partial_verify.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md reports/gate_outputs/wf0908_P1_partial.txt reports/gate_outputs/wf0908_P1_b_ratio_report.txt
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md          |  43 ++
+ reports/gate_outputs/wf0908_P1_b_ratio_report.txt |   9 +
+ tests/test_partial_verify.py                      | 270 +++++
+ tools/partial_verify.py                           | 843 +++++++++++++++++++++
+ 4 files changed, 1165 insertions(+)
+
+（reports/gate_outputs/wf0908_P1_partial.txt 本身是這次新增的證據檔，git 尚未
+add -N 時不計入這條 diff 輸出，但確實是本卡新增檔案，已列入 files_touched。）
+
+未列在上面的其餘 unstaged/staged 變動（.gitignore、docs/EXTERNAL_ANCHOR_SOURCES.md、
+reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md、src/physics/HammerImpulse.h、
+src/physics/RadiationModel.h、tests/physics_models_repro.cpp 等）皆為其他 lane 在本
+工作樹同時進行的既有改動，本卡開工前即已存在，本卡完全沒有觸碰（親自逐檔核對過
+git diff 內容不含本卡任何字元）。
+
+================================================================================
+結論：GATE 1/3/4 全過；GATE 2 為實跑統計（非 pass/fail），22 顆弱基頻高音
+pitch_via_partials 全數 PASS（least-squares 重建 f0 皆落在既有 ±5 cents 內），
+一般子集 partials_verified 237/240（3 顆例外皆為 t=0 首顆事件的已知 fallback
+分支，非缺陷）。本工具全程 status=informational / gate_ready=false，未宣稱任何
+GATE 級主張。
+================================================================================
+
+================================================================================
+修正回合（2026-09-09，回應稽核 FAIL）
+================================================================================
+
+稽核發現 2 項 major + 2 項 minor，逐項修正如下：
+
+--------------------------------------------------------------------------------
+[major-1] docs §8.6 誤稱「給愛麗絲乾聲全曲 905 事件」實跑過
+--------------------------------------------------------------------------------
+屬實：本卡從未在全曲 905 事件規模上跑成 partial_verify.py（stem_verify.py 自身
+記憶體隨事件數飆到 ~41GB 被迫中止，見本檔上方「附註」段）。已改寫
+docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §8.6「實跑統計」段，明確寫出：
+  - 全曲 905 事件從未跑成，原因與証據段落出處都寫清楚
+  - 實際跑成的只有 23 事件弱基頻子集（(2a)+(2b)）+ 40 事件一般子集（(2c)）
+  - 移除「905 顆」字樣，不再違反 README §3「不可宣稱未量測的東西」
+
+--------------------------------------------------------------------------------
+[major-2] docs §8.6 能量閘門描述與出貨程式碼不符
+--------------------------------------------------------------------------------
+屬實：文件舊版寫「≤ BAND_GATE_DBFS(-70dBFS) 即拒答」，但 tools/partial_verify.py
+的 partial_trusted() 實際判準是「本事件自己起音前靜音段中位數 + RISE_DB(15dB)
+相對門檻」，BAND_GATE_DBFS 只在 t=0（無 pre-onset 可比）時當 fallback。已改寫
+docs §8.6「拒答（reuse，不新增邏輯）」段，準確描述兩層判準（pre-onset 相對門檻
+優先、t<=0 才退回絕對地板），並註明這是文件敘述錯誤的更正，不是程式行為變更
+——本輪未修改 tools/partial_verify.py 的能量閘門邏輯本身（該邏輯本已正確，
+上一輪稽核親自重跑 GATE 1/2/3 全綠、兩次 mutation 測試都被哨兵抓到，稽核意見
+本身也只針對「文件寫錯」，不是「程式錯」）。
+
+--------------------------------------------------------------------------------
+[minor-1] 證據檔 237/240 框法未揭露超出 ±5 cents 的比例
+--------------------------------------------------------------------------------
+重新統計（讀 output/wf0908/P1/partial_verify_general40_report.json 與
+partial_verify_weak_report.json 逐顆 partial 的 verdict 欄位）：
+
+$ python -c "
+import json
+for label, path in [('weak23', 'output/wf0908/P1/partial_verify_weak_report.json'),
+                     ('general40', 'output/wf0908/P1/partial_verify_general40_report.json')]:
+    d = json.load(open(path, encoding='utf-8'))
+    counts = {}
+    max_abs = 0.0
+    for ev in d['events']:
+        for p in ev.get('partials', []):
+            v = p.get('verdict')
+            counts[v] = counts.get(v, 0) + 1
+            c = p.get('measured_cents')
+            if c is not None:
+                max_abs = max(max_abs, abs(c))
+    print(label, counts, 'max_abs_cents=', round(max_abs, 4))
+"
+weak23 {'PASS': 96, 'FAIL': 41} max_abs_cents= 10.8158
+general40 {'PASS': 199, 'UNVERIFIED': 3, 'FAIL': 38} max_abs_cents= 10.1099
+
+即：一般 40 事件子集量到的 237 顆 partial 中 38 顆（16%）超出 ±5 cents
+（PASS=199/FAIL=38/UNVERIFIED=3）；22 顆弱基頻子集量到的 137 顆中 41 顆
+（30%）超出（PASS=96/FAIL=41，UNVERIFIED=0）。已把這兩組 PASS/FAIL 拆分數字
+補進 docs §8.6「實跑統計」段與本檔前段「結論」的措辭依據，往後任何引用本卡
+數字都必須帶上這個拆分，不得只寫「237/240 通過」造成誤讀。
+
+（附註：partial 頻率 FAIL 不等於引擎缺陷——本卡定位是 informational、
+gate_ready=false，§8.4/§8.5 已記載三弦 detune 展寬 ±5 cents 與非諧性等已知
+物理成因，本卡沒有新增或修改這些既有結論，只是把「有多少顆落在容差外」的
+數字如實揭露。）
+
+--------------------------------------------------------------------------------
+[minor-2] tools/partial_verify.py:390 的 %% 不會被格式化成單一 %
+--------------------------------------------------------------------------------
+屬實：該 reason 字串是直接字面賦值（非 % (...) 或 .format() 格式化），%% 會
+原樣印出兩個百分號。已修正為單一 %：
+
+$ git diff -- tools/partial_verify.py | grep -A1 -B1 "^\+.*partial's"
++                                "partial's +/-3% band overlaps another "
+-                                "partial's +/-3%% band overlaps another "
+
+確認修正後、修正前的 (2a)/(2b)/(2c) 三次實跑皆無任何一顆 partial 觸發
+band-collision reason（見下方重跑輸出，collision_count=0），故本次修正
+不影響本檔上方任何已記錄的實跑數字，僅修正字串本身；同時確認 tests/ 目錄
+沒有任何測試斷言舊字串（grep 逐字核對）。
+
+--------------------------------------------------------------------------------
+修正回合 GATE 重跑
+--------------------------------------------------------------------------------
+
+$ python -m pytest tests/test_partial_verify.py -q
+..........                                                               [100%]
+10 passed in 2.00s
+
+$ python tools/partial_verify.py output/wf0908/P1/stem_verify_weak_report.json --partials 6 --json output/wf0908/P1/partial_verify_weak_report.json
+[partial_verify] output\wf0908\P1\stem_verify_weak_report.json
+  events=23  stem_available=23  stem_missing=0
+  partials verified=137 refused=0  max|cents|=10.8158
+  pitch_via_partials: eligible=22 measured=22 (pass=22 fail=0) unverified=0
+
+$ python tools/partial_verify.py output/wf0907/C12_audit/new_report.json --partials 6 --json output/wf0908/P1/partial_verify_general40_report.json
+[partial_verify] output\wf0907\C12_audit\new_report.json
+  events=40  stem_available=40  stem_missing=0
+  partials verified=237 refused=3  max|cents|=10.1099
+  pitch_via_partials: eligible=0 measured=0 (pass=0 fail=0) unverified=0
+
+（數字與修正前完全一致——本輪只改了文件敘述與一個未觸發過的 reason 字串，
+沒有改動任何判定邏輯，符合預期。band collision 觸發次數重新核對為 0/0，
+證實 minor-2 修正對本卡既有實跑證據無影響。）
+
+$ python -m pytest tests -q
+........................................................................ [ 27%]
+................s....................................................... [ 55%]
+................................................................. [ 82%]
+.............................................                            [100%]
+260 passed, 1 skipped in 70.28s (0:01:10)
+
+$ git diff --stat -- tools/partial_verify.py tests/test_partial_verify.py docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md reports/gate_outputs/wf0908_P1_partial.txt reports/gate_outputs/wf0908_P1_b_ratio_report.txt
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md          |  60 ++
+ reports/gate_outputs/wf0908_P1_b_ratio_report.txt |   9 +
+ tests/test_partial_verify.py                      | 270 +++
+ tools/partial_verify.py                           | 843 +++++++++++++++++++
+ 4 files changed, 1182 insertions(+)
+（wf0908_P1_partial.txt 本身是這份證據檔，diff --stat 對它自己不計入是正常的
+git 行為；本段落即為它這次唯一的新增內容。）
+
+結論：4 項稽核 findings 全部處理完畢（2 項 major 改文件敘述使其與出貨程式碼
+及實際跑成的範圍一致、2 項 minor 分別補齊統計拆分與修正字串瑕疵）；本輪未
+變更 tools/partial_verify.py 的任何判定邏輯，僅修正一處不影響輸出數字的
+reason 字串格式問題；GATE 1/3 重跑全綠、GATE 2 實跑數字與修正前逐字一致、
+GATE 4 範圍仍只含卡上五檔。
+================================================================================

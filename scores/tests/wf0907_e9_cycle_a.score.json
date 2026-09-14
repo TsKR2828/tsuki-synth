@@ -1,0 +1,39 @@
+{
+  "$schema": "TsukiSynth Score v1",
+  "meta": {
+    "title": "WF0907-E9 cycle fixture A",
+    "id": "wf0907_e9_cycle_a",
+    "author": "TsukiSynth",
+    "description": "WF0907-E9 GATE 3(c): A references B, B references A -- B.hasLayers() must make --dump-modes fail closed with exit 1 (nested layers are not supported, so no separate cycle detector is needed).",
+    "created": "2026-09-07",
+    "tags": ["test", "layer", "wf0907-e9"],
+    "mood": "neutral",
+    "use_case": "VTuber scene transition",
+    "category": "transition_sfx",
+    "worldview": "Akashic",
+    "primary_type": "whoosh",
+    "sound_type": "oneshot",
+    "family_id": "wf0907_e9_cycle",
+    "character": ["metallic"]
+  },
+  "global": {
+    "bpm": 120,
+    "sample_rate": 48000,
+    "master_volume": 0.8
+  },
+  "layers": [
+    {
+      "source": "wf0907_e9_cycle_b.score.json",
+      "region": [0.0, 1.0],
+      "gain": 1.0
+    }
+  ],
+  "crossfade_ms": 0,
+  "export": {
+    "filename": "wf0907_e9_cycle_a",
+    "format": "wav",
+    "bit_depth": 24,
+    "normalize": true,
+    "tail_silence_ms": 100
+  }
+}

@@ -7,9 +7,17 @@
  *
  * ── 物理模型 ──
  *
- * 槌頭接觸弦/梁/板期間，接觸力近似半正弦脈衝（Chaigne & Askenfelt 1994,
- * JASA 95(2), "Numerical simulations of piano strings I"；該文以力-時間曲線
- * 半高寬定義接觸時間 tau_c，並描述槌頭非線性：接觸時間隨衝擊力增大而縮短）：
+ * 槌頭接觸弦/梁/板期間，接觸力近似半正弦脈衝（半正弦模型出自 Woodhouse,
+ * 《Euphonics》§2.2.6 "Frequency spectrum of a hammer tap"："a half-cycle
+ * of a cosine wave"；§12.1.2 說明此脈衝形狀的作用是低通濾波）。**上一版
+ * 把這個模型掛在 Chaigne & Askenfelt 1994（JASA 95(2), "Numerical
+ * simulations of piano strings I"）名下是誤引**——該文明文反對半正弦
+ * 假設，其槌力是非線性冪次律 F=K|y|^p 動態解出的結果，接觸時間 tau_c
+ * 是模型求解的輸出、不是預先給定的已知量（溯源查核見
+ * reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md §3.11，
+ * 2026-09-08）。真實鋼琴氈槌非線性、接觸時間隨衝擊力增大而縮短這件事
+ * 仍然成立，此處半正弦仍是本檔案採用的簡化近似，tau_c 作為輸入參數，
+ * 數值來源見下方：
  *
  *   F(t) = F_max * sin(pi * t / tau_c),   0 <= t <= tau_c
  *   F(t) = 0                              其他時間
@@ -278,27 +286,45 @@ public:
 
     /** Felt（鋼琴氈槌）專用：由 F=K·δ^α、槌質量、撞速解出的接觸時間（秒）。
      *
-     *   tau_c_piano(note, v) = kTauCFelt * g(note, v) / g(69, 0.5)
+     *   tau_c_piano(note, v) = kTauCFelt * keytrackScale(note) * [ g(note, v) / g(note, 0.5) ]
      *
-     * 錨定選擇（**B4 卡的設計決策，不是文獻數字**，登記供月月覆核）：
+     * A14 B-2（`reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md`
+     * §3.2–3.5、§4 選項 B）：B4 原公式把音高形狀與力度形狀混在同一個
+     * g(note, v)（相對於固定的 g(69, 0.5) 錨點）裡，音高形狀因此是
+     * K/α/質量三張錨點表隱含推出的副產品——等效冪次 k ≈ 0.212（A14 §3.3），
+     * 比文獻量測（Askenfelt & Jansson，本檔頂端已引用：A0 ~4 ms → C8 <1 ms，
+     * k ≈ 0.276～0.32）平，高音 τc 拖得太長，基頻正好落進
+     * forceSpectrumMagnitude() 的力脈衝零點（A14 §3.2：G5 x=2.910 幾乎正中
+     * x=3 零點、G6 x=5.063 正中 x=5 零點），造成 G5/G6 第二泛音反超基頻
+     * 30～51 dB（A14 §3.9 對 Fletcher, Blackham & Stratton 1962 消聲室逐音
+     * 量測），而 g 這個比例式本身只在半正弦脈衝模型成立的 x<1 區域有物理
+     * 意義（A14 §3.3 第 3 點）——用它的音高形狀去外插到 x=7 沒有依據。
+     *
+     * 改法：音高形狀換成本檔已溯源、量測擬合的 keytrackScale()（k=0.32，
+     * A4=1.0，clamp [0.4, 2.6]，不改動——README §0 禁止項）；力度形狀保留
+     * B4 的物理推導 g(note, v)/g(note, 0.5)，但分母改成**同一個 note**
+     * （原本是固定的 g(69, 0.5)），讓它只描述「同一音高上，力度怎麼影響
+     * 接觸時間」，音高的部分完全交給 keytrackScale()，不再重複計入。
+     *
+     * 錨定不變（**B4 卡的設計決策，此輪未動**，登記供月月覆核）：
      * 文獻只給比例關係（HAMMER_CONTACT_SOURCES.md §3），沒有給絕對前置
      * 係數（那需要解 F=Kδ^α 運動方程的相位積分，文件未提供、Rule 4 禁止
      * 編造）。因此把比例關係錨定在既有、已溯源的絕對量級上：kTauCFelt
-     * = 2.0 ms（Askenfelt & Jansson 量測，本檔頂端已引用）在 A4（MIDI 69）、
-     * velocity=0.5 這一點。新公式在該點與舊校準完全重合；其餘音高/力度的
-     * 「相對形狀」才是本函式真正換成物理推導的部分。
+     * = 2.0 ms（Askenfelt & Jansson 量測）在 A4（MIDI 69）、velocity=0.5
+     * 這一點——keytrackScale(69) = 1、g(69,0.5)/g(69,0.5) = 1，新公式在
+     * 該點與舊校準完全重合，不變。
      *
      * velocity 的定義沿用既有 tauCForStrike() 的 jlimit(0.02, 1.0)
      * （0-1 正規化 MIDI velocity proxy，不是真實 m/s——既有架構限制，
-     * B4 不解決，只沿用）。輸出經 kPianoTauCMinS/MaxS 工程安全 clamp
+     * 本輪不解決，只沿用）。輸出經 kPianoTauCMinS/MaxS 工程安全 clamp
      * （見該常數註解：非文獻值、非容差）。
      */
     static float pianoHammerTauC (int midiNote, float velocity)
     {
         const float v    = juce::jlimit (0.02f, 1.0f, velocity);
         const float g    = pianoHammerG (midiNote, v);
-        const float gRef = pianoHammerG (69, 0.5f);   // A4 / v=0.5 錨點
+        const float gRef = pianoHammerG (midiNote, 0.5f);   // same-note velocity-shape reference
         return juce::jlimit (kPianoTauCMinS, kPianoTauCMaxS,
-                             kTauCFelt * (g / gRef));
+                             kTauCFelt * keytrackScale (midiNote) * (g / gRef));
     }
 };

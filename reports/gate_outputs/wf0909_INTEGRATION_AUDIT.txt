@@ -1,0 +1,113 @@
+================================================================================
+WF0909 INTEGRATION — INDEPENDENT AUDIT (Opus)   2026-09-09
+稽核不採信工兵自報：以下每一條都是稽核親自重跑、親眼看到的輸出。
+Raw logs: reports/gate_outputs/wf0909_audit_method/
+================================================================================
+
+STEP 0  工作樹狀態（稽核開跑前後各取一次，tracked 檔零變動）
+  git status --short / --cached --stat / --stat  -> audit_git_state.txt
+  稽核全程未 commit / 未 stage / 未 checkout / 未 stash / 未 reset。
+  稽核產生的檔案全部是 untracked 證據：
+    reports/gate_outputs/wf0909_audit_method/*
+    reports/gate_outputs/wf0907_method/render_audit_wf0909_integration.csv
+    reports/gate_outputs/wf0907_method/sha256_audit_wf0909_integration.txt
+
+STEP 2  對 build\ 重建（本卡是唯一獲准對 build\ 跑 cmake 的卡）
+  cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+    -> EXIT 0   (audit_build_main.txt)
+  cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest
+       TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+    -> EXIT 0，五個 .exe 全部產出 (audit_build_tests.txt)
+  X4 規約遵守：ctest 之前先重建測試 target，確定不是測到舊 binary。
+
+STEP 3  ctest --test-dir build -C Release --output-on-failure      [稽核親跑]
+  1/4 audit_repro ............ Passed 1.13s
+  2/4 tuner_repro ............ Passed 0.54s
+  3/4 physics_models_repro ... Passed 0.08s
+  4/4 spectrum_view_repro .... Passed 0.03s
+  100% tests passed, 0 tests failed out of 4      EXIT 0
+  -> 與工兵回報一致。
+
+STEP 4  python -m pytest tests -q                                   [稽核親跑]
+  267 passed, 1 skipped, 3 xfailed in 529.16s     PYTEST_EXIT=0
+  -> 與工兵回報（267/1/3，525.55s）逐項一致。
+  保留意見見下方 FINDING-1（此數字是「staged + C10C 未落地改動」混合樹的結果）。
+
+STEP 5  python tools/physics_verify.py --full                       [稽核親跑]
+  F1 eigenvalue anchors  : PASS
+  1b note-range scan     : PASS
+  1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+  1d velocity judgment   : PASS
+  2d amplitude judgment  : PASS
+  5b measured T60        : PASS
+  F5 residual energy     : PASS (limit -60.0 dB re total)
+  Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s),
+                           tongue_drum/rubber (T60 0.014s < 0.031s),
+                           water_gong/rubber (T60 0.028s < 0.031s)
+  RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED     PV_EXIT=0
+  -> 與工兵回報一致；三條 rubber UNVERIFIED 與歷史基準同一組，非新增。
+
+STEP 6  HostProbe 對 build\ 的 VST3（稽核自己重建過的那顆）        [稽核親跑]
+  build/Release/TsukiSynthHostProbe.exe \
+      build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 output/wf0909/AUDIT
+  67 個 [PASS]，PASS (0 failures)，HOSTPROBE_EXIT=0
+  含 H6 變動 block size(64/256/512/1024/4096)、H6 water_gong glide 逐位元相同、
+  H7 preset round-trip 三情境(matched/missing/mismatch)、H8 tail。
+
+STEP 7  位元不變（本卡最關鍵的一條）                                [稽核親跑]
+  基準檔：reports/gate_outputs/b6_method/sha256_before_post_d8.txt（README §1 D8 落地後新基準）
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py \
+      --label audit_wf0909_integration --workdir <repo 外 scratchpad>
+  以稽核自己重建的 build\TsukiSynthCLI.exe 渲染 8 首，RENDER_EXIT=0
+  diff 基準 vs 稽核渲染結果 -> 完全無差異
+  RESULT: 8/8 IDENTICAL — 未觸發 R10
+  另外獨立比對工兵的 sha256_wf0909_integration.txt vs 基準 -> 亦 8/8 IDENTICAL。
+
+  基準切換正當性（稽核自己查證，非採信工兵）：
+    sha256_before.txt vs sha256_before_post_d8.txt 只差兩行，
+    正是 moonlight_..._tongue_drum 與 moonlight_..._yangqin_tongue_mix，與 README §1/§3 描述相符。
+    兩首 score 的 staged diff 內容：
+      git diff --cached -- <該兩首> | 去掉 +/- 後統計
+        1142 x  "exciter": "wood_mallet"   (新)
+        1142 x  "exciter": "finger"        (舊)
+      = 差異 100% 只有 exciter 欄位，沒有夾帶其他改動。基準切換成立。
+
+STEP 8  measurement_selfcal.py / --holdout（條件：C10C 已 PASS）
+  C10C = RED，條件不成立 -> 卡上第 8 步不適用，工兵跳過正確。
+  稽核仍以「補充資訊」身分實跑（非 GATE），結論如下：
+    (a) 工作樹版 python tools/measurement_selfcal.py      -> EXIT 1，RESULT: FAIL
+    (b) staged（C10Baudit 已核可版）在 repo 外隔離重跑    -> EXIT 1，RESULT: FAIL
+        max_abs_error_cents = 1.1721 (limit 1.0)
+  -> 兩者都 FAIL，且 staged 版的 1.1721 c 正是 wf0909_C10C_nls.txt 記錄的 legacy 估計器數字。
+     這是 C10Baudit「honest revert」刻意保留的誠實 RED 現況，不是本次整合引入的新缺陷；
+     也正好解釋卡片為何把第 8 步設成「C10C PASS 才跑」。
+
+C10C 為何是 RED（稽核自己開證據檔看，不採信轉述）
+  reports/gate_outputs/wf0909_C10C_nls.txt：真實引擎格點
+    max_abs_error_cents = 1.1721 與 1.0840，兩者都 > 1.0 限值 -> 確實 RED，未通過。
+  其實作（tools/melody_verify.py、tools/measurement_selfcal.py、
+  tests/test_measurement_selfcal.py）維持 unstaged，本次整合未動、未 stage、未還原。
+
+================================================================================
+稽核發現
+================================================================================
+FINDING-1（minor，非阻斷，且工兵無法在規約內避免）
+  STEP 4 的 pytest 與 STEP 8(a) 是在「staged + C10C 未落地改動」的混合工作樹上量到的，
+  不等於月月 `git diff --cached` 會看到的 staged-only 狀態。
+  R7 禁止 stash/checkout，工兵無法隔離，並非失職。
+  緩解證據：(1) 只有 tools/melody_verify.py、tools/measurement_selfcal.py、
+  tests/test_measurement_selfcal.py 三個檔是 unstaged 實作，src/ 與 scores/ 全部已 staged，
+  所以 STEP 3/5/6/7（build、ctest、physics_verify、HostProbe、位元不變）完全不受污染；
+  (2) staged 版 selfcal 經稽核隔離重跑，行為與其卡片文件一致（誠實 FAIL 1.1721 c）。
+
+FINDING-2（minor，交辦事項）
+  本次整合的證據檔仍是 untracked（?? reports/gate_outputs/wf0909_INTEGRATION.txt 等）。
+  README §1 要求證據檔進版控、§2.3 要求稽核 PASS 時 git add；但本輪指令明確要求
+  「絕不 commit、不 stage」，稽核遵守後者，證據檔保持 untracked，留給規劃者/月月決定何時納管。
+
+================================================================================
+稽核結論：PASS
+  卡上第 2–7 步全部由稽核親自重跑並親眼確認通過；第 8 步條件不成立、跳過正確。
+  位元不變 8/8 IDENTICAL，未觸發 R10。
+  未發現工兵自報與實測不符之處；未發現任何卡的實作被整合卡動過。
+================================================================================

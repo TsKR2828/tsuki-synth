@@ -267,6 +267,30 @@ fc = ca² / (2π · √(Dx / ρs))     // 不是 √(Dx · H)
 人造的 `fc`/`fga` 數值（例如故意設 `fc=1000, fga=2000`）而不是硬套雲杉的
 `1.8kHz`/`1.3kHz`，否則測不到那個分支。
 
+**2026-09-09 補記（依 `docs/B7_PHASE0_DATA.zh-TW.md` C7/C9/C12 與其
+「C7／C9 更正說明」查證更正）**：`docs/workcards/B7.md` 曾引用本節，
+寫「優先嘗試從 Ege & Boutillon 論文自己給的 `M=9kg`／板厚／密度回推
+`S=M/(ρh)`」；`B7_PHASE0_DATA.zh-TW.md` 本輪複核已查證兩個關鍵事實，
+補記於此：
+
+(a) **`M` 有出處，不是查無**：Ege & Boutillon, arXiv:1210.5688 原文
+「`Lx = 1.39 m, Ly = 0.91 m and total mass M = 9 kg`」（B7_PHASE0_DATA
+C9 列）；同一研究群 arXiv:1210.5109（*Forum Acusticum 2011*）進一步把
+這個 `M` 定義為「整塊音板（含肋條、琴橋、兩根杉木撐條）的質量」，原文
+「M is the mass of the whole soundboard (including ribs, bridges and
+the two fir bars) and almost equal to 9 kg for our upright piano.」
+（B7_PHASE0_DATA C12 列）。
+
+(b) **因此不可用生雲杉密度 `ρ≈400 kg/m³`、`h=8 mm` 反推面積**：`M` 是
+含肋條與琴橋的等效均向板質量，不是裸雲杉板；若硬套生木密度反推會得到
+`S=9/(400×0.008)=2.8125 m²`，是真值 `1.2649 m²` 的約 **2.22 倍**
+（隱含等效體密度 `9/1.2649/0.008≈889 kg/m³`，遠高於生雲杉）
+（B7_PHASE0_DATA §2.3「C7／C9 更正說明」第 3 點）。**直立琴不需要
+反推**——尺寸原文直接給了 `Lx·Ly = 1.2649 m²`；**平台琴反推路線一樣
+用不上**，因為十個來源仍全部查無 `M`。**結論**：`S=M/(ρh)` 反推路線對
+直立琴是「不必要」（尺寸已知，不必反推），對平台琴是「不適用」（`M`
+本身查無），不是原先「查不到 `M` 所以走不通」的說法。
+
 ---
 
 ## 6. 引用清單

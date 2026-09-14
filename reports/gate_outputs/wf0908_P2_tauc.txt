@@ -1,0 +1,205 @@
+======================================================================
+WF0908-P2 A14 B-2 tauc keytrack Rule10 GATE evidence
+======================================================================
+
+###################### GATE 1a: baseline 8/8 (pre-edit) ######################
+cmd: python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0908_p2_baseline --workdir <outside-repo> --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+7b0413dd4f85807969242b831c512758834e18b878ec4181c67ad308e9b8b79b  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71  physical_piano/physical_piano.wav
+be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click/restraint_metal_click_001.wav
+c37ac02d01f08a307b1bafcbc5aa6068fe041049fa75a2cb7b240c4a18ccb92e  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free/water_gong_free.wav
+74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening/fur_elise_opening.wav
+
+###################### GATE 1b: after-edit 7/8 (only physical_piano changes) ######################
+cmd: same script, --label wf0908_p2_after, cli rebuilt from after-edit source
+49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+7b0413dd4f85807969242b831c512758834e18b878ec4181c67ad308e9b8b79b  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b  physical_piano/physical_piano.wav
+be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click/restraint_metal_click_001.wav
+c37ac02d01f08a307b1bafcbc5aa6068fe041049fa75a2cb7b240c4a18ccb92e  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free/water_gong_free.wav
+74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening/fur_elise_opening.wav
+
+diff baseline vs after:
+3c3
+< 607d0d3bc578136ff8ebb0bd5c428582d2c2db6ede3989286284539399d52f71  physical_piano/physical_piano.wav
+---
+> 1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b  physical_piano/physical_piano.wav
+(only physical_piano line differs = 7/8 IDENTICAL, matches card expectation)
+
+###################### GATE 2a: ctest after main+test target rebuild (X4) ######################
+cmd: cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+cmd: cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+cmd: ctest --test-dir build-wf -C Release --output-on-failure
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.37 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.62 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.11 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.06 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   2.24 sec
+
+###################### GATE 3: new A14 unit test output (from physics_models_repro test binary, captured on the after-edit build, before the final revert -- ./build-wf/Release/TsukiSynthPhysicsModelsTest.exe | grep -i "A14\|C8 tau_c\|equivalent k\|velocity exponent") ######################
+       velocity exponent @ MIDI 36: -0.393939 (expected -0.394)
+       velocity exponent @ MIDI 60: -0.428571 (expected -0.429)
+       velocity exponent @ MIDI 96: -0.5 (expected -0.5)
+[PASS] Velocity exponents at C2/C4/C7 match -0.394/-0.429/-0.500 (< 1e-3)
+[PASS] A14 B-2: A4/v=0.5 anchor unchanged after re-anchoring pitch shape
+[PASS] A14 B-2: C8 tau_c < 1 ms at v=0.5 (was ~1.46 ms pre-fix)
+       C8 tau_c @ v=0.5 = 0.972655 ms
+[PASS] A14 B-2: C2->C7 equivalent keytrack exponent k = 0.32 +/- 0.01
+       C2->C7 equivalent k = 0.32 (expected 0.32)
+[PASS] A14 B-2: velocity law at fixed pitch bit-equivalent to B4 (rel < 1e-6)
+(re-verified after the final revert: the same grep on the reverted build's
+ physics_models_repro test binary correctly shows ONLY the pre-existing
+ "Velocity exponents" line and none of the 5 A14 B-2 lines above --
+ confirming those checks are compiled out along with the reverted patch)
+
+###################### GATE 2b: physics_verify.py --full --cli build-wf ######################
+cmd: python tools/physics_verify.py --full --cli build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+----------------------------------------------------------------------
+Velocity-response judgment (vel 0.378 -> 0.756; JUDGED in the fundamental's own +/-3% band. tau_c(v)/Felt paths [B4, 2026-08-27 ruling (b)]: render delta vs the model's own prediction; tol +/-1.0 dB throughout, unchanged):
+   engine      MIDI    f0_lo    f0_hi  f0_delta  model_dB  verdict
+   piano         60    -44.6    -36.6      +8.0      +8.0  PASS
+      tau_c(v) claim domain [2026-08-27 ruling (b)]: JUDGED claim = render matches the model's own prediction. Honest report: predicted f0-band delta +7.99 dB, deviation from the fixed-tau_c reference +1.97 dB (informational).
+      broadband RMS delta = +9.18 dB (informational)
+----------------------------------------------------------------------
+   water_gong_free   72    3.51s    3.51s   1.00  (span 57.6dB, probe 5.0s)
+   piano         60    4.14s    4.34s   1.05  (beat 1.51 Hz)  (span 51.6dB, probe 5.0s)
+   piano         72    2.11s    2.22s   1.05  (beat 3.02 Hz)  (span 51.8dB, probe 5.0s)
+
+(model = fundamental decayTime straight from the C++ model;
+ measured = narrowband (+/-3% of measured f0) Hilbert-envelope
+ log-slope fit, beat-period-averaged for multi-string courses;
+ see measure_t60()'s docstring for the exact method, ROADMAP_PHYSICS.md M5-5a.)
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -63.9 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+
+======================================================================
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+###################### GATE 5: python -m pytest tests -q ######################
+........................................................................ [ 27%]
+................s....................................................... [ 55%]
+........................................................................ [ 82%]
+.............................................                            [100%]
+260 passed, 1 skipped in 70.29s (0:01:10)
+
+###################### 5 affected corpus files: verify_score.py --cli build-wf (before) ######################
+=== scores/classical/fur_elise/fur_elise_complete.score.json ===
+RESULT: ALL CHECKS PASSED
+=== scores/examples/physical_piano.score.json ===
+RESULT: ALL CHECKS PASSED
+=== scores/library/akashic/akashic_action_001.score.json ===
+RESULT: ALL CHECKS PASSED
+=== scores/library/ocean/ocean_action_001.score.json ===
+RESULT: ALL CHECKS PASSED
+=== scores/originals/ai_radiance/ai_radiance_m3.score.json ===
+RESULT: ALL CHECKS PASSED
+
+###################### 5 affected corpus files: verify_score.py --cli build-wf (after) ######################
+=== scores/classical/fur_elise/fur_elise_complete.score.json ===
+RESULT: ALL CHECKS PASSED
+=== scores/examples/physical_piano.score.json ===
+RESULT: ALL CHECKS PASSED
+=== scores/library/akashic/akashic_action_001.score.json ===
+RESULT: ALL CHECKS PASSED
+=== scores/library/ocean/ocean_action_001.score.json ===
+RESULT: ALL CHECKS PASSED
+=== scores/originals/ai_radiance/ai_radiance_m3.score.json ===
+RESULT: ALL CHECKS PASSED
+
+###################### patch generation + apply --check ######################
+cmd: git diff -- src/physics/HammerImpulse.h tests/physics_models_repro.cpp > reports/a14_tauc_keytrack_b2.patch
+139 reports/a14_tauc_keytrack_b2.patch
+cmd: git apply --check reports/a14_tauc_keytrack_b2.patch (run against reverted tree)
+PATCH CHECK OK (confirmed interactively, see session log)
+
+###################### final revert: ctest ######################
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.22 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.55 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.11 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   1.97 sec
+
+###################### final revert: 8/8 bit-identity restored ######################
+(empty diff above = 8/8 IDENTICAL, tree confirmed restored)
+
+###################### GATE 6: git diff --stat scope check (on FINAL reverted tree) ######################
+cmd: git diff --stat -- src/physics/HammerImpulse.h tests/physics_models_repro.cpp
+(empty above = confirmed src/tests reverted, not staged)
+
+cmd: git status --short -- reports/a14_tauc_keytrack_b2.patch reports/a14_tauc_keytrack_before_after.md
+     reports/gate_outputs/wf0908_P2_tauc* reports/gate_outputs/wf0908_method
+     reports/gate_outputs/wf0907_method/render_wf0908_p2_* reports/gate_outputs/wf0907_method/sha256_wf0908_p2_*
+     src/physics/HammerImpulse.h tests/physics_models_repro.cpp
+     (scoped to THIS card's files only -- other WF0908_* files in the same
+      directories belong to sibling cards running in parallel this round and
+      are not this card's responsibility; excluded here)
+ M src/physics/HammerImpulse.h
+ M tests/physics_models_repro.cpp
+?? reports/a14_tauc_keytrack_b2.patch
+?? reports/a14_tauc_keytrack_before_after.md
+?? reports/gate_outputs/wf0907_method/render_wf0908_p2_after.csv
+?? reports/gate_outputs/wf0907_method/render_wf0908_p2_after_recheck.csv
+?? reports/gate_outputs/wf0907_method/render_wf0908_p2_baseline.csv
+?? reports/gate_outputs/wf0907_method/render_wf0908_p2_final_revert.csv
+?? reports/gate_outputs/wf0907_method/sha256_wf0908_p2_after.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0908_p2_after_recheck.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0908_p2_baseline.txt
+?? reports/gate_outputs/wf0907_method/sha256_wf0908_p2_final_revert.txt
+?? reports/gate_outputs/wf0908_P2_tauc.txt
+?? reports/gate_outputs/wf0908_P2_tauc_baseline_ctest.txt
+?? reports/gate_outputs/wf0908_P2_tauc_build_main.txt
+?? reports/gate_outputs/wf0908_P2_tauc_build_tests.txt
+?? reports/gate_outputs/wf0908_P2_tauc_ctest.txt
+?? reports/gate_outputs/wf0908_P2_tauc_final_revert_ctest.txt
+?? reports/gate_outputs/wf0908_P2_tauc_physics_verify_full.txt
+?? reports/gate_outputs/wf0908_P2_tauc_pytest.txt
+?? reports/gate_outputs/wf0908_method/
+
+NOTE on the " M" flags above: `git diff --stat` (the actual GATE 6 check,
+run immediately above this block) is EMPTY for both files -- zero content
+difference from the index. `git status` flags them anyway purely because
+`git show :file > file` (the Rule-10-mandated revert method, NOT `git
+checkout`) writes LF-normalized blob content and this repo's core.autocrlf
+then considers the file pending re-normalization to CRLF on next git touch.
+This is a line-ending bookkeeping artifact, not a real change; confirmed by
+re-running the reverted build's test binary (GATE 3 section above) and
+seeing the A14 checks correctly absent, and by the final 8/8 bit-identity
+re-render (identical to the pre-edit baseline byte-for-byte).

@@ -107,6 +107,32 @@ public:
 
     void processBlock (juce::AudioBuffer<float>& buffer)
     {
+        // Hosts are not required to keep every callback <= the block size
+        // negotiated in prepare(). Rather than silently falling back to a
+        // different signal path (see the old numSamples <= maxBlock guard
+        // below), split any oversized block into maxBlock-sized chunks and
+        // run each one through the exact same processing below -- output
+        // must be bit-identical to calling this function once per chunk.
+        // The AudioBuffer(Type* const*, channels, startSample, numSamples)
+        // constructor only wraps existing pointers (channels <= 32 use
+        // preallocatedChannelSpace), so this never allocates on the audio
+        // thread.
+        const int totalSamples = buffer.getNumSamples();
+        if (totalSamples > maxBlock)
+        {
+            int startSample = 0;
+            while (startSample < totalSamples)
+            {
+                const int chunk = juce::jmin (maxBlock, totalSamples - startSample);
+                juce::AudioBuffer<float> subBuffer (buffer.getArrayOfWritePointers(),
+                                                     buffer.getNumChannels(),
+                                                     startSample, chunk);
+                processBlock (subBuffer);
+                startSample += chunk;
+            }
+            return;
+        }
+
         // Parameter automation may arrive as block-sized steps.  Smooth every
         // continuous control so automation cannot create artificial clicks.
         if (pCompThreshold)  smCompThreshold.setTargetValue (pCompThreshold->load());
