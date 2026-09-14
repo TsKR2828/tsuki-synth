@@ -1,7 +1,11 @@
 # TsukiSynth — Current TODO
 
-> Last updated: 2026-09-07
-> Branch: `fix/deep-physics-audit-20260716`（HEAD `cdf2017`，2026-09-07 merge → `main`）
+> Last updated: 2026-09-14
+> Branch: `fix/deep-physics-audit-20260716`（HEAD `49b8542`；領先 `main`（`34aa904`）五個 commit，**未 push 未 merge**）
+
+**2026-09-14 快照**：09-10 四裁決全部落地（C10=A 主張域收窄／A14 patch 已 apply 稽核 PASS／母帶等換源／兩封信草稿待寄）；09-13 切五個 commit；09-14 VST3 新版已部署到 Cubase。
+**沒有任何擋路項。** 下一步由月月選主線（HANDOVER §5-1）：push+merge main → 月光/四季換源重轉譜 → UI 規格送設計端 → B7 開工 → D9–D15。
+月月待辦三件小事：寄信、裝 Limbus 並啟用、Yamaha 裝好後叫 AI 清 Downloads 殘留。
 
 **2026-09-07 補記**：8/31 兩個 commit 登記（`a7413e5` 稽核修復批次、`cdf2017` 水鑼 Pitch Glide
 buffer-size 缺陷已修＝稽核 §4-A 關閉）＋月月裁決批次（push/merge、requirements 加 pytest+mido、

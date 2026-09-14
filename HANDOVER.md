@@ -1,29 +1,26 @@
 # TsukiSynth 交接文件
 
-> 交接視窗：2026-09-09（09-11 補記四裁決落地）　分支：`fix/deep-physics-audit-20260716`
-> （HEAD `98f346f`，`main` = `34aa904` 同步至 09-07；**工作樹 250+ 個檔案 staged 未 commit、零 unstaged**，見 §1）
->
-> **2026-09-10～11 月月四裁決已全部落地**：C10 選 A（主張域收窄：量測器含 ≤1.18 cent 已知誤差，不可宣稱 ≤1 cent；C10C 工具部分入庫、NLS 候選存 patch）／
-> **A14 B-2 patch 已 apply**（Opus 稽核 PASS；位元基準改 `sha256_before_post_a14.txt`）／月光母帶等換源後一起出／兩封信草稿在 `docs/correspondence/`（月月寄）。
-> §5 以下保留裁決前說明供追溯。
+> 交接視窗：**2026-09-14**　分支：`fix/deep-physics-audit-20260716`
+> （HEAD `49b8542`；`main` = `34aa904` 停在 09-07；**分支領先 main 五個 commit，未 push、未 merge**，見 §1）
 > **新 session 請先讀完這一頁再動手。** 待辦細節在 `TODO.md` 開頭「待辦總表」與「三輪 Workflow 快照」；
-> 歷史決策在 `DEVLOG.md`（09-07～09 段）；施工卡與流程規約在 `docs/workcards/WF0907_README.md`。
+> 歷史決策在 `DEVLOG.md`（09-07～14 段）；施工卡與流程規約在 `docs/workcards/WF0907_README.md`。
 
 ---
 
 ## 0. 一句話現況
 
-**09-07～09 三輪 Dynamic Workflow（71 個 agent）把稽核清單清空、F-03 落地、D8 解除、A13/A14/F-03/K-02 代決完成；
-全部成果 staged 未 commit，等月月審 `git diff --cached` 並裁決 §5 的四件事。**
+**09-07～11 三輪 Dynamic Workflow（71 個 agent）+ 月月四裁決全部落地，09-13 切成五個 commit（`5c9cdb3`～`49b8542`）；
+稽核 8/31 清單清空、F-03 落地、D8 解除、A14 τc 修正放行、C10 主張域收窄。VST3 新版 09-14 已由月月部署到 Cubase。
+現在沒有任何東西擋路；下一步是月月選主線（§5）。**
 
 ## 1. 立刻要知道的四件事
 
-1. **工作樹狀態**：`git diff --cached --stat` ≈ 233 檔、+39k 行。**staged = Opus 稽核親自重跑 GATE 通過**（規劃者文件 HANDOVER/TODO/DEVLOG/施工卡/證據檔亦 staged）。
-   unstaged 只剩 0 個實質改動；`reports/c10c_nls_candidate.patch` 是 C10C 未落地候選（見 §5-1）。
-   **R7 照舊**：沒有月月明示不 commit / 不 push。月月授權後的建議 commit 切法：(a) WF0907 工程批、(b) WF0908 F-03+P1+E10b 批、(c) WF0909 D8+P4b 批、(d) 研究文件與裁決包、(e) 施工卡與證據——或一次一個 commit 也可以。
-2. **等月月放行的 patch**：`reports/a14_tauc_keytrack_b2.patch`（A14 B-2，Rule 10）——`git apply` 即落地，只影響 5 個鋼琴 score，報告 `reports/a14_tauc_keytrack_before_after.md`。
-3. **月月是聾人開發者，全程免耳驗收。** 物理/位置正確性由 GATE 鏈負責，美學驗收由外部專業人士。corpus **75 檔**；8 首位元不變基準自 09-09 起用 `reports/gate_outputs/b6_method/sha256_before_post_d8.txt`（D8 改了兩首月光空靈鼓相關曲目）。
-4. **系統部署的 VST3 仍是 0.2.0（7/12）**——F-03、tail length、glide 逐取樣等 plugin 側修正要讓 Cubase 看到，月月需以管理員權限把 `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3` 覆蓋到 `C:\Program Files\Common Files\VST3\`。
+1. **git 狀態**：工作樹乾淨。分支比 `main` 多五個 commit（驗證工具與 CI／引擎 plugin score／研究與裁決包／施工卡與證據／交接文件）。
+   **未 push、未 merge**——R7 照舊，等月月一句話。push 後 CI 會跑三平台（macos leg 會第一次編到 `ParameterLayout.cpp`、`IRLibrary.h`，理論上無平台相依碼，但這是首次實戰）。
+2. **VST3 已部署**（09-14，月月自行覆蓋 `C:\Program Files\Common Files\VST3\`；來源 `Desktop\TsukiSynth_VST3_2026-09-10\`，建於 09-10 23:46，含 F-03 IR 庫、tail length、glide 逐取樣、A14 修正）。
+   Cubase 端可驗的差異：殘響區多了 IR 狀態三態顯示、`.wav` 與 `.json` 載入鈕分開。
+3. **月月是聾人開發者，全程免耳驗收。** 物理/位置正確性由 GATE 鏈負責，美學驗收由外部專業人士。corpus **75 檔**；8 首位元不變基準自 09-10 起用 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`（D8 改兩首月光、A14 改 physical_piano，其餘 5 首自 B6 起從未變）。
+4. **等月月自己做的三件小事**：寄兩封信（`docs/correspondence/`）；裝 Limbus Spatial Stage 並用信裡的金鑰啟用（§11）；Yamaha Piano Sheet Converter 裝好後叫 AI 清 Downloads 殘留。
 
 ## 2. 這個專案是什麼
 
@@ -32,7 +29,7 @@
 **X4 規約**：跑 `ctest` 前必先重建測試 target（現為五個：Audit/Tuner/PhysicsModels/SpectrumView/HostProbe）。
 四個引擎：Cimbalom/Piano（弦）、Tongue Drum（梁）、Water Gong（板）、FM Piano（域外）。
 
-## 3. 三輪工程落地了什麼（全部 staged）
+## 3. 三輪工程落地了什麼（全部已 commit：`5c9cdb3`～`49b8542`）
 
 | 卡 | 白話 | 證據 |
 |---|---|---|
@@ -46,7 +43,7 @@
 | E10/E10b | H6 五種 block size 位元相同；水鑼 glide 逐取樣（原本逐 block 階梯差 +2.6 dB）；H7 user preset harness（`src/ParameterLayout.h`） | `wf0907_E10_*.txt`、`wf0908_E10b_*.txt` |
 | **P3 F-03** | 受管理 IR 庫 `src/IRLibrary.h`（sha256 去重）、preset 存 `reverb_ir{kind,sha256,original_name}`、缺檔三態、`getIRStatus()` 單一真相、HostProbe 67 PASS | `wf0908_P3_f03.txt` |
 | P1 | `tools/partial_verify.py`：partial 頻率內部一致性（±5 c）+ C13 `pitch_via_partials_*`；`gate_ready=false` | `wf0908_P1_partial.txt` |
-| P2 | A14 B-2 τc 音高律 patch（**未落地**，見 §5-2） | `reports/a14_tauc_keytrack_before_after.md` |
+| P2 → A14 落地 | A14 B-2 τc 音高律 patch 09-10 放行 `git apply`，Opus 稽核 PASS；7/8 位元不變只 physical_piano 變 | `reports/a14_tauc_keytrack_before_after.md`、`wf0910_A14_apply*.txt` |
 | P4/P4b | A8 引用更正：TU Berlin 半徑 2.06 m 非 1.05、授權 BY-NC-SA、Sinin 消音室、HammerImpulse 檔頭出處改 Woodhouse | `wf0908_P4_a8.txt`、`wf0909_P4b_citation.txt` |
 | **D8** | 兩首月光空靈鼓相關 score `exciter: finger → wood_mallet`（月月裁決）；200 Hz 以下能量 97% → 18%、斜率 41 → 5.5 dB | `reports/d8_tongue_drum_exciter_before_after.md` |
 | 整合 ×3 | 每輪末重建 `build/`：ctest / pytest 267 / `--full` NO CHECKED FAILURES / HostProbe / 位元不變全綠 | `wf090{7,8,9}_INTEGRATION.txt` |
@@ -61,12 +58,31 @@ MIDI 原譜 ──① score_vs_midi_verify──> score.json ──② melody_ve
         ④ HostProbe(H1–H8) / ⑤ Cubase 實測 / ⑥ piano-roll 影片 / ⑦ stem_verify / ⑧ partial_verify ─┘
 ```
 
-- ② `melody_verify`：onset ±10 ms / pitch ±5 c（既有裁定）。**量測器自證 ≤1 c 尚未達成**（1.1721 c；B 路線兩家族六候選試完，見 §5-1）。
+- ② `melody_verify`：onset ±10 ms / pitch ±5 c（既有裁定）。**量測器自證 ≤1 c 未達成，月月 09-10 選 A 收窄主張域**（1.1721 c 為已知誤差；B 路線兩家族六候選試完，見 §5-0）。
 - ⑦ `stem_verify`：乾聲分軌預設、拒答理由、provenance。**已知**：905 事件全曲記憶體 >28 GB（TODO D14），`--limit 300` 可跑。
 - ⑧ `partial_verify`：informational；振幅只記錄不判定；**不可宣稱「泛音已驗證」**。
 - ④ HostProbe：H6 變動 block size 位元相同（含水鑼 glide）、H7 user preset 三情境（F-03 落地後為硬 CHECK）、H8 tail ≥ 引擎 worst-case。
 
-## 5. 等月月裁決（四件）——**2026-09-10 月月已全部裁決**：1 選 A（收窄主張域，落地中）／2 放行（patch apply 中）／3 母帶等換源後一起出／4 兩封信要寫（草稿在 `docs/correspondence/`，由月月寄）。以下保留裁決前的說明。
+## 5. 下一步候選（月月選主線；09-10 四裁決已全部落地，見 §5-0）
+
+### 5-0 已落地的四裁決（2026-09-10～11）
+
+| 裁決 | 落地 |
+|---|---|
+| C10 選 A | 主張域收窄寫進設計文件 §8.5/§9.7：量測器含 ≤1.18 cent 已知誤差，±5 cent 門檻不變，**不可宣稱 ≤1 cent**；C10C 工具部分入庫、時域 NLS 候選存 `reports/c10c_nls_candidate.patch` |
+| A14 放行 | `git apply` 落地，Opus 稽核 PASS（含牙齒：還原公式 sha 精準回舊值）；7/8 位元不變只 physical_piano 變；基準改 `sha256_before_post_a14.txt` |
+| 月光母帶 | 等換源重轉譜後一起重出，現在不動 |
+| 兩封信 | 草稿 `docs/correspondence/2026-09-10_TU_Berlin_*.md`、`_Iowa_MIS_*.md`，月月自寄 |
+
+### 5-1 主線候選（依價值排）
+
+1. **push + merge `main`**（一句話的事，讓 CI 三平台驗一次 IRLibrary/ParameterLayout）。
+2. **月光／四季換源重轉譜**（解上架限制的唯一路；轉譜 GATE `score_vs_midi_verify.py` 已備；D8 母帶重出掛在這後面）。
+3. **UI 功能規格 v1.1 送設計端**（`docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md`，月月決定找誰）。
+4. **B7 第一原理力鏈開工**（Phase 0 三塊資料齊兩塊：velocity→槌速三錨點、直立琴音板面積；絕對 SPL 出處仍缺，B7.md §8 已改成兩案並列待月月核）。
+5. **D9～D15 缺口**（IR 響度對齊／B-1 文獻／弦長弦徑 B 偏高／舊 DAW state 遷移／水鑼 2.0× partial／stem_verify 記憶體／哨兵放鍵段語料）。
+
+### 5-2 裁決前的原始說明（保留追溯）
 
 1. **C10 量測器自證**：B 路線已在 STFT 家族（5 候選，其中柔化質心被稽核抓到假改善撤回）與時域 NLS（合成關卡 hold-out 0.08 c 但真實渲染更差）試完。
    **建議改選 A（收窄主張域）**，措辭草案 `reports/decision_packets/C10_selfcal_domain.zh-TW.md` §6.4。
@@ -100,7 +116,7 @@ D14 stem_verify 900+ 事件記憶體線性成長 >28 GB／D15 合成哨兵缺放
 | 流程規約（lane、build-wf、X4、位元不變基準、稽核 stage 規則） | `docs/workcards/WF0907_README.md`、`WF0907_R_research_common.md` |
 | 施工卡 | `docs/workcards/WF0907_*.md`、`WF0908_*.md`、`WF0909_*.md` |
 | 裁決包 | `reports/decision_packets/`（A13/A14/F03/K02/C10/D8） |
-| Rule 10 報告 | `reports/a14_tauc_keytrack_before_after.md`（未落地）、`reports/d8_tongue_drum_exciter_before_after.md`（已落地） |
+| Rule 10 報告 | `reports/a14_tauc_keytrack_before_after.md`（09-10 已落地）、`reports/d8_tongue_drum_exciter_before_after.md`（09-09 已落地） |
 | 稽核診斷（三病根） | `docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md`（§4 全部已修或已裁決） |
 | 免耳驗證設計 + 主張域 + 量測器自證 | `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §7–§10 |
 | 外部資料集 | `docs/EXTERNAL_DATASET_A8.zh-TW.md`、`_ALTERNATIVES`、`_SUPPLEMENT`；資料在 `external_data/`（gitignore） |
@@ -118,7 +134,23 @@ D14 stem_verify 900+ 事件記憶體線性成長 >28 GB／D15 合成哨兵缺放
 - HostProbe：`build/Release/TsukiSynthHostProbe.exe <.vst3> <outdir>`
 - ffmpeg：`C:\Users\admin\Desktop\Tools\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe`
 
-## 10. 工作方式備忘（三輪的教訓）
+## 10. 工作方式備忘——補充
+
+（原文在 §12；09-13 新增一條：**多檔 commit 用路徑清單時要先 `tr -d '
+'`**，Windows 寫出的清單帶 CR 會讓 git 認不出檔名，五個 commit 第一次全部空跑。）
+
+## 11. 外部工具評估（2026-09-14，`Downloads\不知道有沒有用`）
+
+| 工具 | 是什麼 | 授權 | 判定 |
+|---|---|---|---|
+| **Limbus Spatial Stage 0.9.0** | 視覺化空間混音（Sender/Master 兩插件 + 獨立程式，每軌即時頻譜） | 原價 €49.90 現 €0 無期限，需金鑰（月月已收到信）| **值得裝**：少數對聾人友善的混音工具，月光多版本混音可用。月月自行安裝啟用 |
+| **Yamaha Piano Sheet Converter β** | AI 採譜：音訊 → 分級鋼琴譜（`installer.exe`，Yamaha 簽章；根目錄 dll/pak/resources 是它的解壓殘留） | β 免費，**限私人、不可商業**；需登入、音檔上傳雲端 | 可當「把錄音翻成看得見的譜」的個人工具；**不可當驗證證據、不可用於換源**（AI 猜的、會繼承錄音版權） |
+| Orra Deverb 1.0.0 | 去殘響 | 免費隨喜 | 可有可無：渲染本就出乾聲，外部資料集皆消音室 |
+| Klanggeist 1.1.1（MODRI） | 一鈕創意頻譜效果 | 平常 €20，72h 免費促銷，需金鑰線上啟用 | 音效產品線可玩，與物理主張無關；先確認有無金鑰 |
+
+已清：重複 zip、Mac 版、`__MACOSX`（進資源回收桶）。**待清**：Yamaha 裝好後根目錄約 200 MB 解壓殘留。
+
+## 12. 工作方式備忘（三輪的教訓，原文）
 
 - **規劃者畫地圖、Sonnet 工兵、Opus 稽核親自重跑**——這套三輪抓到：柔化估計器假改善、研究文件編出來的資料集標題、規劃者自己寫錯的卡文（P4 第 3 項）。**不要跳過稽核層。**
 - **跨 lane 污染**：同一工作樹並行時，未完成卡的新測試檔會弄紅別卡的全套 pytest。全套 pytest 應放整合卡；工兵誠實回 RED 是對的。

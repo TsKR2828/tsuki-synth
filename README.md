@@ -21,6 +21,8 @@
 | Spectrum Analyzer (FFT, log-freq, toggle) | Done |
 | Tuner (measured dry audio, A0-C8, confidence/refusal states, hold-after-release) | Done |
 | Reverb profile / IR loading (scene JSON → params, WAV → convolution) | Done (2026-08-06) |
+| **Managed IR library** (F-03: presets store IR by content hash, three-state missing-file handling, single source of truth for UI/audio IR status) | Done (2026-09-09) |
+| Host tail-length contract (`getTailLengthSeconds()` reports the physical engine's worst-case modal T60, not the FM release) | Done (2026-09-07) |
 | Brightness EQ (creative high shelf: score `effects.eq` + plugin BRIGHTNESS panel) | Done (2026-08-06) |
 | Standalone Score console (render score.json / open report, no DAW; bundles CLI) | Done (2026-08-06) |
 | Scene→Reverb tool (`tools/scene_reverb.py`, Sabine/Eyring → authored T60) | Done (2026-08-05) |
@@ -33,13 +35,13 @@
 | **VST3 build** | **Passed** — fresh Release build from current source |
 | **Standalone build** | **Passed** — fresh Release build from current source |
 | **Standalone launch** | **Passed** — current Release build smoke-tested |
-| **DAW plugin host validation** | **Passed for v0.2.0 (historical)** — Cubase AI 12, MIDI OK, 56 APVTS params verified. Manual DAW re-validation after the current deep-fix round is still pending (see `TODO.md`) |
+| **DAW plugin host validation** | **Passed** — real Cubase LE AI Elements 12 export verified by `melody_verify` 5/5 and bit-identical project save/reload (2026-08-22, L3b); `TsukiSynthHostProbe` H1–H8 cover scan, instantiation, MIDI render determinism, automation, DAW state, variable host block size (bit-identical), user-preset round-trip and tail-length contract. Current build (2026-09-10) deployed to Cubase on 2026-09-14 |
 | State save/load | Done (skipNextProgramChange + reattachListener fix) |
 | Version display | Done (v0.3.0 in title bar) |
 | EN/中文 localization | Done |
 | Standalone REC recording | Done |
 
-**Version**: `v0.3.0` — the active deep-audit branch is `fix/deep-physics-audit-20260716`. B3 (string damping) has been reviewed and merged to `main`; **B4 (hammer contact), B5 (wood orthotropy schema) and B6 (radiation + calibrated physics-only tap, all phases) are committed to the branch and pushed but not yet merged**, pending the maintainer's UI/UX review and a `main`-merge timing decision. Exact verification state: `HANDOVER.md` (start here for a new session) and `TODO.md`.
+**Version**: `v0.3.0` — the active deep-audit branch is `fix/deep-physics-audit-20260716`. B1–B6 are merged to `main` (2026-09-07). The 2026-09-07~11 audit-closure batch (five commits, `5c9cdb3`…`49b8542`: managed IR library, tail-length contract, schema contract sync, layered `--dump-modes`, sample-accurate water-gong glide, A14 hammer-contact pitch law, D8 tongue-drum exciter fix, measurement self-calibration) is **committed on the branch, not yet pushed or merged**. Exact verification state: `HANDOVER.md` (start here for a new session) and `TODO.md`.
 
 ## Overview
 
@@ -79,7 +81,7 @@ For the in-domain engines, `tools/physics_verify.py` compares rendered audio wit
 
 These numbers are model-conformance evidence a deaf user (or an AI) can check visually/numerically — via spectrum plots and pass/fail diffs — without relying on how anything sounds. They are not yet a substitute for calibrated external-instrument measurements.
 
-### Physics chain status (2026-08-28)
+### Physics chain status (2026-09-14)
 
 The string/cimbalom/piano damping law has been extended in stages, each gated on the commands above and, where the render output changes, on a before/after Rule 10 report:
 
@@ -91,6 +93,8 @@ The string/cimbalom/piano damping law has been extended in stages, each gated on
 | B4 | Hammer/felt contact solved per-note from a nonlinear force law instead of a fixed contact-time constant | Done (2026-08-27) | `reports/b4_hammer_contact_before_after.md` |
 | B5 | Orthotropic wood-material schema (9 independent elastic constants per species, from the USDA Wood Handbook) added to `materials.json` | Schema staged, zero consumption — `PlateModel`/`BeamModel` still read a single scalar E/ν; no render output changed | `reports/b5_schema_noop_proof.md` |
 | B6 | Radiation-efficiency skeleton (`RadiationModel.h`, σ(f)/η_rad(f)) exposing diagnostic-only `radiated_power_relative`/`absolute_pressure_per_force`/`acoustic_transfer[]` fields in `--dump-modes` | Done (2026-08-28) — Phase 0-1 skeleton, Phase 2 scope decision (方案 B, physics-only signal-tap calibration), Phase 3/4 landed the calibrated tap; diagnostic path only, `render()`/`ModalResonator` untouched (verified bit-identical 8/8) | — |
+| A14 B-2 | Felt-hammer contact-time pitch law re-anchored to the measured Askenfelt & Jansson curve (`keytrackScale`, k=0.32) instead of the K/α/mass-derived shape (k≈0.212) that pushed treble fundamentals into a force-spectrum null (G5 −34 dB). Velocity law unchanged, no new constants | Done (2026-09-10, maintainer-approved Rule 10) — only 5 piano scores change; 7/8 reference renders bit-identical | `reports/a14_tauc_keytrack_before_after.md` |
+| D8 | Tongue-drum "finger" exciter (4–11 ms soft hammer) replaced by `wood_mallet` in the two Moonlight tongue-drum scores; MIDI 37→87 level slope 41 → 5.5 dB, energy below 200 Hz 97% → 18%. Score change only, engine untouched | Done (2026-09-09, maintainer decision) | `reports/d8_tongue_drum_exciter_before_after.md` |
 
 Full detail and the current decision backlog are in `HANDOVER.md` and `TODO.md`.
 

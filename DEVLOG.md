@@ -2,6 +2,26 @@
 
 ---
 
+## 2026-09-10 ~ 09-14 — 四裁決落地、五個 commit、VST3 部署、外部工具評估
+
+**月月 09-10 四裁決**：C10 選 A（收窄主張域）／A14 patch 放行／月光母帶等換源後一起出／兩封信要寫。
+- **C10 選 A**（Opus 自稽核）：設計文件 §8.5 新增「音高判定含量測器 ≤1.18 cent 已知誤差（開發 1.1721／hold-out 1.0840）」、§8.4 禁語加「不可宣稱量測器 ≤1 cent」、§9.7 裁決記錄；
+  C10C 的工具部分入庫（`measurement_selfcal.py` 增益保真掃描升 GATE、三弦 course 檢查、「增益保真不得比舊版差」迴歸測試）；
+  產品估計器 `measure_pitch_cents()` 一字未動；NLS 候選只存 `reports/c10c_nls_candidate.patch`。**B 路線結論**：STFT 五候選 + 時域 NLS 一候選全否決；更上層發現＝合成哨兵與 NLS 同模型（套套邏輯），登記 D15。
+- **A14 放行**（Sonnet 落地 + Opus 稽核 PASS）：`git apply reports/a14_tauc_keytrack_b2.patch`；ctest 4/4、§A14-1～4 單元測試（C8 τc 0.973 ms、k=0.32）、`--full` NO CHECKED FAILURES、5 檔 verify_score PASS、HostProbe 0 failures；
+  位元不變 7/8 只 physical_piano 607d0d3b→1233b53f（與報告事前值一致），新基準 `sha256_before_post_a14.txt`。
+  稽核牙齒：把公式連分母一起還原成 B4 舊版，sha 精準回舊值；單拿掉 keytrackScale 得另一值（分母已改同音 v=0.5）→ 兩處改動都被位元不變抓得到。
+- **兩封信**：`docs/correspondence/` 英文正文 + 中文對照 + 寄前檢查（TU Berlin 商業授權請求；Iowa MIS 器材/取樣率詢問）。AI 不代發。
+
+**09-13 五個 commit**（月月授權，工作樹自此乾淨；**未 push、未 merge**）：
+`5c9cdb3` 驗證工具與 CI（15 檔）／`31eb7ae` 引擎 plugin score（22）／`9ae8ce2` 研究與裁決包（22）／`27e8393` 施工卡與證據（180）／`49b8542` 交接文件（6）。
+教訓：Windows 寫出的路徑清單帶 CR，`git commit -- $(cat list)` 會把每個檔名尾巴多一個 `?` 全部認不出，第一次五個 commit 全空跑；`tr -d '\r'` 後才成功。
+
+**09-14**：VST3 bundle 複製到 `Desktop\TsukiSynth_VST3_2026-09-10\`（`.vst3` 在 Windows 是資料夾，月月一開始沒看到），月月自行覆蓋 Common Files 完成部署。
+Downloads 四個工具評估寫進 HANDOVER §11（Limbus Spatial Stage 值得裝；Yamaha Piano Sheet Converter β 限私人非商業；Orra Deverb 可有可無；Klanggeist 需金鑰）；重複與 Mac 版已進資源回收桶。
+
+---
+
 ## 2026-09-07 ~ 09-09 — 三輪 Dynamic Workflow：稽核清單清空、F-03 落地、A13/A14/F-03 代決、月月四項裁決
 
 **授權框架**：月月 09-07 一次批六項（push+merge、requirements 加 pytest+mido、A8 下載、UI 等功能做完再送設計、
