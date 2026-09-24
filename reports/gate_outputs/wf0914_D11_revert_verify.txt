@@ -1,0 +1,33 @@
+=== git diff -- src/ tools/ tests/ (must be empty except pre-existing D12/host_probe unrelated changes) ===
+--- diff line count for these 3 files (expect 0) ---
+0
+--- git apply --check reports/d11_string_scale_candidate.patch ---
+exit=0
+
+--- 還原後重建 build-wf (CLI/Standalone/VST3 + 5 測試 target) + ctest ---
+ctest: 100% tests passed, 0 tests failed out of 4 (output/wf0914/D11/ctest_post_revert.txt)
+
+--- 還原後重跑 8 首位元基準，比對本卡開工前基線 (wf0914_D11_sha256_baseline_current_tree.txt) ---
+diff reports/gate_outputs/wf0907_method/sha256_wf0914_D11_baseline.txt reports/gate_outputs/wf0907_method/sha256_wf0914_D11_postrevert.txt
+(no output = identical)
+8/8 IDENTICAL - revert confirmed bit-exact
+
+=== 2026-09-15 re-verify after fixing audit finding 4 (dead link in patch comment) ===
+Steps: git apply reports/d11_string_scale_candidate.patch (bring candidate back) ->
+edit one comment string in src/physics/StringModel.h (docs/d11_string_scale_before_after.md
+-> reports/d11_string_scale_before_after.md, no logic change) ->
+git diff -- src/physics/StringModel.h src/engines/CimbalomEngine.h tools/physics_verify.py
+  > reports/d11_string_scale_candidate.patch (regenerate patch) ->
+cp output/wf0914/D11/backup/StringModel.h.orig src/physics/StringModel.h
+cp output/wf0914/D11/backup/CimbalomEngine.h.orig src/engines/CimbalomEngine.h
+(hand-revert tools/physics_verify.py's two lines back to original, verified against
+ git diff of the applied patch before reverting)
+
+$ git diff -- src/physics/StringModel.h src/engines/CimbalomEngine.h tools/physics_verify.py | wc -l
+0
+$ git apply --check reports/d11_string_scale_candidate.patch
+exit=0 (APPLY_CHECK_OK)
+
+Comment-only fix (one doc-path string inside a C++ comment); no build/ctest/pytest/
+8-song bit-baseline re-run required -- confirmed via `git diff` that no other line changed
+in the regenerated patch besides the corrected path.

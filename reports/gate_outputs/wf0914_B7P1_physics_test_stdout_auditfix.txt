@@ -1,0 +1,258 @@
+TsukiSynth physical-model regression tests
+[PASS] Cantilever analytic mode shapes have a node at the fixed end
+[PASS] Tongue default uses fixed-free eigenvalue ratios
+[PASS] Cantilever free endpoint is not incorrectly forced to zero
+[PASS] Explicit free-free beam retains its distinct modal ratios
+[PASS] Ideal beam width correctly cancels from eigenfrequency
+[PASS] Beam width remains observable through modal mass
+[PASS] Portable Bessel matches independent scipy/A&S anchors (mixed 1e-11)
+       (portable-vs-std worst mixed deviation over 9 orders x 321 args: 2.09744e-11)
+[PASS] Portable Bessel agrees with std::cyl_bessel_j/_i on the full validated grid (mixed 1e-10)
+[PASS] Portable Bessel fail-closed: order 9 (outside validated domain) -> NaN
+[PASS] Portable Bessel fail-closed: negative order -> NaN
+[PASS] Portable Bessel fail-closed: x > 16 (outside validated domain) -> NaN
+[PASS] Portable Bessel fail-closed: negative x -> NaN
+[PASS] Portable Bessel fail-closed: NaN x -> NaN
+[PASS] Portable Bessel positive control: in-domain evaluation is finite
+[PASS] Water-gong glide settles on a bit-identical phase at every buffer size
+[PASS] The settled glide phase is exactly the documented cap
+[PASS] The settled glide multiplier is the documented 0.85 (15 % drop)
+[PASS] The pre-fix per-block reject really did make settled pitch depend on buffer size, by more than the 5-cent melody-GATE tolerance (this test is meaningful)
+       legacy worst settled-pitch spread vs 64 samples = 8.17216 cents (at 8192 samples)
+[PASS] Glide phase stays finite and within the cap for every amount/buffer size
+[PASS] A zero sample rate leaves the glide phase untouched
+[PASS] The settled glide phase is the same at every sample rate
+[PASS] Circular-plate centre strike suppresses m>0 modes without a floor
+[PASS] Clamped plate eigenfunctions vanish at the edge
+[PASS] Free plate preserves centre nodes and the axisymmetric branch
+[PASS] Free-edge eigenvalues depend on the material Poisson ratio
+[PASS] frequency_mode separates MIDI pitch lock from absolute geometry physics
+[PASS] Damping is recomputed from the final sounding frequency
+[PASS] Damping override retains the air/viscoelastic/dislocation losses
+[PASS] Internal friction is broadband: T60 halves per octave (rate ~ eta*f)
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] T60 = 2.2/(f*eta) holds across the whole range, not one anchor
+[PASS] damping_override still means the internal-friction rate at MIDI 60
+[PASS] Anchor T60 with real geometry = 1/(alpha + qInv*f/2.2) per B3 Sec4.1 algebra
+[PASS] B3 retires the bit-exact anchor guarantee: three-mechanism sum shortens anchor T60
+[PASS] Y_inf at h=8mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (3.01e-3 s/kg, +-0.5%)
+[PASS] Y_inf at h=10mm matches BRIDGE_ADMITTANCE_SOURCES.md Sec2.1 table (1.93e-3 s/kg, +-0.5%)
+[PASS] T60_bridge at C2 (T/L=1250.0 N/m) matches literature table (4.25s, +-1%)
+[PASS] T60_bridge at C4 (T/L=1073.3 N/m) matches literature table (4.95s, +-1%)
+[PASS] T60_bridge at C8 (T/L=12650.0 N/m) matches literature table (0.42s, +-1%)
+[PASS] Bridge coupling loss term is frequency-independent (55Hz T60 == 4000Hz T60)
+[PASS] damping_override does not swallow the bridge coupling term
+[PASS] With override/bridge/three-mechanism channels all off, the law reduces bit-exactly to 2.2/(f*eta)
+[PASS] bridgeLossRate fail-closed: soundboardThicknessM=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: negative soundboardThicknessM -> 0.0f
+[PASS] bridgeLossRate fail-closed: length=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: negative length -> 0.0f
+[PASS] bridgeLossRate fail-closed: tension=0 -> 0.0f
+[PASS] bridgeLossRate fail-closed: non-finite tension -> 0.0f
+[SENTINEL 1/2] mutant (frequency-scaled bridgeLoss): T60(55Hz)=20.2186s  T60(4000Hz)=0.278006s -- same equality check as the real test would report: [FAIL] (GOOD -- regression caught)
+[PASS] SENTINEL: mutant frequency-dependent bridgeLoss is distinguishable at 55Hz vs 4000Hz (proves the Sec7-3 equality check has detection power)
+[SENTINEL 2/2] real StringModel::decayTimeForFrequency: T60(55Hz)=4.25044s  T60(4000Hz)=4.25044s -- verdict: [PASS]
+[PASS] SENTINEL: real bridgeLoss term passes the same equality check (frequency-independent, as required)
+[PASS] radiationEfficiency: f < fc all give sigma < 1
+[PASS] radiationEfficiency: f < fc branch is non-decreasing in f
+[PASS] radiationEfficiency: f == fc gives sigma == 1
+[PASS] radiationEfficiency: fc < f < fga gives sigma == 1
+[PASS] radiationEfficiency: f just below fga still gives sigma == 1
+[PASS] radiationEfficiency: f == fga gives the sentinel (-1)
+[PASS] radiationEfficiency: f > fga gives the sentinel (-1)
+[PASS] radiationEfficiency: non-positive fc is fail-closed (-1)
+[PASS] radiationEfficiency: non-positive fga is fail-closed (-1)
+[SENTINEL 1/2] mutant (linear f/fc): sigma(0.5*fc)=0.5 -- if this were the real implementation, it would silently disagree with the correct (f/fc)^2 shape
+[SENTINEL 2/2] real radiationEfficiency (quadratic f/fc): sigma(0.5*fc)=0.25
+[PASS] SENTINEL: linear-f/fc mutant is distinguishable from the real quadratic shape at f=0.5*fc (0.25 vs 0.5, delta=0.25)
+[PASS] SENTINEL: real implementation gives the expected (f/fc)^2=0.25 at f=0.5*fc, not the mutant's 0.5
+[PASS] radiationLossFactor: matches hand-calculated value at f=1000Hz, sigma=1 (eta_rad=rhoAir*cAir*sigma/(omega*rhoS))
+[PASS] radiationLossFactor: sentinel sigma (-1) propagates to sentinel output
+[PASS] radiationLossFactor: non-positive rhoS is fail-closed (-1)
+[PASS] radiatedEnergyFraction: eta_i=0 degenerate case is finite (no NaN/Inf)
+[PASS] radiatedEnergyFraction: eta_i=0 (all damping radiative) correctly gives fraction=1.0, not NaN/div-by-zero
+[PASS] radiatedEnergyFraction: realistic eta_total=0.02 gives 0 < fraction < 1
+[PASS] radiatedEnergyFraction: sentinel etaRad (-1) propagates to sentinel output
+[PASS] radiatedEnergyFraction: non-positive etaTotal is fail-closed (-1)
+[PASS] kPascalsPerUnitPhysicsAmplitude is the decided 1.0 Pa-per-unit-amplitude convention (docs/EXTERNAL_ANCHOR_SOURCES.md §1), unchanged
+[PASS] kMeasurementRadiusM matches the 1.05 m anechoic-array convention (docs/EXTERNAL_ANCHOR_SOURCES.md §1)
+[PASS] pressurePerForce: matches the hand-calculated kPascalsPerUnitPhysicsAmplitude * physicsOnlyAmplitude definition
+[PASS] pressurePerForce: with the 1.0x convention constant, output equals the input amplitude numerically (0.42 Pa/N for 0.42 amplitude)
+[SENTINEL 1/2] mutant (2x calibration constant): 0.84 Pa/N -- if kPascalsPerUnitPhysicsAmplitude were silently doubled, this is what pressurePerForce(0.42) would return instead
+[SENTINEL 2/2] real pressurePerForce(0.42): 0.42 Pa/N
+[PASS] SENTINEL: a doubled-constant mutant is distinguishable from the real 1.0x convention (0.42 vs 0.84 Pa/N, delta=0.42)
+[PASS] pressurePerForce: exactly-zero amplitude fail-closes to the sentinel (-1), not a fabricated 0 Pa/N that would break specimen_verify.py's log10-of-zero-magnitude handling
+[PASS] pressurePerForce: negative amplitude (structurally should not happen upstream, but fail-closed anyway) -> sentinel
+[PASS] pressurePerForce: NaN amplitude -> sentinel
+[PASS] pressurePerForce: +infinity amplitude -> sentinel (not a physical value)
+[PASS] capturePhysicsOnlyModes=false: getPhysicsOnlyModeAmplitudes() stays empty (no computation happened, not just an unused result)
+[PASS] capturePhysicsOnlyModes flag does not change getAllStringModes() (bit-exact float == comparison) -- the diagnostic capture is purely additive bookkeeping, never touches what feeds the render path
+[PASS] capturePhysicsOnlyModes=true: getPhysicsOnlyModeAmplitudes() is populated for a qualifying (steel string) voice
+[PASS] positive control: both vectors are non-empty so the next check cannot pass vacuously
+[SENTINEL] render-path amp[0]=0.356133  physics-only amp[0]=0.773218 -- must differ (render path includes loudnessCompensationGain/spectralTilt, physics-only excludes both)
+[PASS] SENTINEL: physics-only amplitude differs from the render-path amplitude of the same partial (proves the creative-layer multipliers were actually excluded, not accidentally left in)
+       (Cuesta ref f=147Hz: Q=3629.26 vs table 3629)
+[PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+       (Cuesta ref f=1000Hz: Q=6786.62 vs table 6787)
+[PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+       (Cuesta ref f=4000Hz: Q=2816.88 vs table 2817)
+[PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+       (Cuesta ref f=10000Hz: Q=580.421 vs table 580)
+[PASS] String air+visc+dislocation Q matches Cuesta & Valette cello D-string reference
+[SENTINEL r^6->r^2 mutant] f=147Hz: Q=1.20594e-07 vs table 3629 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=1000Hz: Q=2.60591e-09 vs table 6787 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=4000Hz: Q=1.62869e-10 vs table 2817 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+[SENTINEL r^6->r^2 mutant] f=10000Hz: Q=2.60591e-11 vs table 580 (deviation 100% -- same 1% criterion would report: [FAIL] (GOOD -- power law checked))
+[PASS] SENTINEL: r^2 mutant misses the Cuesta reference by far more than 10% (the 1% reference test really checks the r^6 power law)
+       (air-band 1/T60 octave ratio: 1.4468; old f^2 shape would give 4.0)
+[PASS] Air term is not proportional to f^2 (regression guard against the old shape)
+[PASS] Low-band 1/T60 octave ratio sits in the physical sqrt(2)..2 band
+[PASS] stringAirViscDislQInv fail-closed: radius=0 -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: negative radius -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: tension=0 -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: non-finite tension -> 0.0f
+[PASS] stringAirViscDislQInv fail-closed: frequency=0 -> 0.0f
+[PASS] stringAirViscDislQInv positive control: valid inputs give a positive Q^-1
+[PASS] Beam frequencies obey L^-2, thickness, sqrt(E), and rho^-1/2 scaling
+[PASS] Plate frequencies obey R^-2, thickness, sqrt(E), and rho^-1/2 scaling
+[PASS] Unforced modal energy decays monotonically cycle by cycle
+[PASS] Invalid modal numbers fail closed without NaN output or a live voice
+[PASS] Invalid modes cannot poison a simultaneously active valid mode
+[PASS] 1/(2*tau) is the removable pi/4 point, not a false spectral null
+[PASS] Half-sine impulse first true null is 3/(2*tau)
+[PASS] Hertz strike-speed law shortens contact at higher velocity
+[PASS] alpha(C2/C4/C7) reproduce the Euphonics Table 2 anchors exactly
+[PASS] K(C2/C4/C7) reproduce the Euphonics Table 2 anchors (rel < 1e-4)
+[PASS] hammer mass reproduces the C1/C4/C8 Table 1 anchors exactly
+[PASS] pianoHammerTauC(A4, v=0.5) reproduces kTauCFelt (anchor point)
+[PASS] Solved contact time shortens at higher strike velocity
+       velocity exponent @ MIDI 36: -0.393939 (expected -0.394)
+       velocity exponent @ MIDI 60: -0.428571 (expected -0.429)
+       velocity exponent @ MIDI 96: -0.5 (expected -0.5)
+[PASS] Anchor-note tau_c values stay strictly inside the safety clamp
+[PASS] Velocity exponents at C2/C4/C7 match -0.394/-0.429/-0.500 (< 1e-3)
+[PASS] A14 B-2: A4/v=0.5 anchor unchanged after re-anchoring pitch shape
+[PASS] A14 B-2: C8 tau_c < 1 ms at v=0.5 (was ~1.46 ms pre-fix)
+       C8 tau_c @ v=0.5 = 0.972655 ms
+[PASS] A14 B-2: C2->C7 equivalent keytrack exponent k = 0.32 +/- 0.01
+       C2->C7 equivalent k = 0.32 (expected 0.32)
+[PASS] A14 B-2: velocity law at fixed pitch bit-equivalent to B4 (rel < 1e-6)
+[PASS] alphaForPianoNote is non-decreasing over MIDI 36..96
+[PASS] alpha flat-clamps outside the C2..C7 anchor range
+[PASS] K flat-clamps outside the C2..C7 anchor range
+[PASS] hammer mass flat-clamps outside the C1..C8 anchor range
+[PASS] K(MIDI 66) matches the hand-computed log-domain interpolation
+[PASS] Linear-in-K miscoding differs from log-domain result by >1 order of magnitude
+[PASS] Non-Felt hardness values (0/2/3, 1.6, 0.4, 2.4) do not select the solver
+[PASS] Felt detent (1.0 and +/-0.4 neighbourhood) selects the solver
+[PASS] Score-path exact enum: only ExciterType::Felt (1) selects the solver
+[PASS] hammerVelocityMps(52) == 1.0 m/s exactly (2^0)
+[PASS] hammerVelocityMps(77) == 2.0 m/s (Goebl & Bresin 2003 anchor)
+       hammerVelocityMps(40) = 0.716978 (expected 0.717)
+       hammerVelocityMps(60) = 1.24833 (expected 1.248)
+       hammerVelocityMps(110) = 4.99332 (expected 4.993)
+[PASS] hammerVelocityMps matches docs/HAMMER_VELOCITY_SOURCES.md §2's A12 cross-check table within 1e-3
+[PASS] hammerVelocityMps: MIDI < 20 clamps flat to the measured minimum 0.18 m/s
+[PASS] hammerVelocityMps: MIDI > 120 clamps flat to the measured maximum 6.8 m/s
+[PASS] hammerVelocityMps: MIDI == 120 (boundary) still uses the formula, not the clamp
+[PASS] hammerVelocityMps is non-decreasing over MIDI 0..127 (clamp + formula together)
+[PASS] hammerVelocityMps: NaN input is fail-closed (-1)
+[PASS] hammerVelocityMps: +Inf input is fail-closed (-1)
+[PASS] hertzPeakForceNewtons: positive output for a valid input
+       MIDI 36 v=0.3 m/s: integral(K*delta^alpha, 0..deltaMax)=0.000495 J, (1/2)*m*v^2=0.000495 J, rel error=4.30622e-07
+[PASS] hertzPeakForceNewtons: positive output for a valid input
+       MIDI 60 v=1.25 m/s: integral(K*delta^alpha, 0..deltaMax)=0.00703124 J, (1/2)*m*v^2=0.00703125 J, rel error=1.08286e-06
+[PASS] hertzPeakForceNewtons: positive output for a valid input
+       MIDI 96 v=4 m/s: integral(K*delta^alpha, 0..deltaMax)=0.048 J, (1/2)*m*v^2=0.048 J, rel error=1.06869e-07
+[PASS] hertzPeakForceNewtons: numerically-integrated contact work matches (1/2)*m*v^2 within 1e-3 relative error at C2/C4/C7 (B7.md §7 item 2)
+[PASS] hertzPeakForceNewtons: zero speed is fail-closed (-1)
+[PASS] hertzPeakForceNewtons: negative speed is fail-closed (-1)
+[PASS] hertzPeakForceNewtons: NaN speed is fail-closed (-1)
+[PASS] hertzPeakForceNewtons: larger speed gives larger peak force (same note)
+[SENTINEL 1/2] mutant (missing (alpha+1) factor): F_peak=16.6045 N -- if delta_max forgot to multiply by (alpha+1), this is what hertzPeakForceNewtons(60, 1.25) would return instead
+[SENTINEL 2/2] real hertzPeakForceNewtons(60, 1.25): 40.63 N (ratio mutant/real = 0.408677)
+[PASS] SENTINEL: delta_max mutant missing the (alpha+1) factor gives a F_peak at least 2x away from the real implementation
+[PASS] modalEnergyFirstPrinciples: matches the hand-calculated 0.8 J reference point (uses forceSpectrumMagnitude's exact pi/4 value)
+       E_mode(hand-calc reference) = 0.8 J (expected 0.8)
+[PASS] bridgePowerFirstPrinciples: matches the hand-calculated 8.0 W reference point (W_bridge = 2*alpha_bridge*E_mode)
+       W_bridge(hand-calc reference) = 8 W (expected 8.0)
+[PASS] bridgePowerFirstPrinciples: doubling F_peak quadruples W_bridge (E_mode ~ impulse^2 ~ F_peak^2, physical-sanity check replacing the W_rad<=W_bridge conservation inequality this '否' branch does not build)
+[PASS] modalEnergyFirstPrinciples/bridgePowerFirstPrinciples: never negative across a spread of physically plausible (F_peak, tauC, f) inputs
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+[PASS] conservation domain scan: all chain inputs valid for this (note, midiVel)
+       impulse/(2*m*v) worst-case ratio across MIDI 36-96 x velocity 20-120 domain scan: 1 (audit finding before this fix: 2.55-4.32x; must be ~1.0 now)
+[PASS] hertzImpulseConsistentTauCSeconds: assembled impulse fPeakN*tauC*(2/pi) equals the elastic-collision momentum bound 2*m*v to within 1e-3 relative error, across MIDI 36/48/60/72/84/96 x velocity 20/40/60/77/90/110/120 (B7.md SS7 item 4, conservation check)
+[PASS] SENTINEL: assembled impulse never exceeds the physical momentum bound 2*m*v anywhere in the domain scan (WF0914-B7P1 audit finding, 2026-09-14: this FAILED by 2.55-4.32x domain-wide before the fix)
+       [REGRESSION GUARD] old (wrong) tauC source: impulse/(2*m*v) = 3.63722 at MIDI 60, score-velocity 0.8 (audit's own example; expected ~3.6x, i.e. a clear violation)
+[PASS] REGRESSION GUARD: reusing pianoHammerTauC() (the previous, wrong tauC source) DOES violate the 2*m*v bound at the audit's own worked example -- confirms this test would have caught the original WF0914-B7P1 defect
+[PASS] modalEnergyFirstPrinciples: non-positive fPeakN is fail-closed (-1)
+[PASS] modalEnergyFirstPrinciples: non-positive tauCS is fail-closed (-1)
+[PASS] modalEnergyFirstPrinciples: non-positive modalMassKg is fail-closed (-1)
+[PASS] modalEnergyFirstPrinciples: NaN excitationWeight is fail-closed (-1)
+[PASS] bridgePowerFirstPrinciples: negative alphaBridge is fail-closed (-1)
+[PASS] bridgePowerFirstPrinciples: sentinel eModeJoules (-1) propagates to sentinel output
+[PASS] hertzImpulseConsistentTauCSeconds: zero speedMps is fail-closed (-1)
+[PASS] hertzImpulseConsistentTauCSeconds: zero fPeakN is fail-closed (-1)
+[PASS] hertzImpulseConsistentTauCSeconds: negative speedMps is fail-closed (-1)
+[PASS] hertzImpulseConsistentTauCSeconds: NaN speedMps is fail-closed (-1)
+[PASS] hertzImpulseConsistentTauCSeconds: larger F_peak gives smaller tauC (same note/speed -- fixed impulse target, less time needed at higher force)
+[PASS] SENTINEL: Path B (pressurePerForce) and Path C (bridgePowerFirstPrinciples) give bit-identical results regardless of call order -- pure functions, no shared hidden state through which one path could corrupt the other
+[SENTINEL 1/2] Path B pressurePerForce(0.42) = 0.42 Pa/N
+[SENTINEL 2/2] Path C bridgePowerFirstPrinciples(hand-calc) = 8 W -- must not equal Path B's value (different physical quantity, different units, independently computed)
+[PASS] SENTINEL: Path B and Path C outputs are numerically distinguishable for representative inputs (not accidentally wired to the same computation / swapped function bodies)
+[PASS] Modal frequency gate exactly matches the DSP renderable band
+[PASS] Geometry modes below 20 Hz are rejected instead of becoming attack-only audio
+[PASS] Weak modes use a relative -60 dB lifetime instead of an absolute cutoff
+[PASS] Modal resonator stops after each mode reaches its T60
+[PASS] Specified PCG noise is exactly reproducible for the same event seed
+[PASS] Distinct semantic event identities prevent coherent repeated-note noise streams
+[PASS] StereoDelay honours the full 5000 ms score contract including 1.10x right spread
+[PASS] Zero-time delay keeps history moving instead of replaying frozen stale audio
+[PASS] Authored reverb T60 reaches approximately -60 dB after one second
+[PASS] Plugin and CLI share the same static FX signal path
+PASS (0 failures)

@@ -1,0 +1,173 @@
+WF0914-INTEGRATION 全套 GATE 執行記錄（2026-09-15，工兵 Sonnet）
+================================================================
+
+結論：status=DONE。全部 GATE 綠燈，本輪 B7P0/B7P1/B7P3/D9/D10/D12/D13/D14/D15/D11
+（前提由規劃者確認：稽核 PASS 的改動已 staged／RED 卡改動不在工作樹上）合併後互不打架。
+
+前提複核（開工前）：
+  git status 顯示 tracked 檔案改動全數在 "Changes to be committed"（staged），
+  無 "Changes not staged for commit" 區塊 —— 與規劃者所述「B7P0/B7P1/B7P3/D9/D10/D14/D15
+  稽核 PASS 已 staged」一致；D12 三檔（src/PluginProcessor.cpp/.h、tests/host_probe.cpp）
+  現況同樣是 staged（相對於前一輪 BLOCKED 記錄時的 unstaged，狀態已推進）。
+  D11 候選修正確認不在工作樹（git diff -- src/ tools/ tests/ 對 D11 相關檔案無殘留，
+  只有 reports/d11_string_scale_candidate.patch 等未套用的候選檔）。
+  大量 untracked 的 docs/workcards/WF0914_*.md 與 reports/*.txt/.csv/.md 為本輪正常產出。
+  （已將上一輪 BLOCKED 前置檢查記錄另存
+   reports/gate_outputs/wf0914_INTEGRATION_prev_blocked_20260915.txt 留痕）
+
+----------------------------------------------------------------------
+GATE 1: cmake 設定
+命令：cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+結果：Configuring done / Generating done，Build files written to build/。EXIT_CODE=0
+[PASS]
+
+----------------------------------------------------------------------
+GATE 2: 建置三個主 target
+命令：cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+結果：TsukiSynthCLI.exe / TsukiSynth Standalone.exe / TsukiSynth.vst3 全部建置成功，
+      無 error。EXIT_CODE=0
+[PASS]
+
+----------------------------------------------------------------------
+GATE 3: 建置五個測試 target（X4 規約：ctest 前先重建）
+命令：cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest
+      TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+結果：五個 target 全部建置成功，無 error。EXIT_CODE=0
+[PASS]
+
+----------------------------------------------------------------------
+GATE 4: ctest
+命令：ctest --test-dir build -C Release --output-on-failure
+結果：
+    Start 1: audit_repro ......................   Passed    1.19 sec
+    Start 2: tuner_repro ......................   Passed    0.56 sec
+    Start 3: physics_models_repro .............   Passed    0.10 sec
+    Start 4: spectrum_view_repro ..............   Passed    0.05 sec
+  100% tests passed, 0 tests failed out of 4
+[PASS]
+
+----------------------------------------------------------------------
+GATE 5: pytest 全套
+命令：python -m pytest tests -q
+結果：264 passed, 1 skipped, 5 xfailed in 390.40s (0:06:30)　EXIT_CODE=0
+
+新基線核對（重要：與 WF0914_README 所寫「基線 267 passed」對數）：
+  - 本輪新增 3 個測試（全部在 tests/test_measurement_selfcal.py，D15 卡新增）：
+      test_release_development_grid_within_one_cent  (xfail, strict=True)
+      test_release_holdout_grid_within_one_cent      (xfail, strict=True)
+      test_release_sensitivity_anti_false_green      (plain, passed)
+  - HEAD（766d21d，本輪開工前）collect 總數 = 270 - 3 = 267，與 README「基線 267」一致
+    （逐檔核對：git show HEAD:tests/test_measurement_selfcal.py 已含 3 個既有 xfail
+    (test_development_grid_within_one_cent / test_holdout_grid_within_one_cent /
+    test_gain_fidelity_within_one_cent，皆標注 WF0909-C10C 2026-09-09，早於本輪)；
+    git show HEAD:tests/test_render_app_filename_safety.py 已含 1 個既有 skip）。
+  - 因此 README 的「267 passed」是「267 個測試」口語簡寫，非全部 status=PASSED；
+    HEAD 實際細分＝263 passed + 3 xfailed + 1 skipped = 267 total。
+  - 本輪：263+1(新pass)=264 passed；3+2(新xfail)=5 xfailed；1 skipped（不變）
+    → 264+5+1=270 total，與本輪 pytest 輸出完全吻合，無任何測試被移除或意外變紅。
+  - git diff --cached -- tests/ 與 git diff -- tests/（unstaged）逐檔核對：只有新增
+    def test_ 三行，沒有任何 -def test_（無測試被刪除）。
+  - 5 個 xfail 與 1 個 skip 均為既有規約（strict=True xfail 記錄 WF0909-C10C 未解決的
+    校正誤差缺口；skip 記錄 WF0907 的 unreachable-through-export.filename 案例），
+    非本輪產生的新紅燈，exit code 0 視為「全綠」。
+
+新 pytest 基線（本輪之後）：264 passed, 1 skipped, 5 xfailed, 0 failed（共 270 個測試）
+[PASS]
+
+----------------------------------------------------------------------
+GATE 6: physics_verify.py --full
+命令：python tools/physics_verify.py --full
+結果（節錄 --full summary）：
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total)
+   Unverified ranges      : cimbalom/rubber、tongue_drum/rubber、water_gong/rubber
+                             （既有已知的 rubber 錘頭 T60 太短、低於量測窗門檻的
+                             UNVERIFIED/N/A，非本輪新增，非 CHECKED FAILURE）
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED　EXIT_CODE=0
+[PASS]
+
+----------------------------------------------------------------------
+GATE 7: physics_verify.py --selftest
+命令：python tools/physics_verify.py --selftest
+結果：15 項自我測試全部 PASS（short_t60_f0 / relative_axis_t60 / positive_control /
+      50pct_shift_rejected / missing_p3_p5_rejected / super_nyquist_rejected /
+      overlap_peak_reuse_rejected / partial_negative_suite /
+      amps_wrong_amplitude_rejected / velocity_law_violation_rejected(_uniform) /
+      velocity_taucv_selfconsistency_sentinel / residual_energy_unmodeled_peak_rejected 等）
+      EXIT_CODE=0
+[PASS]
+
+----------------------------------------------------------------------
+GATE 8: verify_score.py --all
+命令：python tools/verify_score.py --all
+結果：75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)),
+      0 failed.　EXIT_CODE=0
+（既有豁免數維持 1 個，未變，符合「75/75 或既有豁免不變」）
+[PASS]
+
+----------------------------------------------------------------------
+GATE 9: TsukiSynthHostProbe（VST3 host 掃描）
+命令：build/Release/TsukiSynthHostProbe.exe
+      build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+      output/wf0914/INTEGRATION/hostprobe
+結果：全部 [PASS]（含 D12 三個 migration 情境 scenario 1/2/3、H8 tail 系列），
+      PASS (0 failures)　EXIT_CODE=0
+[PASS]
+
+----------------------------------------------------------------------
+GATE 10: render_wf_scores.py 位元不變（對 sha256_before_post_a14.txt）
+命令：python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0914_INTEGRATION \
+  --workdir <tmp, outside repo> \
+  --cli C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+輸出：
+  reports/gate_outputs/wf0907_method/render_wf0914_INTEGRATION.csv
+  reports/gate_outputs/wf0907_method/sha256_wf0914_INTEGRATION.txt
+
+比對（reports/gate_outputs/b6_method/sha256_before_post_a14.txt 為基準）：
+  awk '{print $1}' reports/gate_outputs/b6_method/sha256_before_post_a14.txt > base_hashes.txt
+  awk '{print $1}' reports/gate_outputs/wf0907_method/sha256_wf0914_INTEGRATION.txt > this_hashes.txt
+  diff base_hashes.txt this_hashes.txt
+  -> (無輸出；exit 0) 8 個完整 sha256（非僅前綴）逐位元 IDENTICAL：
+
+  49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin
+  280cbdac3c117c142dd89853eaec0706ef6d6afec604de37621577d57bf637d1  moonlight_sonata_movement1_yangqin_tongue_mix
+  1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b  physical_piano
+  be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click
+  f539aefa91919cbfe3b22e7fb4d17f404e758aca39d1b08b173e6f44cd63f67e  moonlight_sonata_movement1_tongue_drum
+  31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free
+  74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1
+  b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening
+
+RESULT: 8/8 IDENTICAL（渲染路徑不受本輪任何 lane 改動影響，符合預期：B7P0/B7P1/B7P3/
+D9/D10/D13 為文件/研究、D14/D15 為工具層、D12 只動 PluginProcessor 的 plugin state
+載入路徑、D11 無殘留改動——皆不觸碰 CLI 渲染路徑 ScoreRenderer）
+[PASS]
+
+======================================================================
+總結
+
+status = DONE
+
+GATE 結果一覽：
+  1. cmake configure                              PASS
+  2. build 三主 target                             PASS
+  3. build 五測試 target                           PASS
+  4. ctest（4/4）                                  PASS
+  5. pytest（264 passed, 1 skipped, 5 xfailed / 270 total, 0 failed） PASS
+  6. physics_verify.py --full（NO CHECKED FAILURES） PASS
+  7. physics_verify.py --selftest（全綠）           PASS
+  8. verify_score.py --all（75/75，既有 1 豁免不變） PASS
+  9. TsukiSynthHostProbe（0 failures，含 D12 三情境+H8 tail） PASS
+ 10. render_wf_scores.py 位元不變（8/8 IDENTICAL vs sha256_before_post_a14.txt） PASS
+
+新 pytest 基線：264 passed / 1 skipped / 5 xfailed（共 270 個測試，較上一輪基線 267
+淨增 3 個測試，皆屬 D15 卡新增，細分核對見 GATE 5 段落）。
+位元不變：8/8 IDENTICAL（完整 sha256 逐位元比對，非僅前綴）。
+
+本輪所有落地互不打架，無任何 GATE 紅燈。

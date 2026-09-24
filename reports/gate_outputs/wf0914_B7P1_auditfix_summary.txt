@@ -1,0 +1,58 @@
+WF0914-B7P1 audit-fix round summary (2026-09-14)
+
+Findings addressed (see completion report for full detail):
+1. Energy-conservation violation in bridge_power_firstprinciples_c chain
+   (RadiationModel::modalEnergyFirstPrinciples / ScoreRenderer.h) -- FIXED.
+   Root cause: assembled impulse used F_peak (Hertz energy-conservation
+   solve) together with tauC from B4's independently-calibrated
+   pianoHammerTauC(), an unrelated quantity. Fix: HammerImpulse::
+   hertzImpulseConsistentTauCSeconds(note,v,F_peak) = pi*m*v/F_peak,
+   self-consistent by construction with the SAME Hertz solve. Verified
+   via tests/physics_models_repro.cpp domain scan (MIDI 36/48/60/72/84/96
+   x velocity 20/40/60/77/90/110/120, 42 points): impulse/(2*m*v) worst
+   case = 1.000000 (was 2.55-4.32x before the fix; audit's own worked
+   example MIDI60/velocity0.8 reproduced at 3.637x via a regression-guard
+   test that deliberately calls the old (wrong) pianoHammerTauC() path).
+
+2. tests/physics_models_repro.cpp §7 item 4 was a non-conservation
+   sentinel -- FIXED. Added a genuine impulse-conservation domain scan
+   (see above) plus a regression guard proving the pre-fix code would
+   have failed it.
+
+3. §1.1 velocity-proxy-to-MIDI decision re-examined -- audit's BLOCKED
+   claim CONFIRMED (with stronger evidence than cited): tools/
+   midi_to_tsukisynth.py::velocity_for() -- the only code path that
+   actually derives score `velocity` from a real MIDI source -- computes
+   base_velocity(role, 0.42-0.72) * (source_velocity/90.0) +/- small
+   adjustments, clamped to [0.12, 0.92]. This is never MIDI/127 and is
+   not even proportional to MIDI velocity. Per B7.md SS1.1's own rule
+   ("若查證結果與此矛盾...不要硬套，status=BLOCKED"), the
+   "bridge_power_firstprinciples_c" dumpModes() field has been withdrawn
+   (ScoreRenderer.h) pending 月月's decision on SS1.1. The underlying
+   pure functions remain, fixed and unit-tested, ready to be re-wired
+   once SS1.1 is resolved.
+
+4. wf0914_B7P1_bit_identity.txt lacked the actual comparison result --
+   FIXED: this file (and this round's re-render) now include the
+   per-file MATCH table and a normalized `diff` (CRLF/LF) with exit code,
+   RESULT: 8/8 IDENTICAL.
+
+GATE re-run this round (post-fix):
+- Build: TsukiSynthCLI / TsukiSynth_Standalone / TsukiSynth_VST3 -- exit 0.
+- Rebuild 5 test targets (X4) -- exit 0 each.
+- ctest 4/4 Passed (wf0914_B7P1_ctest_auditfix.txt).
+- physics_models_repro.exe stdout captured directly, confirms new tests
+  ran and PASS (wf0914_B7P1_physics_test_stdout_auditfix.txt).
+- physics_verify.py --full: byte-identical to
+  wf0914_B7P1_baseline_full.txt (diff exit 0) --
+  wf0914_B7P1_gate_full_auditfix.txt.
+- physics_verify.py --selftest: identical to
+  wf0914_B7P1_selftest.txt -- wf0914_B7P1_selftest_auditfix.txt.
+- verify_score.py --all: 75/75 PASS (1 registered exemption), identical
+  summary line to the prior round -- wf0914_B7P1_corpus_all_auditfix.txt.
+- Bit-identity: 8/8 IDENTICAL, both raw SHA256 match and normalized diff
+  exit 0 -- wf0914_B7P1_bit_identity.txt,
+  reports/gate_outputs/wf0907_method/sha256_wf0914_b7p1_auditfix.txt.
+
+Not re-run this round (unaffected by the fix, no src/ change touches them):
+- None -- all GATE items above were re-run against the rebuilt binary.

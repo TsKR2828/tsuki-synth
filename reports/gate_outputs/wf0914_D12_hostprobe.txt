@@ -1,0 +1,126 @@
+[PASS] H1 scan: VST3 format finds the bundle (C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)
+[PASS] H1 scan: described as instrument named TsukiSynth (got 'TsukiSynth', isInstrument=1, version 0.3.0)
+[PASS] H2 instantiate: instance created
+[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.505276) -- melody-position verdict follows via melody_verify.py
+[PASS] H3 MIDI render: WAV written: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0914\D12\hostprobe_render.wav
+[PASS] H3 determinism: second instance created
+[PASS] H3 determinism: fresh-instance re-render is byte-identical
+[PASS] H4 automation: instances created
+[PASS] H4 automation: 'EQ Shelf Gain (dB)' parameter exposed to host
+[PASS] H4 automation: identically-automated renders are byte-identical
+[PASS] H4 automation: +12 dB shelf ramp lifts 3-12 kHz band by 8.51 dB (require >= 6)
+[PASS] H5 state: 'Strike Position' parameter found
+[PASS] H5 state: non-empty state captured (3819 bytes)
+[PASS] H5 state: two fresh instances created
+[PASS] H5 state: parameter survives round-trip exactly (requested 0.42, settled 0.42, restored 0.42)
+[PASS] H5 state: two restores of the same state render byte-identically
+
+-- H6 variable block size (sentinel melody) --
+[PASS] H6: fresh instance created for block size 64
+[PASS] H6: WAV written for block size 64: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0914\D12\h6_block_64.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+[PASS] H6: fresh instance created for block size 256
+[PASS] H6: WAV written for block size 256: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0914\D12\h6_block_256.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 512
+[PASS] H6: WAV written for block size 512: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0914\D12\h6_block_512.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 1024
+[PASS] H6: WAV written for block size 1024: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0914\D12\h6_block_1024.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 4096
+[PASS] H6: WAV written for block size 4096: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0914\D12\h6_block_4096.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+
+-- H6 water_gong Pitch Glide=1.0 (hardened to CHECK, WF0908-E10b) --
+[PASS] H6 glide: fresh instance created for block size 64
+[PASS] H6 glide: fresh instance created for block size 256
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-222.72 dB re signal (n=216000 samples/ch)
+[PASS] H6 glide: block 256 vs 64 water_gong Pitch Glide=1.0 render is byte-identical (max|delta|=0.000000 LSB@24bit, require 0)
+[PASS] H6 glide: fresh instance created for block size 512
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-222.72 dB re signal (n=216000 samples/ch)
+[PASS] H6 glide: block 512 vs 64 water_gong Pitch Glide=1.0 render is byte-identical (max|delta|=0.000000 LSB@24bit, require 0)
+[PASS] H6 glide: fresh instance created for block size 1024
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-222.72 dB re signal (n=216000 samples/ch)
+[PASS] H6 glide: block 1024 vs 64 water_gong Pitch Glide=1.0 render is byte-identical (max|delta|=0.000000 LSB@24bit, require 0)
+[PASS] H6 glide: fresh instance created for block size 4096
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-222.72 dB re signal (n=216000 samples/ch)
+[PASS] H6 glide: block 4096 vs 64 water_gong Pitch Glide=1.0 render is byte-identical (max|delta|=0.000000 LSB@24bit, require 0)
+
+-- H6 supplementary (informational only, not melody_verify-judged): FM Piano high note (MIDI 96) --
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+
+-- H7 user preset round-trip --
+[PASS] H7: IR fixture imported into managed library ()
+  [INFO] preset directory: C:\Users\admin\AppData\Roaming\TsukiSynth\Presets
+  [INFO] IR library directory: C:\Users\admin\AppData\Roaming\TsukiSynth\IR
+[PASS] H7: shadow PresetManager::saveUserPreset("wf0908_h7", true) succeeded
+[PASS] H7: preset file written: C:\Users\admin\AppData\Roaming\TsukiSynth\Presets\wf0908_h7.tsukipreset
+[PASS] H7: saved user preset's reverb_ir block records the imported IR's sha256 (fx_reverb_mode was saved as Impulse Response)
+
+  -- H7 scenario 1: matched --
+[PASS] H7: fresh real VST3 instance created for LOAD side
+[PASS] H7: "wf0908_h7" user preset visible to a fresh real VST3 instance's getProgramName() (scanned 28 programs)
+[PASS] H7: loaded real instance exposes at least the shadow's 60 product parameters (2142 total, incl. VST3-wrapper extras -- Bypass/Program/MIDI CC)
+[PASS] H7: setCurrentProgram("wf0908_h7") on a real VST3 instance restores every one of 60 product parameters bit-identical to the shadow APVTS that saved it (0 value mismatches, 0 name mismatches)
+[PASS] H7 scenario 1 (matched): getStateInformation() carries a reverb_ir block with the imported sha256, ir_missing=0, ir_mismatch=0 -- getIRStatus().loaded == effectChain.hasImpulseResponse() by construction (PluginProcessor.h's IRStatus comment: single field, not a second independently-tracked bool)
+
+  -- H7 scenario 3: missing (no GUI) --
+[PASS] H7: IR fixture present in library before missing simulation
+[PASS] H7: library IR file moved aside to simulate a missing file
+[PASS] H7: fresh real VST3 instance created for LOAD side
+[PASS] H7: "wf0908_h7" user preset visible to a fresh real VST3 instance's getProgramName() (scanned 28 programs)
+[PASS] H7 scenario 3: fx_reverb_mode forced back to Algorithmic (0) -- red line 1, never keeps the instance's previous IR
+[PASS] H7 scenario 3 (missing, no GUI): getStateInformation() carries NO reverb_ir block (red line 1: nothing is remembered as loaded) and ir_missing=1 -- UI shows "not loaded", never claims IR while audio silently runs algorithmic (red line 2)
+
+  -- H7 scenario 2: mismatch (library index rewritten) --
+[PASS] H7: library index rewritten -- different IR content placed at the sha-named path the preset expects (simulates "使用者指了別的檔", behaviourally identical from the processor's point of view: loaded content whose hash disagrees with the recorded identity)
+[PASS] H7: fresh real VST3 instance created for LOAD side
+[PASS] H7: "wf0908_h7" user preset visible to a fresh real VST3 instance's getProgramName() (scanned 28 programs)
+[PASS] H7 scenario 2: fx_reverb_mode stays Impulse Response -- loaded anyway per §2.3 row 2, mismatch does not silently fall back to algorithmic
+[PASS] H7 scenario 2 (mismatch): getStateInformation() carries a reverb_ir block (something IS loaded, audio truth == UI truth) and ir_mismatch=1 (UI would flag "not the same IR as the preset")
+[PASS] H7: cleanup -- PresetManager::deleteUserPreset() removed "wf0908_h7" (C:\Users\admin\AppData\Roaming\TsukiSynth\Presets\wf0908_h7.tsukipreset)
+[PASS] H7: cleanup -- preset file no longer on disk
+
+-- D12 legacy reverb_ir_path migration --
+[PASS] D12: template instance created for building synthetic legacy state blobs
+
+  -- D12 scenario 1: legacy path resolves to a file --
+[PASS] D12: legacy IR source fixture hashes (C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0914\D12\d12_legacy_ir_source.wav)
+[PASS] D12: legacy IR source not yet in the managed library (migration must import it itself, not assume it's already there)
+[PASS] D12 scenario 1: synthetic legacy state blob built
+[PASS] D12 scenario 1: fresh real VST3 instance created
+[PASS] D12 scenario 1: fx_reverb_mode left as the saved state had it (Algorithmic) -- migration imports the IR but does not force-switch the mode (switchModeToIR=false), matching the removed pre-F-03 code's own choice
+[PASS] D12 scenario 1: migrated state carries a reverb_ir block with the legacy file's own content hash and ir_missing=0 -- resolved through the managed library exactly like a fresh GUI import
+[PASS] D12 scenario 1: legacy IR now present in the managed library under its content hash (hash/dedupe/kind=user, workcard §1 item 1)
+[PASS] D12 scenario 1 (audit fix): migrated state is marked dirty -- a migration silently changes in-memory state (new reverb_ir block) that no longer matches the bytes on disk, so it must not come back as "not dirty" (setStateInformation() runs presetManager.setDirty() after restoreDirty() when migration ran, so restoreDirty()'s read of the OLD presetDirty=0 does not silently survive)
+
+  -- D12 scenario 2: legacy path does not resolve --
+[PASS] D12: legacy IR source deliberately absent for scenario 2
+[PASS] D12 scenario 2: synthetic legacy state blob built
+[PASS] D12 scenario 2: fresh real VST3 instance created
+[PASS] D12 scenario 2: fx_reverb_mode forced to Algorithmic -- F-03's normal missing-IR path (§2.3 row 3), not the silent "leave algorithmic without saying anything" this card exists to remove (workcard §1 item 2)
+[PASS] D12 scenario 2: migrated state carries NO reverb_ir block (red line 1: nothing remembered as loaded) and ir_missing=1 -- the same three-state "missing" signature H7 scenario 3 validates for the new schema, now also reached from the legacy key
+[PASS] D12 scenario 2 (audit fix): migrated state is marked dirty even on the missing-file path -- fx_reverb_mode was force-changed to Algorithmic and a warning raised, which also diverges from the bytes on disk
+
+  -- D12 scenario 3: reverb_ir already present, legacy key ignored --
+[PASS] D12: IR-A imported into managed library ()
+[PASS] D12: IR-B not in the managed library before scenario 3 (must stay that way -- migration must not run)
+[PASS] D12 scenario 3: synthetic state blob built (reverb_ir=IR-A + legacy reverb_ir_path=IR-B)
+[PASS] D12 scenario 3: fresh real VST3 instance created
+[PASS] D12 scenario 3: migrated state still carries IR-A's own sha256 (the new schema's identity), never IR-B's -- legacy reverb_ir_path is ignored once a reverb_ir block already exists (workcard §1 item 3)
+[PASS] D12 scenario 3: IR-B still absent from the managed library -- migrateLegacyReverbIRPath() never ran, no import happened
+[PASS] D12 scenario 3 (audit fix contrast): migration never ran, so unlike scenarios 1/2 the dirty flag is untouched by D12 code -- confirms the setDirty() call in setStateInformation() is gated on migratedLegacyIR actually having run, not unconditional
+[PASS] H8 tail: MaterialDB loads C:\Users\admin\Desktop\Claude\tsuki-synth\data\materials.json
+[PASS] H8 tail: instance created for cimbalom
+[PASS] H8 tail: cimbalom getTailLengthSeconds()=34.4814s >= engine worstCaseTailSeconds()=33.0287s
+[PASS] H8 tail: instance created for tongue_drum
+[PASS] H8 tail: tongue_drum getTailLengthSeconds()=178.734s >= engine worstCaseTailSeconds()=177.281s
+[PASS] H8 tail: instance created for water_gong
+[PASS] H8 tail: water_gong getTailLengthSeconds()=319.848s >= engine worstCaseTailSeconds()=318.395s
+[PASS] H8 tail: tongue_drum sustain instance created
+[PASS] H8 tail: tongue_drum MIDI 40 tail RMS at 10s = -16.09 dB relative to peak (require > -60, -60dB IS the T60 definition)
+[PASS] H8 tail: tongue_drum still audibly ringing at 10s -> getTailLengthSeconds()=178.734s (require > 10)
+PASS (0 failures)

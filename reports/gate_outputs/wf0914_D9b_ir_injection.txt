@@ -1,0 +1,308 @@
+WF0914-D9b GATE 證據檔：K-02 量測鏈加外部 IR 注入點 + 真實 IR 量測 + 裁決包
+==============================================================================
+日期：2026-09-15（施工）～2026-09-16（GATE 收尾）
+工作樹 branch fix/deep-physics-audit-20260716（本卡未 commit/push/git add，
+git add 由稽核執行）
+lane：C++（build-wf\），依 WF0914_README §1
+工兵：Sonnet
+依據：docs/workcards/WF0914_D9b_ir_injection.md（月月 2026-09-15 裁決 D9 選 (a)）
+
+------------------------------------------------------------------------------
+§0 實作摘要
+------------------------------------------------------------------------------
+
+tests/audit_repro.cpp 新增內容（git diff --stat 見 §6）：
+1. `#include <cstdlib>`（std::getenv 需要）。
+2. 新函式 `reportReverbWetGainQuantificationExternalIr (const juce::String&)`
+   ——緊接在既有 `reportReverbWetGainQuantification()` 之後、匿名 namespace
+   結束前新增，完全不修改既有函式的任何一個字元。方法逐項照抄既有 K-02
+   （同一種子 271828 的 2s 白噪 burst + 12s 靜音尾段、同一 wetMix=1.0、
+   同一 ALGO 對照量測、同一 measureNoiseBurstDecay() -60dB 交越 T60 量測），
+   唯一差異是 IR 來源改用呼叫端傳入的外部 WAV 檔（經
+   `prepareChainWithOptionalIr()` 走 `EffectChain::loadImpulseResponse()`
+   正式介面載入，不繞過 build-wf 正式建置的產品程式碼路徑）而非
+   `writeExponentialDecayIr()` 合成的白噪×指數衰減 IR。
+3. `main()` 尾端新增：讀 `TSUKI_K02_EXTERNAL_IR` 環境變數，**未設定時完全
+   不進入新增的 if 區塊**——`reportReverbWetGainQuantification()` 的呼叫
+   在此 if 區塊之前，不受影響。設定時才呼叫新函式；若回傳 false（讀檔
+   失敗）印出明確錯誤訊息並 `return 1`（fail-closed，不落回合成 IR）。
+
+Fail-closed 的檢查點：新函式一開頭用檔案本身既有的 `openAudioFile()`
+輔助函式（本檔案原有、供其他測項讀取音檔用，`juce::AudioFormatManager::
+createReaderFor()`）驗證路徑可被讀成音檔；驗證失敗立即印錯誤並回傳
+false，**不呼叫** `EffectChain::loadImpulseResponse()`。這麼做的理由記在
+程式碼註解裡並記於此：核對過
+`libs/JUCE/modules/juce_dsp/frequency/juce_Convolution.cpp` 的
+`loadStreamToBuffer()`（行 709-724），JUCE 自己的檔案載入器在
+`AudioFormatManager::createReaderFor()` 回傳 nullptr 時**不會報錯**，
+而是回傳一個空、sampleRate=0.0 的 buffer，讓 convolution 静默地用空 IR
+繼續跑（近乎無聲但不是明確錯誤）——這正是卡文要求「讀檔失敗
+fail-closed（明確報錯，不 silent fallback）」要避開的行為，所以本卡在
+呼叫 JUCE 的載入器之前，自己先驗證一次並主動報錯。
+
+取樣率不合的處理方式（卡 §1 第 2 點要求溯源到 JUCE Convolution 實際行為，
+非工程假設）：**自動重取樣，不拒收**。核對
+`juce_Convolution.cpp:787`（`ConvolutionEngine`/`EngineWithZeroLatency` 的
+`makeEngine()`）：
+  auto resampled = resampleImpulseResponse (impulseResponse, originalSampleRate, processSpec.sampleRate);
+這行**無條件**執行（沒有先比較 originalSampleRate == processSpec.sampleRate
+才跳過），所以任何取樣率的來源檔都會被重取樣到目前的 ProcessSpec 取樣率
+（本卡是 48 kHz）。另外，`src/effects/EffectChain.h:89-96` 的
+`EffectChain::loadImpulseResponse()` 呼叫
+`convolution.loadImpulseResponse (file, Stereo::yes, Trim::yes, 0)`，
+最後一個 `Normalise` 參數留白用宣告預設值 `Normalise::yes`
+（`juce_Convolution.h:242`，File 版 overload；稽核更正，原誤引 :227=記憶體版），所以 `makeEngine()` 裡
+`if (wantsNormalise == Convolution::Normalise::yes) normaliseImpulseResponse (resampled);`
+（`juce_Convolution.cpp:789-792`）這個分支會執行——即**產品程式碼的實際
+路徑本來就對載入的 IR 做能量正規化**，不是本卡新增的行為，只是本卡第一次
+把它跟真實 IR 檔案接起來量出數字（見 §4 說明，這點直接餵給下方裁決包）。
+
+EchoThief 3 顆 IR 使用前先驗 SHA256（見 §2），與
+`reports/gate_outputs/wf0914_D9_ir_measure.txt` 記錄一致。
+
+------------------------------------------------------------------------------
+§1 GATE 1：三 build target + 五測試 target 重建，exit 0
+------------------------------------------------------------------------------
+
+--- 1.1 configure ---
+命令：
+  cmake -B build-wf -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+
+輸出（節錄）：
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+  -- Configuring done (8.1s)
+  -- Generating done (1.9s)
+  -- Build files have been written to: C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+
+--- 1.2 三個主 target ---
+命令：
+  cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+
+輸出（節錄各 target 完成行）：
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  TsukiSynth_Standalone.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+  TsukiSynth_VST3.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  creating C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+  [exited with code 0]
+
+--- 1.3 五個測試 target（X4 規約：ctest 前先重建）---
+命令：
+  cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+
+輸出（節錄，`audit_repro.cpp` 出現在編譯清單中，證明本卡改動確實觸發重編）：
+  audit_repro.cpp
+  TsukiSynthAuditTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthAuditTest.exe
+  TsukiSynthTunerTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthTunerTest.exe
+  physics_models_repro.cpp
+  TsukiSynthPhysicsModelsTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthPhysicsModelsTest.exe
+  TsukiSynthSpectrumViewTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthSpectrumViewTest.exe
+  TsukiSynthHostProbe.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthHostProbe.exe
+  [exited with code 0]
+
+（未修改 CMakeLists.txt——`tests/audit_repro.cpp` 已經 include `effects/EffectChain.h`
+且 WF0907-E7 卡已把 `juce::juce_dsp` 連結加進 `TsukiSynthAuditTest` target，
+本卡不需要再動建置設定。）
+
+------------------------------------------------------------------------------
+§2 GATE 2：ctest 全綠（未設環境變數）
+------------------------------------------------------------------------------
+
+命令：
+  ctest --test-dir build-wf -C Release --output-on-failure
+
+輸出：
+  Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+      Start 1: audit_repro
+  1/4 Test #1: audit_repro ......................   Passed    1.44 sec
+      Start 2: tuner_repro
+  2/4 Test #2: tuner_repro ......................   Passed    0.57 sec
+      Start 3: physics_models_repro
+  3/4 Test #3: physics_models_repro .............   Passed    0.11 sec
+      Start 4: spectrum_view_repro
+  4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+
+  100% tests passed, 0 tests failed out of 4
+
+  Total Test time (real) =   2.29 sec
+
+------------------------------------------------------------------------------
+§3 GATE 3：預設行為不變證據（不設 TSUKI_K02_EXTERNAL_IR）
+------------------------------------------------------------------------------
+
+命令：
+  build-wf\Release\TsukiSynthAuditTest.exe
+
+完整輸出（105 行；其中 97 個既有 [PASS] 項目＋PASS (0 failures)＋K-02 四行＋其餘為非 PASS 資訊行；稽核更正，原誤寫 95 個；
+無 TSUKI_K02_EXTERNAL_IR 相關輸出，證明新增的 if 區塊確實被跳過）：
+
+  TsukiSynth regression tests
+  [PASS] Envelope remains active before release time
+  ... （95 項既有測試全部 [PASS]，與 wf0907_E7_reverb.txt 附錄一逐項相同，
+       不在此重複列出，完整清單可由本命令重跑復現）...
+  [PASS] K-03(a): IR-mode EffectChain::processBlock on one 1537-sample call is bit-identical to three externally chunked 512+512+513 calls
+  [PASS] K-03(c): a mutant chunking that drops one input sample at a chunk boundary is NOT bit-identical to the correct reference -- proving the bit-exact comparison in (a)/(b) has teeth
+  [PASS] K-03(b): ALGO-mode EffectChain::processBlock on one 1537-sample call is bit-identical to three externally chunked 512+512+513 calls
+  PASS (0 failures)
+
+  WF0907-E7 K-02 quantification (informational, no PASS/FAIL):
+  [K-02] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+  [K-02] IR   wet output (matched-T60 IR = 1.173 s): steady-state RMS = -26.626 dBFS, measured T60 = 1.173333 s
+  [K-02] RMS difference (IR - ALGO) = -28.483 dB
+  [K-02] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+
+exit code = 0
+
+比對（逐值核對 reports/gate_outputs/wf0907_E7_reverb.txt §GATE 2 記錄的
+K-02 原始數字，同機同 binary 邏輯）：
+
+  量                              wf0907_E7_reverb.txt      本卡重跑（未設變數）
+  ALGO wet RMS                    1.857 dBFS                 1.857 dBFS   一致
+  ALGO 量得 T60                   1.173333 s                  1.173333 s   一致
+  IR（合成）wet RMS               -26.626 dBFS                -26.626 dBFS 一致
+  IR（合成）量得 T60              1.173333 s                  1.173333 s   一致
+  RMS 差（IR-ALGO）               -28.483 dB                  -28.483 dB   一致
+  理論差（0.15 因子）             16.478 dB                   16.478 dB   一致
+
+**逐值完全相同，GATE 3 PASS**——新增的外部 IR 變體在未啟用環境變數時，
+對既有合成 IR 路徑的行為零影響（不只是「新增測項通過」，是連小數點後三位
+的既有數字都沒有變化）。
+
+------------------------------------------------------------------------------
+§4 GATE 4：外部 IR 變體——3 顆 EchoThief IR 各一次 + 1 個 fail-closed 反例
+------------------------------------------------------------------------------
+
+--- 4.0 先驗 SHA256（與 wf0914_D9_ir_measure.txt §2 記錄比對）---
+
+命令：
+  python3 -c "hashlib.sha256() 逐檔讀取全部 bytes 計算"（對 3 個 WAV 檔）
+
+輸出：
+  aadee0daf28d2d88bf177a144ec94bb5f599e02ac974a0aa50249e4a871324b1  .../Stairwells/CCRMA Stairwell Stanford University California.wav
+  11b1e662a4125717b06e115feedf7a7a2ee80a0f336598fbb3e7f541024f28e5  .../Venues/Conrad Prebys Concert Hall Seat F111 UC San Diego California.wav
+  4cf9aca8fc0fb4dee0ce611c8d737b60d21ad9c883a007cc7ce5600011b4e36d  .../Sanctuaries/St Paul's Cathedral San Diego California.wav
+
+三個雜湊逐字元與 wf0914_D9_ir_measure.txt §2 記錄的值相同——PASS，確認
+量測的是同一批已授權記錄過的檔案，未被竄改或替換。
+
+--- 4.1 IR 1／3：Stairwells（小，樓梯間）---
+
+命令（PowerShell/bash 皆可設環境變數，以下為 bash 語法）：
+  export TSUKI_K02_EXTERNAL_IR="C:\Users\admin\Desktop\Claude\tsuki-synth\external_data\ir\echothief\EchoThief\Stairwells\CCRMA Stairwell Stanford University California.wav"
+  build-wf\Release\TsukiSynthAuditTest.exe
+
+輸出（尾端新增區塊；前 95 項既有測試與 §3 完全相同，exit code = 0）：
+  WF0914-D9b K-02 external-IR quantification (informational, no PASS/FAIL):
+  [K-02-EXT] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+  [K-02-EXT] IR   wet output (external IR file = C:\Users\admin\Desktop\Claude\tsuki-synth\external_data\ir\echothief\EchoThief\Stairwells\CCRMA Stairwell Stanford University California.wav): steady-state RMS = -26.869 dBFS, measured T60 = 2.080000 s
+  [K-02-EXT] RMS difference (IR - ALGO) = -28.726 dB
+  [K-02-EXT] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+
+--- 4.2 IR 2／3：Venues（廳，音樂廳）---
+
+命令：
+  export TSUKI_K02_EXTERNAL_IR="C:\Users\admin\Desktop\Claude\tsuki-synth\external_data\ir\echothief\EchoThief\Venues\Conrad Prebys Concert Hall Seat F111 UC San Diego California.wav"
+  build-wf\Release\TsukiSynthAuditTest.exe
+
+輸出（尾端新增區塊，exit code = 0）：
+  WF0914-D9b K-02 external-IR quantification (informational, no PASS/FAIL):
+  [K-02-EXT] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+  [K-02-EXT] IR   wet output (external IR file = C:\Users\admin\Desktop\Claude\tsuki-synth\external_data\ir\echothief\EchoThief\Venues\Conrad Prebys Concert Hall Seat F111 UC San Diego California.wav): steady-state RMS = -26.630 dBFS, measured T60 = 1.066667 s
+  [K-02-EXT] RMS difference (IR - ALGO) = -28.487 dB
+  [K-02-EXT] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+
+--- 4.3 IR 3／3：Sanctuaries（教堂，座堂）---
+
+命令：
+  export TSUKI_K02_EXTERNAL_IR="C:\Users\admin\Desktop\Claude\tsuki-synth\external_data\ir\echothief\EchoThief\Sanctuaries\St Paul's Cathedral San Diego California.wav"
+  build-wf\Release\TsukiSynthAuditTest.exe
+
+輸出（尾端新增區塊，exit code = 0）：
+  WF0914-D9b K-02 external-IR quantification (informational, no PASS/FAIL):
+  [K-02-EXT] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+  [K-02-EXT] IR   wet output (external IR file = C:\Users\admin\Desktop\Claude\tsuki-synth\external_data\ir\echothief\EchoThief\Sanctuaries\St Paul's Cathedral San Diego California.wav): steady-state RMS = -26.766 dBFS, measured T60 = 2.613333 s
+  [K-02-EXT] RMS difference (IR - ALGO) = -28.623 dB
+  [K-02-EXT] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+
+--- 4.4 fail-closed 反例：不存在的路徑 ---
+
+命令：
+  export TSUKI_K02_EXTERNAL_IR="C:\Users\admin\Desktop\Claude\tsuki-synth\external_data\ir\echothief\does_not_exist.wav"
+  build-wf\Release\TsukiSynthAuditTest.exe
+  echo "exit=$?"
+
+輸出（前 95 項既有測試 + 既有 K-02 仍正常跑完並印出，證明錯誤處理只影響
+新增區塊、不影響既有測試；之後才是外部 IR 錯誤處理）：
+  ... [95 項既有 PASS] ...
+  PASS (0 failures)
+
+  WF0907-E7 K-02 quantification (informational, no PASS/FAIL):
+  [K-02] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+  [K-02] IR   wet output (matched-T60 IR = 1.173 s): steady-state RMS = -26.626 dBFS, measured T60 = 1.173333 s
+  [K-02] RMS difference (IR - ALGO) = -28.483 dB
+  [K-02] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+
+  WF0914-D9b K-02 external-IR quantification (informational, no PASS/FAIL):
+  [K-02-EXT] ERROR: TSUKI_K02_EXTERNAL_IR does not name a readable audio file (missing, or format not recognised by JUCE's AudioFormatManager): C:\Users\admin\Desktop\Claude\tsuki-synth\external_data\ir\echothief\does_not_exist.wav
+  WF0914-D9b: TSUKI_K02_EXTERNAL_IR was set but the IR could not be loaded -- failing closed (see error above); no fallback to the synthetic IR.
+
+  exit=1
+
+**fail-closed 驗證通過**：不存在的路徑得到明確錯誤訊息（點名是
+「missing, or format not recognised」，不是靜默用空 IR 或合成 IR 頂替），
+且 process exit code = 1（非 0），呼叫端／CI 若檢查退出碼會偵測到。
+
+--- 4.5 GATE 4 數字彙整表 ---
+
+  IR                    來源      wet RMS(dBFS)  量得T60(s)  RMS差(IR-ALGO,dB)  IR檔本身寬頻RMS/長度*
+  ALGO（對照組，四次重跑一致）      --       1.857         1.173333        --                 --
+  合成 IR（既有 K-02 基準）      本卡合成    -26.626        1.173333       -28.483             --
+  Stairwells（小/樓梯間）      EchoThief   -26.869        2.080000       -28.726        RMS=-25.054dBFS, 長度2.276s
+  Venues（廳/音樂廳）          EchoThief   -26.630        1.066667       -28.487        RMS=-41.670dBFS, 長度1.429s
+  Sanctuaries（教堂/座堂）     EchoThief   -26.766        2.613333       -28.623        RMS=-32.345dBFS, 長度2.941s
+
+  * IR 檔本身的寬頻 RMS/長度數字取自 reports/gate_outputs/wf0914_D9_ir_measure.txt
+    §3（同一批已驗證 SHA256 的檔案，該報告用 soundfile+numpy 直接讀取 WAV
+    樣本計算，本卡未重算，避免同一個量兩套工具各自實作一次的重複風險；
+    此處僅原樣引用供裁決包對照）。
+
+**重要觀察**（供下方裁決包使用，先誠實記在這裡）：3 顆真實 IR 檔案本身的
+寬頻 RMS 差異達 16.6 dB（-25.054 至 -41.670 dBFS，涵蓋很不同的空間尺度），
+但通過 EffectChain 的 convolution 後，wet 路徑輸出的 RMS 只在很窄的範圍內
+（-26.869 至 -26.630 dBFS，僅 0.24 dB 展幅）——且與既有合成 IR 基準的
+-26.626 dBFS 也非常接近（三顆真實 IR 與合成 IR 基準的差距分別是 0.243 dB、
+0.004 dB、0.140 dB）。這與 §0 溯源的 JUCE 行為一致：
+`EffectChain::loadImpulseResponse()` 呼叫 convolution 時 `Normalise` 參數
+留在預設的 `Normalise::yes`，所以無論來源 IR 檔案本身多大聲/多小聲，
+載入後都會被 JUCE 自己的 `normaliseImpulseResponse()` 正規化過，wet 路徑
+輸出的響度主要由正規化目標決定，不是被個別 IR 檔案的原始能量決定。
+
+------------------------------------------------------------------------------
+§5 本卡不碰 src/ 的驗證
+------------------------------------------------------------------------------
+
+命令：
+  git diff --stat -- src/
+
+輸出：（無輸出，空）
+
+------------------------------------------------------------------------------
+§6 git diff --stat / git status（本卡實際觸碰範圍）
+------------------------------------------------------------------------------
+
+命令：
+  git diff --stat -- tests/audit_repro.cpp
+
+輸出：
+   tests/audit_repro.cpp | 124 ++++++++++++++++++++++++++++++++++++++++++++++++++
+   1 file changed, 124 insertions(+)
+
+本卡新增/修改的檔案（未 git add，供稽核核對範圍；此工作樹同時有其他卡
+已 staged 的大批改動，均非本卡觸碰，如實記錄不動它們）：
+   M tests/audit_repro.cpp（本卡，見上方 diff --stat）
+   M TODO.md（本卡，僅 D9 條目一行同步，見 git diff -- TODO.md）
+  ?? reports/gate_outputs/wf0914_D9b_ir_injection.txt（本檔，新增）
+  ?? reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md（本卡新增，裁決包）
+
+==============================================================================
+GATE 結論：GATE 1-5 全部 PASS。狀態 DONE。
+==============================================================================

@@ -1,0 +1,308 @@
+WF0914-D14: stem_verify.py 記憶體線性成長修復 -- GATE evidence
+================================================================================
+Worker: Sonnet (工兵)
+Generated: 2026-09-14
+
+================================================================================
+0. 診斷（事前，未動任何程式碼前）
+================================================================================
+
+線性成長的具體來源：tools/stem_verify.py (HEAD 版, commit 前) run() 函式，
+第 919 行 `stem_arrays = {}`，第 958 行 `stem_arrays[orig_idx] = arr_i`。
+
+  * 這個 dict 對每一顆 velocity>0 的事件（跑到 --limit 或全部 905 顆）都存一份
+    完整的 float64 ndarray（該事件單獨渲染出的 stem WAV 全部取樣點，經
+    read_wav_float() 讀入，shape=[n_samples, n_channels]，dtype=float64）。
+  * 這些陣列從各自被讀入的那一刻起，一路被保留到函式最後才用到的地方 --
+    第 972 行 `stem_list = [stem_arrays[i] for i, _ in used if i in stem_arrays]`
+    + 第 973 行 `compare_superposition(arr_ref, stem_list, ...)` -- 也就是說，
+    N 顆事件的音訊陣列会同時全部活在記憶體裡，直到疊加證明算完為止。
+  * 每一顆 stem 的緩衝長度＝該事件自己的 eventEndTime + 尾音 margin（見
+    superposition_tail_margin_ms()），不是整首歌的長度，但 N 顆同時累加 ->
+    記憶體峰值隨事件數（N）線性成長 -- 這就是本卡登記的 "905 事件全曲跑
+    >28 GB" 現象的直接成因。
+  * 其餘結構核對過，均非 O(event_count) 成長來源：`stem_results`（每顆事件
+    只存 verdict/reason 等純量/字串的小 dict）、`rendered`（render_many() 回傳
+    的只是路徑字串）、`render_many()`/`render_one()` 本身透過 subprocess 呼叫
+    TsukiSynthCLI.exe 渲染，音訊資料是 CLI 子行程寫檔，不進 Python 行程記憶體。
+    melody_verify.py / verify_score.py 均無模組層級快取（grep 確認，無
+    lru_cache / 模組級 dict-as-cache）。
+
+================================================================================
+1. 修法
+================================================================================
+
+只動 tools/stem_verify.py，判定邏輯／容差／輸出 schema 一個都沒動：
+
+  (a) 新增 read_wav_header(path)：只解析 RIFF 'fmt ' chunk 取得
+      (sample_rate, n_channels)，用檔案 seek 跳過 'data' chunk 的位元組，
+      從不把音訊資料讀進記憶體。用來取代 run() 迴圈內原本呼叫
+      read_wav_float()（會把整段音訊讀進來）只是為了比對 sample_rate/
+      channel 是否跟 reference 相容那一步 -- 現在只讀 header，不再讀值。
+
+  (b) 新增 StemArrayStream 類別：對一串 (orig_idx, wav_path) 提供
+      __len__/__iter__，行為對 compare_superposition() 而言與傳一個真正
+      的 Python list 完全一樣（該函式只用 len()/for 迴圈兩種操作），
+      但 __iter__ 是產生器，每次疊代才呼叫 read_wav_float() 讀入「這一顆」
+      stem 的完整陣列、算進 composite 總和後即可被 GC 回收 -- 疊代順序與
+      run() 原本 `[stem_arrays[i] for i, _ in used if i in stem_arrays]`
+      的順序完全相同（同樣依 `used` 的順序、同樣的 in/not-in 過濾邏輯），
+      所以逐樣加總的順序、因而浮點捨入結果，跟修改前逐位元相同。
+
+  (c) run() 內：`stem_arrays = {}`（存滿陣列的 dict）改成 `stem_wav_paths = {}`
+      （只存 wav_path 字串的 dict，metadata-only）；原本讀整段陣列做
+      sr/ch 相容性檢查那行改呼叫 read_wav_header()；superposition 那段的
+      `stem_list = [...]`（materialize 全部陣列成 list）改成先建
+      `stem_entries = [(i, stem_wav_paths[i]) for ...]`（只是路徑 tuple 列表，
+      非陣列）再包成 `StemArrayStream(stem_entries)` 傳給
+      compare_superposition() -- 呼叫點、參數個數、下游所有 len(stem_list)/
+      check_superposition_completeness()/vacuous 判斷完全不變（StemArrayStream
+      支援 len()）。
+
+  compare_superposition() 函式本身一行都沒改（只在 docstring 補充一句說明
+  它現在也接受 duck-typed 的 len()+iteration 物件，不只是 list）-- 其邏輯、
+  容差、輸出欄位、S1 哨兵測試涵蓋的行為完全不受影響。
+
+  --limit / --jobs / --json / --analysis-dry 等既有介面全部原樣保留，
+  未新增/移除任何 CLI 參數。
+
+================================================================================
+2. GATE 1：等價性（修改前後各跑一次 --limit 300，逐欄比對）
+================================================================================
+
+方法：
+  $ git show HEAD:tools/stem_verify.py > tools/stem_verify_before_wf0914d14.py
+  （借用 tools/ 目錄本身，讓其 `ROOT = Path(__file__).resolve().parent` 能
+  直接沿用現有的 tools/melody_verify.py、tools/verify_score.py 做 sibling
+  import -- 這兩個檔案本卡完全沒有觸碰，用同一份是正確的隔離方式）
+
+  $ python tools/stem_verify_before_wf0914d14.py \
+      scores/classical/fur_elise/fur_elise_complete.score.json \
+      --limit 300 --jobs 4 \
+      --json output/wf0914/D14/before_report.json \
+      --out-dir output/wf0914/D14/before_out --force-clean
+
+  [stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+    events total=905  velocity>0=905  used=300 (--limit 300, TRUNCATED)
+    stem_verify summary: 259 PASS / 5 FAIL / 36 UNVERIFIED
+    baseline (whole-file melody_verify): 8 PASS / 33 FAIL / 865 UNVERIFIED
+    superposition: NOT APPLICABLE (--limit truncated self-comparison)
+      max_abs_diff=9.816140e-07  budget=1.788139e-05  peak=-120.16 dBFS  rms=-135.71 dBFS  first_diff@0.0
+    [exit=1] n_fail=5
+
+  $ python tools/stem_verify.py \
+      scores/classical/fur_elise/fur_elise_complete.score.json \
+      --limit 300 --jobs 4 \
+      --json output/wf0914/D14/after_report.json \
+      --out-dir output/wf0914/D14/after_out --force-clean
+
+  [stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+    events total=905  velocity>0=905  used=300 (--limit 300, TRUNCATED)
+    stem_verify summary: 259 PASS / 5 FAIL / 36 UNVERIFIED
+    baseline (whole-file melody_verify): 8 PASS / 33 FAIL / 865 UNVERIFIED
+    superposition: NOT APPLICABLE (--limit truncated self-comparison)
+      max_abs_diff=9.816140e-07  budget=1.788139e-05  peak=-120.16 dBFS  rms=-135.71 dBFS  first_diff@0.0
+    [exit=1] n_fail=5
+
+  $ rm -f tools/stem_verify_before_wf0914d14.py   # 清掉借用的臨時檔案
+
+比對腳本 output/wf0914/D14/compare_before_after.py（遞迴比對整份 JSON，
+排除唯一已知的執行期欄位 "generated_at" -- 讀原始碼確認 stem_verify.py
+只有這一個欄位是 datetime.now() 產生，其餘欄位皆為 deterministic）：
+
+  $ python output/wf0914/D14/compare_before_after.py \
+      output/wf0914/D14/before_report.json output/wf0914/D14/after_report.json
+
+  mismatches (excluding ['generated_at']): 3
+    /provenance/analysis_score/path: '...before_out/derived/...' != '...after_out/derived/...'
+    /superposition_proof/reference_score: '...before_out\reference\score.json' != '...after_out\reference\score.json'
+    /superposition_proof/reference_wav: '...before_out\reference\reference.wav' != '...after_out\reference\reference.wav'
+
+  before stem_verify.summary: {'pass': 259, 'fail': 5, 'unverified': 36}
+  after  stem_verify.summary: {'pass': 259, 'fail': 5, 'unverified': 36}
+  before event_count_used: 300
+  after  event_count_used: 300
+  before superposition_proof.max_abs_diff: 9.816139936447144e-07
+  after  superposition_proof.max_abs_diff: 9.816139936447144e-07
+
+  這 3 個「差異」全部是 --out-dir 選了不同資料夾（before_out vs after_out，
+  兩次跑一定要分開資料夾，否則第二次會被 F-01 guard 擋下）造成的路徑字串
+  差異，不是內容差異 -- 三個 provenance sha256（source_score/analysis_score/
+  cli）與 stem_verify.events 全部 300 顆事件的 verdict/onset_err_ms/
+  pitch_cents/expected_f0_hz/reason/rules、baseline 的 pass/fail/unverified、
+  superposition_proof 的 max_abs_diff/bit_exact/established 等所有內容欄位
+  逐位元相同（獨立驗證 sha256 三項 match=True/True/True，見下）：
+
+  $ python -c "
+      import json
+      b = json.load(open('output/wf0914/D14/before_report.json', encoding='utf-8'))
+      a = json.load(open('output/wf0914/D14/after_report.json', encoding='utf-8'))
+      print('sha256 source match:', b['provenance']['source_score']['sha256'] == a['provenance']['source_score']['sha256'])
+      print('sha256 analysis match:', b['provenance']['analysis_score']['sha256'] == a['provenance']['analysis_score']['sha256'])
+      print('sha256 cli match:', b['provenance']['cli']['sha256'] == a['provenance']['cli']['sha256'])
+    "
+  sha256 source match: True
+  sha256 analysis match: True
+  sha256 cli match: True
+
+GATE 1 結論：PASS（300 顆事件逐欄 0 差異，僅 --out-dir 造成的路徑字串
+不同；判定邏輯/容差/輸出 schema 逐位元不變）。
+
+================================================================================
+3. GATE 2：記憶體證據（905 事件 score，--limit 300 / 600 / 全量三檔）
+================================================================================
+
+附帶對照（非本卡正式三檔表，GATE 1 兩次跑當下順手用 PowerShell Get-Process
+即時觀察到、可佐證修法方向正確的數字 -- 同一顆 score、同一個 --limit 300，
+新舊兩份程式各自的行程）：
+
+  舊版（tools/stem_verify_before_wf0914d14.py，PID 3256，--limit 300）：
+    Get-Process -Id 3256 | Select WorkingSet64,PeakWorkingSet64
+    WorkingSet64=6413615104 (6.0 GB)  PeakWorkingSet64=7620829184 (7.1 GB)
+    （這是跑到一半時量到的中繼值，最終峰值只會更高；905 顆全量線性外推
+    到本卡登記的 >28 GB 是合理的同一數量級）
+
+  新版（tools/stem_verify.py，PID 15516，--limit 300，即 GATE 1 的 after 跑）：
+    Get-Process -Id 15516 | Select WorkingSet64,PeakWorkingSet64
+    WorkingSet64=~210-451 MB（全程穩定，未隨時間繼續往上爬）
+    PeakWorkingSet64=1656041472 (1579.3 MB)
+    （同一顆 300 事件 score，峰值只有舊版中繼值的 ~1/4.6，且趨勢是平的
+    不是往上爬 -- 定性上已經證實記憶體與事件數解耦；下面是正式三檔表）
+
+正式三檔表（PowerShell 輪詢方法：output/wf0914/D14/measure_peak_ws.ps1，
+每 1 秒 Get-Process 一次同時記 WorkingSet64 峰值與該行程自己回報的
+PeakWorkingSet64（Windows 核心維護的歷史峰值，單調不減，取輪詢樣本中的
+最大值 -- 發現 `$proc`（Start-Process -PassThru 的物件）在行程結束後讀
+PeakWorkingSet64 不可靠會回 null，所以改成在迴圈內對每次輪詢到的 Get-Process
+物件讀，取其最大值），每次跑都是全新行程、獨立 --out-dir，三次跑之間互不干擾）：
+
+  --limit 300：
+  $ powershell -File output/wf0914/D14/measure_peak_ws.ps1 -Score scores/classical/fur_elise/fur_elise_complete.score.json -Limit 300 -OutDir output/wf0914/D14/g2_300 -JsonOut output/wf0914/D14/g2_300_report.json -LogOut output/wf0914/D14/g2_300_log.txt
+    duration_sec: 473.18   poll_samples: 467
+    max_ws_polled_bytes: 1374334976  (1310.7 MB)
+    stem_verify summary（同一份跑出的 report.json 內容，佐證與 GATE1 一致）：
+      259 PASS / 5 FAIL / 36 UNVERIFIED, event_count_used=300, status=ok
+
+  --limit 600：
+  $ powershell -File output/wf0914/D14/measure_peak_ws.ps1 -Score scores/classical/fur_elise/fur_elise_complete.score.json -Limit 600 -OutDir output/wf0914/D14/g2_600 -JsonOut output/wf0914/D14/g2_600_report.json -LogOut output/wf0914/D14/g2_600_log.txt
+    duration_sec: 1056.4   poll_samples: 1037
+    max_ws_polled_bytes: 1331412992  (1269.7 MB)
+    peak_ws_reported_bytes: 1690091520  (1611.8 MB)  -- Windows 自己的核心峰值，
+      這次腳本已修正（迴圈內逐次讀 Get-Process 的 PeakWorkingSet64 取最大值），
+      不再像 --limit 300 那次一樣讀到 null
+    stem_verify summary: 464 PASS / 9 FAIL / 127 UNVERIFIED, event_count_used=600, status=ok
+
+  --limit 300 對照 --limit 600（事件數 2 倍）：
+    max_ws_polled: 1310.7 MB -> 1269.7 MB（幾乎持平，甚至更低，屬輪詢採樣雜訊範圍）
+    peak_ws_reported（600 這次量到 1611.8 MB；300 那次腳本 bug 沒量到，但同一時期
+      手動 Get-Process 對照量到的 GATE1 after-跑（同樣 --limit 300）
+      PeakWorkingSet64 是 1579.3 MB，量級一致）
+    事件數變 2 倍，峰值記憶體只變 1.0～1.23 倍，**不是線性成長** -- 修法有效的
+    直接數字證據。
+
+  全量（無 --limit，905 顆全部 -- 這正是登記時「無法跑完」的案例本身）：
+  $ powershell -File output/wf0914/D14/measure_peak_ws.ps1 -Score scores/classical/fur_elise/fur_elise_complete.score.json -Limit "" -OutDir output/wf0914/D14/g2_full -JsonOut output/wf0914/D14/g2_full_report.json -LogOut output/wf0914/D14/g2_full_log.txt
+    duration_sec: 1795.82   poll_samples: 1775
+    max_ws_polled_bytes: 1604370432  (1530.0 MB)
+    peak_ws_reported_bytes: 1730031616  (1649.9 MB)
+    status: ok   event_count_used: 905   event_count_total: 905   limited_run: False
+    stem_verify summary: 677 PASS / 16 FAIL / 212 UNVERIFIED
+    superposition_proof: n_stems_summed=905, bit_exact=False, established=True
+      （全量、無 --limit 的疊加證明不是 self-comparison，是對全曲 905 顆事件的
+      真實驗證，established=True 代表殘差在量化誤差預算內 -- 見 compare_
+      superposition() 的 residual_budget 定義，本卡完全未動這段判定邏輯）
+    exit_issues: ['n_fail=16']（16 顆真的判定 FAIL，屬正常判定結果，不是崩潰
+    或記憶體錯誤 -- exit=1 只代表「有事件沒通過」，不是「程式跑不完」）
+
+  **這就是本卡登記時「現在只能 --limit 300」的那個案例本身，本卡落地後
+  完整跑完，peak_ws_reported ≈ 1.65 GB，離 28 GB 的登記數字有 17 倍空間**。
+
+三檔彙總表（同一顆 905 事件 score、同一台機器、同一顆已修改的 tools/
+stem_verify.py，唯一變數是 --limit）：
+
+  | --limit | 用到的事件數 | max_ws_polled (MB) | peak_ws_reported (MB) | 跑完？ |
+  |---------|------------|--------------------:|----------------------:|--------|
+  | 300     | 300        | 1310.7              | (腳本 bug，未量到)     | 是     |
+  | 600     | 600        | 1269.7              | 1611.8                 | 是     |
+  | 全量    | 905        | 1530.0              | 1649.9                 | 是     |
+
+  事件數從 300 -> 905（成長 3.02 倍），峰值記憶體只從約 1.3 GB -> 1.5-1.65 GB
+  （成長不到 1.3 倍，且 300->600 那一段甚至持平/微降，屬輪詢採樣雜訊範圍）--
+  **不是線性成長**。舊版同一顆 300 事件 score 光是跑到一半就已經量到
+  WorkingSet64=6.0 GB／PeakWorkingSet64=7.1 GB（見上面的附帶對照），若線性
+  外推到 905 顆會落在同一數量級，與本卡登記的「>28 GB」相符；本卡登記的
+  「全量全曲跑不完，只能 --limit 300」的現象，本次修法後的全量跑已實測
+  完整跑完（status=ok、905/905 事件、exit=1 只因為 16 顆真的 FAIL，
+  不是崩潰或 OOM）。
+
+GATE 2 結論：兩項達標判準都滿足 -- (1) 全量能跑完：是（905/905，status=ok）；
+(2) 峰值不再隨事件數線性成長：是（300→905 顆峰值只從 ~1.3GB 到 ~1.65GB，
+遠低於舊版同規模已經量到的 6-7GB 中繼值）。數字表如上，如實記錄，
+未設任何新容差/門檻（R2 精神）。
+
+================================================================================
+4. GATE 3：stem_verify 相關 pytest（只跑相關檔）
+================================================================================
+
+  $ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q
+  .................................................                        [100%]
+  49 passed in 30.47s
+
+  （見 output/wf0914/D14/gate3_pytest_stem_verify.txt 完整輸出）
+
+  額外針對本次修改風險最高的三條哨兵單獨重跑確認（monkeypatch
+  compare_superposition 詐報 n_stems_summed 的 test_e2e_dropped_stem_
+  is_caught_not_silently_summed -- 驗證 StemArrayStream 對
+  `sv.compare_superposition(...)` 呼叫點仍是模組層級名稱查找，monkeypatch
+  照樣攔得到；真實 CLI 端到端 5 事件 fixture 的 test_e2e_run_on_real_
+  fixture_stem_count_matches_and_established -- established=True 不受影響；
+  test_limited_run_superposition_is_not_applicable_not_bit_exact）：
+
+  $ PYTHONPATH=tools python -m pytest tests/test_stem_verify.py -q \
+      -k "dropped_stem or e2e_run_on_real_fixture or limited_run"
+  ...                                                                        [100%]
+  3 passed, 46 deselected in 7.76s
+
+  未修改任何一條既有測試（`git status --short -- tests/` 空白，見 GATE 4）。
+  只跑 tests/test_stem_verify.py（lane 規約：非整合卡不跑全套），未跑
+  `python -m pytest tests -q`。
+
+  額外查核（避免漏掉其他測試檔隱性依賴 stem_arrays 內部結構）：
+  $ grep -rl "stem_verify" tests/
+    tests/test_stem_verify.py
+    tests/test_score_vs_midi_verify.py   -- 只在註解裡提到 stem_verify，未 import
+    tests/test_schema_contract_sync.py   -- 只在註解裡提到，未 import
+    tests/test_partial_verify.py         -- 只用字串 "stem_verify.py" 建構假 JSON，未 import 本模組
+    tests/test_render_app_filename_safety.py -- 只在註解裡提到，未 import
+  逐一開檔確認：以上四份都不 import tools/stem_verify、不呼叫
+  compare_superposition/stem_arrays 等內部結構，本次改動與它們零耦合。
+
+================================================================================
+5. GATE 4：git diff 檔案範圍
+================================================================================
+
+本卡實際改動的檔案（工兵未執行 git add，以下用 git status --short 逐一核對）：
+
+  $ git status --short -- tools/stem_verify.py reports/gate_outputs/wf0914_D14_memory_fix.txt TODO.md tests/test_stem_verify.py
+  MM TODO.md
+   M tools/stem_verify.py
+  ?? reports/gate_outputs/wf0914_D14_memory_fix.txt
+
+  （TODO.md 顯示 "MM" 是因為工作樹上還有其他 lane 已經 stage 過又繼續改的
+  內容，屬同一份共用工作樹的其他卡，非本卡造成 -- 本卡只在 C 類清單的
+  C13 條目後面插入一段新的 D14 bullet，`git diff -- TODO.md` 裡屬本卡的
+  部分只有那段新增文字，逐行核對過沒有動到其他任何一行。）
+
+  $ git diff --stat -- tools/stem_verify.py
+   tools/stem_verify.py | 109 ++++++++++++++++++++++++++++++++++++++++++++++-----
+   1 file changed, 99 insertions(+), 10 deletions(-)
+
+  tests/test_stem_verify.py：未修改（git status 對它空白）-- 本卡的
+  StemArrayStream/read_wav_header 設計對既有測試套件完全相容，不需要改
+  任何一條既有斷言，所以沒有觸碰這個檔案（符合卡上「若既有測試依賴舊行為
+  才需要改」的但書 -- 這裡不適用，因為沒有測試依賴 stem_arrays 這個內部
+  實作細節，全部 49 條斷言都是對外部行為/report 內容斷言）。
+
+GATE 4 結論：實際改動只有 tools/stem_verify.py（+99/-10）與新增的證據檔
+reports/gate_outputs/wf0914_D14_memory_fix.txt，加上 TODO.md 裡新增的一段
+D14 條目，未動任何測試檔、未動 src/、未動卡外任何檔案。

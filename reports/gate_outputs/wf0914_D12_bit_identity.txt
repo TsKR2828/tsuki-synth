@@ -1,0 +1,65 @@
+WF0914-D12 bit-identity GATE (reverb_ir_path legacy-state migration)
+CLI: build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe (rebuilt after D12 PluginProcessor.h/.cpp edit)
+Baseline: reports/gate_outputs/b6_method/sha256_before_post_a14.txt
+This round: reports/gate_outputs/wf0907_method/sha256_wf0914_D12.txt
+Render CSV: reports/gate_outputs/wf0907_method/render_wf0914_D12.csv
+
+Command:
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0914_D12 \
+    --workdir <tmp, outside repo> \
+    --cli C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+Comparison (diff of the two sha256 files reports a difference ONLY in line
+endings -- baseline file is CRLF, this round's freshly-written file is LF;
+the actual 8 sha256 hex digests, compared field-by-field with `awk '{print $1}'`
+on each file, are IDENTICAL):
+
+  awk '{print $1}' reports/gate_outputs/b6_method/sha256_before_post_a14.txt > base_hashes.txt
+  awk '{print $1}' reports/gate_outputs/wf0907_method/sha256_wf0914_D12.txt  > this_hashes.txt
+  diff base_hashes.txt this_hashes.txt
+  -> (no output; exit 0) HASHES IDENTICAL 8/8
+
+Per-piece hashes (this round, all 8 match baseline):
+  49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin
+  280cbdac3c117c142dd89853eaec0706ef6d6afec604de37621577d57bf637d1  moonlight_sonata_movement1_yangqin_tongue_mix
+  1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b  physical_piano
+  be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click
+  f539aefa91919cbfe3b22e7fb4d17f404e758aca39d1b08b173e6f44cd63f67e  moonlight_sonata_movement1_tongue_drum
+  31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free
+  74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1
+  b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening
+
+RESULT: 8/8 IDENTICAL. Expected: D12 only touches PluginProcessor.h/.cpp's
+setStateInformation()/new private helpers (plugin state load path); the CLI
+render path (ScoreRenderer, never touches setStateInformation()/plugin
+state) is untouched, so bit-identity holding is the expected, not merely
+hoped-for, outcome -- consistent with the workcard's own comment
+"CLI 渲染不走 plugin state，SHA 理應全同；任何變化=立即 BLOCKED".
+
+--------------------------------------------------------------------
+Re-run after audit-fix round (findings: switchModeToIR forced-mode-switch,
+presetDirty overwrite -- both in setStateInformation()/migrateLegacyReverbIRPath(),
+same plugin-state-only surface as before):
+
+CLI: build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe (rebuilt after
+the audit-fix edit to src/PluginProcessor.h/.cpp)
+This round: reports/gate_outputs/wf0907_method/sha256_wf0914_D12_auditfix.txt
+Render CSV: reports/gate_outputs/wf0907_method/render_wf0914_D12_auditfix.csv
+
+Command:
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0914_D12_auditfix \
+    --workdir <tmp, outside repo> \
+    --cli C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+  awk '{print $1}' reports/gate_outputs/b6_method/sha256_before_post_a14.txt        > base_hashes.txt
+  awk '{print $1}' reports/gate_outputs/wf0907_method/sha256_wf0914_D12_auditfix.txt > this_hashes.txt
+  diff base_hashes.txt this_hashes.txt
+  -> (no output; exit 0) HASHES IDENTICAL 8/8
+
+All 8 per-piece sha256 prefixes match both the baseline and the pre-audit-fix
+D12 round exactly (49514b00.../280cbdac.../1233b53f.../be634798.../
+f539aefa.../31b539c6.../74122637.../b0877774...), confirming the audit fix
+(switchModeToIR=false + conditional setDirty()) changed only plugin
+setStateInformation() behaviour, not the CLI render path.
+
+RESULT: 8/8 IDENTICAL (audit-fix round).

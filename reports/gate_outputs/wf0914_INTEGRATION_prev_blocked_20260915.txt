@@ -1,0 +1,60 @@
+WF0914-INTEGRATION 開工前置檢查記錄（2026-09-15，工兵 Sonnet）
+================================================================
+
+結論：BLOCKED（前置條件不成立，未執行任何 cmake/build/ctest/pytest GATE 命令）。
+
+INTEGRATION 卡前提原文（docs/workcards/WF0914_INTEGRATION.md 第 4 行）：
+  「前提：B7P0/B7P1/B7P3/D9/D10/D12/D13/D14/D15/D11 全部已稽核完（PASS 或 RED 皆可開工——
+    RED 卡的改動不在工作樹上就照常整合；若 RED 卡有殘留 unstaged 改動，先回報再說，不要清理）。」
+
+實查（git status --porcelain=v1，見下方原始輸出）+ TODO.md 最新記錄，發現至少三張卡不滿足
+「已稽核完（PASS 或 RED）」這個前提：
+
+--- B7P1（force chain）---
+TODO.md 第 384 行：「2026-09-14 WF0914-B7P0+B7P1 進度更新（In progress，unstaged 待稽核）」
+TODO.md 第 416 行：「2026-09-14 B7P1 稽核修復（unstaged 待再次稽核，In progress，狀態較上一輪倒退為 BLOCKED）」
+TODO.md 第 444-445 行：「Phase 1『最低限度交付物』（dumpModes() 新欄位）因 §1.1 BLOCKED 而未達成，
+  待月月裁決 §1.1：score velocity 該如何合法轉換成真實 MIDI/槌速，才能繼續這條診斷鏈。」
+狀態 = BLOCKED（待月月裁決），不是 PASS，也不是（改動已撤出工作樹的）RED。
+git status 證實 src/physics/HammerImpulse.h、src/physics/RadiationModel.h、
+src/score/ScoreRenderer.h、tests/physics_models_repro.cpp 目前是 staged（M，非 unstaged），
+與 TODO.md 描述的「unstaged」不一致——即卡文/TODO.md 記錄與目前 git 實際狀態本身互相矛盾，
+無法確認這些 staged 改動是否就是 TODO.md 說的、待月月裁決後可能要再撤回的那份 B7P1 改動。
+
+--- B7P3（dual path）---
+TODO.md 第 446 行：「2026-09-14 WF0914-B7P3（unstaged 待稽核，BLOCKED）：施工卡要求的 Phase 3
+  雙路徑比對本輪執行不了……沒有第二條路徑可比，非『差異很大』而是『無資料』。」
+狀態 = BLOCKED，非 PASS/RED。
+（B7P3 卡文本身聲明「本卡未碰 src/」，git status 顯示 reports/gate_outputs/wf0914_B7P3_dualpath.txt
+  等相關報告檔目前是 staged，這部分與卡文自述一致，但 BLOCKED 狀態本身仍與前提要求的「已稽核完
+  （PASS 或 RED）」不符。）
+
+--- D12（state migration）---
+TODO.md 第 26 行：「D12 舊 DAW state reverb_ir_path 無遷移……2026-09-15 工兵施工完成，
+  稽核打回後已修復，待覆核」。
+狀態 = 待覆核（第二輪修復尚未經稽核確認 PASS），不是已稽核完。
+git status 證實 src/PluginProcessor.cpp、src/PluginProcessor.h、tests/host_probe.cpp
+三檔目前為 unstaged modified（未被稽核 git add），與「待覆核」描述一致。
+
+--- 其餘卡（B7P0、D9、D10、D11、D13、D14、D15）---
+D14：TODO.md 第 517 行標 [x] Done，證據 reports/gate_outputs/wf0914_D14_memory_fix.txt 已 staged——
+  這張看起來確實已完稽核。
+D9/D13/D15：對應證據檔存在（部分 staged、部分 untracked），但 TODO.md 未見逐卡「稽核 PASS/RED」
+  結論記錄，无法單靠現有文件確認稽核狀態；未進一步深入查證（時間/範圍考量，已如實列入 open_items）。
+D11：卡文本身要求「交付時 git diff -- src/ tools/ tests/ 為空」，git status 確認 src/tools/tests
+  目前無 D11 相關改動、只有 reports/decision_packets 下的候選 patch 與裁決包，形式上符合「無殘留」，
+  但同樣未見明確稽核 verdict 記錄。
+B7P0：docs/workcards/WF0914_B7P0_sources_docs.md 要求交付三份溯源文件，git status 顯示
+  docs/HAMMER_VELOCITY_SOURCES.md、docs/RADIATION_POWER_SOURCES.md、docs/HAMMER_CONTACT_SOURCES.md
+  均已 staged，B7P1 卡文開頭寫「前置：WF0914-B7P0 已 PASS」，可推斷 B7P0 本身應已 PASS，惟未找到
+  獨立稽核記錄文件逐字確認。
+
+================================================================
+判定：依派工指令鐵律「卡文與 repo 現況矛盾 → 停下，寫進 open_items 回報，不要硬做」，
+以及本卡前提「全部已稽核完（PASS 或 RED）」未成立（B7P1、B7P3 為 BLOCKED；D12 為待覆核），
+本輪不執行 cmake -B build / ctest / pytest / physics_verify / verify_score / HostProbe /
+render_wf_scores 任何一條 GATE 命令，避免在未定案的混合工作樹上重建 build\ 並產出會被誤讀為
+「本輪所有落地互不打架」的假性 PASS 結果。
+
+git status --porcelain=v1 原始輸出（2026-09-15 查驗時點）：見同次回報 gate_results / open_items，
+或重新執行 `git status --porcelain=v1` 於 C:\Users\admin\Desktop\Claude\tsuki-synth 重現。

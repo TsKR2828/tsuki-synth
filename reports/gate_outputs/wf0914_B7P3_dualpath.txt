@@ -1,0 +1,85 @@
+WF0914-B7P3 GATE evidence: Phase 3 dual-path (Path B vs Path C) comparison attempt
+Date: 2026-09-14
+branch fix/deep-physics-audit-20260716, HEAD a38bd6a2 (this card: no commit)
+
+===============================================================================
+Result: Phase 3 dual-path comparison per B7.md Sec.6 step 11 / WF0914_B7P3_dual_path.md
+Sec.1 CANNOT be executed this round. Path C fields do not exist anywhere in the current
+dumpModes() JSON output. Full explanation: reports/b7_dual_path_comparison.md
+Decision packet (Sec.1-4 required by the workcard): reports/decision_packets/B7_phase2_and_open_items.zh-TW.md
+===============================================================================
+
+--- Command run (probe, to confirm current dumpModes() output shape empirically,
+    not just by reading source) ---
+
+$ mkdir -p output/wf0914/B7P3
+$ ./build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes \
+    scores/examples/physical_piano.score.json > output/wf0914/B7P3/probe_physical_piano_dumpmodes.json
+exit=0
+(14 lines of output; single-line JSON body)
+
+--- grep for any Path C key anywhere in the dump ---
+
+$ grep -c "firstprinciples_c\|bridge_power" output/wf0914/B7P3/probe_physical_piano_dumpmodes.json
+0
+
+--- grep for the one Path B key that IS present, confirming Path B itself is fine ---
+
+$ grep -o '"absolute_pressure_per_force[^,}]*' output/wf0914/B7P3/probe_physical_piano_dumpmodes.json
+"absolute_pressure_per_force"]
+(this is the model_observables array entry, i.e. Path B advertises the key; see below
+ for the per-partial/per-event structure)
+
+--- python structural check ---
+
+$ python -c "
+import json
+d=json.load(open('output/wf0914/B7P3/probe_physical_piano_dumpmodes.json',encoding='utf-8'))
+print('model_observables:', d['model_observables'])
+ev0=d['events'][0]
+print('event keys:', list(ev0.keys()))
+print('partial0 keys:', list(ev0['partials'][0].keys()))
+print('acoustic_transfer len:', len(ev0.get('acoustic_transfer',[])))
+print('acoustic_transfer[0] keys:', list(ev0['acoustic_transfer'][0].keys()))
+"
+
+model_observables: ['modal_frequency_hz', 'relative_modal_amplitude', 'modal_t60_s', 'radiated_power_relative', 'absolute_pressure_per_force']
+event keys: ['source_index', 'engine', 'note', 'midi', 'frequency_mode', 'partials', 'strings', 'acoustic_transfer']
+partial0 keys: ['freq', 'amp', 'decay', 'body_mag', 'radiated_power_relative']
+acoustic_transfer len: 4
+acoustic_transfer[0] keys: ['model_partial_index', 'radius_m', 'azimuth_deg', 'elevation_deg', 'pressure_per_force_real_pa_n', 'pressure_per_force_imag_pa_n']
+
+=> Confirmed: no "_firstprinciples_c" / "bridge_power_firstprinciples_c" / "acoustic_transfer_c"
+   key anywhere in model_observables, event level, partial level, or acoustic_transfer[] entries.
+   Path B (absolute_pressure_per_force / acoustic_transfer[]) is present and structurally intact
+   -- the gap is entirely on the Path C side.
+
+--- Source-level corroboration (read-only, src/ untouched by this card) ---
+
+reports/gate_outputs/wf0914_B7P1_auditfix_summary.txt point 3:
+  "the 'bridge_power_firstprinciples_c' dumpModes() field has been withdrawn
+   (ScoreRenderer.h) pending 月月's decision on SS1.1."
+
+src/score/ScoreRenderer.h L224-266: full BLOCKED explanation comment (SS1.1 velocity-proxy
+  finding, cites tools/midi_to_tsukisynth.py::velocity_for()).
+src/score/ScoreRenderer.h L333-335: "B7 Phase 1 Path C wiring removed here" (piano/cimbalom/
+  string branch, where the Path C call site used to be).
+src/score/ScoreRenderer.h L466-469: "bridge_power_firstprinciples_c" emission removed here
+  (modeToJson(), where the field used to be written).
+src/physics/RadiationModel.h L342-361: class-level comment confirming SS1.2 "否" branch --
+  no soundboardRadiatingAreaM2() / pressureAtDistanceFirstPrinciples() exists; chain stops at
+  bridgePowerFirstPrinciples() (W_bridge(f)).
+
+--- git diff -- src/ (this card touches NO src/ file; confirms scope compliance) ---
+
+$ git diff -- src/
+(empty -- this card made zero changes to src/)
+
+--- Scope of this card's actual file changes ---
+
+$ git status --short | grep -v "^M \|^A "
+?? output/wf0914/B7P3/            (gitignored, not part of git-tracked deliverable)
+?? reports/b7_dual_path_comparison.md
+?? reports/decision_packets/B7_phase2_and_open_items.zh-TW.md
+?? reports/gate_outputs/wf0914_B7P3_dualpath.txt
+(TODO.md/B7.md status-line sync, if made, listed separately in the completion report)

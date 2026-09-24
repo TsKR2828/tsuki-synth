@@ -1,0 +1,281 @@
+WF0914-D9 GATE 證據檔：真實 IR 取得 + 載入響度量測 + 對齊裁決包
+==============================================================================
+日期：2026-09-14
+工作樹 branch fix/deep-physics-audit-20260716，HEAD a38bd6a（本卡未 commit/push，未 git add）
+lane：研究（依 WF0914_README §1，只用 build\ 現成 exe；不碰 src/、tools/、tests/）
+工兵：Sonnet
+
+**本卡最終狀態：BLOCKED**（§2 量測步驟卡在卡文方法與 lane 授權範圍矛盾，
+見本檔末「§4 BLOCKER 說明」與結構化回報的 open_items）。§1 來源/授權調查與
+下載、§2 步驟 2 中「IR 本身寬頻能量與長度」已完成並記錄於此，但 §2 步驟 1-2
+要求的核心數字「wet 路徑輸出響度相對 ALGO 差多少 dB」未能量出，因此依卡片
+§3 要求（每案需附本卡實測數字）**未產出**
+`reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md`——沒有真數字的
+裁決包會誤導月月裁決，比不產出更糟。
+
+------------------------------------------------------------------------------
+§1 來源與授權調查（卡 §1，逐來源記錄）
+------------------------------------------------------------------------------
+
+--- 候選 1：OpenAIR（York）——已停用，跳過 ---
+
+命令：
+  curl -sI --max-time 15 https://www.openair.hosted.york.ac.uk/
+  curl -sI --max-time 15 http://www.openairlib.net
+  curl -s  --max-time 20 "https://www.openairlib.net" -L
+
+輸出（節錄）：
+  HTTP/1.1 302 Found
+  Location: https://www.openair.hosted.york.ac.uk/cgi-sys/suspendedpage.cgi
+  ...
+  <title>Account Suspended</title>
+
+結論：官方網域（openairlib.net / openair.hosted.york.ac.uk）目前導向主機商的
+「帳號已停用」頁面，非授權問題而是網站本身已不存在，無法取得檔案或授權文字。
+跳過，不下載。
+
+--- 候選 2：EchoThief（echothief.com）——授權文字已取得，可用作私下對照參考 ---
+
+官方頁 URL：https://www.echothief.com/
+下載連結（頁面 <a> href，經瀏覽器 find 工具確認）：
+  https://www.echothief.com/wp-content/uploads/2025/10/EchoThief.zip
+
+授權來源：官網首頁與 Wayback Machine 存檔（/about、cdx 索引 1108 筆 URL，
+逐一搜尋 "licen*"/"term*"/"faq"/"usage"/"permission" 關鍵字均無命中）都**沒有**
+公開的授權條款頁面；唯一的授權文字在下載的 zip 檔內
+`EchoThief/_EchoThief License.pdf`（隨檔案一起提供，非另行網頁），
+**逐字**（PDF 文字擷取，見 GATE 命令 Read 工具輸出，本檔轉錄）：
+
+  """
+  EchoThief License
+
+  Permitted Use
+
+  Subject to the terms and conditions of this Agreement, the San Diego State
+  University Research Foundation ("SDSURF") permits the use of the EchoThief
+  Response Library and associated materials ("EchoThief") solely for the
+  purpose of creating original musical compositions and other creative works
+  of individuals.
+
+  Restrictions
+
+  EchoThief shall not be used, in whole or in part, for any video production
+  purposes intended for wide distribution, including but not limited to
+  synchronization with motion picture, television, streaming video, gaming,
+  advertising, or other audiovisual works, without first obtaining a separate
+  commercial license from SDSURF. This restriction also applies to any
+  training of artificial intelligence models and/or algorithms or embedding
+  of EchoThief in software, applications, or other products intended for
+  distribution, sale, or other commercial exploitation.
+
+  Commercial License Requirement
+
+  Any person or entity intending to use EchoThief for purposes described
+  under "Restrictions" must contact SDSURF to negotiate and obtain an
+  appropriate commercial license prior to such use. To obtain such a license,
+  please contact innovation@sdsu.edu.
+  """
+
+判定：**非商用授權**——明文禁止「embedding of EchoThief in software,
+applications, or other products intended for distribution, sale, or other
+commercial exploitation」，TsukiSynth 是要出售的 VST3 產品，未取得 SDSURF
+另外的商業授權前，**不得把 EchoThief 的 IR 內容隨產品散布/內嵌**。
+比照 A8 先例（HANDOVER §6「A8：私下對照參考（月月 09-09：無可商用校準資料集
+就私下參考）」）：**下載作私下量測對照參考可以，但任何裁決包/文件都必須明標
+「量測參考用，授權不可隨產品散布，正式產品若要用需另外向 SDSURF
+（innovation@sdsu.edu）取得商業授權」**。
+
+格式/取樣率：44.1 kHz、16/24-bit PCM WAV（見 §2 量測輸出的 sr= 欄）。
+
+--- 候選 3：Samplicity Bricasti M7 impulse response archive ---
+
+官方頁 URL：https://samplicity.com/downloads/（原 bricasti-m7-impulse-responses
+頁已停用並跳轉到此）
+授權文字（頁面逐字擷取，get_page_text 工具輸出）：
+
+  """
+  This archive contains free, standalone impulse response files captured
+  from the Bricasti M7 hardware reverb. The files are provided in Wave
+  format for use with convolution reverbs that can load external impulse
+  responses. [...] These impulse responses are offered free of charge and
+  as-is.
+  """
+
+判定：這段文字沒有正式授權條款（不是 CC 某版本、沒有「可用於商業產品」或
+「禁止商業使用」的明確字樣），只說「free of charge and as-is」——**授權不明**。
+且該頁面只提供**單一整包 zip**（Samplicity – Bricasti IRs version 2023-10.zip，
+964 MB），沒有逐檔下載，對本卡只需 2–4 個代表性 IR 而言不成比例地大，
+**跳過，不下載**（授權不明 + 檔案規模不合本卡目的，兩個理由都記錄於此）。
+
+--- 候選 4：MIT McDermott Lab "IR Survey"（Traer & McDermott, PNAS 2016） ---
+
+官方頁 URL：https://mcdermottlab.mit.edu/Reverb/IR_Survey.html
+授權文字：頁面（get_page_text 工具完整輸出，見上方步驟）只有資料集說明
+（271 個 IR、量測方法），**沒有任何授權/使用條款文字**（無 CC 標示、無
+「for research use only」或類似字樣）。
+
+判定：**授權不明，跳過，不下載**（已有 EchoThief 一個可用的私下參考來源，
+且本卡只要求 2–4 個代表性 IR，不需要疊加第二個授權同樣不明的來源）。
+
+------------------------------------------------------------------------------
+§2 下載與 SHA256（卡 §1：逐檔記錄；存放於 external_data/ir/，已確認 gitignore）
+------------------------------------------------------------------------------
+
+命令：
+  curl -sS --max-time 60 -o external_data/ir/echothief_EchoThief.zip \
+      "https://www.echothief.com/wp-content/uploads/2025/10/EchoThief.zip"
+
+下載檔 HTTP 回應（curl -sI，下載前確認大小）：
+  HTTP/1.1 200 OK
+  Content-Length: 35668804
+  Content-Type: application/zip
+
+實際下載檔案大小（ls -la）：35668804 bytes（與 Content-Length 一致）
+
+從 zip 中挑選 3 個代表性 IR（涵蓋卡 §1「小房間/廳/教堂各一」的空間尺度分佈；
+EchoThief 的分類資料夾沒有字面上的「small room」，改用同樣屬於小型封閉混響
+空間的 Stairwell 類別代表小房間）：
+  - 小（樓梯間）：EchoThief/Stairwells/CCRMA Stairwell Stanford University California.wav
+  - 廳（音樂廳）：EchoThief/Venues/Conrad Prebys Concert Hall Seat F111 UC San Diego California.wav
+  - 教堂（座堂）：EchoThief/Sanctuaries/St Paul's Cathedral San Diego California.wav
+另外把授權 PDF 一併留存：EchoThief/_EchoThief License.pdf
+
+命令（SHA256，python3 hashlib，逐檔讀取全部 bytes）：
+  python3 -c "hashlib.sha256() 逐檔計算，見上方 §1 命令"
+
+輸出（SHA256  檔案  大小）：
+  592c6cb43186c4ead38e5975ecc924fb9d15fbae3016429632b84dcc93f86f9f  external_data/ir/echothief_EchoThief.zip  35668804 bytes
+  aadee0daf28d2d88bf177a144ec94bb5f599e02ac974a0aa50249e4a871324b1  external_data/ir/echothief/EchoThief/Stairwells/CCRMA Stairwell Stanford University California.wav  602222 bytes
+  11b1e662a4125717b06e115feedf7a7a2ee80a0f336598fbb3e7f541024f28e5  external_data/ir/echothief/EchoThief/Venues/Conrad Prebys Concert Hall Seat F111 UC San Diego California.wav  378098 bytes
+  4cf9aca8fc0fb4dee0ce611c8d737b60d21ad9c883a007cc7ce5600011b4e36d  external_data/ir/echothief/EchoThief/Sanctuaries/St Paul's Cathedral San Diego California.wav  778196 bytes
+  496e3054c0082f7663e9b9f65816de50d5777f6ad78fb4798ad3e80ef7d1e6d8  external_data/ir/echothief/_EchoThief License.pdf  65022 bytes
+
+git 狀態確認（external_data/ 不進版控）：
+  命令：git check-ignore -v external_data/ir/echothief_EchoThief.zip
+        git check-ignore -v "external_data/ir/echothief/_EchoThief License.pdf"
+  輸出：
+    .gitignore:28:external_data/	external_data/ir/echothief_EchoThief.zip
+    .gitignore:28:external_data/	external_data/ir/echothief/_EchoThief License.pdf
+  （兩者皆被 .gitignore 第 28 行 `external_data/` 規則吃掉，確認不進版控）
+
+------------------------------------------------------------------------------
+§3 IR 本身的寬頻能量（RMS）與長度（卡 §2 步驟 2 後半，唯一能在不碰
+src/tools/tests 的前提下完成的量測——只讀取下載的 WAV 檔本身，不涉及
+EffectChain/convolution 路徑）
+------------------------------------------------------------------------------
+
+命令：
+  python3（soundfile + numpy，讀檔 → sr/channels/samples/length，
+  broadband RMS = 20*log10(sqrt(mean(x^2)))，peak = 20*log10(max(|x|))，
+  逐檔輸出）
+
+輸出：
+  EchoThief/Stairwells/CCRMA Stairwell Stanford University California.wav
+    sr=44100 Hz  channels=2  length=2.276 s  samples=100363
+    broadband RMS = -25.054 dBFS   peak = -0.009 dBFS
+  EchoThief/Venues/Conrad Prebys Concert Hall Seat F111 UC San Diego California.wav
+    sr=44100 Hz  channels=2  length=1.429 s  samples=63009
+    broadband RMS = -41.670 dBFS   peak = -0.087 dBFS
+  EchoThief/Sanctuaries/St Paul's Cathedral San Diego California.wav
+    sr=44100 Hz  channels=2  length=2.941 s  samples=129692
+    broadband RMS = -32.345 dBFS   peak = -0.001 dBFS
+
+**這三個數字是 IR 檔案自己的統計量（整段 IR 波形的均方根/峰值），不是
+「載入該 IR 後 wet 路徑輸出響度相對 ALGO 差多少 dB」——後者需要把 IR 真正餵進
+EffectChain 的 convolution 分支、對同一段測試訊號（如 K-02 的白噪 burst）跑
+一次 wet-only 輸出再量 RMS，是完全不同的量。卡 §2 要問的核心數字是後者，
+本卡未能量出，見下方 §4。**
+
+------------------------------------------------------------------------------
+§4 BLOCKER 說明：無法完成「wet 路徑輸出響度相對 ALGO 差多少 dB」量測
+------------------------------------------------------------------------------
+
+卡 §2 步驟 1 指示：「先讀 wf0907_E7 證據檔，照抄它量 K-02（IR vs ALGO 差
+28.5 dB）的方法（同一 score、同一量測鏈；如果它量的是合成 IR，本卡換成
+真實 IR 重量，方法不變）」。
+
+**wf0907_E7 的方法是什麼**（已讀 `reports/gate_outputs/wf0907_E7_reverb.txt`
+與 `tests/audit_repro.cpp` 全文）：K-02 的數字來自
+`build-wf\Release\TsukiSynthAuditTest.exe` 執行 `main()` 尾端呼叫的
+`reportReverbWetGainQuantification()`（`tests/audit_repro.cpp:1240-1303`）。
+這個函式：
+
+  1. 內部呼叫 `writeExponentialDecayIr()`（`tests/audit_repro.cpp:1016-1034`）
+     **當場合成**一顆白噪 × 指數衰減 IR，寫到 `juce::File::createTempFile()`
+     產生的暫存檔，T60 由函式內部先測出的 ALGO T60 反推決定。
+  2. 沒有任何參數、命令列引數、環境變數或設定檔可以指定「改用這個外部真實
+     IR 檔案」——已確認：`grep -n "getenv\|IR_FILE\|IR_PATH\|TSUKI_IR"
+     tests/audit_repro.cpp` 無結果；`main()`（1306-1337 行）不解析 argv；
+     `reportReverbWetGainQuantification()` 內部寫死呼叫
+     `writeExponentialDecayIr(sampleRate, algoT60, irLengthSeconds, 555111)`，
+     固定種子、固定合成方式，無從外部注入真實 IR 檔。
+  3. `build\Release\TsukiSynthAuditTest.exe`（研究 lane 應該用的「現成 exe」，
+     對應 HEAD `a38bd6a`）同樣是這份編譯結果，行為完全相同——不是「舊版本
+     缺功能」，是這份原始碼從未設計成可插入外部 IR。
+
+**要讓這個量測鏈吃進真實 IR 檔，唯一辦法是修改
+`tests/audit_repro.cpp`**（新增一個接受外部 WAV 路徑的變體函式或 CLI 引數，
+重新編譯出一個新的測試執行檔），這牽涉到：
+  - 改 `tests/`（本卡與 WF0914_README §1 明文：研究 lane「不碰 src/、tools/、
+    tests/」）；
+  - 重新編譯（研究 lane 用 `build\` 現成 exe，不建置；C++ 建置是 `build-wf\`
+    lane 的事，D9 不在 C++ lane 清單裡）。
+
+也考慮過繞過修改 `tests/` 的替代路徑，逐一排除：
+  - `TsukiSynthCLI.exe`：K-02 裁決包 §2 已核實「CLI 的 ScoreRenderer 不使用
+    EffectChain 的 IR 分支」（`ScoreRenderer` 只用 `SimpleReverb` 直接介面），
+    CLI 完全沒有 convolution/IR 路徑可量。
+  - `TsukiSynthHostProbe.exe`：讀過 `tests/host_probe.cpp` 的 H7 段
+    （865-1090 行附近），它用的也是內部合成的短 IR fixture
+    （`makeImpulseFixture()`），命令列只吃 `<vst3路徑> <輸出目錄>` 兩個固定
+    引數（已用 `--help` 實測確認），檢查的是 preset round-trip 的三態邏輯
+    （ir_missing/ir_mismatch/正常），**不量測、不印任何 loudness/dB 數字**，
+    也沒有外部 IR 檔案注入點。
+  - 自行在 repo 之外寫一個新的 C++ 小程式去 `#include` `src/effects/
+    EffectChain.h` 直接呼叫 convolution：這樣雖然沒有「修改」任何被禁的
+    檔案，但等於自建一套繞過 `build-wf` 正式建置系統（CMakeLists.txt/JUCE
+    模組連結）的影子編譯管線去跑 production DSP 程式碼，精神上正是
+    WF0914_README §1 想隔離的「研究 lane 不建置、不碰程式」——沒有採用。
+  - 用 Python（scipy）自己重做一次 convolution 去逼近同樣的數字：這樣量出來
+    的不是「JUCE `dsp::Convolution` 實際的行為」（JUCE 的 Convolution 有自己
+    的分區卷積/正規化細節，K-02 裁決包 §2 已經證明「T60 對齊不保證響度對齊」
+    這種容易被直覺誤判的地方），量出來的數字沒有溯源到真正的產品程式碼，
+    不能替代「同一量測鏈」的要求，也違反卡文「方法不變」的指示——沒有採用。
+
+**結論**：這是卡文方法與 lane 檔案授權範圍的直接矛盾（卡文假設「照抄
+wf0907_E7 的方法」可行，但該方法所在的 `tests/audit_repro.cpp` 需要修改才能
+吃真實 IR，而本卡被指派在不能碰 `tests/` 的研究 lane），依規約「卡文與 repo
+現況矛盾 → 停下，寫進 open_items，不要硬做」處理，**不修改 `tests/`**，
+**不自建影子編譯管線**，**不用近似的 Python 卷積冒充同一量測鏈**，如實回報
+BLOCKED。
+
+------------------------------------------------------------------------------
+§5 git diff / git status（本卡實際觸碰的檔案）
+------------------------------------------------------------------------------
+
+命令：
+  git status --short
+
+本卡新增的檔案（全部是本檔＋gitignored 的 external_data/ 內容，沒有修改任何
+既有追蹤檔案）：
+  本檔（新增）：reports/gate_outputs/wf0914_D9_ir_measure.txt
+  gitignored（不進版控，git status --short 不會列出）：
+    external_data/ir/echothief_EchoThief.zip
+    external_data/ir/echothief/EchoThief/Stairwells/CCRMA Stairwell Stanford University California.wav
+    external_data/ir/echothief/EchoThief/Venues/Conrad Prebys Concert Hall Seat F111 UC San Diego California.wav
+    external_data/ir/echothief/EchoThief/Sanctuaries/St Paul's Cathedral San Diego California.wav
+    external_data/ir/echothief/_EchoThief License.pdf
+    output/wf0914/D9/EchoThief/_EchoThief License.pdf（讀取授權文字用的暫存
+      複本，同樣屬於 output\wf0914\ 底下，已 gitignore）
+
+`git status --short` 列出的其餘未追蹤/已修改檔案（TODO.md、
+docs/HAMMER_CONTACT_SOURCES.md、docs/RADIATION_POWER_SOURCES.md、
+docs/workcards/B7.md、tools/stem_verify.py、docs/HAMMER_VELOCITY_SOURCES.md、
+以及一批 docs/workcards/WF0914_*.md）**皆非本卡改動**，屬於同輪其他 lane
+（B7P0/B7P1/B7P3、D14 等）已在工作樹留下的既有變更，本卡未觸碰、未修改，
+如實記錄供稽核核對範圍。
+
+**本卡未產出 `reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md`**
+（見本檔開頭與 §4 說明），因此本卡的 `git diff` 範圍**不符合**卡 §4 GATE
+「只含 reports 兩檔（證據＋裁決包）」的預期（只有證據檔一份，沒有裁決包）——
+如實記錄，不強行生出裁決包湊數。

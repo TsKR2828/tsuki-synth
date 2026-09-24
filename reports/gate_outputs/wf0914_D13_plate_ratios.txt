@@ -1,0 +1,161 @@
+WF0914-D13 證據檔：水鑼 2.0x partial 缺口分析
+================================================
+
+## §1 現況量化：模態比值計算腳本與完整輸出
+
+命令（在 repo 根目錄執行）：
+  PYTHONIOENCODING=utf-8 python output/wf0914/D13/plate_mode_ratios.py
+
+腳本內容來源：src/physics/PlateModel.h freeEigenvalueForPoisson() 的
+nu=0.33（文獻原始列）與 nu=0.34（bronze，見 data/materials.json:22
+"poisson_ratio": 0.34）兩列 omega[] 常數，逐字抄自程式碼，未修改。
+腳本本體另存於 output/wf0914/D13/plate_mode_ratios.py（未進版控，
+gitignore 的 output/ 目錄下）。
+
+完整輸出（2026-09-14 本機實跑）：
+
+=== nu = 0.33 ===
+  (2,0) fundamental    omega=5.262037  ratio=1.000000
+  (0,1)                omega=9.068899  ratio=1.723458
+  (3,0)                omega=12.243894  ratio=2.326835
+  (1,1)                omega=20.513087  ratio=3.898317
+  (4,0)                omega=21.527217  ratio=4.091042
+  (2,1)                omega=35.242521  ratio=6.697505
+  (0,2)                omega=38.506969  ratio=7.317883
+  最接近 2.0 的下鄰居: ratio=1.723458  差=-257.63 cents
+  最接近 2.0 的上鄰居: ratio=2.326835  差=262.04 cents
+
+=== nu = 0.34 ===
+  (2,0) fundamental    omega=5.229136  ratio=1.000000
+  (0,1)                omega=9.090469  ratio=1.738427
+  (3,0)                omega=12.176775  ratio=2.328640
+  (1,1)                omega=20.525822  ratio=3.925280
+  (4,0)                omega=21.420716  ratio=4.096416
+  (2,1)                omega=35.236681  ratio=6.738528
+  (0,2)                omega=38.528075  ratio=7.367962
+  最接近 2.0 的下鄰居: ratio=1.738427  差=-242.66 cents
+  最接近 2.0 的上鄰居: ratio=2.328640  差=263.39 cents
+
+=== bronze (nu=0.34, water_gong_free.score.json 實際用材質) 逐比對表 ===
+  (2,0) fundamental    ratio=1.000000  cents_vs_2.0=-1200.00
+  (0,1)                ratio=1.738427  cents_vs_2.0=-242.66
+  (3,0)                ratio=2.328640  cents_vs_2.0=+263.39
+  (1,1)                ratio=3.925280  cents_vs_2.0=+1167.35
+  (4,0)                ratio=4.096416  cents_vs_2.0=+1241.23
+  (2,1)                ratio=6.738528  cents_vs_2.0=+2102.92
+  (0,2)                ratio=7.367962  cents_vs_2.0=+2257.52
+
+（同一份輸出另存 output/wf0914/D13/plate_mode_ratios_output.txt，gitignore）
+
+## §2 文獻 fetch 記錄（供稽核抽查）
+
+S1（成功，全文）
+  URL: https://www.acoustics.asn.au/journal/1997/1997_25_3_McLachlan.pdf
+  方法：WebFetch（PDF 二進位存到本機後用 Read 工具解析全 5 頁）
+  結果：McLachlan, N. (1997), "Finite Element Analysis and Gong Acoustics",
+  Acoustics Australia 25(3), 103-107。全文可讀，含 Table 1 逐格數字與
+  Discussion 逐字引用（見 docs/GONG_PARTIAL_ANALYSIS.zh-TW.md §3.1）。
+  本機保存路徑（scratchpad，非 repo）：
+  C:\Users\admin\.claude\projects\C--Users-admin-Desktop-Claude\
+  147112da-779b-45fe-ad8f-488e204b39ea\tool-results\
+  webfetch-1789390663181-ifeuv9.pdf
+
+S2（失敗，HTTP 403，未取得全文，未引用其具體數字）
+  URL: https://pubs.aip.org/asa/jasa/article/128/1/EL8/655833/
+       Acoustical-and-vibrometry-analysis-of-a-large
+  方法：WebFetch
+  結果：「The server returned HTTP 403 Forbidden.」
+  2026-09-09 WF0909-P6 已記錄同一結果（docs/EXTERNAL_DATASET_SUPPLEMENT.
+  zh-TW.md §3 第 5 點）；本卡 2026-09-14 重試，結果相同。
+
+S3（成功，確認頁面內容範圍）
+  URL: https://theremin.music.uiowa.edu/MISgongtamtams.html
+  方法：WebFetch
+  結果：頁面只列音名/力度錄音清單，無鑼的形狀/構造描述文字（確認 §3.3
+  第 4 點「Iowa 錄音的鑼是否有 boss 未經頁面文字驗證」）。
+
+S4（成功，一般性背景資料，非量測數字來源）
+  URL: https://en.wikipedia.org/wiki/Gong
+  方法：WebFetch
+  結果：「Bossed or nipple gongs have a raised centre boss or knob and are
+  often suspended and played horizontally.」「Nipple gongs at Wat
+  Chulaphonwararam...Nakhon Nayok」（圖說）。僅用於背景陳述「泰國鑼常見為
+  乳突鑼」，不作為模態機制的數字依據。
+
+## §3 git diff 範圍確認
+
+命令：git diff --stat -- docs/ reports/
+（工兵不執行 git add；此處只列出本卡改動的檔案供稽核核對範圍）
+
+本卡改動/新增檔案：
+  docs/GONG_PARTIAL_ANALYSIS.zh-TW.md（新增）
+  reports/decision_packets/D13_gong_2x_partial.zh-TW.md（新增）
+  reports/gate_outputs/wf0914_D13_plate_ratios.txt（本檔，新增）
+
+本卡新增但不進版控（gitignore 的 output/）：
+  output/wf0914/D13/plate_mode_ratios.py
+  output/wf0914/D13/plate_mode_ratios_output.txt
+
+## §4（2026-09-14 稽核回合修復）GATE 重跑：`--dump-modes` 實際引擎順序
+
+稽核發現 §3.1（(1,1)/(4,0) 順序）與 §2（1.7384× 強度）兩處與引擎實際輸出矛盾。
+本回合重跑：
+
+命令：
+  ./build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --dump-modes
+    scores/examples/water_gong_free.score.json
+
+完整輸出另存 output/wf0914/D13/dump_modes_audit_rerun.json（gitignore，未進版控）。
+關鍵欄位（C4, midi=60）：
+
+  freq=261.626   amp=0.10611   ratio=1.0000   (2,0)
+  freq=454.817   amp=0.70891   ratio=1.7384   (0,1)  <- 全 7 根裡振幅最大
+  freq=609.232   amp=0.03888   ratio=2.3286   (3,0)
+  freq=1026.953  amp=0.67490   ratio=3.9253   (1,1)
+  freq=1071.727  amp=0.01275   ratio=4.0964   (4,0)
+  freq=1762.971  amp=0.23352   ratio=6.7385   (2,1)
+  freq=1927.647  amp=0.09098   ratio=7.3680   (0,2)
+
+（G4, midi=67 同構：amp 序列 0.12783/0.83027/0.04398/0.65147/0.01202/0.10219/0.02369，
+最大值同樣在 ratio=1.7384 那一根。）
+
+**確認 1**：1.7384× 那根在兩個音高都是振幅最大值（0.70891／0.83027 皆為 7 根之最）——
+原文件 §2 表格寫「第 2 弱」是錯的，已改正為「第 2 根，亦為引擎最強」。
+
+**確認 2**：引擎依頻率排序的模態序是 (2,0)→(0,1)→(3,0)→(1,1)→(4,0)→(2,1)→(0,2)，
+`(1,1)` 排在 `(4,0)` 之前。這與 src/physics/PlateModel.h:204-205 的既有註解一致：
+「Free-edge branches can cross as Poisson ratio changes (notably (1,1)/(4,0))」。
+
+## §5（2026-09-14 稽核回合修復）McLachlan 1997 PDF 逐頁重抽：頁碼與 Table 1 完整數字
+
+命令：
+  curl -sL -o mclachlan1997.pdf
+    https://www.acoustics.asn.au/journal/1997/1997_25_3_McLachlan.pdf
+  python output/wf0914/D13/extract_pdf.py   （PyMuPDF fitz，逐頁取 get_text()）
+
+下載檔案大小：464285 bytes（與上一輪記錄的 453.4KB 一致，同一份 PDF）。
+
+完整逐頁文字另存 output/wf0914/D13/mclachlan1997_fulltext_by_pymupdf.txt（gitignore）。
+
+**頁碼核對**：搜尋文件引用的兩段逐字引文（"nodal diameters only...increase dramatically"
+與 "had less affect on the three modes with nodal circles"），兩段皆落在 PDF 第 3 頁
+（0-based index 2），該頁頁尾逐字為「Vol. 25 (1997) No.3 - 105」。PDF 第 4 頁（index 3）
+頁尾才是「106‧Vol.25 (1997) NO.3」。**正確頁碼為 p.105，原文件標註的 p.106 錯一頁，
+已改正**。
+
+**"affect" vs "effect" 核對**：PyMuPDF 抽取原文逐字為「The introduction ofa rim had less
+affect on the three modes with nodal circles shown in the figure」——原文用 affect
+（文法上此處應為名詞 effect，屬原文本身的錯字）。分析文件的逐字引文區塊已將其靜默訂正為
+effect 並在引文後加註說明，不再無聲修改。
+
+**Table 1「Steel」（無 boss，旋壓鋼板+100mm鑼緣）列完整七模態 Hz 值**（p.104）：
+  (2,0)=252Hz  (0,1)=422Hz  (3,0)=498Hz  (4,0)=622-662Hz  (1,1)=738Hz
+  (2,1)=984Hz  (0,2)=1223Hz
+  比值（本卡由 Hz 值直接算，不採信該表另一列因掃描 OCR 跨欄錯位的 f/f(1) 比值列）：
+  (0,1)/(2,0)=1.675  (3,0)/(2,0)=1.976  (4,0)/(2,0)=2.47-2.63  (1,1)/(2,0)=2.929
+
+**確認**：文獻表格欄位順序是 (2,0)→(0,1)→(3,0)→(4,0)→(1,1)→(2,1)→(0,2)——`(4,0)` 在
+`(1,1)` 之前，與引擎實際順序（§4 已證：`(1,1)` 在 `(4,0)` 之前）**相反**。原文件 §3.1
+「順序相同」的陳述是錯的，已改正為明確指出兩者在 (1,1)/(4,0) 這一對順序相反，且說明這是
+不同邊界條件（有鑼緣 vs 自由邊）本來就會有的分支交叉行為，不能作為佐證引擎與文獻一致的
+證據，也不影響本卡 §3.2 的核心推論（boss/rim 機制在自由邊平板裡不存在）。
