@@ -327,4 +327,220 @@ public:
         return juce::jlimit (kPianoTauCMinS, kPianoTauCMaxS,
                              kTauCFelt * keytrackScale (midiNote) * (g / gRef));
     }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // B7 Phase 1 (WF0914-B7P1, docs/workcards/B7.md §4.2/§4.3): velocity ->
+    // real hammer speed -> Hertz peak contact force. Pure diagnostic-chain
+    // functions feeding ScoreRenderer::dumpModes()'s Path C fields only --
+    // NOT called from tauCForNote()/tauCForStrike()/pianoHammerTauC()/
+    // forceSpectrumMagnitude() above, and none of those existing functions
+    // are modified by this section (README Rule 10: this card must not
+    // alter the existing velocity->amplitude law or any rendered audio).
+    // ────────────────────────────────────────────────────────────────────────
+
+    /** MIDI velocity (REAL 0-127, NOT this engine's [0,1] score-velocity
+     *  proxy -- see the caller-side conversion note at the call site,
+     *  ScoreRenderer.h's dumpModes()) -> real hammer speed (m/s).
+     *
+     *    hammerVelocityMps(midi) = 2 ^ ((midi - 52) / 25)
+     *
+     *  Source: Goebl, W. (2003) doctoral thesis, *The Role of Timing and
+     *  Intensity in the Production and Perception of Melody in Expressive
+     *  Piano Performance*, Univ. Graz / OFAI TR-2003-28, Ch.3 SS3.7 eq.(3.2).
+     *  Original text: "was chosen to be MIDIvel = 52 + 25 * log2(fhv)"
+     *  (fhv = final hammer velocity, m/s); this function is the algebraic
+     *  inverse. Full sourcing, the three cross-check anchors, the +14%
+     *  inter-study scale discrepancy, and the reasoning behind the two
+     *  clamp values below: docs/HAMMER_VELOCITY_SOURCES.md SS1-SS4
+     *  (transcribed there from docs/B7_PHASE0_DATA.zh-TW.md, not
+     *  re-derived in this file).
+     *
+     *  **Not a physical law** -- the source text's own word is "was chosen
+     *  to be": this is the Boesendorfer SE290 system's device convention
+     *  for one research programme, corroborated (to printing precision) by
+     *  three independent MIDI-velocity/m-s data points from two OTHER
+     *  papers by the same author group -- but those three points and this
+     *  formula are plausibly all reductions of the SAME underlying map
+     *  (docs/HAMMER_VELOCITY_SOURCES.md SS3(1): residual agreement there is
+     *  self-consistency of one map, not independent-instrument accuracy).
+     *  Usable precision floor: +-14% (~+-1.14 dB if peak pressure scaled
+     *  linearly with hammer speed) from the inter-study scale gap alone --
+     *  this is a magnitude statement, not a new GATE tolerance (Rule 2).
+     *
+     *  Domain: MIDI 20-120 has direct measurement support (docs/
+     *  HAMMER_VELOCITY_SOURCES.md SS2/SS4). Outside that range the formula
+     *  is known to misbehave (MIDI 127 -> 8.0 m/s, 18% ABOVE the measured
+     *  maximum 6.8 m/s), so this function clamps FLAT to the two measured
+     *  extremes 0.18 m/s / 6.8 m/s outside [20, 120] rather than
+     *  extrapolating the curve (same "flat, not linear, outside the
+     *  anchored range" style as interpAnchorsFlat() above; this specific
+     *  clamp choice is a B7P1 engineering decision per the workcard, not a
+     *  literature-mandated rule).
+     *
+     *  @param midiVelocity  REAL MIDI velocity units, 0-127 (NOT this
+     *         engine's [0,1] score-velocity proxy). Callers holding only
+     *         the proxy must decide and document their own conversion --
+     *         docs/HAMMER_VELOCITY_SOURCES.md SS5(a) leaves that
+     *         undecided at the source-document level.
+     *  @return hammer speed (m/s); fail-closed sentinel -1.0f on
+     *          non-finite input.
+     */
+    static float hammerVelocityMps (float midiVelocity)
+    {
+        if (! std::isfinite (midiVelocity))
+            return -1.0f;
+        if (midiVelocity < 20.0f)  return 0.18f;
+        if (midiVelocity > 120.0f) return 6.8f;
+        const float v = std::pow (2.0f, (midiVelocity - 52.0f) / 25.0f);
+        return (std::isfinite (v) && v > 0.0f) ? v : -1.0f;
+    }
+
+    /** Hertz-contact peak force F_peak(note, v) from a hammer of mass
+     *  m(note) striking at real speed v (m/s) a contact obeying
+     *  F = K(note)*delta^alpha(note) -- the SAME B4 K/alpha/mass anchor
+     *  tables above (alphaForPianoNote()/logKForPianoNote()/
+     *  hammerMassForPianoNote()), not re-queried or re-derived.
+     *
+     *  **Derivation** (docs/workcards/B7.md SS4.3 -- this file's own
+     *  energy-conservation algebra, not a literature-verbatim formula, same
+     *  status as radiationLossFactor()'s derivation in RadiationModel.h):
+     *  the hammer (mass m, speed v) strikes a contact assumed to be a
+     *  FIXED point (known simplification, see below); all of its kinetic
+     *  energy converts to elastic contact potential energy at maximum
+     *  compression delta_max:
+     *
+     *    (1/2)*m*v^2 = integral_0^delta_max K*delta'^alpha d(delta')
+     *                = K*delta_max^(alpha+1) / (alpha+1)
+     *
+     *    => delta_max = [ (alpha+1)*m*v^2 / (2*K) ] ^ (1/(alpha+1))
+     *    => F_peak    = K * delta_max^alpha
+     *
+     *  **Known simplification** (must be repeated at every call site's
+     *  reasoning, per B7.md SS4.3): this treats the struck point as fixed
+     *  and immobile. A real string is itself moving during contact --
+     *  Chaigne & Askenfelt (1994, already referenced at this file's own
+     *  header for the separate half-sine-pulse-shape question) instead
+     *  solve the coupled hammer+string equations of motion numerically.
+     *  This closed-form energy-conservation shortcut is NOT that coupled
+     *  solution; it most likely OVERESTIMATES F_peak's magnitude somewhat
+     *  (a real string yields, absorbing some of the hammer's kinetic
+     *  energy as string motion rather than pure contact compression), but
+     *  this file does not have and will not invent a precise correction
+     *  factor for that (Rule 4).
+     *
+     *  @param midiNote  MIDI note number, for the K/alpha/mass anchor
+     *         lookups above -- same domain restriction as those tables:
+     *         Cimbalom/Piano path with ExciterType::Felt only
+     *         (docs/HAMMER_CONTACT_SOURCES.md SS6).
+     *  @param speedMps  REAL hammer speed (m/s), e.g. hammerVelocityMps()'s
+     *         output -- NOT the [0,1] score-velocity proxy.
+     *  @return F_peak in Newtons; fail-closed sentinel -1.0f if speedMps is
+     *          non-finite/non-positive or any anchor-table lookup is
+     *          invalid (non-finite or non-positive).
+     */
+    static float hertzPeakForceNewtons (int midiNote, float speedMps)
+    {
+        if (! std::isfinite (speedMps) || speedMps <= 0.0f)
+            return -1.0f;
+
+        const float alpha = alphaForPianoNote (midiNote);
+        const float K     = logKForPianoNote (midiNote);
+        const float m     = hammerMassForPianoNote (midiNote);
+        if (! std::isfinite (alpha) || alpha <= 0.0f
+            || ! std::isfinite (K) || K <= 0.0f
+            || ! std::isfinite (m) || m <= 0.0f)
+            return -1.0f;
+
+        const float deltaMax = std::pow (
+            (alpha + 1.0f) * m * speedMps * speedMps / (2.0f * K),
+            1.0f / (alpha + 1.0f));
+        if (! std::isfinite (deltaMax) || deltaMax <= 0.0f)
+            return -1.0f;
+
+        const float fPeak = K * std::pow (deltaMax, alpha);
+        return (std::isfinite (fPeak) && fPeak > 0.0f) ? fPeak : -1.0f;
+    }
+
+    /** Contact duration tau_c (s), self-consistent with the SAME
+     *  dissipation-free Hertzian collision that produced `fPeakN` via
+     *  hertzPeakForceNewtons() above -- **added 2026-09-14, WF0914-B7P1
+     *  audit fix, replacing the previous ScoreRenderer.h call site's reuse
+     *  of the unrelated, independently-calibrated pianoHammerTauC() for
+     *  this diagnostic chain.**
+     *
+     *  **Why the previous choice was wrong (audit finding, 2026-09-14)**:
+     *  `F = K*delta^alpha` above has NO dissipation term, so by time-
+     *  reversal symmetry of that ODE the hammer leaves contact at speed
+     *  EXACTLY v (reversed) -- this idealized collision is perfectly
+     *  elastic, and its EXACT total impulse, independent of pulse SHAPE,
+     *  is the hammer's own momentum change:
+     *
+     *    integral_0^tauC f(t) dt = m*v - (-m*v) = 2*m*v                (*)
+     *
+     *  `pianoHammerTauC()` is calibrated from a COMPLETELY different
+     *  envelope (kTauCFelt anchor * keytrackScale * a velocity-ratio
+     *  g(note,v)/g(note,0.5), HAMMER_CONTACT_SOURCES.md's spectral-
+     *  envelope fit) with no algebraic relationship to the K/alpha/mass
+     *  Hertz solve above. Feeding that independently-anchored duration
+     *  into `F_peak*tauC*(2/pi)` (the half-sine pulse's own exact impulse,
+     *  see forceSpectrumMagnitude()'s header) produced an assembled
+     *  impulse 2.55-4.32x ABOVE the physical bound (*) across the entire
+     *  MIDI 36-96 x velocity 20-120 Felt-anchor domain -- i.e. every
+     *  output was claiming the hammer delivered several times more
+     *  momentum than it physically carries. RadiationModel.h's
+     *  modalEnergyFirstPrinciples(), which squares this impulse, then
+     *  produced single-mode energies up to ~24x the hammer's OWN total
+     *  kinetic energy for a single strike -- an energy-conservation
+     *  violation, not a rounding-level approximation error.
+     *
+     *  **This function's derivation**: this codebase already approximates
+     *  the hammer-string force pulse as a half sine of peak `fPeakN` and
+     *  duration `tauC` for spectral purposes (forceSpectrumMagnitude()
+     *  above -- the SAME approximation pianoHammerTauC() feeds for the
+     *  real render path). A half-sine pulse's own total impulse is
+     *  EXACTLY `fPeakN*tauC*(2/pi)`. Solving (*) for tauC under that
+     *  shape assumption:
+     *
+     *    fPeakN * tauC * (2/pi) = 2*m*v
+     *    => tauC = pi*m*v / fPeakN
+     *
+     *  This is the tauC that makes the half-sine model's OWN assembled
+     *  impulse equal the exact momentum bound of the SAME elastic
+     *  collision that produced `fPeakN` -- the self-consistent choice,
+     *  not a second, independently-measured value. For ANY finite
+     *  positive `m`/`speedMps`/`fPeakN`, `fPeakN*tauC*(2/pi)` equals
+     *  `2*m*speedMps` to floating-point precision by construction, so a
+     *  Path C field built from it can no longer exceed this bound at the
+     *  impulse stage (see tests/physics_models_repro.cpp's
+     *  testBridgePowerFirstPrinciplesChain() domain scan for the
+     *  verification across all 24 Felt-anchor points).
+     *
+     *  This does NOT replace, call, or modify pianoHammerTauC()/
+     *  tauCForNote()/tauCForStrike() or any existing B4 function -- those,
+     *  and the real render path they feed, are untouched by this fix.
+     *
+     *  @param midiNote  for the hammer-mass anchor lookup, same table
+     *         hertzPeakForceNewtons() used for this (midiNote, speedMps).
+     *  @param speedMps  the SAME real hammer speed passed to
+     *         hertzPeakForceNewtons() for this note.
+     *  @param fPeakN    hertzPeakForceNewtons()'s output for that SAME
+     *         (midiNote, speedMps) pair -- passing a mismatched F_peak
+     *         from a different (note, speed) reintroduces the same
+     *         inconsistency this function exists to remove.
+     *  @return tauC in seconds; fail-closed sentinel -1.0f on non-finite/
+     *          non-positive speedMps or fPeakN, or an invalid mass lookup.
+     */
+    static float hertzImpulseConsistentTauCSeconds (int midiNote, float speedMps, float fPeakN)
+    {
+        if (! std::isfinite (speedMps) || speedMps <= 0.0f
+            || ! std::isfinite (fPeakN) || fPeakN <= 0.0f)
+            return -1.0f;
+
+        const float m = hammerMassForPianoNote (midiNote);
+        if (! std::isfinite (m) || m <= 0.0f)
+            return -1.0f;
+
+        const float tauC = juce::MathConstants<float>::pi * m * speedMps / fPeakN;
+        return (std::isfinite (tauC) && tauC > 0.0f) ? tauC : -1.0f;
+    }
 };

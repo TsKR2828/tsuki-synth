@@ -1090,6 +1090,457 @@ void testPianoHammerContactSolver()
     }
 }
 
+// ── B7 Phase 1 (WF0914-B7P1, docs/workcards/B7.md §7) ──────────────────────
+// First-principles force chain: velocity -> real hammer speed -> Hertz peak
+// force -> real modal energy -> bridge power. §1.2 "否" branch (see
+// RadiationModel::bridgePowerFirstPrinciples()'s doc comment): the current
+// soundboard params are not traceable to the same measured instrument as
+// S's only usable literature value, so the chain stops at W_bridge(f) --
+// tests 4/5 below are therefore adapted from B7.md §7's literal wording
+// (which assumes a "sigma(f)"/"S" continuation that this card's Phase 1
+// does not build) into equivalent sentinels on W_bridge(f) itself, per the
+// workcard's explicit "否" branch instruction. This is documented here and
+// in the WF0914-B7P1 completion report, not silently substituted.
+
+// §7 item 1: velocity-mapping range + monotonicity.
+void testHammerVelocityMps()
+{
+    // Exact anchors (formula gives an exact power of 2 at these two points):
+    // MIDI 52 -> 2^0 = 1.0 m/s; MIDI 77 -> 2^1 = 2.0 m/s (matches the Goebl &
+    // Bresin (2003) "77 MIDI velocity units -> 2 m/s" anchor exactly, see
+    // docs/HAMMER_VELOCITY_SOURCES.md §2).
+    CHECK (std::abs (HammerImpulse::hammerVelocityMps (52.0f) - 1.0f) < 1.0e-5f,
+           "hammerVelocityMps(52) == 1.0 m/s exactly (2^0)");
+    CHECK (std::abs (HammerImpulse::hammerVelocityMps (77.0f) - 2.0f) < 1.0e-4f,
+           "hammerVelocityMps(77) == 2.0 m/s (Goebl & Bresin 2003 anchor)");
+
+    // Cross-check against docs/HAMMER_VELOCITY_SOURCES.md §2's own "A12
+    // cross-check" table (transcribed from B7_PHASE0_DATA, hand-verifiable
+    // by the closed-form formula -- reproduced here as an independent check
+    // on the IMPLEMENTATION, not a re-derivation of the source numbers).
+    // Note: MIDI 127 is deliberately excluded here -- it falls inside this
+    // function's own ">120" domain clamp (see below), so it returns the
+    // clamped 6.8 m/s, not the raw formula's 8.0 m/s docs/
+    // HAMMER_VELOCITY_SOURCES.md §2 quotes for the UNCLAMPED formula value
+    // at that point (used there to show the 18% overshoot the clamp exists
+    // to correct, not as this function's own return value).
+    struct { float midi, expectedMps; } anchors[] = {
+        { 40.0f, 0.717f }, { 60.0f, 1.248f }, { 110.0f, 4.993f }
+    };
+    bool anchorsOk = true;
+    for (const auto& a : anchors)
+    {
+        const float got = HammerImpulse::hammerVelocityMps (a.midi);
+        anchorsOk = anchorsOk && std::abs (got - a.expectedMps) < 1.0e-3f;
+        std::cout << "       hammerVelocityMps(" << a.midi << ") = " << got
+                  << " (expected " << a.expectedMps << ")\n";
+    }
+    CHECK (anchorsOk, "hammerVelocityMps matches docs/HAMMER_VELOCITY_SOURCES.md "
+                       "§2's A12 cross-check table within 1e-3");
+
+    // Domain clamp: MIDI < 20 -> 0.18 m/s flat, MIDI > 120 -> 6.8 m/s flat
+    // (the two measured extremes, docs/HAMMER_VELOCITY_SOURCES.md §3(2)/§4
+    // -- the formula itself is known to overshoot outside this range).
+    CHECK (HammerImpulse::hammerVelocityMps (19.9f) == 0.18f
+           && HammerImpulse::hammerVelocityMps (0.0f) == 0.18f
+           && HammerImpulse::hammerVelocityMps (-50.0f) == 0.18f,
+           "hammerVelocityMps: MIDI < 20 clamps flat to the measured minimum 0.18 m/s");
+    CHECK (HammerImpulse::hammerVelocityMps (120.1f) == 6.8f
+           && HammerImpulse::hammerVelocityMps (127.0f + 1.0f) == 6.8f
+           && HammerImpulse::hammerVelocityMps (300.0f) == 6.8f,
+           "hammerVelocityMps: MIDI > 120 clamps flat to the measured maximum 6.8 m/s");
+    // Domain boundary itself uses the formula, not the clamp (MIDI 120 -> 6.59, not 6.8).
+    CHECK (HammerImpulse::hammerVelocityMps (120.0f) < 6.8f
+           && HammerImpulse::hammerVelocityMps (120.0f) > 6.0f,
+           "hammerVelocityMps: MIDI == 120 (boundary) still uses the formula, not the clamp");
+
+    // Monotonicity across the full domain, clamp included.
+    bool monotone = true;
+    float prev = HammerImpulse::hammerVelocityMps (0.0f);
+    for (float midi = 1.0f; midi <= 127.0f; midi += 1.0f)
+    {
+        const float cur = HammerImpulse::hammerVelocityMps (midi);
+        monotone = monotone && cur >= prev;
+        prev = cur;
+    }
+    CHECK (monotone, "hammerVelocityMps is non-decreasing over MIDI 0..127 "
+                      "(clamp + formula together)");
+
+    // Fail-closed on non-finite input.
+    CHECK (HammerImpulse::hammerVelocityMps (std::numeric_limits<float>::quiet_NaN()) < 0.0f,
+           "hammerVelocityMps: NaN input is fail-closed (-1)");
+    CHECK (HammerImpulse::hammerVelocityMps (std::numeric_limits<float>::infinity()) < 0.0f,
+           "hammerVelocityMps: +Inf input is fail-closed (-1)");
+}
+
+// §7 item 2: peak-force energy-conservation self-consistency (numerical
+// integration, not a hand-picked closed-form reference -- the derivation
+// itself (docs/workcards/B7.md §4.3) IS the energy-conservation identity,
+// so checking hertzPeakForceNewtons()'s own delta_max/F_peak against a
+// numerically-integrated contact work is the correct self-consistency
+// check, matching B7.md §7 item 2's literal instruction).
+void testHertzPeakForceEnergyConservation()
+{
+    const int   notes[]  = { 36, 60, 96 };     // C2 / C4 / C7 anchors (B4)
+    const float speeds[] = { 0.3f, 1.25f, 4.0f };
+    bool allConverge = true;
+    for (int ni = 0; ni < 3; ++ni)
+    {
+        const int   note = notes[ni];
+        const float v    = speeds[ni];
+        const float alpha = HammerImpulse::alphaForPianoNote (note);
+        const float K     = HammerImpulse::logKForPianoNote (note);
+        const float m     = HammerImpulse::hammerMassForPianoNote (note);
+        const float fPeak = HammerImpulse::hertzPeakForceNewtons (note, v);
+        CHECK (fPeak > 0.0f, "hertzPeakForceNewtons: positive output for a valid input");
+
+        // delta_max recovered algebraically from F_peak = K*delta_max^alpha
+        // (double precision, independent of the implementation's own
+        // internal delta_max local).
+        const double deltaMax = std::pow ((double) fPeak / (double) K, 1.0 / (double) alpha);
+
+        // Simpson's rule, 4000 sub-intervals, of integral_0^deltaMax K*x^alpha dx.
+        const int N = 4000;
+        const double h = deltaMax / N;
+        auto integrand = [&] (double x) { return (double) K * std::pow (x, (double) alpha); };
+        double integral = integrand (0.0) + integrand (deltaMax);
+        for (int i = 1; i < N; ++i)
+            integral += (i % 2 == 0 ? 2.0 : 4.0) * integrand (i * h);
+        integral *= h / 3.0;
+
+        const double kineticEnergy = 0.5 * (double) m * (double) v * (double) v;
+        const double relError = std::abs (integral - kineticEnergy)
+                               / std::max (kineticEnergy, 1e-30);
+        allConverge = allConverge && relError < 1.0e-3;
+        std::cout << "       MIDI " << note << " v=" << v
+                  << " m/s: integral(K*delta^alpha, 0..deltaMax)=" << integral
+                  << " J, (1/2)*m*v^2=" << kineticEnergy
+                  << " J, rel error=" << relError << "\n";
+    }
+    CHECK (allConverge,
+           "hertzPeakForceNewtons: numerically-integrated contact work matches "
+           "(1/2)*m*v^2 within 1e-3 relative error at C2/C4/C7 (B7.md §7 item 2)");
+
+    // Fail-closed on non-finite / non-positive speed.
+    CHECK (HammerImpulse::hertzPeakForceNewtons (60, 0.0f) < 0.0f,
+           "hertzPeakForceNewtons: zero speed is fail-closed (-1)");
+    CHECK (HammerImpulse::hertzPeakForceNewtons (60, -1.0f) < 0.0f,
+           "hertzPeakForceNewtons: negative speed is fail-closed (-1)");
+    CHECK (HammerImpulse::hertzPeakForceNewtons (60, std::numeric_limits<float>::quiet_NaN()) < 0.0f,
+           "hertzPeakForceNewtons: NaN speed is fail-closed (-1)");
+
+    // Directionality: faster strike -> larger peak force (monotone in v),
+    // same note.
+    CHECK (HammerImpulse::hertzPeakForceNewtons (60, 4.0f)
+           > HammerImpulse::hertzPeakForceNewtons (60, 0.5f),
+           "hertzPeakForceNewtons: larger speed gives larger peak force (same note)");
+}
+
+// §7 item 3 (mandatory counter-example): a mutant delta_max that forgets to
+// multiply by (alpha+1) must be distinguishable from the real implementation.
+void testHertzPeakForceCounterexample()
+{
+    const int   note = 60;   // C4: alpha=2.5, K=4.5e9, m=0.009 kg
+    const float v    = 1.25f;
+    const float alpha = HammerImpulse::alphaForPianoNote (note);
+    const float K      = HammerImpulse::logKForPianoNote (note);
+    const float m       = HammerImpulse::hammerMassForPianoNote (note);
+
+    const float realFPeak = HammerImpulse::hertzPeakForceNewtons (note, v);
+
+    // Mutant: delta_max_wrong = [ m*v^2 / (2*K) ] ^ (1/(alpha+1))  -- missing
+    // the (alpha+1) factor docs/workcards/B7.md §4.3's derivation requires.
+    const float deltaMaxWrong = std::pow (
+        m * v * v / (2.0f * K), 1.0f / (alpha + 1.0f));
+    const float fPeakWrong = K * std::pow (deltaMaxWrong, alpha);
+
+    const double ratio = (double) fPeakWrong / (double) realFPeak;
+    std::cout << "[SENTINEL 1/2] mutant (missing (alpha+1) factor): F_peak="
+              << fPeakWrong << " N -- if delta_max forgot to multiply by "
+              << "(alpha+1), this is what hertzPeakForceNewtons(60, 1.25) "
+              << "would return instead\n";
+    std::cout << "[SENTINEL 2/2] real hertzPeakForceNewtons(60, 1.25): "
+              << realFPeak << " N (ratio mutant/real = " << ratio << ")\n";
+    // (alpha+1)=3.5 missing inside a ^(1/(alpha+1))=^(1/3.5) power law is a
+    // large, easily-distinguishable multiplicative gap, not a rounding-level
+    // difference -- assert at least 2x apart (order-of-magnitude margin,
+    // not a new GATE tolerance, same style as testRadiationEfficiencyShape()'s
+    // "delta > 0.2f" sentinel margin).
+    CHECK (ratio < 0.5 || ratio > 2.0,
+           "SENTINEL: delta_max mutant missing the (alpha+1) factor gives a "
+           "F_peak at least 2x away from the real implementation");
+}
+
+// §7 items 4/5 ("否" branch adaptation, see the section-header comment
+// above, UPDATED 2026-09-14 audit fix): item 5 still has no
+// acoustic_transfer/acoustic_transfer_c JSON-field comparison to make
+// (neither key exists in this "否"-branch build), so testPathBAndPathCDoNotInterfere()
+// below keeps its pure-function-level adaptation. Item 4 ORIGINALLY had no
+// W_rad<=W_bridge inequality available either (no S/sigma(f)) and was
+// adapted down to scale-law/non-negativity sentinels only -- the audit
+// (2026-09-14) correctly flagged that this dropped the one conservation
+// check that WAS available and load-bearing: the assembled impulse
+// feeding modalEnergyFirstPrinciples() has a hard physical ceiling, 2*m*v
+// (the elastic-collision momentum bound), regardless of S/sigma(f). That
+// check is now present below (the "GENUINE conservation check" block) and
+// is what actually caught -- and, after the fix, verifies the repair of --
+// the WF0914-B7P1 impulse/energy-conservation violation.
+
+void testBridgePowerFirstPrinciplesChain()
+{
+    // Hand-calculated reference point, chosen so the half-sine spectrum's
+    // pi/4 removable-singularity value (already verified independently by
+    // testHammerSpectrum() above) makes the arithmetic exact:
+    //   fPeakN=40 N, tauCS=0.002 s, fHz = 1/(2*tauCS) = 250 Hz
+    //     -> forceSpectrumMagnitude(2*pi*250, 0.002) == pi/4 (the "turning"
+    //        point, see testHammerSpectrum()).
+    //   impulseDC = fPeakN*tauCS*(2/pi) = 40*0.002*(2/pi) = 0.08*(2/pi)
+    //   impulseAtOmega = impulseDC * (pi/4) * excitationWeight(=1)
+    //                  = 40*0.002*(2/pi)*(pi/4) = 40*0.002*0.5 = 0.04 N*s
+    //     (the pi cancels exactly -- (2/pi)*(pi/4) = 1/2)
+    //   E_mode = 0.04^2 / (2*0.001) = 0.0016/0.002 = 0.8 J
+    //   W_bridge = 2*alphaBridge*E_mode = 2*5.0*0.8 = 8.0 W
+    const float fPeakN = 40.0f, tauCS = 0.002f;
+    const float fHz = 1.0f / (2.0f * tauCS);   // 250 Hz
+    const float modalMassKg = 0.001f;
+    const float excitationWeight = 1.0f;
+    const float alphaBridge = 5.0f;
+
+    const float eMode = RadiationModel::modalEnergyFirstPrinciples (
+        fPeakN, tauCS, fHz, modalMassKg, excitationWeight);
+    CHECK (std::abs (eMode - 0.8f) < 1.0e-3f,
+           "modalEnergyFirstPrinciples: matches the hand-calculated 0.8 J "
+           "reference point (uses forceSpectrumMagnitude's exact pi/4 value)");
+    std::cout << "       E_mode(hand-calc reference) = " << eMode << " J (expected 0.8)\n";
+
+    const float wBridge = RadiationModel::bridgePowerFirstPrinciples (alphaBridge, eMode);
+    CHECK (std::abs (wBridge - 8.0f) < 1.0e-2f,
+           "bridgePowerFirstPrinciples: matches the hand-calculated 8.0 W "
+           "reference point (W_bridge = 2*alpha_bridge*E_mode)");
+    std::cout << "       W_bridge(hand-calc reference) = " << wBridge << " W (expected 8.0)\n";
+
+    // Physical-sanity monotonicity (adapted "conservation" check per the
+    // "否" branch note above: with no S/sigma(f) continuation there is no
+    // W_rad to bound W_bridge by, so this checks the physically-required
+    // relationships W_bridge(f) itself must obey instead): E_mode ~
+    // impulse^2, so doubling fPeakN (all else fixed) should ~4x E_mode and
+    // therefore ~4x W_bridge.
+    const float eModeDoubled = RadiationModel::modalEnergyFirstPrinciples (
+        2.0f * fPeakN, tauCS, fHz, modalMassKg, excitationWeight);
+    const float wBridgeDoubled = RadiationModel::bridgePowerFirstPrinciples (
+        alphaBridge, eModeDoubled);
+    CHECK (std::abs (wBridgeDoubled / wBridge - 4.0f) < 1.0e-2f,
+           "bridgePowerFirstPrinciples: doubling F_peak quadruples W_bridge "
+           "(E_mode ~ impulse^2 ~ F_peak^2, physical-sanity check replacing "
+           "the W_rad<=W_bridge conservation inequality this '否' branch "
+           "does not build)");
+
+    // Non-negativity across a spread of physically plausible inputs.
+    bool allNonNegative = true;
+    for (float fp : { 5.0f, 40.0f, 200.0f })
+        for (float tc : { 0.0003f, 0.002f, 0.006f })
+            for (float f : { 50.0f, 440.0f, 4000.0f })
+            {
+                const float e = RadiationModel::modalEnergyFirstPrinciples (
+                    fp, tc, f, modalMassKg, excitationWeight);
+                allNonNegative = allNonNegative && e >= 0.0f;
+                if (e >= 0.0f)
+                {
+                    const float w = RadiationModel::bridgePowerFirstPrinciples (alphaBridge, e);
+                    allNonNegative = allNonNegative && w >= 0.0f;
+                }
+            }
+    CHECK (allNonNegative,
+           "modalEnergyFirstPrinciples/bridgePowerFirstPrinciples: never "
+           "negative across a spread of physically plausible (F_peak, tauC, f) inputs");
+
+    // §7 item 4, GENUINE conservation check (audit fix, 2026-09-14 --
+    // replaces the mutation-sentinel-only version this test previously had
+    // in that slot; the "否" branch note above still stands for why there
+    // is no W_rad<=W_bridge INEQUALITY to check (no S/sigma(f)), but the
+    // workcard's own physical-necessity language ("任何一組合法輸入都要
+    // 滿足") has a directly available equivalent that DOES apply here: the
+    // assembled impulse feeding modalEnergyFirstPrinciples() can never
+    // physically exceed the hammer's own momentum change for a
+    // dissipation-free Hertzian collision, 2*m*v (see
+    // HammerImpulse::hertzImpulseConsistentTauCSeconds()'s doc comment for
+    // the derivation). This is checked here using the REAL production
+    // functions end-to-end (HammerImpulse::hammerVelocityMps() with real
+    // MIDI velocity input directly -- bypassing the score `velocity`
+    // proxy question entirely, which is orthogonal to this chain's own
+    // internal self-consistency), across the SAME 24+ -point domain the
+    // audit finding scanned (MIDI 36/48/60/72/84/96 x a spread of real
+    // MIDI velocities): before the fix, every one of these failed by
+    // 2.55-4.32x (reusing HammerImpulse::pianoHammerTauC() for tauC); with
+    // the fix, all must hold to float precision.
+    {
+        const int   testNotes[]  = { 36, 48, 60, 72, 84, 96 };
+        const float testMidiVels[] = { 20.0f, 40.0f, 60.0f, 77.0f, 90.0f, 110.0f, 120.0f };
+        bool allWithinBound = true;
+        bool allSelfConsistent = true;
+        double worstRatioToBound = 0.0;
+        for (int note : testNotes)
+        {
+            for (float midiVel : testMidiVels)
+            {
+                const float v     = HammerImpulse::hammerVelocityMps (midiVel);
+                const float fPeak = HammerImpulse::hertzPeakForceNewtons (note, v);
+                const float tauC  = HammerImpulse::hertzImpulseConsistentTauCSeconds (note, v, fPeak);
+                const float m     = HammerImpulse::hammerMassForPianoNote (note);
+                CHECK (fPeak > 0.0f && tauC > 0.0f && m > 0.0f,
+                       "conservation domain scan: all chain inputs valid for this (note, midiVel)");
+                if (fPeak <= 0.0f || tauC <= 0.0f || m <= 0.0f) continue;
+
+                const double impulseNs = (double) fPeak * (double) tauC
+                                        * (2.0 / (double) juce::MathConstants<float>::pi);
+                const double boundNs = 2.0 * (double) m * (double) v;
+                const double ratio = impulseNs / boundNs;
+                worstRatioToBound = std::max (worstRatioToBound, ratio);
+                // Self-consistent by construction: impulse should equal the
+                // bound to float precision, not merely stay under it.
+                allSelfConsistent = allSelfConsistent && std::abs (ratio - 1.0) < 1.0e-3;
+                // Hard physical requirement regardless of construction
+                // details: never exceed the momentum bound (small float
+                // slack, not a new tolerance -- same 1e-3 margin used
+                // throughout this file's other energy-conservation checks).
+                allWithinBound = allWithinBound && ratio < 1.0 + 1.0e-3;
+            }
+        }
+        std::cout << "       impulse/(2*m*v) worst-case ratio across MIDI "
+                     "36-96 x velocity 20-120 domain scan: " << worstRatioToBound
+                  << " (audit finding before this fix: 2.55-4.32x; must be ~1.0 now)\n";
+        CHECK (allSelfConsistent,
+               "hertzImpulseConsistentTauCSeconds: assembled impulse fPeakN*tauC*(2/pi) "
+               "equals the elastic-collision momentum bound 2*m*v to within 1e-3 "
+               "relative error, across MIDI 36/48/60/72/84/96 x velocity "
+               "20/40/60/77/90/110/120 (B7.md SS7 item 4, conservation check)");
+        CHECK (allWithinBound,
+               "SENTINEL: assembled impulse never exceeds the physical momentum "
+               "bound 2*m*v anywhere in the domain scan (WF0914-B7P1 audit finding, "
+               "2026-09-14: this FAILED by 2.55-4.32x domain-wide before the fix)");
+
+        // Regression guard: demonstrate that reusing the OLD (wrong) tauC
+        // source -- HammerImpulse::pianoHammerTauC(), an existing B4
+        // function unrelated to this Hertz solve -- DOES violate the same
+        // bound at the audit's own worked example (MIDI 60, real hammer
+        // speed corresponding to the audit's score velocity 0.8 case).
+        // This is not testing dead code; it is a concrete demonstration
+        // that the fix is load-bearing (the fail-closed CHECK above would
+        // not have caught the original bug had this alternate path been
+        // used instead), tied to a real, currently-existing B4 function.
+        {
+            const int note = 60;
+            const float midiVel = 0.8f * 127.0f;   // audit's own worked example
+            const float v = HammerImpulse::hammerVelocityMps (midiVel);
+            const float fPeak = HammerImpulse::hertzPeakForceNewtons (note, v);
+            const float m = HammerImpulse::hammerMassForPianoNote (note);
+            // NOTE: this deliberately calls the score-velocity proxy of
+            // pianoHammerTauC() (its 2nd arg is a [0,1] score velocity,
+            // not m/s) -- this is EXACTLY the mismatched call the previous
+            // B7P1 pass made at the ScoreRenderer.h call site.
+            const float wrongTauC = HammerImpulse::pianoHammerTauC (note, 0.8f);
+            const double wrongImpulseNs = (double) fPeak * (double) wrongTauC
+                                         * (2.0 / (double) juce::MathConstants<float>::pi);
+            const double boundNs = 2.0 * (double) m * (double) v;
+            std::cout << "       [REGRESSION GUARD] old (wrong) tauC source: impulse/"
+                         "(2*m*v) = " << (wrongImpulseNs / boundNs)
+                      << " at MIDI 60, score-velocity 0.8 (audit's own example; "
+                         "expected ~3.6x, i.e. a clear violation)\n";
+            CHECK (wrongImpulseNs / boundNs > 1.0 + 1.0e-3,
+                   "REGRESSION GUARD: reusing pianoHammerTauC() (the previous, wrong "
+                   "tauC source) DOES violate the 2*m*v bound at the audit's own "
+                   "worked example -- confirms this test would have caught the "
+                   "original WF0914-B7P1 defect");
+        }
+    }
+
+    // Fail-closed sentinels.
+    CHECK (RadiationModel::modalEnergyFirstPrinciples (-1.0f, tauCS, fHz, modalMassKg, 1.0f) < 0.0f,
+           "modalEnergyFirstPrinciples: non-positive fPeakN is fail-closed (-1)");
+    CHECK (RadiationModel::modalEnergyFirstPrinciples (fPeakN, 0.0f, fHz, modalMassKg, 1.0f) < 0.0f,
+           "modalEnergyFirstPrinciples: non-positive tauCS is fail-closed (-1)");
+    CHECK (RadiationModel::modalEnergyFirstPrinciples (fPeakN, tauCS, fHz, -1.0f, 1.0f) < 0.0f,
+           "modalEnergyFirstPrinciples: non-positive modalMassKg is fail-closed (-1)");
+    CHECK (RadiationModel::modalEnergyFirstPrinciples (
+               fPeakN, tauCS, fHz, modalMassKg,
+               std::numeric_limits<float>::quiet_NaN()) < 0.0f,
+           "modalEnergyFirstPrinciples: NaN excitationWeight is fail-closed (-1)");
+    CHECK (RadiationModel::bridgePowerFirstPrinciples (-1.0f, 0.8f) < 0.0f,
+           "bridgePowerFirstPrinciples: negative alphaBridge is fail-closed (-1)");
+    // Sentinel propagation: modalEnergyFirstPrinciples()'s own -1 sentinel
+    // fed into bridgePowerFirstPrinciples() must not be silently treated as
+    // a real (negative) energy value.
+    CHECK (RadiationModel::bridgePowerFirstPrinciples (alphaBridge, -1.0f) < 0.0f,
+           "bridgePowerFirstPrinciples: sentinel eModeJoules (-1) propagates to sentinel output");
+
+    // hertzImpulseConsistentTauCSeconds() fail-closed sentinels (audit fix,
+    // 2026-09-14 -- new function).
+    CHECK (HammerImpulse::hertzImpulseConsistentTauCSeconds (60, 0.0f, 40.0f) < 0.0f,
+           "hertzImpulseConsistentTauCSeconds: zero speedMps is fail-closed (-1)");
+    CHECK (HammerImpulse::hertzImpulseConsistentTauCSeconds (60, 1.25f, 0.0f) < 0.0f,
+           "hertzImpulseConsistentTauCSeconds: zero fPeakN is fail-closed (-1)");
+    CHECK (HammerImpulse::hertzImpulseConsistentTauCSeconds (60, -1.0f, 40.0f) < 0.0f,
+           "hertzImpulseConsistentTauCSeconds: negative speedMps is fail-closed (-1)");
+    CHECK (HammerImpulse::hertzImpulseConsistentTauCSeconds (
+               60, std::numeric_limits<float>::quiet_NaN(), 40.0f) < 0.0f,
+           "hertzImpulseConsistentTauCSeconds: NaN speedMps is fail-closed (-1)");
+    // Directionality sanity: larger F_peak (same m, v) -> smaller tauC
+    // (more force needed to deliver the same fixed 2*m*v impulse in less
+    // time).
+    CHECK (HammerImpulse::hertzImpulseConsistentTauCSeconds (60, 1.25f, 200.0f)
+           < HammerImpulse::hertzImpulseConsistentTauCSeconds (60, 1.25f, 40.0f),
+           "hertzImpulseConsistentTauCSeconds: larger F_peak gives smaller tauC "
+           "(same note/speed -- fixed impulse target, less time needed at higher force)");
+}
+
+// §7 item 5 ("否" branch adaptation, see the section-header comment above):
+// "Path B/C fields do not interfere" is checked here as (a) B6's
+// pressurePerForce() and this card's bridgePowerFirstPrinciples() give
+// numerically DIFFERENT results for representative inputs (not aliased/
+// accidentally wired to the same computation), and (b) both are pure
+// functions whose results do not depend on call order or on each other
+// (no shared hidden state that could let one path corrupt the other) --
+// this is the concrete failure mode "互不干擾" protects against; a real
+// dumpModes() JSON-level acoustic_transfer/acoustic_transfer_c comparison
+// does not apply here because this "否" branch never emits those two Path C
+// keys (see RadiationModel::bridgePowerFirstPrinciples()'s doc comment).
+void testPathBAndPathCDoNotInterfere()
+{
+    const float physicsOnlyAmplitude = 0.42f;   // same representative value
+                                                 // testPressurePerForceCalibration() uses
+    const float fPeakN = 40.0f, tauCS = 0.002f, fHz = 250.0f;
+    const float modalMassKg = 0.001f, excitationWeight = 1.0f, alphaBridge = 5.0f;
+
+    // Order 1: Path B (B6) computed first, then Path C (B7P1).
+    const float pathB_order1 = RadiationModel::pressurePerForce (physicsOnlyAmplitude);
+    const float eMode_order1 = RadiationModel::modalEnergyFirstPrinciples (
+        fPeakN, tauCS, fHz, modalMassKg, excitationWeight);
+    const float pathC_order1 = RadiationModel::bridgePowerFirstPrinciples (alphaBridge, eMode_order1);
+
+    // Order 2: Path C (B7P1) computed first, then Path B (B6) -- same
+    // inputs, reversed call order.
+    const float eMode_order2 = RadiationModel::modalEnergyFirstPrinciples (
+        fPeakN, tauCS, fHz, modalMassKg, excitationWeight);
+    const float pathC_order2 = RadiationModel::bridgePowerFirstPrinciples (alphaBridge, eMode_order2);
+    const float pathB_order2 = RadiationModel::pressurePerForce (physicsOnlyAmplitude);
+
+    CHECK (pathB_order1 == pathB_order2 && pathC_order1 == pathC_order2,
+           "SENTINEL: Path B (pressurePerForce) and Path C "
+           "(bridgePowerFirstPrinciples) give bit-identical results "
+           "regardless of call order -- pure functions, no shared hidden "
+           "state through which one path could corrupt the other");
+
+    std::cout << "[SENTINEL 1/2] Path B pressurePerForce(0.42) = " << pathB_order1
+              << " Pa/N\n";
+    std::cout << "[SENTINEL 2/2] Path C bridgePowerFirstPrinciples(hand-calc) = "
+              << pathC_order1 << " W -- must not equal Path B's value (different "
+              << "physical quantity, different units, independently computed)\n";
+    CHECK (std::abs (pathB_order1 - pathC_order1) > 0.1f,
+           "SENTINEL: Path B and Path C outputs are numerically distinguishable "
+           "for representative inputs (not accidentally wired to the same "
+           "computation / swapped function bodies)");
+}
+
 void testRelativeCutoffAndNoiseStreams()
 {
     ModalResonator frequencyGate;
@@ -1485,6 +1936,11 @@ int main()
     testPassivityAndInvalidNumericRefusal();
     testHammerSpectrum();
     testPianoHammerContactSolver();
+    testHammerVelocityMps();
+    testHertzPeakForceEnergyConservation();
+    testHertzPeakForceCounterexample();
+    testBridgePowerFirstPrinciplesChain();
+    testPathBAndPathCDoNotInterfere();
     testRelativeCutoffAndNoiseStreams();
     testLongDelayAndSharedEffects();
     std::cout << (failures == 0 ? "PASS" : "FAIL")

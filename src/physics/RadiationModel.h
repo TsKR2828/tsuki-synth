@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include <juce_core/juce_core.h>
+#include "HammerImpulse.h"
 
 /**
  * 音板輻射效率骨架 + 絕對校準 — B6 施工卡 Phase 1（骨架）與 Phase 3/4
@@ -336,5 +337,161 @@ public:
 
         const float pa = kPascalsPerUnitPhysicsAmplitude * physicsOnlyAmplitude;
         return (std::isfinite (pa) && pa > 0.0f) ? pa : -1.0f;
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // B7 Phase 1 (WF0914-B7P1, docs/workcards/B7.md SS4.4) -- first-
+    // principles bridge-power chain, "否" branch of the workcard's SS1.2
+    // query. That query asked whether THIS class's existing D/rhoS/fc
+    // params (kBridgeSoundboardThicknessM + the "wood_spruce" MaterialDB
+    // entry, both wired in from CimbalomEngine.h) trace to the SAME
+    // measured Atlas upright-piano soundboard the ONLY usable literature
+    // value for S (docs/RADIATION_POWER_SOURCES.md SS8.2's 1.2649 m^2)
+    // comes from. They do not: CimbalomEngine.h's own comments say both
+    // are "文獻類比預設值...不是 TsukiSynth cimbalom 的實測值" (a generic
+    // "8-10mm piano soundboard range midpoint" and a generic Sitka-spruce
+    // USDA Wood Handbook material entry, MaterialDB.h SS111-134) -- NOT
+    // measurements of the specific instrument arXiv:1212.2323/1210.5688
+    // describe. Per the workcard's SS1.2 "否" branch: S stays UNVERIFIED,
+    // and this file deliberately does NOT add a soundboardRadiatingAreaM2()
+    // or a pressureAtDistanceFirstPrinciples() function -- sigma(f)/S/the
+    // radiated-pressure half of the chain (B7.md SS4.5-SS4.6) are simply
+    // not built here. The two functions below stop at W_bridge(f) (SS4.4),
+    // the informational endpoint of this card's Phase 1.
+    // ────────────────────────────────────────────────────────────────────
+
+    /** Real modal energy E_mode(f) imparted by a single Hertz-contact
+     *  hammer strike (B7.md SS4.4, first half).
+     *
+     *  **Derivation** (this file's own algebra, not a literature-verbatim
+     *  formula -- same status as radiationLossFactor()'s derivation
+     *  above): for an UNDAMPED single-degree-of-freedom oscillator (one
+     *  string mode) forced by an arbitrary transient f(t) confined to
+     *  [0, tauC], starting from rest, the oscillator's mechanical energy
+     *  AFTER the pulse ends (t >= tauC) is EXACTLY
+     *
+     *    E = |F_hat(omega_n)|^2 / (2*m_eff)
+     *
+     *  where F_hat(omega) = integral_0^tauC f(t)*exp(-i*omega*t) dt is the
+     *  force pulse's (non-DC-normalised) Fourier transform and m_eff is
+     *  the mode's generalised (modal) mass. Proof sketch: using the
+     *  causal impulse response h(t) = sin(omega_n*t)/(m*omega_n), the
+     *  post-pulse response x(t>=tauC) reduces to a pure sinusoid at
+     *  omega_n whose cos/sin coefficients are exactly Re(F_hat(omega_n))
+     *  and -Im(F_hat(omega_n)) (up to the 1/(m*omega_n) prefactor); a
+     *  freely oscillating undamped SDOF's total energy is
+     *  (1/2)*m*(velocity amplitude)^2, and substituting the velocity
+     *  amplitude sqrt(Re^2+Im^2)/m = |F_hat(omega_n)|/m gives the formula
+     *  above. This is standard shock-response-spectrum theory (e.g.
+     *  Harris & Piersol, "Shock and Vibration Handbook" -- this file has
+     *  not fetched that book, so the formula is presented as this file's
+     *  own from-scratch re-derivation, not a page citation, per Rule 4).
+     *
+     *  F_hat(omega) for the half-sine hammer pulse is
+     *  HammerImpulse::forceSpectrumMagnitude()'s DC-normalised H(omega)
+     *  (H(0)=1) times the DC value |F_hat(0)| = fPeakN*tauCS*(2/pi) -- see
+     *  HammerImpulse.h's header comment for that DC-value derivation (it
+     *  is the half-sine pulse's exact time integral).
+     *
+     *  `excitationWeight` is the mode-shape projection factor
+     *  sin(n*pi*strikePosition) from standard forced-string modal
+     *  analysis -- a point force F(t) at x_hit projects onto mode shape
+     *  phi_n(x) = sin(n*pi*x/L) as F(t)*phi_n(x_hit); with the
+     *  normalisation integral_0^L phi_n^2 dx = L/2 this codebase already
+     *  uses (StringModel::calculateModes()'s own doc comment: "the equal
+     *  modal mass of the ideal string (m_n = mu*L/2 for every n)" behind
+     *  its amp ~ |phi_n(x_hit)| render-path amplitude convention), the
+     *  caller passes modalMassKg = m_string/2 (constant across modes),
+     *  matching that same convention in real kg instead of only using it
+     *  to cancel out of a ratio.
+     *
+     *  `tauCS` **must** be
+     *  `HammerImpulse::hertzImpulseConsistentTauCSeconds(midiNote,
+     *  speedMps, fPeakN)` for this SAME (midiNote, speedMps, fPeakN)
+     *  triple -- **corrected 2026-09-14, WF0914-B7P1 audit fix**. The
+     *  first B7P1 pass instead reused `HammerImpulse::pianoHammerTauC()`
+     *  (an existing, unmodified B4 function calibrated from a completely
+     *  different envelope -- kTauCFelt * keytrackScale * a velocity-ratio,
+     *  with NO algebraic relationship to the K/alpha/mass Hertz solve that
+     *  produces `fPeakN`), on the mistaken assumption that the two were
+     *  "built from the same B4 K/alpha/mass anchor tables" -- they are
+     *  not. That mismatch let the assembled impulse
+     *  `fPeakN*tauCS*(2/pi)` exceed the hammer's own physical momentum
+     *  bound `2*m*speedMps` by 2.55-4.32x across the whole MIDI 36-96 x
+     *  velocity 20-120 Felt-anchor domain (audit finding, 2026-09-14; see
+     *  `hertzImpulseConsistentTauCSeconds()`'s doc comment in
+     *  HammerImpulse.h for the full derivation and root-cause analysis).
+     *  This function itself does not call
+     *  hertzImpulseConsistentTauCSeconds() so it stays a pure function of
+     *  its numeric inputs -- the caller is responsible for passing a
+     *  self-consistent `tauCS`; see
+     *  tests/physics_models_repro.cpp::testBridgePowerFirstPrinciplesChain()
+     *  for the domain-wide verification that the impulse bound now holds.
+     *
+     *  @param fPeakN            Hertz peak contact force (N), e.g.
+     *         HammerImpulse::hertzPeakForceNewtons()'s output.
+     *  @param tauCS             contact time (s), see above.
+     *  @param fHz               this mode's frequency (Hz).
+     *  @param modalMassKg       generalised modal mass (kg), m_string/2
+     *         for an ideal string.
+     *  @param excitationWeight  |sin(n*pi*strikePosition)| mode-shape
+     *         projection factor, finite (may be 0 at a true node).
+     *  @return E_mode(f) in Joules; fail-closed sentinel -1.0f on any
+     *          non-finite input, or fPeakN/tauCS/modalMassKg <= 0.
+     */
+    static float modalEnergyFirstPrinciples (float fPeakN, float tauCS, float fHz,
+                                             float modalMassKg, float excitationWeight)
+    {
+        if (! std::isfinite (fPeakN) || fPeakN <= 0.0f
+            || ! std::isfinite (tauCS) || tauCS <= 0.0f
+            || ! std::isfinite (fHz) || fHz < 0.0f
+            || ! std::isfinite (modalMassKg) || modalMassKg <= 0.0f
+            || ! std::isfinite (excitationWeight))
+            return -1.0f;
+
+        const float omega = juce::MathConstants<float>::twoPi * fHz;
+        const float H = HammerImpulse::forceSpectrumMagnitude (omega, tauCS);
+        const float impulseDcNs = fPeakN * tauCS * (2.0f / juce::MathConstants<float>::pi);
+        const float impulseAtOmegaNs = impulseDcNs * H * excitationWeight;
+        const float e = (impulseAtOmegaNs * impulseAtOmegaNs) / (2.0f * modalMassKg);
+        return (std::isfinite (e) && e >= 0.0f) ? e : -1.0f;
+    }
+
+    /** Power flowing from the string end, through the bridge, into the
+     *  soundboard at this partial's frequency (B7.md SS4.4, second half):
+     *
+     *    W_bridge(f) = 2 * alpha_bridge * E_mode(f)
+     *
+     *  `alpha_bridge` = T*Re(Y_inf)/L is frequency-INDEPENDENT
+     *  (StringModel.h's bridgeLossRate()/soundboardDynamics() doc comment:
+     *  Y_inf is real and frequency-independent), so the caller passes the
+     *  SAME alpha_bridge for every partial of a given note. This function
+     *  does not recompute it -- StringModel.h is untouched by this card,
+     *  the caller derives alpha_bridge from that file's existing public
+     *  soundboardDynamics()/tensionForNote()/lengthFromMidiNote() helpers.
+     *
+     *  The `2*` prefactor matches the SAME loss-rate convention
+     *  bridgeLossRate() above already uses for the string-end amplitude
+     *  decay rate alpha = (T/L)*G (an energy flowing OUT of a mode at
+     *  amplitude decay rate alpha corresponds to power = 2*alpha*E, the
+     *  standard energy/amplitude relation for an exponentially-decaying
+     *  oscillator -- amplitude ~ exp(-alpha*t) means energy ~
+     *  exp(-2*alpha*t), so d(energy)/dt at t=0 = -2*alpha*E).
+     *
+     *  @param alphaBridge  T*Re(Y_inf)/L (1/s), frequency-independent.
+     *  @param eModeJoules  E_mode(f) (J), e.g.
+     *         modalEnergyFirstPrinciples()'s output.
+     *  @return W_bridge(f) in Watts; fail-closed sentinel -1.0f if either
+     *          input is non-finite or negative (eModeJoules's own sentinel
+     *          -1.0f is caught by the same < 0 check).
+     */
+    static float bridgePowerFirstPrinciples (float alphaBridge, float eModeJoules)
+    {
+        if (! std::isfinite (alphaBridge) || alphaBridge < 0.0f
+            || ! std::isfinite (eModeJoules) || eModeJoules < 0.0f)
+            return -1.0f;
+
+        const float w = 2.0f * alphaBridge * eModeJoules;
+        return (std::isfinite (w) && w >= 0.0f) ? w : -1.0f;
     }
 };

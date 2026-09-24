@@ -221,6 +221,50 @@ public:
             float radiationFga = -1.0f;
             bool radiationValid = false;
 
+            // B7 Phase 1 (WF0914-B7P1): "bridge_power_firstprinciples_c"
+            // Path C wiring is BLOCKED as of the 2026-09-14 audit fix --
+            // **status intentionally reverted from the prior pass**, not
+            // just "not yet built". docs/workcards/B7.md SS1.1's own rule
+            // ("若查證結果與此矛盾（score 語意根本不是正規化 MIDI）→ 不要
+            // 硬套，status=BLOCKED") is triggered: the prior pass's call
+            // site converted score `ev.velocity` (documented in
+            // ScoreParser.h as the LINEAR excitation-force scale
+            // ModalResonator::excite() consumes directly, currentAmp =
+            // baseAmp*velocity) into a "MIDI velocity" proxy via
+            // `velocity*127.0f`. Audit evidence this proxy is wrong, not
+            // merely undocumented: `tools/midi_to_tsukisynth.py`'s
+            // `velocity_for()` -- the ONLY code path that actually
+            // populates a score's `velocity` field from a real MIDI
+            // source -- computes
+            //   source_scale = source_velocity/90.0    (note: /90, not /127)
+            //   velocity = profile.base_velocity * source_scale (+/- up to
+            //     0.035 per-hand adjustment), clamped to [0.12, 0.92]
+            // i.e. `velocity` is `base_velocity(role) * (real MIDI
+            // velocity/90)`, never `MIDI/127` alone -- role's base_velocity
+            // (0.42-0.72 across the defined profiles) and the additive
+            // adjustments make the two quantities NOT even proportional to
+            // each other. `velocity*127.0f` is therefore not a "normalised
+            // MIDI velocity" by this codebase's own real data-generation
+            // path; the true per-note MIDI velocity is discarded before it
+            // reaches the score JSON (only the composite `velocity` above
+            // survives to ScoreEvent). There is no other field on
+            // ScoreEvent carrying a real hammer speed or true MIDI
+            // velocity, and this card is barred from adding one (SS5:
+            // "本卡不新增任何 score JSON 欄位"). Per SS1.1's own
+            // instruction, this is not a "proceed with the documented
+            // caveat" situation -- the whole Path C chain (HammerImpulse::
+            // hammerVelocityMps()'s only available input) has no
+            // evidence-backed source, so it is withdrawn here pending
+            // 月月's decision on SS1.1. The underlying pure functions
+            // (HammerImpulse::hammerVelocityMps()/hertzPeakForceNewtons()/
+            // hertzImpulseConsistentTauCSeconds(),
+            // RadiationModel::modalEnergyFirstPrinciples()/
+            // bridgePowerFirstPrinciples()) remain in the codebase, fixed
+            // and unit-tested (tests/physics_models_repro.cpp) -- they
+            // take real MIDI/m/s/N/Hz parameters and are independent of
+            // this specific score-semantics question -- ready to be wired
+            // back in once SS1.1 is resolved with a legitimate input.
+
             if (ev.engine == "string" || ev.engine == "cimbalom" || ev.engine == "piano")
             {
                 const Material* mat = materialDB->getMaterial (juce::String (ev.material));
@@ -286,6 +330,9 @@ public:
                 // ended up 0, which noteOn()'s own jlimit(1, ...) prevents).
                 physicsOnlyAmplitudes = voice->getPhysicsOnlyModeAmplitudes();
                 bodyMagFn = [voice] (float f) { return voice->getBodyMagnitudeAt (f); };
+                // B7 Phase 1 Path C wiring removed here -- see the
+                // "bridge_power_firstprinciples_c" BLOCKED note above
+                // radiationFc/radiationFga at the top of this loop body.
             }
             else if (ev.engine == "beam" || ev.engine == "tongue_drum"
                   || ev.engine == "plate" || ev.engine == "water_gong"
@@ -416,6 +463,10 @@ public:
                     if (sigma >= 0.0f)
                         s << ", \"radiated_power_relative\": " << juce::String (sigma, 5);
                 }
+                // B7 Phase 1 "bridge_power_firstprinciples_c" Path C
+                // emission removed here (WF0914-B7P1 audit fix, SS1.1
+                // BLOCKED) -- see the note above radiationFc/radiationFga
+                // near the top of this loop body.
                 s << "}";
                 return s;
             };
