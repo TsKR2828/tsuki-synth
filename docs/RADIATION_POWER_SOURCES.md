@@ -494,3 +494,148 @@ D=844.63 N·m、ρs=4.05 kg/m²）代入 Phase 1 落地的公式：
 （註：本文件 §3 原表用的骨架數字 fc≈1.8 kHz 來自 Ege & Boutillon 的鋼琴音板
 參數；上述 1274 Hz 是本引擎 wood_spruce/9mm 實際參數的結果，兩者不同屬正常，
 非矛盾。）
+
+---
+
+## 8. 音板輻射面積 `S` 的 Phase 0 補搜結果（2026-09-14，WF0914-B7P0）
+
+> 對應 `docs/workcards/B7.md` §4.5／§6 Phase 0 第 2 項交付物、
+> `docs/B7_PHASE0_DATA.zh-TW.md` §2.3（表 C）／§4.1 C 格。
+> **本節是轉寫，不是新研究**：不做任何新的 WebSearch/WebFetch，不引用
+> `B7_PHASE0_DATA.zh-TW.md`（下稱 `B7_PHASE0_DATA`）與 `docs/workcards/B7.md`
+> 之外的任何數字。
+
+### 8.1 同儕審查層級：平台琴查無
+
+`B7_PHASE0_DATA` 累計查了 10 個同儕審查來源，**平台琴音板面積一個都沒有**：
+Chabassier et al. (2013)、Suzuki (1986，僅摘要)、Giordano (1998，付費牆)、
+Corradi et al. ISMA 2010（Fazioli 平台琴模態分析，本輪親自重掃 `area`／
+`kg`／`dimension`／`thick` 全部 0 命中）、arXiv:1011.5372、INRIA RR-8181
+（HAL 反機器人攔截，未取得）、arXiv:1210.5109、Conklin（KTH 講義）、
+Wogram（KTH 講義）、eprints.soton.ac.uk 的 Corradi et al. 2017 postprint
+（Anubis 反機器人攔截，未取得）。
+
+其中 **arXiv:1210.3948**（Boutillon, Ege & Paulello, *Comparison of the
+vibroacoustical characteristics of different pianos*）把 `area A` 列為
+模型輸入參數卻不印數值，原文：**"Geometrical parameters: area A,
+geometry, boundary conditions…"**；致謝欄另寫 **"the dimension report
+of the grand pianos"**——代表作者手上有平台琴的完整尺寸圖，但沒有把面積
+數值印在論文裡（`B7_PHASE0_DATA` C18）。
+
+### 8.2 直立琴：`1.265 m²`（乘法是本專案做的，論文沒印面積）
+
+**同一研究群、同一台 Atlas 直立琴，兩篇論文都印出同一組尺寸**（不是兩組
+獨立量測）：
+
+- Ege, Boutillon & Rébillat, arXiv:1212.2323。原文：**"An upright piano
+  (Atlas brand) with a rectangular soundboard"**（後接尺寸 0.91 m ×
+  1.39 m × 8 mm）。
+- Ege & Boutillon, *Synthetic description of the piano soundboard
+  mechanical mobility*, arXiv:1210.5688。原文：**"of dimensions Lx =
+  1.39 m, Ly = 0.91 m and total mass M = 9 kg"**。
+
+`0.91 × 1.39 = 1.2649 m²`（乘法為本文件轉寫來源 `B7_PHASE0_DATA` 所做，
+兩篇論文本身都沒有直接印出這個乘積）。`M = 9 kg` 的組成另有第三篇原文
+定義句：Ege & Boutillon, *Global and local synthetic descriptions of the
+piano soundboard*, Forum Acusticum 2011, arXiv:1210.5109，原文：
+**"M is the mass of the whole soundboard (including ribs, bridges and
+the two fir bars) and almost equal to 9 kg for our upright piano."**
+
+### 8.3 廠商規格層級：Baldwin 六台平台琴 `0.87–1.68 m²`
+
+Baldwin（美國鋼琴廠）官網型號規格頁，六台平台琴的音板面積：
+
+| 琴長 | 官網原文 | 換算 |
+|---|---|---|
+| 4'10"（148 cm） | "Soundboard Area: Sq. In. 1,348" | 0.87 m² |
+| 5'0" | "Soundboard Area: Sq. In. 1,620" | 1.05 m² |
+| 5'5" | "Soundboard Area: Sq. In. 1,900" | 1.23 m² |
+| 5'10" | "Soundboard Area: Sq. In. 1,988" | 1.28 m² |
+| 6'3" | "Soundboard Area: Sq. In. 2,209" | 1.43 m² |
+| 6'11" | "Soundboard Area: Sq. In. 2,604" | 1.68 m² |
+
+**可信度檢查**：同廠 47 吋直立琴的音板面積 **1.2774 m²**（"Soundboard
+Area: Sq. In. 1,980"）與 §8.2 的論文實測值 **1.2649 m²** 只差
+**0.99%**——廠商規格欄與論文量測對得起來，不是隨口寫的行銷字
+（`B7_PHASE0_DATA` C16/C17）。
+
+**但這是「廠商規格」，不是「同儕審查論文」，等級低一階**，且必須同時
+講清楚兩件事：**這是「板子的面積」，不是「有效輻射面積」**——物理上
+真正在輻射的面積會小於板面積，兩者不是同一件事；且未說明量法（含不含
+琴橋／截角）。九尺演奏琴（如 Steinway D）沒有數字，本輪查到最大只到
+6'11"，往上外推是猜，本節不做。
+
+### 8.4 `S = M/(ρh)` 反推路線不通的理由
+
+`docs/workcards/B7.md` §6 Phase 0 步驟 2 建議「嘗試從 Ege & Boutillon 論文
+自己給的 `M`／`h`／`ρ` 回推 `S = M/(ρh)`」。`B7_PHASE0_DATA`「C7／C9 更正
+說明」已查證這條路線**對兩種琴的結論都不是「查不到所以走不通」**，而是：
+
+- **直立琴不需要反推**——尺寸原文直接給了（`1.39 × 0.91 = 1.2649 m²`）。
+  若硬套生木密度反推（`M = 9 kg`、生雲杉密度 `ρ ≈ 400 kg/m³`、
+  `h = 8 mm`）：`S = 9/(400×0.008) = 2.8125 m²`，是真值 `1.2649 m²` 的
+  約 **2.22 倍**。原因是這個 `M` 是**抹平後等效均向板**的質量（把肋條與
+  琴橋的質量都攤進 8 mm 厚的板裡），隱含面密度 `9/1.2649 = 7.115 kg/m²`、
+  等效體密度 `889 kg/m³`，遠高於生雲杉的 `400 kg/m³`。
+- **平台琴這條路線用不了**——本輪十個來源裡沒有任何一篇給出平台琴音板的
+  `M` 或完整尺寸，連 `M` 本身都查無，反推無從做起。
+
+**結論**：`S = M/(ρh)` 對直立琴是「不必要」（尺寸已知，不必反推），對
+平台琴是「不適用」（`M` 本身查無），不是原先「查不到 `M` 所以走不通」的
+說法。
+
+### 8.5 跨琴種挪用警告
+
+那個 **1.265 m² 是一台直立琴**。平台琴音板**形狀就不一樣**——原文自述
+像「向後傾斜的 L」：
+
+> Boutillon & Ege, arXiv:1305.3057 §1：**"The soundboard of grand pianos
+> looks like a backward slanted 'L'."**
+
+不是矩形；面積也明顯較大（廠商規格上到 1.68 m²）。**把直立琴的
+1.265 m² 拿去當平台琴的 `S`，就是 Rule 4 要擋的事**（跨琴種挪用參數，
+把測到的某個物體的常數安到另一個物體上），除非：
+
+1. 本卡（B7）的目標樂器**明確就是直立琴**（那要在完成報告裡寫死這件
+   事）；或
+2. 月月／規劃者**明示接受廠商規格層級**，那就用 §8.3 中與目標琴長相符
+   的那一筆，並在程式註解與完成報告裡**標明「廠商規格，非同儕審查，且
+   是板面積非有效輻射面積」**。
+
+**兩條都沒發生 → `S` 這一格仍然是「查無」，B7 在此環節卡住**（見
+`docs/workcards/B7.md` §12）。也**不得**用 §2.3（本文件既有內容）通則性
+的音板寬/長/厚尺寸自行相乘造一個平台琴的 `S`——那些是通則性描述，不是
+特定琴的實測，且平台琴音板本身不是矩形（見上）。也**不得**把 §8.3 的
+六筆廠商規格外推到九尺演奏琴——查到最大只到 6'11"，再往上是猜。
+
+### 8.6 σ(f) 信度上限量化（沿用 §3 補記既有值，不重新推導）
+
+本卡（B7）§6 Phase 0 第 3 項要求把「σ(f) 信度」的窄窗事實量化寫進完成
+報告。**以下數字全部沿用本文件 §3 補記（2026-08-28 Opus 稽核實測）已有
+的既有值，不重新推導**：
+
+- 以實際生效的引擎參數（`wood_spruce`：`E=12 GPa`、`ν=0.37`、
+  `ρ=450 kg/m³`、`h=9 mm`）代入 Phase 1 落地的公式：
+  **`fc ≈ 1274.01 Hz`、`fga ≈ 1307.69 Hz`**（`fc/fga = 0.974`，兩者幾乎
+  重合）。
+- 「`fc ≤ f < fga` → σ=1」的重合飽和分支只有 **33.7 Hz 活動窗**——佔
+  模型有效頻寬約 **2.6%**。
+- 換言之，**97%+ 的輸出值走的是 §4.4 的 `(f/fc)²` 工程近似**——B7 §8
+  驗收基準 (a)（文獻 SPL 範圍 GATE）若要依賴 `radiated_power_relative`
+  或 `σ(f)` 的形狀，其信度幾乎完全押在這個近似式上（其「保量級不保形狀」
+  的侷限，本文件 §4 第 2 點已載明）。
+- 這個窄窗事實是 B6 既有結論的繼承，不是 B7 本卡引入的新問題，但直接
+  限制 B7 §8 驗收基準 (a) 能不能通過的信度上限——B7 完成報告必須提這
+  一點（`docs/workcards/B7.md` §2.1「軟性前置」小節已預先提醒本卡要在
+  完成報告裡寫這件事）。
+
+### 8.7 本節結論
+
+**論文層級**：平台琴音板面積仍然查無出處（10+ 負面來源累計）。
+**廠商規格層級**：已有六台平台琴的數字（0.87–1.68 m²），與同廠直立琴
+對論文實測值誤差 0.99%，可信度不低，但等級與定義都與同儕審查論文不同。
+**若 B7P1 要用一個 `S`**，依 `B7_PHASE0_DATA` §2.3 的既有結論，有三個
+誠實選項：(i) 用直立琴的 `1.2649 m²`（跨琴種挪用，需標明）；(ii) 用
+§8.3 中與目標琴長相符的廠商規格值（標明「廠商規格、非同儕審查、板面積
+非有效輻射面積」）；(iii) 卡在這裡不往下算。**本節不替 B7P1 選**，選擇
+留給該卡按 `docs/workcards/B7.md` §4.5／§12 的既有規則處理。

@@ -230,3 +230,154 @@ R(t) = (ε/τ₀)·exp(−t/τ₀)
       `b4_gate_full_after_f3_redefine.txt`＋哨兵 `b4_f3_redefine_sentinel.txt`；
       corpus 重驗 `b4_corpus_all.txt`；Rule 10 前後對照
       `reports/b4_hammer_contact_before_after.md`。
+
+---
+
+## 9. 槌力譜滾降（B-1 依據）文獻搜尋（WF0914-D10，2026-09-14）
+
+> 目標：A14 裁決包點名的兩篇缺口文獻——**Hall & Askenfelt 1988**（JASA 83(4):1627,
+> *Piano string excitation V: Spectra for real hammers and strings*）與
+> **Chaigne & Askenfelt 1994 Part II**（JASA 95(3):1631）——的**真槌力譜滾降**資料
+> （dB/octave 或等價頻譜圖數值）。**本節只記文獻，不提案實作，不改 `src/`。**
+> 逐頁 fetch 證據存 `output/wf0914/D10/fetched_excerpts.md`。
+
+### 9.1 管道逐項記錄（依 WF0914_D10 卡 §1 順序）
+
+1. **KTH STL-QPSR / 五講義**（speech.kth.se，本 repo 既有引用來源）：
+   逐頁查驗 `hall/compare.html`、`hall/theory.html`、`hall/complica.html`、
+   `hall/further.html`、`askenflt/stricont.html`、`askenflt/coda.html`。
+   `hall/compare.html` 有一條相關但**不是**槌力頻譜本身的引句（見 9.1a）；
+   其餘頁面皆未出現「dB」「octave」等關鍵詞用於描述槌力頻譜滾降。
+   另嘗試 citeseerx 上的 STL-QPSR 報告（Askenfelt 1991
+   *Measuring the motion of the piano hammer during string contact*），該連結
+   301 重導向到 `web.archive.org`，**本環境工具回報無法 fetch `web.archive.org`**，
+   未能取得內容——誠實記錄為「查過但工具不可達」，非「沒查」。
+2. **arXiv / HAL**：以「Chaigne Askenfelt HAL open archive」「hal.science Boutillon piano
+   hammer」搜尋，未找到 HAL 上的 Chaigne & Askenfelt 或 Boutillon 全文連結；
+   arXiv 搜到的相關論文（*Numerical Modeling of Collisions in Musical Instruments* 等）
+   內容與槌力頻譜滾降無關，未引用。
+3. **Google Scholar 連到的作者頁/機構典藏**：
+   - Hall & Askenfelt 1988 直接 PDF（`pubs.aip.org/.../1627_1_online.pdf`）：
+     **本輪第 4 次嘗試仍 403**，付費牆狀態未變（與 A14 裁決包記錄一致）。
+   - *Reconstruction of piano hammer force from string velocity*（JASA 140(5):3504,
+     2016）：AIP 直接 PDF 與 ResearchGate 頁面**皆 403**，未取得。
+   - Stulov 個人頁（`homes.ioc.ee/stulov/klaver2.pdf` 及該網域首頁）：
+     **皆 404**，網站已下線/搬遷，§5 既有的 Stulov 遲滯參數（F₀/p/ε/τ₀）
+     維持原引用狀態，本輪未能補上更多佐證來源。
+   - **D. Russell 個人頁（賓州州大，作者自存檔）**：找到並成功 fetch 全文——見 9.2。
+     **此來源非本卡新發現**：同一篇文獻（同一 URL）已於 A14 裁決包
+     `reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md` L1-16～L1-22
+     （2026-09-08）引用並逐條摘錄，含同一份 Table I、同樣的 Fig.7 A0/F7 數字、
+     同一句 L1-20 弦端反射造成凹谷的引句。本卡在該既有引用的基礎上，補摘
+     A14 未逐字擷取、但與 B-1（力譜/震波譜計算式、Fig.3/Fig.6 波形比較）
+     直接相關的段落，**不是兩個獨立來源，避免被重複計數**。
+4. **Woodhouse《Euphonics》**：查驗 2.2.6「Frequency spectrum of a hammer tap」，
+   給出的是**半正弦脈衝本身**（現行被取代對象）的理論頻譜公式
+   `F(ω) = (kAΩ/π)·cos(πω/2Ω)/(Ω²−ω²)`，力集中在「below about 2.5 Ω」；
+   這是理論模型公式，不是真槌實測滾降數字，故不算命中。
+5. **替代文獻**：命中 **Russell & Rossing 1998**（Acustica/acta acustica 84:967-975），
+   peer-reviewed、開放（作者自存檔）、提供真槌力脈衝波形與半正弦/正弦平方/歪斜
+   versed-sine 脈衝的殘餘震波譜（residual shock spectrum）比對，符合本管道要求。
+
+**9.1a Hall 講義頁引句**（性質：弦振動**輸出**頻譜，非槌**力**頻譜本身，已標註區別）：
+> "If we compare a 12 dB/oct curve, we can see that the measured spectra are much steeper,
+> especially for pianissimo playing" ——`hall/compare.html`
+
+### 9.2 補摘：Russell & Rossing (1998) 與力譜/震波譜計算式相關的段落
+
+> **非新來源**——本節整理的是 A14 裁決包 L1-16～L1-22（2026-09-08）已引用文獻的**補充摘錄**，
+> 只補 A14 沒有逐字擷取、但與 D10 卡主題（B-1 力譜滾降）直接相關的部分（殘餘震波譜計算式、
+> Fig.3/Fig.6 脈衝波形與滾降量化比較）。A14 已摘錄過的 Table I、Fig.7、L1-20 等內容不在此重複，
+> 需要時見 A14 裁決包本文。
+
+**出處**：D. Russell and T. Rossing, "Testing the Nonlinearity of Piano Hammers Using
+Residual Shock Spectra," *Acustica · acta acustica*, Vol. 84 (1998), pp. 967–975.
+**URL**（作者自存檔，開放，與 A14 L1-16 同一 URL）：https://www.acs.psu.edu/drussell/publications/pianohammer.pdf
+**取得狀態**：✅ 全文 PDF（9 頁）本卡再次完整 fetch（A14 於 09-08 已 fetch 過同一篇）。
+
+**數據與逐字引文**（本卡補摘部分，不重複 A14 已摘錄的 L1-16～L1-22）：
+
+- p.970，Fig.3：硬 A3 槌（4 m/s）實測力脈衝（虛線）與 (a) 半正弦、(b) 正弦平方、
+  (c) 歪斜 versed-sine 三種理論脈衝比較。
+- p.970：**只有聚氨酯彈性體（線性、非氈）實驗槌，才「非常接近半正弦脈衝，顯示線性
+  行為」**：
+  > "the impulse obtained from an experimental hammer with a polyurethane elastomer head
+  > could be very closely approximated by a half-sine pulse, indicating a linear behavior."
+
+  且真氈槌接觸時間隨速度增加而縮短，聚氨酯槌則否：
+  > "for all real piano hammers measured in this study the pulse duration decreased with
+  > increasing velocity" 對照聚氨酯槌 "the pulse duration remained essentially constant
+  > over the velocity range of 1-5 m/s."
+
+  → 這與 A14 裁決包已引的 Woodhouse *Euphonics* 結論（半正弦=線性槌行為，鋼琴氈槌非
+  線性）**方向一致的獨立第二篇文獻佐證**。
+- p.971，Fig.6：A3 硬槌 4 m/s 的殘餘震波譜（∝ ω|F(ω)|，式號見下方適用域段落的完整
+  說明——原文式（3）／（4）兩個編號都與這個運算有關）與三種理論脈衝的
+  震波譜疊圖比較，**可直接引用的量化差異數字**：
+  > "the value of fmax predicted by the skewed versed-sine pulse is about 140 Hz higher
+  > than the measured value, and the sine-squared pulse prediction is about 230 Hz to
+  > high. In both cases the amplitude is about 20% too low."
+- p.971，Table I：13 顆已調音（voiced）Steinway model D 琴槌，`fmax = a·v^b` 擬合值，
+  涵蓋 A0（琴鍵位置 1）到 F7（位置 81），`b` 值範圍 0.36–0.64、隨音高略升
+  （逐格轉錄存 `output/wf0914/D10/fetched_excerpts.md` §8）。
+- p.972，Fig.7：
+  > "For hammer A0, fmax is 775 Hz at 1 m/s and 1370 Hz at 4 m/s. For hammer F7, fmax is
+  > 1300 Hz at 1 m/s and 3038 Hz at 4 m/s."
+
+**適用域與限制（原文自陳）**：
+
+- 這是**槌打在剛性力規頭**（非真弦）上量得的力脈衝/震波譜。作者明白指出真實槌-弦
+  交互作用會因弦端反射波使力脈衝出現「valleys」，與剛性面量測不同：
+  > "reflections from the near end of the string can cause valleys in the pulse shape
+  > ... so that it differs considerably from the smooth sine-squared-like pulse shape
+  > obtained when the hammer hits a rigid object." (p.969)
+- **震波譜不是力頻譜本身**，是力頻譜乘上角頻率。原文（p.968 §3.1）給出兩個式子：
+  一般型（加速度震波譜）標號 **Eq.(3)**：`Ra(ω) = ω|Fa(jω)|`；套用到力脈衝、除以受測
+  系統質量 M 的特化式標號 **Eq.(4)**：`Ra(ω) = (ω/M)|F(jω)|`。原文緊接著說明
+  > "Equation (3) allows the residual shock spectrum to be obtained for a shock pulse
+  > that may be measured, but not expressed mathematically."
+
+  且在描述實際量測作法時（p.969 §4.1）寫：
+  > "The residual shock spectrum was obtained by multiplying the power spectrum (Fourier
+  > transform of the force pulse) by ω, as per Eq.(3)."
+
+  也就是原文自己在實驗方法段落**用 Eq.(3) 稱呼**這個「乘 ω」的運算（M 視為常數時
+  Eq.(3)/(4) 等效，原文 p.968 自陳 "If the mass of the system is constant then a
+  measurement of ω|F(ω)| may still be considered to be a measure of the acceleration
+  amplitude."）。故本文件標註**原文式（3）／（4）**，不單獨斷言其中一個編號指涉
+  Fig.6/Fig.7 的量測結果；兩者形狀相差一個 `+6 dB/oct` 的 `ω` 加權因子。**若要換算回
+  力頻譜滾降，需先扣掉這個加權——本文件不做這個換算**，換算出的數字會是未溯源的
+  推導常數（違反 R4）。
+- 未給出顯式的 **dB/octave 斜率數字**，只給出 fmax（峰值頻率）與少數比較點的 Hz/
+  百分比差異。
+
+**與現行半正弦模型的差異點（本文件整理，非原文結論）**：
+
+- 現行 `HammerImpulse.h` 半正弦力脈衝對應的正是本文 Fig.3(a) 的比較基準；本文獨立確認
+  半正弦只精確對應**線性（聚氨酯）槌**，不對應真氈槌。
+- Table I 的 `fmax(v)` 冪律擬合提供一組**開放、可核對的量化資料**（真槌撞剛性面時震波
+  譜峰值頻率隨速度的冪律變化）。**這不是本卡新提案**——A14 裁決包 :687 已建議
+  「B-1 施工卡把 f_max 當成驗收指標」，:938 已裁定「B-1 不動：真槌力譜滾降形狀原文
+  未取得……拿到前不得填替代曲線」。Table I 本身**不是**弦-槌交互作用下的力頻譜滾降
+  本身；套用到 B-1 前需要額外物理轉換（去 ω 加權、從剛性面外推到真弦邊界條件），
+  本文件不越權做這個轉換。
+
+### 9.3 仍未取得的部分（誠實記錄）
+
+- **Hall & Askenfelt 1988**（JASA 83(4):1627）原文全文：本輪第 4 次嘗試（含直接 PDF
+  連結）**仍 403**，付費牆狀態未變。
+- **Chaigne & Askenfelt 1994 Part II**（JASA 95(3):1631）：本輪未找到開放全文
+  （AIP abstract-only、Semantic Scholar 僅摘要、ResearchGate 頁面未見開放 PDF）；
+  未嘗試登入 ResearchGate 請求全文（依規約「要登入才能拿的來源直接跳過記錄」）。
+- ***Reconstruction of piano hammer force from string velocity***（JASA 140(5):3504,
+  2016）：AIP 與 ResearchGate 頁面皆 403，未取得。
+- Stulov 遲滯模型原論文的補充來源（`homes.ioc.ee`）：網域整頁 404，未能補上。
+- **結論**：真槌力譜滾降的**顯式 dB/octave 數字**，本卡窮盡管道後**仍未取得**，
+  Hall & Askenfelt 1988 與 Chaigne & Askenfelt 1994 Part II 的付費牆狀態與 A14
+  裁決包（2026-09-08）記錄一致、未變。本卡在 A14 已引用的 Russell & Rossing (1998)
+  （L1-16～L1-22）中補摘了與力譜/震波譜計算式直接相關、A14 未逐字擷取過的段落（見
+  9.2）——**這是對既有來源的補摘，不是新來源**。**B-1 維持 A14 已裁定的等文獻狀態
+  不變**（A14 :938）；本卡沒有新增任何改變該裁定的材料，也不建議以 9.2 補摘的資料
+  直接推導滾降斜率（會產生未溯源的換算常數，違反 R4）。是否要為取得 Hall &
+  Askenfelt 1988 / Chaigne & Askenfelt Part II 花費館際/機構帳號等額外力氣，
+  A14 :814 已把這個取捨交給月月決定，本卡沒有新資訊可以改變這個待決狀態。

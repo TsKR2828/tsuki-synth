@@ -1,0 +1,202 @@
+diff --git a/src/engines/CimbalomEngine.h b/src/engines/CimbalomEngine.h
+index f92d404..65c91d2 100644
+--- a/src/engines/CimbalomEngine.h
++++ b/src/engines/CimbalomEngine.h
+@@ -164,7 +164,10 @@ public:
+         if (soundboardMat == nullptr) return;
+ 
+         float strikePos = pStrikePos->load();
+-        float diameter  = pDiameter->load() * 0.001f;   // mm → m
++        // WF0914-D11 候選修正（Rule 10，patch 未落地）：改用逐八度真實弦徑查表
++        // 取代使用者單一 pDiameter 旋鈕；原始行為存於 backup，見
++        // reports/d11_string_scale_candidate.patch。
++        float diameter  = StringModel::diameterFromScaleTable (midiNoteNumber);
+         int   nStrings  = juce::jlimit (1, kMaxStringsPerCourse,
+                                         (int) pNumStrings->load());
+         float detCents  = pDetuning->load();
+@@ -192,7 +195,8 @@ public:
+ 
+         // ── 弦參數 ──
+         StringModel::Params sp;
+-        sp.length         = StringModel::lengthFromMidiNote (midiNoteNumber);
++        // WF0914-D11 候選修正：弦長改用逐八度真實查表（見 diameter 賦值處註解）。
++        sp.length         = StringModel::lengthFromScaleTable (midiNoteNumber);
+         sp.tension        = StringModel::tensionForNote (midiNoteNumber,
+                                 sp.length, diameter, mat->density);
+         sp.diameter       = diameter;
+@@ -379,7 +383,10 @@ public:
+ 
+         float strikePos = juce::jlimit (0.05f, 0.95f,
+                                         static_cast<float> (params.strikePosition));
+-        float diameter  = static_cast<float> (params.diameterMm) * 0.001f;
++        // WF0914-D11 候選修正（Rule 10，patch 未落地）：改用逐八度真實弦徑查表
++        // 取代 score JSON 的單一 diameter_mm 參數；原始行為存於 backup，見
++        // reports/d11_string_scale_candidate.patch。
++        float diameter  = StringModel::diameterFromScaleTable (midiNote);
+         // DIAGNOSTIC-ONLY (see DiagnosticOverrides.h): --num-strings lets
+         // physics_verify.py isolate multi-string beating. Sentinel <= 0
+         // means "no override" -> identical to the pre-existing behavior.
+@@ -391,7 +398,8 @@ public:
+         int   hammerIdx = juce::jlimit (0, 3, static_cast<int> (params.exciter));
+ 
+         StringModel::Params sp;
+-        sp.length         = StringModel::lengthFromMidiNote (midiNote);
++        // WF0914-D11 候選修正：弦長改用逐八度真實查表（見 diameter 賦值處註解）。
++        sp.length         = StringModel::lengthFromScaleTable (midiNote);
+         sp.tension        = (params.tensionOverride > 0.0)
+                                 ? static_cast<float> (params.tensionOverride)
+                                 : StringModel::tensionForNote (midiNote,
+@@ -630,7 +638,6 @@ public:
+             return 0.0;
+ 
+         float strikePos = pStrikePos ? pStrikePos->load() : 0.3f;
+-        float diameter  = (pDiameter ? pDiameter->load() : 0.8f) * 0.001f;
+         int   nStrings  = juce::jlimit (1, kMaxStringsPerCourse,
+                               (int) (pNumStrings ? pNumStrings->load() : 3.0f));
+         float detCents  = pDetuning ? pDetuning->load() : 5.0f;
+@@ -661,8 +668,11 @@ public:
+ 
+         for (int midiNote = 21; midiNote <= 108; ++midiNote)
+         {
++            // WF0914-D11 候選修正：弦長/弦徑改用逐八度真實查表，取代原本迴圈外
++            // 固定的單一 diameter（見 startNote()/noteOn() 同款註解）。
++            const float diameter = StringModel::diameterFromScaleTable (midiNote);
+             StringModel::Params sp;
+-            sp.length         = StringModel::lengthFromMidiNote (midiNote);
++            sp.length         = StringModel::lengthFromScaleTable (midiNote);
+             sp.tension        = StringModel::tensionForNote (midiNote,
+                                     sp.length, diameter, mat->density);
+             sp.diameter       = diameter;
+diff --git a/src/physics/StringModel.h b/src/physics/StringModel.h
+index 99060b0..b58628b 100644
+--- a/src/physics/StringModel.h
++++ b/src/physics/StringModel.h
+@@ -362,6 +362,13 @@ public:
+     /**
+      * 從 MIDI 音符計算弦長
+      * 假設基準：A4 (MIDI 69) = 0.35m，每升一個八度弦長減半
++     *
++     * **WF0914-D11 候選修正保留此函式原封不動**（見下方 lengthFromScaleTable()/
++     * diameterFromScaleTable()）——本函式本身已知會讓高音非諧性 B 偏高
++     * 14–87 倍（`reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md`
++     * §3.10，量測 vs 引擎逐音對照）。是否用新函式取代呼叫端由月月裁決
++     * （reports/d11_string_scale_before_after.md）；保留舊函式是為了讓 R10
++     * 前後對照的 diff 侷限在呼叫端，不動這個函式本身。
+      */
+     static float lengthFromMidiNote (int midiNote, float referenceLength = 0.35f)
+     {
+@@ -369,6 +376,77 @@ public:
+         return referenceLength * std::pow (2.0f, -semitoneOffset / 12.0f);
+     }
+ 
++    // ────────────────────────────────────────────────────────────────────────
++    // WF0914-D11（2026-09-15）候選修正：真實鋼琴弦長/弦徑逐八度錨點，
++    // 取代上面 lengthFromMidiNote() 的「每八度減半＋corpus 固定弦徑」簡化假設。
++    // **本卡是 Rule 10 候選（patch 存檔，不落地）——下面兩個函式與呼叫端的
++    // 改動全部只存在於 reports/d11_string_scale_candidate.patch，交付時
++    // git diff -- src/ 必須為空。**
++    //
++    // 來源：docs/STRING_SCALE_SOURCES.md（轉引 docs/HAMMER_CONTACT_SOURCES.md
++    // §2.2，原始出處 Woodhouse, *Euphonics* §12.2.1 Table 1；該文件已用
++    // 「由張力/弦長/總質量回推 f1 對比標稱頻率」做過自洽檢查，誤差 <0.15%）。
++    // 錨點 MIDI 值沿用 HammerImpulse.h 的 kPianoMassAnchorMidi 同一組
++    // C1-C8（24/36/48/60/72/84/96/108），與槌質量表格用同一組琴鍵定義，
++    // 兩個檔案的錨點語意一致（都是「該八度 C 音」）。
++    //
++    // **C1-C3 為纏繞弦（銅包鋼）的說明（重要限制，非文獻缺陷）**：原表另有
++    // 「纏繞外徑」欄（C1 5.80mm／C2 3.76mm／C3 1.80mm），本引擎的 StringModel
++    // 只有單一材質／單一直徑的圓弦模型，沒有「鋼芯+銅纏繞」複合線密度模型。
++    // 本候選修正取**芯線直徑**（1.21/1.21/1.08mm）而非纏繞外徑——用纏繞外徑
++    // 套進單一材質公式會把整個截面積都當成弦材質（通常是 steel）算密度，
++    // 而實際銅纏繞層密度、且大部分外徑是繞在外面而非實心，兩者都會算出
++    // 錯誤的線密度。取芯線直徑會低估低音弦的線密度（真弦因纏繞層而更重），
++    // 這是本候選修正**已知未解決**的部分，見報告限制章節，不是文獻資料本身
++    // 有問題。
++    //
++    // **內插規則（本卡新增的建模決策，不是文獻原文，體例比照
++    // HammerImpulse.h::interpAnchorsFlat()）**：對弦長與弦徑本身（不取
++    // log）做逐段線性內插，範圍外 flat 夾在最近錨點。理由：兩個量的量綱
++    // 相同（都是長度），不像 HammerImpulse 的 K 那樣跨錨點單位不同；弦長
++    // 表本身在 C4→C5 就有接近腰橋換弦材料造成的大幅斜率變化（見表格本身，
++    // 不是內插規則造成的假象），逐段線性是對已知八度錨點之間最保守、不
++    // 外加額外曲率假設的做法。
++    // ────────────────────────────────────────────────────────────────────────
++
++    static constexpr int   kPianoScaleAnchorMidi[8] = { 24, 36, 48, 60, 72, 84, 96, 108 };
++    /// 弦長 (m)，C1-C8，docs/STRING_SCALE_SOURCES.md §1（轉引 Woodhouse Table 1）。
++    static constexpr float kPianoScaleLengthM[8]    =
++        { 1.013f, 0.925f, 0.830f, 0.639f, 0.324f, 0.181f, 0.096f, 0.051f };
++    /// 芯線直徑 (m)，C1-C8，同上；C1-C3 見上方纏繞弦限制說明。
++    static constexpr float kPianoScaleDiameterM[8]  =
++        { 0.00121f, 0.00121f, 0.00108f, 0.00100f, 0.00094f, 0.00085f, 0.00082f, 0.00076f };
++
++    /// 與 HammerImpulse.h::interpAnchorsFlat() 同體例的獨立實作（StringModel.h
++    /// 不 include HammerImpulse.h，避免引入非必要的標頭相依）。
++    static float interpScaleAnchorsFlat (const float* values, int midiNote)
++    {
++        const int* anchorMidi = kPianoScaleAnchorMidi;
++        const int  count = 8;
++        if (midiNote <= anchorMidi[0])         return values[0];
++        if (midiNote >= anchorMidi[count - 1]) return values[count - 1];
++
++        int seg = 0;
++        while (seg + 2 < count && midiNote >= anchorMidi[seg + 1])
++            ++seg;
++
++        const float t = (float) (midiNote - anchorMidi[seg])
++                      / (float) (anchorMidi[seg + 1] - anchorMidi[seg]);
++        return values[seg] + (values[seg + 1] - values[seg]) * t;
++    }
++
++    /// 弦長 (m)：查表內插版，取代 lengthFromMidiNote() 的每八度減半假設。
++    static float lengthFromScaleTable (int midiNote)
++    {
++        return interpScaleAnchorsFlat (kPianoScaleLengthM, midiNote);
++    }
++
++    /// 芯線直徑 (m)：查表內插版，取代 corpus 固定弦徑（0.8mm/1.0mm）假設。
++    static float diameterFromScaleTable (int midiNote)
++    {
++        return interpScaleAnchorsFlat (kPianoScaleDiameterM, midiNote);
++    }
++
+     /**
+      * 從 MIDI 音符計算所需張力
+      * 給定弦長、弦徑、材質密度，反推需要多少張力才能得到正確基頻
+diff --git a/tools/physics_verify.py b/tools/physics_verify.py
+index 9975bb5..0eabd5d 100644
+--- a/tools/physics_verify.py
++++ b/tools/physics_verify.py
+@@ -1576,8 +1576,30 @@ def stiff_string_oracle(score_path, count=40):
+     materials_path = Path(__file__).resolve().parent.parent / "data" / "materials.json"
+     materials = json.loads(materials_path.read_text(encoding="utf-8"))["materials"]
+     material = materials[material_key]
+-    diameter = float(params.get("diameter_mm", 0.8)) * 0.001
+-    length = 0.35 * 2.0 ** (-(midi - 69) / 12.0)
++    # WF0914-D11 候選修正（Rule 10，patch 未落地）：鏡射
++    # src/physics/StringModel.h 新增的 lengthFromScaleTable()/
++    # diameterFromScaleTable()（真實鋼琴 C1-C8 逐八度查表，取代下面被取代的
++    # 「0.35*2^(-(midi-69)/12) 每八度減半 + score 固定 diameter_mm」），讓這個
++    # oracle 繼續有效反映「dump source 有沒有漂移」，而不是拿舊公式跟新公式打架。
++    # 只在本卡的候選建置存在；revert 後這段連同 StringModel.h 一起消失，
++    # 見 reports/d11_string_scale_candidate.patch。
++    _d11_anchor_midi = (24, 36, 48, 60, 72, 84, 96, 108)
++    _d11_anchor_length_m = (1.013, 0.925, 0.830, 0.639, 0.324, 0.181, 0.096, 0.051)
++    _d11_anchor_diameter_m = (0.00121, 0.00121, 0.00108, 0.00100, 0.00094, 0.00085, 0.00082, 0.00076)
++
++    def _d11_interp(values, note):
++        if note <= _d11_anchor_midi[0]:
++            return values[0]
++        if note >= _d11_anchor_midi[-1]:
++            return values[-1]
++        seg = 0
++        while seg + 2 < len(_d11_anchor_midi) and note >= _d11_anchor_midi[seg + 1]:
++            seg += 1
++        t = (note - _d11_anchor_midi[seg]) / (_d11_anchor_midi[seg + 1] - _d11_anchor_midi[seg])
++        return values[seg] + (values[seg + 1] - values[seg]) * t
++
++    diameter = _d11_interp(_d11_anchor_diameter_m, midi)
++    length = _d11_interp(_d11_anchor_length_m, midi)
+     radius = diameter * 0.5
+     mu = float(material["density"]) * math.pi * radius * radius
+     target = midi_to_hz(midi)
