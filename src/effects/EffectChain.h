@@ -226,9 +226,13 @@ public:
             for (int i = 0; i < numSamples; ++i)
             {
                 const float m = mixScratch[(size_t) i];
-                chL[i] = dryL[i] * (1.0f - m) + chL[i] * m;
+                // kIrWetMakeupGain applies only to the just-convolved wet
+                // sample (chL[i]/chR[i] here), never to the dry component --
+                // see the constant's declaration below for the full
+                // DECIDED CONVENTION derivation/citation.
+                chL[i] = dryL[i] * (1.0f - m) + (chL[i] * kIrWetMakeupGain) * m;
                 if (numChannels > 1)
-                    chR[i] = dryR[i] * (1.0f - m) + chR[i] * m;
+                    chR[i] = dryR[i] * (1.0f - m) + (chR[i] * kIrWetMakeupGain) * m;
             }
         }
 
@@ -251,6 +255,25 @@ public:
     }
 
 private:
+    // DECIDED CONVENTION (月月 2026-09-16 裁決 D9 選項 A;
+    // reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md §5/裁決記錄):
+    // IR（convolution）模式的 wet 路徑相對 ALGO 路徑的響度結構性偏低，
+    // 4 樣本（3 顆 EchoThief 真實 IR：Stairwells/Venues/Sanctuaries ＋ 1 顆
+    // 既有合成 IR）平均落差 -28.58 dB（見
+    // reports/gate_outputs/wf0914_D9b_ir_injection.txt §3/§4：-28.483 /
+    // -28.726 / -28.487 / -28.623 dB，展幅僅 0.24 dB）。這是 ALGO（回饋式
+    // comb/allpass）與 IR（一次性正規化摺積）兩種演算法結構性的響度差異，
+    // 不是個別 IR 檔案本身比較安靜——JUCE 的 Convolution::Normalise::yes
+    // （宣告預設值，EffectChain::loadImpulseResponse() 未覆寫）已把不同
+    // IR 檔案本身的能量正規化掉，3 顆真實 IR 的 wet RMS 展幅只有 0.24 dB，
+    // 遠小於這些 IR 檔案本身寬頻 RMS 的 16.6 dB 展幅（詳見上述裁決包 §2/§3）。
+    // kIrWetMakeupGain = 26.9f（+28.58 dB，= 10^(28.58/20)，4 樣本平均落差
+    // 的反相補償）把這個結構性落差補平，只乘在 IR wet 訊號上（dry 訊號、
+    // ALGO 路徑一概不動，見 processBlock() 的施加點）。**非物理常數**，
+    // 是 4 樣本平均值反推的工程慣例（DECIDED CONVENTION），樣本僅涵蓋
+    // 3 種空間尺度（小房間／樓梯間、音樂廳、教堂座堂），非窮舉。
+    static constexpr float kIrWetMakeupGain = 26.9f;
+
     Distortion   distortionL, distortionR;
     Compressor   compressor;
     StereoDelay  delay;

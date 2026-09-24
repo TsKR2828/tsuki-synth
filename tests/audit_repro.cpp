@@ -10,6 +10,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <memory>
 #include <random>
@@ -1185,9 +1186,21 @@ void testEffectChainOversizedBlockMatchesExternalChunking()
 // K-02: quantifies (does not PASS/FAIL) how many dB louder EffectChain's IR
 // wet path is than its ALGO wet path for a matched-T60 reverb, because
 // SimpleReverb.h:155-156 multiplies wet output by an extra 0.15 that the
-// convolution path (EffectChain.h) does not. Numbers feed
+// convolution path (EffectChain.h) does not. Numbers originally fed
 // reports/decision_packets/K02_reverb_wet_scale.zh-TW.md; this function
 // asserts nothing.
+//
+// WF0914-D9c (月月 2026-09-16 裁決 D9 選項 A;
+// reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md): EffectChain
+// now applies a fixed makeup gain (EffectChain::kIrWetMakeupGain = 26.9f,
+// +28.58 dB) to the IR wet signal to compensate this structural gap, so the
+// "[K-02] RMS difference (IR - ALGO)" this function prints is expected to
+// land near 0 dB now (0 +/- 0.25 dB per the D9c workcard, citing the 0.24 dB
+// spread already measured across the 4 real/synthetic IR samples in
+// reports/gate_outputs/wf0914_D9b_ir_injection.txt) instead of the
+// pre-D9c -28.483 dB. The measurement method itself is unchanged -- only
+// EffectChain's product-code behaviour changed, which this quantifier is
+// designed to observe.
 struct DecayMeasurement { double referenceDb; double t60Seconds; bool measured; };
 
 DecayMeasurement measureNoiseBurstDecay (const juce::AudioBuffer<float>& buffer,
@@ -1301,6 +1314,118 @@ void reportReverbWetGainQuantification()
 
     irFile.deleteFile();
 }
+
+// WF0914-D9b: external-IR variant of K-02
+// (docs/workcards/WF0914_D9b_ir_injection.md). Reproduces the exact method
+// of reportReverbWetGainQuantification() above verbatim (same seed 271828,
+// same 2s-burst/12s-tail geometry, same ALGO reference measurement, same
+// -60dB-crossing T60 measurement, same wetMix=1.0) but loads a real WAV file
+// named by the caller into the IR chain instead of
+// writeExponentialDecayIr()'s synthetic fixture. This function is only
+// reached from main() when TSUKI_K02_EXTERNAL_IR is set (see below); the
+// unconditional reportReverbWetGainQuantification() call above it is
+// untouched, so default (env var unset) behaviour is byte-for-byte
+// unchanged -- WF0914_D9b GATE 3.
+//
+// WF0914-D9c: since EffectChain now applies kIrWetMakeupGain (see
+// EffectChain.h), the "[K-02-EXT] RMS difference" this function prints for
+// each external IR is expected to land near 0 dB (0 +/- 0.25 dB, per the
+// D9c workcard) instead of the pre-D9c ~-28.5 dB this function originally
+// measured for the 3 EchoThief IRs.
+//
+// Fails closed: validates the path opens as a readable audio file via
+// JUCE's AudioFormatManager (the same openAudioFile() helper this file
+// already uses for its own fixtures) BEFORE handing it to
+// EffectChain::loadImpulseResponse(). This matters because
+// juce::dsp::Convolution's own file loader does NOT fail closed on an
+// unreadable file: juce_Convolution.cpp's loadStreamToBuffer() returns an
+// empty, zero-sample-rate buffer when AudioFormatManager::createReaderFor()
+// returns nullptr, and Convolution silently proceeds with that empty IR
+// (near-silent wet output) rather than raising an error. Pre-validating
+// here means an unreadable path is reported explicitly instead of silently
+// producing a near-silent-but-plausible-looking measurement.
+//
+// Sample-rate mismatch is NOT treated as a fail-closed condition: JUCE's
+// juce::dsp::Convolution always resamples a loaded IR to the current
+// ProcessSpec sample rate before it becomes active, regardless of the
+// source file's native rate -- traced to
+// libs/JUCE/modules/juce_dsp/frequency/juce_Convolution.cpp,
+// ConvolutionEngine::makeEngine(): `resampleImpulseResponse (impulseResponse,
+// originalSampleRate, processSpec.sampleRate)` runs unconditionally (not
+// gated on a rate-equality check), followed by
+// `normaliseImpulseResponse (resampled)` because
+// EffectChain::loadImpulseResponse() (src/effects/EffectChain.h) calls
+// `convolution.loadImpulseResponse (file, Stereo::yes, Trim::yes, 0)` and
+// leaves the trailing `Normalise` parameter at its declared default
+// (`Normalise::yes`, juce_Convolution.h). So a 44.1kHz EchoThief WAV loaded
+// while this function renders at 48kHz is resampled and energy-normalised
+// by JUCE itself, not rejected -- this is the actual product code path
+// (EffectChain), not an approximation of it.
+bool reportReverbWetGainQuantificationExternalIr (const juce::String& irPathArg)
+{
+    const juce::File irFile (irPathArg);
+    if (openAudioFile (irFile) == nullptr)
+    {
+        std::printf ("[K-02-EXT] ERROR: TSUKI_K02_EXTERNAL_IR does not name a "
+                    "readable audio file (missing, or format not recognised "
+                    "by JUCE's AudioFormatManager): %s\n",
+                    irPathArg.toRawUTF8());
+        return false;
+    }
+
+    const double sampleRate = 48000.0;
+    const int burstSamples = (int) std::lround (sampleRate * 2.0);   // 2 s noise
+    const int tailSamples  = (int) std::lround (sampleRate * 12.0);  // 12 s decay tail
+    const int totalSamples = burstSamples + tailSamples;
+
+    juce::AudioBuffer<float> input (2, totalSamples);
+    input.clear();
+    {
+        const auto burst = generateWhiteNoise (burstSamples, 2, 271828);
+        for (int ch = 0; ch < 2; ++ch)
+            input.copyFrom (ch, 0, burst, ch, 0, burstSamples);
+    }
+
+    std::atomic<float> wetMix { 1.0f };
+
+    // ALGO reference, identical setup to reportReverbWetGainQuantification()
+    // above (this is a separate process invocation each time
+    // TSUKI_K02_EXTERNAL_IR changes, so the ALGO reference is re-measured
+    // rather than reused).
+    EffectChain algoChain;
+    prepareChainWithOptionalIr (algoChain, sampleRate, 2048, nullptr, &wetMix, nullptr);
+    juce::AudioBuffer<float> algoOut = input;
+    algoChain.processBlock (algoOut);
+    const auto algoDecay = measureNoiseBurstDecay (algoOut, burstSamples, sampleRate);
+
+    std::printf ("[K-02-EXT] ALGO wet output: steady-state RMS = %.3f dBFS, "
+                "measured T60 = %s\n", algoDecay.referenceDb,
+                algoDecay.measured
+                    ? (std::to_string (algoDecay.t60Seconds) + " s").c_str()
+                    : "NOT FOUND within 12 s tail");
+
+    std::atomic<float> irModeOn { 1.0f };
+    EffectChain irChain;
+    prepareChainWithOptionalIr (irChain, sampleRate, 2048, &irModeOn, &wetMix, &irFile);
+    juce::AudioBuffer<float> irOut = input;
+    irChain.processBlock (irOut);
+    const auto irDecay = measureNoiseBurstDecay (irOut, burstSamples, sampleRate);
+
+    std::printf ("[K-02-EXT] IR   wet output (external IR file = %s): "
+                "steady-state RMS = %.3f dBFS, measured T60 = %s\n",
+                irPathArg.toRawUTF8(), irDecay.referenceDb,
+                irDecay.measured
+                    ? (std::to_string (irDecay.t60Seconds) + " s").c_str()
+                    : "NOT FOUND within 12 s tail");
+
+    const double rmsDiffDb = irDecay.referenceDb - algoDecay.referenceDb;
+    const double theoreticalDb = 20.0 * std::log10 (1.0 / 0.15);
+    std::printf ("[K-02-EXT] RMS difference (IR - ALGO) = %.3f dB\n", rmsDiffDb);
+    std::printf ("[K-02-EXT] Theoretical difference if ALGO's 0.15 factor were absent "
+                "(20*log10(1/0.15)) = %.3f dB\n", theoreticalDb);
+
+    return true;
+}
 }
 
 int main()
@@ -1332,6 +1457,23 @@ int main()
 
     std::printf ("\nWF0907-E7 K-02 quantification (informational, no PASS/FAIL):\n");
     reportReverbWetGainQuantification();
+
+    // WF0914-D9b: external-IR K-02 variant. Only runs when this env var is
+    // explicitly set; when unset (ctest's default invocation, GATE 2/3),
+    // this entire block is skipped and everything above is unchanged --
+    // default behaviour is byte-for-byte identical to before this workcard.
+    if (const char* externalIrPath = std::getenv ("TSUKI_K02_EXTERNAL_IR"))
+    {
+        std::printf ("\nWF0914-D9b K-02 external-IR quantification "
+                    "(informational, no PASS/FAIL):\n");
+        if (! reportReverbWetGainQuantificationExternalIr (juce::String (externalIrPath)))
+        {
+            std::printf ("WF0914-D9b: TSUKI_K02_EXTERNAL_IR was set but the IR "
+                        "could not be loaded -- failing closed (see error "
+                        "above); no fallback to the synthetic IR.\n");
+            return 1;
+        }
+    }
 
     return failures == 0 ? 0 : 1;
 }
