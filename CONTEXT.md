@@ -1,5 +1,23 @@
 # TsukiSynth — Current Handoff Context
 
+> ## ⚠ 歷史文件（2026-08-06 快照）——最新狀態看 `HANDOVER.md`／`TODO.md`
+>
+> **2026-09-25 標註**：這份檔案停在 2026-08-06，之後沒有逐項更新，**不要拿來當現況**。
+> 新 session 請從 `HANDOVER.md` 開始，待辦與裁決看 `TODO.md`，驗收規則看 `ROADMAP_PHYSICS.md`。
+> 內文保留原樣當歷史紀錄，只修了下方「Standard commands」的建置指令（見該段註解）。
+>
+> 已知過時處（舉例，不是完整清單）：
+>
+> | 本檔原文 | 現況（2026-09-25 查證） |
+> |---|---|
+> | Working tree clean；merge 到 `main` 要等 Cubase 四步驗證 | A9 真 host 實測 2026-08-22 完成（L3b）；之後已多次 merge 進 `main`，最近一次 `3f9b90a`（2026-09-15） |
+> | IR「path persisted in state」 | F-03 改成 sha256 受管理 IR 庫（2026-09-09）；D12 把舊 `reverb_ir_path` state 遷移成三態 |
+> | Release corpus 73/73 | 75/75（2026-09-25 重跑） |
+> | ctest 3/3、pytest 121/121 | ctest 4/4、pytest 270（264 passed＋1 skip＋5 xfail）（2026-09-25 重跑） |
+> | 「No soundboard/body coupling…nonlinear contact solver」 | 部分過時，見該行註記 |
+> | 「Real DAW automation/state round-trip…still require human/host validation」 | L2 `TsukiSynthHostProbe`（89 PASS）與 L3b Cubase 實測已做 |
+> | 「cross-OS/compiler bit identity is not promised」 | 仍不承諾位元相同；但 2026-08-22 已登記跨平台容差（C3，`scores/crossplatform_tolerance.json`），CI 每次 push 做三平台渲染比對 |
+
 > Last updated: 2026-08-06
 > Project: TsukiSynth（與 haguruma-engine 無關）
 
@@ -63,10 +81,13 @@
 ## Standard commands
 
 ```powershell
-cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone
+# 2026-09-25 修正：原本只建三個主 target、沒建任何測試 target 就跑 ctest。
+# X4 規約：跑 ctest 前必先重建五個測試 target（HostProbe 不在 ctest 內，要另跑，見 README quick reference）。
+cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
 ctest --test-dir build -C Release --output-on-failure
 
-python -m unittest tests\test_physics_verify.py tests\test_consonance_contract.py tests\test_verify_score_contract.py -v
+# 2026-09-25 修正：現行全套 Python 測試用 pytest（原本這行只跑三個檔）。
+python -m pytest tests -q
 python tools\tuner_audit.py
 python tools\tuner_audit_v2.py
 python tools\physics_verify.py --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --selftest
@@ -80,6 +101,7 @@ python tools\check_piece_consonance.py scores\originals\rules_v2_demo\rules_v2_d
 - Material `beta_air` and `gamma_radiation` still lack specimen-level traceability; `alpha` is anchored, not broadband calibrated.
 - Output amplitude is normalized/dimensionless: no calibrated Newton → Pascal/SPL path, microphone/directivity or spatial phase.
 - No soundboard/body coupling, sympathetic resonance, damper/pedal system, anisotropic wood, nonlinear contact solver, temperature/humidity model or measured specimen fitting.
+  （**2026-09-25 註：這行部分過時。** B1 無限板導納損耗通道與 B4 Felt 槌非線性接觸求解器已有；有限音板共振、共鳴、制音器／踏板、異向木材的實際使用（B5 只有 schema，零消費）、溫濕度模型、實測試體擬合仍然沒有。）
 - FM Piano is deliberately non-physical; plugin creative macros are not physical evidence.
 - Same-machine SHA256 reproducibility is tested; cross-OS/compiler bit identity is not promised.
 - Tuner is target-aware and monophonic; polyphonic/missing-fundamental mixtures may be refused rather than guessed.

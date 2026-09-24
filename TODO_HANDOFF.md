@@ -1,5 +1,19 @@
 # TsukiSynth — Deep-fix Handoff
 
+> ## ⚠ 歷史文件（2026-07-17 快照）——最新狀態看 `HANDOVER.md`／`TODO.md`
+>
+> **2026-09-25 標註**：這份是 2026-07-17 深修第一輪的交接，之後沒有更新，**不要拿來當現況**。
+> 新 session 請從 `HANDOVER.md` 開始，待辦與裁決看 `TODO.md`，驗收規則看 `ROADMAP_PHYSICS.md`。
+> 內文保留原樣當歷史紀錄，只修了下方重跑指令的建置行與 Python 測試行（見該段註解）。
+>
+> 已知過時處（舉例，不是完整清單）：
+>
+> | 本檔原文 | 現況（2026-09-25 查證） |
+> |---|---|
+> | release corpus 73/73 | 75/75（2026-09-25 重跑） |
+> | 「cross-platform bit identity is not」（沒提其他） | 仍不承諾位元相同；但 2026-08-22 已登記跨平台容差（C3，`scores/crossplatform_tolerance.json`），CI 每次 push 做 Windows MSVC／Linux GCC／macOS AppleClang 三平台渲染比對 |
+> | 「Current branch」 | 分支名稱沒變，但已多次 merge 進 `main`（最近一次 `3f9b90a`，2026-09-15） |
+
 > Updated 2026-07-17. Current branch: `fix/deep-physics-audit-20260716`.
 
 ## What changed
@@ -26,9 +40,12 @@
 ## Required rerun after further code changes
 
 ```powershell
-cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+# 2026-09-25 修正：原本只建三個測試 target，照做 ctest 會出現 spectrum_view_repro「Not Run」（09-07～14 CI 紅燈同一個坑）。
+# X4 規約：跑 ctest 前必先重建五個測試 target（HostProbe 不在 ctest 內，要另跑，見 README quick reference）。
+cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
 ctest --test-dir build -C Release --output-on-failure
-python -m unittest tests\test_physics_verify.py tests\test_consonance_contract.py tests\test_verify_score_contract.py -v
+# 2026-09-25 修正：現行全套 Python 測試用 pytest（原本這行只跑三個檔）。
+python -m pytest tests -q
 python tools\tuner_audit_v2.py
 python tools\physics_verify.py --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --selftest
 python tools\physics_verify.py --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --full

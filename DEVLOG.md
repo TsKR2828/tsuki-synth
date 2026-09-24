@@ -2,6 +2,119 @@
 
 ---
 
+## 2026-09-25 — 現況盤點（9 agents）＋ staged 樹重跑 GATE 全綠 ＋ 月月裁決「先修文件、切 7 個 commit」
+
+**起因**：WF0914 的 121 個檔從 09-15 起 staged 等審，已 10 天；先盤點「做到哪、還差什麼、文件跟 repo 對不對得上」，再決定下一步。
+
+**方法**：9 個 agent——6 路掃描（staged-review／engineering-gaps／docs-consistency／open-work／release-readiness／live-gate）＋3 個懷疑者逐條反駁。
+128 條發現：92 條屬實、36 條部分修正（以「查證修正」為準）、0 條被推翻；懷疑者另補抓 13 條漏項。
+盤點全程沒改 repo 原始檔、沒 `git add`、沒 commit，唯一改動是重建 `build/`。
+產出 `reports/status_check_2026-09-25/`：`STATUS_CHECK.zh-TW.md`（總結）、`APPENDIX_findings.zh-TW.md`（逐條＋證據）、`gate_logs/`、`commit_lists/`（7 個 commit 清單，已驗證 121 檔無重複、無遺漏、無 CR）、`probes/`。
+
+**對 staged 樹重跑 GATE：全綠，每一項數字都和 09-15 基線相同**（09-15 整合卡早於 D9b／D9c，這是 D9c 落地後第一次在 `build/` 跑全套）：
+- 三個主 target＋五個測試 target 重建 exit 0；ctest 4/4——K-02 資訊行由 −28.5 dB 變成 **+0.112 dB**，證明 D9c 有編進去。
+- pytest **270＝264 passed＋1 skip＋5 xfail**；`physics_verify --full` NO CHECKED FAILURES（與 09-15 逐行 diff 0）；`--selftest` 13 行全 PASS（09-15 摘要寫「15 項」是筆誤）。
+- `verify_score --all` 75/75（1 項既有豁免）；HostProbe 89 PASS／0 failures；位元不變 **8/8 IDENTICAL**（`sha256_before_post_a14.txt`）。
+- 結束時 git status 與開始時完全相同。原始 log 在 `reports/status_check_2026-09-25/gate_logs/`。
+
+**部署實況（跟文件寫的不同）**：實際裝的是 `C:\Program Files\Common Files\VST3\TsukiSynth_VST3_2026-09-10\TsukiSynth.vst3`
+（整個外層資料夾被放進 VST3 目錄，多一層子資料夾），是 **09-10 23:46 的 build，缺 D12 與 D9c**——拿 HostProbe 測它剛好只有 5 個 D12 檢查 FAIL（84 PASS／5 FAIL）。
+另有 `C:\Program Files (x86)\Common Files\VST3\TsukiSynth.vst3`（07-12）與 `%APPDATA%\VST3\TsukiSynth.vst3`（05-07）舊副本；Cubase 外掛快取停在 08-22，指向已不存在的路徑。依指示沒有重新部署。
+
+**這次新查到、repo 沒登記過的事**（STATUS_CHECK §2，依重要性）：
+1. **給愛麗絲全曲 16 顆弱基頻 FAIL**（`TODO.md` 登記為 **D16**）：A14 B-2 讓原本 G5@0.427×19 等 22 顆全部轉 PASS，但力脈衝深零點搬到別的「音高＋力度」：
+   E5@0.278×9、A5@0.427/0.452×4、A6@0.427×2、A#6@0.427×1（基頻比第二泛音低 6～19 dB；08-30 時這 16 顆全是 PASS）。
+   A14 報告只掃音高軸、沒掃力度軸。**clean_batch2 的給愛麗絲鋼琴版母帶含這 16 顆。**
+2. **D9c 沒有任何硬 GATE 守著**：K-02 只印數字不判定、HostProbe 不量 IR 電平、8 首位元不變走 CLI（CLI 不經 EffectChain）——把 `kIrWetMakeupGain` 刪掉，全套 GATE 仍是綠的。
+3. **發行用 CI 第一次打 tag 必紅**：`release-physics.yml:45` 漏建 SpectrumViewTest（766d21d 只修了 physics.yml）；`:50` 用 `unittest` 而不是 pytest，會漏收 pytest 寫法的測試。
+4. **「全曲版 41 個削波樣本」是誤讀**：那是正規化前的計數（`WavWriter.h` 先數 ≥1.0、再把峰值拉到 0.95），母帶峰值 0.95、沒有平頂——變現裁決第 3 題「要不要重渲」前提不成立。
+5. 6 個 loop 檔長度不是整小節（後面接了餘響尾巴），買家拿到的 README 卻寫「可無縫循環」。
+6. VST3 動態連結 VC++ runtime（MSVCP140／MSVCP140_2／VCRUNTIME140／VCRUNTIME140_1）；買家電腦沒裝可轉散發套件時 DAW 載不進來。
+7. VST3 Program 參數格數在建立 instance 時就固定，但使用者 preset 會增減、依名稱排序 → 自動化或 program change 可能載到別的 preset。
+8. D15 的兩個 strict xfail 永遠不會 XPASS（pin assert 排在 ≤1 c 判定之前）。
+9. D9c GATE 證據檔 :252-254「HostProbe 原始碼搜不到 IR 字樣」不實（實際 83 行命中），結論「沒有 IR 響度情境」仍成立。
+10. B7 裁決包 §6 第 3 點（ROADMAP／TODO 的 B7 條目同步）沒落地，所以「五項裁決全部落地」不精確。
+11. pluginval／Steinberg validator 最後一次是 08-06；之後改過 tail、IR state、D12、D9c，都沒重驗。
+
+**月月 09-25 裁決**（原話）：「先修文件，然後照 7 個 commit 切」「剩下你能處理的都處理掉」。
+即：先修過時／矛盾的文件 → WF0914 staged 121 檔依 `commit_lists/` 分 7 個 commit（文件修正併入 c7 交接 commit，不 push）→ 開新一輪 WF0925，AI 能處理的都處理掉，成果照慣例 staged 不 commit。
+
+**文件修正（本批）**：
+- `docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md` → **v1.2**：「IR 與演算法殘響差 28 dB 尚未對齊」改標結案（D9c 已補平，並寫明只在演算法預設 size 0.5、未設 T60 時對齊）；缺檔警告「音量會與 IR 模式不同」列為待改寫文案、附建議文字（src 字串未改，待 WF0925／月月確認）；新增 §5-7 D12 舊專案遷移三種結果；補記 IR 模式下 size/T60 不作用、「IR 模式但沒載入 IR」狀態、沒有輸出限幅。
+- `docs/workcards/WF0914_README.md`：pytest 基線改精確（267 個測試＝263 passed＋3 xfail＋1 skip；本輪新基線 270＝264 passed＋1 skip＋5 xfail）。
+- `reports/gate_outputs/wf0914_D9c_ir_makeup_gain.txt`：原文不改，檔尾附加「勘誤」段（grep 實數：staged 版 83 行、HEAD 版 32 行）。
+- `reports/a14_tauc_keytrack_before_after.md`：原文不改，檔尾附加「09-25 追記」（22 顆轉 PASS、16 顆新 FAIL、力度軸沒掃）。
+- `docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md`（untracked，照盤點建議不進版控）：「UI 雙開門裁決」改成 UI 規格 v1.2 等月月決定送誰；全曲版削波改成查證結果（放不放月月決定、不需重渲）；loop 盤點結果；盤點指向。
+- 同批另有 HANDOVER、TODO、README、ROADMAP_PHYSICS、CONTEXT、TODO_HANDOFF、RESEARCH_INDEX 的修正（以各檔 diff 為準）。
+
+**渲染器存檔**：clean_batch2 50 份 manifest 的 `renderer_executable_sha256` 指向 `build/` 09-15 02:07 建的 CLI（sha256 `9123db8f…`），任何一次重建都會改掉這個 sha。
+已備份到 `exports/renderer_archive/TsukiSynthCLI_9123db8f_build20260915.exe`（附 README.txt、SHA256SUMS.txt，sha 已核對；`exports/` 在 .gitignore，不進版控）。
+
+**git**：WF0914 成果 2026-09-25 依月月裁決分 7 個 commit 入庫（未 push；hash 見 git log）：
+c1 B7P1 引擎純函式／c2 D12 plugin state 遷移／c3 D9c IR 補償增益／c4 D14・D15 驗證工具／c5 研究文件與裁決包／c6 施工卡與 GATE 證據／c7 交接文件（含本批文件修正）。
+接著開 WF0925 輪；它的結果寫進下一段，這裡不預寫。
+
+**仍等月月的**（STATUS_CHECK §3-1）：commit 後要不要重新部署 VST3、清掉 (x86) 與 %APPDATA% 舊副本；變現 5 裁決（第 3 題可直接放）；給愛麗絲母帶先上架或等弱基頻修好；UI 規格 v1.2 送誰；四季／月光換源排程；新的工程裁決候選（D9c 硬 CHECK、IR 模式輸出限幅、Program 參數只給工廠 preset、靜態 CRT 或附 vc_redist、plugin↔CLI 一致性、R6 要不要涵蓋 plugin 層、B7 MIDI 20 clamp 跳 2.3 倍）。
+
+**本輪教訓**：
+- 「整合卡全綠」要寫清楚跑在哪些改動之前：09-15 整合卡早於 D9b／D9c，全套 pytest 與 corpus 在 D9c 之後直到今天才重跑。
+- GATE 證據裡「搜不到」這種話要附命令和計數，不然會寫出不實陳述（D9c :252）。
+- 前後對照要掃完所有會動的軸：A14 只掃音高，零點就搬到力度軸上沒人看見。
+- 產物欄位的語意要寫在欄位旁：`samples_at_or_above_full_scale` 是正規化前計數，被讀成「母帶削波」，一路抄進 PRODUCT_SHEET、LISTING_COPY、變現計畫，catalog 還把它命名成 `clipped_samples` 欄。
+
+---
+
+## 2026-09-15（下） — 月月五項裁決「五題全照建議」落地 + 兩封信寄出
+
+判斷基準用白話重述給月月（不需樂理，三條軸：花多少工／誠不誠實／會不會弄紅綠燈），
+月月一句「五題全照建議」全批。落地：
+1. **B7**：§5 路徑 C＋驗收基準 (a) 乙——本輪合法終點，欄位撤回版純函式保留（裁決包 §6）。
+2. **D9**：選 (a)——**D9b** 加外部 IR 注入點（`TSUKI_K02_EXTERNAL_IR`，fail-closed；並溯源
+   JUCE：loadStreamToBuffer 讀檔失敗是靜默空 IR、取樣率不合是自動重取樣、EffectChain 載入本就
+   Normalise::yes），量出 3 顆真實 IR 落差 −28.726/−28.487/−28.623 dB 與合成基準 −28.483 幾乎重合
+   （IR 檔響度差 16.6 dB 也一樣）→ **落差是演算法結構性固定差**。月月 09-16 再裁選項 A →
+   **D9c** 落地 `EffectChain.h::kIrWetMakeupGain=26.9f`（+28.58 dB，DECIDED CONVENTION，只乘 IR wet），
+   補償後四組 +0.112/−0.131/+0.108/−0.028 dB（稽核親算 float32 實際增益 28.595 dB，四組殘差到小數
+   三位自洽）；8/8 位元不變、HostProbe 89 PASS。**D9 全鏈關閉**，兩次裁決記錄都在裁決包。
+3. **D11**：選 C——patch 存檔不落地，新登記「D11-F5 根因調查」卡（裁決記錄在裁決包文末）。
+4. **D13**：選 B——新建 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md`（引擎主張域清單），
+   §1 water_gong=自由邊平板非乳突鑼（裁決記錄在裁決包 §4）。
+5. **D15**：選 A'——`EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.5 加「≤1.18c 只涵蓋持續段；
+   放鍵/阻尼段已知上界 ~7.2c」段，B' 不追。
+**兩封信（TU Berlin 授權請求、Iowa 器材詢問）月月 09-15 已寄出，等回覆。**
+
+---
+
+## 2026-09-14 ~ 09-15 — WF0914 輪：push+merge+CI 修紅、B7 開工、D9～D15 全數處理
+
+**月月 09-14 三句話**：「push + merge main + B7 第一原理力鏈開工 + 補 D9～D15 缺口，用 Dynamic Workflow（Fable 規劃／Sonnet 工兵／Opus 稽核）」。兩段 workflow 共 **40 agents**（32+8），外加規劃者親自修 CI 與兩句收尾。流程沿用 WF0907 規約（R7 不 commit、稽核 PASS 才 `git add`、build-wf lane、位元基準 post_a14），新增規約寫死「全 pytest 只在整合卡跑」。施工卡 `docs/workcards/WF0914_*.md`（12 檔）。
+
+**git / CI**：09-13 五 commit + 09-14 交接更新（`a38bd6a`）push + merge `main`（`b56747d`）。**CI 紅燈**：09-07 與 09-14 兩輪 push 其實都在紅——根因 `physics.yml` 兩處測試建置清單漏 `TsukiSynthSpectrumViewTest`（ctest 註冊 `spectrum_view_repro` 但 exe 沒建 → Not Run；X4 教訓的 CI 版）。fix=`766d21d`，branch+main（`3f9b90a`）三平台全綠；**macOS leg 首編 `IRLibrary.h`/`ParameterLayout.cpp` 通過**，cross-platform-compare 過。
+
+**落地（staged，稽核 PASS）**：
+- **B7P0**：`docs/HAMMER_VELOCITY_SOURCES.md` 新建 + `RADIATION_POWER_SOURCES.md` §8（S 補搜結果），全部逐字轉寫自 `B7_PHASE0_DATA`；B6 前置三步確認過。
+- **B7P1**：`HammerImpulse.h`/`RadiationModel.h` 新增力鏈純函式＋五條測試（含稽核抓到的**能量守恆違反修復**：衝量組裝原混用 F_peak 與 B4 的 τc，改為 `hertzImpulseConsistentTauCSeconds()=π·m·v/F_peak` 自洽解，42 點域掃描衝量/2mv 精確=1）。**dumpModes 欄位撤回**：稽核查證推翻規劃者「proxy×127」代決——`tools/midi_to_tsukisynth.py::velocity_for()` 證實 score velocity=`base_velocity(role)×(MIDI/90)±微調`，真實 MIDI 轉譜時被丟棄 → Path C 無合法輸入，欄位撤下、純函式保留待月月裁決後接線。S 走「否」分支（直立琴 1.265 m² 未採用）。
+- **D10**：Hall 1988／Chaigne & Askenfelt 1994 Part II 開放管道窮盡仍付費牆；A14 已引用的 Russell & Rossing 1998 補摘（`HAMMER_CONTACT_SOURCES.md` §9，明標非新來源）；B-1 維持等文獻。
+- **D12**：舊 DAW state `reverb_ir_path` 三態遷移進 `setStateInformation()`（檔案存在→IRLibrary 正常匯入且**不**強制切模式；缺檔→F-03 缺檔態＋警告；新 schema 存在→舊鍵忽略並清除）；HostProbe 89 PASS；稽核三輪（第一輪抓到 switchModeToIR 誤設 true、第二輪抓到過時註解與 sha 筆誤）。
+- **D14**：stem_verify 記憶體線性成長根因=`stem_arrays` dict 囤積全部事件 float64 陣列；改 `StemArrayStream` 產生器逐顆讀入即釋放（疊代順序不變→浮點逐位元不變）。**905 事件全量首次跑完**：峰值 ≈1.65 GB（原 >28 GB），300/600/905 三檔峰值 1310/1270/1530 MB 證明已解耦；`--limit 300` 前後 JSON 逐欄相同；49 測試綠。
+- **D13/D11**：分析+裁決包（見下），各經四輪稽核（三輪抓文字層錯誤：D13 矽青銅誤稱磷青銅、頁碼、Leissa 溯源措辭；D11 五條數字/引文敘述與自家證據矛盾）。
+
+**BLOCKED（合法完成，等月月五項裁決，詳 TODO 快照）**：
+1. B7 裁決包 `B7_phase2_and_open_items.zh-TW.md`：velocity proxy 換算（三選一）／S／Phase 2 甲乙案。
+2. D9：K-02 量測鏈（`tests/audit_repro.cpp`）無外部 IR 注入點，研究 lane 不可碰 tests/ → 三選一。EchoThief 3 顆真實 IR 已下載（`external_data/ir/echothief/`，非商用授權，量測參考用；OpenAIR 已死站、Samplicity/MIT 授權不明跳過）。
+3. D11（R10）：Fletcher & Rossing 錨點查表候選（`d11_string_scale_candidate.patch`）B 偏差 86.4×→18.7×，但 `--full` F5 殘餘能量會退化 FAIL（-58.5 dB）根因未查——不建議直落地；工作樹已還原乾淨（patch `git apply --check` 過）。
+4. D13：自由邊平板結構性無 2.0× 模態（鄰居 ±243/263 音分）；McLachlan 1997 證實矽青銅乳突鑼 boss 幾何造成 2.0× 調諧；三案並列（傾向 B 主張域收窄，未代決）。
+5. D15：哨兵補放鍵/阻尼段語料（release_factor 0.002/0.05/0.08 讀自引擎實際 damp() 呼叫值）＋真值偏離正控制（注入 ±3c 量出 +2.13/−2.43c）——新 worst-case **5.2304 c（開發）／7.2055 c（hold-out）**打破 §8.5「≤1.18 cent」主張（持續段分項逐位元不變 1.1721/1.0840）；措辭 A'/B' 兩案待裁。
+
+**整合卡（重建 `build/`）全綠**：ctest 4/4、**pytest 新基線 270 個測試**（264 passed+1 skip+5 xfail；淨增 3=D15 新測試）、`--full` NO CHECKED FAILURES、selftest、corpus 75/75、HostProbe 0 failures（含 D12 三情境）、位元不變 **8/8 IDENTICAL**（post_a14）。
+
+**本輪教訓**：
+- 稽核層再次證明不可省——抓到 B7P1 能量守恆違反（物理實質錯誤）、規劃者 proxy 代決被程式碼證據推翻、D12 switchModeToIR 語意錯、D13 合金名誤述、D11 五條數字敘述矛盾。「工程對了、文字也要對得起證據」是這輪最大量的返工來源。
+- 施工卡的 lane 授權要和量測手段先對齊：D9 的「照抄 K-02 方法」和「研究 lane 不碰 tests/」互斥，卡文自相矛盾工兵停下是對的。
+- CI 的測試建置清單=另一份會漂移的 X4 清單；新增測試 target 時要同步 `physics.yml` 兩處（本輪已修，未來 E 類卡把這句寫進卡文）。
+
+---
+
 ## 2026-09-10 ~ 09-14 — 四裁決落地、五個 commit、VST3 部署、外部工具評估
 
 **月月 09-10 四裁決**：C10 選 A（收窄主張域）／A14 patch 放行／月光母帶等換源後一起出／兩封信要寫。

@@ -17,7 +17,7 @@
 | Oscilloscope (lock-free FIFO) | Done |
 | 8 Macro Parameters (DAW automation) | Done |
 | Preset Manager (27 factory + user save/load) | Done |
-| Preset Browser (visual popup + category filter) | Done |
+| Preset selector (`presetCombo` drop-down: current engine's factory presets + user presets, prev/next stepping; **no category filter** — the visual browser popup `PresetBrowser.h` was removed on 2026-05-22, `1954418`) | Done |
 | Spectrum Analyzer (FFT, log-freq, toggle) | Done |
 | Tuner (measured dry audio, A0-C8, confidence/refusal states, hold-after-release) | Done |
 | Reverb profile / IR loading (scene JSON → params, WAV → convolution) | Done (2026-08-06) |
@@ -27,7 +27,7 @@
 | Standalone Score console (render score.json / open report, no DAW; bundles CLI) | Done (2026-08-06) |
 | Scene→Reverb tool (`tools/scene_reverb.py`, Sabine/Eyring → authored T60) | Done (2026-08-05) |
 | Hover magnifier + enlarged tooltips (visual accessibility) | Done (2026-08-06) |
-| Harmonic Editor (Custom sub-engine, 8 partials) | Done |
+| Harmonic Editor (Custom sub-engine, 8 partials) — embedded in the main editor as 8 ratio + 8 amplitude knobs (`chrRatios[8]`/`chrAmps[8]`, shown when Custom is selected); the separate `HarmonicEditor.h` component was removed on 2026-05-22 (`1954418`) | Done |
 | Responsive UI (resizable 420x700 ~ 900x1200) | Done |
 | Custom LookAndFeel (dark theme, arc knobs) | Done |
 | MIDI Keyboard (on-screen) | Done |
@@ -35,13 +35,13 @@
 | **VST3 build** | **Passed** — fresh Release build from current source |
 | **Standalone build** | **Passed** — fresh Release build from current source |
 | **Standalone launch** | **Passed** — current Release build smoke-tested |
-| **DAW plugin host validation** | **Passed** — real Cubase LE AI Elements 12 export verified by `melody_verify` 5/5 and bit-identical project save/reload (2026-08-22, L3b); `TsukiSynthHostProbe` H1–H8 cover scan, instantiation, MIDI render determinism, automation, DAW state, variable host block size (bit-identical), user-preset round-trip and tail-length contract. Current build (2026-09-10) deployed to Cubase on 2026-09-14 |
+| **DAW plugin host validation** | **Passed** — real Cubase LE AI Elements 12 export verified by `melody_verify` 5/5 and bit-identical project save/reload (2026-08-22, L3b); `TsukiSynthHostProbe` H1–H8 cover scan, instantiation, MIDI render determinism, automation, DAW state, variable host block size (bit-identical), user-preset round-trip and tail-length contract, plus the D12 legacy IR-state migration scenarios (89 PASS / 0 failures on the 2026-09-25 build). Deployment note (checked 2026-09-25): the copy installed on the maintainer's machine is the 2026-09-10 23:46 build, placed in a sub-folder (`Common Files\VST3\TsukiSynth_VST3_2026-09-10\TsukiSynth.vst3`); it predates the WF0914 plugin changes (D12 state migration, D9c IR make-up gain), Cubase's plug-in cache was last written 2026-08-22 and still points at the old top-level path, and older copies remain under `Program Files (x86)` and `%APPDATA%\VST3`. The L3b real-host pass above tested the build of that time, not the current source — redeploy is pending the maintainer's go-ahead |
 | State save/load | Done (skipNextProgramChange + reattachListener fix) |
 | Version display | Done (v0.3.0 in title bar) |
 | EN/中文 localization | Done |
 | Standalone REC recording | Done |
 
-**Version**: `v0.3.0` — the active deep-audit branch is `fix/deep-physics-audit-20260716`. B1–B6 are merged to `main` (2026-09-07). The 2026-09-07~11 audit-closure batch (five commits, `5c9cdb3`…`49b8542`: managed IR library, tail-length contract, schema contract sync, layered `--dump-modes`, sample-accurate water-gong glide, A14 hammer-contact pitch law, D8 tongue-drum exciter fix, measurement self-calibration) is **committed on the branch, not yet pushed or merged**. Exact verification state: `HANDOVER.md` (start here for a new session) and `TODO.md`.
+**Version**: `v0.3.0` — the active deep-audit branch is `fix/deep-physics-audit-20260716`. B1–B6 are merged to `main` (the last of them, B5/B6, with the 2026-08-30 merge `64afb49`). The 2026-09-07~11 audit-closure batch (five commits, `5c9cdb3`…`49b8542`: managed IR library, tail-length contract, schema contract sync, layered `--dump-modes`, sample-accurate water-gong glide, A14 hammer-contact pitch law, D8 tongue-drum exciter fix, measurement self-calibration), the 2026-09-14 handover update `a38bd6a` and the CI fix `766d21d` are **pushed and merged to `main`** (`b56747d` 2026-09-14, `3f9b90a` 2026-09-15); the Physics Verification workflow is green on both `766d21d` and `3f9b90a` (Windows / Linux / macOS legs). The 2026-09-14~16 WF0914 batch (B7 Phase 0 + partial Phase 1, D9c IR make-up gain, D12 legacy IR-state migration, D13/D15 claim-domain narrowing, D14 `stem_verify` memory fix, decision packets and GATE evidence) was committed on 2026-09-25 as seven commits per the maintainer's ruling — **not pushed yet** (hashes: see `git log`). Exact verification state: `HANDOVER.md` (start here for a new session) and `TODO.md`.
 
 ## Overview
 
@@ -71,17 +71,17 @@ TsukiSynth's physical claims are scoped and machine-checked, not aspirational �
 |---|---|---|
 | Cimbalom / Piano (StringModel) | ✅ In domain — struck rigid string, incl. inharmonicity; amplitude includes a documented creative layer (`spectralTilt`, see `CimbalomEngine.h` comments) — frequency/decay are unaffected; kept and scope-fenced per 月月's 2026-07-23 ruling | Physically verifiable |
 | Tongue Drum (BeamModel) | ✅ In domain — fixed-free cantilever by default; explicit free-free suspended bar | Physically verifiable |
-| Water Gong (PlateModel) | ✅ In domain — Kirchhoff circular plate (clamped + free-edge) | Physically verifiable |
+| Water Gong (PlateModel) | ✅ In domain — Kirchhoff circular plate (clamped + free-edge). Claim domain narrowed by 月月's 2026-09-15 ruling (D13 option B): it models a plain free-edge plate, **not** a bossed gong, so no mode near 2.0× f0 is a domain limit, not a calculation error — see `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §1 | Physically verifiable (within that domain) |
 | Custom Harmonics | ⚠️ Half-domain — additive synthesis, ratios checkable but not physically derived | Not a physical-accuracy claim |
 | FM Piano | ❌ Out of domain — explicitly non-physical synthesis | Not covered |
 | Effect Chain (Reverb/Delay/Comp/Dist) | ❌ Out of domain — verification always runs with FX off | Not covered |
 | Chromatic scaling (size → timbre, MIDI → pitch) | ⚠️ Hybrid — physics shapes the spectral content, equal temperament sets f0 | Not "fully physical"; do not describe as such |
 
-For the in-domain engines, `tools/physics_verify.py` compares rendered audio with theory using a ±5-cent frequency gate, ±3.0 dB partial-amplitude gate, +6.0 ±1.0 dB velocity-doubling gate and a measured/model T60 ratio gate; T60 fits must also capture at least 8.0 dB of clean decay. `tools/verify_score.py` measures a multi-string course by its amplitude-weighted centroid with a ±5-cent gate, and also checks rest RMS ≤ −50 dBFS, clipping, manifests and same-environment SHA256 determinism. Manifest v4 binds the WAV, renderer executable, root score and every recursively referenced layer by SHA256, plus a canonical dependency-tree digest and configure-time commit/dirty/toolchain metadata. The 2026-08-02 fresh-build `--full` run has no checked failures; three ultra-short rubber cases are reported as `UNVERIFIED/N/A`, not as passes. A new four-shard full-corpus run passed 75/75 with the one pre-existing visible FX-art exemption and no failures. Current VST3 also passes pluginval L10 across six sample rates and adversarial block sizes, plus the pinned Steinberg SDK 3.8 validator (47/47). See `DEVLOG.md` and `TODO.md`.
+For the in-domain engines, `tools/physics_verify.py` compares rendered audio with theory using a ±5-cent frequency gate, ±3.0 dB partial-amplitude gate, +6.0 ±1.0 dB velocity-doubling gate and a measured/model T60 ratio gate; T60 fits must also capture at least 8.0 dB of clean decay. `tools/verify_score.py` measures a multi-string course by its amplitude-weighted centroid with a ±5-cent gate, and also checks rest RMS ≤ −50 dBFS, clipping, manifests and same-environment SHA256 determinism. Manifest v4 binds the WAV, renderer executable, root score and every recursively referenced layer by SHA256, plus a canonical dependency-tree digest and configure-time commit/dirty/toolchain metadata. The 2026-08-02 fresh-build `--full` run has no checked failures; three ultra-short rubber cases are reported as `UNVERIFIED/N/A`, not as passes. A new four-shard full-corpus run passed 75/75 with the one pre-existing visible FX-art exemption and no failures. Both results were re-confirmed on 2026-09-25 against the WF0914 tree (`--full` NO CHECKED FAILURES, corpus 75/75, 8/8 reference renders bit-identical to the post-A14 baseline). The VST3 last passed pluginval L10 across six sample rates and adversarial block sizes, plus the pinned Steinberg SDK 3.8 validator (47/47), on **2026-08-06**; neither has been re-run since the 2026-09 plugin changes (tail-length cache, managed IR state, D12 migration, D9c make-up gain). See `DEVLOG.md` and `TODO.md`.
 
 These numbers are model-conformance evidence a deaf user (or an AI) can check visually/numerically — via spectrum plots and pass/fail diffs — without relying on how anything sounds. They are not yet a substitute for calibrated external-instrument measurements.
 
-### Physics chain status (2026-09-14)
+### Physics chain status (2026-09-25)
 
 The string/cimbalom/piano damping law has been extended in stages, each gated on the commands above and, where the render output changes, on a before/after Rule 10 report:
 
@@ -91,10 +91,12 @@ The string/cimbalom/piano damping law has been extended in stages, each gated on
 | B2 | Broadband-damping cleanup — corpus-wide re-verification and loudness-anchor remeasurement after B1 | Done (2026-08-21) | `reports/b1_b2_bridge_damping_before_after.md` |
 | B3 | String damping law rewritten to Cuesta & Valette's zero-free-parameter three-mechanism model (air/viscoelastic/thermoelastic loss), replacing two previously unsourced fit constants | Done (2026-08-26, merged to `main`) | `reports/string_damping_firstprinciples_before_after.md` |
 | B4 | Hammer/felt contact solved per-note from a nonlinear force law instead of a fixed contact-time constant | Done (2026-08-27) | `reports/b4_hammer_contact_before_after.md` |
-| B5 | Orthotropic wood-material schema (9 independent elastic constants per species, from the USDA Wood Handbook) added to `materials.json` | Schema staged, zero consumption — `PlateModel`/`BeamModel` still read a single scalar E/ν; no render output changed | `reports/b5_schema_noop_proof.md` |
+| B5 | Orthotropic wood-material schema (9 independent elastic constants per species, from the USDA Wood Handbook) added to `materials.json` | Schema committed (`88bdfac`, 2026-08-28; merged to `main` 2026-08-30), zero consumption — `PlateModel`/`BeamModel` still read a single scalar E/ν; no render output changed | `reports/b5_schema_noop_proof.md` |
 | B6 | Radiation-efficiency skeleton (`RadiationModel.h`, σ(f)/η_rad(f)) exposing diagnostic-only `radiated_power_relative`/`absolute_pressure_per_force`/`acoustic_transfer[]` fields in `--dump-modes` | Done (2026-08-28) — Phase 0-1 skeleton, Phase 2 scope decision (方案 B, physics-only signal-tap calibration), Phase 3/4 landed the calibrated tap; diagnostic path only, `render()`/`ModalResonator` untouched (verified bit-identical 8/8) | — |
 | A14 B-2 | Felt-hammer contact-time pitch law re-anchored to the measured Askenfelt & Jansson curve (`keytrackScale`, k=0.32) instead of the K/α/mass-derived shape (k≈0.212) that pushed treble fundamentals into a force-spectrum null (G5 −34 dB). Velocity law unchanged, no new constants | Done (2026-09-10, maintainer-approved Rule 10) — only 5 piano scores change; 7/8 reference renders bit-identical | `reports/a14_tauc_keytrack_before_after.md` |
 | D8 | Tongue-drum "finger" exciter (4–11 ms soft hammer) replaced by `wood_mallet` in the two Moonlight tongue-drum scores; MIDI 37→87 level slope 41 → 5.5 dB, energy below 200 Hz 97% → 18%. Score change only, engine untouched | Done (2026-09-09, maintainer decision) | `reports/d8_tongue_drum_exciter_before_after.md` |
+| B7 | First-principles force chain (MIDI velocity → hammer speed → Hertz peak force → bridge power → Pa at 1.05 m), Cimbalom/Piano with felt exciter only, as an independent cross-check of the B6 calibration | **Partial** — Phase 0 (sources) done; Phase 1 partial: five pure functions + their tests landed in `HammerImpulse.h`/`RadiationModel.h` (the chain stops at bridge power; radiating area `S` stays UNVERIFIED), but the `--dump-modes` field was withdrawn after the velocity-proxy check was overturned; Phase 2/3 BLOCKED (source gap). 月月's 2026-09-15 ruling (path C + criterion (a) option 乙) makes this the legitimate end point of the round. Not wired into any render path (8/8 bit-identical) | `reports/decision_packets/B7_phase2_and_open_items.zh-TW.md` §6 |
+| D9c | *Effect chain, outside the verification domain — listed here because it changes what a DAW user hears.* IR-convolution reverb wet is multiplied by a fixed `kIrWetMakeupGain = 26.9` (+28.58 dB), a DECIDED CONVENTION (not a physical constant) averaged from 4 IRs, closing the structural IR-vs-algorithmic wet gap (residual −0.13…+0.11 dB). **In a DAW, IR-mode wet level changes** for existing projects; dry signal, algorithmic mode and CLI/score renders are untouched (8/8 bit-identical) | Done (2026-09-16 maintainer decision, D9 option A) | `reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md`, `reports/gate_outputs/wf0914_D9c_ir_makeup_gain.txt` |
 
 Full detail and the current decision backlog are in `HANDOVER.md` and `TODO.md`.
 
@@ -103,7 +105,7 @@ Full detail and the current decision backlog are in `HANDOVER.md` and `TODO.md`.
 Because neither the developer nor the AI can rely on listening, a second verification chain checks *where in time and at what pitch* notes actually land — independent of the acoustic-model checks above:
 
 - **L1 `tools/melody_verify.py`** — compares a rendered WAV against its source score event-by-event (onset ±10ms, pitch within 5 cents), plus 8 fail-closed refusal rules (masking, overtone contamination, course self-beating, bed energy, low-frequency resolution limits, etc.) so it reports `UNVERIFIED` rather than a false pass when a case is outside its proven domain. Five adversarial sentinels (time-shift/transpose/delete-note/phantom-note must FAIL, unmodified must PASS) guard against a rubber-stamp checker. `--html` renders a piano-roll overlay so a Deaf reviewer can inspect the result visually.
-- **L2 `TsukiSynthHostProbe`** — a CMake test target that loads the built `.vst3` from disk and drives it like a real host (16/16 automated checks PASS), the first automated proof that the plugin's live audio path (not just the offline CLI renderer) places notes correctly.
+- **L2 `TsukiSynthHostProbe`** — a CMake test target that loads the built `.vst3` from disk and drives it like a real host (H1–H8 plus the D12 legacy IR-state migration scenarios: 89 checks PASS, 0 failures on the 2026-09-25 re-run; run it from the repo root, because H8 loads `data/materials.json` by relative path), the first automated proof that the plugin's live audio path (not just the offline CLI renderer) places notes correctly.
 - **L3 Cubase real-host verification** — `tools/cubase_scan_verify.py` parses Cubase's own scan-cache XML (5/5 PASS), and a supervised end-to-end pass (project build, MIDI import, tempo-aligned export, reverb zeroed) fed back through `melody_verify.py` scored 5/5 with onset ≤2.5ms / pitch ≤0.4 cents, and reload → re-export reproduced bit-identical audio (SHA256 match).
 
 The regression corpus this all runs against is **75 score files** (`scores/examples/` + `scores/classical/` + `scores/originals/ai_radiance/` + `scores/library/`), currently passing 75/75 with zero newly-registered exemptions per full run.
@@ -115,7 +117,9 @@ The regression corpus this all runs against is **75 score files** (`scores/examp
 ctest --test-dir build -C Release --output-on-failure
 
 # Python metrology/counterexample contracts and the complete physics matrix
-python -m unittest discover -s tests -p "test_*.py" -v
+# (pytest, as in CI: 270 tests = 264 passed + 1 skipped + 5 xfailed on 2026-09-25;
+#  `unittest discover` only collects 199 of them)
+python -m pytest tests -q
 python tools\physics_verify.py --selftest
 python tools\physics_verify.py --full
 
@@ -125,11 +129,11 @@ python tools\verify_score.py --all --shard-index 0 --shard-count 4 `
 
 # MSVC AddressSanitizer regression build
 cmake -B build-asan -DTSUKI_BUILD_TESTS=ON -DTSUKI_ENABLE_SANITIZERS=ON
-cmake --build build-asan --config RelWithDebInfo --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+cmake --build build-asan --config RelWithDebInfo --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest
 tools\run_asan_ctest.ps1
 ```
 
-The exact P1–P7 methods and results are recorded in [the 2026-08-02 verification report](docs/P1_P7_VERIFICATION_2026-08-02.zh-TW.md). For a real instrument specimen, follow [the specimen protocol](docs/SPECIMEN_VALIDATION_PROTOCOL.zh-TW.md). `tools/specimen_pipeline.py` now turns synchronized repeated CSV records into a self-contained v2 bundle: calibrated H1/coherence, complex phase, automatic modal T60, Pa/N, SPL at a declared RMS force, complex directivity points, uncertainty records and SHA256 provenance. `tools/specimen_verify.py` implements all corresponding comparators. The current synth Mode Dump still emits only modal frequency, relative modal magnitude and T60, so phase/SPL/radiation claims remain honestly `UNVERIFIED` until the synth gains those physical model observables; measured data alone is never promoted to PASS.
+The exact P1–P7 methods and results are recorded in [the 2026-08-02 verification report](docs/P1_P7_VERIFICATION_2026-08-02.zh-TW.md). For a real instrument specimen, follow [the specimen protocol](docs/SPECIMEN_VALIDATION_PROTOCOL.zh-TW.md). `tools/specimen_pipeline.py` now turns synchronized repeated CSV records into a self-contained v2 bundle: calibrated H1/coherence, complex phase, automatic modal T60, Pa/N, SPL at a declared RMS force, complex directivity points, uncertainty records and SHA256 provenance. `tools/specimen_verify.py` implements all corresponding comparators. The synth's Mode Dump v2 (`--dump-modes`) emits modal frequency, relative modal amplitude and T60 for the in-domain engines, and — for the string/cimbalom/piano branch only — the diagnostic B6 fields `radiated_power_relative`, `absolute_pressure_per_force` and `acoustic_transfer[]` (see the B6 row above). It explicitly lists `complex_phase`, `absolute_spl` and `radiation_directivity` as unsupported observables. So phase and directivity claims remain honestly `UNVERIFIED` (the model has no phase or spatial-radiation operator), and a pressure-per-force comparison stays `UNVERIFIED` until a calibrated specimen measurement exists to compare it with; measured data alone is never promoted to PASS.
 
 ```powershell
 # Copy and fill specimens/templates/measurement_v2.template.json and
@@ -143,8 +147,8 @@ python tools\specimen_verify.py path\to\new-bundle\measurement.json `
 
 | Format | Target DAWs | Status |
 |--------|-------------|--------|
-| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | **Built** (current x64 binary 7.53 MiB) |
-| Standalone | No DAW required | **Built** (current x64 binary 7.40 MiB) |
+| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | **Built** (x64 binary 7.58 MiB, 7,945,216 B — 2026-09-25 build of the WF0914 tree) |
+| Standalone | No DAW required | **Built** (x64 binary 7.46 MiB, 7,817,216 B — 2026-09-25 build) |
 
 The Standalone doubles as a self-contained tool: the title-bar **Score** button opens a
 console that renders a `score.json` to WAV (spawning the bundled `TsukiSynthCLI.exe` —
@@ -169,7 +173,7 @@ in the same folder.
 - Three-in-one engine: Tongue Drum / Water Gong / Custom Harmonics
 - Tongue Drum: **Euler-Bernoulli beam model** (non-harmonic modes from eigenvalue formula) — physically verifiable
 - Water Gong: **Kirchhoff circular plate model** (plate characteristic roots and Bessel/modified-Bessel radial modes; free or clamped edge) — physically verifiable
-- Custom: user-editable ratio/amplitude via **Harmonic Editor** (8 partials with ratio + amplitude sliders, APVTS-driven) — additive synthesis, ratios checkable but not physically derived
+- Custom: user-editable ratio/amplitude via the **Harmonic Editor** (8 partials; ratio + amplitude knobs embedded in the main editor, shown when Custom is selected, APVTS-driven) — additive synthesis, ratios checkable but not physically derived
 - `frequency_mode: "midi"` is a **hybrid**: physics shapes the modal ratios/decay while equal temperament sets f0. `frequency_mode: "geometry"` retains the absolute material/geometry prediction for metrology.
 - Parameters: sub-engine, material, exciter hardness, strike position, thickness, size, pitch glide, 8 harmonic ratios, 8 harmonic amplitudes
 
@@ -207,7 +211,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 - **Distortion**: Overdrive / Bitcrush / Wavefold with instability control
 - **Compressor**: Peak-based, linked stereo detection, auto makeup gain
 - **Delay**: Stereo with LP-filtered feedback, R channel offset for width
-- **Reverb**: two modes — algorithmic Schroeder (8 comb + 4 allpass, room-size knob or authored T60 seconds) or IR convolution (load a .wav impulse response via the panel's Load button; also accepts a `scene_reverb.py` JSON profile, which sets T60 + wet on the algorithmic engine)
+- **Reverb**: two modes — algorithmic Schroeder (8 comb + 4 allpass, room-size knob or authored T60 seconds) or IR convolution (load a .wav impulse response via the panel's Load button; also accepts a `scene_reverb.py` JSON profile, which sets T60 + wet on the algorithmic engine). Since D9c (2026-09-16 decision) the IR wet signal is multiplied by a fixed `kIrWetMakeupGain = 26.9` (+28.58 dB, a decided convention, not a physical constant) so IR and algorithmic modes sit at the same wet level; projects saved before D9c will hear a louder IR-mode wet
 - **Brightness EQ**: RBJ high shelf (`fx_eq_freq`/`fx_eq_gain`, score `global.effects.eq`); documented creative layer added 2026-08-06 to compensate the perceived darkening after damping physicalization; 0 dB = hard bypass (bit-identical renders)
 
 ## Analyzer
@@ -220,7 +224,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 
 - 27 factory presets (8 Cimbalom + 8 Chromatic + 9 FM + 2 Physical Piano) compiled as static arrays
 - User preset save/load (`.tsukipreset` XML files in AppData), stable UUID identity and atomic replacement
-- **Visual preset browser** with category filters (All / Cimbalom / Chromatic / FM / User)
+- Preset **drop-down** (`presetCombo`) listing the current engine's factory presets, then user presets after a separator, with prev/next buttons. There is no category filter: the earlier visual browser popup with All / Cimbalom / Chromatic / FM / User filters (`PresetBrowser.h`) was removed on 2026-05-22 (`1954418`)
 - DAW program change compatible (VST3 `getNumPrograms` / `setCurrentProgram`)
 - Dirty indicator + Init button
 - Full state serialization (`getStateInformation` / `setStateInformation`), restoring preset ID and dirty state without synchronous user-preset disk reads in program loading
@@ -237,28 +241,36 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 | GUI | Custom LookAndFeel (arc knobs, gradient faces, engine-colored accents) |
 | Brand Assets | IBM Plex Sans SemiBold embedded via BinaryData; SVG moon path from design mockup |
 | Material Data | JSON embedded via BinaryData (density, Young's modulus, Poisson ratio, damping) |
-| Platform | Windows (MSVC), macOS (Clang) planned |
+| Platform | Plugin (VST3/Standalone): built and validated on Windows (MSVC) only so far. CLI renderer: built in CI on three platforms — Windows MSVC / Linux GCC 13.3 / macOS AppleClang — for the cross-platform tolerance check (the Linux leg is labelled `ubuntu-24.04-clang` in `physics.yml` but actually compiles with GCC) |
 
 ## Directory Structure
 
 ```
 tsuki-synth/
 ├── README.md
+├── HANDOVER.md                   <- start here for a new session (current state)
+├── TODO.md                       <- task list and decision backlog
+├── ROADMAP_PHYSICS.md            <- physics acceptance rules (sole acceptance basis)
 ├── ROADMAP.md
 ├── DEVLOG.md
-├── CONTEXT.md
+├── CONTEXT.md                    <- historical snapshot (2026-08-06); see HANDOVER.md
+├── TODO_HANDOFF.md               <- historical snapshot (2026-07-17); see HANDOVER.md
 ├── CMakeLists.txt
 ├── libs/
 │   └── JUCE/                     <- git submodule (JUCE 8.0.12)
 ├── src/
-│   ├── PluginProcessor.h/.cpp    <- main audio processor (APVTS, 3 synths, effect chain)
-│   ├── PluginEditor.h/.cpp       <- GUI editor (540x850, tab switching, preset bar)
+│   ├── PluginProcessor.h/.cpp    <- main audio processor (APVTS, 3 synths, effect chain, state incl. D12 legacy IR migration)
+│   ├── PluginEditor.h/.cpp       <- GUI editor (540x850, tab switching, preset bar with presetCombo drop-down,
+│   │                                embedded 8-partial ratio/amplitude knobs for the Custom sub-engine)
+│   ├── ParameterLayout.h/.cpp    <- GUI-free APVTS parameter layout (shared by the plugin and HostProbe)
 │   ├── PresetManager.h           <- factory + user preset load/save/dirty tracking
-│   ├── PresetBrowser.h           <- visual preset browser popup + category filter
 │   ├── Presets.h                 <- 27 factory preset definitions (static arrays)
-│   ├── HarmonicEditor.h          <- 8-partial ratio/amplitude editor (Custom sub-engine)
+│   ├── IRLibrary.h               <- managed, content-hash (SHA-256) IR library for user impulse responses (F-03)
+│   ├── ScoreConsole.h            <- Standalone-only Score console (launches the bundled TsukiSynthCLI)
+│   ├── HoverMagnifier.h          <- accessibility hover magnifier for small text controls
 │   ├── TsukiLookAndFeel.h        <- custom knobs, combos, tabs, colour palette
 │   ├── UiLocale.h                <- EN/中文 localization layer
+│   ├── BuildProvenance.h.in      <- configure-time commit/dirty/toolchain metadata (render manifests)
 │   ├── engines/
 │   │   ├── CimbalomEngine.h      <- string physical modeling (40 modes, multi-string beating)
 │   │   ├── ChromaticEngine.h     <- beam/plate/custom three-in-one
@@ -267,9 +279,12 @@ tsuki-synth/
 │   │   ├── ModalResonator.h      <- core: N-mode decaying sine renderer
 │   │   ├── AudioFIFO.h           <- lock-free FIFO for analyzer
 │   │   ├── BiquadFilter.h        <- IIR biquad (LP/HP/BP/Notch)
+│   │   ├── BodyResonance.h       <- procedural body resonance (two band-pass filters, per voice)
 │   │   ├── Compressor.h          <- peak compressor (dsp-level)
 │   │   ├── DelayLine.h           <- circular buffer + linear interpolation
+│   │   ├── DiagnosticOverrides.h <- diagnostic-only CLI overrides for differential renders (not in the render contract)
 │   │   ├── Distortion.h          <- overdrive / bitcrush / wavefold
+│   │   ├── EffectsChain.h        <- offline (CLI/score) effects chain, same DSP classes and order as the plugin
 │   │   ├── Envelope.h            <- ADSR + ExpDecay
 │   │   ├── LFO.h                 <- low-frequency oscillator
 │   │   ├── NoiseGen.h            <- white + pink noise
@@ -277,7 +292,8 @@ tsuki-synth/
 │   │   ├── Oscillator.h          <- phase accumulator (sin/saw/square/tri)
 │   │   └── Reverb.h              <- (legacy, replaced by effects/SimpleReverb)
 │   ├── effects/
-│   │   ├── EffectChain.h         <- global chain: Distortion -> Comp -> Delay -> Reverb
+│   │   ├── EffectChain.h         <- plugin chain: Distortion -> Comp -> Delay -> Reverb (algorithmic or IR convolution,
+│   │   │                            IR wet × kIrWetMakeupGain, D9c) -> Brightness EQ
 │   │   ├── Compressor.h          <- peak compressor with linked stereo
 │   │   ├── StereoDelay.h         <- stereo delay with LP feedback
 │   │   └── SimpleReverb.h        <- Schroeder reverb (8 comb + 4 allpass)
@@ -285,6 +301,9 @@ tsuki-synth/
 │   │   ├── StringModel.h         <- string mode frequency (inharmonicity, physical decay)
 │   │   ├── BeamModel.h           <- Euler-Bernoulli beam (tongue drum)
 │   │   ├── PlateModel.h          <- Kirchhoff circular plate (Bessel zeros)
+│   │   ├── BesselPortable.h      <- portable Bessel J/I series (fallback where libc++ lacks std::cyl_bessel_*)
+│   │   ├── HammerImpulse.h       <- hammer/exciter force-pulse spectrum, felt contact solver (B4), A14 pitch law, B7 pure functions
+│   │   ├── RadiationModel.h      <- radiation-efficiency skeleton + calibrated pressure-per-force tap (B6), B7 pure functions
 │   │   └── MaterialDB.h          <- transactional JSON material database loader (14 materials)
 │   ├── analyzer/
 │   │   ├── AnalyzerPanel.h       <- Scope / Spectrum / Tuner tabs
@@ -294,7 +313,9 @@ tsuki-synth/
 │   │   └── SpectrumView.h        <- FFT spectrum (2048-sample, log-freq, smoothed dB)
 │   ├── score/
 │   │   ├── ScoreParser.h         <- JSON score file parser
-│   │   ├── ScoreRenderer.h       <- offline rendering using DSP engines
+│   │   ├── ScoreRenderer.h       <- offline rendering using DSP engines (+ Mode Dump v2 / --dump-modes)
+│   │   ├── EventIdentity.h       <- stable semantic event identity (deterministic noise seeding)
+│   │   ├── SampleRateContract.h  <- single source of truth for supported sample rates
 │   │   └── WavWriter.h           <- 24-bit WAV output with normalization
 │   └── cli/
 │       └── RenderApp.cpp         <- CLI entry point (single + --batch mode)
@@ -306,14 +327,21 @@ tsuki-synth/
 │   ├── schema/
 │   │   └── score.schema.json     <- JSON Schema validation
 │   ├── examples/                 <- 13 focused examples / regression scores
+│   ├── classical/                <- 14 scores (Für Elise, Vivaldi Four Seasons)
+│   ├── originals/                <- ai_radiance (5 scores) + rules_v2_demo (1)
+│   ├── tests/                    <- test fixtures (e.g. melody_sentinel)
 │   └── library/                  <- 43 production short scores (6 worlds)
 ├── sound_library/
 │   ├── sound_names.json          <- sound library index
 │   └── tags.json                 <- taxonomy (category/mood/energy/world)
-├── uiux/                         <- HTML/CSS UI reference mockup
-└── presets/
-    └── factory/                  <- (reserved for future preset files)
+├── tests/                        <- C++ regression tests (audit/tuner/physics_models/spectrum_view, host_probe) + pytest suite
+├── tools/                        <- verification and pipeline scripts (physics_verify, verify_score, melody_verify, stem_verify, ...)
+├── docs/                         <- design docs, source-traceability docs, workcards
+├── reports/                      <- decision packets, Rule 10 before/after reports, GATE outputs
+└── uiux/                         <- HTML/CSS UI reference mockup
 ```
+
+The regression corpus walked by `verify_score.py --all` is examples + classical + originals/ai_radiance + library = 75 score files (`originals/rules_v2_demo` and `tests/` are not part of it).
 
 ## AI JSON Score Pipeline
 
@@ -353,23 +381,27 @@ Use cases: VTuber sound effects, character UI sounds, short BGM motifs, worldvie
 git submodule update --init --recursive
 pip install -r tools/requirements-physics.txt   # Python deps for the physics verification harness
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
-cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-Always rebuild the three test targets (`TsukiSynthAuditTest`, `TsukiSynthTunerTest`, `TsukiSynthPhysicsModelsTest`) immediately before `ctest` — a stale binary from an earlier build will silently report against old code (see `HANDOVER.md` §2, "X4 規約").
+Always rebuild the five test targets (`TsukiSynthAuditTest`, `TsukiSynthTunerTest`, `TsukiSynthPhysicsModelsTest`, `TsukiSynthSpectrumViewTest`, `TsukiSynthHostProbe`) immediately before `ctest` — a stale binary from an earlier build will silently report against old code, and a registered test whose exe was never built shows up as "Not Run" (see `HANDOVER.md` §2, "X4 規約"; the 2026-09-07~14 CI red was exactly this: `spectrum_view_repro` is registered with ctest but `TsukiSynthSpectrumViewTest` was missing from the build list, fixed in `766d21d`). `ctest` runs the four registered tests (audit / tuner / physics_models / spectrum_view); `TsukiSynthHostProbe` is deliberately not registered with ctest and is run by hand after the VST3 is built (see the quick reference below).
 
-### Quick reference (see `HANDOVER.md` §6 for the full list)
+### Quick reference (see `HANDOVER.md` §9 for the full list)
 
 | Task | Command |
 |---|---|
 | Full physics GATE | `python tools/physics_verify.py --full` |
 | Score corpus (4 shards) | `python tools/verify_score.py --all --shard-index N --shard-count 4 --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe` |
 | Hearing-free melody check | `python tools/melody_verify.py <score> [--wav W] [--html H]` (`--selftest` runs the adversarial sentinels) |
-| Live-plugin position check (L2) | `build/Release/TsukiSynthHostProbe.exe build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <outdir>` |
+| Live-plugin position check (L2) | `build/Release/TsukiSynthHostProbe.exe build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <outdir>` (run from the repo root; expect 89 PASS, 0 failures) |
 | Cubase scan-cache check (L3a) | `python tools/cubase_scan_verify.py` |
 | Cross-platform check | `python tools/crossplatform_verify.py --selftest` (CI runs this on push, blocking) |
-| Python unit/contract tests | `pytest tests -q` |
+| Python unit/contract tests | `python -m pytest tests -q` (baseline 270: 264 passed + 1 skipped + 5 xfailed) |
+| MIDI ↔ score transcription check | `python tools/score_vs_midi_verify.py <midi> <score> [--json J]` (`--selftest` runs the mutation sentinels; the Für Elise pair also runs in CI via pytest) |
+| Per-event dry-stem check | `python tools/stem_verify.py <score> [--limit N] [--jobs N] [--json J]` |
+| Partial-level check (informational, not a GATE) | `python tools/partial_verify.py <stem report.json> [--json J] [--html H]` |
+| Measurement self-calibration | `python tools/measurement_selfcal.py [--holdout]` |
 
 ### Output
 - VST3: `build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3`
@@ -388,7 +420,7 @@ The binaries already present in a checkout may predate the current source. Rebui
 |---------|-----------|-----------|
 | v0.1 | Playable Build | 3 engines, effects, presets, CLI — **Done** |
 | v0.2 | Polish | DAW validation, standalone listening test, factory preset tuning |
-| v0.3 | Physics hardening | bridge admittance (B1-B2, done) + first-principles string damping (B3, done) + hammer contact solver (B4, done) + wood orthotropy schema (B5, staged) + radiation-efficiency skeleton (B6, done — physics-only signal-tap calibration landed 2026-08-28) |
+| v0.3 | Physics hardening | bridge admittance (B1-B2, done) + first-principles string damping (B3, done) + hammer contact solver (B4, done) + wood orthotropy schema (B5, committed 2026-08-28, zero consumption) + radiation-efficiency skeleton (B6, done — physics-only signal-tap calibration landed 2026-08-28) + first-principles force chain (B7, partial — legitimate end point per the 2026-09-15 ruling) |
 | v0.4 | AI Sound Library | CLI batch export pipeline, sound library metadata, AI workflow docs; product line = re-rendered public-domain/CC-BY classical arrangements as full multi-engine pieces, not sound-effect packs (see `docs/PRODUCT_MARKET_NOTES.zh-TW.md`) |
 | v0.5 | Advanced Sound Design | creative features only with explicit out-of-physical-domain labels |
 | v1.0 | Product Release | Installer, user manual, demo videos, commercial licensing |
@@ -532,3 +564,14 @@ dimensions, and no partial frequency or amplitude has ever been measured — see
 
 This audit changes no code, no tolerance and no gate; the corrections above are
 the maintainer's call.
+
+**Follow-up (2026-09-25 status check):** the stale items in both audit records
+are closed in the text above — the corpus sentence names all four roots and
+75/75, the B6 row reads Done, the binary sizes were re-measured (7.58 / 7.46 MiB
+on the 2026-09-25 build), and the
+quick reference now lists `score_vs_midi_verify` / `stem_verify` /
+`partial_verify` / `measurement_selfcal`. `score_vs_midi_verify` is no longer
+outside CI: `tests/test_score_vs_midi_verify.py::EndToEndFurEliseTests` asserts
+905/905 on the Für Elise pair and runs in the blocking pytest step of
+`physics.yml`. `CONTEXT.md` still carries 73/73 but is now marked as a
+historical snapshot.

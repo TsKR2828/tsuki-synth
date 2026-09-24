@@ -311,3 +311,35 @@ git show :tests/physics_models_repro.cpp > tests/physics_models_repro.cpp
   （F3 piano velocity 判定仍 PASS，僅既有 3 筆 rubber UNVERIFIED）；受影響 5 檔 `verify_score.py` 全 PASS；
   `pytest tests -q` 263 passed / 1 skipped / 3 xfailed；HostProbe PASS (0 failures)。
   全套細節見 `reports/gate_outputs/wf0910_A14_apply.txt`。
+
+---
+
+## 09-25 追記（2026-09-25 現況盤點；以上原文一字未改）
+
+**一句話**：B-2 讓給愛麗絲全曲原本的 22 顆弱基頻 FAIL 全部轉 PASS，但同一首曲子出現 **16 顆新的弱基頻 FAIL**——
+力脈衝的深零點沒有消失，只是搬到別的「音高＋力度」組合。本報告只掃了音高軸（§5 單音診斷固定 v=0.45），
+沒有掃力度軸；§4 的 `verify_score.py` 是整曲檢查，不是逐音檢查，所以兩者都抓不到這件事。
+
+**數字**（stem_verify 逐音、給愛麗絲全曲乾聲 905 顆；本追記自己重讀 JSON 核對過）：
+
+| | 08-30（A14 之前） | 09-14（A14 B-2 之後） |
+|---|---|---|
+| 來源 | `output/stem_verify_fur_elise_dry.json`（08-30 04:25） | `output/wf0914/D14/g2_full_report.json`（D14 全量首跑，`build/` CLI，含 B-2） |
+| PASS / FAIL / UNVERIFIED | 671 / 22 / 212 | **677 / 16 / 212** |
+| FAIL 組成（音@力度×顆數） | G5@0.427×19、D7@0.462×1、G6@0.462×1、F#6@0.427×1 | **E5@0.278×9、A5@0.427×3、A5@0.452×1、A6@0.427×2、A#6@0.427×1** |
+
+- 舊的 22 顆在 09-14 全部 PASS；新的 16 顆在 08-30 全部是 PASS。16 顆的理由都是「no onset in near-silent fundamental band」（基頻頻帶幾乎無聲）。
+- 同一個 E5 換個力度就沒事：E5@0.427／0.437／0.452／0.462 共 79 顆全 PASS。
+- 引擎自己的 `--dump-modes`（`build/` 09-15 CLI）：這 16 顆的基頻比第二泛音低 6.2～18.9 dB
+  （E5@0.278 −18.5、A5@0.427 −18.9、A5@0.452 −14.2、A#6@0.427 −9.0、A6@0.427 −6.2 dB）。
+  另外 A5@0.462 ×3 也低 10.0 dB，但 stem_verify 判 PASS——邊緣格，零點地圖要一併畫出。
+  出處：`reports/status_check_2026-09-25/probes/fur_elise_weak_fundamental_triage.txt`。
+- 歸因：score 自 `0f271ae`（08-28）後沒改過；本報告 §3 記錄 fur_elise_complete 的 amp 指紋在 B-2 前後改變
+  （freq/decay 不變）；B-2 之後的改動讓 physical_piano 位元不變（post_a14 基準 8/8 IDENTICAL，09-25 重跑亦同）。
+  盤點據此判定翻轉來自 B-2。這個因果會由零點地圖直接用 τc 公式驗證。
+- 影響：`exports/products/clean_batch2/` 準備上架的給愛麗絲鋼琴版母帶（09-15 build 渲染）含這 16 顆；先上架或等修好，由月月決定。
+- 本報告 §0「G5/G6 的基頻不再掉進深零點」對 G5/G6 本身仍然成立，不改原文；需要補的是「力度軸沒掃」這個範圍限制。
+
+**後續**：細節見 `reports/status_check_2026-09-25/STATUS_CHECK.zh-TW.md` §2-1 與 `APPENDIX_findings.zh-TW.md` 條目 open-work:N1-fe16；`TODO.md` 登記為 **D16**。
+下一步是弱基頻「零點地圖」（用 `--dump-modes` 掃 piano Felt 路徑的 MIDI×力度網格，標出基頻掉進零點的格子），
+引擎面的修法併入 A14 B-1（力脈衝滾降形狀本身，仍等文獻，見 D10）。

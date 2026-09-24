@@ -1,39 +1,82 @@
 # TsukiSynth — Current TODO
 
-> Last updated: 2026-09-14
-> Branch: `fix/deep-physics-audit-20260716`（HEAD `49b8542`；領先 `main`（`34aa904`）五個 commit，**未 push 未 merge**）
+> Last updated: 2026-09-25（09-25 盤點後文件修正；上一版 2026-09-15）
+> Branch: `fix/deep-physics-audit-20260716`（**WF0914 成果 2026-09-25 依月月裁決分 7 個 commit 入庫（未 push；hash 見 `git log`）**；遠端仍停在 09-15：分支 `766d21d`、`main`=`3f9b90a`）
+> ~~（舊版：HEAD `766d21d`；已 push，`main`=`3f9b90a` 已 merge 同步；WF0914 輪成果全部 staged 未 commit，月月看 `git diff --cached`）~~
 
-**2026-09-14 快照**：09-10 四裁決全部落地（C10=A 主張域收窄／A14 patch 已 apply 稽核 PASS／母帶等換源／兩封信草稿待寄）；09-13 切五個 commit；09-14 VST3 新版已部署到 Cubase。
-**沒有任何擋路項。** 下一步由月月選主線（HANDOVER §5-1）：push+merge main → 月光/四季換源重轉譜 → UI 規格送設計端 → B7 開工 → D9–D15。
-月月待辦三件小事：寄信、裝 Limbus 並啟用、Yamaha 裝好後叫 AI 清 Downloads 殘留。
+**2026-09-25 快照（現況盤點 + 月月 09-25 裁決）**：
+- **盤點**：9 個 agent（6 路掃描＋3 個懷疑者逐條反駁），128 條發現：92 條屬實、36 條部分修正、0 條被推翻，另有懷疑者補抓 13 條漏項。
+  結論 `reports/status_check_2026-09-25/STATUS_CHECK.zh-TW.md`；逐條證據 `reports/status_check_2026-09-25/APPENDIX_findings.zh-TW.md`（本檔引用寫成 `[區段:條目]`，部分修正的條目以「查證修正」為準）。
+- **09-25 對 staged 樹重跑 GATE：全綠，每項數字都跟 09-15 基線相同**。這是 D9c 落地後第一次跑全套（09-15 整合卡跑在 D9b/D9c 之前）：
+  ctest 4/4、pytest 270（264 passed＋1 skip＋5 xfail）、`--full` NO CHECKED FAILURES、`--selftest` 13 行全 PASS、`verify_score --all` 75/75（1 項既有豁免）、HostProbe 89 PASS 0 failures、位元不變 8/8 IDENTICAL（基準 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`）。原始 log 在 `reports/status_check_2026-09-25/gate_logs/`。
+- **月月 09-25 裁決**：「先修文件，然後照 7 個 commit 切，剩下 AI 能處理的都處理掉」。
+  (1) 盤點查到的過時文件先修，修正併入 c7 交接 commit；
+  (2) **WF0914 成果 2026-09-25 依月月裁決分 7 個 commit 入庫（未 push；hash 見 `git log`）**，切法清單 `reports/status_check_2026-09-25/commit_lists/`；
+  (3) **WF0925 輪進行中**：AI 能做的項目照慣例 staged 不 commit，結果另外更新交接。
+- **部署實況（跟舊文件寫的不同）**：系統上的 VST3 是 `C:\Program Files\Common Files\VST3\TsukiSynth_VST3_2026-09-10\TsukiSynth.vst3`，多了一層子資料夾；它是 09-10 23:46 的 build，**缺 D12 和 D9c**。
+  另有兩份舊副本：`C:\Program Files (x86)\Common Files\VST3\TsukiSynth.vst3`（binary 07-12）、`%APPDATA%\VST3\TsukiSynth.vst3`（05-07）。Cubase 的外掛快取停在 08-22，指向已經不存在的路徑。
+  上架母帶用的 CLI（sha256 `9123db8f…`）已備份到 `exports/renderer_archive/`。
+- **最要緊的新發現**：給愛麗絲全曲有 16 顆音的基頻被壓掉（A14 B-2 把力脈衝深零點搬到別的音高×力度），登記為 **D16**。其餘新待辦列在下方「2026-09-25 盤點新登記」一節。
+
+**2026-09-15 快照（WF0914 輪，40 agents：Fable 規劃／Sonnet 工兵／Opus 稽核親自重跑）**：
+月月 09-14 裁決「push+merge main + B7 開工 + 補 D9～D15」全部執行完畢。
+- **push+merge**：09-13 五 commit + 09-14 交接更新（`a38bd6a`）已 push 並 merge `main`；**CI 三平台全綠**（macOS leg 首編 `IRLibrary.h`/`ParameterLayout.cpp` 過）。附帶抓到並修掉 09-07 起就在紅的 CI 缺陷：`physics.yml` 測試建置清單漏 `TsukiSynthSpectrumViewTest`（X4 教訓的 CI 版），fix=`766d21d`。
+- **落地（當時 staged，稽核 PASS；2026-09-25 已分 7 個 commit 入庫，見 09-25 快照）**：B7P0 兩份溯源文件；B7P1 力鏈底層純函式+五條測試（**dumpModes 欄位已撤回**，見 B7 條目）；D10 文獻補摘；D12 舊 `reverb_ir_path` state 三態遷移（HostProbe 89 PASS）；D14 stem_verify 記憶體解耦（905 事件全量 1.65 GB 跑完，原 >28 GB；判定逐位元不變）；D13/D11 分析+裁決包（四輪稽核）。
+- ~~**BLOCKED（合法完成，等月月裁決，見下）**：B7P1/B7P3（velocity proxy 換算）、D9（量測鏈矛盾）、D15（哨兵新語料打破 ≤1.18c 主張）。~~
+  **→ 09-25 註：這三項已由下方 09-15～16 五項裁決全部解除**（B7＝路徑 C 乙案合法終點、D9 關閉、D15 選 A'）。`[docs-consistency:T1]`
+- **整合卡全綠**：重建 `build/`，ctest 4/4、pytest 新基線 **270 個測試**（264 passed+1 skip+5 xfail，較 267 淨增 3）、`--full` NO CHECKED FAILURES、corpus 75/75、HostProbe 0 failures、位元不變 **8/8 IDENTICAL**（post_a14 基準）。
+  （09-25 註：這張整合卡 09-15 02:53 跑完，早於 D9b（09-16 00:09）和 D9c（09-16 01:18）；兩張卡各自只跑了 GATE 1-5／1-6，沒跑全套 pytest 和 corpus。D9c 之後的全套重跑見 09-25 快照，數字相同。`[docs-consistency:I1]`）
+
+**月月 2026-09-15 五項裁決（「五題全照建議」，已全部落地或排卡）**：
+（09-25 註：原寫「已全部落地」不精確——B7 裁決包 §6 第 3 點要求的 TODO/ROADMAP 條目同步 09-25 才補上，見下方 B7 條目；D13 的註解/描述同步也還欠著。`[懷疑者補抓的漏項（docs-open）]`）
+1. **B7 選「§5 路徑 C + 驗收基準 (a) 乙案」**：proxy 與 S 皆不裁決，B7 本輪合法終點=Phase 0 完成、Phase 1 部分完成（dumpModes 欄位撤回、五個純函式+測試保留入庫）、Phase 2/3 BLOCKED。裁決記錄 `reports/decision_packets/B7_phase2_and_open_items.zh-TW.md` §6。背景：稽核查證推翻規劃者代決——score `velocity` 實為 `base_velocity(role)×(MIDI/90)±微調`（`tools/midi_to_tsukisynth.py::velocity_for()`），非 MIDI/127。
+2. **D9 選 (a)**：C++ lane 小卡在 `tests/audit_repro.cpp` 加外部 IR 注入點，用同一 K-02 量測鏈量 EchoThief 3 顆真實 IR（`external_data/ir/echothief/`，非商用授權，量測參考用）→ **WF0914-D9b 完工（GATE 1-5 PASS，2026-09-16）**：3 顆真實 IR 的 wet-vs-ALGO 落差 -28.5～-28.7 dB（僅差 0.24 dB，跟既有合成 IR 基準 -28.483 dB 幾乎重合，儘管 IR 檔本身寬頻能量彼此差 16.6 dB——證實落差是 ALGO/IR 演算法結構性差異、非個別 IR 檔案響度），裁決包 `reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md`，對齊方案（A/B/C）待月月裁決。**月月 2026-09-16 選項 A → WF0914-D9c 完工（GATE 1-6 PASS）**：`EffectChain.h` 對 IR wet 訊號加固定補償增益 `kIrWetMakeupGain=26.9f`（+28.58 dB，DECIDED CONVENTION，4 樣本平均落差反推），K-02 四組落差由 -28.483/-28.726/-28.487/-28.623 dB 收斂到 +0.112/-0.131/+0.108/-0.028 dB（皆落在 0±0.25 dB 內），位元不變 8/8 IDENTICAL、HostProbe 89 PASS 0 failures，證據 `reports/gate_outputs/wf0914_D9c_*.txt`。
+3. **D11 選 C**：patch 存檔不落地（`reports/d11_string_scale_candidate.patch`，`git apply --check` 已驗）；**新登記「D11-F5 根因調查」卡**：定位候選修正下 F5 piano 殘餘能量 −63.9→−58.5 dB 退化的機制，查清後帶數字回來重開 A/B。裁決記錄在裁決包文末。（09-25：勾選項補在「2026-09-25 盤點新登記」。`[docs-consistency:T7]`）
+4. **D13 選 B**：主張域收窄已落地——新建 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §1（water_gong=自由邊平板、非乳突鑼；2.0× 缺失是域限制非計算錯誤）；`PlateModel.h` 檔頭/score 描述的同步留待下次動那兩檔的卡順路做。裁決記錄在裁決包 §4。（09-25 查證：兩處都還沒改——`src/physics/PlateModel.h:25`、`scores/examples/water_gong_free.score.json:7`；勾選項補在「2026-09-25 盤點新登記」。`[docs-consistency:T7]`）
+5. **D15 選 A'**：主張域再收窄已落地——`docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.5 新增「≤1.18 cent 只涵蓋持續段；放鍵/阻尼段已知誤差上界 ~7.2 cent」段；B' 不追。
+**兩封信已寄出（2026-09-15，TU Berlin 授權請求＋Iowa 器材詢問），等回覆**；月月待辦剩：~~裝 Limbus 並啟用、Yamaha 裝好後叫 AI 清 Downloads 殘留~~。
+（09-25 查證：Limbus 兩個 VST3 與 Yamaha Piano Sheet Converter 都在 **09-14 12:56 已安裝**。還剩兩件要月月回覆：Limbus 有沒有用金鑰啟用（磁碟上查不到）；`Downloads\不知道有沒有用`（共 614 MB，其中 Piano Sheet Converter 解壓殘留約 470 MB，其餘是安裝檔）要不要清、留哪些。`[docs-consistency:H5]`）
 
 **2026-09-07 補記**：8/31 兩個 commit 登記（`a7413e5` 稽核修復批次、`cdf2017` 水鑼 Pitch Glide
 buffer-size 缺陷已修＝稽核 §4-A 關閉）＋月月裁決批次（push/merge、requirements 加 pytest+mido、
-A8 下載、UI 等功能做完再送設計、A13/A14/F-03 由 AI 查外部資料決定）——詳見 `HANDOVER.md` §0-2。
+A8 下載、UI 等功能做完再送設計、A13/A14/F-03 由 AI 查外部資料決定）——詳見 `HANDOVER.md` §0-2
+（09-25 註：這是 09-07 版 HANDOVER 的小節，現版已經沒有，請看 `git show 98f346f:HANDOVER.md`。`[docs-consistency:H9]`）。
 
-**2026-09-07～09 三輪 Workflow 快照（WF0907 / WF0908 / WF0909，施工卡在 `docs/workcards/WF09*.md`）**：
-規劃者→Sonnet 工兵→Opus 稽核（親自重跑）；**稽核 PASS 才 `git add`，全部未 commit**，月月看 `git diff --cached`。
-- **已落地（staged）**：E1 CI 全量 pytest + pytest/mido pin；E5 `getTailLengthSeconds()` 接引擎 worst-case T60（3.45 s → 34/179/320 s）+ Custom 判斷式單一化；
+**2026-09-07～09 三輪 Workflow 快照（WF0907 / WF0908 / WF0909，施工卡在 `docs/workcards/WF09*.md`）**（**歷史快照**：這三輪成果 09-13 已 commit，後續看 09-15、09-25 快照。`[docs-consistency:T2]`）：
+規劃者→Sonnet 工兵→Opus 稽核（親自重跑）；**稽核 PASS 才 `git add`**，~~**全部未 commit**，月月看 `git diff --cached`~~ **→ 09-13 已分 5 個 commit 入庫：`5c9cdb3`／`31eb7ae`／`9ae8ce2`／`27e8393`／`49b8542`（09-14 已 push、merge `main`）**。
+- **已落地（當時 staged，09-13 已 commit）**：E1 CI 全量 pytest + pytest/mido pin；E5 `getTailLengthSeconds()` 接引擎 worst-case T60（3.45 s → 34/179/320 s）+ Custom 判斷式單一化；
   E8 schema 三份契約同步（388 突變體矩陣 0 不一致、corpus 75/75、converter raise 不 clamp）；E9 `--dump-modes` 支援 layered；
   E7 K-03 超 maxBlock 分塊（位元等價）+ K-02 量化；C11 拒答理由/規則直方圖；C12 `--analysis-dry` 預設 + provenance hash/diff；
   C10 重構+`measurement_selfcal.py` 入庫（1-cent 主張另議）；E10b 水鑼 glide 逐取樣（H6 五種 block size 位元相同）+ H7 user preset harness（選項 B，`src/ParameterLayout.h`）；
   **P3 F-03 落地**（`src/IRLibrary.h` 受管理 IR 庫 B＋、缺檔三態、UI/音訊單一真相 `getIRStatus()`、HostProbe 67 PASS）；P1 `tools/partial_verify.py`（A13 B+，informational，`gate_ready=false`）。
-- **等月月**：**A14 B-2 τc 音高律 patch** `reports/a14_tauc_keytrack_b2.patch`（報告 `reports/a14_tauc_keytrack_before_after.md`；7/8 位元不變只 physical_piano 變；月月 `git apply` 即落地）。
-- **進行中（WF0909）**：C10B 估計器 ≤1 cent（月月選 B）；D8 兩首月光 `finger→wood_mallet`（月月裁決）；P4b A8 引用更正補完；P6 A8 補充來源（Weinzierl 2018 CC BY／Iowa 泰國鑼）。
-- **規劣者代決（月月 09-07 委託，可推翻）**：A13=B+；A14=引擎缺陷（B-2 先做、B-1 等文獻）；F-03=B＋三態；K-02=C 維持現狀（IR 反而比 ALGO 小 28.5 dB，主因非 0.15，另立「IR 載入響度對齊」D 類項）。
+- ~~**等月月**~~：**A14 B-2 τc 音高律 patch** `reports/a14_tauc_keytrack_b2.patch`（報告 `reports/a14_tauc_keytrack_before_after.md`；7/8 位元不變只 physical_piano 變；月月 `git apply` 即落地）。
+  **→ 已結：月月 09-10 放行，已 `git apply` 落地，稽核 PASS（見 A 區 A14）。**
+- ~~**進行中（WF0909）**~~：C10B 估計器 ≤1 cent（月月選 B）；D8 兩首月光 `finger→wood_mallet`（月月裁決）；P4b A8 引用更正補完；P6 A8 補充來源（Weinzierl 2018 CC BY／Iowa 泰國鑼）。
+  **→ 全部已結**：C10B 兩個家族六個候選全數否決，09-10 月月改選 A（見 C10）；D8 已落地（見 D8）；P4b、P6 已完成（`reports/gate_outputs/wf0909_P4b_citation.txt`、`wf0909_P6_supplement.txt`，09-13 隨 `27e8393` 入庫）。
+- **規劃者代決（月月 09-07 委託，可推翻）**：A13=B+；A14=引擎缺陷（B-2 先做、B-1 等文獻）；F-03=B＋三態；K-02=C 維持現狀（IR 反而比 ALGO 小 28.5 dB，主因非 0.15，另立「IR 載入響度對齊」D 類項）。
 - **月月 09-09 裁決**：C10=B；D8=wood_mallet；A8=無可商用校準資料集→私下對照參考（TU Berlin 實為 **CC BY-NC-SA**）；K-02 交 AI 評估。
-- **新登記**：D9 IR 載入響度對齊（等真實 IR 檔量測）；D10 B-1 真槌力譜滾降文獻（Hall 1987／Chaigne & Askenfelt 1994 未取得）；D11 弦長/弦徑造成 B 偏高 2.4～5.2×（R10 全 corpus，月月另裁）；
-  D12 舊 DAW state `reverb_ir_path` 無遷移（重開只會安靜留 algorithmic）；B7 §2.2/§8 已依 Phase 0 資料更新（velocity→槌速三錨點；絕對 SPL 出處仍阻塞）。
+- **新登記**：D9 IR 載入響度對齊（~~等真實 IR 檔量測~~ → 09-16 D9c 落地，**已關閉**，見上方五項裁決第 2 點）；D10 B-1 真槌力譜滾降文獻（Hall 1988／Chaigne & Askenfelt 1994 Part II 仍 403/付費牆未取得；**WF0914-D10 窮盡開放管道再確認：兩篇缺口文獻仍 403/付費牆；A14（09-08）已引用的 Russell & Rossing 1998（L1-16～L1-22）補摘與力譜/震波譜計算式直接相關的段落（非新來源），無顯式 dB/octave 數字，B-1 維持 A14 既有裁定的等文獻狀態**，見 `docs/HAMMER_CONTACT_SOURCES.md` §9）；D11 弦長/弦徑造成 B 偏高 ~~2.4～5.2×~~（R10 全 corpus，~~月月另裁~~）
+  **（09-25 更正：「2.4～5.2×」查無出處，其實是非諧性係數 B 的舊數字，A13 已更正為 2.4～5.4；D11 裁決包 §3 改用 A14 §3.10 的「B 偏高 14–87 倍」，候選修正下 G6 由 86.4× 降到 18.7×。09-15 月月已裁 C，見上方五項裁決第 3 點。`[docs-consistency:T8]`）**；
+  D12 舊 DAW state `reverb_ir_path` 無遷移（重開只會安靜留 algorithmic）**2026-09-15 WF0914-D12 完工，三輪稽核 PASS 已 staged（HostProbe 89 PASS、位元不變 8/8）**：
+  `setStateInformation()` 在新 schema（`reverb_ir` 區塊）不存在時讀舊鍵，三態遷移（檔案存在→正常匯入，
+  但**不**強制切 `fx_reverb_mode`（`switchModeToIR=false`，尊重 state 已還原的模式，比對 `git show 31eb7ae^`
+  舊版本來就是 false，首輪誤設 true 已被稽核抓出並修正）；
+  檔案不存在→F-03 缺檔態強制切回 algorithmic＋警告；新 schema 已存在→舊鍵忽略不重複匯入，並清掉舊鍵避免殘留），
+  遷移後另修 `presetDirty` 被 `restoreDirty()` 蓋掉的問題（遷移一律 `presetManager.setDirty()`），
+  HostProbe 新增三情境並補上 dirty flag 斷言（真實 VST3 ABI 合成 legacy state blob 餵 setStateInformation）0 failures，
+  ctest 4/4、`--full` NO CHECKED FAILURES、8/8 位元不變（首輪＋修復後兩輪都測過）；證據 `reports/gate_outputs/wf0914_D12_*.txt`；
+  B7 §2.2/§8 已依 Phase 0 資料更新（velocity→槌速三錨點；絕對 SPL 出處仍阻塞）。
 - **UI 功能規格送設計端**：等 WF0909 收尾 + A14 patch 裁決後執行（月月 09-07：等所有功能做完）。
+  （09-25 註：WF0909 收尾、A14 裁決這兩個前提都已滿足；但月月 09-07 的條件是「等所有功能做完」，算不算做完要月月自己認定。規格 v1.1 還寫著「IR 與演算法殘響差 28 dB 尚未對齊」，D9c 之後已不成立，送出前要先同步成 v1.2。勾選項見「2026-09-25 盤點新登記」。`[open-work:U2-send]` `[open-work:U1-spec-sync]`）
 
 The deep-audit implementation fixes are on the branch. Historical Phase D–I decisions remain in `DEVLOG.md`; this file lists only current work and scientific gaps.
 
 **2026-08-31 稽核修復輪**：codex 兩輪稽核的問題點已整理成診斷文件
 `docs/AUDIT_STRUCTURAL_FINDINGS_2026-08-31.zh-TW.md`（三個結構性病根 + 未修清單 +
 我複驗後與稽核判斷不同的項目）。F-03 裁決包在
-`reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md`（待月月選 A/B/C）。
+`reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md`（~~待月月選 A/B/C~~ → 規劃者代決 B＋三態（月月 09-07 委託，見 `HANDOVER.md` §6）、已在 WF0908-P3 落地：`src/IRLibrary.h` 受管理 IR 庫＋缺檔三態，09-13 隨 `31eb7ae` 入庫。`[docs-consistency:T3]`）。
 
-**2026-08-30 快照（最新）**：**UI 走向重設計 + 密集複音驗證缺口部分補上**。
+**2026-08-30 快照（~~最新~~ 歷史）**：**UI 走向重設計 + 密集複音驗證缺口部分補上**。
 (1) 月月**否決**雙開門 UI 提案，裁定撇開現行 UI 既有元素、由設計端從功能重做
 → 新的設計輸入 `docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md`（只清點功能，不寫樣式）。
 (2) 分支已全數 **merge → `main`**（月月明示授權），`main` = `b7e4330`。
@@ -42,7 +85,7 @@ The deep-audit implementation fixes are on the branch. Historical Phase D–I de
 給愛麗絲全曲拒答 **862 → 212**，疊加證明 ESTABLISHED。
 兩個新發現：**殘響會把 melody_verify 的音高質心拉偏最多 9.5 cents**（現行 GATE 既有缺陷）、
 **22 顆高音弱基頻需 harmonic-aware 判定**。主張域已更新
-（`docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8）。**stem_verify 相關檔案全部 unstaged 待審。**
+（`docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8）。~~**stem_verify 相關檔案全部 unstaged 待審。**~~ → 08-31 已隨 `a7413e5` commit。`[docs-consistency:T8]`
 
 （歷史快照）**2026-08-29**：**B1–B6 物理鏈全部 Done**，六場物理戰役收官。
 B6 全卡完工（方案 B 絕對聲壓校準落地，月月裁決；對抗稽核五缺陷已修）；B7 卡已立
@@ -58,11 +101,85 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
 
 ---
 
-# 待辦總表（2026-08-15 整理，2026-08-22 更新）
+# 待辦總表（2026-08-15 整理，2026-08-22 更新；2026-09-25 加「盤點新登記」一節並清掉過時勾選）
 
 > 文獻依據與依賴關係見 [`docs/RESEARCH_INDEX.md`](docs/RESEARCH_INDEX.md)。
 > 新 session 請先讀 [`HANDOVER.md`](HANDOVER.md)。
 > 下面各項的細節在本檔後半段的原始條目裡，這裡只列「要做什麼」。
+
+## ★ 2026-09-25 盤點新登記
+
+> 來源：`reports/status_check_2026-09-25/STATUS_CHECK.zh-TW.md`（結論）＋`APPENDIX_findings.zh-TW.md`（逐條證據；每行最後的 `[區段:條目]` 就是附錄裡的條目 id）。
+> 分三類：**等月月裁決**／**AI 可做**（WF0925 輪處理中，結果另外更新交接）／**等外部**。
+> 新的 D 類編號從 **D16** 起（09-25 查過：本檔 D1～D15 已用，repo 裡沒有 D16）。
+
+### 等月月裁決
+
+- [ ] **給愛麗絲鋼琴版母帶去留**：clean_batch2 準備上架的這份母帶含 D16 那 16 顆弱基頻。先上架，還是等 D16 修好？AI 先交零點地圖數字。`[open-work:N1-fe16]`
+- [ ] **D9c 要不要加硬 CHECK**：K-02 只印數字、不判定，把 `kIrWetMakeupGain` 刪掉，全套 GATE 仍會是綠的。
+      「0±0.25 dB」出自 D9c 施工卡（D9b 實測展幅），**不是月月裁決的容差**；升成 CHECK 等於加新的 GATE 判準，屬 R2，要月月裁。`[staged-review:D9c-guard]`
+- [ ] **pluginval＋Steinberg validator 重驗**：上次停在 08-06，之後改過 tail 快取、IR state、D12、D9c 都沒重驗。
+      要下載 pluginval 並 build SDK validator，**下載需月月同意**（或修好 release CI 後 push 手動觸發）；月月同意後由 AI 執行。`[engineering-gaps:E2]`
+- [ ] **VC++ runtime**：VST3 動態連結 MSVCP140／VCRUNTIME140 等，買家電腦沒裝 VC++ 可轉散發套件時 DAW 會載不進來。二選一：靜態 CRT（改 CMakeLists，走 R6＋8/8）或安裝包附 vc_redist。`[engineering-gaps:E4]`
+- [ ] **VST3 Program 參數錯位**：host 看到的 program 格數在建立 instance 時就固定，但使用者 preset 會增減、又依名稱排序 → 自動化或 program change 可能載到別的 preset，換機器也可能對不上。建議 host 只看得到 27 個工廠 preset（UX 決定）。`[engineering-gaps:E7]`
+- [ ] **IR 模式沒有任何輸出限幅**：D9c 補償後，IR 最壞單頻增益比 ALGO 預設高 4～9 dB（Python 複製版估計，仍在 ALGO 自己的可調範圍內）。接受現狀並寫進文件，或另開卡加限幅（會改渲染，走 R10）。`[staged-review:D9c-clip]`
+- [ ] **plugin↔CLI 一致性 GATE，還是把文案收窄**：物理 GATE 驗的是 CLI 路徑；plugin 的 `startNote()` 只跟 CLI 共用衰減律，激發、macro、BodyResonance、EffectChain 各自組裝，而「可稽核物理鏈」正是賣點。
+      補 parity GATE（容差要走 §6 登記），或文案改成「CLI 渲染已驗證」。`[engineering-gaps:E3]`
+- [ ] **R6 範圍要不要涵蓋 plugin 層**：`ROADMAP_PHYSICS.md` §1 第 6 條（R6）只列 `src/physics|engines|dsp|score/`；D12 改的 `src/PluginProcessor.cpp`、D9c 改的 `src/effects/EffectChain.h` 都不在強制範圍。ROADMAP §1 是月月的規則，只有月月能改。`[懷疑者補抓的漏項（docs-open）]`
+- [ ] **B7 `hammerVelocityMps()` 在 MIDI 20 跳 2.3 倍**：<20 clamp 到 0.18 m/s，公式在 20 卻是 0.412 m/s（120 那端也有 +3% 小跳）。文件說「比照 interpAnchorsFlat」，實際不連續。
+      函式目前沒有呼叫點，不影響渲染；B7 重啟時請月月選：取公式邊界值（連續），或保留實測極值並寫明不連續。`[staged-review:B7-clamp]`
+- [ ] **D12 載入失敗分支的設計**：舊路徑檔案還在、但載入失敗（>30 s、讀不到、匯入失敗）時，照 `PluginProcessor.cpp:875-878` 註解寫明的既有設計：靜默不載、不留舊路徑線索、不跳警告，跟「檔案不存在」分支不一致。
+      要不要改走缺檔三態＋警告，屬推翻既有設計；改了要跑 R6。`[staged-review:D12-failpath]`
+- [ ] **重新部署 VST3、清舊副本**：commit 後用新 build 覆寫部署（要管理員權限），清掉 `(x86)`（07-12）和 `%APPDATA%\VST3`（05-07）兩份舊副本，再讓 Cubase 重掃並跑 `tools/cubase_scan_verify.py`。動系統資料夾要月月同意。`[open-work:G6-redeploy]` `[docs-consistency:H8]`
+- [ ] **變現五項裁決**：售價、AI Radiance 署名、全曲版要不要放、聽人把關、賣家帳號（`exports/products/clean_batch2/PRODUCT_SHEET.md` §5）。
+      **第 3 題前提已不成立**：「41 個削波樣本」是正規化之前的計數，母帶峰值 0.95、沒有平頂，全曲版可以直接放、不必重渲。建議連同音效包的 AI 揭露口徑一起裁；賣家帳號只能月月本人註冊。`[release-readiness:R3]` `[release-readiness:P5]` `[release-readiness:R8]`
+- [ ] **音效正規化政策**：三個打擊音效（Rabbit Stomp、Spring Release、Shackle Slam）的峰值被開頭尖峰佔掉，比全包中位數小約 12～23 LU。維持全部 −1 dBTP，還是另附響度對齊版？尖峰算不算瑕疵要靠聽人。`[release-readiness:R5]`
+- [ ] **專輯授權**：專輯 zip 只有一句授權、沒有 LICENSE 檔；要不要允許營利影片當背景音樂、上 DistroKid 要不要開 Content ID。`[release-readiness:R7]`
+- [ ] **BeamModel `*2` 阻尼加權去留**：寬頻化後變成「全音域一律 2 倍過阻尼」的純經驗係數。`src/physics/BeamModel.h:48` 註解自稱「已登記 TODO.md」，實際 09-25 才登記在這裡。前置是 D1；去留會改所有舌鼓渲染（R10）。`[open-work:B1-beam-x2]` `[open-work:G19-docs-stale]`
+- [ ] **partial_verify 要不要升 GATE**：A13 原規劃「C10 選 A 即可翻成 GATE」，C10 09-10 已選 A；但 D15 A' 揭露放鍵段上界約 7.2 c（大於 ±5 c），前提變了。
+      照原規劃只判持續段翻 GATE，或維持 informational 並改寫 `tools/partial_verify.py:514-518` 還寫著「待月月裁決」的理由字串。AI 先交全量數字。`[open-work:P3-partial-gate-premise]`
+- [ ] **ROADMAP §6 補登與 R7 措辭**：onset ±10 ms（C3-b 委託 AI 自定，08-20）和量測器自證 1.0 c（月月 08-30 訂）在用，但沒登記進 §6；數值不變，只補登記與出處。
+      R7 字面寫「留 unstaged」，實際流程是稽核 PASS 後 `git add`，措辭也請月月定。`[docs-consistency:P2]` `[docs-consistency:P3]`
+- [ ] **UI 功能規格送誰、合成器線走不走**：功能算不算「做完」、找哪位設計端，請月月一次決定（送出前 AI 先同步 v1.2，見下）。合成器本體上架（安裝包／手冊／demo／DRM）的 go/no-go 也掛在這裡。`[open-work:U2-send]` `[open-work:M6-synth-phase2]`
+- [ ] **缺檔警告措辭**：F-03 規定的「音量會和 IR 模式不同」（`src/PluginProcessor.cpp:846` 英文版）在 D9c 之後已不準確，只剩音色不同。改字串等於改 F-03 規格措辭。`[open-work:U3-ir-warning]`
+- [ ] **變現計畫與商品資料的去處**：repo 是 PUBLIC，未追蹤的 `docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md` 含售價，不宜 commit；要移出 repo 或加進 `.gitignore`。商品文字檔（授權、文案、腳本、catalog）要不要搬進受版控的位置。`[staged-review:S-monetize]` `[release-readiness:R10]`
+- [ ] **小事**：Limbus 有沒有用金鑰啟用；`Downloads\不知道有沒有用` 約 470 MB 殘留要不要清；A10 Score 控制台實操；調音器目視可讀性（見 Before merging 段）。`[open-work:Y1-small-actions]` `[docs-consistency:Y1]`
+- [ ] 四季／月光換源要不要排程（擋專輯 Vol.2；見 A 區「古典曲目換源重製」）。`[open-work:C1-resource]`
+
+### AI 可做（WF0925 輪處理中，結果另外更新交接）
+
+- [ ] **D16 給愛麗絲 16 顆弱基頻（新登記）**：A14 B-2 落地後，舊的 22 顆（G5×19 等）全轉 PASS，但力脈衝深零點搬到別的音高×力度：E5@0.278×9、A5@0.427/0.452×4、A6@0.427×2、A♯6@0.427×1，基頻比第二泛音低 6～19 dB。
+      08-30 時這 16 顆都是 PASS，score 之後沒改過，所以是 A14 造成的；A14 報告只掃了音高、沒掃力度。
+      **先做零點地圖**：用 `--dump-modes` 掃 piano Felt 路徑的 MIDI×velocity 網格，不改 src。引擎面修法併入 A14 B-1（等文獻），或在 scratch 做接觸力數值積分原型（要同時比無耗散、Stulov 遲滯、半正弦三種）。`[open-work:N1-fe16]` `[open-work:E1-a14-b1]`
+- [ ] **D11-F5 根因調查**（唯一排隊卡，月月 09-15 裁 C 已授權）：在獨立副本或 build-wf 套 `reports/d11_string_scale_candidate.patch`，拆解 F5 piano 殘餘能量 −63.9→−58.5 dB 的退化機制（多弦 beating 邊帶？partial 滑出 ±3% 判定窗？）。
+      **不在主工作樹套 patch**；查完附 8/8 還原證明，帶數字回來重開 A/B。`[open-work:D11-F5]`
+- [ ] **D13 後續同步**：`src/physics/PlateModel.h:25` 檔頭、`scores/examples/water_gong_free.score.json:7` 描述補上「自由邊平板、沒有 2.0× 模態、不代表乳突鑼（見 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §1）」。
+      裁決原訂「下張本來就要動這兩檔的卡順路做」，單獨做要先告知月月；改完照 R6 跑，確認 8/8 WAV 位元不變（score sha 和 provenance 清單會變，屬正常）。`[open-work:D13-sync]` `[staged-review:D13-sync]`
+- [ ] **release-physics.yml 修正**：`:45` 建置清單補 `TsukiSynthSpectrumViewTest`（跟 `766d21d` 修掉的是同一個坑）；`:50` 由 `unittest discover`（只收得到 199/270 個）改成 `python -m pytest tests -q`。
+      這支從沒跑過，第一次打 v tag 一定紅；改完要 push 後手動觸發才驗得到（push 需月月）。`[staged-review:CI-release]` `[engineering-gaps:E1]`
+- [ ] **D15 xfail pin 改成非 xfail**：`tests/test_measurement_selfcal.py` 的 release 段 pin（5.2304／7.2055）放在 strict xfail 裡，數字漂移抓不到、估計器變好也永遠不會 XPASS。
+      另開非 xfail 測試只 pin 數值；順手修 `:105` 引用的不存在檔名、`:54` 的「card BLOCKED」。`[staged-review:D15-xfailpin]`
+- [ ] **B7 殘留註解**：`src/physics/HammerImpulse.h:334/342-343/513` 改成「目前沒有呼叫點（B7 09-15 裁決撤回），重新接回前先解 §1.1」。純註解，照 R6。`[staged-review:B7-residual]`
+- [ ] **UI 功能規格同步 v1.2**：`docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md` §5-3、§6 還寫「IR 與演算法殘響差 28 dB 尚未對齊」，改成 D9c 已對齊（DECIDED CONVENTION）；補 D12 舊專案遷移的使用者可見行為。`[open-work:U1-spec-sync]`
+- [ ] **partial_verify 全曲 905 顆實跑**：D14 修好記憶體後已經能跑；產出 A14 之後的 informational 報告，給 D16 和「partial_verify 要不要升 GATE」用。`[open-work:P2-partial-full]`
+- [ ] **loop 非整小節**：6 個 loop 檔都比小節長度長（後面接了餘響尾巴；例：akashic 24.3 s，60 BPM×4 小節應為 16 s），買家拿到的 README 卻寫「可無縫循環」。
+      在 `exports/` 另做 loop-ready 版（裁到整小節、尾巴疊回開頭），接縫用數字驗收；替換前給月月看。`[release-readiness:R4]` `[open-work:M4-loop-seam]`
+- [ ] **音效包授權漏洞與 Fab**：`LICENSE_SE_PACK.txt` 寫「purchasing or downloading」就給授權、只禁上傳訓練資料集沒禁拿去訓練，Content ID、遊戲拆包、違約終止也沒寫清楚；Fab 只接受平台授權（CC-BY 或 Fab Standard License＋NoAI）。
+      起草 v1.1＋Fab 版 zip，月月決定後才替換（不是法律意見）。`[release-readiness:R6]`
+- [ ] **第三方授權聲明檔**：新增 `THIRD_PARTY_NOTICES.txt`（VST3 SDK MIT；JUCE 依賴 FLAC、Ogg、png、zlib、HarfBuzz、SheenBidi 等；IBM Plex 的 SIL OFL 1.1 全文，repo 目前沒有）；`LICENSE` 的「VST is a trademark」改成「registered trademark」。`[release-readiness:S4]`
+- [x] **JUCE 8 EULA 查證**（2026-09-25 已完成）：JUCE 8.0.12；Starter 年營收 US$20k 以下免費、可閉源，沒有 splash 或署名要求，跟 `LICENSE` 一致；營收保守要把合成器、音效包、專輯合計。Starter 要不要到 juce.com 註冊查不到定論（見 A7）。`[release-readiness:S4]` `[open-work:M5-juce-eula]`
+- [ ] **外掛 16 voice 搶音量測**：外掛每個引擎 16 顆 voice，CLI 每個事件一顆；引擎自報 worst-case T60 長達 34/179/320 s，密集段可能搶音，一直沒量過。`[open-work:P1-voice-steal]`
+- [ ] **D1 梁／板阻尼文獻補搜**：從沒搜過；擋 BeamModel `*2` 裁決和舌鼓／水鑼 T60 主張。照研究 lane 規約，只引實際拿到全文的數字。`[open-work:R-D1]`
+- [ ] **D9c 常數註解補依賴說明**：`kIrWetMakeupGain` 約 18.06 dB 來自 JUCE Convolution 的 0.125 正規化（JUCE 升版前要重跑 K-02）；26.9 只在 ALGO 預設 size 0.5、沒設 T60 時對齊。純文字。`[engineering-gaps:E18]` `[staged-review:D9c-calib]`
+- [ ] **測試補強（小）**：27 個工廠 preset 逐一確認 paramID 解析得到、輸出 isfinite（峰值、靜音門檻屬新判準，要月月核）；D14 `read_wav_header`／`StemArrayStream` 單元測試。`[engineering-gaps:E16]` `[staged-review:D14-tests]`
+- [ ] **工程小修（會動 src/CI）**：HostProbe 接進 CI、改成不依賴工作目錄與真實 `%APPDATA%`；`render_wf_scores.py` 加 `--outdir`；Cimbalom 每個音在音訊執行緒建一次 `juce::String`，改成預先存指標。詳見 STATUS_CHECK §3-4。`[engineering-gaps:E5]` `[engineering-gaps:E8]`
+
+### 等外部
+
+- [ ] **兩封信的回覆**（TU Berlin 指向性資料商業授權／Iowa MIS 泰國鑼器材，09-15 寄出）：repo 沒有回覆記錄；收到時轉給 AI 登記。`[open-work:W1-letters]`
+- [ ] **付費牆文獻**：D10（Hall 1988、Chaigne & Askenfelt 1994 Part II；擋 A14 B-1 和 D16 的引擎修法）、D5（銅鑼 JCIE 2005）、Rossing & Shepherd 1982（D13 選項 A 的前提）、B7 驗收基準 (a) 的絕對 SPL 出處（Goebl Fig. 2.20／Roginska 2013／Meyer）。月月若有機構帳號可以一次代取。`[open-work:W2-paywall]`
+- [ ] **D7 實體試體量測**：文獻買不到，只能自己量（見 D 區 D7）。`[open-work:W2-paywall]`
+- [ ] **聽人把關**：品質美感只能靠外部聽人。建議列成約 15 分鐘的定點清單：3 個打擊音效的開頭、6 個 loop 的接縫、Gate Open Dark 的 overdrive、D16 那 16 顆。要不要花錢找人由月月裁（變現第 4 題）。`[release-readiness:H1]` `[release-readiness:S6]`
 
 ## 🔴 0. 紅燈（優先於一切，2026-08-16）
 
@@ -106,16 +223,20 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       規約：`cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest` 之後才跑 `ctest`。
       已加進 `docs/workcards/` 六張卡（B1–B6）的 GATE 段：已完工的 B1/B2 用「2026-08-24 事後補記」註記形式，
       未施工的 B3–B6 直接融入 GATE 清單表格前的強制說明。未來所有新卡沿用同一段規約文字。
+      （09-25 註：上面「三個測試 target」是 08-24 當時的原文。現在 CMakeLists 有**五個**測試 target：Audit/Tuner/PhysicsModels/SpectrumView 四個註冊了 ctest，HostProbe 刻意不註冊。
+      只重建三個會讓 `spectrum_view_repro` Not Run——09-07～14 CI 紅燈就是這個原因（`766d21d` 修 `physics.yml`；`release-physics.yml:45` 還沒修，見「2026-09-25 盤點新登記」）。`[docs-consistency:R2]`）
 
 ## A. 等月月決定（AI 不能自己動）
 
-- [x] **A13 partial GATE 的主張域** — **2026-09-08 規劃者代決 B+（月月 09-07 委託）**：只驗 partial 頻率內部一致性（±5 cents 既有容差）、不立振幅 GATE、`B` 對照寫成非 GATE 報告；工具 `tools/partial_verify.py`（WF0908-P1）已入庫，`gate_ready=false` 直到 C10B 量測器自證達標。裁決包 `reports/decision_packets/A13_partial_gate_domain.zh-TW.md`。原始記錄：2026-08-30 新增。`stem_verify` **完全沒有實測 partial
+- [x] **A13 partial GATE 的主張域** — **2026-09-08 規劃者代決 B+（月月 09-07 委託）**：只驗 partial 頻率內部一致性（±5 cents 既有容差）、不立振幅 GATE、`B` 對照寫成非 GATE 報告；工具 `tools/partial_verify.py`（WF0908-P1）已入庫，`gate_ready=false` 直到 C10B 量測器自證達標。
+      （09-25 註：C10B 候選全數否決、09-10 C10 改選 A，這個條件不會再達成；A13 裁決包原本寫「C10 選 A 即可翻成 GATE」，但 D15 A' 揭露放鍵段上界約 7.2 c，前提又變了。要不要升 GATE 待月月裁，見「2026-09-25 盤點新登記」。`[open-work:P3-partial-gate-premise]`）裁決包 `reports/decision_packets/A13_partial_gate_domain.zh-TW.md`。原始記錄：2026-08-30 新增。`stem_verify` **完全沒有實測 partial
       的頻率或振幅**（`--dump-modes` 的 partials 只用來預判基頻帶污染），因此目前
       **不可宣稱「泛音已驗證」**。要不要立 partial GATE、以及它的主張要多強
       （只驗頻率？連振幅一起？容差多少？）需月月裁決——**新容差不可由工程端自訂（R2）**。
       參考：`docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.4。
 - [~] **A14 高音弱基頻是物理正確還是引擎缺陷** — **2026-09-08 規劃者代決「部分合理，主因引擎缺陷」**：半正弦力脈衝在 x=2·f·τc≫1 區被外插（G5 x=2.91 正中零點，基頻 −33.7 dB），τc 音高律 k=0.212 比文獻平。
-      **月月 2026-09-10 裁決放行 → B-2 patch 已 `git apply` 落地**（`reports/a14_tauc_keytrack_before_after.md` 文末落地記錄；7/8 位元不變、physical_piano 607d0d3b→1233b53f 與報告事前值一致；5 檔 verify_score PASS；`--full` NO CHECKED FAILURES；位元基準改 `sha256_before_post_a14.txt`；Opus 稽核中）。B-1 等文獻（D10）。原始記錄：2026-08-30 新增，**擋住 22 顆音的判定**。
+      **月月 2026-09-10 裁決放行 → B-2 patch 已 `git apply` 落地**（`reports/a14_tauc_keytrack_before_after.md` 文末落地記錄；7/8 位元不變、physical_piano 607d0d3b→1233b53f 與報告事前值一致；5 檔 verify_score PASS；`--full` NO CHECKED FAILURES；位元基準改 `sha256_before_post_a14.txt`；~~Opus 稽核中~~ → **09-10 稽核 PASS**，`reports/gate_outputs/wf0910_A14_apply_AUDIT.txt` verdict = PASS）。B-1 等文獻（D10）。原始記錄：2026-08-30 新增，**擋住 22 顆音的判定**。
+      **09-25 維持 [~]，理由兩個**：(1) B-1 仍等文獻（D10）；(2) 盤點新發現 B-2 落地後，舊的 22 顆全部轉 PASS，但深零點搬到了 E5／A5／A6／A♯6 的特定力度，給愛麗絲全曲有 **16 顆新 FAIL**，登記為 **D16**（見「2026-09-25 盤點新登記」）。`[docs-consistency:T3]` `[open-work:N1-fe16]`
       乾聲單音實測（piano 引擎、velocity 0.427/0.462）：G5 峰值 −46.7 dBFS、主導頻率
       1571.5 Hz（第二 partial，比值 2.0044）、基頻低 21.9 dB；G6 峰值 −54.5 dBFS、
       主導 3214.9 Hz（比值 2.0503）、基頻低 24.0 dB；D7 峰值 −64.5 dBFS（主導即基頻）。
@@ -143,9 +264,12 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
 - [x] **A7 repo License 定案** — **2026-08-26 完成**：依「保留商業」決定寫入 `LICENSE`
       （All rights reserved 專有授權 + 中文摘要 + 第三方元件條款）、`README.md` License 段 TBD 已更新。
       **殘留提醒**：正式發行前仍要讀一次 JUCE 8 EULA 的署名條款（LICENSE 檔內已註記）。VST3 SDK 在 JUCE 8 內是 MIT，無虞。
+      **→ 2026-09-25 已查證**（`[release-readiness:S4]`）：repo 內 JUCE 為 8.0.12；Starter 方案年營收 US$20k 以下免費、可閉源商用，EULA 沒有 splash 或署名要求，跟 LICENSE 的寫法一致。
+      營收保守算法要把合成器、音效包、專輯合計。Starter 要不要先到 juce.com 註冊，查不到定論。
+      但 VST3 SDK 的 MIT、JUCE 的依賴、IBM Plex 字型的 OFL 都要求隨軟體附聲明，repo 目前沒有第三方授權聲明檔（見「2026-09-25 盤點新登記」）。
 - [x] **A8 外部資料集要不要下載** — **2026-09-07 月月裁決下載 → 09-09 裁決「無替代就私下對照參考」**。已下載吉他/豎琴子集到 `external_data/`（gitignore），登記 `docs/EXTERNAL_DATASET_A8.zh-TW.md`。
       **兩個更正**：授權實為 **CC BY-NC-SA 4.0**（資料檔 metadata；arXiv 預印本寫 BY-SA 是我們原本抄錯的來源）；量測半徑 **2.06 m 非 1.05 m**（`RadiationModel.h` 1.05 是自訂慣例，註解已改）。
-      替代搜尋（`docs/EXTERNAL_DATASET_ALTERNATIVES.zh-TW.md`）：可商用且校準到絕對聲壓 = 0；補充來源 Weinzierl 2018 JASA（CC BY）+ Iowa MIS 泰國鑼（WF0909-P6 入庫中）。寫信要商業授權由月月自行決定。
+      替代搜尋（`docs/EXTERNAL_DATASET_ALTERNATIVES.zh-TW.md`）：可商用且校準到絕對聲壓 = 0；補充來源 Weinzierl 2018 JASA（CC BY）+ Iowa MIS 泰國鑼（WF0909-P6 ~~入庫中~~ → 09-09 完成，09-13 隨 `27e8393` 入庫）。寫信要商業授權由月月自行決定。
 - [x] **A9 Cubase 四步驗證** — **已由自動化取代人工並於真 Cubase 實測完成**（月月 2026-08-20 委託重定義 + 2026-08-22 L3b 實測）：
       掃描（L3a 快取 XML + GUI 建軌）／MIDI 實彈（Cubase 匯出經 melody_verify 5/5）／
       專案存讀（重開再匯出音訊位元全等）皆真 host 證據；automation 於 L2 HostProbe 合約層驗證
@@ -172,12 +296,20 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
         furelise_midi_verify.txt`）。**現況誠實標註**：docstring 自稱
         "full-corpus" 但 `scores/` 下僅 `fur_Elise_WoO59.mid` 一份來源 MIDI
         入庫，14 份 classical score.json 目前只有 2 份（鋼琴/揚琴給愛麗絲）
-        被此 GATE 實際覆蓋；Vivaldi 四季來源 MIDI 尚未入庫。**尚未接進任何
-        GATE/CI/文件**（`.github/workflows`、README 快查表皆零命中）——四季/
+        被此 GATE 實際覆蓋；Vivaldi 四季來源 MIDI 尚未入庫。~~**尚未接進任何
+        GATE/CI/文件**（`.github/workflows`、README 快查表皆零命中）~~——四季/
         月光換源排程執行時，此工具與其 pytest（`tests/test_score_vs_midi_
         verify.py`，23 passed）須納入該次轉譜的驗收流程，不能只跑既有
         render-audio 系 GATE（`verify_score.py`/`melody_verify.py`/
         `physics_verify.py`）。
+        **09-25 更正「尚未接進 CI」**（`[open-work:V1-score-vs-midi]`，已自行查證）：
+        `tests/test_score_vs_midi_verify.py` 的 `EndToEndFurEliseTests` 對兩份給愛麗絲 score
+        跑 `svm.verify()`，斷言 905/905 matched。這個檔的 26 個測試都在 pytest 收集範圍內
+        （`python -m pytest tests --collect-only` 共 270 個，其中 26 個出自此檔）。
+        CI `physics.yml` 從 E1 起每次 push 都跑 `python -m pytest tests -q`，沒有 `continue-on-error`，是阻斷式。
+        來源 MIDI `fur_Elise_WoO59.mid` 和兩份 score 都已入庫，CI 不會因缺檔 skip。
+        所以對目前唯一入庫的 MIDI↔score 配對，這道 GATE 早就在 CI 裡跑。
+        還開著的只有一件：四季/月光換源時，要把新配對加進這組測試（上面那句仍然有效）。
       - `tools/melody_roll_video.py`——聾人可視旋律 shape 影片（piano-roll
         滾動疊圖），重用 `melody_verify.py` 的偵測數學（zero 新增
         pitch/onset 判定邏輯，僅新增繪圖/切窗）；給愛麗絲驗證影片
@@ -185,10 +317,12 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
         重用。**已知限制**：`DEFAULT_FFMPEG` 寫死月月本機絕對路徑（有
         `--ffmpeg` 可覆蓋，換機/CI 無 PATH 後援）；同樣**尚未接進文件/CI**。
         換源產線執行時可選配當人工複核輔助，非強制 GATE。
-- [x] **IR 稽核** — 已完成，見 `docs/IR_REVERB_AUDIT.zh-TW.md`（unstaged 待審）。
-- [ ] **UI 雙開門**（提案 + mockup 完成，待月月視覺裁決）— 提案
+- [x] **IR 稽核** — 已完成，見 `docs/IR_REVERB_AUDIT.zh-TW.md`（~~unstaged 待審~~ → 08-28 已隨 `0f271ae` commit。`[docs-consistency:T3]`）。
+- [x] **UI 雙開門**（提案 + mockup 完成，~~待月月視覺裁決~~）— 提案
       `docs/uiux/DOUBLE_DOOR_PROPOSAL.zh-TW.md`、互動 mockup
       `uiux/double_door_mockup.html`；月月看過裁決後才開實作卡。
+      **→ 2026-08-30 月月否決**（`313acaa`，見上方 08-30 快照）：改由設計端照 `docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md` 從功能重做，不開雙開門實作卡。
+      未入版控的 `docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md` §3 #2 和 `exports/products/clean_batch2/LISTING_COPY.md` 還把「雙開門裁決」當待辦，措辭同樣過時。`[docs-consistency:T3]` `[release-readiness:S2]`
 - [x] **A11 共鳴板厚度 h 與材質選定（B1 琴橋導納）** —— **2026-08-27 月月裁決 (i)「確認現值」，關閉**：
       `h = 9mm`／`wood_spruce` 由月月確認維持（依據裁決包
       `reports/decision_packets/A11_soundboard_sensitivity.md`；`docs/BRIDGE_ADMITTANCE_SOURCES.md`
@@ -230,6 +364,9 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       (b) 自訂參數類別讓 setValue 也 snap（live 聽感微變）；(c) 接受現狀、文件標註。需月月裁決。
 
 ## B. 資料齊、可以開工（**依此順序**，理由見 `RESEARCH_INDEX.md` §4）
+
+> 09-25 註：B1–B6 已全部 Done（08-29 收官），B7 停在 09-15 裁決的合法終點，這個順序已經不再用來排工作。
+> `docs/RESEARCH_INDEX.md` 停在 08-15；它 §5 的「D7／D8」指的是別的東西（Giordano 導納曲線／資料集本體），**跟本檔的 D7（實體試體）、D8（tongue_drum 斜率）不是同一項**。`[docs-consistency:C2]`
 
 - [x] **B1 琴橋導納／共鳴板耦合**——**2026-08-21 由 B2 收尾補齊 Rule 10 報告 + corpus 73/73 後轉完成**（M10 已標 Done，見 ROADMAP §2）。
       `Y∞ = 1/(8√(D·ρs))` → `α = (T/L)·Re Y` → `1/T60_bridge = T·G/(ln1000·L)`。
@@ -370,9 +507,95 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       1 Pa ≡ 94 dB。
       → 依據 `docs/EXTERNAL_ANCHOR_SOURCES.md` §2–§3、
       `docs/RADIATION_POWER_SOURCES.md`、`docs/workcards/B6.md`
-- [ ] **B7 完整第一原理力鏈校準（方案 C）**（前置：**B6 方案 B 落地**——
+- [~] **B7 完整第一原理力鏈校準（方案 C）**（前置：**B6 方案 B 落地**——
       **2026-08-28 已滿足**，B6 Phase 3/4 皆 Done，見上一條目；本卡可以
       開工，但仍待有人實際排入工作）
+      **狀態（月月 09-15 裁決，照 `reports/decision_packets/B7_phase2_and_open_items.zh-TW.md` §6 第 3 點指定措辭同步）：
+      In progress——Phase 0 完成、Phase 1 部分完成（欄位撤回版）、Phase 2/3 BLOCKED（月月 09-15 裁決）。**
+      裁決內容：§5 三條路徑選 **C**（proxy 與 `S` 都不裁，B7 本輪到此為止＝合法終點）；§1 驗收基準 (a) 選**乙**（標 BLOCKED，來源缺口）。
+      要重啟得先解 §1.1：score schema 加真實 MIDI velocity 欄位，需要另開卡，並改 B7.md §5 的禁令。
+      解除 (a) 阻塞的三條管道（向 Goebl 要 Fig. 2.20 校準值／機構帳號取 Roginska 2013／借 Meyer 動態範圍表）留給月月日後有機會再說。
+      下面各段「已 staged」「BLOCKED 待月月裁決」是 09-14 當時的狀態；WF0914 成果 2026-09-25 已 commit。
+      （09-25 補同步：裁決包要求的這句 09-15 沒寫進 TODO/ROADMAP，盤點查到後補上。`[docs-consistency:T6]` `[懷疑者補抓的漏項（docs-open）]`）
+      **B7 殘留尾巴**（都不影響現有渲染）：
+      `HammerImpulse.h:334/342-343/513` 的註解還指向已撤回的 `dumpModes()` Path C 欄位（`[staged-review:B7-residual]`）；
+      `hammerVelocityMps()` 在 MIDI 20 有 2.3 倍的跳躍（`[staged-review:B7-clamp]`，重啟時由月月裁）；
+      `hertzImpulseConsistentTauCSeconds` 只做到衝量自洽，錨點 α=2.3～3.0 時接觸時間只有真 Hertz 碰撞的 0.695～0.599 倍（`[staged-review:B7-tauC]`，長期研究）。
+      這三條的勾選項見「2026-09-25 盤點新登記」。
+      **2026-09-14 WF0914-B7P0+B7P1 進度更新（In progress，稽核 PASS 已 staged）**：
+      Phase 0 兩份溯源文件已完工（`docs/HAMMER_VELOCITY_SOURCES.md`——
+      Goebl 2003 博士論文式 (3.2) `v=2^((MIDI-52)/25)`，原文已核；
+      `docs/RADIATION_POWER_SOURCES.md` §8——音板輻射面積 `S`：同儕審查層級
+      平台琴查無，只有直立琴 1.2649 m²）。Phase 1 力鏈組裝已落地但**卡在
+      §1.2「否」分支**：查證 `RadiationModel.h`/`CimbalomEngine.h` 現行音板
+      參數（`kBridgeSoundboardThicknessM=9mm`、`wood_spruce` 材質）後，
+      `CimbalomEngine.h` 自己的註解已明寫兩者皆「文獻類比預設值，不是
+      TsukiSynth cimbalom 的實測值」——**不是**那台 Ege/Boutillon 直立琴
+      的實測值，與 `S` 唯一可用的文獻數字（同一台直立琴）非同源。故
+      `S` 維持 `UNVERIFIED`，Path C 的 `absolute_pressure_per_force_firstprinciples_c`
+      / `acoustic_transfer_c[]` 兩欄位**不輸出**（fail-closed），力鏈只
+      落地到 §4.4 的 `W_bridge(f)`（新欄位
+      `"bridge_power_firstprinciples_c"`，僅 Cimbalom/Piano + Felt）。
+      新函式：`HammerImpulse::hammerVelocityMps()`/`hertzPeakForceNewtons()`
+      （§4.2/§4.3，能量守恆推導）、`RadiationModel::modalEnergyFirstPrinciples()`/
+      `bridgePowerFirstPrinciples()`（§4.4，SDOF 衝量-能量精確解推導，本文件自推）。
+      §7 五條測試對應調整為 `testHammerVelocityMps`/
+      `testHertzPeakForceEnergyConservation`/`testHertzPeakForceCounterexample`/
+      `testBridgePowerFirstPrinciplesChain`（4/5 項改對 `W_bridge` 的哨兵，
+      「否」分支下無 `W_rad` 可比、無 `acoustic_transfer_c[]`）/
+      `testPathBAndPathCDoNotInterfere`，全過。GATE 全綠：三 build target
+      exit 0、ctest 4/4 Passed（X4 先重建五測試 target）、`--full`/
+      `--selftest` 與基線零差異、`verify_score.py --all` 與基線一致、
+      位元不變性對 `sha256_before_post_a14.txt` 8/8 IDENTICAL（本卡只進
+      `--dump-modes`，未動 `render()`/`renderEvent()`）。證據
+      `reports/gate_outputs/wf0914_B7P1_*.txt`。**剩餘項**：(a) §1.1 velocity
+      proxy→MIDI 換算為規劃者代決（proxy×127），非查證確認，月月可推翻；
+      (b) §8 驗收基準 (a)(b)（文獻 SPL GATE、與 B6 雙路徑一致性）本卡未執行
+      （Phase 1 完成即本卡此輪的交付範圍）；(c) `S` 若要繼續，需月月在
+      §4.5 的兩個選項（跨琴種挪用直立琴 1.2649 m²／改用廠商規格值）之間
+      裁決，或維持卡住。詳見 WF0914-B7P1 完成報告。
+      **2026-09-14 B7P1 稽核修復（複稽 PASS 已 staged，In progress，狀態較
+      上一輪倒退為 BLOCKED）**：稽核抓到兩個真實缺陷，皆已修——(1) 能量守恆
+      違反：`RadiationModel::modalEnergyFirstPrinciples()` 组裝的衝量用了兩個
+      互不自洽的量（`F_peak` 來自 Hertz 能量守恆解，`τ_c` 卻沿用 B4
+      `pianoHammerTauC()`——一個完全不同、獨立錨定的量），導致 MIDI 36–96 ×
+      velocity 20–120 全域 24/24 點衝量超過物理上限 `2·m·v` 達 2.55–4.32 倍。
+      修法：`HammerImpulse.h` 新增 `hertzImpulseConsistentTauCSeconds(note,v,
+      F_peak)=π·m·v/F_peak`（半正弦脈衝模型自身衝量公式 `F_peak·τ_c·(2/π)`
+      令其等於彈性碰撞動量守恆 `2·m·v`，反解 `τ_c`，與 `F_peak` 同一組 Hertz
+      解自洽），取代原本的錯誤呼叫；修復後全域衝量/`2mv` 比值精確收斂到 1.0
+      （浮點精度內）。(2) §7 測試第 4 項原本被換成非守恆哨兵，已補上真正的域
+      掃描守恆測試 + regression guard（`tests/physics_models_repro.cpp`）。
+      **(3) §1.1 velocity proxy→MIDI 換算重新查證後改判 BLOCKED**（稽核挑戰
+      成立）：`tools/midi_to_tsukisynth.py::velocity_for()`——本專案唯一真正
+      把 MIDI 轉成 score `velocity` 的程式碼——算式是 `base_velocity(role,
+      0.42–0.72) × (source_velocity/90.0)`（±0.025–0.035 微調，clamp 至
+      [0.12,0.92]），**從未是 `MIDI/127`、也不與 MIDI 成比例**（真實 MIDI
+      velocity 在轉譜當下就被丟棄）。依施工卡 §1.1「若查證結果與此矛盾…不要
+      硬套，status=BLOCKED」，已撤回 `ScoreRenderer.h::dumpModes()` 對
+      `bridge_power_firstprinciples_c` 的欄位輸出與 `model_observables`
+      廣告；底層純函式（`hammerVelocityMps()`/`hertzPeakForceNewtons()`/
+      `hertzImpulseConsistentTauCSeconds()`/`modalEnergyFirstPrinciples()`/
+      `bridgePowerFirstPrinciples()`）保留、已修好、單元測試全過，待月月對
+      §1.1 裁決後再接回。**(4) 位元不變性證據檔補齊**：`wf0914_B7P1_
+      bit_identity.txt` 這一輪重寫為真正含比對結果（先前版本只有 render
+      log，沒有 diff/IDENTICAL 結論），本輪 8/8 IDENTICAL。GATE 全綠：三
+      build target exit 0、ctest 4/4 Passed、`--full`/`--selftest` 與基線
+      零差異、位元不變性 8/8 IDENTICAL。**Phase 1「最低限度交付物」
+      （dumpModes() 新欄位）因 §1.1 BLOCKED 而未達成**，待月月裁決 §1.1：
+      score velocity 該如何合法轉換成真實 MIDI/槌速，才能繼續這條診斷鏈。
+      **2026-09-14 WF0914-B7P3（稽核 PASS 已 staged，~~BLOCKED 待月月裁決~~ → 09-15 月月已裁：路徑 C＋(a) 乙案＝本卡本輪合法終點，見本條目開頭狀態行）**：施工卡要求的
+      Phase 3 雙路徑比對（B7.md §6 步驟 11）本輪**執行不了**——實際跑
+      `--dump-modes` 確認 `model_observables`/事件層級/partial 層級**完全
+      沒有任何 Path C 欄位**（`bridge_power_firstprinciples_c` 已在 B7P1
+      稽核修復回合撤回，`absolute_pressure_per_force_firstprinciples_c`
+      因 §1.2「否」分支本來就未落地），沒有第二條路徑可比，非「差異很大」
+      而是「無資料」。已把這個事實與 Phase 2 甲/乙案一起整理成裁決包
+      `reports/decision_packets/B7_phase2_and_open_items.zh-TW.md`
+      （§1 甲/乙案＋新事實、§2 `S` 採用記錄追認、§3 proxy 代決追認、
+      §4 雙路徑差異＝空白＋恢復條件），完整過程見
+      `reports/b7_dual_path_comparison.md`。**本卡未碰 `src/`**
+      （`git diff -- src/` 為空）。
       **2026-08-28 立卡（月月裁決：「C 立卡排隊」，`reports/decision_packets/
       B6_calibration_choice.md`「裁決記錄」節）**：施工卡
       `docs/workcards/B7.md`——從 MIDI velocity 一路換算真實物理單位
@@ -415,7 +638,12 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       (2) 時域 NLS 擬合（WF0909-C10C，Opus）——合成關卡大幅領先（hold-out 0.08 c、增益保真 0.009 c）**但真實渲染更差**（0.22 s 短音在 1.23 s 視窗、放鍵阻尼非單一指數 → τ 只剩 0.03–0.05 s、線寬 16–26 c；給愛麗絲前 300 顆 7 顆 PASS→FAIL、30 檔強域動 9 檔），未上產品路徑。
       **更上層發現**：合成哨兵的訊號模型正好就是 NLS 的模型 → 現行形式的 1-cent 門檻本身不足以認證估計器；要補「放鍵/阻尼段」語料，但那會改變 1.1721 這個比對數字（門檻不變）。
       **現況**：產品估計器＝原始硬邊界質心（位元組不變），`measurement_selfcal.py` 多了增益保真掃描（升為 GATE 條件）與三弦 course 檢查，並有「增益保真不得比舊版差」迴歸測試。C10C 全部改動存成 `reports/c10c_nls_candidate.patch`（未落地）。
-      **規劃者建議：改選 A（收窄主張域）**，措辭草案在裁決包 §6.4；等月月一句話。原始記錄：月月 2026-08-30 查核第 5 點：
+      **規劃者建議：改選 A（收窄主張域）**，措辭草案在裁決包 §6.4；~~等月月一句話~~。
+      **→ 2026-09-10 月月選 A，已落地**：`docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.5／§9.7 寫明量測器含 ≤1.18 cent 已知誤差（開發 1.1721／hold-out 1.0840），±5 cent 門檻不變，**不可宣稱 ≤1 cent**。
+      09-15 D15 選 A' 再收窄：≤1.18 cent 只涵蓋持續段，放鍵/阻尼段已知誤差上界約 7.2 cent（§8.5）。
+      本條以「收窄主張域」結案，保留 [~] 是因為 ≤1 cent 從未達成：5 個 strict xfail 刻意留著當開放缺口的標記。
+      **09-25 另查到**：兩個 release 段 strict xfail 的 pin assert 排在 ≤1 c 判定之前，數字漂移抓不到，估計器變好也永遠不會 XPASS（`[staged-review:D15-xfailpin]`，勾選項見「2026-09-25 盤點新登記」）。`[docs-consistency:T6]`
+      原始記錄：月月 2026-08-30 查核第 5 點：
       ±5 cents 是本專案既有裁定的產品門檻，**不是 ISO 或業界標準**；
       要用它執行 GATE，量測器本身必須先用**合成訊號**（已知頻率、已知衰減、
       已知泛音結構）證明自身誤差 **≤1 cent**。目前沒有這個證明。
@@ -429,13 +657,33 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       temp 一清就只剩口述來源（月月 2026-08-30 查核指出）。
       應由工具自己產生乾聲衍生 score，並把來源 hash 與 leaf diff 寫進報告。
       §8.3 已定：**帶殘響訊號的音高判定不得作為 GATE 依據**，所以乾聲應是預設分析路徑。
-- [x] **C13 harmonic-aware 判定** — **2026-09-09 Done（WF0908-P1，informational）**：`tools/partial_verify.py` 的 `pitch_via_partials_*` 欄位（與 `verdict` 分離，月月 08-30 裁定）；B 由 dump 的 f2/f1 反推不引外部值。A14 判為缺陷後 22 顆要在 B-2 patch 落地後重量。原始記錄：給 22 顆弱基頻高音一個「答得出來」的問法：
+- [x] **C13 harmonic-aware 判定** — **2026-09-09 Done（WF0908-P1，informational）**：`tools/partial_verify.py` 的 `pitch_via_partials_*` 欄位（與 `verdict` 分離，月月 08-30 裁定）；B 由 dump 的 f2/f1 反推不引外部值。A14 判為缺陷後 22 顆要在 B-2 patch 落地後重量。
+      （09-25 查證：B-2 已落地，但 `reports/gate_outputs/` 找不到 A14 之後重量的記錄；partial_verify 也從沒在全曲 905 顆規模跑過。弱基頻的組成已換成 D16 那 16 顆。勾選項見「2026-09-25 盤點新登記」。`[open-work:P2-partial-full]`）原始記錄：給 22 顆弱基頻高音一個「答得出來」的問法：
       驗 `f_n = n·F0·√(1+B·n²)` 或直接對 `--dump-modes` 預測的逐 partial 頻率比對。
       **前置**：A13 主張域裁決、A14 物理判定。`B` 的物理合理性須獨立查證（R4）。
+- [x] **D14 stem_verify 記憶體線性成長修復** — **2026-09-14 Done（WF0914-D14）**：診斷出 `run()` 的
+      `stem_arrays={}` dict 把每顆事件完整 float64 音訊陣列留到函式最後才用（`compare_superposition()`
+      那一次呼叫），905 顆事件全曲跑會同時全部活在記憶體裡，登記時實測 >28 GB（隨事件數線性成長，
+      當時只能 `--limit 300`）。改用 `read_wav_header()`（只讀 WAV 'fmt ' chunk 取樣率/聲道數，不讀音訊
+      資料）做相容性檢查取代整段讀入，並新增 `StemArrayStream`（duck-typed 串流物件，`len()`/`for`
+      跟真正的 list 行為一致，`compare_superposition()` 本體一行未改）取代 dict，讓疊加證明改成逐顆
+      讀入、加總、即釋放。GATE 1（等價性）：修改前後各跑一次 `--limit 300`，300 顆事件逐欄 0 差異
+      （provenance 三個 sha256 全 match，僅 --out-dir 路徑字串不同）。GATE 2（記憶體證據，PowerShell
+      Get-Process 輪詢，`output/wf0914/D14/measure_peak_ws.ps1`）：905 事件 score 分別以 `--limit 300`／
+      `600`／全量三檔量峰值 working set——1310.7 MB／1269.7 MB／1530.0 MB（peak_ws_reported 600→
+      1611.8 MB、全量→1649.9 MB），事件數從 300→905（3.02 倍）峰值只從 ~1.3 GB→~1.65 GB，**不是線性
+      成長**；全量（無 --limit，就是登記時「跑不完」的那個案例）本次**完整跑完**（status=ok、905/905
+      事件、superposition established=True）。GATE 3：`tests/test_stem_verify.py` 49 passed（含
+      monkeypatch 詐報 n_stems_summed 的防呆哨兵、真實 CLI 端到端哨兵，逐一重跑確認不受影響）。
+      證據 `reports/gate_outputs/wf0914_D14_memory_fix.txt`。原始記錄：見 D14 施工卡
+      `docs/workcards/WF0914_D14_stem_memory.md`。
 
 - [ ] **C1 rubber 短瞬態 T60 估計器** — 現行「不足八週期即 N/A」太粗，改用 EDT／Schroeder 反向積分 + 明確拒答條件，把三個 `UNVERIFIED/N/A` 轉成可判定。**需月月裁決可信門檻（幾個週期算數）**。
 - [ ] **C2 多音／缺基頻調音器模式** — 只在能可靠拒答模稜兩可的情況下才做。工作量最大、對物理驗證主張價值最小。
-- [ ] **C3-b 免耳三層驗證（旋律位置 GATE）** — 設計提案 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md`（2026-08-20，未實作）：
+- [x] **C3-b 免耳三層驗證（旋律位置 GATE）** — 設計提案 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md`（2026-08-20，~~未實作~~）：
+      **09-25 改 [x]**：「未實作」是 08-20 開卡當時的狀態。下方進度 L1／L2／L3a／報告層／L3b 已全部 ✅
+      （證據 `reports/gate_outputs/l1_l2_l3a_melody_gate.txt`、`l1_selftest_v2.txt`、`l3b_cubase_live.txt`），A9 已 [x]；
+      「H5 兩項誠實 FAIL」已由 A12（08-22）修好。唯一沒做的是 Cubase GUI 手畫 automation lane，A9 已誠實標註。`[docs-consistency:T5]`
       L1 `melody_verify.py`（score↔WAV 逐事件 onset+pitch 正向驗證，補上「休止安靜≠音在對的位置」的缺口，含五件哨兵）＋
       L2 `TsukiSynthHostProbe`（JUCE host 載磁碟上的 .vst3，A9 四步全自動化，順帶首次驗 plugin 即時路徑的音訊內容）＋
       L3 Cubase 本尊（3a 掃描快取 XML 解析——**已核實 TsukiSynth 在 vst3plugins.xml、blacklist 零筆**；3b AI 開 Cubase 匯出、L1 判定）。
@@ -453,7 +701,7 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       ✅ **L2** `TsukiSynthHostProbe`（CMake target，載磁碟 .vst3）完工——H1 掃描/H2 實體化/
       H3 MIDI 串流渲染+跨實例位元決定性/H4 automation ramp 位元決定性+3-12kHz +8.6dB/
       H5 state round-trip。**plugin 即時路徑旋律位置首次被驗：5/5 PASS（onset ≤1.31ms、pitch ≤1.31c）**。
-      H5 兩項誠實 FAIL = A12。
+      H5 兩項誠實 FAIL = A12（→ 08-22 A12 已修，HostProbe 16/16 PASS；現為 89 項）。
       ✅ **L3a** `tools/cubase_scan_verify.py` 完工——真實 Cubase LE AI Elements 12 掃描快取 S1-S5 全 PASS
       （雙 class、Instrument 分類、無 blacklist、快取↔磁碟時戳一致）；S6 誠實揭露部署落差（裝的是 0.2.0）。
       ✅ **報告層** `melody_verify.py --html`——piano-roll 疊圖（頻譜圖底 + 期望音符框
@@ -484,6 +732,7 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       證據 `reports/gate_outputs/l3b_cubase_live.txt` + 專案 l3b_tsukisynth_verify.cpr 留檔。
       A9 四步覆蓋：掃描✅ MIDI 實彈✅ 存讀✅；automation 於 L2 合約層✅（GUI 畫 lane 未做，誠實標註）。
       註：host 測的是系統部署的 0.2.0（升級部署需月月以管理員權限覆蓋 Common Files\VST3）。
+      （09-25 註：現在系統上部署的是 09-10 build，放在 `Common Files\VST3\TsukiSynth_VST3_2026-09-10\` 子資料夾，缺 D12/D9c；Cubase 快取停在 08-22，部署後還沒重掃。見 09-25 快照。`[docs-consistency:H8]`）
       ✅ corpus 81 檔 melody_verify 掃描完成（informational，`reports/gate_outputs/melody_corpus_sweep_informational.txt`）：
       30 檔全綠（強域實證）+ 48 檔含 FAIL（§7 弱域：密集複音/混響/delay，位置保證由 2e 位元決定性承擔）
       + 3 檔 layered 整檔拒答（上游 CLI 無 layer 展開的 --dump-modes；工具已補優雅拒答 exit 3）。
@@ -504,6 +753,7 @@ D1/D2、B7 Phase 0 資料。詳見 `HANDOVER.md`。
       **月月 2026-09-09 裁決 `wood_mallet` → WF0909-D8 已落地（staged）**：兩首月光空靈鼓相關 score 各 1142 顆 tongue_drum 事件改 exciter（揚琴事件不動），
       Rule 10 報告 `reports/d8_tongue_drum_exciter_before_after.md`（200 Hz 以下能量 97.36% → 17.55%、旋律音域 2.64% → 82.44%、單音斜率 37–39 → ~2.7 dB、f0/T60 位元不變），
       verify_score 兩檔 PASS，8 首位元不變基準換 `reports/gate_outputs/b6_method/sha256_before_post_d8.txt`（6 首不變 + 2 首預期改變）。
+      （09-25 註：09-10 A14 落地後基準又換成 `sha256_before_post_a14.txt`，兩份只差 physical_piano 一首；**現在一律用 post_a14**，post_d8 只留存檔，拿它比會讓 physical_piano 假紅燈。`[docs-consistency:H1]`）
       **未做**：`exports/products/moonlight_batch1/` 的母帶仍是 08-28 舊渲染。**月月 2026-09-10 裁決：母帶等月光換源（重轉譜）完成後一起重出**，現在不重出（反正授權未淨不能賣）。**D8 引擎面缺陷條目自此改為「樂譜設定問題已解；引擎槌具標定仍掛 D2」。**
       長期項：Chromatic 槌具 τc 重新標定（擋在 D2）、梁模態比值升級（擋在 D4/D7）、補償飽和診斷警告（純新增，可獨立提案）。原始記錄：
       同 velocity 探針渲染實測：tongue_drum MIDI 37→87 RMS 從 −32.8 掉到 −73.1 dBFS
@@ -558,7 +808,7 @@ see "2026-07-23 round-4 裁決落地" below.**
 - [x] **M4-4c 首輪驗收回饋**：報告看不出用途（預設讀者懂管線）。已修：`report_html.py` 頁首加「這一頁是什麼？」導讀卡 + 六個區塊各加一行「💬 白話」說明；`ai_radiance_m1.report.html` 已重產，**2026-08-15 月月目視驗收通過 → M4 三項齊備轉 Done**（`ROADMAP_PHYSICS.md` §2 M4 列與 §3 M4-4c 已同步）。
 - [x] **M4-4c 二輪回饋「報告像隱藏功能、Standalone 應可當獨立工具」**：`src/ScoreConsole.h` Score 控制台（`c0615fa`）——Standalone 頂列 [Score] 鈕，一鍵渲染 score.json（子程序呼叫同捆 `TsukiSynthCLI.exe`，渲染合約單一來源；輸出 `桌面\TsukiSynth_Renders`）＋開資料夾／開報告／python 產報告。發佈包自此同捆 CLI。**待月月實際操作驗收**。
 
-## 2026-08-06（夜）跨音域響度失衡修正（unstaged 待審）
+## 2026-08-06（夜）跨音域響度失衡修正（~~unstaged 待審~~ 已於 2026-08-10 commit `af849ec`，09-25 註）
 
 - [x] **激發端根因修正**（同題第三線，與亮度 EQ 應急線／阻尼寬頻化長期線並行）：
   τc keytrack（`HammerImpulse::tauCForNote`，文獻擬合 f^-0.32）+ noteOn 攻擊能量
@@ -572,8 +822,9 @@ see "2026-07-23 round-4 裁決落地" below.**
   B 18/18 + C 18/18 + D 18/18，僅既有 moonlight 豁免保持可見）；邊際檔
   summer_m2/m3 rest RMS 皆過（低音變小聲反而擴大邊際）。存證：
   `reports/gate_outputs/loudnessfix_corpus_{A..D}.txt`。
-- [ ] **亮度 EQ 應急層去留覆核**——激發端修正落地後，既有 `global.effects.eq`
+- [x] **亮度 EQ 應急層去留覆核**——激發端修正落地後，既有 `global.effects.eq`
   高頻 shelf 的補償需求可能已部分消失，月月審聽後決定是否調整建議值/文件。
+  **→ 已由 A 區 A4 結案**（2026-08-27 月月裁決「調整文件建議值」，eq 預設不開，程式碼零改動）。`[docs-consistency:T4]`
 
 ## 月月待裁決（pending decisions）
 
@@ -582,7 +833,7 @@ see "2026-07-23 round-4 裁決落地" below.**
 - [x] **spectralTilt heuristic 層去留**——**2026-07-23 裁決：降級保留**，聲音不動，劃界為已文件化 creative 層（不算入物理主張），已同步 `ROADMAP_PHYSICS.md` §0 與 `README.md` 域表註記。
 - [x] **【2026-07-18 round-2 → 2026-07-22 round-3 已修正】piano velocity 物理律「違規」**——量測域變更（寬帶→基頻窄帶）**2026-07-23 裁決：追認**，已同步 `ROADMAP_PHYSICS.md` §6 velocity 列依據欄。詳見 `DEVLOG.md` 2026-07-22 條目、`reports/gate_outputs/deepfix3_selftest.txt`／`deepfix3_gate_full.txt`。
 - [x] **【2026-07-18 round-2 → 2026-07-22 round-3 已修】corpus 逐聲道 RMS 揭露的 2 個既有 rest 超標**——`summer_m2`（decay 2.8→2.6）／`summer_m3`（decay 1.2→1.0，累計 2.1→1.0）的殘響藝術效果**2026-07-23 裁決：接受**。機器 GATE 已於 round-3 過（`verify_score.py` 全項 PASS 含 determinism SHA256 match）。
-- [ ] **Rule 10 前後對照報告審閱**——`reports/deep_fix_before_after.md`（2026-07-18 round-2）：8 首代表曲目改動前後 RMS/頻譜質心/T60/f0 比對，`physical_piano` 是唯一變大聲的一首（+2.346 dB），值得月月過目確認方向是否符合預期。**2026-08-15 月月回饋「看了但看不懂」→ 已補 §00 白話導讀**（一句話結論、逐首白話對照表、主因＝τ→T60 重新定義使音尾變 1/6.9、舌鼓泛音整組換掉的說明、哪些數字不可信、決策選項）。待月月讀完白話版後裁決「整批接受」或「指名回退某項」。
+- [x] **Rule 10 前後對照報告審閱**（**→ 已由 A 區 A1 結案：2026-08-26 月月裁決「放行」，整批接受、無指名回退**。`[docs-consistency:T4]`）——`reports/deep_fix_before_after.md`（2026-07-18 round-2）：8 首代表曲目改動前後 RMS/頻譜質心/T60/f0 比對，`physical_piano` 是唯一變大聲的一首（+2.346 dB），值得月月過目確認方向是否符合預期。**2026-08-15 月月回饋「看了但看不懂」→ 已補 §00 白話導讀**（一句話結論、逐首白話對照表、主因＝τ→T60 重新定義使音尾變 1/6.9、舌鼓泛音整組換掉的說明、哪些數字不可信、決策選項）。待月月讀完白話版後裁決「整批接受」或「指名回退某項」。
 
 ## 2026-07-23 round-4 裁決落地
 
@@ -596,10 +847,16 @@ see "2026-07-23 round-4 裁決落地" below.**
 
 ## Before merging this branch
 
+> **歷史段落**（09-25 註）：分支自 08-26 起已多次 merge 進 `main`——`b47d550`（08-26）、`361101e`（08-28）、`64afb49`／`b7e4330`（08-30）、`34aa904`（09-07）、`b56747d`（09-14）、`3f9b90a`（09-15）。下面各項依實況逐條結案。`[docs-consistency:T5]`
+
 - [x] Review the complete P1–P7 diff; keep it as one atomic physics-hardening commit because production changes, fail-closed contracts, CI gates and their evidence documentation must land together.
 - [x] Push the branch and let the updated Windows CI run Python unit tests, CTest, build targets, the event-specific consonance gate and `physics_verify.py --full` — 2026-08-05 push（`aba7f84` specimen 批 + `4cf4817` scene→reverb 批），CI run 31004676104 全步驟綠。
-- [ ] Validate VST3 scan, MIDI, automation and state round-trip in the intended DAW.
-- [ ] Perform a visual accessibility review of the tuner and generated HTML report with the intended deaf user; automated tests cannot certify readability.
+- [x] Validate VST3 scan, MIDI, automation and state round-trip in the intended DAW.
+      **→ 由 A9／L3b 完成（2026-08-22 真 Cubase）**：掃描、MIDI 實彈、專案存讀都有真 host 證據（`reports/gate_outputs/l3b_cubase_live.txt`）。
+      **但書**：DAW 內的 automation 只驗到 L2 HostProbe 合約層，Cubase GUI 手畫 lane 沒做（A9 已誠實標註）。當時測的是部署的 0.2.0。
+- [~] Perform a visual accessibility review of the tuner and generated HTML report with the intended deaf user; automated tests cannot certify readability.（09-25 拆成兩項：）
+  - [x] HTML 報告：2026-08-15 月月目視驗收通過（M4-4c，見「2026-08-06 月月審聽/驗收裁決落地」）。
+  - [ ] 調音器可讀性：查不到目視證據，待月月本人看。
 
 ## 2026-07-18 round-2 修復（完成，詳見 `docs/DEEP_FIX_ROUND2_2026-07-18.zh-TW.md`）
 
@@ -631,29 +888,42 @@ see "2026-07-23 round-4 裁決落地" below.**
       `docs/STRING_DAMPING_SOURCES.md`；弦不再讀這兩欄，欄位改名
       `beam_plate_beta_air`/`beam_plate_gamma_radiation` 只給 Beam/Plate。
       **Beam/Plate 仍未溯源（D1）**——本缺口對 Chromatic 引擎維持開放。工作項 D1（B3/D3 已關）。
+      **09-25 現況**：D1 仍未搜尋；BeamModel 的 `*2` 經驗阻尼加權去留也卡在 D1，09-25 才正式登記（見「2026-09-25 盤點新登記」）。`[docs-consistency:T8]`
 - [ ] Replace single-frequency damping anchors with broadband/specimen measurements and uncertainty intervals. **2026-08-06 月月裁決升級**：Rule 10 審聽確認材質物理化後全體音色「低音變大聲、高音變超小聲」（`phase_h_before_after.md` §3 已記錄的機制——單頻 η 錨高估高頻衰減是主因之一），本項定為該問題的**長期物理修法**；短期先以 `global.effects.eq` 亮度補償 creative 層應急（同日已落地，見下）。
       **2026-08-10 實作完成但卡住**（程式仍 unstaged）：寬頻化揭露模型缺頻率無關的損耗通道，C2 的 T60 由 39 s 變 129 s、corpus 掉到 72/73 → `reports/damping_broadband_findings.md`。
       該缺口的閉式解已找到（琴橋導納），**本項的前置是 B1**。工作項 A2 / B2。
+      **09-25 現況**：上面「程式仍 unstaged」「卡住」是 08-10 的狀態。B1（琴橋導納）、B2（寬頻化收尾）08-21 Done，08-22 月月接受後 commit（見 A1'），C2 的 T60 由 128.75 s 收斂到 17.66 s，corpus 73/73 回到全 PASS；**弦的部分已解**。
+      缺口保留 [ ]，因為還缺兩塊：實體試體量測與不確定度區間（D7）、梁/板的阻尼溯源（D1）。`[docs-consistency:T8]`
 - [ ] Add the synth-side calibrated force → displacement → radiated pressure/SPL model, including pickup/microphone position, signed/complex modal residue and spatial radiation. The v2 measurement pipeline/comparators are complete; this remaining item is specifically the physical prediction model.
       **輻射理論骨架與絕對校準慣例已備**（1.05 m 球面、1.0 ≡ 1 Pa ≡ 94 dB）→ `docs/EXTERNAL_ANCHOR_SOURCES.md` §1–§3。
       合成端預測模型仍未實作；相位維持 `UNVERIFIED`。工作項 B6。
+      **09-25 現況**：B6 方案 B 08-28 Done——`--dump-modes` 已輸出 `absolute_pressure_per_force` 和 `acoustic_transfer[]`，但這是月月裁決的慣例錨定，不是實測也不是推導。
+      B7 第一原理力鏈停在 09-15 裁決的合法終點（Phase 1 部分完成）。拾音位置、相位、指向性仍 `UNVERIFIED`，缺口維持開放。`[docs-consistency:T8]`
 - [ ] Add coupled-body/soundboard/sympathetic-resonance and realistic damper/pedal physics for piano.
       **閉式公式鏈完整、只需新增音板厚度一個參數** → `docs/BRIDGE_ADMITTANCE_SOURCES.md`。
       是阻尼寬頻化／輻射／木材異向三項的前置。工作項 **B1（建議最先做）**。
+      **09-25 現況**：B1 已 Done（08-21），但它是無限板導納損耗通道，重現不了 Wogram 量到的相鄰半音 5:1 落差（有限音板的共振峰谷結構，`reports/damping_broadband_findings.md` §4.1）。
+      有限音板共振、共鳴、制音器/踏板都還沒做，缺口維持開放。`[docs-consistency:T8]` `[open-work:L1-longterm]`
 - [ ] Replace the velocity proxy with a parameterized nonlinear contact solver using hammer mass, compliance and geometry.
       **鋼琴逐音 `K`/`α` + 槌質量 + Stulov 遲滯參數已備** → `docs/HAMMER_CONTACT_SOURCES.md`。
       現行 `v^-0.2` 對應 `α=1.5`（純赫茲），實測鋼琴氈是 `α=2.3~3.0`。
       **僅適用 Cimbalom/Piano；會撞 §6 velocity 判定。** 工作項 B4 / D2。
+      **09-25 現況**：上面「現行 `v^-0.2`」是 B4 之前的說法。B4 Felt 路徑（Cimbalom/Piano）的非線性接觸求解器 08-27 已 Done（F3 主張域二分，見 B4 條目）；
+      Chromatic 仍卡在 D2，本缺口對 Chromatic 維持開放。`[docs-consistency:T8]`
 - [ ] Model anisotropic/orthotropic wood, temperature and humidity where those claims are needed.
       **24 樹種彈性比 + 25 樹種泊松比 + 含水率公式已備** → `docs/WOOD_ANISOTROPY_SOURCES.md`。
       **建議等 B1 的音板需要 `D` 時一併進場**；單獨做效益低、破壞面大。工作項 B5 / D6。
+      **09-25 現況**：B5 異向 schema 08-28 已入庫，但沒有任何程式讀它（死資料），Kirchhoff 板改異向版沒做，缺口維持開放。`[docs-consistency:T8]`
 - [ ] Validate models against external measured recordings or laboratory modal data not generated by TsukiSynth itself.
       **揚琴／舌鼓／鑼都有公開量測文獻**（初版「證據是零」已更正）→ `docs/EXTERNAL_ANCHOR_SOURCES.md` §5.1。
       但已取得的方法學等級不足、其餘卡付費牆；**可信外部錨仍須實體試體量測**。工作項 D4 / D5 / D7 / A8。
-- [ ] Establish cross-platform numerical reproducibility rules (bit identity where possible, numeric/audio tolerance otherwise).
+      **09-25 現況**：A8 已裁「無可商用校準資料集 → 私下對照參考」（TU Berlin 為 CC BY-NC-SA），D7 實體試體仍沒做，缺口維持開放。`[docs-consistency:T8]`
+- [x] Establish cross-platform numerical reproducibility rules (bit identity where possible, numeric/audio tolerance otherwise).
       **工具與 CI 三平台矩陣已就位、本機 GATE 全過**（`tools/crossplatform_verify.py`）。
       Rule 2：無登記容差時 exit 3 `UNREGISTERED` 只印數字不判定。
       **跨平台實測數字須 push 後由 CI 產出。** 工作項 A5 / C3。
+      **→ 09-25 改 [x]**：X3（2026-08-21，CI run `32446987833` 三平台實測數字）＋C3（2026-08-22 月月裁決照提案登記 `scores/crossplatform_tolerance.json`）完成，`cross-platform-compare` 已是阻斷式 GATE，符合本節「GATE 通過才關缺口」的規定。
+      **注意**：CI 的 Linux leg 標籤寫 clang，實際編譯器是 GCC 13.3（`physics.yml` 沒設 CC/CXX）。所以三平台實際是 MSVC／GCC／AppleClang，日後登記跨平台容差要對到正確編譯器。`[docs-consistency:T5]` `[懷疑者補抓的漏項（code）]`
 - [ ] Add a polyphonic/missing-fundamental tuner mode only if it can refuse ambiguous cases reliably; the current target-aware monophonic detector must not guess.
 
 ## Honest N/A cases
