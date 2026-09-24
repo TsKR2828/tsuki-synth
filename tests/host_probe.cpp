@@ -122,6 +122,32 @@
 //                    is still audible (RMS > -60 dBFS relative to peak) at
 //                    10 s, tying the host-facing NUMBER to something that
 //                    actually still needs to be there.
+//   D12 legacy IR migration (WF0914-D12) three synthetic-state scenarios
+//                    (docs/workcards/WF0914_D12_state_migration.md §1/§2)
+//                    for TsukiSynthProcessor::migrateLegacyReverbIRPath(),
+//                    which upgrades a pre-F-03 DAW project state's bare
+//                    "reverb_ir_path" property (no "reverb_ir" block existed
+//                    before WF0908-P3) into the current three-state
+//                    contract instead of silently leaving no IR loaded.
+//                    Reached, like H7, only through the real VST3-ABI
+//                    setStateInformation() -- this probe has no linked-in
+//                    TsukiSynthProcessor to call the migration function on
+//                    directly -- fed a synthetic pre-F-03 state blob built by
+//                    buildLegacyMigrationStateBlob() (no real old project
+//                    file exists to load from disk). Scenario 1: legacy path
+//                    resolves to a file -> ordinary IRLibrary import,
+//                    fx_reverb_mode left as the saved state had it (migration
+//                    imports the IR but does not force-switch the mode,
+//                    switchModeToIR=false). Scenario 2:
+//                    legacy path does not resolve -> F-03's normal
+//                    missing-IR path (mode forced to Algorithmic, no
+//                    reverb_ir block, ir_missing=1) -- the same signature H7
+//                    scenario 3 already validates for the new schema.
+//                    Scenario 3: a "reverb_ir" block is already present ->
+//                    the legacy key is ignored entirely, proven by the
+//                    migrated state still naming the new schema's own IR
+//                    (never the legacy path's IR) and that IR never
+//                    appearing in the managed library.
 //
 // HONEST SCOPE: this is a JUCE host, not Cubase. It proves VST3-contract
 // behaviour of the shipped binary; Cubase-specific behaviour is L3
@@ -615,6 +641,87 @@ bool memoryBlockContainsAscii (const juce::MemoryBlock& block, const char* needl
         if (std::memcmp (data + i, needle, needleLen) == 0)
             return true;
     return false;
+}
+
+// WF0914-D12: builds a synthetic setStateInformation()-shaped blob carrying
+// the pre-F-03 legacy "reverb_ir_path" property, so
+// TsukiSynthProcessor::migrateLegacyReverbIRPath() (reached only through the
+// opaque VST3 ABI here, same architectural reason as H7's comment block at
+// the top of this file -- this probe holds no linked-in TsukiSynthProcessor)
+// can be exercised without a GUI or a real pre-F-03 project file.
+//
+// Starts from `sourceInstance`'s OWN getStateInformation() output -- so
+// every property real production code writes (presetIndex/engine_index/
+// ir_missing/ir_mismatch/etc) round-trips unmodified, exactly the "bit
+// pattern setStateInformation() actually receives" rather than a hand-typed
+// XML guess -- and edits only the inner TsukiSynthProcessor-state XML nested
+// inside the VST3 wrapper's <VST3PluginState><IComponent>BASE64...
+// </IComponent></VST3PluginState> shell (see this file's
+// decodeVst3ProcessorState() comment for why that shell exists and how the
+// base64 IComponent text maps 1:1 to TsukiSynthProcessor::getStateInformation
+// ()'s own bytes):
+//   - `dropIRChild`: removes any existing "reverb_ir" child first (a fresh
+//     instance's default state has none, but this keeps the helper correct
+//     if called on an instance that already has one loaded).
+//   - `injectIRRef`: when non-null, adds/replaces a "reverb_ir" child built
+//     from that identity -- used to synthesize an "already on the new
+//     schema" state without a GUI (scenario 3: new schema present, legacy
+//     key must be ignored).
+//   - `legacyPath`: always set as the "reverb_ir_path" property (the bare
+//     pre-F-03 key). Empty string = no such property (not used by any of
+//     this card's three scenarios, kept only for completeness).
+// No IEditController child is written: juce_VST3PluginFormatImpl.h's
+// setStateInformation() reuses the IComponent stream for
+// setComponentStateAndResetParameters() (the step that refreshes the
+// host-exposed AudioProcessorParameter values findParam() reads below)
+// unconditionally whenever an editController exists, regardless of whether
+// an IEditController child is present -- confirmed by reading that
+// function's body (juce_VST3PluginFormatImpl.h:2835-2869).
+juce::MemoryBlock buildLegacyMigrationStateBlob (juce::AudioPluginInstance& sourceInstance,
+                                                 const juce::String& legacyPath,
+                                                 bool dropIRChild,
+                                                 const IRLibrary::IRRef* injectIRRef)
+{
+    juce::MemoryBlock outerRaw;
+    sourceInstance.getStateInformation (outerRaw);
+
+    auto outerXml = juce::AudioProcessor::getXmlFromBinary (outerRaw.getData(),
+                                                             (int) outerRaw.getSize());
+    if (outerXml == nullptr) return {};
+    auto* comp = outerXml->getChildByName ("IComponent");
+    if (comp == nullptr) return {};
+
+    juce::MemoryBlock innerRaw;
+    if (! innerRaw.fromBase64Encoding (comp->getAllSubText())) return {};
+    auto innerXml = juce::AudioProcessor::getXmlFromBinary (innerRaw.getData(),
+                                                             (int) innerRaw.getSize());
+    if (innerXml == nullptr) return {};
+
+    if (dropIRChild || injectIRRef != nullptr)
+        if (auto* existing = innerXml->getChildByName ("reverb_ir"))
+            innerXml->removeChildElement (existing, true);
+
+    if (injectIRRef != nullptr)
+    {
+        auto* child = innerXml->createNewChildElement ("reverb_ir");
+        child->setAttribute ("kind", injectIRRef->kind);
+        child->setAttribute ("sha256", injectIRRef->sha256);
+        child->setAttribute ("original_name", injectIRRef->originalName);
+    }
+
+    if (legacyPath.isNotEmpty())
+        innerXml->setAttribute ("reverb_ir_path", legacyPath);
+
+    juce::MemoryBlock newInnerRaw;
+    juce::AudioProcessor::copyXmlToBinary (*innerXml, newInnerRaw);
+
+    juce::XmlElement outer ("VST3PluginState");
+    outer.createNewChildElement ("IComponent")
+         ->addTextElement (newInnerRaw.toBase64Encoding());
+
+    juce::MemoryBlock newOuterRaw;
+    juce::AudioProcessor::copyXmlToBinary (outer, newOuterRaw);
+    return newOuterRaw;
 }
 } // namespace
 
@@ -1110,6 +1217,210 @@ int main (int argc, char** argv)
                         " \"wf0908_h7\" (" << presetFile.getFullPathName() << ")");
         CHECK (! presetFile.existsAsFile(),
                "H7: cleanup -- preset file no longer on disk");
+    }
+
+    // -- D12 legacy reverb_ir_path migration (WF0914-D12) --------------------
+    // See docs/workcards/WF0914_D12_state_migration.md §1/§2 and this file's
+    // buildLegacyMigrationStateBlob() comment for the full rationale.
+    // Exercises TsukiSynthProcessor::migrateLegacyReverbIRPath() through the
+    // same real VST3-ABI setStateInformation() path H7 already validates the
+    // "reverb_ir" schema through, feeding it a synthetic pre-F-03 state blob
+    // (bare "reverb_ir_path" property, no "reverb_ir" block) in place of a
+    // real old project file -- no such file exists to load from disk.
+    std::cout << "\n-- D12 legacy reverb_ir_path migration --\n";
+    {
+        // Template instance: its own getStateInformation() output is what
+        // buildLegacyMigrationStateBlob() edits. A fresh default state has
+        // no "reverb_ir" block, matching every pre-F-03 project (the new
+        // schema did not exist yet when such a project was last saved).
+        juce::String sourceErr;
+        auto sourceInst = fm.createPluginInstance (desc, kSampleRate, kBlockSize, sourceErr);
+        CHECK (sourceInst != nullptr, "D12: template instance created for building"
+                                      " synthetic legacy state blobs");
+
+        if (sourceInst != nullptr)
+        {
+            // -- scenario 1: 檔案存在 -> 正常 IRLibrary 匯入，等同使用者手動
+            // 載入該 .wav (workcard §1 item 1) --------------------------------
+            std::cout << "\n  -- D12 scenario 1: legacy path resolves to a file --\n";
+            const juce::File legacySource = outDir.getChildFile ("d12_legacy_ir_source.wav");
+            writeWav (makeImpulseFixture (2000, 3), legacySource);
+            const auto expectedSha = IRLibrary::hashFile (legacySource);
+            CHECK (expectedSha.isNotEmpty(),
+                   "D12: legacy IR source fixture hashes ("
+                   << legacySource.getFullPathName() << ")");
+
+            IRLibrary::IRRef expectedRef;
+            expectedRef.sha256 = expectedSha;
+            CHECK (! IRLibrary::resolve (expectedRef).existsAsFile(),
+                   "D12: legacy IR source not yet in the managed library"
+                   " (migration must import it itself, not assume it's already there)");
+
+            const auto blob1 = buildLegacyMigrationStateBlob (
+                *sourceInst, legacySource.getFullPathName(), true, nullptr);
+            CHECK (blob1.getSize() > 0, "D12 scenario 1: synthetic legacy state blob built");
+
+            juce::String err1;
+            auto inst1 = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err1);
+            CHECK (inst1 != nullptr, "D12 scenario 1: fresh real VST3 instance created");
+            if (inst1 != nullptr)
+            {
+                inst1->setStateInformation (blob1.getData(), (int) blob1.getSize());
+
+                // Audit fix (WF0914 D12 re-review): the synthetic source
+                // state's own fx_reverb_mode is left at its default
+                // (Algorithmic, ParameterLayout.cpp choice index 0) -- a
+                // real achievable pre-F-03 project (user loaded an IR, then
+                // switched back to Algorithmic, then saved; the old
+                // reverb_ir_path key was written independently of the mode
+                // parameter -- see `git show 31eb7ae^:src/PluginProcessor.cpp`
+                // lines 699-700/743-745). Migration must import the file and
+                // populate the new schema WITHOUT force-switching the mode
+                // the saved state already carries -- that would silently
+                // overwrite the user's own choice, matching neither the
+                // pre-F-03 removed code (which passed
+                // `/*switchModeToIR*/ false`) nor this card's own goal of
+                // not silently discarding saved user state.
+                auto* modeParam = findParam (*inst1, "Reverb Mode");
+                CHECK (modeParam != nullptr && modeParam->getValue() < 0.5f,
+                       "D12 scenario 1: fx_reverb_mode left as the saved state had it"
+                       " (Algorithmic) -- migration imports the IR but does not"
+                       " force-switch the mode (switchModeToIR=false), matching the"
+                       " removed pre-F-03 code's own choice");
+
+                juce::MemoryBlock state1raw;
+                inst1->getStateInformation (state1raw);
+                const auto state1 = decodeVst3ProcessorState (state1raw);
+                CHECK (memoryBlockContainsAscii (state1, "<reverb_ir ")
+                       && memoryBlockContainsAscii (state1, expectedSha.toRawUTF8())
+                       && memoryBlockContainsAscii (state1, "ir_missing=\"0\""),
+                       "D12 scenario 1: migrated state carries a reverb_ir block with the"
+                       " legacy file's own content hash and ir_missing=0 -- resolved"
+                       " through the managed library exactly like a fresh GUI import");
+                CHECK (IRLibrary::resolve (expectedRef).existsAsFile(),
+                       "D12 scenario 1: legacy IR now present in the managed library"
+                       " under its content hash (hash/dedupe/kind=user, workcard §1 item 1)");
+                CHECK (memoryBlockContainsAscii (state1, "presetDirty=\"1\""),
+                       "D12 scenario 1 (audit fix): migrated state is marked dirty --"
+                       " a migration silently changes in-memory state (new reverb_ir"
+                       " block) that no longer matches the bytes on disk, so it must"
+                       " not come back as \"not dirty\" (setStateInformation() runs"
+                       " presetManager.setDirty() after restoreDirty() when migration"
+                       " ran, so restoreDirty()'s read of the OLD presetDirty=0 does"
+                       " not silently survive)");
+
+                inst1->releaseResources();
+            }
+
+            IRLibrary::fileForSha (expectedSha).deleteFile();
+            IRLibrary::sidecarForSha (expectedSha).deleteFile();
+            legacySource.deleteFile();
+
+            // -- scenario 2: 檔案不存在 -> F-03 缺檔三態，不安靜留 algorithmic
+            // (workcard §1 item 2) -------------------------------------------
+            std::cout << "\n  -- D12 scenario 2: legacy path does not resolve --\n";
+            const juce::File missingSource = outDir.getChildFile ("d12_legacy_ir_missing.wav");
+            missingSource.deleteFile();   // guarantee it does not exist
+            CHECK (! missingSource.existsAsFile(),
+                   "D12: legacy IR source deliberately absent for scenario 2");
+
+            const auto blob2 = buildLegacyMigrationStateBlob (
+                *sourceInst, missingSource.getFullPathName(), true, nullptr);
+            CHECK (blob2.getSize() > 0, "D12 scenario 2: synthetic legacy state blob built");
+
+            juce::String err2;
+            auto inst2 = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err2);
+            CHECK (inst2 != nullptr, "D12 scenario 2: fresh real VST3 instance created");
+            if (inst2 != nullptr)
+            {
+                inst2->setStateInformation (blob2.getData(), (int) blob2.getSize());
+
+                auto* modeParam = findParam (*inst2, "Reverb Mode");
+                CHECK (modeParam != nullptr && modeParam->getValue() < 0.5f,
+                       "D12 scenario 2: fx_reverb_mode forced to Algorithmic -- F-03's"
+                       " normal missing-IR path (§2.3 row 3), not the silent"
+                       " \"leave algorithmic without saying anything\" this card exists"
+                       " to remove (workcard §1 item 2)");
+
+                juce::MemoryBlock state2raw;
+                inst2->getStateInformation (state2raw);
+                const auto state2 = decodeVst3ProcessorState (state2raw);
+                CHECK (! memoryBlockContainsAscii (state2, "<reverb_ir ")
+                       && memoryBlockContainsAscii (state2, "ir_missing=\"1\""),
+                       "D12 scenario 2: migrated state carries NO reverb_ir block (red"
+                       " line 1: nothing remembered as loaded) and ir_missing=1 -- the"
+                       " same three-state \"missing\" signature H7 scenario 3 validates"
+                       " for the new schema, now also reached from the legacy key");
+                CHECK (memoryBlockContainsAscii (state2, "presetDirty=\"1\""),
+                       "D12 scenario 2 (audit fix): migrated state is marked dirty even"
+                       " on the missing-file path -- fx_reverb_mode was force-changed to"
+                       " Algorithmic and a warning raised, which also diverges from the"
+                       " bytes on disk");
+
+                inst2->releaseResources();
+            }
+
+            // -- scenario 3: 新 schema 已存在 -> 舊鍵忽略，不重複匯入
+            // (workcard §1 item 3) --------------------------------------------
+            std::cout << "\n  -- D12 scenario 3: reverb_ir already present, legacy key"
+                         " ignored --\n";
+            const juce::File irASource = outDir.getChildFile ("d12_irA_source.wav");
+            writeWav (makeImpulseFixture (2200, 4), irASource);
+            juce::String importErrA;
+            const auto irRefA = IRLibrary::importFile (irASource, importErrA);
+            CHECK (! irRefA.sha256.isEmpty(),
+                   "D12: IR-A imported into managed library (" << importErrA << ")");
+
+            const juce::File irBSource = outDir.getChildFile ("d12_irB_source.wav");
+            writeWav (makeImpulseFixture (2600, 5), irBSource);
+            const auto irBSha = IRLibrary::hashFile (irBSource);
+            IRLibrary::IRRef irBRef;
+            irBRef.sha256 = irBSha;
+            CHECK (! IRLibrary::resolve (irBRef).existsAsFile(),
+                   "D12: IR-B not in the managed library before scenario 3"
+                   " (must stay that way -- migration must not run)");
+
+            const auto blob3 = buildLegacyMigrationStateBlob (
+                *sourceInst, irBSource.getFullPathName(), false, &irRefA);
+            CHECK (blob3.getSize() > 0, "D12 scenario 3: synthetic state blob built"
+                                        " (reverb_ir=IR-A + legacy reverb_ir_path=IR-B)");
+
+            juce::String err3;
+            auto inst3 = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err3);
+            CHECK (inst3 != nullptr, "D12 scenario 3: fresh real VST3 instance created");
+            if (inst3 != nullptr)
+            {
+                inst3->setStateInformation (blob3.getData(), (int) blob3.getSize());
+
+                juce::MemoryBlock state3raw;
+                inst3->getStateInformation (state3raw);
+                const auto state3 = decodeVst3ProcessorState (state3raw);
+                CHECK (memoryBlockContainsAscii (state3, "<reverb_ir ")
+                       && memoryBlockContainsAscii (state3, irRefA.sha256.toRawUTF8())
+                       && ! memoryBlockContainsAscii (state3, irBSha.toRawUTF8())
+                       && memoryBlockContainsAscii (state3, "ir_missing=\"0\""),
+                       "D12 scenario 3: migrated state still carries IR-A's own sha256 (the"
+                       " new schema's identity), never IR-B's -- legacy reverb_ir_path is"
+                       " ignored once a reverb_ir block already exists (workcard §1 item 3)");
+                CHECK (! IRLibrary::resolve (irBRef).existsAsFile(),
+                       "D12 scenario 3: IR-B still absent from the managed library --"
+                       " migrateLegacyReverbIRPath() never ran, no import happened");
+                CHECK (memoryBlockContainsAscii (state3, "presetDirty=\"0\""),
+                       "D12 scenario 3 (audit fix contrast): migration never ran, so"
+                       " unlike scenarios 1/2 the dirty flag is untouched by D12 code --"
+                       " confirms the setDirty() call in setStateInformation() is gated"
+                       " on migratedLegacyIR actually having run, not unconditional");
+
+                inst3->releaseResources();
+            }
+
+            IRLibrary::fileForSha (irRefA.sha256).deleteFile();
+            IRLibrary::sidecarForSha (irRefA.sha256).deleteFile();
+            irASource.deleteFile();
+            irBSource.deleteFile();
+
+            sourceInst->releaseResources();
+        }
     }
 
     // -- H8 tail length (WF0907-E5) ------------------------------------------

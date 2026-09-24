@@ -167,6 +167,49 @@ private:
         getStateInformation() embed. */
     juce::ValueTree buildReverbIRBlock() const;
     void setIRWarning (const juce::String& message);
+    /** WF0914-D12: the "resolved to nothing, no GUI to ask" tail shared by
+        restoreReverbIR()'s §2.3 row 3 and migrateLegacyReverbIRPath()'s
+        missing-file case -- forces fx_reverb_mode back to Algorithmic and
+        raises the one-shot "not loaded" warning naming `originalName`
+        (F03_IR_PRESET_RECALL.zh-TW.md §7.2/§7.6 wording). Does not touch
+        reverbIRMissing/expectedIRRef: the two callers populate those
+        differently (a real IRRef with a sha256 vs. a migration placeholder
+        that has none), and centralising just the mode-force + warning text
+        here is what the card means by "遷移邏輯集中一處". */
+    void forceAlgorithmicMissingIR (const juce::String& originalName);
+    /** WF0914-D12: migrates a pre-F-03 DAW project state's bare
+        "reverb_ir_path" property (the only IR identity that existed before
+        WF0908-P3 introduced the "reverb_ir" {kind,sha256,original_name}
+        schema) into the current three-state contract. Called by
+        setStateInformation() only when that state has NO "reverb_ir" block
+        (checked by the caller -- new-schema state always wins, the old key
+        is then ignored for good, workcard §1 item 3) and the legacy key is
+        present. Must run AFTER restoreReverbIR() has already cleared any
+        loaded IR (red line 1: never carries a previous instance's IR across
+        a state load), so this function itself never calls
+        effectChain.clearImpulseResponse() again.
+        - Path still resolves to a file on disk: ordinary IRLibrary import
+          (hash/dedupe/kind=user) via the same loadReverbIRFile() a GUI file
+          pick uses -- workcard §1 item 1, "等同使用者手動載入該 .wav", BUT
+          with switchModeToIR=false: unlike an interactive GUI pick, this is
+          a state *restore*, and apvts.replaceState() (called earlier in
+          setStateInformation(), before restoreReverbIR()/this function run)
+          has already put fx_reverb_mode wherever the saved project left it
+          -- which may be Algorithmic even though reverb_ir_path is present
+          (a user can load an IR, then switch back to Algorithmic, then
+          save; the old code never coupled the two). The pre-F-03
+          implementation this replaces (see `git show 31eb7ae^` for the
+          removed original) made the same choice --
+          `loadReverbIRFile (juce::File (irPath), irError, switchModeToIR=false)`
+          -- specifically to avoid silently
+          overriding the mode the user's own saved state carries. "等同使用者
+          手動載入該 .wav" (workcard §1 item 1) describes the import
+          mechanics (hash/dedupe/kind=user, same function as a GUI pick),
+          not a claim that mode-switching should also be replayed.
+        - Path does not resolve: F-03's normal missing-IR path (§2.3 row 3)
+          via forceAlgorithmicMissingIR() -- workcard §1 item 2, never a
+          silent fallback to algorithmic with no UI indication. */
+    void migrateLegacyReverbIRPath (const juce::String& legacyPath);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthProcessor)
 };

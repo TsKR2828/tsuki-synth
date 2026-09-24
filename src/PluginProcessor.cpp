@@ -602,7 +602,47 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         // Algorithmic and raises a one-shot warning (never silently keeps
         // whatever IR this instance happened to have loaded before -- red
         // line 1).
-        restoreReverbIR (tree.getChildWithName ("reverb_ir"));
+        const auto irChild = tree.getChildWithName ("reverb_ir");
+        restoreReverbIR (irChild);
+
+        // WF0914-D12: pre-F-03 project state (saved before WF0908-P3) never
+        // wrote a "reverb_ir" block at all -- it wrote a bare
+        // "reverb_ir_path" property instead (the old PluginProcessor.cpp's
+        // now-removed reload-on-DAW-state-restore path). Since
+        // restoreReverbIR() above has no code that looks for that old
+        // property name, loading such a project used to silently leave no
+        // IR loaded -- this is the workcard's motivating defect. Migrate
+        // only when the new schema was genuinely absent from this state
+        // (irChild.isValid() reflects what was actually in `tree`, not
+        // restoreReverbIR()'s outcome, so a malformed-but-present reverb_ir
+        // block still correctly skips migration -- card §1 item 3, "新
+        // schema 已存在 → 舊鍵忽略").
+        bool migratedLegacyIR = false;
+        if (! irChild.isValid())
+        {
+            const auto legacyIRPath = tree.getProperty ("reverb_ir_path", juce::String()).toString();
+            if (legacyIRPath.isNotEmpty())
+            {
+                migrateLegacyReverbIRPath (legacyIRPath);
+                migratedLegacyIR = true;
+                // The legacy key has now been consumed (imported, or
+                // recorded as missing via expectedIRRef) -- drop it from the
+                // live state so it does not linger in every future save this
+                // session produces. `tree` shares its underlying ValueTree
+                // SharedObject with apvts.state after apvts.replaceState()
+                // above (AudioProcessorValueTreeState::replaceState() is a
+                // plain `state = newState` handle assignment, not a deep
+                // copy), so this mutation is visible to
+                // TsukiSynthProcessor::getStateInformation() too. This does
+                // NOT affect the original DAW project file on disk -- only
+                // this session's in-memory state -- so reopening that same
+                // old, unmodified project file again still re-migrates
+                // correctly (card §1 item 3 only forbids re-migrating once a
+                // "reverb_ir" block already exists, which removing this
+                // unrelated property does not create).
+                tree.removeProperty ("reverb_ir_path", nullptr);
+            }
+        }
 
         presetManager.reattachListener();
         const int resolvedPreset = presetId.isNotEmpty()
@@ -611,6 +651,25 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         const bool missingSavedPreset = presetId.isNotEmpty() && resolvedPreset < 0;
         presetManager.restoreDirty (
             (int) tree.getProperty ("presetDirty", 0) != 0 || missingSavedPreset);
+        // WF0914-D12 audit fix: migrateLegacyReverbIRPath() (above) may have
+        // called loadReverbIRFile() -- which calls presetManager.setDirty()
+        // internally -- or forced fx_reverb_mode to Algorithmic via
+        // forceAlgorithmicMissingIR(). Either way the live state this
+        // instance now holds has diverged from the bytes the DAW project
+        // still has on disk (a "reverb_ir" block now exists in memory where
+        // the saved project only had the bare legacy path, or the mode
+        // param moved), the same kind of divergence setDirty() exists to
+        // flag elsewhere. restoreDirty() just above reads `presetDirty` from
+        // the OLD saved state and unconditionally overwrites whatever
+        // setDirty() calls happened during this function -- so without this,
+        // a migrated project would silently come back up as "not dirty"
+        // even though its in-memory state no longer matches what a
+        // subsequent getStateInformation() would write. Run after
+        // restoreDirty(), not merged into it, so it can never accidentally
+        // clear a legitimate presetDirty=1 that had nothing to do with the
+        // migration.
+        if (migratedLegacyIR)
+            presetManager.setDirty();
         restoredProgramToIgnore.store (resolvedPreset, std::memory_order_release);
     }
 }
@@ -761,6 +820,11 @@ void TsukiSynthProcessor::restoreReverbIR (const juce::ValueTree& irBlock)
     // never leave the UI claiming IR while audio silently runs algorithmic
     // (red line 2) or clip/mute the transport (§4/§7.2's "不可靜音").
     reverbIRMissing = true;
+    forceAlgorithmicMissingIR (expected.originalName);
+}
+
+void TsukiSynthProcessor::forceAlgorithmicMissingIR (const juce::String& originalName)
+{
     if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
             apvts.getParameter ("fx_reverb_mode")))
         *p = 0;
@@ -769,7 +833,7 @@ void TsukiSynthProcessor::restoreReverbIR (const juce::ValueTree& irBlock)
         (UiLocale::isChinese() ? juce::String (juce::CharPointer_UTF8 (
              "\xe6\x9c\xaa\xe8\xbc\x89\xe5\x85\xa5\xef\xbc\x9a"))          // "未載入："
                                : juce::String ("Not loaded: "))
-        + expected.originalName
+        + originalName
         + (UiLocale::isChinese()
                ? juce::String (juce::CharPointer_UTF8 (
                      "\xe2\x80\x94\xe2\x80\x94\xe9\x80\x99\xe5\x80\x8b preset "
@@ -780,6 +844,56 @@ void TsukiSynthProcessor::restoreReverbIR (const juce::ValueTree& irBlock)
                : juce::String (" -- this preset's IR could not be found on this"
                                 " computer. Switched back to algorithmic reverb;"
                                 " the volume will differ from IR mode.")));
+}
+
+void TsukiSynthProcessor::migrateLegacyReverbIRPath (const juce::String& legacyPath)
+{
+    // WF0914-D12: see the header comment for the full behaviour contract.
+    // Precondition (enforced by the only caller, setStateInformation()):
+    // restoreReverbIR() already ran this state load and found no "reverb_ir"
+    // block, so effectChain/reverbIRRef/reverbIRMissing/expectedIRRef are
+    // already the freshly-cleared "nothing loaded" state -- this function
+    // never needs to (and does not) clear anything itself.
+    const juce::File file (legacyPath);
+    if (file.existsAsFile())
+    {
+        // §1 item 1: file still resolves -- ordinary IRLibrary import
+        // (hash/dedupe/kind=user), same function a GUI file pick uses. Mode
+        // is NOT force-switched (switchModeToIR=false): apvts.replaceState()
+        // already restored fx_reverb_mode to whatever this project's saved
+        // state carries, and "reverb_ir_path present" does not imply
+        // "fx_reverb_mode was Impulse Response" -- a user can load an IR,
+        // switch back to Algorithmic, then save (the old key was written
+        // independently of the mode, see the pre-F-03 write site kept for
+        // reference at `git show 31eb7ae^:src/PluginProcessor.cpp` lines
+        // 699-700). Forcing IR mode here would silently overwrite that
+        // user's own saved choice -- exactly the kind of silent state
+        // change this card exists to prevent, just on the other field. The
+        // removed pre-F-03 migration code made the same call
+        // (`/*switchModeToIR*/ false`, same source line range 743-745),
+        // so this also matches historic behaviour, not just avoids
+        // regressing it. A failure here (unreadable, >30 s) is not the
+        // "missing file" case the card is about -- it degrades the same way
+        // a bad GUI-picked file would: no IR loaded, no forced mode change,
+        // no fabricated identity to warn about.
+        juce::String importError;
+        loadReverbIRFile (file, importError, false);
+        return;
+    }
+
+    // §1 item 2: file does not resolve -- F-03's normal missing-IR path
+    // (§2.3 row 3), NOT the silent "leave algorithmic without saying
+    // anything" behaviour this card exists to remove. There is no content
+    // hash to carry (the file cannot be read), so this cannot go through
+    // restoreReverbIR()'s ValueTree-based path (which requires a real
+    // "reverb_ir" block with a non-empty sha256) -- it sets the same fields
+    // that path's row-3 branch sets, directly, recording the legacy path's
+    // filename as `original_name` for UI display (getIRStatus().name reads
+    // expectedIRRef.originalName whenever reverbIRMissing is true).
+    reverbIRMissing = true;
+    expectedIRRef = {};
+    expectedIRRef.originalName = file.getFileName();
+    forceAlgorithmicMissingIR (expectedIRRef.originalName);
 }
 
 juce::ValueTree TsukiSynthProcessor::buildReverbIRBlock() const
