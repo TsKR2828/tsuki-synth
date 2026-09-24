@@ -156,6 +156,62 @@ both passed every synthetic grid and then failed 4 of 5 real sentinel
 notes. `course_semantics_check()` puts it in the synthetic tool where it
 belongs, at both an equal-amplitude and a 0.5/1/0.5 amplitude course,
 judged against the same 1.0-cent bar.
+
+Release/damping-segment corpus (WF0914-D15; also exit-code affecting, folded
+into run_grid()/run_holdout_grid() as the "release" segment -- see
+RELEASE_FACTORS / RELEASE_TIME_S / synth_tone_release() below)
+------------------------------------------------------------------
+WF0909-C10C's real-audio rejection (module reference:
+reports/decision_packets/C10_selfcal_domain.zh-TW.md S6.3 /
+docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S9.6) found the structural reason
+a matched-model estimator can sweep every grid above and still be wrong on
+real renders: every signal this file synthesized before D15 was a SINGLE
+exponential decay for the whole analysis window, but a real note that gets
+damped (key released, sustain pedal lifted, or voice-stolen) mid-window is
+NOT -- ModalResonator::damp(factor) (src/dsp/ModalResonator.h L107-117)
+shortens the CURRENT decayTime by `factor` without resetting amplitude, so
+the true envelope is continuous in amplitude but discontinuous in decay
+RATE at the release instant. The synthetic corpus was therefore blind to
+exactly the failure geometry that mattered (WF0909-C10C's diagnosed
+piano notes: duration 0.215-0.231 s inside a 1.23 s analysis window).
+
+D15 closes that gap by adding a SECOND segment type, "release", alongside
+the original ("sustain", unchanged) to both run_grid() and
+run_holdout_grid(): `synth_tone_release()` builds the same falling-
+harmonic-series partial stack as synth_tone(), decaying at T60_S until
+RELEASE_TIME_S after onset, then continuing from whatever amplitude it has
+already reached at a SHORTENED T60 = T60_S * release_factor -- the same
+two-stage law ModalResonator.damp() implements, not a re-derived one. The
+true fundamental (freqs[0]) is unaffected by the envelope change, so
+ground truth is exactly as known as the sustain corpus's.
+
+`release_factor` is drawn from RELEASE_FACTORS, the ACTUAL values this
+project's engines call ModalResonator::damp()/StringModel damp() with (grep
+result, not invented -- R4): 0.002 (voice-stealing quick fade,
+src/engines/CimbalomEngine.h L355 and src/engines/ChromaticEngine.h L279,
+same value independently in two engines), 0.05 (CimbalomEngine's regular
+noteOff()/sustain-pedal-release path, src/engines/CimbalomEngine.h L867
+inside applyDamp()), and 0.08 (ChromaticEngine's regular noteOff() path,
+src/engines/ChromaticEngine.h L273/289/410). Each release cell in the grid
+cycles through these three factors in turn so the corpus spans the engines'
+actual damping-RANGE rather than picking one number. RELEASE_TIME_S (0.20 s
+post-onset) is an engineering test-timing choice, not a literature
+constant (labelled as such per WF0914_README S2 point 3): it sits inside
+melody_verify.PITCH_SEG_S's analysis window ((0.020, 1.250) s relative to
+onset) and is the same order of magnitude as the short real note durations
+WF0909-C10C actually measured getting damped mid-window.
+
+`release_sensitivity_check()` is the release corpus's own anti-false-green
+positive control (module docstring "Sensitivity anti-false-green check"
+section, same idea, same +-3.0/-3.0-cent injection and 1.0-cent tolerance,
+applied to a release-segment signal instead of a plain sustain one): it
+proves the estimator is measuring the release corpus's TRUE frequency, not
+just echoing back the expected value, before any worst-case number computed
+over that corpus is trusted.
+
+R2/R3 unchanged by this section: no threshold, band, exit-code rule, or
+grid point is REMOVED; MAX_ABS_ERROR_CENTS_LIMIT and SENSITIVITY_TOL_CENTS
+are reused, not widened or re-derived.
 """
 import argparse
 import math
@@ -206,6 +262,28 @@ HOLDOUT_LEVELS_DBFS = (-12.0, -45.0)
 # 6.9375 x hop).
 HOLDOUT_T_ONSET_S = 0.0507
 
+# -- release/damping-segment corpus knobs (WF0914-D15; provenance in module
+# docstring "Release/damping-segment corpus" section above) ------------------
+# Actual values engines call ModalResonator::damp()/StringModel.damp() with
+# (grep'd from src/, not invented -- R4):
+#   0.002 -- voice-stealing quick fade-out, src/engines/CimbalomEngine.h:355
+#            `strings[s].damp (0.002f);` and src/engines/ChromaticEngine.h:279
+#            `resonator.damp (0.002f);` (same value, two independent engines)
+#   0.05  -- CimbalomEngine's regular noteOff()/sustain-pedal-release damper,
+#            src/engines/CimbalomEngine.h:867 (applyDamp(): `strings[s].damp
+#            (0.05f);`)
+#   0.08  -- ChromaticEngine's regular noteOff()/sustain-pedal-release damper,
+#            src/engines/ChromaticEngine.h:273 / :289 / :410
+#            (`resonator.damp (0.08f);`)
+RELEASE_FACTORS = (0.002, 0.05, 0.08)
+# Engineering test-timing choice (R4-labelled, not a literature constant):
+# lands inside melody_verify.PITCH_SEG_S's analysis window ((0.020, 1.250) s
+# relative to onset) and matches the order of magnitude of the short real
+# note durations (0.215-0.231 s) WF0909-C10C measured getting damped
+# mid-window (reports/decision_packets/C10_selfcal_domain.zh-TW.md S6.3;
+# docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S9.6).
+RELEASE_TIME_S = 0.20
+
 
 def midi_to_hz(midi):
     return 440.0 * 2.0 ** ((midi - 69) / 12.0)
@@ -250,6 +328,47 @@ def synth_tone(freqs, amps, sr, t_onset, duration_s, t60, peak_dbfs,
     return sig + noise
 
 
+def synth_tone_release(freqs, amps, sr, t_onset, duration_s, t60_sustain,
+                        release_time_s, release_factor, peak_dbfs,
+                        noise_floor_dbfs=NOISE_FLOOR_DBFS_RMS, seed=NOISE_SEED):
+    """WF0914-D15: two-stage-decay counterpart of synth_tone() (module
+    docstring "Release/damping-segment corpus" section). Identical to
+    synth_tone() for t < t_onset + release_time_s (T60 = t60_sustain); at
+    and after that instant the envelope continues from whatever amplitude
+    it already reached but decays at T60 = t60_sustain * release_factor --
+    amplitude-continuous, decay-rate-discontinuous, mirroring
+    ModalResonator::damp() (src/dsp/ModalResonator.h L107-117) exactly:
+    that function also only rewrites decayCoeff going forward from the
+    CURRENT amplitude, never resets it."""
+    n = int(round(duration_s * sr))
+    t = np.arange(n) / sr
+    active = t >= t_onset
+    tt = np.where(active, t - t_onset, 0.0)
+    # stage 1 (0..release_time_s): identical formula to synth_tone().
+    # stage 2 (>= release_time_s): continues from the stage-1 amplitude at
+    # release_time_s, then decays at the shortened T60 for the elapsed time
+    # since the release instant -- same log-domain construction as
+    # synth_tone()'s single-stage exp(), just composed in two pieces.
+    env = np.exp(-math.log(1000.0) * np.minimum(tt, release_time_s) / t60_sustain)
+    t60_release = t60_sustain * release_factor
+    tail = np.where(tt > release_time_s, tt - release_time_s, 0.0)
+    env = env * np.exp(-math.log(1000.0) * tail / t60_release) * active
+    sig = np.zeros(n)
+    for f, a in zip(freqs, amps):
+        sig += a * env * np.sin(2.0 * np.pi * f * t)
+    peak = float(np.max(np.abs(sig)))
+    target_peak = 10.0 ** (peak_dbfs / 20.0)
+    if peak > 0:
+        sig *= target_peak / peak
+    rng = np.random.default_rng(seed)
+    noise = rng.standard_normal(n)
+    noise_rms = float(np.sqrt(np.mean(noise ** 2)))
+    target_rms = 10.0 ** (noise_floor_dbfs / 20.0)
+    if noise_rms > 0:
+        noise *= target_rms / noise_rms
+    return sig + noise
+
+
 def measure_one(midi, variant, level_dbfs, sr, t_onset=T_ONSET_S, t60=T60_S,
                  duration_s=DURATION_S, freq_offset_cents=0.0, seed=NOISE_SEED):
     """Synthesizes one grid cell and returns
@@ -264,6 +383,34 @@ def measure_one(midi, variant, level_dbfs, sr, t_onset=T_ONSET_S, t60=T60_S,
         freqs = freqs * shift
     sig = synth_tone(freqs, amps, sr, t_onset, duration_s, t60, level_dbfs,
                       seed=seed)
+    cents, fail = mv.measure_pitch_cents(sig, sr, f0_true, t_onset)
+    onset_err_ms = None
+    if fail is None:
+        lo, hi = mv.band_of(f0_true)
+        t_ref = mv.refined_onset(sig, sr, lo, hi, t_onset)
+        if t_ref is not None:
+            onset_err_ms = (t_ref - t_onset) * 1e3
+    return cents, fail, onset_err_ms, f0_nominal, f0_true
+
+
+def measure_one_release(midi, variant, level_dbfs, sr, release_factor,
+                         t_onset=T_ONSET_S, t60=T60_S,
+                         release_time_s=RELEASE_TIME_S,
+                         duration_s=DURATION_S, freq_offset_cents=0.0,
+                         seed=NOISE_SEED):
+    """Release-segment counterpart of measure_one(): same grid cell
+    (midi/variant/level/sr), same ground-truth f0_true, but synthesized with
+    synth_tone_release() instead of synth_tone() (module docstring
+    "Release/damping-segment corpus" section). Same return shape as
+    measure_one() so callers/summarize() need no special-casing."""
+    f0_nominal = midi_to_hz(midi)
+    freqs, amps, f0_true = build_partials(f0_nominal, variant, sr)
+    if freq_offset_cents:
+        shift = 2.0 ** (freq_offset_cents / 1200.0)
+        freqs = freqs * shift
+    sig = synth_tone_release(freqs, amps, sr, t_onset, duration_s, t60,
+                              release_time_s, release_factor, level_dbfs,
+                              seed=seed)
     cents, fail = mv.measure_pitch_cents(sig, sr, f0_true, t_onset)
     onset_err_ms = None
     if fail is None:
@@ -309,12 +456,43 @@ def measure_one_holdout(midi, offset_cents, b, level_dbfs, sr,
     return cents, fail, onset_err_ms, f0_nominal, f0_true
 
 
+def measure_one_holdout_release(midi, offset_cents, b, level_dbfs, sr,
+                                 release_factor,
+                                 t_onset=HOLDOUT_T_ONSET_S, t60=T60_S,
+                                 release_time_s=RELEASE_TIME_S,
+                                 duration_s=DURATION_S, seed=NOISE_SEED):
+    """Release-segment counterpart of measure_one_holdout() (WF0914-D15):
+    same hold-out cell (midi/offset/B/level/sr), same ground-truth f0_true,
+    synthesized with synth_tone_release() instead of synth_tone(). Same
+    return shape so it plugs into summarize() unchanged."""
+    f0_nominal = midi_to_hz(midi) * (2.0 ** (offset_cents / 1200.0))
+    freqs, amps, f0_true = build_holdout_partials(midi, offset_cents, b, sr)
+    sig = synth_tone_release(freqs, amps, sr, t_onset, duration_s, t60,
+                              release_time_s, release_factor, level_dbfs,
+                              seed=seed)
+    cents, fail = mv.measure_pitch_cents(sig, sr, f0_true, t_onset)
+    onset_err_ms = None
+    if fail is None:
+        lo, hi = mv.band_of(f0_true)
+        t_ref = mv.refined_onset(sig, sr, lo, hi, t_onset)
+        if t_ref is not None:
+            onset_err_ms = (t_ref - t_onset) * 1e3
+    return cents, fail, onset_err_ms, f0_nominal, f0_true
+
+
 def run_holdout_grid():
     """Builds the WF0909-C10B hold-out grid (module docstring "Hold-out
     grid" section): 65 MIDI notes x 2 off-lattice cent offsets x 2
     inharmonicity B values x 2 peak levels x 2 sample rates = 1040 points,
-    every knob disjoint from the development grid's (run_grid)."""
+    every knob disjoint from the development grid's (run_grid), TAGGED
+    segment="sustain" -- PLUS (WF0914-D15) an equal-size "release" segment
+    built from the identical (midi, offset, b, level, sr) cells via
+    measure_one_holdout_release(), cycling through RELEASE_FACTORS, giving
+    2080 points total. Same pass/fail rule as the development grid
+    (max_abs_error_cents <= MAX_ABS_ERROR_CENTS_LIMIT, 0 refusals) -- the 1.0
+    cent number is not relaxed for hold-out or for the release segment (R2)."""
     rows = []
+    release_idx = 0
     for sr in SR_LIST:
         for midi in range(MIDI_LO, MIDI_HI + 1):
             for offset in HOLDOUT_OFFSETS_CENTS:
@@ -327,6 +505,18 @@ def run_holdout_grid():
                             "b": b, "level_dbfs": level, "f0_nominal": f0_nom,
                             "f0_true": f0_true, "error_cents": cents,
                             "fail_reason": fail, "onset_err_ms": onset_err_ms,
+                            "segment": "sustain", "release_factor": None,
+                        })
+                        rfactor = RELEASE_FACTORS[release_idx % len(RELEASE_FACTORS)]
+                        release_idx += 1
+                        rcents, rfail, ronset, rf0nom, rf0true = measure_one_holdout_release(
+                            midi, offset, b, level, sr, rfactor)
+                        rows.append({
+                            "sr": sr, "midi": midi, "offset_cents": offset,
+                            "b": b, "level_dbfs": level, "f0_nominal": rf0nom,
+                            "f0_true": rf0true, "error_cents": rcents,
+                            "fail_reason": rfail, "onset_err_ms": ronset,
+                            "segment": "release", "release_factor": rfactor,
                         })
     return rows
 
@@ -431,7 +621,15 @@ def band_label(f0):
 
 
 def run_grid():
+    """Development grid (module docstring "Grid" section): the original
+    1170-point single-exponential-decay ("sustain") corpus, TAGGED
+    segment="sustain" -- PLUS (WF0914-D15) an equal-size "release" segment
+    built from the identical (midi, variant, level, sr) cells via
+    measure_one_release(), cycling through RELEASE_FACTORS so the corpus
+    spans the engines' actual damping-factor range (module docstring
+    "Release/damping-segment corpus" section), giving 2340 points total."""
     rows = []
+    release_idx = 0
     for sr in SR_LIST:
         for midi in range(MIDI_LO, MIDI_HI + 1):
             for variant in VARIANTS:
@@ -443,6 +641,18 @@ def run_grid():
                         "level_dbfs": level, "f0_nominal": f0_nom,
                         "f0_true": f0_true, "error_cents": cents,
                         "fail_reason": fail, "onset_err_ms": onset_err_ms,
+                        "segment": "sustain", "release_factor": None,
+                    })
+                    rfactor = RELEASE_FACTORS[release_idx % len(RELEASE_FACTORS)]
+                    release_idx += 1
+                    rcents, rfail, ronset, rf0nom, rf0true = measure_one_release(
+                        midi, variant, level, sr, rfactor)
+                    rows.append({
+                        "sr": sr, "midi": midi, "variant": variant,
+                        "level_dbfs": level, "f0_nominal": rf0nom,
+                        "f0_true": rf0true, "error_cents": rcents,
+                        "fail_reason": rfail, "onset_err_ms": ronset,
+                        "segment": "release", "release_factor": rfactor,
                     })
     return rows
 
@@ -453,6 +663,30 @@ def sensitivity_check(midi=69, variant="harmonic", level_dbfs=-6.0, sr=48000):
     for offset in (SENSITIVITY_OFFSET_CENTS, -SENSITIVITY_OFFSET_CENTS):
         cents, fail, _onset, _nom, _true = measure_one(
             midi, variant, level_dbfs, sr, freq_offset_cents=offset)
+        ok = (fail is None and cents is not None
+              and abs(cents - offset) <= SENSITIVITY_TOL_CENTS)
+        out.append((offset, cents, fail, ok))
+    return out
+
+
+def release_sensitivity_check(midi=69, variant="harmonic", level_dbfs=-6.0,
+                               sr=48000, release_factor=RELEASE_FACTORS[1]):
+    """WF0914-D15 positive control (module docstring "Release/damping-
+    segment corpus" section): same idea as sensitivity_check() -- the TRUE
+    synthesized frequency is offset by +/-3.0 cents while the EXPECTED value
+    passed to the estimator stays unshifted -- but built on a RELEASE-
+    segment signal (synth_tone_release()) instead of a plain sustain one.
+    Proves the estimator is measuring the release corpus's true frequency,
+    not echoing back the expected value, before any worst-case number
+    computed over the release segment is trusted. Default release_factor
+    is 0.05 (CimbalomEngine's regular damper, RELEASE_FACTORS[1]) -- the
+    same tolerance/offset numbers as sensitivity_check() (R2: no new
+    number). Returns list of (offset_cents, measured_cents, fail, ok)."""
+    out = []
+    for offset in (SENSITIVITY_OFFSET_CENTS, -SENSITIVITY_OFFSET_CENTS):
+        cents, fail, _onset, _nom, _true = measure_one_release(
+            midi, variant, level_dbfs, sr, release_factor,
+            freq_offset_cents=offset)
         ok = (fail is None and cents is not None
               and abs(cents - offset) <= SENSITIVITY_TOL_CENTS)
         out.append((offset, cents, fail, ok))
@@ -478,6 +712,21 @@ def summarize(rows):
             continue
         by_level.setdefault(r["level_dbfs"], []).append(abs(r["error_cents"]))
 
+    # WF0914-D15: split by "segment" (sustain / release) when the rows carry
+    # that tag (run_grid()/run_holdout_grid()); absent on rows from older
+    # call sites (e.g. a caller building its own row list), so default to
+    # "sustain" rather than KeyError.
+    by_segment = {}
+    n_fail_by_segment = {}
+    for r in rows:
+        seg = r.get("segment", "sustain")
+        if r["fail_reason"] is not None:
+            n_fail_by_segment[seg] = n_fail_by_segment.get(seg, 0) + 1
+            continue
+        if r["error_cents"] is None:
+            continue
+        by_segment.setdefault(seg, []).append(abs(r["error_cents"]))
+
     onset_errs = [r["onset_err_ms"] for r in rows if r["onset_err_ms"] is not None]
     return {
         "max_abs_error_cents": max_abs,
@@ -486,6 +735,8 @@ def summarize(rows):
         "fails": fails,
         "by_band": {k: max(v) for k, v in by_band.items()},
         "by_level": {k: max(v) for k, v in by_level.items()},
+        "by_segment": {k: max(v) for k, v in by_segment.items()},
+        "n_fail_by_segment": n_fail_by_segment,
         "onset_max_abs_ms": max((abs(e) for e in onset_errs), default=None),
         "onset_n": len(onset_errs),
     }
@@ -539,6 +790,13 @@ def main():
         v = summ["by_level"].get(level)
         print("    %+6.1f dBFS  %s" % (level, ("%.4f c" % v) if v is not None else "(no points)"))
 
+    print("  by segment (WF0914-D15, max |error_cents|, fail_reason count):")
+    for seg in ("sustain", "release"):
+        v = summ["by_segment"].get(seg)
+        nf = summ["n_fail_by_segment"].get(seg, 0)
+        print("    %-8s %s  (fail_reason on %d)"
+              % (seg, ("%.4f c" % v) if v is not None else "(no points)", nf))
+
     print("  max_abs_error_cents = %s  (limit %.1f)"
           % (("%.4f" % summ["max_abs_error_cents"])
              if summ["max_abs_error_cents"] is not None else "N/A",
@@ -553,6 +811,20 @@ def main():
     sens_ok = True
     for offset, cents, fail, ok in sens:
         sens_ok &= ok
+        if fail is not None:
+            print("    offset %+.1fc -> FAIL: %s" % (offset, fail))
+        else:
+            print("    offset %+.1fc -> measured %+.4fc  [%s]"
+                  % (offset, cents, "OK" if ok else "FAIL"))
+
+    print("  release-segment sensitivity anti-false-green (WF0914-D15; grid "
+          "cell MIDI69/harmonic/-6dBFS/48kHz, release_factor=%g -- module "
+          "docstring 'Release/damping-segment corpus'):"
+          % RELEASE_FACTORS[1])
+    rel_sens = release_sensitivity_check()
+    rel_sens_ok = True
+    for offset, cents, fail, ok in rel_sens:
+        rel_sens_ok &= ok
         if fail is not None:
             print("    offset %+.1fc -> FAIL: %s" % (offset, fail))
         else:
@@ -634,7 +906,7 @@ def main():
           % (("%.4f" % course_max) if course_max is not None else "N/A",
              len(course_rows)))
 
-    passed = grid_ok and sens_ok and gain_ok and course_ok
+    passed = grid_ok and sens_ok and gain_ok and course_ok and rel_sens_ok
     print("RESULT (%s grid): %s"
           % ("hold-out" if a.holdout else "development", "PASS" if passed else "FAIL"))
     if not passed:

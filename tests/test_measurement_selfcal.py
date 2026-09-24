@@ -51,6 +51,25 @@ S8.5/S9.7), not an open promise. The tests below are split accordingly:
       whole development grid, so no estimator swap can land without a
       fresh audit.
 
+STATUS after WF0914-D15 (2026-09-14, card BLOCKED per its own rule -- new
+worst-case > 1.18 c): run_grid()/run_holdout_grid() now each return TWO
+segments, "sustain" (the original single-exponential corpus, unchanged
+numbers) and "release" (WF0914-D15's new two-stage-decay corpus mirroring
+ModalResonator::damp()). The tests below therefore filter to segment ==
+"sustain" wherever they assert the ORIGINAL pinned numbers (1170/1040
+points, 1.1721/1.0840 cents) -- run_grid()'s row COUNT changed (grew), the
+SUSTAIN SUBSET's numbers did not, so this is not a narrowed assertion (R3):
+it is the same check, still exercising the same 1170/1040 points it always
+did, just selected out of a larger returned list. New xfail tests
+(j) test_release_development_grid_within_one_cent and (k)
+test_release_holdout_grid_within_one_cent assert the release segment
+against the SAME unmoved 1-cent bar and currently fail it by a wide margin
+(development 5.2304 c, hold-out 7.2055 c) -- see
+docs/workcards/WF0914_D15_selfcal_corpus.md and the D15 worker report for
+the open month-lead decision this result opens. (l)
+test_release_sensitivity_anti_false_green is the release segment's own
+anti-false-green positive control and passes today.
+
   NOT here any more: the three C10C candidate tests (they imported
   melody_verify.measure_pitch_cents_nls, which option A kept out of the
   tree). See the comment block at the bottom of this file for what they
@@ -79,6 +98,13 @@ import melody_verify as mv        # noqa: E402
 # XPASS by the GRID getting easier rather than an estimator getting better.
 LEGACY_DEV_GRID_MAX_ABS_CENTS = 1.1721
 LEGACY_HOLDOUT_GRID_MAX_ABS_CENTS = 1.0840
+
+# WF0914-D15: the release segment's own pinned numbers (same role as the
+# two above -- stops the xfails below silently drifting to a different
+# number without anyone noticing). Sourced from
+# reports/gate_outputs/wf0914_D15_gate1_dev.txt / _holdout.txt.
+RELEASE_DEV_GRID_MAX_ABS_CENTS = 5.2304
+RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS = 7.2055
 
 XFAIL_REASON = (
     "WF0909-C10C (2026-09-09, card RED): the production estimator is still "
@@ -144,10 +170,14 @@ def test_mutant_estimator_caught_by_sensitivity_check(monkeypatch):
 
 @pytest.mark.xfail(strict=True, reason=XFAIL_REASON)
 def test_development_grid_within_one_cent():
-    """The 1170-point development grid must clear the ratified 1-cent
-    self-certification bar with zero refusals. Production measures
-    1.1721 cents -- the gap C10 opened and C10B/C10C have not closed."""
-    rows = ms.run_grid()
+    """The 1170-point SUSTAIN-segment development grid must clear the
+    ratified 1-cent self-certification bar with zero refusals. Production
+    measures 1.1721 cents -- the gap C10 opened and C10B/C10C have not
+    closed. (WF0914-D15: run_grid() now also returns an equal-size
+    "release" segment; this test filters segment=="sustain" so it keeps
+    testing the exact same 1170 points/number it always has -- see
+    test_release_development_grid_within_one_cent for the new segment.)"""
+    rows = [r for r in ms.run_grid() if r["segment"] == "sustain"]
     fails = [r for r in rows if r["fail_reason"] is not None]
     assert not fails, "development grid produced refusals: %r" % fails[:5]
     errs = [abs(r["error_cents"]) for r in rows if r["error_cents"] is not None]
@@ -164,10 +194,12 @@ def test_holdout_grid_within_one_cent():
     """WF0909-C10B S2.2 overfitting guard: the hold-out grid (disjoint f0
     offsets/B/level/onset from the development grid) must ALSO clear the
     1-cent bar with zero refusals. Production measures 1.0840 cents. Full
-    grid (1040 points) -- slower than the other tests here, but this IS
-    the assertion the card's GATE 1 depends on; a subset would not prove
-    the hold-out number."""
-    rows = ms.run_holdout_grid()
+    SUSTAIN-segment grid (1040 points) -- slower than the other tests here,
+    but this IS the assertion the card's GATE 1 depends on; a subset would
+    not prove the hold-out number. (WF0914-D15: run_holdout_grid() now also
+    returns an equal-size "release" segment; filtered out here so this test
+    keeps testing the exact same 1040 points/number it always has.)"""
+    rows = [r for r in ms.run_holdout_grid() if r["segment"] == "sustain"]
     fails = [r for r in rows if r["fail_reason"] is not None]
     assert not fails, "hold-out grid produced refusals: %r" % fails[:5]
     errs = [abs(r["error_cents"]) for r in rows if r["error_cents"] is not None]
@@ -177,6 +209,74 @@ def test_holdout_grid_within_one_cent():
         "hold-out grid max |error| = %.4f cents exceeds the ratified "
         "%.1f-cent self-calibration limit -- estimator overfits the "
         "development grid" % (max_abs, ms.MAX_ABS_ERROR_CENTS_LIMIT))
+
+
+@pytest.mark.xfail(strict=True, reason=XFAIL_REASON)
+def test_release_development_grid_within_one_cent():
+    """WF0914-D15: the 1170-point RELEASE-segment development grid (module
+    docstring "Release/damping-segment corpus") judged against the SAME
+    unmoved 1-cent bar (R2: no new tolerance). Production measures
+    5.2304 cents -- far worse than the sustain segment's already-missed
+    1.1721 cents, because a real damping-law change mid-analysis-window is
+    exactly the failure geometry the sustain-only corpus was blind to
+    (WF0909-C10C's real-audio rejection)."""
+    rows = [r for r in ms.run_grid() if r["segment"] == "release"]
+    fails = [r for r in rows if r["fail_reason"] is not None]
+    assert not fails, "release-segment development grid produced refusals: %r" % fails[:5]
+    errs = [abs(r["error_cents"]) for r in rows if r["error_cents"] is not None]
+    assert len(errs) == len(rows) == 1170
+    max_abs = max(errs)
+    assert abs(max_abs - RELEASE_DEV_GRID_MAX_ABS_CENTS) < 5e-4, (
+        "release-segment development grid max |error| now measures %.4f "
+        "cents, not the %.4f cents on record -- re-derive the pinned "
+        "number and every document that cites it"
+        % (max_abs, RELEASE_DEV_GRID_MAX_ABS_CENTS))
+    assert max_abs <= ms.MAX_ABS_ERROR_CENTS_LIMIT, (
+        "release-segment development grid max |error| = %.4f cents exceeds "
+        "the ratified %.1f-cent self-calibration limit"
+        % (max_abs, ms.MAX_ABS_ERROR_CENTS_LIMIT))
+
+
+@pytest.mark.xfail(strict=True, reason=XFAIL_REASON)
+def test_release_holdout_grid_within_one_cent():
+    """WF0914-D15 hold-out counterpart of test_release_development_grid_
+    within_one_cent(): the 1040-point RELEASE-segment hold-out grid judged
+    against the same unmoved 1-cent bar. Production measures 7.2055 cents."""
+    rows = [r for r in ms.run_holdout_grid() if r["segment"] == "release"]
+    fails = [r for r in rows if r["fail_reason"] is not None]
+    assert not fails, "release-segment hold-out grid produced refusals: %r" % fails[:5]
+    errs = [abs(r["error_cents"]) for r in rows if r["error_cents"] is not None]
+    assert len(errs) == len(rows) == 1040
+    max_abs = max(errs)
+    assert abs(max_abs - RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS) < 5e-4, (
+        "release-segment hold-out grid max |error| now measures %.4f "
+        "cents, not the %.4f cents on record -- re-derive the pinned "
+        "number and every document that cites it"
+        % (max_abs, RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS))
+    assert max_abs <= ms.MAX_ABS_ERROR_CENTS_LIMIT, (
+        "release-segment hold-out grid max |error| = %.4f cents exceeds "
+        "the ratified %.1f-cent self-calibration limit -- estimator "
+        "overfits the development grid"
+        % (max_abs, ms.MAX_ABS_ERROR_CENTS_LIMIT))
+
+
+def test_release_sensitivity_anti_false_green():
+    """WF0914-D15's own positive control (module docstring "Release/
+    damping-segment corpus" section, mirrors test_sensitivity_anti_false_
+    green but on a release-segment signal): a release-segment signal
+    deliberately mistuned by +/-3.0 cents from the value the estimator is
+    told to expect must be REPORTED as mistuned (+-1.0c tolerance) -- proof
+    the release corpus's worst-case numbers reflect real measurement, not
+    the estimator echoing back the expected value."""
+    results = ms.release_sensitivity_check()
+    assert len(results) == 2
+    for offset, cents, fail, ok in results:
+        assert fail is None, "release sensitivity cell refused: %r" % fail
+        assert ok, (
+            "estimator did not report the injected %.1f-cent mistuning on "
+            "a release-segment signal (measured %.4f, tolerance +-%.1f) -- "
+            "release-corpus anti-false-green check failed"
+            % (offset, cents, ms.SENSITIVITY_TOL_CENTS))
 
 
 @pytest.mark.xfail(strict=True, reason=XFAIL_REASON)
@@ -256,11 +356,11 @@ def test_gain_fidelity_no_regression_vs_legacy():
 
 def test_measure_pitch_cents_matches_legacy_after_revert():
     """Production must be numerically IDENTICAL to
-    measure_pitch_cents_legacy() over the full development grid. Both
-    WF0909-C10B and WF0909-C10C ended with their candidate estimator
-    rejected, so this is what keeps every pitch number already on record in
-    this repo valid, and stops a future estimator swap from landing without
-    a fresh real-audio audit."""
+    measure_pitch_cents_legacy() over the full development grid (both
+    segments, WF0914-D15). Both WF0909-C10B and WF0909-C10C ended with
+    their candidate estimator rejected, so this is what keeps every pitch
+    number already on record in this repo valid, and stops a future
+    estimator swap from landing without a fresh real-audio audit."""
     new_rows = ms.run_grid()
 
     orig = mv.measure_pitch_cents
@@ -270,7 +370,7 @@ def test_measure_pitch_cents_matches_legacy_after_revert():
     finally:
         mv.measure_pitch_cents = orig
 
-    assert len(new_rows) == len(legacy_rows) == 1170
+    assert len(new_rows) == len(legacy_rows) == 2340
     mismatches = [
         (n, l) for n, l in zip(new_rows, legacy_rows)
         if n["fail_reason"] != l["fail_reason"]
@@ -285,13 +385,16 @@ def test_measure_pitch_cents_matches_legacy_after_revert():
         "audit AND the WF0909-C10C real-audio evidence rerun before "
         "shipping whatever changed it: %r"
         % (len(mismatches), len(new_rows), mismatches[:3]))
-    legacy_max = max(abs(r["error_cents"]) for r in legacy_rows
+    legacy_sustain = [r for r in legacy_rows if r["segment"] == "sustain"]
+    assert len(legacy_sustain) == 1170
+    legacy_max = max(abs(r["error_cents"]) for r in legacy_sustain
                      if r["error_cents"] is not None)
     assert abs(legacy_max - LEGACY_DEV_GRID_MAX_ABS_CENTS) < 5e-4, (
         "the production/legacy centroid now measures %.4f cents on the "
-        "development grid, not the %.4f on record -- the GRID changed, so "
-        "every before/after number in reports/c10b_estimator_before_after"
-        ".md, reports/c10c_nls_estimator_before_after.md and "
+        "SUSTAIN segment of the development grid, not the %.4f on record "
+        "-- the GRID changed, so every before/after number in "
+        "reports/c10b_estimator_before_after.md, "
+        "reports/c10c_nls_estimator_before_after.md and "
         "docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S9 needs re-deriving"
         % (legacy_max, LEGACY_DEV_GRID_MAX_ABS_CENTS))
 

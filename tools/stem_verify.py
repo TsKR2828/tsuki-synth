@@ -207,6 +207,38 @@ def read_wav_float(path):
     return sample_rate, n_channels, arr
 
 
+def read_wav_header(path):
+    """WF0914-D14: lightweight RIFF/WAVE header reader -- returns just
+    (sample_rate, n_channels) from the 'fmt ' chunk, WITHOUT ever reading
+    the 'data' chunk's bytes into memory (unlike read_wav_float(), which
+    loads Path(path).read_bytes() -- the WHOLE file, sample data included
+    -- up front). Used where a caller only needs to check a stem's
+    sample_rate/channel-count compatibility against the reference mix and
+    does not (yet) need the actual sample values, so a stem's full audio
+    buffer is never materialized just to answer that yes/no question. Reads
+    incrementally via file seeks (mirrors read_wav_float()'s own chunk-walk
+    / word-alignment rules, just stopping as soon as 'fmt ' is found rather
+    than continuing on to look for 'data')."""
+    with open(path, "rb") as f:
+        head = f.read(12)
+        if len(head) < 12 or head[0:4] != b"RIFF" or head[8:12] != b"WAVE":
+            raise ValueError("%s: not a RIFF/WAVE file" % path)
+        while True:
+            chunk_hdr = f.read(8)
+            if len(chunk_hdr) < 8:
+                raise ValueError("%s: no fmt chunk found" % path)
+            chunk_id = chunk_hdr[0:4]
+            chunk_size = struct.unpack("<I", chunk_hdr[4:8])[0]
+            if chunk_id == b"fmt ":
+                body = f.read(16)
+                if len(body) < 16:
+                    raise ValueError("%s: truncated fmt chunk" % path)
+                _audio_format, n_channels, sample_rate, _byte_rate, \
+                    _block_align, _bits = struct.unpack("<HHIIHH", body)
+                return sample_rate, n_channels
+            f.seek(chunk_size + (chunk_size & 1), 1)  # chunks word-align
+
+
 # ============================================================================
 # derived-score construction
 # ============================================================================
@@ -631,10 +663,50 @@ def pad_to_length(arr, n_samples, n_channels):
     return np.concatenate([arr, pad], axis=0)
 
 
+class StemArrayStream:
+    """WF0914-D14: list-like, streaming view over stems' rendered WAV files.
+    `len()` and iteration both work exactly like a plain Python list of the
+    stems' float64 ndarrays would (compare_superposition() below only ever
+    calls those two on its `stem_arrays` argument, so it cannot tell this
+    apart from a real list), and iterating yields arrays in EXACTLY the
+    order `entries` lists them -- so a caller summing them one at a time
+    (as compare_superposition() does) gets a bit-for-bit identical running
+    total to summing a real pre-built list in that same order. The
+    difference is WHEN each array is read: on demand, one at a time, inside
+    the caller's own summation loop, rather than all up front -- so at most
+    one stem's full sample array is ever resident in memory through this
+    object, not every voiced event's. This is what lets run()'s
+    orchestration avoid the O(event_count) growth this card fixes (the old
+    code's `stem_arrays = {}` dict, filled once per event via
+    read_wav_float() and held until the single final compare_superposition()
+    call at the very end). compare_superposition()'s own logic, tolerances
+    and output are therefore unchanged -- see its docstring; the existing
+    S1 sentinel tests keep exercising it directly with small, real Python
+    lists, unaffected by this class.
+
+    `entries`: list of (orig_idx, wav_path) tuples, in the exact order the
+    sum must accumulate (the caller must build this in the same order as
+    `used`, see run())."""
+
+    def __init__(self, entries):
+        self._entries = entries
+
+    def __len__(self):
+        return len(self._entries)
+
+    def __iter__(self):
+        for _orig_idx, wav_path in self._entries:
+            _sr, _ch, arr = read_wav_float(wav_path)
+            yield arr
+
+
 def compare_superposition(reference_arr, stem_arrays, sample_rate, quant_bit_depth=24):
     """reference_arr: float64 ndarray [n, ch]. stem_arrays: list of float64
-    ndarray [<=n, ch] (will be zero-padded to n here). Pure array-level
-    function (no file I/O) so it can be sentinel-tested directly (S1).
+    ndarray [<=n, ch] (will be zero-padded to n here) -- or, per WF0914-D14,
+    any object supporting len() + iteration in that same shape (see
+    StemArrayStream above; run() passes one of those to avoid materializing
+    every stem array at once). Pure array-level function (no file I/O of
+    its own) so it can be sentinel-tested directly (S1).
 
     `quant_bit_depth`: the PCM bit depth stems are actually rendered at
     (24, by default -- see unnormalized_export()). Each stem independently
@@ -916,7 +988,15 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
     # -- per-stem judgment (delegated to melody_verify.verify()) +
     #    superposition data -- BOTH read from the SAME rendered file ---------
     stem_results = []
-    stem_arrays = {}
+    # WF0914-D14: metadata only (a wav_path string per eligible event), NOT
+    # each stem's full sample array -- the old `stem_arrays = {}` dict here
+    # stored a complete float64 ndarray per voiced event and held ALL of
+    # them until the single compare_superposition() call far below, which
+    # is exactly the O(event_count) memory growth this card fixes (measured
+    # >28 GB on the 905-event corpus). The actual sample data is read later,
+    # one stem at a time via StemArrayStream (see the superposition-proof
+    # section below), only while compare_superposition() is summing them.
+    stem_wav_paths = {}
     sr_ref, ch_ref, arr_ref = read_wav_float(rendered["reference"]["wav_path"])
 
     for orig_idx, ev in used:
@@ -949,13 +1029,17 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
             entry["rules"] = extract_rule_ids(entry["reason"])
         stem_results.append(entry)
 
-        sr_i, ch_i, arr_i = read_wav_float(wav_path_i)
+        # WF0914-D14: header-only read (sample_rate/n_channels), not the
+        # full sample array -- see read_wav_header() docstring. The actual
+        # samples for this stem are read again, later, by StemArrayStream,
+        # one stem at a time, only while the superposition sum is computed.
+        sr_i, ch_i = read_wav_header(wav_path_i)
         if sr_i != sr_ref or ch_i != ch_ref:
             entry["superposition_excluded"] = (
                 "sample_rate/channel mismatch vs reference (%d/%d vs %d/%d)"
                 % (sr_i, ch_i, sr_ref, ch_ref))
         else:
-            stem_arrays[orig_idx] = arr_i
+            stem_wav_paths[orig_idx] = wav_path_i
 
     n_pass = sum(1 for r in stem_results if r["verdict"] == "PASS")
     n_fail = sum(1 for r in stem_results if r["verdict"] == "FAIL")
@@ -965,11 +1049,16 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
 
     # -- superposition proof --------------------------------------------------
     # missing_from_sum and stem_list are computed via two INDEPENDENT
-    # traversals of `used`/`stem_arrays` (not derived from one another) so
-    # that check_superposition_completeness() below can actually catch a bug
-    # in either one -- see that function's docstring.
-    missing_from_sum = [orig_idx for orig_idx, _ in used if orig_idx not in stem_arrays]
-    stem_list = [stem_arrays[i] for i, _ in used if i in stem_arrays]
+    # traversals of `used`/`stem_wav_paths` (not derived from one another)
+    # so that check_superposition_completeness() below can actually catch a
+    # bug in either one -- see that function's docstring. WF0914-D14:
+    # stem_list is a StemArrayStream over (orig_idx, wav_path) pairs, not a
+    # materialized list of arrays -- see that class's docstring for how this
+    # keeps run()'s peak memory from growing with event_count while
+    # compare_superposition() itself (and its output) stay unchanged.
+    missing_from_sum = [orig_idx for orig_idx, _ in used if orig_idx not in stem_wav_paths]
+    stem_entries = [(i, stem_wav_paths[i]) for i, _ in used if i in stem_wav_paths]
+    stem_list = StemArrayStream(stem_entries)
     superposition = compare_superposition(arr_ref, stem_list, sr_ref, quant_bit_depth=24)
 
     completeness_error = check_superposition_completeness(
