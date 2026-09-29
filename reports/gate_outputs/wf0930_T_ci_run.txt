@@ -1,0 +1,81 @@
+WF0930-T evidence 2/2: CI watch of physics.yml on the pushed HEAD (Q33=A)
+generated: 2026-09-30 01:07:13 +0800   local HEAD: 643ab8a   repo: E:\Tsuki-project\tsuki-synth
+Local paths anonymised: <TOOLS> = E:\Tsuki-project\_tools, <SCRATCH> = session scratchpad (outside the repo).
+Rules followed: read-only (gh run list/view/watch + job-log API); nothing triggered, nothing cancelled, nothing fixed.
+
+## Run identity
+workflow : Physics Verification (.github/workflows/physics.yml)
+run id   : 36598831072
+url      : https://github.com/TsKR2828/tsuki-synth/actions/runs/36598831072
+branch   : fix/deep-physics-audit-20260716
+headSha  : 643ab8ad5c49e3227aa41fbd41f8cb0b75eacf39  (= the 643ab8a just pushed; matches local HEAD)
+trigger  : push  created 2026-09-29T16:35:28Z (UTC)  -- first CI run that includes the WF0925 P1/TF workflow changes,
+           the K1/K2 src changes and the new in-job HostProbe step on a GitHub runner.
+watched  : gh run watch 36598831072 --exit-status --interval 60  -> EXIT=0 (full transcript <SCRATCH>\run_watch.log);
+           job logs fetched via gh api repos/TsKR2828/tsuki-synth/actions/jobs/<id>/logs (saved under <SCRATCH>).
+
+## Overall: completed / SUCCESS -- all 6 jobs green (UTC times)
+job id        name                                              conclusion  started  -> completed
+109510623619  build-and-verify (windows-2022)                   success     16:35:36 -> 17:05:03  (~29.5 min)
+109510623277  cpp-address-sanitizer (windows-2022)              success     16:35:33 -> 16:45:59
+109510623785  cross-platform-emit (windows-2022, msvc)          success     16:35:34 -> 16:40:33
+109510623956  cross-platform-emit (ubuntu-24.04, clang)         success     16:35:32 -> 16:39:19
+109510623660  cross-platform-emit (macos-14, appleclang)        success     16:35:36 -> 16:38:49
+109512730486  cross-platform-compare (ubuntu-24.04)             success     16:40:36 -> 16:40:59
+
+## build-and-verify (windows-2022) -- every step green; key lines
+- ctest (C++ regression):        '100% tests passed, 0 tests failed out of 4'  (audit_repro, tuner_repro, physics_models_repro, spectrum_view_repro)
+- pytest tests -q:               '299 passed, 3 skipped, 5 xfailed in 484.30s (0:08:04)'
+                                 -> 299+3+5 = 307 collected = the expected baseline 307 (handover 643ab8a: 'pytest 307'). MATCHES.
+- standalone T60 gate:           'RESULT: ALL WITHIN TOLERANCE'  (tongue_drum model 30.14s vs meas 30.18s ratio 1.00; water_gong 7.49s vs 7.47s ratio 1.00)
+- physics_verify --full (M1+M2+M5): 'RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED'
+- whole-score smoke (6 scores):  6/6 '-> PASS', 'RESULT: ALL CHECKS PASSED'
+                                 (ai_radiance_m1, rules_v2_demo_001, akashic_bell, water_gong_clamped, water_gong_free, physical_piano;
+                                  manifest v4 line shows configured source=643ab8ad5c49 clean, runner MSVC 19.44.35229.0, Release)
+- consonance gate:               'wrote ...rules_v2_demo_consonance_check.md: 13 pairs, 13 PASS, 0 not-PASS'
+
+### HostProbe step (NEW this round -- first time on a GitHub runner; WF0925b-TF placed it LAST in the job)
+- step:      'Run L2 HostProbe against the built VST3', cwd 'D:\a\tsuki-synth\tsuki-synth' (repo root)
+- verdict:   'TsukiSynthHostProbe exit code: 0'
+- counted in the step log: 215 x '[PASS]', 0 x '[FAIL]'  -> 215/0, same as the local baseline (HostProbe 215).
+- headless VST3 load on the runner WORKS:
+    '[PASS] H1 scan: VST3 format finds the bundle (...build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)'
+    '[PASS] H1 scan: described as instrument named TsukiSynth (got 'TsukiSynth', isInstrument=1, version 0.3.0)'
+    '[PASS] H2 instantiate: instance created'
+    '[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.505276) ...'
+- %APPDATA% on the runner IS writable (H7 wrote real files there):
+    '[INFO] preset directory: C:\Users\runneradmin\AppData\Roaming\TsukiSynth\Presets'
+    '[PASS] H7: preset file written: C:\Users\runneradmin\AppData\Roaming\TsukiSynth\Presets\wf0908_h7.tsukipreset'
+    (IR library dir C:\Users\runneradmin\AppData\Roaming\TsukiSynth\IR also created/used.)
+- state/version checks all green, e.g. '[PASS] E14 state_version: captured state carries state_version=3',
+  H6 block sizes 64/256/512/1024/4096 rendered, glide renders byte-identical across block sizes.
+- artifact 'hostprobe-log-windows' uploaded (hostprobe_log.txt, retention 14 days).
+
+## cpp-address-sanitizer -- green
+- './tools/run_asan_ctest.ps1 -BuildDirectory build-asan -Configuration RelWithDebInfo'
+- '100% tests passed, 0 tests failed out of 4', 'Total Test time (real) = 6.55 sec'
+- no 'AddressSanitizer:' / heap- / stack- / leak lines anywhere in the job log.
+
+## cross-platform-emit x3 -- green
+- each rendered the 5-score probe set with its own CLI build, 0 failures, and uploaded 11 files:
+  windows-2022-msvc:    'Wrote xplat\windows-2022-msvc\platform.json (5 score(s), 0 failure(s))'   artifact 9,602,621 B
+  ubuntu-24.04-clang:   'Wrote xplat/ubuntu-24.04-clang/platform.json (5 score(s), 0 failure(s))'  artifact 9,602,486 B
+  macos-14-appleclang:  'Wrote xplat/macos-14-appleclang/platform.json (5 score(s), 0 failure(s))' artifact 9,602,621 B
+
+## cross-platform-compare -- green (this is the registered-tolerance GATE since commit 1c70efb)
+- 'reference : windows-2022-msvc  (Windows AMD64)', tolerance file scores/crossplatform_tolerance.json
+- every metric on every score/platform '[PASS]', e.g. worst seen:
+    'max_abs_delta_dbfs: -124.4944 (limit -120.0000)', 'delta_rms_re_signal_db: -125.8102 (limit -120.0000)',
+    'max_spectral_deviation_db: 0.0011 (limit 0.0100)', 'peak_pitch_deviation_cents: 0.0000 (limit 0.0100)'
+- final annotation: 'Cross-platform renders agree (bit-identical or within registered tolerance).'
+- comparison report uploaded as artifact 'xplat-comparison-report'.
+
+## Red lights: NONE. Nothing to diagnose, nothing was modified.
+## Annotations (informational only, not failures):
+- 'Node.js 20 is deprecated ... actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4' on several jobs
+  (GitHub-side deprecation warning; workflow still succeeded. A future card may bump these actions -- decision for the user.)
+- macOS job note: 'jobs targeting macOS arm64 runners may experience longer queue times.'
+
+## release-physics.yml -- confirmed present, NOT triggered
+- gh workflow list: 'Release Physics Gates  active  343059240'  (path .github/workflows/release-physics.yml, state active)
+- gh run list --workflow=release-physics.yml -> [] (no runs ever). Left untouched per instructions (waits for the user).

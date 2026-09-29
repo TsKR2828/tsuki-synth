@@ -1,0 +1,124 @@
+WF0930-V GATE 1-2 evidence: rebuild after repo move + R10 bit identity + ctest
+=============================================================================
+Date: 2026-09-30 (local, UTC+8)   HEAD: 643ab8a (pushed; working tree: only the two known untracked items)
+Context: repo moved C:\Users\admin\Desktop\Claude\tsuki-synth -> E:\Tsuki-project\tsuki-synth (HANDOVER 09-30 note).
+build\CMakeCache.txt (and the nested JUCE juceaide cache build\libs\JUCE\tools\CMakeCache.txt) still pointed at the C: path,
+so the cache had to be regenerated before anything could be built. No src/, tools/, tests/ or docs/ changes in this round.
+Path aliases in this file: <REPO> = E:/Tsuki-project/tsuki-synth, <SCRATCH> = E:/Tsuki-project/_scratch (both outside git or gitignored).
+Raw logs (gitignored): <REPO>/output/wf0930/V/{bin_sha_before.txt,bin_sha_after.txt,cmake_configure.log,build_*.log,render_bit_identity.log,ctest.log}
+
+## GATE 1  Reconfigure + rebuild 3 main targets + 5 test targets
+Toolchain (from cmake_configure.log): Visual Studio 18 2026 generator, MSVC 19.50.35730.0 (cl.exe 14.50.35717), CMake 4.3.2, x64.
+
+Binaries BEFORE (built at the old C: path, 09-25 round; sha256):
+2d3183648f6d2d3830ac862c227ef41aca14e33315cbd453ae510e96becff69d *build/Release/TsukiSynthAuditTest.exe
+3293ccf1e3b9d69d0c69fd85480860972e1844707af5da27231ae1954037900e *build/Release/TsukiSynthHostProbe.exe
+fb3f72c056d2b3337d81eb84ef4ea7c3a33c4cdd00ba1fb4501f91665bfef344 *build/Release/TsukiSynthPhysicsModelsTest.exe
+8d49994e42944593303e1d4027379299bc10581c95c570405652479e2a91966a *build/Release/TsukiSynthSpectrumViewTest.exe
+c0ddaefeb9c9d69614d18f9b0fb9bcc8756bb592471007bea2815b9ab8715eed *build/Release/TsukiSynthTunerTest.exe
+6a65fd4f91276b197d88e8ddfaaad28732f1362696a8d54efbc3c648ab2b116c *build/Release/TsukiSynth_vst3_helper.exe
+b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+c5b6b2f1c6e83f84a9b470261247db34425f207460808cd2b4210bcaceb8201c *build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+
+$ rm build/CMakeCache.txt build/libs/JUCE/tools/CMakeCache.txt ; rm -rf build/CMakeFiles build/libs/JUCE/**/CMakeFiles
+  (first attempt with only the top-level cache removed failed: "CMakeCache.txt directory ... build/libs/JUCE/tools ... is different";
+   the JUCE juceaide sub-build keeps its own cache, so it was removed too, then configure succeeded.)
+$ cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+CMAKE_CONFIGURE_EXIT=0   (00:37:06 -> 00:38:12; the "CMAKE_BUILD_TYPE not used" warning is the usual multi-config-generator notice)
+CMAKE_HOME_DIRECTORY now = <REPO>   (nested juceaide cache: <REPO>/libs/JUCE)
+
+$ cmake --build build --config Release --target <T>     (one target per invocation)
+  TsukiSynthCLI                  BUILD_EXIT=0   vcxproj -> <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  TsukiSynth_VST3                BUILD_EXIT=0   vcxproj -> <REPO>\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  TsukiSynth_Standalone          BUILD_EXIT=0   vcxproj -> <REPO>\build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+  TsukiSynthAuditTest            BUILD_EXIT=0   vcxproj -> <REPO>\build\Release\TsukiSynthAuditTest.exe
+  TsukiSynthTunerTest            BUILD_EXIT=0   vcxproj -> <REPO>\build\Release\TsukiSynthTunerTest.exe
+  TsukiSynthPhysicsModelsTest    BUILD_EXIT=0   vcxproj -> <REPO>\build\Release\TsukiSynthPhysicsModelsTest.exe
+  TsukiSynthSpectrumViewTest     BUILD_EXIT=0   vcxproj -> <REPO>\build\Release\TsukiSynthSpectrumViewTest.exe
+  TsukiSynthHostProbe            BUILD_EXIT=0   vcxproj -> <REPO>\build\Release\TsukiSynthHostProbe.exe
+  (" error " count in every build log: 0)
+  Wall time: TsukiSynthCLI 00:38:20-00:39:43, VST3 00:40:50-00:42:12, Standalone 00:42:35-00:43:36, five test targets 00:43:41-00:48:12.
+
+Binaries AFTER (sha256; all differ from BEFORE as expected -- MSVC embeds the new absolute source path in PDB/debug directory
+and the link timestamp; the rendering identity is proven by GATE 2 below, not by binary hash):
+df2e7d27af63bb9a10f36707189bf56fc222a6bce38d1290be1df152db58c59f *build/Release/TsukiSynthAuditTest.exe
+919ee83c19d74ab59b8fa6acf423ff909f9aa3bed9686e6368257a2c963a9aee *build/Release/TsukiSynthHostProbe.exe
+91241d0cd2ac9703f42643d58767a20637016daaf4904753eb2e85390988805a *build/Release/TsukiSynthPhysicsModelsTest.exe
+f027c8b9daa88ecf2fcbc38481505be0d264eb86b3f28eb8a38df546c5f46ab8 *build/Release/TsukiSynthSpectrumViewTest.exe
+fa134ee131da0e7b7fc0839dbd4c4f5c04a467d7598149be0fd7e1ec52a8c167 *build/Release/TsukiSynthTunerTest.exe
+2083798fe2f17da57c7b2af46fc1a87ef0b9ba3717f45d0305d510971e0fe879 *build/Release/TsukiSynth_vst3_helper.exe
+8ecfdabde66bb5d8cf6b5ec9c97923d9f6814fdfd424d40db77e9c70e931ab31 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+48f3193b18440711ae7dad4a8b66a6b41a7f6d46c469f90835c2a33bfebbb4ab *build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+8c07ec0f1e9edd14ad4c3719739e958302a4a0f46b9268018df6da7f645819a8 *build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+
+GATE 1 verdict: PASS (8/8 targets built, exit 0, 0 compiler errors).
+
+## GATE 2a  R10 bit identity (8 reference scores), new CLI vs 09-25 baseline
+Baseline: reports/gate_outputs/b6_method/sha256_before_post_a14.txt (CRLF; compared with --strip-trailing-cr).
+Script: reports/gate_outputs/wf0907_method/render_wf_scores.py (--workdir outside the repo; --outdir gitignored).
+CLI used: 8ecfdabde66bb5d8cf6b5ec9c97923d9f6814fdfd424d40db77e9c70e931ab31 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+
+start 2026-09-30 00:48:25
+$ python reports/gate_outputs/wf0907_method/render_wf_scores.py --cli <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe --label wf0930_V --workdir <SCRATCH>/wf0930_render --outdir output/wf0930/V/render_out
+cli: <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+rendering moonlight_sonata_movement1_yangqin ...
+  len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+  len=325.869s  RMS=-23.899 dBFS  sha256=280cbdac3c117c14
+rendering physical_piano ...
+  len=7.575s  RMS=-18.485 dBFS  sha256=1233b53f1e8660bc
+rendering restraint_metal_click ...
+  len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...
+  len=327.289s  RMS=-21.589 dBFS  sha256=f539aefa91919cbf
+rendering water_gong_free ...
+  len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...
+  len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+rendering fur_elise_opening ...
+  len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+wrote <REPO>\output\wf0930\V\render_out\render_wf0930_V.csv
+wrote <REPO>\output\wf0930\V\render_out\sha256_wf0930_V.txt
+RENDER_EXIT=0
+$ diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt output/wf0930/V/render_out/sha256_wf0930_V.txt
+DIFF_STRIP_CR_EXIT=0
+end 2026-09-30 00:49:58
+
+## Per-score comparison (baseline vs this run, CR stripped)
+IDENTICAL 49514b007e3e01fc  moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+IDENTICAL 280cbdac3c117c14  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+IDENTICAL 1233b53f1e8660bc  physical_piano/physical_piano.wav
+IDENTICAL be634798c4a0bf71  restraint_metal_click/restraint_metal_click_001.wav
+IDENTICAL f539aefa91919cbf  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+IDENTICAL 31b539c6ac08d942  water_gong_free/water_gong_free.wav
+IDENTICAL 74122637a0c71278  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+IDENTICAL b0877774da9e5fc5  fur_elise_opening/fur_elise_opening.wav
+
+GATE 2a verdict: PASS (8/8 IDENTICAL, diff exit 0) -- moving the repo and regenerating the CMake cache changed no rendered sample.
+
+## GATE 2b  ctest
+start 2026-09-30 00:49:58
+$ ctest --test-dir build -C Release
+Test project <REPO>/build
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.28 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.55 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.10 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.05 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   2.00 sec
+CTEST_EXIT=0
+end 2026-09-30 00:50:01
+
+GATE 2b verdict: PASS (4/4).
+
+## open_items
+- Binary hashes are not reproducible across source paths (MSVC path/timestamp embedding); bit identity of the audio output is the
+  invariant this project tracks, and it held 8/8. Nothing to fix.
+- build-wf\ (the second build tree from WF0925) was NOT regenerated in this round; its CMakeCache still points at the C: path.
+  Regenerate the same way (delete both caches + CMakeFiles) before using it again.

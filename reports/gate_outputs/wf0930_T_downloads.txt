@@ -1,0 +1,89 @@
+WF0930-T evidence 1/2: downloads (A: Inno Setup 7.1.0, B: VST Compatible Logo artwork)
+generated: 2026-09-30 00:45:07 +0800   HEAD: 643ab8a   repo: E:\Tsuki-project\tsuki-synth
+Rules followed: download only, nothing installed, nothing executed; no git add/commit/push; repo files untouched;
+               build\ not touched (another agent is rebuilding it). <TOOLS> = E:\Tsuki-project\_tools (outside the repo).
+Decisions applied: Q37-1 = Y (Inno Setup), Q37-3 = Y (VST logo), Q29 = B (name TsukiSynth, VST compat on its own line + logo).
+
+## A. Inno Setup 7.1.0 (x64 installer) -- Q37-1
+# source of truth: GitHub release API  gh api repos/jrsoftware/issrc/releases/tags/is-7_1_0
+#   tag_name=is-7_1_0  published_at=2026-08-12T09:02:28Z
+#   asset name=innosetup-7.1.0-x64.exe  size=14304168  digest=sha256:0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f
+#   browser_download_url=https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe
+# command: curl -sSL -o innosetup-7.1.0-x64.exe <browser_download_url>   (in <TOOLS>\innosetup)
+file: <TOOLS>\innosetup\innosetup-7.1.0-x64.exe
+size: 14304168  (API says 14304168 -> MATCH)
+sha256 (local, python hashlib): 0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f
+sha256 (GitHub API digest):    0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f
+verdict: SHA256 MATCH
+NOT INSTALLED. Installer is left for the user to run. Q37 table (packet) says 14,304,168 B and sha256:0362a383... -> consistent.
+
+### A2. README says 'Inno Setup 6.3.0 or newer' -- is 7.1.0 compatible?
+# read-only web check. Official changelog: https://jrsoftware.org/files/is7-whatsnew.htm  (same bytes as
+#   https://raw.githubusercontent.com/jrsoftware/issrc/main/whatsnew.htm, 138,799 B, fetched 2026-09-30).
+#   The help-file frame page https://jrsoftware.org/ishelp/index.php?topic=whatsnew only loads that file; topic_whatsnew.htm is 404.
+# Versions present in 7.x: 7.1.0 (2026-08-12), 7.0.2 (2026-07-13), 7.0.1-beta (2026-05-26), 7.0.0-beta (2026-05-18).
+# Script checked: tools/installer/TsukiSynth.iss (10,206 B, UTF-8 without BOM, valid UTF-8 with 522 non-ASCII chars, LF).
+#
+# 6.3.0 (2024-06-09) confirms README's premise, verbatim from the changelog:
+#   'Added support for UTF-8 encoded files without a BOM for .iss script files, .isl messages files, LicenseFile, ...'
+#   'In ArchitecturesAllowed and ArchitecturesInstallIn64BitMode, change any use of x64 to x64compatible.'
+#   'x64compatible matches systems capable of running x64 binaries.'
+#   'The x64 architecture identifier is now deprecated.'
+#
+# 7.x changes checked against the script -- verdict per item:
+#  [OK]   7.0.0: 'Great care has been taken to ensure maximum backward compatibility with Inno Setup 6'
+#  [OK]   7.0.0: SetupArchitecture new; default still builds a 32-bit installer. Script does not set it -> 7.1.0 builds a 32-bit x86
+#         Setup.exe that installs in 64-bit mode (ArchitecturesAllowed/InstallIn64BitMode=x64compatible are set explicitly, so the
+#         changed defaults do not matter). Optional later: add SetupArchitecture=x64 for a 64-bit installer (not required).
+#  [OK]   7.0.0: 'Directive AppVerName now defaults to AppName AppVersion' -- script sets AppVerName explicitly (line 67), unaffected.
+#  [OK]   7.0.0: 'Directive TimeStampsInUTC now defaults to yes' -- cosmetic (log/installed file timestamps), not set in script.
+#  [OK]   7.0.0: ArchiveExtraction default 'auto' -- script uses no extractarchive flag, unaffected.
+#  [OK]   7.0.0: Pascal 'Removed support function EnableFsRedirection' and DisableFsRedir param removed -- script has no active [Code]
+#         section (only the commented-out ;;[Code] VCRedistNeeded block, which uses RegQueryDWordValue only). Unaffected.
+#  [OK]   7.0.0: new Pascal types (UInt64, HWND, ...) may clash with custom definitions -- none in script.
+#  [OK]   7.0.0: .isl files may no longer contain # directives -- script has no [Languages] section, uses default English.
+#  [OK]   7.0.0: 'The Compiler IDE has been renamed from Compil32.exe to ISIDE.exe' -- README/iss do not mention Compil32 or ISCC.
+#  [OK]   7.0.2: 'Compilation will now fail with an error if an .iss/.isl file contains a byte value or sequence that is not valid
+#         in the file's code page' -- TsukiSynth.iss decodes as valid UTF-8 (checked above). EULA.txt (not yet created) must also be
+#         valid UTF-8 (LicenseFile is loaded by the same rule).
+#  [OK]   7.1.0: ISCC 'Warnings are now always written to stderr' and '-$e ... now defaults to on' -- only matters for scripted builds;
+#         README step 6.1 says 'compiler 0 errors', warnings on stderr do not change that.
+#  [OK]   7.1.0: ISPP 'Pascal-style string literals ... An unterminated string now raises a compiler error' -- all #define strings in
+#         the script are closed (grep of lines 21-61).
+#  [OK]   ISPP VER / EncodeVer / #error / FileExists / SourcePath / RemoveBackslashUnlessRoot: all still documented in 7.1.0; the guard
+#         '#if VER < EncodeVer(6,3,0)' passes on 7.1.0 (7.1.0 > 6.3.0).
+# Incompatibilities found: NONE. README wording '6.3.0 or newer' still correct; 7.1.0 satisfies it. Nothing was compiled (rule: no install).
+# Note for README (not edited): 7.x has a 64-bit and a 32-bit *edition* of the compiler; downloaded file is the x64 edition
+#   ('Using the 64-bit edition is recommended.'). Commercial use note on the page: 'Using Inno Setup commercially? Please purchase a license.'
+#   -> whether selling TsukiSynth counts as commercial use of Inno Setup is a Yue-Yue decision (open item).
+
+## B. VST Compatible Logo artwork -- Q37-3 / Q29
+# source: GitHub steinbergmedia/vst3_doc (default branch master, license MIT, Copyright (c) 2026 Steinberg Media Technologies GmbH)
+# listing: gh api repos/steinbergmedia/vst3_doc/contents/artwork  (16 entries: 4 eps, 4 png logos, 4 svg logos, icns, ico, 2 icon png)
+# last commit touching artwork/: c8b05bbc29c18d20ce6daa4ccc8f60d03d91bdf2  2020-07-30  'vstsdk370_30_07_2020_build_115'
+# fetched only svg + png (10 files) via raw URLs; eps/icns/ico NOT fetched (Q37 says svg/png only). No clone.
+# columns: file | size(local) | size(API) | sha256(local) | git-blob-sha1(local) | blob sha1 from API | URL | check
+VST_Compatible_Logo_Steinberg.png | 25682 | 25682 | 54a3ff4b89dd3e63be1a51772c531008258f02a0b61fbe428c8285d83dc08a83 | 864dfd445dd877ad8ecd81bf19cb7d2171c46de5 | 864dfd445dd877ad8ecd81bf19cb7d2171c46de5 | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_Compatible_Logo_Steinberg.png | OK
+VST_Compatible_Logo_Steinberg.svg | 6819 | 6819 | cec8e0fa7f350e1124ce16bf6c1953965930fd67a5c082798350381217ccfbb0 | b6d28370732cd2442dbc9b36f6f85502be83c7bb | b6d28370732cd2442dbc9b36f6f85502be83c7bb | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_Compatible_Logo_Steinberg.svg | OK
+VST_Compatible_Logo_Steinberg_negative.png | 15891 | 15891 | 5dfcead97f55b4857491efeb23f8a24851c779bfee3b57a70df36d302be7feaa | d3acb3ade05afa2c6fc07940c766348920da547d | d3acb3ade05afa2c6fc07940c766348920da547d | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_Compatible_Logo_Steinberg_negative.png | OK
+VST_Compatible_Logo_Steinberg_negative.svg | 6754 | 6754 | 7415e9b28f120143d0103bae6511a6e60a6b9d4827c07c54373d56c036e14b1e | f03d67ac3b54dcba987a06b59623604d5eceaf3b | f03d67ac3b54dcba987a06b59623604d5eceaf3b | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_Compatible_Logo_Steinberg_negative.svg | OK
+VST_Compatible_Logo_Steinberg_with_TM.png | 43917 | 43917 | fdf4f96b7a8bc1f53f0d2c167a27ac5fac00f29ff4a7bc3eaad851ad4be10f35 | c5df9d7bbe82bca1ccc8b94e189160a3316994f0 | c5df9d7bbe82bca1ccc8b94e189160a3316994f0 | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_Compatible_Logo_Steinberg_with_TM.png | OK
+VST_Compatible_Logo_Steinberg_with_TM.svg | 18534 | 18534 | d1f44b085813b6ddf24632e0d0a739a536a56f828bbd1b097c7d109cec9ca1fe | 2a96e497812926ff7a0d4c29ed48e5955f7ffc69 | 2a96e497812926ff7a0d4c29ed48e5955f7ffc69 | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_Compatible_Logo_Steinberg_with_TM.svg | OK
+VST_Compatible_Logo_Steinberg_with_TM_negative.png | 37498 | 37498 | 0dce622a5bd24b02acc692dadae5af52cd4329acd2b9e9586a15ce17db18b283 | dbce1a04cebc91ef53fcb5e463b9d41ffcb538d0 | dbce1a04cebc91ef53fcb5e463b9d41ffcb538d0 | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_Compatible_Logo_Steinberg_with_TM_negative.png | OK
+VST_Compatible_Logo_Steinberg_with_TM_negative.svg | 19332 | 19332 | b62bfca119aeb497fdec206e5c15c2d7e871d32b5a9c3d1f2b5b7d0675546180 | 281d7d9877b8e7bf682fddb23a9c835b5809607b | 281d7d9877b8e7bf682fddb23a9c835b5809607b | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_Compatible_Logo_Steinberg_with_TM_negative.svg | OK
+VST_icon_24x15px.png | 2548 | 2548 | 613aac30df57760825832960ffbe00c441a72678e71d1546ea4950759f96f1b4 | bfacb7e3c2a6a37dff21feb5c4a66fca211117a1 | bfacb7e3c2a6a37dff21feb5c4a66fca211117a1 | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_icon_24x15px.png | OK
+VST_icon_44x25px.png | 908 | 908 | 0375c5fbac75f617068845b59a2fb8a564e76f007259bd08e2a4753560ffb7e6 | c7614436e360638731ddb4d260c745318a80552e | c7614436e360638731ddb4d260c745318a80552e | https://raw.githubusercontent.com/steinbergmedia/vst3_doc/master/artwork/VST_icon_44x25px.png | OK
+total bytes: 177883   all 10 files: size and git blob sha1 match the GitHub API listing -> VERIFIED
+# pixel sizes (file(1)): plain 481x309 RGBA; negative 473x311 RGB; with_TM 474x443 RGBA; with_TM_negative 474x443 RGBA; icons 24x15 (grey), 44x25 RGBA
+# stored at: <TOOLS>\vst_logo\
+
+### B2. Steinberg trademark usage rules
+# page: https://steinbergmedia.github.io/vst3_dev_portal/pages/VST+3+Licensing/Usage+guidelines.html  (HTML 23,198 B -> text 8,504 chars)
+# old URL from packet Q29 (https://www.steinberg.net/en/company/technologies/vst3.html) now 301 -> http://www.steinberg.net/technology/,
+#   which contains no guideline text any more (nav + newsletter only).
+# verbatim excerpts with section numbers saved to: <TOOLS>\vst_logo\USAGE_NOTES.zh-TW.md
+# key points: logo must appear on every product web page / packaging / documentation / marketing (must), About box (should);
+#   first use 'VST' needs (R); attribution sentence 'VST is a registered trademark of Steinberg Media Technologies GmbH.' in all credits+docs;
+#   'VSTi' and other blends prohibited; VST in company name prohibited; VST in product name allowed only in plain text with logo adjacent;
+#   minimum printing size 20 x 18,7 mm (tall logo) and 15 x 10 mm (wide logo), 'must be respected in all digital and printed uses'.
+# NOT on the page: clear-space rule, no-distortion/recolour rule, px sizes, any signature requirement, a PDF guideline.
