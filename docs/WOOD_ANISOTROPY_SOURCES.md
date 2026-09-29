@@ -154,8 +154,13 @@ P = P12 · (P12/Pg)                        ... Wood Handbook Eq. (5–3)
 **150 °C (302 °F)** 時，力學性質與溫度**近似線性相關**。快速加熱/冷卻後
 在該狀態下量測的變化稱為「immediate effect」（可逆）。
 
-**本文件未取得該線性關係的逐項係數表**（Table 5–15，位於本次取得的 PDF
-之後續頁面）。要實作溫度相依需補抓該表。
+**2026-09-25 更新：Table 5–15 已取得**（WF0925-L1）。取自 FPL-GTR-282（2021）第 5 章官方 PDF
+第 5–36 頁（GTR-190 同頁同表、數字相同），全表逐格轉錄在
+`docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md` §7（來源分級見該檔 §2.1 S12／S13）。
+例：12% 含水率的順紋 MOE，相對 20 °C 在 −50 °C 是 +17%、+50 °C 是 −7%（原表數字）。
+目前 repo 仍沒有任何消費者（見 §6）。
+原記錄：「本文件未取得該線性關係的逐項係數表（Table 5–15，位於本次取得的 PDF
+之後續頁面）。要實作溫度相依需補抓該表。」
 
 ---
 
@@ -181,7 +186,7 @@ Beam/Plate 的既有 GATE 全部要重驗，換到的物理正確性有限。
 | # | 出處 | 取得狀態 | 用到什麼 |
 |---|---|---|---|
 | 1 | *Wood Handbook — Wood as an Engineering Material*, Chapter 5「Mechanical Properties of Wood」, USDA Forest Service, Forest Products Laboratory, General Technical Report **FPL–GTR–190** | ✅ 免費政府出版品，本文件取自公開鏡像的完整 PDF（46 頁）並在本機解析 | Table 5–1（§2）、Table 5–2（§3）、Eq. 5–3 與 Table 5–13（§4）、溫度段落（§5） |
-| 2 | 同系列較新版 **FPL–GTR–282**（2021） | ⚠️ FPL 官網對本工具回 HTTP 403 | 未取得；§2／§3 兩表在兩版之間內容相同，本文件引 GTR–190 為準 |
+| 2 | 同系列較新版 **FPL–GTR–282**（2021） | ⚠️ FPL 官網對本工具回 HTTP 403（2026-09-25 更新：WF0925-L1 已從美國林務局官方 Treesearch 下載第 5 章，見 `docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md` §2.1 S12） | 本文件當時未取得；§2／§3 兩表在兩版之間內容相同，本文件引 GTR–190 為準；Table 5–15 見 §5 |
 
 **取得方式說明**：Eq. 5–3 在 PDF 中是排版影像，文字層抽不出來；
 本文件將該頁以 150 dpi 轉為點陣圖後逐字轉錄，**未從任何圖形曲線讀值**
@@ -195,7 +200,8 @@ Beam/Plate 的既有 GATE 全部要重驗，換到的物理正確性有限。
 - [x] 泊松比（25 樹種）取得
 - [x] 含水率修正公式 Eq. 5–3 與 `Mp` 表取得
 - [x] 溫度相依的定性關係與適用上限（150 °C）取得
-- [ ] 溫度相依的逐項係數表（Table 5–15）未取得
+- [x] 溫度相依的逐項係數表（Table 5–15）已取得（2026-09-25，WF0925-L1；轉錄見
+      `docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md` §7；原記錄為「未取得」）
 - [x] `materials.json` 的 schema 若要容納 9 個獨立常數，需設計向後相容路徑
       （比照 `MaterialDB.h` 現行 `alpha`→`eta` 的 fail-closed 做法）
       → **schema 遷移路徑已設計並落地**（2026-08-28，B5 卡）：orthotropic

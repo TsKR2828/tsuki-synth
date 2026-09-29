@@ -171,3 +171,15 @@ GATE 結果一覽：
 位元不變：8/8 IDENTICAL（完整 sha256 逐位元比對，非僅前綴）。
 
 本輪所有落地互不打架，無任何 GATE 紅燈。
+
+----------------------------------------------------------------------
+勘誤（2026-09-25，WF0925b-DS 附加；上方原文一字未改）
+----------------------------------------------------------------------
+- GATE 7 那段（本檔第 97 行）寫「15 項自我測試全部 PASS」，項數寫錯，應為 13 項。
+  依據 1：本卡自己的 raw 檔 reports/gate_outputs/wf0914_integration_raw/07_physics_verify_selftest.txt
+          只有 13 行「<名稱>: PASS」、0 行 FAIL（grep -c -E ': (PASS|FAIL)' → 13）。
+  依據 2：09-25 WF0925 整合卡重跑也是 13 項
+          （reports/gate_outputs/wf0925_integration_raw/07_physics_verify_selftest.txt）；
+          兩次的結果行逐行 diff 相同（同目錄 07b_selftest_vs_wf0914.txt：「DIFF_EXIT=0  (行數: 13 vs 13)」）。
+- 正確說法：13 項自我測試全部 PASS，EXIT_CODE=0。GATE 7 的判定（PASS）不變，只有項數寫錯。
+- 最早由 WF0925 整合卡順帶發現（docs/workcards/WF0925_README.md §6）。

@@ -98,3 +98,11 @@
 | R6 | 研究 | Opus | D8 tongue_drum 40 dB 斜率 + 缺泛音 根因診斷 |
 
 lane 內順序：Python = E1 → C10 → C11 → C12；C++ = E5 → E8 → E9 → E7 → E10；研究六張平行。
+
+## WF0925 後更新（2026-09-25，WF0925b-DS 附加；上方原文是 WF0907 輪當時的規約，未改）
+
+- **HostProbe 不再依賴 cwd**：WF0925-K2 之後，HostProbe 找 `data/materials.json` 的順序是 cwd → 環境變數 `TSUKI_REPO_ROOT` → exe 所在資料夾一路往上，用了哪條會印出來；exe 複製到 repo 外、又沒設環境變數時，會大聲出現 4 個 H8 FAIL（不靜默跳過）。證據 `reports/gate_outputs/wf0925_K2_hostprobe.txt`。
+- **新基線**：pytest **288 個測試＝282 passed＋1 skipped＋5 xfailed**（上方 §3 寫的「現況 213 collected」是 WF0907 當時的數字）；HostProbe **215 PASS／0 FAIL**；AuditTest 110 PASS。證據 `reports/gate_outputs/wf0925_INTEGRATION.txt`、`reports/gate_outputs/wf0925_integration_raw/05_pytest.txt`、`09_hostprobe_cwd_repo.txt`。
+- **本機 Python 是 3.13.3**（上方 §1 寫 3.12；CI 固定 3.12.8）。WF0925 輪所有 Python GATE 都在 3.13.3 上跑。
+- **位元不變比對**：基準早已不是上方 §3 的 `sha256_before.txt`／`sha256_before_post_d8.txt`，自 A14（2026-09-10）起是 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`，期望 8/8 IDENTICAL。比對腳本 `reports/gate_outputs/wf0907_method/render_wf_scores.py` 的用法：`--workdir` 必須在 repo 外（腳本會拒絕 repo 內路徑）；`--cli` 用 Windows 絕對路徑（相對路徑會 WinError 2）；WF0925-P1 加了 `--outdir`，把 csv／sha256 寫到指定資料夾（不帶時照舊寫進 `reports/gate_outputs/wf0907_method/`）；跟基準比對用 `diff --strip-trailing-cr`（基準檔是 CRLF）。
+- 細節與其他差異見 `docs/workcards/WF0925_README.md` §0。

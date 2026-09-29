@@ -33,3 +33,12 @@
 4. **裁決包體例**：比照 `reports/decision_packets/K02_reverb_wet_scale.zh-TW.md`——選項並列、每案代價/前提寫清楚、附看數字就能選的表格、**不替月月選**。
 5. 工兵回報一律結構化：`status`（DONE / BLOCKED / RED）、`files_touched`、`gate_results`（每條 GATE 的命令＋關鍵輸出行）、`evidence_paths`、`open_items`。發現卡文與 repo 現況矛盾 → 停下寫進 `open_items`，不要硬做（WF0908-P4 教訓：卡文可能錯）。
 6. 下載類（僅 D9）：只從官方來源頁下載；逐檔記 URL、授權原文逐字、SHA256；要登入才能拿的來源直接跳過記錄；下載物放 `external_data/`（gitignored），**不進版控**。
+
+## WF0925 後更新（2026-09-25，WF0925b-DS 附加；上方原文是 WF0914 輪當時的規約，未改）
+
+- **新基線**：pytest **288 個測試＝282 passed＋1 skipped＋5 xfailed**（上方 §0 的 270 是 WF0914 整合後的基線）；HostProbe **215 PASS／0 FAIL**（WF0914 時 89）。證據 `reports/gate_outputs/wf0925_INTEGRATION.txt`。
+- **HostProbe 不必再以 repo 根目錄為 cwd**（WF0925-K2：cwd → `TSUKI_REPO_ROOT` → exe 所在資料夾往上找）。證據 `reports/gate_outputs/wf0925_K2_hostprobe.txt`。
+- **本機 Python 實際是 3.13.3**（CI 固定 3.12.8）。
+- **`render_wf_scores.py`**：WF0925-P1 加了 `--outdir`（csv／sha256 改寫到指定資料夾；不帶時行為照舊）；`--workdir` 放 repo 外、`--cli` 用 Windows 絕對路徑、跟基準比對用 `diff --strip-trailing-cr`。位元不變基準仍是 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`，期望 8/8。
+- **`build\` 已由 WF0925 整合卡重建**（CLI sha256 `b84c775b…`）；上方 §0 說的「`build\` 對應 HEAD `a38bd6a`（09-10 建）」已過時。商品母帶用的舊渲染器 `9123db8f…` 備份在 `exports/renderer_archive/`（gitignored）。
+- 細節見 `docs/workcards/WF0925_README.md` §0。

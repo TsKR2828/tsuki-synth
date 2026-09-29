@@ -25,6 +25,13 @@
   關鍵原始文獻 Rossing & Shepherd (1982) 全文未取得（見裁決包
   `reports/decision_packets/D13_gong_2x_partial.zh-TW.md` §2 選項 A 前提）。
 
-**同步備忘**：`src/physics/PlateModel.h` 檔頭註解與
-`scores/examples/water_gong_free.score.json` 的 `meta.description` 尚未帶上這段聲明——
-留待下一張本來就要動這兩個檔案的卡順路同步（純註解/描述，不影響渲染，屆時仍照 R6 慣例驗證）。
+**同步記錄（2026-09-25 更新）**：`src/physics/PlateModel.h` 檔頭註解與
+`scores/examples/water_gong_free.score.json` 的 `meta.description` 已於 **WF0925-K1** 帶上這段聲明：
+PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼，引本檔 §1 與 bronze ν=0.34 比值
+1 : 1.738 : 2.329 : 3.925）；water_gong_free 的 description 拿掉「hung gong 的物理上合適邊界」的說法，
+改寫成「不是乳突鑼」的聲明並換成同一組比值（出處 `reports/gate_outputs/wf0914_D13_plate_ratios.txt`）。
+純註解／描述，不影響渲染：8 首代表曲位元不變 8/8 IDENTICAL（water_gong_free 在這 8 首內，
+`reports/gate_outputs/wf0925_K1_bit_identity.txt`、`wf0925_K1K2fix_bit_identity.txt`）；render manifest 的
+`root_score_sha256` 會變（預期）。改動目前 staged、未 commit，可用
+`git diff --cached -- src/physics/PlateModel.h scores/examples/water_gong_free.score.json` 查看。
+原備忘（2026-09-15）：「尚未帶上這段聲明——留待下一張本來就要動這兩個檔案的卡順路同步」。
