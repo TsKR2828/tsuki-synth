@@ -883,15 +883,47 @@ def render_probe(cli, eng, midi, outdir, sr=48000, vel=0.85, dur=2.0,
     return wav, sf
 
 
+# WF0925-P1 (engineering-gaps:E17): paths already announced on stdout by
+# find_cli() in this process, so a caller that looks the CLI up once per
+# event (melody_verify.verify() inside stem_verify's per-stem loop) prints
+# the chosen binary once instead of once per event.
+_FIND_CLI_ANNOUNCED = set()
+
+
 def find_cli():
+    """Locate the TsukiSynthCLI executable under <repo>/build/.
+
+    WF0925-P1 (engineering-gaps:E17): the choice is deterministic and is
+    never decided by file mtime (the old rule, max(st_mtime), could silently
+    pick a Debug build that happened to be newer). Candidates are the same
+    three name patterns as before, ranked by, in order:
+      1. the path below build/ has a directory named "Release"
+         (case-insensitive) -- a Release CLI always beats Debug/RelWithDebInfo;
+      2. name pattern order: TsukiSynthCLI.exe, tsukisynth-cli*, TsukiSynthCLI;
+      3. fewer path components, then the lower-cased relative path string
+         (a fixed tie-break, independent of filesystem timestamps).
+    The chosen path is printed to stdout (once per process per path) so
+    every GATE log records which binary actually ran. Returns None when
+    no candidate exists."""
     here = Path(__file__).resolve().parent.parent
-    cands = list((here / "build").rglob("TsukiSynthCLI.exe"))
-    cands += list((here / "build").rglob("tsukisynth-cli*"))
-    cands += list((here / "build").rglob("TsukiSynthCLI"))
-    cands = [c for c in cands if c.is_file()]
-    if not cands:
+    build = here / "build"
+    patterns = ("TsukiSynthCLI.exe", "tsukisynth-cli*", "TsukiSynthCLI")
+    ranked = []
+    for pattern_idx, pattern in enumerate(patterns):
+        for cand in build.rglob(pattern):
+            if not cand.is_file():
+                continue
+            rel = cand.relative_to(build)
+            in_release = any(part.lower() == "release" for part in rel.parts[:-1])
+            ranked.append(((0 if in_release else 1, pattern_idx, len(rel.parts),
+                            rel.as_posix().lower()), cand))
+    if not ranked:
         return None
-    return max(cands, key=lambda p: p.stat().st_mtime)
+    chosen = min(ranked, key=lambda item: item[0])[1]
+    if str(chosen) not in _FIND_CLI_ANNOUNCED:
+        _FIND_CLI_ANNOUNCED.add(str(chosen))
+        print("[find_cli] TsukiSynthCLI selected: %s" % chosen, flush=True)
+    return chosen
 
 
 # ── main ────────────────────────────────────────────────────────────────────

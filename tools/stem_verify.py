@@ -54,6 +54,11 @@ Usage:
   python tools/stem_verify.py <score.json> [--out-dir DIR] [--jobs N]
                               [--limit N] [--json REPORT.json] [--keep-stems]
                               [--force-clean] [--analysis-dry | --no-analysis-dry]
+                              [--cli PATH]
+
+  --cli PATH (WF0925b-TF): use this TsukiSynthCLI for every render and
+  --dump-modes call of the run (melody_verify's own lookups included);
+  default is verify_score.find_cli(). Recorded in provenance.cli.
 
   --analysis-dry (default ON, WF0907-C12): before rendering, derives a dry
   copy of the score (global.effects.reverb.wet/.decay and
@@ -92,10 +97,12 @@ existing CLI/melody_verify.py -- it does not touch src/.
 
 import argparse
 import concurrent.futures
+import contextlib
 import copy
 import datetime
 import json
 import math
+import os
 import re
 import struct
 import sys
@@ -160,31 +167,85 @@ def gate_check(score):
 # reader is needed here rather than widening verify_score.py's PCM reader.
 # ============================================================================
 
+WAVE_FORMAT_PCM = 0x0001
+WAVE_FORMAT_IEEE_FLOAT = 0x0003
+WAVE_FORMAT_EXTENSIBLE = 0xFFFE
+# Microsoft KSDATAFORMAT_SUBTYPE_PCM / _IEEE_FLOAT are
+# {0000000X-0000-0010-8000-00AA00389B71} with X = 1 / 3 (mmreg.h / ksmedia.h:
+# the SubFormat GUID's first field IS the plain WAVE_FORMAT_* tag). As stored
+# little-endian in a fmt chunk, bytes 4..15 of the 16-byte GUID are fixed:
+_KSDATAFORMAT_GUID_TAIL = bytes([0x00, 0x00, 0x10, 0x00,
+                                 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71])
+
+
+def _effective_wav_format(path, fmt_body):
+    """(audio_format, n_channels, sample_rate, bits) from a 'fmt ' chunk body.
+
+    WF0925b-TF (decision packet O16): WAVE_FORMAT_EXTENSIBLE (tag 0xFFFE,
+    written by many editors/converters for 24-bit, 32-bit or >2-channel
+    files) is resolved to its real sample format through the SubFormat GUID:
+    KSDATAFORMAT_SUBTYPE_PCM -> tag 1, KSDATAFORMAT_SUBTYPE_IEEE_FLOAT -> tag
+    3. Samples are then decoded exactly like the plain tag (container size =
+    wBitsPerSample; PCM valid bits are left-justified in the container, so
+    the same full-scale divisor applies). Anything else -- a GUID that is not
+    one of those two, a cbSize/chunk too short to hold the extension, or
+    wValidBitsPerSample larger than the container -- raises ValueError
+    naming what was found, never guessed."""
+    if len(fmt_body) < 16:
+        raise ValueError("%s: truncated fmt chunk (%d bytes)" % (path, len(fmt_body)))
+    audio_format, n_channels, sample_rate, _byte_rate, _block_align, bits = \
+        struct.unpack("<HHIIHH", fmt_body[:16])
+    if audio_format != WAVE_FORMAT_EXTENSIBLE:
+        return audio_format, n_channels, sample_rate, bits
+    if len(fmt_body) < 40:
+        raise ValueError("%s: WAVE_FORMAT_EXTENSIBLE fmt chunk is %d bytes, "
+                          "needs 40" % (path, len(fmt_body)))
+    cb_size, valid_bits, _channel_mask = struct.unpack("<HHI", fmt_body[16:24])
+    if cb_size < 22:
+        raise ValueError("%s: WAVE_FORMAT_EXTENSIBLE cbSize=%d, needs >= 22"
+                          % (path, cb_size))
+    sub_format = fmt_body[24:40]
+    sub_tag = struct.unpack("<I", sub_format[:4])[0]
+    if (sub_format[4:] != _KSDATAFORMAT_GUID_TAIL
+            or sub_tag not in (WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT)):
+        raise ValueError("%s: unsupported WAVE_FORMAT_EXTENSIBLE SubFormat "
+                          "GUID %s (only KSDATAFORMAT_SUBTYPE_PCM / "
+                          "_IEEE_FLOAT are decoded)" % (path, sub_format.hex()))
+    if valid_bits > bits:
+        raise ValueError("%s: WAVE_FORMAT_EXTENSIBLE wValidBitsPerSample=%d "
+                          "exceeds container wBitsPerSample=%d"
+                          % (path, valid_bits, bits))
+    return sub_tag, n_channels, sample_rate, bits
+
+
 def read_wav_float(path):
     """Minimal RIFF/WAVE parser returning (sample_rate, n_channels,
     float64 ndarray[n_samples, n_channels]). Supports PCM 16/24/32-bit and
-    IEEE-float 32-bit (fmt tag 3). Values are exact (no averaging/mixdown)."""
+    IEEE-float 32-bit (fmt tag 3), plain or WAVE_FORMAT_EXTENSIBLE (tag
+    0xFFFE with a PCM / IEEE-float SubFormat GUID, see
+    _effective_wav_format()). Values are exact (no averaging/mixdown).
+    Any other format raises ValueError."""
     data = Path(path).read_bytes()
     if len(data) < 12 or data[0:4] != b"RIFF" or data[8:12] != b"WAVE":
         raise ValueError("%s: not a RIFF/WAVE file" % path)
     pos = 12
-    fmt = None
+    fmt_body = None
     audio_bytes = None
     while pos + 8 <= len(data):
         chunk_id = data[pos:pos + 4]
         chunk_size = struct.unpack("<I", data[pos + 4:pos + 8])[0]
         body_start = pos + 8
         body_end = min(body_start + chunk_size, len(data))
-        if chunk_id == b"fmt " and fmt is None:
-            fmt = struct.unpack("<HHIIHH", data[body_start:body_start + 16])
+        if chunk_id == b"fmt " and fmt_body is None:
+            fmt_body = data[body_start:body_end]
         elif chunk_id == b"data" and audio_bytes is None:
             audio_bytes = data[body_start:body_end]
         pos = body_start + chunk_size + (chunk_size & 1)  # chunks word-align
-    if fmt is None:
+    if fmt_body is None:
         raise ValueError("%s: no fmt chunk found" % path)
     if audio_bytes is None:
         raise ValueError("%s: no data chunk found" % path)
-    audio_format, n_channels, sample_rate, _byte_rate, _block_align, bits = fmt
+    audio_format, n_channels, sample_rate, bits = _effective_wav_format(path, fmt_body)
     if audio_format == 3 and bits == 32:
         arr = np.frombuffer(audio_bytes, dtype="<f4").astype(np.float64)
     elif audio_format == 1 and bits == 16:
@@ -198,8 +259,11 @@ def read_wav_float(path):
     elif audio_format == 1 and bits == 32:
         arr = np.frombuffer(audio_bytes, dtype="<i4").astype(np.float64) / 2147483648.0
     else:
-        raise ValueError("%s: unsupported wav format (tag=%d bits=%d)"
-                          % (path, audio_format, bits))
+        raw_tag = struct.unpack("<H", fmt_body[:2])[0]
+        raise ValueError("%s: unsupported wav format (tag=%d bits=%d%s)"
+                          % (path, audio_format, bits,
+                             ", from WAVE_FORMAT_EXTENSIBLE SubFormat"
+                             if raw_tag == WAVE_FORMAT_EXTENSIBLE else ""))
     if n_channels > 1:
         arr = arr[: (len(arr) // n_channels) * n_channels].reshape(-1, n_channels)
     else:
@@ -805,8 +869,48 @@ def check_superposition_completeness(used, missing_from_sum, stem_list_len,
 # orchestration
 # ============================================================================
 
+@contextlib.contextmanager
+def _melody_verify_uses_cli(cli_path):
+    """WF0925b-TF (O16): makes melody_verify.verify() -- which this tool calls
+    to judge every stem and for the whole-score baseline, and which looks
+    the CLI up by itself through its OWN private verify_score instance
+    (mv.vs.find_cli(), used for --dump-modes and for the baseline render) --
+    use the same explicit --cli binary as this tool's own stem/reference
+    renders, so one run never mixes two binaries. Only this tool's private
+    `mv` module object is touched (loaded by _load_module(), not registered
+    in sys.modules), and the original lookup is restored on exit."""
+    target = mv.vs
+    saved = target.find_cli
+    target.find_cli = lambda: cli_path
+    try:
+        yield
+    finally:
+        target.find_cli = saved
+
+
 def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
-        quiet=False, force_clean=False, analysis_dry=True):
+        quiet=False, force_clean=False, analysis_dry=True, cli=None):
+    """cli=None (default, unchanged behaviour): TsukiSynthCLI is found by
+    verify_score.find_cli() (Release-first under <repo>/build/). cli=<path>
+    (the --cli flag, WF0925b-TF / O16): that binary is used for every render
+    AND every --dump-modes call of the run, including the ones
+    melody_verify.verify() makes (see _melody_verify_uses_cli()); a path
+    that is not an existing file is an error (exit 1), never a fallback to
+    find_cli(). A relative path is taken relative to the current working
+    directory and made absolute before use."""
+    if cli is None:
+        return _run(score_path, out_dir=out_dir, jobs=jobs, limit=limit,
+                    keep_stems=keep_stems, quiet=quiet, force_clean=force_clean,
+                    analysis_dry=analysis_dry, explicit_cli=None)
+    explicit_cli = Path(os.path.abspath(str(cli)))
+    with _melody_verify_uses_cli(explicit_cli):
+        return _run(score_path, out_dir=out_dir, jobs=jobs, limit=limit,
+                    keep_stems=keep_stems, quiet=quiet, force_clean=force_clean,
+                    analysis_dry=analysis_dry, explicit_cli=explicit_cli)
+
+
+def _run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
+         quiet=False, force_clean=False, analysis_dry=True, explicit_cli=None):
     score_path = Path(score_path)
     score = json.loads(score_path.read_text(encoding="utf-8"))
     report = {
@@ -895,13 +999,24 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
     # cleanup below -- a pre-existing (empty) one is used but left in place.
     stems_dir_ours_to_delete = not stems_dir_preexisted
 
-    cli = vs.find_cli()
-    if cli is None:
-        report["status"] = "error"
-        report["error"] = "TsukiSynthCLI executable not found under build/"
+    if explicit_cli is not None:
+        cli = explicit_cli
+        if not cli.is_file():
+            report["status"] = "error"
+            report["error"] = "--cli path does not exist or is not a file: %s" % cli
+            if not quiet:
+                print("[ERROR] " + report["error"])
+            return report, 1
         if not quiet:
-            print("[ERROR] " + report["error"])
-        return report, 1
+            print("[stem_verify] --cli TsukiSynthCLI: %s" % cli, flush=True)
+    else:
+        cli = vs.find_cli()
+        if cli is None:
+            report["status"] = "error"
+            report["error"] = "TsukiSynthCLI executable not found under build/"
+            if not quiet:
+                print("[ERROR] " + report["error"])
+            return report, 1
 
     # -- WF0907-C12: derive the dry analysis score (default on) BEFORE any
     #    stem/reference score is built from `score`, so every downstream
@@ -929,7 +1044,9 @@ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
         "analysis_score": {"path": rel_to_repo(analysis_score_path),
                             "sha256": vs.sha256_file(analysis_score_path),
                             "leaf_diff": leaf_diff},
-        "cli": {"path": rel_to_repo(cli), "sha256": vs.sha256_file(cli)},
+        "cli": {"path": rel_to_repo(cli), "sha256": vs.sha256_file(cli),
+                "selected_by": ("--cli" if explicit_cli is not None
+                                else "verify_score.find_cli()")},
         "analysis_dry": analysis_dry,
     }
     if not analysis_dry:
@@ -1388,6 +1505,14 @@ def build_arg_parser():
                           "provenance.analysis_dry=false and carries a "
                           "top-level warning that pitch verdicts are not "
                           "GATE evidence in that case (design doc §8.3)")
+    ap.add_argument("--cli", default=None,
+                     help="TsukiSynthCLI executable to use for every render and "
+                          "--dump-modes call of this run, including the ones "
+                          "melody_verify.verify() makes (default: "
+                          "verify_score.find_cli(), Release-first under "
+                          "build/). Must be an existing file; a relative path "
+                          "is resolved against the current directory. "
+                          "Recorded in report provenance.cli.")
     return ap
 
 
@@ -1399,7 +1524,7 @@ def main():
         report, code = run(args.score, out_dir=args.out_dir, jobs=args.jobs,
                             limit=args.limit, keep_stems=args.keep_stems,
                             force_clean=args.force_clean,
-                            analysis_dry=args.analysis_dry)
+                            analysis_dry=args.analysis_dry, cli=args.cli)
     except Exception as e:  # noqa: BLE001 -- surface as a clean error, not a traceback dump
         report = {"tool": "stem_verify.py", "score": args.score,
                   "status": "error", "error": "%s: %s" % (type(e).__name__, e)}

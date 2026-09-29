@@ -1184,3 +1184,191 @@ def test_c12_own_temp_cleanup_marks_deleted_flag_not_path_suffix(tmp_path, monke
     # sha256 of the now-deleted file must still be the real fingerprint of
     # what was written (recorded before cleanup ran) -- untouched by this fix.
     assert len(prov["analysis_score"]["sha256"]) == 64
+
+
+
+# ============================================================================
+# WF0925b-TF (decision packet O16): --cli for stem_verify and partial_verify.
+# Default (no --cli) behaviour is unchanged and stays covered by every test
+# above; these pin the explicit-binary path:
+#   * a --cli that is not an existing file is an error, never a silent
+#     fallback to find_cli(), and nothing is rendered;
+#   * a relative --cli is made absolute;
+#   * ONE binary serves the whole run -- stem_verify's own renders AND the
+#     --dump-modes / baseline-render calls melody_verify.verify() makes
+#     through its own private verify_score instance -- and the override is
+#     removed again afterwards, also when the run raises.
+# (partial_verify's tests live here because tests/test_partial_verify.py is
+# outside this card's file list; they only exercise the CLI plumbing.)
+# ============================================================================
+
+import shutil  # noqa: E402
+
+SPEC_PV = importlib.util.spec_from_file_location(
+    "partial_verify", ROOT / "tools" / "partial_verify.py")
+pv = importlib.util.module_from_spec(SPEC_PV)
+SPEC_PV.loader.exec_module(pv)
+
+
+class _StopRun(Exception):
+    pass
+
+
+def _no_find_cli(*_a, **_kw):
+    raise AssertionError("find_cli() must not be consulted when --cli is given")
+
+
+def test_tf_cli_flag_defaults_to_none_and_parses():
+    assert sv.build_arg_parser().parse_args(["x.score.json"]).cli is None
+    assert sv.build_arg_parser().parse_args(
+        ["x.score.json", "--cli", "a/b.exe"]).cli == "a/b.exe"
+    assert pv.build_arg_parser().parse_args(["r.json"]).cli is None
+    assert pv.build_arg_parser().parse_args(["r.json", "--cli", "a/b.exe"]).cli == "a/b.exe"
+
+
+def test_tf_stem_verify_missing_cli_is_error_not_fallback(tmp_path, monkeypatch):
+    monkeypatch.setattr(sv.vs, "find_cli", _no_find_cli)
+
+    def must_not_render(*_a, **_kw):
+        raise AssertionError("nothing may be rendered with a missing --cli")
+
+    monkeypatch.setattr(sv, "render_many", must_not_render)
+    original_mv_lookup = sv.mv.vs.find_cli
+    score_path = tmp_path / "sentinel.score.json"
+    score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    missing = tmp_path / "no_such_cli.exe"
+
+    report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"),
+                          quiet=True, cli=str(missing))
+    assert code == 1
+    assert report["status"] == "error"
+    assert "--cli path does not exist" in report["error"]
+    assert str(missing) in report["error"]
+    assert "stem_verify" not in report
+    assert sv.mv.vs.find_cli is original_mv_lookup
+
+
+def test_tf_stem_verify_cli_reaches_renders_and_melody_verify(tmp_path, monkeypatch):
+    fake_cli = tmp_path / "fake_cli.exe"
+    fake_cli.write_bytes(b"not a real binary; render_many is replaced below")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sv.vs, "find_cli", _no_find_cli)
+    original_mv_lookup = sv.mv.vs.find_cli
+    seen = {}
+
+    def capture_and_stop(cli, jobs, tasks):
+        seen["render_cli"] = cli
+        seen["melody_verify_cli"] = sv.mv.vs.find_cli()
+        raise _StopRun()
+
+    monkeypatch.setattr(sv, "render_many", capture_and_stop)
+    score_path = tmp_path / "sentinel.score.json"
+    score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+
+    with pytest.raises(_StopRun):
+        sv.run(str(score_path), out_dir=str(tmp_path / "out"), quiet=True,
+               cli="fake_cli.exe")  # relative to the cwd set above
+    expected = Path(os.path.abspath(str(fake_cli)))
+    assert seen["render_cli"] == expected
+    assert seen["melody_verify_cli"] == expected
+    # restored even though the run raised
+    assert sv.mv.vs.find_cli is original_mv_lookup
+
+
+def test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary(tmp_path, monkeypatch):
+    """Real renders: a copy of the built CLI placed OUTSIDE build/ is passed
+    as --cli; every render_score / dump_modes call of the run (stem_verify's
+    own and melody_verify's) must receive exactly that path, the provenance
+    must name it, and the verdicts must be the ones the default run gives
+    (test_e2e_run_on_real_fixture_stem_count_matches_and_established)."""
+    built = vs.find_cli()
+    if built is None:
+        pytest.skip("TsukiSynthCLI not built under build/")
+    cli_copy = tmp_path / "cli_copy" / Path(built).name
+    cli_copy.parent.mkdir()
+    shutil.copy2(built, cli_copy)
+    expected = Path(os.path.abspath(str(cli_copy)))
+
+    calls = []
+
+    def recorder(label, fn):
+        def wrapped(cli, *a, **kw):
+            calls.append((label, Path(cli)))
+            return fn(cli, *a, **kw)
+        return wrapped
+
+    monkeypatch.setattr(sv.vs, "find_cli", _no_find_cli)
+    monkeypatch.setattr(sv.vs, "render_score",
+                        recorder("stem_verify.render", sv.vs.render_score))
+    monkeypatch.setattr(sv.mv.vs, "render_score",
+                        recorder("melody_verify.render", sv.mv.vs.render_score))
+    monkeypatch.setattr(sv.mv.vs, "dump_modes",
+                        recorder("melody_verify.dump_modes", sv.mv.vs.dump_modes))
+    original_mv_lookup = sv.mv.vs.find_cli
+
+    score_path = tmp_path / "sentinel.score.json"
+    score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+    report, code = sv.run(str(score_path), out_dir=str(tmp_path / "out"), quiet=True,
+                          cli=str(cli_copy))
+
+    assert report["status"] == "ok"
+    assert code == 0
+    assert report["event_count_used"] == 5
+    assert report["superposition_proof"]["established"] is True
+    assert report["stem_verify"]["summary"]["fail"] == 0
+    prov_cli = report["provenance"]["cli"]
+    assert prov_cli["selected_by"] == "--cli"
+    assert Path(prov_cli["path"]) == expected.resolve()
+    assert prov_cli["sha256"] == _sha256_of(cli_copy)
+    labels = [label for label, _cli in calls]
+    # 5 stems + 1 reference; 1 baseline render; 5 per-stem judges + baseline
+    assert labels.count("stem_verify.render") == 6
+    assert labels.count("melody_verify.render") == 1
+    assert labels.count("melody_verify.dump_modes") >= 6
+    assert {c for _label, c in calls} == {expected}
+    assert sv.mv.vs.find_cli is original_mv_lookup
+
+
+def test_tf_partial_verify_missing_cli_is_error_not_fallback(tmp_path, monkeypatch):
+    monkeypatch.setattr(pv.vs, "find_cli", _no_find_cli)
+    stem_report = tmp_path / "stem_report.json"
+    stem_report.write_text("{}", encoding="utf-8")
+    missing = tmp_path / "no_such_cli.exe"
+    report, code = pv.run(str(stem_report), quiet=True, cli=str(missing))
+    assert code == 1
+    assert report["status"] == "error"
+    assert "--cli path does not exist" in report["error"]
+    assert report["gate_ready"] is False
+    with pytest.raises(RuntimeError, match="--cli path does not exist"):
+        pv.run_b_report(str(tmp_path / "b.txt"), cli=str(missing))
+
+
+def test_tf_partial_verify_resolve_cli(tmp_path, monkeypatch):
+    fake_cli = tmp_path / "fake_cli.exe"
+    fake_cli.write_bytes(b"x")
+    monkeypatch.chdir(tmp_path)
+    path, err, how = pv._resolve_cli("fake_cli.exe")
+    assert (path, err, how) == (Path(os.path.abspath(str(fake_cli))), None, "--cli")
+    # default: the find_cli() lookup, unchanged
+    monkeypatch.setattr(pv.vs, "find_cli", lambda: fake_cli)
+    assert pv._resolve_cli(None) == (fake_cli, None, "verify_score.find_cli()")
+    monkeypatch.setattr(pv.vs, "find_cli", lambda: None)
+    path, err, how = pv._resolve_cli(None)
+    assert path is None and "not found under build/" in err
+
+
+def test_tf_partial_verify_b_report_uses_explicit_cli(tmp_path, monkeypatch):
+    built = vs.find_cli()
+    if built is None:
+        pytest.skip("TsukiSynthCLI not built under build/")
+    cli_copy = tmp_path / "cli_copy" / Path(built).name
+    cli_copy.parent.mkdir()
+    shutil.copy2(built, cli_copy)
+    monkeypatch.setattr(pv.vs, "find_cli", _no_find_cli)
+    out = tmp_path / "b_report.txt"
+    lines = pv.run_b_report(str(out), cli=str(cli_copy))
+    cli_line = [line for line in lines if line.startswith("cli: ")]
+    assert cli_line == ["cli: %s (sha256 %s)"
+                        % (Path(os.path.abspath(str(cli_copy))).resolve(),
+                           _sha256_of(cli_copy))]
+    assert out.read_text(encoding="utf-8").splitlines() == lines

@@ -26,11 +26,22 @@ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §8.6):
     amplitude is RECORDED ONLY, never judged. Every amplitude field in this
     tool's output carries "amplitude_claim": "none".
   * THIS TOOL'S OWN STATUS IS INFORMATIONAL, NOT GATE EVIDENCE
-    (report["gate_ready"] is always False): the pitch measurer this file
-    reuses (melody_verify.measure_pitch_cents) has a self-calibration
-    sentinel (C10, tools/measurement_selfcal.py) whose "informational vs
-    GATE" ruling is itself still pending 月月裁決. This tool must not be
-    read as a stronger claim than its own prerequisite.
+    (report["gate_ready"] is always False). A13 選項 B+ planned to promote
+    it once C10 -- the self-calibration of the pitch measurer this file
+    reuses (melody_verify.measure_pitch_cents, sentinel
+    tools/measurement_selfcal.py) -- was ruled option A. C10 WAS ruled A on
+    2026-09-10 (claim domain narrowed: known measurer error <=1.18 c on the
+    sustain-segment corpus, the reused +/-5 c tolerance unchanged, production
+    estimator unchanged). But D15 was ruled option A' on 2026-09-15: on
+    release/damping-segment signals the same measurer's known error bound is
+    ~7.2 c (development grid 5.2304 c, hold-out grid 7.2055 c), larger than
+    +/-5 c, so that plan's premise no longer holds as written
+    (docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S8.5). Promoting this tool to
+    GATE therefore needs a separate 月月 ruling that has not been made
+    (decision packet Q18); until then gate_ready stays False and this tool
+    must not be read as a stronger claim than its own prerequisite.
+    (WF0925b-TF, O16: this paragraph and the report caveat brought up to
+    date; gate_ready_reason was updated by WF0925-P1.)
 
 WHAT THIS TOOL DOES
   1. Reads a tools/stem_verify.py JSON report (must have been produced with
@@ -97,6 +108,7 @@ import argparse
 import datetime
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -494,7 +506,32 @@ def compute_pitch_via_partials(dumped_partials, partials_out, expected_f0):
 # orchestration
 # ============================================================================
 
-def run(stem_report_path, n_partials=6, json_out=None, html_out=None, quiet=False):
+def _resolve_cli(cli):
+    """WF0925b-TF (O16): cli=None -> verify_score.find_cli() (Release-first
+    under <repo>/build/, unchanged default); cli=<path> -> that file, made
+    absolute (relative paths are taken against the current directory).
+    Returns (Path or None, error message or None, how it was selected). An
+    explicit path that is not an existing file is an error, never a
+    fallback to find_cli()."""
+    if cli is None:
+        found = vs.find_cli()
+        if found is None:
+            return None, "TsukiSynthCLI executable not found under build/", None
+        return found, None, "verify_score.find_cli()"
+    explicit = Path(os.path.abspath(str(cli)))
+    if not explicit.is_file():
+        return None, "--cli path does not exist or is not a file: %s" % explicit, None
+    return explicit, None, "--cli"
+
+
+def run(stem_report_path, n_partials=6, json_out=None, html_out=None, quiet=False,
+        cli=None):
+    """cli: see _resolve_cli() -- None (default) keeps the find_cli() lookup;
+    a path (the --cli flag) is used for every --dump-modes call of this run.
+    This tool never renders audio: it reads the stems stem_verify already
+    rendered, so --cli should name the binary that stem_verify run used (its
+    report's provenance.cli.sha256 is the reference; this report records its
+    own cli path/sha256 next to it)."""
     stem_report_path = Path(stem_report_path)
     stem_report = json.loads(stem_report_path.read_text(encoding="utf-8"))
 
@@ -511,21 +548,37 @@ def run(stem_report_path, n_partials=6, json_out=None, html_out=None, quiet=Fals
         "amplitude_claim": "none",
         "status": "informational",
         "gate_ready": False,
-        "gate_ready_reason": ("C10 (measurement self-calibration, tools/"
-                               "measurement_selfcal.py) is itself still "
-                               "pending 月月裁決 on informational-vs-GATE "
-                               "status; this tool cannot outrank its own "
-                               "prerequisite -- A13 decision packet 選項 B+."),
+        # WF0925-P1 (open-work:P3-partial-gate-premise): reason text
+        # brought up to date; gate_ready itself stays False.
+        "gate_ready_reason": ("Promoting this tool to GATE needs a separate "
+                               "月月 ruling that has not been made. A13 "
+                               "decision packet 選項 B+ planned to promote it "
+                               "once C10 (the pitch measurer's self-"
+                               "calibration, tools/measurement_selfcal.py) "
+                               "was ruled option A -- and C10 was ruled A on "
+                               "2026-09-10 (claim domain narrowed: known "
+                               "measurer error <=1.18 c on the sustain-"
+                               "segment corpus, the reused +/-5 c tolerance "
+                               "unchanged). But D15 was ruled option A' on "
+                               "2026-09-15: on release/damping-segment "
+                               "signals the same measurer's known error "
+                               "bound is ~7.2 c (development grid 5.2304 c, "
+                               "hold-out grid 7.2055 c), larger than +/-5 c, "
+                               "so that plan's premise no longer holds as "
+                               "written (docs/EARFREE_MELODY_GATE_DESIGN."
+                               "zh-TW.md S8.5). Until 月月 rules, this "
+                               "report is informational only."),
     }
 
-    cli = vs.find_cli()
+    cli, cli_error, cli_selected_by = _resolve_cli(cli)
     if cli is None:
         report["status"] = "error"
-        report["error"] = "TsukiSynthCLI executable not found under build/"
+        report["error"] = cli_error
         if not quiet:
             print("[ERROR] " + report["error"])
         return report, 1
-    report["cli"] = {"path": rel_to_repo(cli), "sha256": vs.sha256_file(cli)}
+    report["cli"] = {"path": rel_to_repo(cli), "sha256": vs.sha256_file(cli),
+                     "selected_by": cli_selected_by}
 
     sp = stem_report.get("superposition_proof") or {}
     ref_wav = sp.get("reference_wav")
@@ -650,8 +703,11 @@ def run(stem_report_path, n_partials=6, json_out=None, html_out=None, quiet=Fals
     }
     report["caveats"] = [
         "status=informational, gate_ready=false: this report is NOT GATE "
-        "evidence (A13 decision packet 選項 B+; C10 self-cal still pending "
-        "月月裁決).",
+        "evidence (A13 decision packet 選項 B+). C10 self-cal was ruled A on "
+        "2026-09-10 and D15 was ruled A' on 2026-09-15 (release-segment "
+        "measurer error bound ~7.2 c > the reused +/-5 c tolerance); "
+        "promoting this tool to GATE needs a separate 月月 ruling that has "
+        "not been made -- see gate_ready_reason.",
         "amplitude fields (amplitude_db_rel_f1_measured/_predicted) are "
         "recorded only, never judged (amplitude_claim=none) -- A13 §4 選項 "
         "C found no sourced, non-arbitrary external amplitude tolerance.",
@@ -749,11 +805,11 @@ def build_b_probe_score(sr=48000):
     }, notes
 
 
-def run_b_report(out_path):
+def run_b_report(out_path, cli=None):
     import tempfile
-    cli = vs.find_cli()
+    cli, cli_error, _selected_by = _resolve_cli(cli)
     if cli is None:
-        raise RuntimeError("TsukiSynthCLI executable not found under build/")
+        raise RuntimeError(cli_error)
     score, notes = build_b_probe_score()
     with tempfile.TemporaryDirectory(prefix="partial_verify_breport_") as td:
         score_path = Path(td) / "wf0908_p1_b_report_probe.score.json"
@@ -808,6 +864,13 @@ def build_arg_parser():
                      help="also (or, if stem_report is omitted, ONLY) write "
                           "the A13 選項 B+ engine-vs-Hamilton B ratio report "
                           "to this path -- sets no pass/fail condition")
+    ap.add_argument("--cli", default=None,
+                     help="TsukiSynthCLI executable for the --dump-modes calls "
+                          "(default: verify_score.find_cli(), Release-first "
+                          "under build/). Must be an existing file; a relative "
+                          "path is resolved against the current directory. "
+                          "Use the same binary the stem_verify report was "
+                          "made with (its provenance.cli.sha256).")
     return ap
 
 
@@ -821,7 +884,7 @@ def main():
     code = 0
     if args.b_report:
         try:
-            run_b_report(args.b_report)
+            run_b_report(args.b_report, cli=args.cli)
             print("[partial_verify] --b-report written to %s" % args.b_report)
         except Exception as e:  # noqa: BLE001
             print("[ERROR] --b-report failed: %s: %s" % (type(e).__name__, e), file=sys.stderr)
@@ -830,7 +893,8 @@ def main():
     if args.stem_report is not None:
         try:
             _report, run_code = run(args.stem_report, n_partials=args.n_partials,
-                                      json_out=args.json, html_out=args.html)
+                                      json_out=args.json, html_out=args.html,
+                                      cli=args.cli)
             code = code or run_code
         except Exception as e:  # noqa: BLE001
             print("[ERROR] %s: %s" % (type(e).__name__, e), file=sys.stderr)

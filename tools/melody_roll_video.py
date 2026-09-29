@@ -78,12 +78,23 @@ Usage:
       [--fps 30] [--width 1280] [--height 720] [--window-s 6.0]
       [--theme neon|slate] [--still-at SECONDS] [--ffmpeg PATH]
 Exit codes: 0 success, 1 error, 2 usage.
+
+ffmpeg lookup order (WF0925-P1, engineering-gaps:E17), first hit wins:
+  1. --ffmpeg PATH
+  2. environment variable TSUKI_FFMPEG
+  3. shutil.which("ffmpeg") (ffmpeg on PATH)
+  4. DEFAULT_FFMPEG below -- the original hard-coded path on the
+     maintainer's machine, kept only as the last fallback so that machine
+     keeps working unchanged.
+The path actually used, and which of the four supplied it, is printed.
 """
 
 import argparse
 import importlib.util
 import json
 import math
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -94,8 +105,26 @@ import numpy as np
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parent
+# Last-resort fallback only (see resolve_ffmpeg() and the module docstring).
 DEFAULT_FFMPEG = Path(
     r"C:\Users\admin\Desktop\Tools\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe")
+
+
+def resolve_ffmpeg(explicit=None):
+    """Returns (ffmpeg_path_str, source) using the lookup order in the
+    module docstring: --ffmpeg > $TSUKI_FFMPEG > shutil.which("ffmpeg") >
+    DEFAULT_FFMPEG. `source` is one of "--ffmpeg", "TSUKI_FFMPEG", "PATH",
+    "DEFAULT_FFMPEG". No existence check here: a wrong explicit/env path
+    fails loudly at the ffmpeg call instead of being silently skipped."""
+    if explicit:
+        return str(explicit), "--ffmpeg"
+    env_path = os.environ.get("TSUKI_FFMPEG")
+    if env_path:
+        return env_path, "TSUKI_FFMPEG"
+    on_path = shutil.which("ffmpeg")
+    if on_path:
+        return on_path, "PATH"
+    return str(DEFAULT_FFMPEG), "DEFAULT_FFMPEG"
 
 
 def _load(name, relpath):
@@ -705,7 +734,9 @@ def main():
     ap.add_argument("--theme", choices=sorted(THEMES), default="neon",
                      help="neon (default, glowing violet/magenta) or slate "
                           "(original monochrome slate-blue)")
-    ap.add_argument("--ffmpeg", default=str(DEFAULT_FFMPEG))
+    ap.add_argument("--ffmpeg", default=None,
+                     help="ffmpeg executable; if omitted: $TSUKI_FFMPEG, then "
+                          "ffmpeg on PATH, then the built-in fallback path")
     ap.add_argument("--still-at", type=float, default=None,
                      help="write a single PNG frame at this time (seconds) "
                           "instead of a video -- for quick palette review")
@@ -777,8 +808,10 @@ def main():
         return
 
     out_path = Path(a.out) if a.out else Path("exports/videos") / (score_path.stem + "_melody_roll.mp4")
+    ffmpeg, ffmpeg_source = resolve_ffmpeg(a.ffmpeg)
+    print("[ffmpeg] using %s (from %s)" % (ffmpeg, ffmpeg_source))
     n_frames = write_video(strip, duration_total, y_of, a.width, a.height, a.fps,
-                            left_pad, pps, wav_path, out_path, a.ffmpeg,
+                            left_pad, pps, wav_path, out_path, ffmpeg,
                             top_margin, bottom_margin, disp, semi_min, semi_max)
     size_mb = out_path.stat().st_size / (1024.0 * 1024.0)
     print("[video] %s  frames=%d  duration=%.2fs  size=%.2f MB"

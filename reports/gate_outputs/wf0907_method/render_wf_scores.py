@@ -33,6 +33,22 @@ Usage (run from repo root; workdir must NOT be inside the repo):
 Output:
     reports/gate_outputs/b6_method/render_<label>.csv
     reports/gate_outputs/b6_method/sha256_<label>.txt
+
+WF0925-P1 (live-gate finding 3): optional --outdir DIR writes those two
+files into DIR instead (created if missing), so a read-only verification
+run does not have to write into the repo. Without --outdir the behaviour is
+exactly as before: both files land next to this script
+(reports/gate_outputs/wf0907_method/). --outdir only moves the csv/sha256
+report files; the rendered WAVs still go to --workdir, which must still be
+outside the repo.
+
+WF0925b-TF (decision packet O16): --cli is turned into an absolute path
+(os.path.abspath, i.e. relative to the current working directory) before it
+is used, and the resolved path is printed. Before this a relative --cli such
+as build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe could fail with
+WinError 2 inside subprocess.run; an absolute --cli (and the default) behave
+exactly as before. A --cli that is not an existing file now stops the run
+before anything is rendered.
 """
 import argparse
 import csv
@@ -104,14 +120,27 @@ def main():
     ap.add_argument("--workdir", required=True,
                     help="render output dir; must be OUTSIDE the repo")
     ap.add_argument("--cli", default=DEFAULT_CLI)
+    ap.add_argument("--outdir", default=None,
+                    help="where render_<label>.csv / sha256_<label>.txt go "
+                         "(default: this script's own directory, unchanged "
+                         "from before --outdir existed)")
     args = ap.parse_args()
+
+    cli = os.path.abspath(args.cli)
+    if not os.path.isfile(cli):
+        sys.exit("--cli is not an existing file: %s" % cli)
+    print("cli:", cli, flush=True)
 
     workdir = os.path.abspath(args.workdir)
     if (workdir + os.sep).startswith(REPO + os.sep):
         sys.exit("refusing to render inside the repo: " + workdir)
     os.makedirs(workdir, exist_ok=True)
 
-    outdir = os.path.dirname(os.path.abspath(__file__))
+    if args.outdir is None:
+        outdir = os.path.dirname(os.path.abspath(__file__))
+    else:
+        outdir = os.path.abspath(args.outdir)
+        os.makedirs(outdir, exist_ok=True)
     out_csv = os.path.join(outdir, "render_%s.csv" % args.label)
     out_sha = os.path.join(outdir, "sha256_%s.txt" % args.label)
     rows = []
@@ -124,7 +153,7 @@ def main():
         piece_dir = os.path.join(workdir, name)
         os.makedirs(piece_dir, exist_ok=True)
         print("rendering", name, "...", flush=True)
-        out = subprocess.run([args.cli, score, "--output", piece_dir],
+        out = subprocess.run([cli, score, "--output", piece_dir],
                              capture_output=True, text=True,
                              encoding="utf-8", errors="replace")
         wavs = [f for f in os.listdir(piece_dir) if f.lower().endswith(".wav")]

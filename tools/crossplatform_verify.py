@@ -149,18 +149,40 @@ def read_wav(path: Path):
 
 
 def find_cli(explicit: str | None):
+    """--cli if given, else the TsukiSynthCLI under <repo>/build/.
+
+    WF0925b-TF (decision packet O16): the search is the same deterministic
+    rule as tools/physics_verify.py / tools/verify_score.py find_cli()
+    (WF0925-P1) and is never decided by file mtime (the old rule here,
+    max(st_mtime), could silently pick a Debug build that happened to be
+    newer). Candidates matching the three name patterns are ranked by, in
+    order:
+      1. the path below build/ has a directory named "Release"
+         (case-insensitive) -- a Release CLI always beats Debug/RelWithDebInfo;
+      2. name pattern order: TsukiSynthCLI.exe, tsukisynth-cli*, TsukiSynthCLI;
+      3. fewer path components, then the lower-cased relative path string
+         (a fixed tie-break, independent of filesystem timestamps).
+    main() prints the chosen path ("Rendering probe set with ...")."""
     if explicit:
         p = Path(explicit)
         if not p.is_file():
             raise FileNotFoundError(f"--cli path does not exist: {p}")
         return p
-    cands = []
-    for pattern in ("TsukiSynthCLI.exe", "TsukiSynthCLI", "tsukisynth-cli*"):
-        cands += [c for c in (REPO_ROOT / "build").rglob(pattern) if c.is_file()]
-    if not cands:
+    build = REPO_ROOT / "build"
+    patterns = ("TsukiSynthCLI.exe", "tsukisynth-cli*", "TsukiSynthCLI")
+    ranked = []
+    for pattern_idx, pattern in enumerate(patterns):
+        for cand in build.rglob(pattern):
+            if not cand.is_file():
+                continue
+            rel = cand.relative_to(build)
+            in_release = any(part.lower() == "release" for part in rel.parts[:-1])
+            ranked.append(((0 if in_release else 1, pattern_idx, len(rel.parts),
+                            rel.as_posix().lower()), cand))
+    if not ranked:
         raise FileNotFoundError(
             "TsukiSynthCLI not found under build/. Build it first or pass --cli.")
-    return max(cands, key=lambda p: p.stat().st_mtime)
+    return min(ranked, key=lambda item: item[0])[1]
 
 
 def db(x: float) -> float:

@@ -51,10 +51,13 @@ S8.5/S9.7), not an open promise. The tests below are split accordingly:
       whole development grid, so no estimator swap can land without a
       fresh audit.
 
-STATUS after WF0914-D15 (2026-09-14, card BLOCKED per its own rule -- new
-worst-case > 1.18 c): run_grid()/run_holdout_grid() now each return TWO
-segments, "sustain" (the original single-exponential corpus, unchanged
-numbers) and "release" (WF0914-D15's new two-stage-decay corpus mirroring
+STATUS after WF0914-D15 (2026-09-14: the card stopped at its own BLOCKED
+rule -- new worst case > 1.18 c; the month-lead then closed D15 on
+2026-09-15 with option A', narrowing the claim domain again: the release
+segment's known measurer-error bound is ~7.2 c, recorded in
+docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S8.5 -- no estimator change):
+run_grid()/run_holdout_grid() now each return TWO segments, "sustain"
+(the original single-exponential corpus, unchanged numbers) and "release" (WF0914-D15's new two-stage-decay corpus mirroring
 ModalResonator::damp()). The tests below therefore filter to segment ==
 "sustain" wherever they assert the ORIGINAL pinned numbers (1170/1040
 points, 1.1721/1.0840 cents) -- run_grid()'s row COUNT changed (grew), the
@@ -65,10 +68,28 @@ did, just selected out of a larger returned list. New xfail tests
 test_release_holdout_grid_within_one_cent assert the release segment
 against the SAME unmoved 1-cent bar and currently fail it by a wide margin
 (development 5.2304 c, hold-out 7.2055 c) -- see
-docs/workcards/WF0914_D15_selfcal_corpus.md and the D15 worker report for
-the open month-lead decision this result opens. (l)
+docs/workcards/WF0914_D15_selfcal_corpus.md for the card and S8.5 of the
+design doc for the A' ruling that closed it. (l)
 test_release_sensitivity_anti_false_green is the release segment's own
 anti-false-green positive control and passes today.
+
+WF0925-P1 (staged-review:D15-xfailpin): the pinned on-record numbers are
+asserted ONLY in plain (non-xfail) tests, measured with the legacy
+estimator: (i) above pins development-grid sustain 1.1721 c AND release
+5.2304 c, and (m) test_holdout_grid_pins_match_record pins hold-out sustain
+1.0840 c and release 7.2055 c. Inside an xfail(strict) test any failing
+assert just counts as the expected failure, so a pin placed there caught
+neither drift nor improvement (the pin assert ran before the 1-cent check,
+so an improved estimator died on the pin and could never XPASS). The four
+grid xfails, (d) (e) (j) (k), now assert only refusals / point count /
+the 1-cent bar, so a real estimator improvement shows up as a strict XPASS.
+
+WF0925b-TF (decision packet O16, P1-audit note): the release segment's
+"zero refusals" condition, until then asserted only inside the strict xfails
+(j) and (k), is now also asserted in the plain tests (i) (production rows,
+development grid) and (m) (legacy rows, hold-out grid). Relocated, not new:
+0 refusals is what both grids measure today (2026-09-25: dev 1170/1170 and
+hold-out 1040/1040 release cells measured, 0 refused).
 
   NOT here any more: the three C10C candidate tests (they imported
   melody_verify.measure_pitch_cents_nls, which option A kept out of the
@@ -96,13 +117,16 @@ import melody_verify as mv        # noqa: E402
 
 # On record in three documents; pinned so the xfails below cannot become
 # XPASS by the GRID getting easier rather than an estimator getting better.
+# Asserted in plain tests (i) and (m) with the LEGACY estimator, so they
+# guard the grid itself and stay green if a better estimator lands (which
+# is then reported by the strict xfails turning XPASS).
 LEGACY_DEV_GRID_MAX_ABS_CENTS = 1.1721
 LEGACY_HOLDOUT_GRID_MAX_ABS_CENTS = 1.0840
 
 # WF0914-D15: the release segment's own pinned numbers (same role as the
-# two above -- stops the xfails below silently drifting to a different
-# number without anyone noticing). Sourced from
-# reports/gate_outputs/wf0914_D15_gate1_dev.txt / _holdout.txt.
+# two above). Existing measured values, not tolerances. Sourced from
+# reports/gate_outputs/wf0914_D15_gate1_dev_grid.txt / _holdout_grid.txt
+# ("by segment ... release 5.2304 c" / "release 7.2055 c").
 RELEASE_DEV_GRID_MAX_ABS_CENTS = 5.2304
 RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS = 7.2055
 
@@ -226,11 +250,7 @@ def test_release_development_grid_within_one_cent():
     errs = [abs(r["error_cents"]) for r in rows if r["error_cents"] is not None]
     assert len(errs) == len(rows) == 1170
     max_abs = max(errs)
-    assert abs(max_abs - RELEASE_DEV_GRID_MAX_ABS_CENTS) < 5e-4, (
-        "release-segment development grid max |error| now measures %.4f "
-        "cents, not the %.4f cents on record -- re-derive the pinned "
-        "number and every document that cites it"
-        % (max_abs, RELEASE_DEV_GRID_MAX_ABS_CENTS))
+    # The 5.2304 c pin lives in the plain test (i), not here (WF0925-P1).
     assert max_abs <= ms.MAX_ABS_ERROR_CENTS_LIMIT, (
         "release-segment development grid max |error| = %.4f cents exceeds "
         "the ratified %.1f-cent self-calibration limit"
@@ -248,11 +268,7 @@ def test_release_holdout_grid_within_one_cent():
     errs = [abs(r["error_cents"]) for r in rows if r["error_cents"] is not None]
     assert len(errs) == len(rows) == 1040
     max_abs = max(errs)
-    assert abs(max_abs - RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS) < 5e-4, (
-        "release-segment hold-out grid max |error| now measures %.4f "
-        "cents, not the %.4f cents on record -- re-derive the pinned "
-        "number and every document that cites it"
-        % (max_abs, RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS))
+    # The 7.2055 c pin lives in the plain test (m), not here (WF0925-P1).
     assert max_abs <= ms.MAX_ABS_ERROR_CENTS_LIMIT, (
         "release-segment hold-out grid max |error| = %.4f cents exceeds "
         "the ratified %.1f-cent self-calibration limit -- estimator "
@@ -360,7 +376,11 @@ def test_measure_pitch_cents_matches_legacy_after_revert():
     segments, WF0914-D15). Both WF0909-C10B and WF0909-C10C ended with
     their candidate estimator rejected, so this is what keeps every pitch
     number already on record in this repo valid, and stops a future
-    estimator swap from landing without a fresh real-audio audit."""
+    estimator swap from landing without a fresh real-audio audit.
+    It also carries the development grid's two pinned on-record numbers,
+    measured on the LEGACY rows (sustain 1.1721 c; since WF0925-P1 also
+    release 5.2304 c, moved here out of the release xfail where a failing
+    pin could never show)."""
     new_rows = ms.run_grid()
 
     orig = mv.measure_pitch_cents
@@ -397,6 +417,84 @@ def test_measure_pitch_cents_matches_legacy_after_revert():
         "reports/c10c_nls_estimator_before_after.md and "
         "docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S9 needs re-deriving"
         % (legacy_max, LEGACY_DEV_GRID_MAX_ABS_CENTS))
+    legacy_release = [r for r in legacy_rows if r["segment"] == "release"]
+    assert len(legacy_release) == 1170
+    # WF0925b-TF (decision packet O16, P1-audit note): "zero refusals on the
+    # RELEASE segment" used to be asserted only inside the strict xfail (j),
+    # where a new refusal would just count as the expected failure and stay
+    # invisible. Same condition, relocated -- not a new threshold (R2) --
+    # and checked on the PRODUCTION rows (new_rows; the mismatch check above
+    # already ties their fail_reason to the legacy rows cell by cell).
+    new_release = [r for r in new_rows if r["segment"] == "release"]
+    assert len(new_release) == 1170
+    release_refused = [r for r in new_release
+                       if r["fail_reason"] is not None or r["error_cents"] is None]
+    assert not release_refused, (
+        "the production estimator refused %d/%d RELEASE-segment development-"
+        "grid cells (on record: 0) -- the D15 release corpus no longer "
+        "measures every cell, so its pinned 5.2304 c is no longer a max over "
+        "all 1170 points: %r"
+        % (len(release_refused), len(new_release), release_refused[:5]))
+    legacy_release_max = max(abs(r["error_cents"]) for r in legacy_release
+                             if r["error_cents"] is not None)
+    assert abs(legacy_release_max - RELEASE_DEV_GRID_MAX_ABS_CENTS) < 5e-4, (
+        "the production/legacy centroid now measures %.4f cents on the "
+        "RELEASE segment of the development grid, not the %.4f on record "
+        "-- the GRID changed, so reports/gate_outputs/"
+        "wf0914_D15_gate1_dev_grid.txt and docs/EARFREE_MELODY_GATE_DESIGN."
+        "zh-TW.md S8.5 need re-deriving"
+        % (legacy_release_max, RELEASE_DEV_GRID_MAX_ABS_CENTS))
+
+
+def test_holdout_grid_pins_match_record(monkeypatch):
+    """(m) WF0925-P1 (staged-review:D15-xfailpin): plain-test home for the
+    HOLD-OUT grid's two pinned on-record numbers -- sustain 1.0840 c (was
+    defined above but asserted nowhere) and release 7.2055 c (was only
+    inside the strict xfail test_release_holdout_grid_within_one_cent,
+    where a failing pin assert just counted as the expected failure).
+    Same pattern and precision (< 5e-4) as the development-grid pin in
+    test_measure_pitch_cents_matches_legacy_after_revert: measured with
+    the LEGACY estimator, so this guards the grid itself; an estimator
+    that really improves leaves this green and turns the strict xfails
+    into XPASS. These are existing measured values, not new tolerances."""
+    monkeypatch.setattr(mv, "measure_pitch_cents", mv.measure_pitch_cents_legacy)
+    legacy_rows = ms.run_holdout_grid()
+    assert len(legacy_rows) == 2080
+
+    legacy_sustain = [r for r in legacy_rows if r["segment"] == "sustain"]
+    assert len(legacy_sustain) == 1040
+    sustain_max = max(abs(r["error_cents"]) for r in legacy_sustain
+                      if r["error_cents"] is not None)
+    assert abs(sustain_max - LEGACY_HOLDOUT_GRID_MAX_ABS_CENTS) < 5e-4, (
+        "the legacy centroid now measures %.4f cents on the SUSTAIN segment "
+        "of the hold-out grid, not the %.4f on record -- the GRID changed; "
+        "re-derive the pinned number and every document that cites it "
+        "(docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S8.5/S9)"
+        % (sustain_max, LEGACY_HOLDOUT_GRID_MAX_ABS_CENTS))
+
+    legacy_release = [r for r in legacy_rows if r["segment"] == "release"]
+    assert len(legacy_release) == 1040
+    # WF0925b-TF (decision packet O16, P1-audit note): the hold-out
+    # counterpart of the zero-refusal check added to (i) -- relocated out of
+    # the strict xfail (k), not a new threshold (R2). These rows are the
+    # LEGACY estimator's (the same rows the pins are measured on); a second
+    # production hold-out run (~1 min) is not added here because production
+    # is held numerically identical to legacy, fail_reason included, by (i).
+    release_refused = [r for r in legacy_release
+                       if r["fail_reason"] is not None or r["error_cents"] is None]
+    assert not release_refused, (
+        "the legacy centroid refused %d/%d RELEASE-segment hold-out-grid "
+        "cells (on record: 0) -- the pinned 7.2055 c is no longer a max over "
+        "all 1040 points: %r"
+        % (len(release_refused), len(legacy_release), release_refused[:5]))
+    release_max = max(abs(r["error_cents"]) for r in legacy_release
+                      if r["error_cents"] is not None)
+    assert abs(release_max - RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS) < 5e-4, (
+        "the legacy centroid now measures %.4f cents on the RELEASE segment "
+        "of the hold-out grid, not the %.4f on record -- the GRID changed; "
+        "re-derive reports/gate_outputs/wf0914_D15_gate1_holdout_grid.txt "
+        "and docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S8.5"
+        % (release_max, RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS))
 
 
 # ---------------------------------------------------------------------------

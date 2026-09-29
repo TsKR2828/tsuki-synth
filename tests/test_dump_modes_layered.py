@@ -39,15 +39,29 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def _find_cli():
+    """TsukiSynthCLI under build-wf/ (WF0907_README Sec.1 X4 regulation).
+
+    WF0925b-TF (decision packet O16): same deterministic ranking as
+    tools/physics_verify.py / tools/verify_score.py find_cli() (WF0925-P1),
+    never decided by file mtime (the old fallback, max(st_mtime), could
+    silently pick a newer Debug build). Ranked by, in order: a "Release"
+    directory in the path below build-wf/ (case-insensitive); name pattern
+    order TsukiSynthCLI.exe, tsukisynth-cli*, TsukiSynthCLI; fewer path
+    components, then the lower-cased relative path string."""
     build_wf = ROOT / "build-wf"
     if not build_wf.exists():
         return None
-    preferred = build_wf / "TsukiSynthCLI_artefacts" / "Release" / "TsukiSynthCLI.exe"
-    if preferred.is_file():
-        return preferred
-    cands = list(build_wf.rglob("TsukiSynthCLI.exe")) + list(build_wf.rglob("TsukiSynthCLI"))
-    cands = [c for c in cands if c.is_file()]
-    return max(cands, key=lambda p: p.stat().st_mtime) if cands else None
+    patterns = ("TsukiSynthCLI.exe", "tsukisynth-cli*", "TsukiSynthCLI")
+    ranked = []
+    for pattern_idx, pattern in enumerate(patterns):
+        for cand in build_wf.rglob(pattern):
+            if not cand.is_file():
+                continue
+            rel = cand.relative_to(build_wf)
+            in_release = any(part.lower() == "release" for part in rel.parts[:-1])
+            ranked.append(((0 if in_release else 1, pattern_idx, len(rel.parts),
+                            rel.as_posix().lower()), cand))
+    return min(ranked, key=lambda item: item[0])[1] if ranked else None
 
 
 def _run_dump(cli, score_path, timeout=120):

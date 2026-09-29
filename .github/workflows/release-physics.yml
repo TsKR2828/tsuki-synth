@@ -2,6 +2,17 @@ name: Release Physics Gates
 
 # Expensive release-only gates: independent VST hosts plus the complete score
 # corpus.  Normal pushes retain the faster implementation-conformance workflow.
+#
+# Exit-code rule for multi-line `run:` blocks (WF0925b-TF, decision packet
+# Q12): every job here runs on windows-2022, whose default shell is pwsh,
+# called by the runner as `pwsh -command ". '{0}'"` with
+# `$ErrorActionPreference = 'stop'` prepended and `exit $LASTEXITCODE`
+# appended. A failing NATIVE command (ctest, python, cmake, git ...) does not
+# stop a pwsh script, so only the LAST command's exit code reached the step
+# result: a ctest or pytest failure in "Run C++ and Python physics gates" was
+# masked by the later --full run's exit 0. Every native command in a
+# multi-line pwsh block is therefore followed by
+# `if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }`.
 
 on:
   workflow_dispatch:
@@ -17,6 +28,14 @@ env:
 jobs:
   build-and-host-validate:
     runs-on: windows-2022
+    outputs:
+      # WF0925b-TF (Q12): "true" only if the CLI artifact below was actually
+      # uploaded, i.e. every step before that upload (build, ctest, pytest,
+      # --selftest, --full, pluginval, Steinberg validator) succeeded.
+      # complete-score-corpus keys off this instead of this job's overall
+      # result, so a HostProbe failure (the job's LAST step) no longer skips
+      # the corpus shards; a failure anywhere before the upload still does.
+      cli_uploaded: ${{ steps.upload_cli.outcome == 'success' }}
 
     steps:
       - name: Checkout code (with submodules)
@@ -32,24 +51,43 @@ jobs:
           cache-dependency-path: tools/requirements-physics.txt
 
       - name: Install Python dependencies
+        shell: pwsh
         run: |
           python -m pip install pip==24.3.1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m pip install -r tools/requirements-physics.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Setup MSVC developer environment
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure and build all release targets
+        shell: pwsh
         run: |
           cmake -B build -DTSUKI_BUILD_TESTS=ON
-          cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_Standalone TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Run C++ and Python physics gates
+        # pytest (pinned in tools/requirements-physics.txt, installed above)
+        # instead of `unittest discover`: unittest silently collects 0 tests
+        # from the pytest-style files (test_measurement_selfcal.py,
+        # test_partial_verify.py, test_stem_verify.py). Same command as
+        # physics.yml.
+        # WF0925b-TF (Q12): each command's exit code is checked; before this
+        # only --full's exit code decided the step, so ctest / pytest /
+        # --selftest failures were masked.
+        shell: pwsh
         run: |
           ctest --test-dir build -C Release --output-on-failure
-          python -m unittest discover -s tests -p "test_*.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pytest tests -q
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/physics_verify.py --selftest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/physics_verify.py --full
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Download pinned pluginval binary
         shell: pwsh
@@ -65,10 +103,15 @@ jobs:
         run: |
           $sdk = Join-Path $env:RUNNER_TEMP 'vst3sdk'
           git clone --filter=blob:none --no-checkout https://github.com/steinbergmedia/vst3sdk.git $sdk
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           git -C $sdk checkout --detach $env:VST3SDK_COMMIT
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           git -C $sdk submodule update --init --depth 1 base cmake pluginterfaces public.sdk
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake -S $sdk -B "$sdk-build" -DSMTG_CREATE_PLUGIN_LINK=0 -DSMTG_ENABLE_VST3_PLUGIN_EXAMPLES=OFF -DSMTG_ENABLE_VSTGUI_SUPPORT=OFF
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build "$sdk-build" --config Release --target validator
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Validate VST3 in two independent hosts
         shell: pwsh
@@ -81,14 +124,66 @@ jobs:
           ./tools/validate_plugin.ps1 -Plugin $plugin -Pluginval $pluginval -Vst3Validator $validator -Strictness 10
 
       - name: Upload CLI for corpus shards
+        id: upload_cli
         uses: actions/upload-artifact@v4
         with:
           name: tsukisynth-cli-release
           path: build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
           if-no-files-found: error
 
+      - name: Run L2 HostProbe against the built VST3
+        # HostProbe is deliberately NOT registered with ctest (CMakeLists.txt
+        # "Deliberately NOT registered with add_test"), so building it is not
+        # enough -- it has to be executed explicitly.
+        # WF0925b-TF (Q12): this step is LAST in the job, after the physics
+        # gates, both host validators and the CLI upload, so a runner that
+        # cannot load the VST3 headlessly no longer makes GitHub skip them;
+        # and complete-score-corpus runs off the cli_uploaded output (see the
+        # job's `outputs:`), not off this job's overall result.
+        # Working directory: since WF0925-K2 the H8 check finds
+        # data/materials.json in the current working directory first, then
+        # under $TSUKI_REPO_ROOT, then in the nearest ancestor of the exe's own
+        # folder, and prints which one it used; if none has it, H8 FAILs
+        # loudly. Running from the repo root (as here) is still recommended.
+        # Any failed CHECK, or a missing binary/bundle, gives a non-zero exit
+        # and turns the job red.
+        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        env:
+          HOSTPROBE_EXE: build/Release/TsukiSynthHostProbe.exe
+          HOSTPROBE_VST3: build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+          HOSTPROBE_OUT: ${{ runner.temp }}/hostprobe
+        run: |
+          if (-not (Test-Path -LiteralPath $env:HOSTPROBE_EXE -PathType Leaf)) { throw "HostProbe binary not found: $env:HOSTPROBE_EXE" }
+          if (-not (Test-Path -LiteralPath $env:HOSTPROBE_VST3)) { throw "VST3 bundle not found: $env:HOSTPROBE_VST3" }
+          $exe = (Resolve-Path -LiteralPath $env:HOSTPROBE_EXE).Path
+          $vst3 = (Resolve-Path -LiteralPath $env:HOSTPROBE_VST3).Path
+          New-Item -ItemType Directory -Force -Path $env:HOSTPROBE_OUT | Out-Null
+          $log = Join-Path $env:HOSTPROBE_OUT 'hostprobe_log.txt'
+          Write-Host "cwd: $((Get-Location).Path)"
+          $ErrorActionPreference = 'Continue'
+          & $exe $vst3 $env:HOSTPROBE_OUT 2>&1 | Tee-Object -FilePath $log
+          $code = $LASTEXITCODE
+          Write-Host "TsukiSynthHostProbe exit code: $code"
+          if ($code -ne 0) { exit $code }
+
+      - name: Upload HostProbe log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hostprobe-log-release
+          path: ${{ runner.temp }}/hostprobe/hostprobe_log.txt
+          if-no-files-found: warn
+          retention-days: 14
+
   complete-score-corpus:
     needs: build-and-host-validate
+    # WF0925b-TF (Q12): run whenever the CLI artifact was uploaded, even if
+    # the build job then went red on its last step (HostProbe). The workflow
+    # as a whole stays red in that case -- this only stops HostProbe from
+    # hiding the corpus result. Cancelled runs and any failure before the
+    # upload still skip the shards.
+    if: ${{ !cancelled() && needs.build-and-host-validate.outputs.cli_uploaded == 'true' }}
     runs-on: windows-2022
     strategy:
       fail-fast: false
@@ -107,9 +202,12 @@ jobs:
           cache-dependency-path: tools/requirements-physics.txt
 
       - name: Install Python dependencies
+        shell: pwsh
         run: |
           python -m pip install pip==24.3.1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m pip install -r tools/requirements-physics.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Download built CLI
         uses: actions/download-artifact@v4
