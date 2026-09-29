@@ -1,0 +1,7 @@
+$ sha256sum -c output/wf0925/R_audit/stage_sha256_before_add.txt  (R 稽核 stage 前 sha256 vs 現在工作樹)
+     75 OK
+EXIT=0
+
+$ sha256sum -c output/wf0925/K_audit2/audited_files_sha256_round2_start.txt
+     34 OK
+EXIT=0

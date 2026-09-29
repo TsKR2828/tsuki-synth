@@ -1,0 +1,66 @@
+# wf0925_X2_listening_kit.txt
+# generated 2026-09-25T08:32:52  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_listening_kit.py
+kit items:
+  A1   A1_Rabbit_Stomp.wav                                               1.575 s  <= ../clean_batch2/distribution/sfx/rabbit/rabbit__Rabbit_Stomp.wav
+  A2   A2_Clockwork_Spring_Release.wav                                   1.375 s  <= ../clean_batch2/distribution/sfx/clockwork/clockwork__Clockwork_Spring_Release.wav
+  A3   A3_Restraint_Shackle_Slam.wav                                     2.704 s  <= ../clean_batch2/distribution/sfx/restraint/restraint__Restraint_Shackle_Slam.wav
+  B01  B01_Akashic_Meditation_Loop__ORIGINAL_x3.wav                     72.974 s  <= ../clean_batch2/distribution/sfx/akashic/akashic__Akashic_Meditation_Loop.wav  seams at 0:24.325 and 0:48.650
+  B02  B02_Akashic_Meditation_Loop__LOOPREADY_x3.wav                    48.000 s  <= loop_ready/akashic/akashic__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav  seams at 0:16.000 and 0:32.000
+  B03  B03_Rabbit_Bounce_Loop__ORIGINAL_x3.wav                          16.097 s  <= ../clean_batch2/distribution/sfx/rabbit/rabbit__Rabbit_Bounce_Loop.wav  seams at 0:05.366 and 0:10.731
+  B04  B04_Rabbit_Bounce_Loop__LOOPREADY_x3.wav                         10.286 s  <= loop_ready/rabbit/rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav  seams at 0:03.429 and 0:06.857
+  B05  B05_Restraint_Industrial_Pulse__ORIGINAL_x3.wav                  25.575 s  <= ../clean_batch2/distribution/sfx/restraint/restraint__Restraint_Industrial_Pulse.wav  seams at 0:08.525 and 0:17.050
+  B06  B06_Restraint_Industrial_Pulse__LOOPREADY_x3.wav                 14.400 s  <= loop_ready/restraint/restraint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav  seams at 0:04.800 and 0:09.600
+  B07  B07_Forest_Rain_Pattern__ORIGINAL_x3.wav                         50.062 s  <= ../clean_batch2/distribution/sfx/forest/forest__Forest_Rain_Pattern.wav  seams at 0:16.687 and 0:33.374
+  B08  B08_Forest_Rain_Pattern__LOOPREADY_x3.wav                        36.000 s  <= loop_ready/forest/forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav  seams at 0:12.000 and 0:24.000
+  B09  B09_Ocean_Wave_Cycle__ORIGINAL_x3.wav                            47.474 s  <= ../clean_batch2/distribution/sfx/ocean/ocean__Ocean_Wave_Cycle.wav  seams at 0:15.825 and 0:31.649
+  B10  B10_Ocean_Wave_Cycle__LOOPREADY_x3.wav                           24.000 s  <= loop_ready/ocean/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav  seams at 0:08.000 and 0:16.000
+  B11  B11_Clockwork_Tick_Loop__ORIGINAL_x3.wav                         15.497 s  <= ../clean_batch2/distribution/sfx/clockwork/clockwork__Clockwork_Tick_Loop.wav  seams at 0:05.166 and 0:10.331
+  B12  B12_Clockwork_Tick_Loop__LOOPREADY_x3.wav                        12.000 s  <= loop_ready/clockwork/clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav  seams at 0:04.000 and 0:08.000
+  C1   C1_Akashic_Gate_Open_Dark.wav                                    21.971 s  <= ../clean_batch2/distribution/sfx/akashic/akashic__Akashic_Gate_Open_Dark.wav
+  D    D_Fur_Elise_piano_44k16.wav                                     133.389 s  <= ../clean_batch2/distribution/music/fur_elise_complete_44k16.wav
+total audio excluding D (full track): 400.0 s = 6.67 min
+impact peak positions (from facts): {'rabbit_action_001': 0.12, 'clockwork_action_001': 0.17, 'restraint_action_001': 20.27, 'akashic_transition_var01': 556.29}
+weak-fundamental events for D: 16 ; time alignment master vs distribution lag = 0 samples
+zip: packages\TsukiSynth_listening_kit_v1_1.zip  116.7 MB  sha256 38ac5b45237d1d4b0416c6638fa635eaa12286ee07d951ab5b92abb8ae8e4fc2
+  44314a0ea8ae4357cdc575b17889cff3925cdfbef1ef884eeca8097b878cadd4  A1_Rabbit_Stomp.wav
+  9486fe6e29e9ffcacf6835b684263dbdcfec1d1a862ee9c9b198549d6e040b95  A2_Clockwork_Spring_Release.wav
+  48d2a30eccf6da9184b32466b9296d8e87a4bf2ff8b9826fc509d9c458a541a0  A3_Restraint_Shackle_Slam.wav
+  8e68984428345c859bffc88f6c61d4b2c38b66385b68ccf3f5b6cefc06c57153  B01_Akashic_Meditation_Loop__ORIGINAL_x3.wav
+  bfb46410b9490201f7713e678ca5f5369f7f894e2a8d5d6efdaf3a069db3d751  B02_Akashic_Meditation_Loop__LOOPREADY_x3.wav
+  9912c053eeaf46a6c86a541d70eb588f8410f2b128c71b2e674d1a04454142c9  B03_Rabbit_Bounce_Loop__ORIGINAL_x3.wav
+  4ca2acb1bc2119699a904922f1fcbf6b7a62d787c221804a6e6f4123c2bd5ef7  B04_Rabbit_Bounce_Loop__LOOPREADY_x3.wav
+  b5b535192caddecc679c592df847e8bd993aa512ef4476dec6efe23e232c5066  B05_Restraint_Industrial_Pulse__ORIGINAL_x3.wav
+  3d599e88eeaa5756c4cd87669adc602e21c4832021b82831fa9f4abf1d55a857  B06_Restraint_Industrial_Pulse__LOOPREADY_x3.wav
+  d244e601ec4c7daa600cb4827d1ccc28189c208c609df745757b066d3e0385ae  B07_Forest_Rain_Pattern__ORIGINAL_x3.wav
+  a66663f0e22e4d69a4eee458ce7b680738f82daebb1db50599dcb3328bb973a9  B08_Forest_Rain_Pattern__LOOPREADY_x3.wav
+  5a4fb81908636bdc027a24238f79b2dfaaeda66270adc60c003388e852e75135  B09_Ocean_Wave_Cycle__ORIGINAL_x3.wav
+  795a762c53b448b043ce02a990d5dd1524cb35dc69d9574ba777eb8bf114e618  B10_Ocean_Wave_Cycle__LOOPREADY_x3.wav
+  e2f9eb01c2e2c95089dcfd27507626255e1590dc215da622d4173f063409fe46  B11_Clockwork_Tick_Loop__ORIGINAL_x3.wav
+  606dca1d5b6af3911aff1eba7fa773098bc3316ee1ecc4f35d6cde8a2ed4473a  B12_Clockwork_Tick_Loop__LOOPREADY_x3.wav
+  26e7183317a2f83082f7e71284067cb1981b899fddf6606debebde9e349508e2  C1_Akashic_Gate_Open_Dark.wav
+  e875958da29549a8c155086d7d2127f86fa41176502ca52df8c3da97dbcb6804  D_Fur_Elise_piano_44k16.wav
+  95d4832104f61054359079583aca9f1b8d80f23581467df01e862607ff491117  LISTENING_SHEET_EN.txt
+
+[PASS] A1_Rabbit_Stomp.wav is a bit-exact copy
+[PASS] A2_Clockwork_Spring_Release.wav is a bit-exact copy
+[PASS] A3_Restraint_Shackle_Slam.wav is a bit-exact copy
+[PASS] B01_Akashic_Meditation_Loop__ORIGINAL_x3.wav: 3 segments sample-identical to source (1167588 frames each, PCM_24)
+[PASS] B02_Akashic_Meditation_Loop__LOOPREADY_x3.wav: 3 segments sample-identical to source (768000 frames each, PCM_24)
+[PASS] B03_Rabbit_Bounce_Loop__ORIGINAL_x3.wav: 3 segments sample-identical to source (257547 frames each, PCM_24)
+[PASS] B04_Rabbit_Bounce_Loop__LOOPREADY_x3.wav: 3 segments sample-identical to source (164571 frames each, PCM_24)
+[PASS] B05_Restraint_Industrial_Pulse__ORIGINAL_x3.wav: 3 segments sample-identical to source (409205 frames each, PCM_24)
+[PASS] B06_Restraint_Industrial_Pulse__LOOPREADY_x3.wav: 3 segments sample-identical to source (230400 frames each, PCM_24)
+[PASS] B07_Forest_Rain_Pattern__ORIGINAL_x3.wav: 3 segments sample-identical to source (800988 frames each, PCM_24)
+[PASS] B08_Forest_Rain_Pattern__LOOPREADY_x3.wav: 3 segments sample-identical to source (576000 frames each, PCM_24)
+[PASS] B09_Ocean_Wave_Cycle__ORIGINAL_x3.wav: 3 segments sample-identical to source (759588 frames each, PCM_24)
+[PASS] B10_Ocean_Wave_Cycle__LOOPREADY_x3.wav: 3 segments sample-identical to source (384000 frames each, PCM_24)
+[PASS] B11_Clockwork_Tick_Loop__ORIGINAL_x3.wav: 3 segments sample-identical to source (247955 frames each, PCM_24)
+[PASS] B12_Clockwork_Tick_Loop__LOOPREADY_x3.wav: 3 segments sample-identical to source (192000 frames each, PCM_24)
+[PASS] C1_Akashic_Gate_Open_Dark.wav is a bit-exact copy
+[PASS] D_Fur_Elise_piano_44k16.wav is a bit-exact copy
+[PASS] kit zip testzip ok and 18 members byte-identical to kit folder
+[PASS] LISTENING_SHEET_EN.txt included
+
+GATE listening kit checks: 19/19
+RESULT: PASS

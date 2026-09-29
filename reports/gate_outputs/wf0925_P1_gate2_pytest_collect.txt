@@ -1,0 +1,36 @@
+WF0925-P1 證據檔（Python/CI lane 工兵）— GATE 2：python -m pytest tests -q --collect-only 收集數
+日期：2026-09-25　repo HEAD：18430c4（branch fix/deep-physics-audit-20260716），本卡改動未 commit
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<repo> = repo 根目錄；<scratchpad> = 本 session 暫存目錄（repo 外）；
+<tmp> = 系統暫存目錄；<home> = 使用者家目錄。原始 log 在 output/wf0925/P1/（gitignored）。
+Python：3.13.3（本機實際版本；pytest 8.4.2）
+================================================================================
+命令（repo 根目錄）：
+  PYTHONIOENCODING=utf-8 python -m pytest tests -q --collect-only -p no:cacheprovider
+
+結果：288 tests collected（WF0914 整合基線 270）。差 +18 全部來自本卡：
+  tests/test_stem_stream.py 新檔 17 個（含 odd_size 參數化 3 個）
+  tests/test_measurement_selfcal.py 12 → 13（新增 test_holdout_grid_pins_match_record）
+（全套 pytest 依規約只在整合卡跑；本卡只收集、不全跑。）
+
+---------------------------------------------------------------- 逐檔收集數（由完整收集清單 uniq -c 算出）
+      7 tests/test_consonance_contract.py::
+      3 tests/test_crossplatform_emit_safety.py::
+      2 tests/test_dump_modes_layered.py::
+     13 tests/test_measurement_selfcal.py::
+     13 tests/test_midi_type0.py::
+     10 tests/test_partial_verify.py::
+     45 tests/test_physics_verify.py::
+      7 tests/test_render_app_filename_safety.py::
+     29 tests/test_scene_reverb.py::
+     11 tests/test_schema_contract_sync.py::
+     26 tests/test_score_vs_midi_verify.py::
+      4 tests/test_specimen_pipeline.py::
+     15 tests/test_specimen_verify.py::
+     17 tests/test_stem_stream.py::
+     49 tests/test_stem_verify.py::
+     37 tests/test_verify_score_contract.py::
+
+---------------------------------------------------------------- pytest 輸出最後 3 行
+
+288 tests collected in 3.63s
+exit=0

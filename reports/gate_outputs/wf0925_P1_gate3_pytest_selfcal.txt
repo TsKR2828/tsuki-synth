@@ -1,0 +1,171 @@
+WF0925-P1 證據檔（Python/CI lane 工兵）— GATE 3：tests/test_measurement_selfcal.py（D15 pin 搬家）＋改善/漂移兩組對照示範
+日期：2026-09-25　repo HEAD：18430c4（branch fix/deep-physics-audit-20260716），本卡改動未 commit
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<repo> = repo 根目錄；<scratchpad> = 本 session 暫存目錄（repo 外）；
+<tmp> = 系統暫存目錄；<home> = 使用者家目錄。原始 log 在 output/wf0925/P1/（gitignored）。
+Python：3.13.3（本機實際版本；pytest 8.4.2）
+================================================================================
+任務 3（staged-review:D15-xfailpin，含懷疑者補充）
+
+改了什麼（數字都是既有量測值，沒有新容差、沒有改門檻）：
+- release 段 pin 5.2304（開發網格）移到非 xfail 的 test_measure_pitch_cents_matches_legacy_after_revert，
+  寫法與精度照 sustain 1.1721 那條（legacy 估計器、abs(x - pin) < 5e-4）。
+- hold-out 的 sustain 1.0840（原本定義了沒人用）與 release 7.2055 放進新的非 xfail 測試
+  test_holdout_grid_pins_match_record（同樣 legacy 估計器、< 5e-4）。
+- 兩個 release strict xfail 只留「拒答數／點數／≤1 c」判定，估計器真的改善時會 XPASS(strict) → CI 紅，提示升級。
+- 修掉 docstring「card BLOCKED」狀態字（改寫成 09-15 月月選 A' 關閉）與不存在的檔名
+  （改成 wf0914_D15_gate1_dev_grid.txt / _holdout_grid.txt）。
+
+A. 主 GATE 命令（repo 根目錄）：
+  PYTHONIOENCODING=utf-8 python -m pytest tests/test_measurement_selfcal.py -v -rxX -p no:cacheprovider
+  結果：8 passed, 5 xfailed（改前 7 passed, 5 xfailed；+1 為新 pin 測試）
+
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-8.4.2, pluggy-1.6.0 -- <home>\AppData\Local\Programs\Python\Python313\python.exe
+rootdir: <repo>
+plugins: anyio-4.13.0, cov-7.1.0, mock-3.15.1
+collecting ... collected 13 items
+
+tests/test_measurement_selfcal.py::test_pure_harmonic_a4_within_one_cent PASSED [  7%]
+tests/test_measurement_selfcal.py::test_sensitivity_anti_false_green PASSED [ 15%]
+tests/test_measurement_selfcal.py::test_mutant_estimator_caught_by_sensitivity_check PASSED [ 23%]
+tests/test_measurement_selfcal.py::test_development_grid_within_one_cent XFAIL [ 30%]
+tests/test_measurement_selfcal.py::test_holdout_grid_within_one_cent XFAIL [ 38%]
+tests/test_measurement_selfcal.py::test_release_development_grid_within_one_cent XFAIL [ 46%]
+tests/test_measurement_selfcal.py::test_release_holdout_grid_within_one_cent XFAIL [ 53%]
+tests/test_measurement_selfcal.py::test_release_sensitivity_anti_false_green PASSED [ 61%]
+tests/test_measurement_selfcal.py::test_gain_fidelity_within_one_cent XFAIL [ 69%]
+tests/test_measurement_selfcal.py::test_course_semantics_reports_centre PASSED [ 76%]
+tests/test_measurement_selfcal.py::test_gain_fidelity_no_regression_vs_legacy PASSED [ 84%]
+tests/test_measurement_selfcal.py::test_measure_pitch_cents_matches_legacy_after_revert PASSED [ 92%]
+tests/test_measurement_selfcal.py::test_holdout_grid_pins_match_record PASSED [100%]
+
+=========================== short test summary info ===========================
+XFAIL tests/test_measurement_selfcal.py::test_development_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_holdout_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_release_development_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_release_holdout_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_gain_fidelity_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+================== 8 passed, 5 xfailed in 465.73s (0:07:45) ===================
+
+real	7m47.009s
+user	0m0.000s
+sys	0m0.031s
+exit=0
+
+
+B. 對照示範（證明改動有牙齒；scratch pytest plugin，repo 檔案不動）
+   B1「估計器真的變好」：plugin 把 production 估計器 melody_verify.measure_pitch_cents 換成永遠回 0.0 c 的完美 oracle
+       （legacy 估計器不動）。HEAD 版（pin 在 xfail 裡）→ 改善被吃掉，記成 xfailed；本卡版 → XPASS(strict) 紅燈，
+       同時 hold-out pin 測試仍綠（pin 守的是網格，不因估計器變好而紅）。
+   B2「網格本身漂移」：plugin 把 measurement_selfcal.RELEASE_FACTORS 反序（估計器不動）。
+       HEAD 版 → 漂移被吃掉，記成 xfailed；本卡版 → 非 xfail 的 pin 測試紅燈並報出新數字。
+   HEAD 版＝git show HEAD:tests/test_measurement_selfcal.py 的 scratch 複本，只把 ROOT 那一行改成指向 repo。
+
+---------------------------------------------------------------- B1 輸出（oracle）
+### A) HEAD version (pin assert inside the strict xfail), production estimator replaced by a perfect oracle
+$ python -m pytest <scratch copy of HEAD:tests/test_measurement_selfcal.py> -p p1_oracle_plugin -k test_release_development_grid_within_one_cent -rxX -q
+[p1_oracle_plugin] production estimator replaced by a perfect oracle
+x                                                                        [100%]
+=========================== short test summary info ===========================
+11 deselected, 1 xfailed in 66.20s (0:01:06)
+exit=0
+
+### B) WF0925-P1 version, same oracle
+$ python -m pytest tests/test_measurement_selfcal.py -p p1_oracle_plugin -k 'test_release_development_grid_within_one_cent or test_holdout_grid_pins_match_record' -rxX -q
+[p1_oracle_plugin] production estimator replaced by a perfect oracle
+F.                                                                       [100%]
+================================== FAILURES ===================================
+________________ test_release_development_grid_within_one_cent ________________
+[XPASS(strict)] WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+1 failed, 1 passed, 11 deselected in 134.74s (0:02:14)
+exit=1
+
+---------------------------------------------------------------- B2 輸出（grid drift）
+### C) HEAD version, GRID drift simulated (RELEASE_FACTORS reversed), estimator untouched
+$ python -m pytest <scratch copy of HEAD:tests/test_measurement_selfcal.py> -p p1_drift_plugin -k test_release_holdout_grid_within_one_cent -rxX -q
+[p1_drift_plugin] RELEASE_FACTORS reversed -> (0.08, 0.05, 0.002)
+x                                                                        [100%]
+=========================== short test summary info ===========================
+11 deselected, 1 xfailed in 64.40s (0:01:04)
+exit=0
+
+### D) WF0925-P1 version, same GRID drift
+$ python -m pytest tests/test_measurement_selfcal.py -p p1_drift_plugin -k 'test_release_holdout_grid_within_one_cent or test_holdout_grid_pins_match_record' -rxX -q
+[p1_drift_plugin] RELEASE_FACTORS reversed -> (0.08, 0.05, 0.002)
+xF                                                                       [100%]
+================================== FAILURES ===================================
+_____________________ test_holdout_grid_pins_match_record _____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001C4239DF5C0>
+
+    def test_holdout_grid_pins_match_record(monkeypatch):
+        """(m) WF0925-P1 (staged-review:D15-xfailpin): plain-test home for the
+        HOLD-OUT grid's two pinned on-record numbers -- sustain 1.0840 c (was
+        defined above but asserted nowhere) and release 7.2055 c (was only
+        inside the strict xfail test_release_holdout_grid_within_one_cent,
+        where a failing pin assert just counted as the expected failure).
+        Same pattern and precision (< 5e-4) as the development-grid pin in
+        test_measure_pitch_cents_matches_legacy_after_revert: measured with
+        the LEGACY estimator, so this guards the grid itself; an estimator
+        that really improves leaves this green and turns the strict xfails
+        into XPASS. These are existing measured values, not new tolerances."""
+        monkeypatch.setattr(mv, "measure_pitch_cents", mv.measure_pitch_cents_legacy)
+        legacy_rows = ms.run_holdout_grid()
+        assert len(legacy_rows) == 2080
+    
+        legacy_sustain = [r for r in legacy_rows if r["segment"] == "sustain"]
+        assert len(legacy_sustain) == 1040
+        sustain_max = max(abs(r["error_cents"]) for r in legacy_sustain
+                          if r["error_cents"] is not None)
+        assert abs(sustain_max - LEGACY_HOLDOUT_GRID_MAX_ABS_CENTS) < 5e-4, (
+            "the legacy centroid now measures %.4f cents on the SUSTAIN segment "
+            "of the hold-out grid, not the %.4f on record -- the GRID changed; "
+            "re-derive the pinned number and every document that cites it "
+            "(docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S8.5/S9)"
+            % (sustain_max, LEGACY_HOLDOUT_GRID_MAX_ABS_CENTS))
+    
+        legacy_release = [r for r in legacy_rows if r["segment"] == "release"]
+        assert len(legacy_release) == 1040
+        release_max = max(abs(r["error_cents"]) for r in legacy_release
+                          if r["error_cents"] is not None)
+>       assert abs(release_max - RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS) < 5e-4, (
+            "the legacy centroid now measures %.4f cents on the RELEASE segment "
+            "of the hold-out grid, not the %.4f on record -- the GRID changed; "
+            "re-derive reports/gate_outputs/wf0914_D15_gate1_holdout_grid.txt "
+            "and docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S8.5"
+            % (release_max, RELEASE_HOLDOUT_GRID_MAX_ABS_CENTS))
+E       AssertionError: the legacy centroid now measures 7.1971 cents on the RELEASE segment of the hold-out grid, not the 7.2055 on record -- the GRID changed; re-derive reports/gate_outputs/wf0914_D15_gate1_holdout_grid.txt and docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S8.5
+E       assert 0.008427677387147448 < 0.0005
+E        +  where 0.008427677387147448 = abs((7.197072322612852 - 7.2055))
+
+tests\test_measurement_selfcal.py:456: AssertionError
+=========================== short test summary info ===========================
+1 failed, 11 deselected, 1 xfailed in 142.36s (0:02:22)
+exit=1
+
+---------------------------------------------------------------- 附錄：兩個 scratch plugin 原文
+"""WF0925-P1 scratch pytest plugin: replaces the PRODUCTION estimator
+melody_verify.measure_pitch_cents with a perfect oracle (always 0.0 cents
+error, never refuses), i.e. simulates "an estimator that really clears the
+1-cent bar". measure_pitch_cents_legacy is left untouched."""
+import sys
+sys.path.insert(0, r"<repo>\tools")
+import melody_verify as mv  # noqa: E402
+
+
+def pytest_configure(config):
+    mv.measure_pitch_cents = lambda sig, sr, f0, t_onset: (0.0, None)
+    print("[p1_oracle_plugin] production estimator replaced by a perfect oracle")
+
+"""WF0925-P1 scratch pytest plugin: simulates GRID drift (not an estimator
+change) by reversing measurement_selfcal.RELEASE_FACTORS, so the release
+segment's cells get different damping factors and its max |error| moves.
+The production and legacy estimators are untouched."""
+import sys
+sys.path.insert(0, r"<repo>\tools")
+import measurement_selfcal as ms  # noqa: E402
+
+
+def pytest_configure(config):
+    ms.RELEASE_FACTORS = tuple(reversed(ms.RELEASE_FACTORS))
+    print("[p1_drift_plugin] RELEASE_FACTORS reversed ->", ms.RELEASE_FACTORS)

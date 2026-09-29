@@ -1,0 +1,354 @@
+WF0925-K2 own changes (test code only)
+======================================
+# Baseline = snapshot taken at K2 start into output/wf0925/K2/pre/ (= HEAD 18430c4 + K1's unstaged edits),
+# so this diff shows ONLY K2's edits. Snapshot sha256: host_probe.cpp ef6ad118526333fb33222ef3fc924f880de863f0518aba91f832ea2cb6e977b9,
+# audit_repro.cpp c71e24a3b5b473b2be68aa710e638a75fd4003dbc11677c5efeb87b386435e81,
+# physics_models_repro.cpp 9c86325c4bcca8bbe890d00ffad9eeec8805cf762b3f853a788b8110b5ae7175 (NOT modified by K2).
+# Line endings: both edited files stay CRLF throughout (0 lone LF).
+
+$ diff -u --strip-trailing-cr output/wf0925/K2/pre/host_probe.cpp tests/host_probe.cpp
+--- output/wf0925/K2/pre/host_probe.cpp	2026-09-25 08:04:00.068566700 +0800
++++ tests/host_probe.cpp	2026-09-25 08:24:02.278441500 +0800
+@@ -121,7 +121,11 @@
+ //                    held tongue_drum MIDI 40 note and checks the tail
+ //                    is still audible (RMS > -60 dBFS relative to peak) at
+ //                    10 s, tying the host-facing NUMBER to something that
+-//                    actually still needs to be there.
++//                    actually still needs to be there. WF0925-K2: the
++//                    engine cross-check's data/materials.json is looked up
++//                    in the cwd first, then under $TSUKI_REPO_ROOT, then in
++//                    the executable's ancestor directories (see
++//                    findMaterialsJson()); the path used is printed.
+ //   D12 legacy IR migration (WF0914-D12) three synthetic-state scenarios
+ //                    (docs/workcards/WF0914_D12_state_migration.md §1/§2)
+ //                    for TsukiSynthProcessor::migrateLegacyReverbIRPath(),
+@@ -161,12 +165,22 @@
+ //                    H7 user preset reads back as file format 2; a preset
+ //                    file claiming a NEWER format is listed and loaded but
+ //                    saveUserPreset() refuses to overwrite it.
++//   E16 factory presets (WF0925-K2): every src/Presets.h factory preset's
++//                    paramIDs must all resolve in the real parameter layout
++//                    (PresetManager::loadFactoryPreset() would otherwise skip
++//                    a bad one silently); each preset, selected on a fresh
++//                    real VST3 instance via setCurrentProgram(), renders one
++//                    C4 note whose output must be entirely finite. Peak/RMS
++//                    are printed only (no new threshold, R2).
+ //
+ // HONEST SCOPE: this is a JUCE host, not Cubase. It proves VST3-contract
+ // behaviour of the shipped binary; Cubase-specific behaviour is L3
+ // (tools/cubase_scan_verify.py = scan; AI-driven export = playback).
+ //
+ // Usage: TsukiSynthHostProbe <path-to-TsukiSynth.vst3> <out-dir>
++// (relative bundle/out-dir paths resolve against the cwd; H8's
++// data/materials.json no longer requires the cwd to be the repo root --
++// WF0925-K2, see findMaterialsJson())
+ // Exit 0 = all checks pass.
+ 
+ #include <juce_audio_processors/juce_audio_processors.h>
+@@ -557,6 +571,96 @@
+     return out;
+ }
+ 
++// WF0925-K2 (E16) helper: one note rendered with the instance's CURRENT
++// parameters left exactly as loaded. Unlike renderNotes() -- which zeroes
++// "Reverb Mix" because the sentinel fixture declares an FX-free render --
++// E16 must render a factory preset as the preset defines it, reverb/delay
++// included. Note-on at sample 0, note-off at noteOffS (so the release/damper
++// path runs too, which renderSustainedNote() deliberately never reaches).
++// The note/velocity/lengths are test-design choices, not pass/fail limits.
++juce::AudioBuffer<float> renderNoteAsLoaded (juce::AudioPluginInstance& inst,
++                                             int midiNote, float velocity,
++                                             double noteOffS, double lengthS)
++{
++    const int totalSamples = (int) (lengthS * kSampleRate);
++    const int numBlocks = (totalSamples + kBlockSize - 1) / kBlockSize;
++    const int offSample = (int) std::llround (noteOffS * kSampleRate);
++    inst.setNonRealtime (true);
++    inst.prepareToPlay (kSampleRate, kBlockSize);
++    const int chans = juce::jmax (2, inst.getTotalNumOutputChannels());
++    juce::AudioBuffer<float> out (2, numBlocks * kBlockSize);
++    out.clear();
++    juce::AudioBuffer<float> block (chans, kBlockSize);
++    juce::MidiBuffer midi;
++
++    for (int b = 0; b < numBlocks; ++b)
++    {
++        const int blockStart = b * kBlockSize;
++        midi.clear();
++        if (b == 0)
++            midi.addEvent (juce::MidiMessage::noteOn (1, midiNote, velocity), 0);
++        if (offSample >= blockStart && offSample < blockStart + kBlockSize)
++            midi.addEvent (juce::MidiMessage::noteOff (1, midiNote), offSample - blockStart);
++        block.clear();
++        inst.processBlock (block, midi);
++        for (int c = 0; c < 2; ++c)
++            out.copyFrom (c, blockStart, block, juce::jmin (c, chans - 1), 0, kBlockSize);
++    }
++    inst.releaseResources();
++    return out;
++}
++
++// WF0925-K2 (09-25 live-gate finding 2): H8 used to look for
++// data/materials.json ONLY relative to the current working directory, so
++// running this probe from anywhere but the repo root produced 4 false H8
++// FAILs (the 2026-09-25 live-gate run hit exactly that). Lookup order now:
++//   1. <cwd>/data/materials.json -- first, so a run from the repo root (the
++//      documented GATE command) resolves exactly the same file as before;
++//   2. $TSUKI_REPO_ROOT/data/materials.json -- explicit override (an
++//      absolute path, or relative to the cwd);
++//   3. the nearest ancestor of this executable's own directory that contains
++//      data/materials.json (e.g. build-wf/Release/ -> the repo root).
++// The path finally used and how it was found are printed by the caller; a
++// rejected TSUKI_REPO_ROOT is printed here. If nothing is found the cwd
++// candidate is returned, so the H8 CHECK fails loudly naming that path,
++// exactly as before this change.
++struct MaterialsLookup { juce::File file; juce::String via; };
++
++MaterialsLookup findMaterialsJson()
++{
++    const juce::String rel ("data/materials.json");
++    const juce::File cwd = juce::File::getCurrentWorkingDirectory();
++    const juce::File cwdCandidate = cwd.getChildFile (rel);
++    if (cwdCandidate.existsAsFile())
++        return { cwdCandidate, "found in the current working directory" };
++
++    const juce::String envRoot =
++        juce::SystemStats::getEnvironmentVariable ("TSUKI_REPO_ROOT", {});
++    if (envRoot.isNotEmpty())
++    {
++        const juce::File envCandidate = cwd.getChildFile (envRoot).getChildFile (rel);
++        if (envCandidate.existsAsFile())
++            return { envCandidate, "found via TSUKI_REPO_ROOT" };
++        std::cout << "  H8 materials.json: TSUKI_REPO_ROOT='" << envRoot
++                  << "' has no " << rel << " -- ignored\n";
++    }
++
++    juce::File dir = juce::File::getSpecialLocation (juce::File::currentExecutableFile)
++                         .getParentDirectory();
++    while (dir.getFullPathName().isNotEmpty())
++    {
++        const juce::File candidate = dir.getChildFile (rel);
++        if (candidate.existsAsFile())
++            return { candidate, "found in an ancestor of the executable's directory" };
++        const juce::File parent = dir.getParentDirectory();
++        if (parent == dir)
++            break;   // reached the filesystem root
++        dir = parent;
++    }
++    return { cwdCandidate, "NOT FOUND in cwd / TSUKI_REPO_ROOT / the executable's ancestors;"
++                           " falling back to the cwd path" };
++}
++
+ // ── H7 user preset round-trip (WF0908-E10b, design doc §10.2 option B) ────
+ // A minimal, GUI-free juce::AudioProcessor used only to host a "shadow"
+ // AudioProcessorValueTreeState built from src/ParameterLayout.h's
+@@ -1641,8 +1745,12 @@
+     // -- H8 tail length (WF0907-E5) ------------------------------------------
+     {
+         MaterialDB matDB;
+-        const juce::File materialsFile = juce::File::getCurrentWorkingDirectory()
+-                                             .getChildFile ("data/materials.json");
++        // WF0925-K2: cwd first, then TSUKI_REPO_ROOT, then the executable's
++        // ancestors -- see findMaterialsJson(). The path used is printed.
++        const MaterialsLookup materialsLookup = findMaterialsJson();
++        const juce::File materialsFile = materialsLookup.file;
++        std::cout << "  H8 materials.json used: " << materialsFile.getFullPathName()
++                  << " (" << materialsLookup.via << ")\n";
+         const bool matLoaded = matDB.loadFromFile (materialsFile);
+         CHECK (matLoaded, "H8 tail: MaterialDB loads " << materialsFile.getFullPathName());
+ 
+@@ -1723,6 +1831,101 @@
+         }
+     }
+ 
++    // -- E16 factory presets (WF0925-K2, engineering-gaps:E16) --------------
++    // PresetManager::loadFactoryPreset() silently SKIPS any paramID that
++    // apvts.getParameter() cannot resolve (src/PresetManager.h, the
++    // `if (auto* param = apvts.getParameter (entry.paramID))` loop), so a
++    // typo in src/Presets.h would ship a preset that quietly ignores that
++    // setting. For every factory preset this block:
++    //   (a) resolves each of its paramIDs against a ShadowProcessor APVTS --
++    //       built from the SAME createTsukiParameterLayout() the product's
++    //       TsukiSynthProcessor uses (see ShadowProcessor above) -- and
++    //       requires every one to resolve;
++    //   (b) creates a FRESH real VST3 instance, requires program i to carry
++    //       that preset's name and, after setCurrentProgram(i), to report i
++    //       as current (exact integer/string equality, no tolerance);
++    //   (c) renders C4 (MIDI 60, vel 0.7, note-off at 1.0 s, 2.0 s total)
++    //       with the preset's parameters untouched and requires every output
++    //       sample to be finite.
++    // Per the 09-25 status check's E16 correction (查證修正), NO peak ceiling
++    // and NO silence/RMS floor are asserted -- those would be new judgment
++    // thresholds (R2/R4) awaiting 月月's decision. Peak and RMS are PRINTED
++    // for each preset, descriptive only, not a GATE.
++    {
++        std::cout << "\n  -- E16 factory presets --\n";
++        int factoryCount = 0;
++        const FactoryPreset* factory = getFactoryPresetList (factoryCount);
++        std::cout << "  E16: src/Presets.h registers " << factoryCount
++                  << " factory presets\n";
++        ShadowProcessor e16Shadow;
++        // Negative control: the resolver used in (a) must be able to say
++        // "no" -- an ID that is not in the layout must NOT resolve.
++        CHECK (e16Shadow.apvts.getParameter ("wf0925_k2_no_such_param") == nullptr,
++               "E16 negative control: a paramID absent from createTsukiParameterLayout()"
++               " does not resolve");
++
++        for (int i = 0; i < factoryCount; ++i)
++        {
++            const FactoryPreset& fp = factory[i];
++            const juce::String presetLabel = "E16 factory preset " + juce::String (i)
++                                           + " '" + juce::String (fp.name) + "'";
++
++            juce::StringArray unresolved;
++            for (int k = 0; k < fp.numParams; ++k)
++                if (e16Shadow.apvts.getParameter (fp.params[k].paramID) == nullptr)
++                    unresolved.add (fp.params[k].paramID);
++            CHECK (unresolved.isEmpty(),
++                   presetLabel << ": all " << fp.numParams
++                   << " paramIDs resolve in createTsukiParameterLayout()"
++                   << (unresolved.isEmpty()
++                           ? juce::String()
++                           : " (UNRESOLVED: " + unresolved.joinIntoString (", ") + ")"));
++
++            auto pinst = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err);
++            CHECK (pinst != nullptr, presetLabel << ": fresh VST3 instance created");
++            if (pinst == nullptr)
++                continue;
++
++            const juce::String vstName = i < pinst->getNumPrograms()
++                                             ? pinst->getProgramName (i) : juce::String();
++            pinst->setCurrentProgram (i);
++            const int currentProgram = pinst->getCurrentProgram();
++            CHECK (vstName == juce::String (fp.name) && currentProgram == i,
++                   presetLabel << ": VST3 program " << i << " is named '" << vstName
++                   << "' and setCurrentProgram(" << i << ") -> getCurrentProgram()="
++                   << currentProgram);
++
++            const auto render = renderNoteAsLoaded (*pinst, 60, 0.7f, 1.0, 2.0);
++            long long nonFinite = 0;
++            double peak = 0.0, sumSq = 0.0;
++            long long finiteCount = 0;
++            for (int c = 0; c < render.getNumChannels(); ++c)
++            {
++                const float* d = render.getReadPointer (c);
++                for (int s = 0; s < render.getNumSamples(); ++s)
++                {
++                    if (! std::isfinite (d[s])) { ++nonFinite; continue; }
++                    peak = juce::jmax (peak, (double) std::abs (d[s]));
++                    sumSq += (double) d[s] * d[s];
++                    ++finiteCount;
++                }
++            }
++            const long long totalSamples = (long long) render.getNumChannels()
++                                         * render.getNumSamples();
++            CHECK (nonFinite == 0,
++                   presetLabel << ": C4 render, all " << totalSamples
++                   << " output samples finite (non-finite: " << nonFinite << ")");
++
++            const double rms = finiteCount > 0 ? std::sqrt (sumSq / (double) finiteCount) : 0.0;
++            std::cout << "    [info] " << presetLabel << ": peak "
++                      << juce::String (20.0 * std::log10 (juce::jmax (peak, 1.0e-12)), 2)
++                      << " dBFS, RMS "
++                      << juce::String (20.0 * std::log10 (juce::jmax (rms, 1.0e-12)), 2)
++                      << " dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB"
++                         " printed for digital silence)\n";
++        }
++    }
++
+     std::cout << (failures == 0 ? "PASS" : "FAIL") << " ("
+               << failures << " failures)\n";
+     return failures == 0 ? 0 : 1;
+diff_exit=1
+
+$ diff -u --strip-trailing-cr output/wf0925/K2/pre/audit_repro.cpp tests/audit_repro.cpp
+--- output/wf0925/K2/pre/audit_repro.cpp	2026-09-25 08:04:00.086066800 +0800
++++ tests/audit_repro.cpp	2026-09-25 08:24:02.278195300 +0800
+@@ -1042,6 +1042,13 @@
+ //     (command + output in reports/gate_outputs/wf0925_K1_*.txt) -- not
+ //     typed from memory. "" and "abc" cover the one-block padding path; the
+ //     56-byte message forces the padding into a SECOND block.
++//     Source note (WF0925-K2): the "abc" and 56-byte (448-bit) digests are
++//     also FIPS 180-2 Appendix B.1 / B.2 (printed pp. 35 / 39 of
++//     https://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf,
++//     fetched 2026-09-25; both match word for word, extract in
++//     reports/gate_outputs/wf0925_K2_e15_sources.txt). The empty-message
++//     digest does NOT appear in FIPS 180-2; its only source here is Python
++//     hashlib.
+ // (b) Corrupted library entry repair: import an IR, damage the managed copy
+ //     (truncate to half, then a 0-byte file), re-import the SAME source,
+ //     and require the entry's content hash to be correct again and no
+@@ -1523,6 +1530,49 @@
+ 
+     return true;
+ }
++
++// WF0925-K2 (09-25 status check, staged-review:D9c-guard): pins
++// EffectChain::kIrWetMakeupGain to the value 月月 decided on 2026-09-16
++// (D9 option A, DECIDED CONVENTION: x26.9 = +28.58 dB; see the 裁決記錄
++// section of reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md,
++// landed by docs/workcards/WF0914_D9c_ir_makeup_gain.md). Before this CHECK
++// nothing turned red if the constant was edited or deleted: K-02 below only
++// prints, HostProbe has no IR-loudness scenario, and the CLI / 8-score
++// bit-identity renders never go through EffectChain.
++//
++// Deliberately NOT asserted here: |IR - ALGO| <= 0.25 dB on the K-02
++// measurement. That 0.25 dB figure comes from the D9c workcard, not from
++// 月月's decision, so making it a pass/fail limit would be a new tolerance
++// (R2); it is left for a decision packet. K-02 / K-02-EXT stay
++// informational, unchanged.
++//
++// Access: kIrWetMakeupGain is a PRIVATE static constexpr member and this
++// card may not touch src/. C++'s explicit-instantiation access rule
++// ([temp.spec.general]/6 in the current working draft,
++// https://eel.is/c++draft/temp.spec.general: "The usual access checking
++// rules do not apply to names in a declaration of an explicit
++// instantiation ...") lets the explicit instantiation below name
++// &EffectChain::kIrWetMakeupGain; the friend function it defines hands that
++// address to the test. Only the constant is read; no product code runs.
++const float* effectChainIrWetMakeupGainAddress();
++
++template <const float* Member>
++struct EffectChainIrWetMakeupGainAccess
++{
++    friend const float* effectChainIrWetMakeupGainAddress() { return Member; }
++};
++
++template struct EffectChainIrWetMakeupGainAccess<&EffectChain::kIrWetMakeupGain>;
++
++void testIrWetMakeupGainPinnedToDecision()
++{
++    const float gain = *effectChainIrWetMakeupGainAddress();
++    std::printf ("[D9c-guard] EffectChain::kIrWetMakeupGain = %.9g\n", (double) gain);
++    CHECK (gain == 26.9f,
++           "D9c-guard: EffectChain::kIrWetMakeupGain == 26.9f (decision 2026-09-16, "
++           "D9 option A, DECIDED CONVENTION; "
++           "reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md)");
++}
+ }
+ 
+ int main()
+@@ -1547,6 +1597,7 @@
+     testLayerSourceMasterAndTrim();
+     testEffectChainOversizedBlockMatchesExternalChunking();
+     testIRLibrarySha256AndCorruptEntryRepair();
++    testIrWetMakeupGainPinnedToDecision();
+ 
+     std::printf ("%s (%d failure%s)\n",
+                  failures == 0 ? "PASS" : "FAIL",
+diff_exit=1
+
+$ diff -u --strip-trailing-cr output/wf0925/K2/pre/physics_models_repro.cpp tests/physics_models_repro.cpp
+diff_exit=0
+
+$ sha256sum tests/host_probe.cpp tests/audit_repro.cpp tests/physics_models_repro.cpp   (final)
+b9c0dc47f93b8b9fd8679092843d5178fd4da063ddf3ac0833c064f4a6a2f83b *tests/host_probe.cpp
+79383b92cb7a0c159b8a1abc4030b59140847512b74cc0173a6ba775d22e99b8 *tests/audit_repro.cpp
+9c86325c4bcca8bbe890d00ffad9eeec8805cf762b3f853a788b8110b5ae7175 *tests/physics_models_repro.cpp
+tests/host_probe.cpp CRLF 1932 lone LF 0
+tests/audit_repro.cpp CRLF 1628 lone LF 0
+
+$ git diff --stat -- tests/host_probe.cpp tests/audit_repro.cpp tests/physics_models_repro.cpp   (K1 + K2 combined vs HEAD)
+ tests/audit_repro.cpp | 149 ++++++++++++++++++
+ tests/host_probe.cpp  | 428 +++++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 572 insertions(+), 5 deletions(-)

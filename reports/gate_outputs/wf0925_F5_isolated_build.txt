@@ -1,0 +1,157 @@
+WF0925-F5 evidence 1/6: isolated build (HEAD archive + D11 patch), CLI identities
+generated: 2026-09-25 06:21:24 +0800   HEAD: 18430c4
+
+## Commands used to build the isolated tree (run once earlier in this card):
+#   mkdir -p output/wf0925/F5/tree && git archive HEAD | tar -x -C output/wf0925/F5/tree
+#   rmdir output/wf0925/F5/tree/libs/JUCE   (empty submodule placeholder)
+#   cmd /c mklink /J JUCE C:\Users\admin\Desktop\Claude\tsuki-synth\libs\JUCE   (in output/wf0925/F5/tree/libs, PowerShell)
+#   GIT_CEILING_DIRECTORIES=<abs>/output/wf0925/F5  cmake -B build -DCMAKE_BUILD_TYPE=Release -A x64   (in output/wf0925/F5/tree)
+#   cmake --build build --config Release --target TsukiSynthCLI   -> copied to output/wf0925/F5/cli_before_own/
+#   patch -p1 < reports/d11_string_scale_candidate.patch ; rebuild TsukiSynthCLI -> output/wf0925/F5/cli_after/
+#   (then an experiment-switch variant, see variant.diff below) ; rebuild -> output/wf0925/F5/cli_variant/
+#   (git apply was NOT used: the scratch tree sits inside the main work tree, so git would
+#    resolve paths against the main repo; GNU patch -p1 is purely cwd-relative.)
+
+## Re-verification on a FRESH archive (tree_check, no junction inside):
+$ rm -rf output/wf0925/F5/tree_check && mkdir -p output/wf0925/F5/tree_check && git archive HEAD | tar -x -C output/wf0925/F5/tree_check && ls output/wf0925/F5/tree_check/libs
+JUCE
+[exit=0]
+
+$ (cd output/wf0925/F5/tree_check && patch -p1 --dry-run < ../../../../reports/d11_string_scale_candidate.patch)
+checking file src/engines/CimbalomEngine.h
+checking file src/physics/StringModel.h
+checking file tools/physics_verify.py
+[exit=0]
+
+$ (cd output/wf0925/F5/tree_check && patch -p1 < ../../../../reports/d11_string_scale_candidate.patch)
+patching file src/engines/CimbalomEngine.h
+patching file src/physics/StringModel.h
+patching file tools/physics_verify.py
+[exit=0]
+
+## tree_check (HEAD + patch) vs the pure-patched source that cli_after was built from:
+$ diff --strip-trailing-cr output/wf0925/F5/tree_check/src/engines/CimbalomEngine.h output/wf0925/F5/cli_after/CimbalomEngine.h.patched_pure && echo IDENTICAL_CimbalomEngine
+IDENTICAL_CimbalomEngine
+[exit=0]
+
+$ diff --strip-trailing-cr output/wf0925/F5/tree_check/src/physics/StringModel.h output/wf0925/F5/tree/src/physics/StringModel.h && echo IDENTICAL_StringModel
+IDENTICAL_StringModel
+[exit=0]
+
+$ diff --strip-trailing-cr output/wf0925/F5/tree_check/tools/physics_verify.py output/wf0925/F5/tools_after/physics_verify.py && echo IDENTICAL_physics_verify_after
+IDENTICAL_physics_verify_after
+[exit=0]
+
+$ git show HEAD:tools/physics_verify.py | diff --strip-trailing-cr - output/wf0925/F5/tools_before/physics_verify.py && echo tools_before_equals_HEAD
+tools_before_equals_HEAD
+[exit=0]
+
+$ rm -rf output/wf0925/F5/tree_check
+[exit=0]
+
+## experiment-switch variant (scratch tree only; env TSUKI_F5_EXP; unset = pure candidate):
+$ cat output/wf0925/F5/variant.diff
+13a14,15
+> #include <cstdlib>
+> #include <string>
+389c391,402
+<         float diameter  = StringModel::diameterFromScaleTable (midiNote);
+---
+>         // ---- WF0925-F5 EXPERIMENT SWITCH (isolated scratch tree only; NOT repo code) ----
+>         const char* f5envRaw = std::getenv ("TSUKI_F5_EXP");
+>         const std::string f5env = f5envRaw ? std::string (f5envRaw) : std::string();
+>         const float f5dTable = StringModel::diameterFromScaleTable (midiNote);
+>         const float f5dParam = static_cast<float> (params.diameterMm) * 0.001f;
+>         const float f5lTable = StringModel::lengthFromScaleTable (midiNote);
+>         const float f5lOld   = StringModel::lengthFromMidiNote (midiNote);
+>         float diameter  = f5dTable;
+>         float f5length  = f5lTable;
+>         if (f5env == "old" || f5env == "decay_only") { diameter = f5dParam; f5length = f5lOld; }
+>         else if (f5env == "L_only")                   { diameter = f5dParam; f5length = f5lTable; }
+>         else if (f5env == "d_only")                   { diameter = f5dTable; f5length = f5lOld; }
+402c415
+<         sp.length         = StringModel::lengthFromScaleTable (midiNote);
+---
+>         sp.length         = f5length;
+416a430,443
+>         // WF0925-F5: decay-channel inputs. Default = the same values as the
+>         // mode geometry (sp). "decay_only": modes/frequencies/B/tension from the
+>         // OLD geometry, but the T60 inputs (bridge loss, radius, tension) from
+>         // the candidate table geometry.
+>         float f5decBridge = bridgeLoss;
+>         float f5decRadius = sp.diameter * 0.5f;
+>         float f5decTension = sp.tension;
+>         if (f5env == "decay_only")
+>         {
+>             const float tTab = StringModel::tensionForNote (midiNote, f5lTable, f5dTable, mat.density);
+>             f5decBridge  = StringModel::bridgeLossRate (tTab, f5lTable, soundboardMat, kBridgeSoundboardThicknessM);
+>             f5decRadius  = f5dTable * 0.5f;
+>             f5decTension = tTab;
+>         }
+524,525c551,552
+<                     m.frequency, mat, dampingOverride, bridgeLoss,
+<                     sp.diameter * 0.5f, sp.tension),
+---
+>                     m.frequency, mat, dampingOverride, f5decBridge,
+>                     f5decRadius, f5decTension),
+547,548c574,575
+<             applyStringDecayTimes (modes, mat, dampingOverride, bridgeLoss,
+<                                    sp.diameter * 0.5f, sp.tension, 1.0f, 1.0f);
+---
+>             applyStringDecayTimes (modes, mat, dampingOverride, f5decBridge,
+>                                    f5decRadius, f5decTension, 1.0f, 1.0f);
+[exit=0]
+
+## build log tails
+$ tail -2 output/wf0925/F5/build_before.log
+  已完成程式碼產生
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\tree\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[exit=0]
+
+$ tail -2 output/wf0925/F5/build_after.log
+  已完成程式碼產生
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\tree\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[exit=0]
+
+$ tail -2 output/wf0925/F5/build_variant.log
+  已完成程式碼產生
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\tree\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[exit=0]
+
+## CLI binaries used
+$ sha256sum build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe output/wf0925/F5/cli_build/TsukiSynthCLI.exe output/wf0925/F5/cli_before_own/TsukiSynthCLI.exe output/wf0925/F5/cli_after/TsukiSynthCLI.exe output/wf0925/F5/cli_variant/TsukiSynthCLI.exe reports/d11_string_scale_candidate.patch
+9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 *output/wf0925/F5/cli_build/TsukiSynthCLI.exe
+06395f2dc6fd8ecd2f7cbb2e40b84d4db06ff70b2e40daa7b00df230920bd735 *output/wf0925/F5/cli_before_own/TsukiSynthCLI.exe
+fa67a642f4cf8e524cf1d1c2e7aad75abfbb21550f6d07b0fac1db532d1599ec *output/wf0925/F5/cli_after/TsukiSynthCLI.exe
+c36c4e6c9e6fbcf57ceb09f1158d00557dd875411fe2b29d74461cf3821f2aaa *output/wf0925/F5/cli_variant/TsukiSynthCLI.exe
+56febec046547a13cc93878b290d3ffa8071c6847419d6fcae7c4884aef06e23 *reports/d11_string_scale_candidate.patch
+[exit=0]
+
+## safety: junction removed (cmd rmdir, link only), JUCE file count unchanged, main repo untouched
+$ cat output/wf0925/F5/juce_filecount_before.txt; find libs/JUCE -type f | wc -l
+4378
+4378
+[exit=0]
+
+$ ls -la output/wf0925/F5/tree/libs/
+total 8
+drwxr-xr-x 1 admin 197609 0 Sep 25 06:17 .
+drwxr-xr-x 1 admin 197609 0 Sep 25 06:00 ..
+[exit=0]
+
+$ grep -c 'lengthFromScaleTable\|diameterFromScaleTable\|TSUKI_F5_EXP\|_d11_anchor' src/physics/StringModel.h src/engines/CimbalomEngine.h tools/physics_verify.py || echo '(grep exit 1 = zero matches in every file)'
+src/physics/StringModel.h:0
+src/engines/CimbalomEngine.h:0
+tools/physics_verify.py:0
+(grep exit 1 = zero matches in every file)
+[exit=0]
+
+$ git diff --stat HEAD -- src/physics/StringModel.h
+[exit=0]
+
+$ git status --porcelain -- src/physics/StringModel.h src/engines/CimbalomEngine.h tools/physics_verify.py reports/d11_string_scale_candidate.patch
+ M src/engines/CimbalomEngine.h
+ M tools/physics_verify.py
+[exit=0]
+

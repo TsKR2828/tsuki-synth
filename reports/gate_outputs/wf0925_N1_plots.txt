@@ -1,0 +1,9 @@
+# WF0925-N1 evidence — generated 2026-09-25 06:02:41 +0800
+# cwd: /c/Users/admin/Desktop/Claude/tsuki-synth
+# git HEAD: 18430c4
+# CLI: output/wf0925/N1/cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8
+$ python reports/weak_fundamental_null_map/plot_maps.py
+
+wrote map_piano_felt.png map_four_configs.png fur_elise_validation.png mechanism_H.png
+
+# rc=0

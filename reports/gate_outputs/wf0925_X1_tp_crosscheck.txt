@@ -1,0 +1,28 @@
+# wf0925_X1_tp_crosscheck.txt
+# generated 2026-09-25T05:58:35  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x1_tp_crosscheck.py
+# ffmpeg: <TOOLS>\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe
+fur_elise_complete           master       swr192k  -0.44405 dBTP (lin 0.95016) | ebur128 lin 0.950 = | loudnorm -0.44 = | ebur128 summary -0.4
+fur_elise_complete           distribution swr192k  -0.99685 dBTP (lin 0.89157) | ebur128 lin 0.892 = | loudnorm -1.00 = | ebur128 summary -1.0
+fur_elise_complete_cimbalom  master       swr192k  -0.43630 dBTP (lin 0.95101) | ebur128 lin 0.951 = | loudnorm -0.44 = | ebur128 summary -0.4
+fur_elise_complete_cimbalom  distribution swr192k  -0.96817 dBTP (lin 0.89452) | ebur128 lin 0.895 = | loudnorm -0.97 = | ebur128 summary -1.0
+ai_radiance_complete         master       swr192k  -0.44553 dBTP (lin 0.95000) | ebur128 lin 0.950 = | loudnorm -0.45 = | ebur128 summary -0.4
+ai_radiance_complete         distribution swr192k  -0.99194 dBTP (lin 0.89208) | ebur128 lin 0.892 = | loudnorm -0.99 = | ebur128 summary -1.0
+akashic_loop_001             master       swr192k  -0.44469 dBTP (lin 0.95009) | ebur128 lin 0.950 = | loudnorm -0.44 = | ebur128 summary -0.4
+akashic_loop_001             distribution swr192k  -1.04469 dBTP (lin 0.88668) | ebur128 lin 0.887 = | loudnorm -1.04 = | ebur128 summary -1.0
+akashic_ambient_001          master       swr192k  -0.44553 dBTP (lin 0.95000) | ebur128 lin 0.950 = | loudnorm -0.45 = | ebur128 summary -0.4
+akashic_ambient_001          distribution swr192k  -1.04553 dBTP (lin 0.88659) | ebur128 lin 0.887 = | loudnorm -1.05 = | ebur128 summary -1.0
+akashic_action_001           master       swr192k  -0.44118 dBTP (lin 0.95048) | ebur128 lin 0.950 = | loudnorm -0.44 = | ebur128 summary -0.4
+akashic_action_001           distribution swr192k  -1.04118 dBTP (lin 0.88704) | ebur128 lin 0.887 = | loudnorm -1.04 = | ebur128 summary -1.0
+akashic_transition_var01     master       swr192k  -0.43895 dBTP (lin 0.95072) | ebur128 lin 0.951 = | loudnorm -0.44 = | ebur128 summary -0.4
+akashic_transition_var01     distribution swr192k  -1.03895 dBTP (lin 0.88726) | ebur128 lin 0.887 = | loudnorm -1.04 = | ebur128 summary -1.0
+akashic_transition_001       master       swr192k  -0.42360 dBTP (lin 0.95240) | ebur128 lin 0.952 = | loudnorm -0.42 = | ebur128 summary -0.4
+akashic_transition_001       distribution swr192k  -1.02360 dBTP (lin 0.88883) | ebur128 lin 0.889 = | loudnorm -1.02 = | ebur128 summary -1.0
+akashic_ui_001               master       swr192k  -0.30436 dBTP (lin 0.96557) | ebur128 lin 0.966 = | loudnorm -0.30 = | ebur128 summary -0.3
+akashic_ui_001               distribution swr192k  -1.00436 dBTP (lin 0.89080) | ebur128 lin 0.891 = | loudnorm -1.00 = | ebur128 summary -1.0
+akashic_notify_001           master       swr192k  -0.44553 dBTP (lin 0.95000) | ebur128 lin 0.950 = | loudnorm -0.45 = | ebur128 summary -0.4
+akashic_notify_001           distribution swr192k  -1.04553 dBTP (lin 0.88659) | ebur128 lin 0.887 = | loudnorm -1.05 = | ebur128 summary -1.0
+akashic_opening_bell_001     master       swr192k  -0.44553 dBTP (lin 0.95000) | ebur128 lin 0.950 = | loudnorm -0.45 = | ebur128 summary -0.4
+akashic_opening_bell_001     distribution swr192k  -1.04553 dBTP (lin 0.88659) | ebur128 lin 0.887 = | loudnorm -1.05 = | ebur128 summary -1.0
+agree with ebur128 at its printed precision: 22/22
+agree with loudnorm at its printed precision: 22/22

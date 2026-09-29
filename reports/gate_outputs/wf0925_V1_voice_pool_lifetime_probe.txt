@@ -1,0 +1,47 @@
+# WF0925-V1 B：voice 壽命公式 vs CLI 單音實測（描述用、非 GATE；差值只列數字，不判定）
+# 方法見 reports/wf0925_method/voice_lifetime_probe.py 檔頭：單一事件乾聲、不正規化 32-bit float、tail 60 s；
+# CLI 的每事件迴圈是 for(...; voice.isActive(); ...)，所以最後一個非零 sample = voice 停止時間（與外掛 clearCurrentNote 同一個 isActive 條件）。
+
+## 1. 前任 06:22 的執行（原樣）
+$ cat output/wf0925/V1/lifetime_probe_log.txt
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\V1\cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8
+#    score                                                        idx    note        dur_s   T60max   noteoff   pred_end   meas_end    diff_s
+0    scores/classical/fur_elise/fur_elise_complete.score.json     88     E5          0.231    1.153    0.7083     0.7556     0.7556   +0.0000
+1    scores/classical/fur_elise/fur_elise_complete.score.json     9      A2          0.215    6.691    0.6937     1.0186     1.0186   +0.0000
+2    scores/classical/fur_elise/fur_elise_complete.score.json     279    A5          0.108    0.865    0.5969     0.6352     0.6352   +0.0000
+3    cores/examples/moonlight_sonata_movement1_yangqin.score.json 0      37          4.480    5.819    4.5320     4.6213     4.6213   -0.0000
+4    s/examples/moonlight_sonata_movement1_tongue_drum.score.json 0      37          4.480   68.675    4.5320     9.7034     9.7103   +0.0069
+5    scores/examples/water_gong_free.score.json                   0      C4          3.000    7.486    3.2000     3.5829     3.5826   -0.0003
+6    our_seasons/winter/vivaldi_four_seasons_winter_m1.score.json 2498   C5          3.810    1.101    3.9286     1.6011     1.6009   -0.0002
+7    our_seasons/summer/vivaldi_four_seasons_summer_m3.score.json 2305   Eb2         0.103    2.843    0.5930     0.7305     0.7305   +0.0000
+8    scores/examples/moonlight_sonata_complete.score.json         0      37          4.480       fm    4.5320     4.5320     4.0019   -0.5301
+9    scores/examples/moonlight_sonata_complete.score.json         571    32         13.440       fm   12.5960    12.5960     4.0019   -8.5941
+wrote output\wf0925\V1\lifetime_probe\probe_results.json
+
+## 2. 本輪重跑，表格逐字比對
+$ python reports/wf0925_method/voice_lifetime_probe.py --cli output/wf0925/V1/cli.exe --dumps output/wf0925/V1/dumps --workdir output/wf0925/V1/recheck/lifetime_probe
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\V1\cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8
+#    score                                                        idx    note        dur_s   T60max   noteoff   pred_end   meas_end    diff_s
+0    scores/classical/fur_elise/fur_elise_complete.score.json     88     E5          0.231    1.153    0.7083     0.7556     0.7556   +0.0000
+1    scores/classical/fur_elise/fur_elise_complete.score.json     9      A2          0.215    6.691    0.6937     1.0186     1.0186   +0.0000
+2    scores/classical/fur_elise/fur_elise_complete.score.json     279    A5          0.108    0.865    0.5969     0.6352     0.6352   +0.0000
+3    cores/examples/moonlight_sonata_movement1_yangqin.score.json 0      37          4.480    5.819    4.5320     4.6213     4.6213   -0.0000
+4    s/examples/moonlight_sonata_movement1_tongue_drum.score.json 0      37          4.480   68.675    4.5320     9.7034     9.7103   +0.0069
+5    scores/examples/water_gong_free.score.json                   0      C4          3.000    7.486    3.2000     3.5829     3.5826   -0.0003
+6    our_seasons/winter/vivaldi_four_seasons_winter_m1.score.json 2498   C5          3.810    1.101    3.9286     1.6011     1.6009   -0.0002
+7    our_seasons/summer/vivaldi_four_seasons_summer_m3.score.json 2305   Eb2         0.103    2.843    0.5930     0.7305     0.7305   +0.0000
+8    scores/examples/moonlight_sonata_complete.score.json         0      37          4.480       fm    4.5320     4.5320     4.0019   -0.5301
+9    scores/examples/moonlight_sonata_complete.score.json         571    32         13.440       fm   12.5960    12.5960     4.0019   -8.5941
+wrote output\wf0925\V1\recheck\lifetime_probe\probe_results.json
+$ diff <(sed 1d 06:22 log | grep -v ^wrote) <(sed 1d recheck log | grep -v ^wrote) && echo IDENTICAL
+TABLE IDENTICAL
+
+## 3. 獨立核對：不經腳本，直接讀 WAV 找最後一個非零 sample（p00 / p04 / p06）
+p00 E5                           first non-zero 0.500000 s ; last non-zero sample 36267 -> end 0.755583 s ; script meas_end 0.755583 ; pred_end 0.755572 ; diff +0.011 ms (0.0045% of predicted lifetime)
+p04 midi 37                      first non-zero 0.500000 s ; last non-zero sample 466093 -> end 9.710292 s ; script meas_end 9.710292 ; pred_end 9.703440 ; diff +6.852 ms (0.0744% of predicted lifetime)
+p06 C5                           first non-zero 0.500000 s ; last non-zero sample 76843 -> end 1.600917 s ; script meas_end 1.600917 ; pred_end 1.601100 ; diff -0.183 ms (-0.0167% of predicted lifetime)
+max |diff| over the 8 modal probes: 6.852 ms
+max |diff| as % of predicted lifetime (modal): 0.0744 %
+
+# FM 兩顆（p08/p09）的「最後非零 sample」都在 4.0019 s：Piano preset sustain=0，attack 5 ms + decay 3.5 s 後輸出為 0，
+# 但 envelope 停在 Sustain、voice 仍佔位直到放鍵，所以此法量不到 FM 的 voice 壽命（照實列出，FM 壽命只照 Envelope.h 程式碼讀）。

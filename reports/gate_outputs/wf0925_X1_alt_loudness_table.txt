@@ -1,0 +1,37 @@
+# wf0925_X1_alt_loudness_table.txt
+# generated 2026-09-25T05:52:27  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x1_alt_loudness_table.py
+# ffmpeg: <TOOLS>\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe
+files: 43; loudest reachable max-momentary at -1 dBTP: min -28.321 (= Rabbit Stomp), median -9.914, max -5.331 LUFS
+[描述用、非 GATE] target T -> files capped by -1 dBTP / out max-momentary range / spread / median
+  T= -10.000: capped 21/43  range  -28.321 ..  -10.000  spread 18.321 LU  median  -10.000  <- card's B plan (the only set produced)
+  T= -12.000: capped 13/43  range  -28.321 ..  -12.000  spread 16.321 LU  median  -12.000
+  T= -14.000: capped  8/43  range  -28.321 ..  -14.000  spread 14.321 LU  median  -14.000
+  T= -16.000: capped  7/43  range  -28.321 ..  -16.000  spread 12.321 LU  median  -16.000
+  T= -18.000: capped  5/43  range  -28.321 ..  -18.000  spread 10.321 LU  median  -18.000
+  T= -20.000: capped  3/43  range  -28.321 ..  -20.000  spread  8.321 LU  median  -20.000
+  T= -24.000: capped  2/43  range  -28.321 ..  -24.000  spread  4.321 LU  median  -24.000
+  T= -28.321: capped  0/43  range  -28.321 ..  -28.321  spread  0.000 LU  median  -28.321  <- = Rabbit Stomp's ceiling: nobody ends below T
+
+files whose -1 dBTP ceiling is below -10 LUFS (cannot reach -10 without a limiter):
+  rabbit    Rabbit Stomp                         ceiling  -28.321 LUFS  (-18.321 LU from -10)
+  clockwork Clockwork Spring Release             ceiling  -24.908 LUFS  (-14.908 LU from -10)
+  restraint Restraint Shackle Slam               ceiling  -22.411 LUFS  (-12.411 LU from -10)
+  forest    Forest Acorn Tap                     ceiling  -19.522 LUFS  (-9.522 LU from -10)
+  rabbit    Rabbit Carrot Button                 ceiling  -19.187 LUFS  (-9.187 LU from -10)
+  restraint Restraint Chain Drag                 ceiling  -17.461 LUFS  (-7.461 LU from -10)
+  forest    Forest Branch Snap                   ceiling  -17.078 LUFS  (-7.078 LU from -10)
+  clockwork Clockwork Gear Click                 ceiling  -15.635 LUFS  (-5.635 LU from -10)
+  forest    Forest Bird Call (Alarm)             ceiling  -13.533 LUFS  (-3.533 LU from -10)
+  akashic   Akashic Light Tap                    ceiling  -13.198 LUFS  (-3.198 LU from -10)
+  restraint Restraint Bolt Click                 ceiling  -12.894 LUFS  (-2.894 LU from -10)
+  clockwork Clockwork Bell Strike                ceiling  -12.079 LUFS  (-2.079 LU from -10)
+  clockwork Clockwork Tick Loop                  ceiling  -12.048 LUFS  (-2.048 LU from -10)
+  restraint Restraint Lock Click (Distorted)     ceiling  -11.927 LUFS  (-1.927 LU from -10)
+  ocean     Ocean Depth Slam                     ceiling  -11.450 LUFS  (-1.450 LU from -10)
+  forest    Forest Bird Call                     ceiling  -11.347 LUFS  (-1.347 LU from -10)
+  ocean     Ocean Abyss Hum                      ceiling  -10.485 LUFS  (-0.485 LU from -10)
+  clockwork Clockwork Gear Shift                 ceiling  -10.415 LUFS  (-0.415 LU from -10)
+  restraint Restraint Iron Drone                 ceiling  -10.402 LUFS  (-0.402 LU from -10)
+  akashic   Akashic Page Turn                    ceiling  -10.234 LUFS  (-0.234 LU from -10)
+  ocean     Ocean Droplet Tap                    ceiling  -10.113 LUFS  (-0.113 LU from -10)

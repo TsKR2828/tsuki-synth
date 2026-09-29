@@ -1,0 +1,298 @@
+WF0925-K2 GATE 1 (build) + GATE 2 (ctest) evidence
+==================================================
+Date 2026-09-25. Branch fix/deep-physics-audit-20260716, HEAD 18430c4 + K1 unstaged edits + K2 test-only edits.
+Build dir: build-wf\ only. K2 changed only tests/host_probe.cpp and tests/audit_repro.cpp; both were 'touch'ed before
+the final test-target build so both TUs recompiled from the final sources. Order of the final sequence: test-target
+build (03) -> ctest (04) -> audit_repro direct (05) -> HostProbe runs -> cmake configure (01) -> main targets (02,
+no TU compiled, binaries byte-identical before/after) -> test targets re-check (03b, no TU compiled, binaries unchanged).
+
+## GATE 1a -- cmake configure
+$ cmake -B build-wf -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Configuring done (2.1s)
+-- Generating done (0.8s)
+-- Build files have been written to: C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+EXIT=0
+
+## GATE 1b -- 3 main targets
+$ cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthCLI_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_rc_lib.dir\Release\TsukiSynthCLI_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthData.lib
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthData.lib
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  TsukiSynth_Standalone.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthData.lib
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  TsukiSynth_vst3_helper.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynth_vst3_helper.exe
+  TsukiSynth_VST3.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  removing moduleinfo.json
+  creating C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+EXIT=0
+compiled TUs in this step: 0 (K2 touched no src/)
+sha256 of the main binaries, identical before and after this step:
+main binaries unchanged by the final build
+a7248ee5837407e10735b8664dcb3bfe96023ec4672bf4d8f17dfdab1e3a6b78 *build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+5c2c3891549cb5acab95e52e7db97c7b0a708cfbdf218cbd25dc88a243f8041f *build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+e5d1b4ba256f1feef1aec1ca343ef62309f04bbcb5a84b679ca6103f0691b6fb *build-wf/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+
+## GATE 1c -- 5 test targets (X4)
+$ touch tests/audit_repro.cpp tests/host_probe.cpp  (force both K2-edited TUs to recompile from the final sources)
+$ cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  audit_repro.cpp
+  TsukiSynthAuditTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthAuditTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthTunerTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthTunerTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthPhysicsModelsTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthPhysicsModelsTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthSpectrumViewTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthSpectrumViewTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  host_probe.cpp
+  TsukiSynthHostProbe.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthHostProbe.exe
+EXIT=0
+error C / error LNK / warning C / warning LNK lines: 0
+
+## GATE 1d -- test targets re-check after the final configure
+$ cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe   (re-check after the final configure)
+
+
+
+
+
+EXIT=0
+sha256 of the five test binaries (unchanged; the ctest and HostProbe runs used exactly these):
+eae5a28d90398c4ef3e17757c92446b80d18115f4969b8dcb739f5a723c44360 *build-wf/Release/TsukiSynthAuditTest.exe
+9eee610e467825f0d1241aee475c43a946d141669540cfefc4bac5e5ce2f45fc *build-wf/Release/TsukiSynthHostProbe.exe
+cf75816ed0a27912e2b3fb228521282e35e414d30f98320dce5e7dcef64d87c3 *build-wf/Release/TsukiSynthTunerTest.exe
+894ead1eb3c9c7a141770805e4702446275abe23c01510932f533265f4ac8e9b *build-wf/Release/TsukiSynthPhysicsModelsTest.exe
+fdd8ef46dfa2fd784fa0815e45cd547968fe76e06905810e7c79f8539c42b4ef *build-wf/Release/TsukiSynthSpectrumViewTest.exe
+
+## GATE 2 -- ctest
+$ ctest --test-dir build-wf -C Release --output-on-failure
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.21 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.54 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.09 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.03 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   1.87 sec
+EXIT=0
+
+## audit_repro run directly (cwd = repo root) -- shows the D9c-guard line, the E15 lines and K-02 (informational)
+$ build-wf/Release/TsukiSynthAuditTest.exe   (cwd = repo root)
+TsukiSynth regression tests
+[PASS] Envelope remains active before release time
+[PASS] Envelope ends at the configured release time
+[PASS] AudioFIFO reports the readable sample count
+[PASS] AudioFIFO overwrites stale samples and keeps newest history
+[PASS] Test material database loads
+[PASS] MaterialDB rejects non-physical material constants
+[PASS] Failed material reload preserves the last known-good database
+[PASS] MaterialDB refuses the retired frequency-independent alpha schema
+[PASS] MaterialDB refuses a damping block carrying both alpha and eta
+[PASS] MaterialDB accepts the renamed beam_plate_* schema (positive control)
+[PASS] MaterialDB refuses the retired bare beta_air/gamma_radiation schema (beta_air)
+[PASS] MaterialDB refuses the retired bare beta_air/gamma_radiation schema (gamma_radiation)
+[PASS] Rejected legacy reloads keep the last known-good beam_plate_* database
+[PASS] Orthotropic: full valid block with explicit-null ratio_GRT_EL loads
+[PASS] Orthotropic: present == true after a valid block loads
+[PASS] Orthotropic: explicit null ratio_GRT_EL yields hasGRT == false
+[PASS] Orthotropic: source_species read back verbatim
+[PASS] Orthotropic: moisture_content_pct read back (±1e-6)
+[PASS] Orthotropic: mp_percent read back (±1e-6)
+[PASS] Orthotropic: ratio_ET_EL read back (±1e-6)
+[PASS] Orthotropic: ratio_ER_EL read back (±1e-6)
+[PASS] Orthotropic: ratio_GLR_EL read back (±1e-6)
+[PASS] Orthotropic: ratio_GLT_EL read back (±1e-6)
+[PASS] Orthotropic: all 6 poisson ratios read back (±1e-6)
+[PASS] Test material database loads
+[PASS] Orthotropic: absent key yields present == false (legal, not an error)
+[PASS] Orthotropic: non-wood material (steel) with a valid block loads (schema allows it)
+[PASS] Orthotropic: non-null ratio_GRT_EL yields hasGRT == true with correct value
+[PASS] Orthotropic: ratio_ET_EL = 1.5 (out of (0,1)) is rejected -- whole file fails closed
+[PASS] Orthotropic: ratio_ET_EL = 0 (excluded boundary) is rejected -- whole file fails closed
+[PASS] Orthotropic: poisson_LR = -0.1 (negative) is rejected -- whole file fails closed
+[PASS] Orthotropic: ratio_GRT_EL = "n/a" (string, not a legal null) is rejected
+[PASS] Orthotropic: source_species = "" (empty) is rejected -- whole file fails closed
+[PASS] Test material database loads
+[PASS] Orthotropic: (setup for transactional check) bad block is rejected
+[PASS] Orthotropic: a failed reload preserves the last known-good database intact
+[PASS] Chromatic fundamental is tuned to the requested MIDI note
+[PASS] Chromatic mode ratios are preserved and ultrasonic modes removed
+[PASS] Temporary score file is writable
+[PASS] ScoreParser accepts a valid score
+[PASS] ScoreParser reads export filename and format
+[PASS] ScoreParser reads wall reflection settings
+[PASS] ScoreParser reads an exact deterministic random seed
+[PASS] ScoreParser accepts the shared 192 kHz render contract
+[PASS] ScoreParser reads an optional stable event_id
+[PASS] Note names are exact and out-of-range notes are rejected
+[PASS] unknown engine
+[PASS] trailing note junk
+[PASS] fractional MIDI
+[PASS] out-of-range velocity
+[PASS] unknown event field
+[PASS] unimplemented membrane
+[PASS] rejected no-op parameter
+[PASS] wrong scalar type
+[PASS] irrelevant engine parameter
+[PASS] irrelevant frequency mode
+[PASS] unknown beam boundary
+[PASS] duplicate event_id
+[PASS] overlong event_id
+[PASS] Test material database loads
+[PASS] Custom score passes renderer preflight
+[PASS] Custom dump reports authored 1:1.5:2.25 ratios
+[PASS] Mode dump v2 carries explicit observable and event identity metadata
+[PASS] Test material database loads
+[PASS] Dump-leak repro: never-dumped baseline renders successfully
+[PASS] Dump-leak repro: dumpModes() produced output
+[PASS] capturePhysicsOnlyModes reads back false immediately after dumpModes() returns (RAII guard restored it, not left permanently true)
+[PASS] Dump-leak repro: post-dump render on the same instance succeeds
+[PASS] Calling dumpModes() before render() produces byte-identical WAV output to a render that never called dumpModes() at all -- capturePhysicsOnlyModes does not leak from the diagnostic dump path into a subsequent render in the same process
+[PASS] Test material database loads
+[PASS] Renderer refuses a modal event whose geometry is entirely below 20 Hz
+[PASS] Attack-only refusal reports the renderable-frequency reason
+[PASS] Test material database loads
+[PASS] Semantic-order regression fixtures render successfully
+[PASS] Permuting simultaneous events preserves the exact WAV bytes
+[PASS] Inserting a zero-velocity event preserves the exact WAV bytes
+[PASS] Test material database loads
+[PASS] Physical renderer writes valid audio at every shared sample rate through 192 kHz
+[PASS] Test material database loads
+[PASS] Renderer is causal: an event produces no samples before its authored time
+[PASS] Adding a future event leaves every earlier rendered sample bit-exact
+[PASS] FX-off renderer obeys linear superposition within PCM quantization error
+[PASS] Extreme valid-duration input is rejected by the 1 GiB buffer budget
+[PASS] Full-wet short reverb renders successfully
+[PASS] Full-wet reverb includes its delayed response instead of all-zero output
+[PASS] FLAC writer creates an output file
+[PASS] FLAC output can be read back with the requested format
+[PASS] ScoreRenderer renders an FM event with no material database entry
+[PASS] FM release and wall reflection are included in output duration
+[PASS] Temporary layer test directory is writable
+[PASS] Layer source score is writable
+[PASS] Layered renderer accepts a valid source score
+[PASS] Layer source trim controls the mixed region length
+[PASS] Layer source master volume is applied before mixing
+[PASS] K-03(a): IR-mode EffectChain::processBlock on one 1537-sample call is bit-identical to three externally chunked 512+512+513 calls
+[PASS] K-03(c): a mutant chunking that drops one input sample at a chunk boundary is NOT bit-identical to the correct reference -- proving the bit-exact comparison in (a)/(b) has teeth
+[PASS] K-03(b): ALGO-mode EffectChain::processBlock on one 1537-sample call is bit-identical to three externally chunked 512+512+513 calls
+[PASS] E15: IRLibrary SHA-256 known answer, empty message
+[PASS] E15: IRLibrary SHA-256 known answer, "abc"
+[PASS] E15: IRLibrary SHA-256 known answer, 56-byte two-block message
+[PASS] E15: fixture IR imported into the managed library under its content hash
+[PASS] E15: fresh library entry's bytes hash to its own name
+[PASS] E15: precondition -- truncated library entry no longer matches its name
+[PASS] E15: re-importing the original file repairs a truncated library entry
+[PASS] E15: no .tmp-* file left next to the repaired entry
+[PASS] E15: precondition -- library entry emptied to 0 bytes
+[PASS] E15: re-importing the original file repairs a 0-byte library entry
+[PASS] E15: no .tmp-* file left after the second repair
+[PASS] E15: re-importing onto an intact entry keeps identity and content
+[D9c-guard] EffectChain::kIrWetMakeupGain = 26.8999996
+[PASS] D9c-guard: EffectChain::kIrWetMakeupGain == 26.9f (decision 2026-09-16, D9 option A, DECIDED CONVENTION; reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md)
+PASS (0 failures)
+
+WF0907-E7 K-02 quantification (informational, no PASS/FAIL):
+[K-02] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+[K-02] IR   wet output (matched-T60 IR = 1.173 s): steady-state RMS = 1.969 dBFS, measured T60 = 1.173333 s
+[K-02] RMS difference (IR - ALGO) = 0.112 dB
+[K-02] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+EXIT=0
+
+## audit_repro [PASS]/[FAIL]/[K-02] lines vs K1's direct run (output/wf0925/K1/audit_repro_direct.log)
+$ diff <(grep '^\[PASS\]\|^\[FAIL\]\|^\[K-02\]' <K1 log>) <(grep ... <K2 log>)
+109a110
+> [PASS] D9c-guard: EffectChain::kIrWetMakeupGain == 26.9f (decision 2026-09-16, D9 option A, DECIDED CONVENTION; reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md)
+diff_exit=1  (only difference = the one new D9c-guard CHECK; K-02 numbers identical, 0.112 dB)
+
+## D9c-guard access-pattern mechanism check (scratch, outside the repo; NOT product code, NOT a GATE)
+# Same explicit-instantiation access pattern as tests/audit_repro.cpp, applied to a stand-in class whose PRIVATE
+# static constexpr float is set by -DGAIN_VALUE, compiled with the same MSVC (D:\Visual_Studio, v14.50) /std:c++17 /W4.
+# Shows (1) the pattern compiles warning-free on MSVC and reads the private value, (2) a changed value turns the check red.
+$ type trick.cpp
+// WF0925-K2 mechanism check (scratch, not product code): same access pattern
+// as tests/audit_repro.cpp's D9c-guard, against a stand-in class whose
+// PRIVATE static constexpr float is set by -DGAIN_VALUE, compiled with the
+// same MSVC and /std:c++17 as the build-wf targets.
+#include <cstdio>
+class EffectChainStandIn
+{
+public:
+    int dummy() const { return 0; }
+private:
+    static constexpr float kIrWetMakeupGain = GAIN_VALUE;
+};
+namespace
+{
+const float* standInGainAddress();
+template <const float* Member>
+struct Access { friend const float* standInGainAddress() { return Member; } };
+template struct Access<&EffectChainStandIn::kIrWetMakeupGain>;
+}
+int main()
+{
+    const float gain = *standInGainAddress();
+    std::printf ("read private constant = %.9g -> %s\n", (double) gain,
+                 gain == 26.9f ? "[PASS] == 26.9f" : "[FAIL] != 26.9f");
+    return gain == 26.9f ? 0 : 1;
+}
+$ type run.bat
+@echo off
+call "D:\Visual_Studio\VC\Auxiliary\Build\vcvars64.bat" >nul
+cl /nologo /std:c++17 /EHsc /W4 /DGAIN_VALUE=26.9f trick.cpp /Fe:trick_269.exe >cl_269.txt 2>&1
+echo cl(26.9f) exit=%ERRORLEVEL%
+type cl_269.txt
+"%~dp0trick_269.exe"
+echo run(26.9f) exit=%ERRORLEVEL%
+cl /nologo /std:c++17 /EHsc /W4 /DGAIN_VALUE=27.0f trick.cpp /Fe:trick_270.exe >cl_270.txt 2>&1
+echo cl(27.0f) exit=%ERRORLEVEL%
+type cl_270.txt
+"%~dp0trick_270.exe"
+echo run(27.0f) exit=%ERRORLEVEL%
+$ run.bat   (the 'vswhere.exe is not recognized' line comes from vcvars64.bat itself and is harmless)
+'vswhere.exe' is not recognized as an internal or external command,
+operable program or batch file.
+cl(26.9f) exit=0
+trick.cpp
+read private constant = 26.8999996 -> [PASS] == 26.9f
+run(26.9f) exit=0
+cl(27.0f) exit=0
+trick.cpp
+read private constant = 27 -> [FAIL] != 26.9f
+run(27.0f) exit=1

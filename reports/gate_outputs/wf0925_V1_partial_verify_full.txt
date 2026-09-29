@@ -1,0 +1,156 @@
+# WF0925-V1 A：partial_verify 第一次在全曲 905 顆規模執行（informational；gate_ready=false；不可據此宣稱「泛音已驗證」）
+# 前任 06:37:56 啟動的那一次因 session 中斷而沒有跑完（log 只有 find_cli 一行、沒有輸出檔）；本輪 08:05 重新完整跑一次。
+# 環境：PYTHONIOENCODING=utf-8（只影響本檔的文字編碼，不影響數字）
+$ python -u tools/partial_verify.py output/wf0925/V1/stem_full_report.json --json output/wf0925/V1/partial_full_report.json --html output/wf0925/V1/partial_full_report.html
+# (cwd = repo root；stdout/stderr -> output/wf0925/V1/partial_full_log_run2.txt；起訖時間 -> partial_full_timing_run2.txt)
+start 2026-09-25 08:05:02
+rc=0
+end 2026-09-25 08:15:30
+[find_cli] TsukiSynthCLI selected: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[partial_verify] output\wf0925\V1\stem_full_report.json
+  events=905  stem_available=905  stem_missing=0
+  partials verified=5426 refused=2  max|cents|=12.3926
+  pitch_via_partials: eligible=16 measured=16 (pass=16 fail=0) unverified=0
+
+# 前任中斷的那一次（留存，不採用）：
+$ cat output/wf0925/V1/partial_full_timing.txt output/wf0925/V1/partial_full_log.txt
+start 2026-09-25 06:37:56
+[find_cli] TsukiSynthCLI selected: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+$ sha256sum output/wf0925/V1/partial_full_report.json
+7b53b67334bd1d99278e5197c09cd32fda11fa71bc72deadf7e741fa4fc23d37 *output/wf0925/V1/partial_full_report.json
+$ python -c (報告頂層欄位)
+status = informational
+gate_ready = False
+amplitude_claim = none
+tolerance_cents = 5.0
+requested_partials = 6
+source_stem_verify_report = {'path': 'output/wf0925/V1/stem_full_report.json', 'sha256': 'a4647c96246999fad03334e1abdcefc7f5048b67f295db78e8364d9f9525ec67'}
+cli = {'path': 'build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe', 'sha256': '9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8'}
+summary = {'events_total': 905, 'events_stem_available': 905, 'events_stem_missing': 0, 'partials_verified_total': 5426, 'partials_refused_total': 2, 'max_abs_partial_cents': 12.392604856712897, 'pitch_via_partials': {'eligible': 16, 'measured': 16, 'pass': 16, 'fail': 0, 'unverified': 0}}
+gate_ready_reason = Promoting this tool to GATE needs a separate 月月 ruling that has not been made. A13 decision packet 選項 B+ planned to promote it once C10 (the pitch measurer's self-calibration, tools/measurement_selfcal.py) was ruled option A -- and C10 was ruled A on 2026-09-10 (claim domain narrowed: known measurer error <=1.18 c on the sustain-segment corpus, the reused +/-5 c tolerance unchanged). But D15 was ruled option A' on 2026-09-15: on release/damping-segment signals the same measurer's known error bound is ~7.2 c (development grid 5.2304 c, hold-out grid 7.2055 c), larger than +/-5 c, so that plan's premise no longer holds as written (docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md S8.5). Until 月月 rules, this report is informational only.
+caveats[0] = status=informational, gate_ready=false: this report is NOT GATE evidence (A13 decision packet 選項 B+; C10 self-cal still pending 月月裁決).
+
+$ python reports/wf0925_method/partial_full_summary.py --stem-report output/wf0925/V1/stem_full_report.json --partial-report output/wf0925/V1/partial_full_report.json --d14-report output/wf0914/D14/g2_full_report.json --pre-a14-stem output/stem_verify_fur_elise_dry.json --pre-a14-weak output/wf0908/P1/partial_verify_weak_report.json
+# WF0925-V1 Part A summary -- partial_verify full 905 (INFORMATIONAL, gate_ready=false)
+# tolerance used by the tool (existing, unchanged): 5.0 c ; provenance: reuses melody_verify.PITCH_TOL_CENTS (== verify_score.MODE_F0_TOL_CENTS, month-lead ratified 2026-07-23); no new tolerance is introduced by this tool (R2). External support for this not being an over-loose number for PARTIAL frequency specifically: Fletcher 1964 JASA 36(1) model-vs-measurement agreement on a solid high string is RMS 0.99 cents / max 1.82 cents (A13 decision packet §2.2-A2) -- far tighter than the 5-cent gate this tool judges against.
+# partial report: status=informational gate_ready=False amplitude_claim=none cli={'path': 'build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe', 'sha256': '9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8'}
+
+## 1. stem_verify (fundamental) summary
+this run : {'pass': 677, 'fail': 16, 'unverified': 212}
+D14 09-14: {'pass': 677, 'fail': 16, 'unverified': 212}
+pre-A14 08-30: {'pass': 671, 'fail': 22, 'unverified': 212}
+per-event verdict differences vs D14 run: 0 []
+max |pitch_cents(this) - pitch_cents(D14)| over events: 0.000000
+superposition: n_stems_summed=905 established=True residual_dbfs=-119.41915963714962
+
+## 2. partial_verify summary (tool's own counters)
+{"events_total": 905, "events_stem_available": 905, "events_stem_missing": 0, "partials_verified_total": 5426, "partials_refused_total": 2, "max_abs_partial_cents": 12.392604856712897, "pitch_via_partials": {"eligible": 16, "measured": 16, "pass": 16, "fail": 0, "unverified": 0}}
+partial verdicts: PASS=4577 FAIL=849 UNVERIFIED=2 (total partial slots 5428)
+measured (PASS+FAIL) = 5426 ; of which FAIL = 849
+  n=1: PASS=870 FAIL=35 UNVERIFIED=0
+  n=2: PASS=784 FAIL=121 UNVERIFIED=0
+  n=3: PASS=824 FAIL=81 UNVERIFIED=0
+  n=4: PASS=751 FAIL=154 UNVERIFIED=0
+  n=5: PASS=749 FAIL=155 UNVERIFIED=1
+  n=6: PASS=599 FAIL=303 UNVERIFIED=1
+UNVERIFIED reasons: {'t=0 fallback absolute floor (BAND_GATE_DBFS)': 2}
+FAIL |cents|: min 5.002  median 5.533  max 12.393 ; sign + 848 / - 1
+events with every one of their partial slots PASS: 307 ; events with >=1 FAIL partial: 597
+partial FAILs by note (top 15): [('E5', 142), ('A4', 123), ('E4', 87), ('D5', 59), ('D#5', 48), ('C4', 37), ('C5', 35), ('A3', 29), ('G#4', 28), ('A2', 24), ('G3', 23), ('F5', 23), ('G4', 22), ('E2', 21), ('F4', 15)]
+partial FAILs by (note, n) (top 20): [(('E5', 6), 73), (('A4', 5), 48), (('D5', 4), 47), (('A4', 6), 42), (('D#5', 6), 38), (('E5', 2), 37), (('C5', 6), 35), (('E4', 2), 32), (('A3', 5), 24), (('E4', 6), 24), (('A4', 3), 21), (('E2', 1), 21), (('E5', 3), 21), (('A2', 4), 18), (('G3', 6), 14), (('E4', 4), 14), (('E4', 5), 13), (('F5', 2), 13), (('A#2', 6), 13), (('G#3', 4), 12)]
+
+## 3. weak-fundamental class in THIS run (stem reason contains the marker) -> pitch_via_partials
+count 16 ; by (note, velocity): [(('A#6', 0.427), 1), (('A5', 0.427), 3), (('A5', 0.452), 1), (('A6', 0.427), 2), (('E5', 0.278), 9)]
+idx   time      note  vel    pvp          pvp_c B          n_used                      partials(n:verdict cents)
+88    16.2500   E5    0.278  PASS        -0.519 0.003055   [1, 2, 3, 4, 5, 6]          1:F+7.42 2:P+4.04 3:F+5.19 4:P+4.48 5:P+4.71 6:F+5.87
+92    17.0833   E5    0.278  PASS        -0.519 0.003055   [1, 2, 3, 4, 5, 6]          1:F+7.42 2:P+4.04 3:F+5.19 4:P+4.48 5:P+4.71 6:F+5.87
+96    17.9167   E5    0.278  PASS        -0.519 0.003055   [1, 2, 3, 4, 5, 6]          1:F+7.42 2:P+4.04 3:F+5.19 4:P+4.48 5:P+4.71 6:F+5.87
+192   32.3958   A5    0.452  PASS        +1.327 0.005445   [1, 2, 3, 4, 5, 6]          1:P+2.36 2:P+4.02 3:F+12.27 4:P+4.24 5:P+4.73 6:F+5.60
+279   40.4166   A5    0.427  PASS        -1.000 0.005445   [1, 2, 3, 4, 5, 6]          1:F+5.92 2:P+4.13 3:F+5.43 4:P+4.16 5:P+4.65 6:P+4.95
+318   42.9166   A5    0.427  PASS        -1.000 0.005445   [1, 2, 3, 4, 5, 6]          1:F+5.92 2:P+4.13 3:F+5.43 4:P+4.16 5:P+4.65 6:P+4.95
+440   63.7500   E5    0.278  PASS        -0.519 0.003055   [1, 2, 3, 4, 5, 6]          1:F+7.42 2:P+4.04 3:F+5.19 4:P+4.48 5:P+4.71 6:F+5.87
+444   64.5833   E5    0.278  PASS        -0.519 0.003055   [1, 2, 3, 4, 5, 6]          1:F+7.42 2:P+4.04 3:F+5.19 4:P+4.48 5:P+4.71 6:F+5.87
+448   65.4166   E5    0.278  PASS        -0.519 0.003055   [1, 2, 3, 4, 5, 6]          1:F+7.42 2:P+4.04 3:F+5.19 4:P+4.48 5:P+4.71 6:F+5.87
+731   100.4166  A6    0.427  PASS        -3.562 0.021777   [1, 2, 3, 4, 5, 6]          1:P+1.54 2:P+4.77 3:P+4.69 4:P+4.97 5:P+3.91 6:P-2.92
+740   101.2500  A#6   0.427  PASS        -2.225 0.024444   [1, 2, 3, 4, 5, 6]          1:F+7.89 2:P+4.49 3:P+4.06 4:F+5.02 5:P+0.75 6:P+4.11
+744   101.3888  A6    0.427  PASS        -3.562 0.021777   [1, 2, 3, 4, 5, 6]          1:P+1.54 2:P+4.77 3:P+4.69 4:P+4.97 5:P+3.91 6:P-2.92
+756   103.0555  A5    0.427  PASS        -1.126 0.005445   [1, 2, 3, 4, 5, 6]          1:F+9.65 2:P+4.44 3:P+4.71 4:P+4.15 5:P+4.63 6:P+4.71
+843   118.7500  E5    0.278  PASS        -0.519 0.003055   [1, 2, 3, 4, 5, 6]          1:F+7.42 2:P+4.04 3:F+5.19 4:P+4.48 5:P+4.71 6:F+5.87
+847   119.5833  E5    0.278  PASS        -0.519 0.003055   [1, 2, 3, 4, 5, 6]          1:F+7.42 2:P+4.04 3:F+5.19 4:P+4.48 5:P+4.71 6:F+5.87
+851   120.4166  E5    0.278  PASS        -0.519 0.003055   [1, 2, 3, 4, 5, 6]          1:F+7.42 2:P+4.04 3:F+5.19 4:P+4.48 5:P+4.71 6:F+5.87
+n=2 level relative to n=1 (recorded only, amplitude_claim=none): predicted / measured dB
+  idx 88 E5 v0.278 : +18.5 / +17.4
+  idx 92 E5 v0.278 : +18.5 / +17.5
+  idx 96 E5 v0.278 : +18.5 / +17.2
+  idx 192 A5 v0.452 : +14.2 / +14.8
+  idx 279 A5 v0.427 : +18.9 / +15.6
+  idx 318 A5 v0.427 : +18.9 / +15.5
+  idx 440 E5 v0.278 : +18.5 / +17.5
+  idx 444 E5 v0.278 : +18.5 / +17.2
+  idx 448 E5 v0.278 : +18.5 / +17.3
+  idx 731 A6 v0.427 : +6.2 / +2.8
+  idx 740 A#6 v0.427 : +9.0 / -0.1
+  idx 744 A6 v0.427 : +6.2 / +0.9
+  idx 756 A5 v0.427 : +18.9 / +15.5
+  idx 843 E5 v0.278 : +18.5 / +17.3
+  idx 847 E5 v0.278 : +18.5 / +17.4
+  idx 851 E5 v0.278 : +18.5 / +17.5
+
+## 4. A13's 22 weak events (pre-A14 FAIL set) re-measured after B-2
+pre-A14 (08-30) weak-class FAIL indices: 22 -> by note [('D7', 1), ('F#6', 1), ('G5', 19), ('G6', 1)]
+pre-A14 FAIL total 22 (all weak-class: True)
+idx   time      note  vel    | stem_now     f0_c | pvp_pre pvp_pre_c | pvp_now  pvp_now_c n_used_now         | parts_now parts_pre
+195   32.7083   G5    0.427  | PASS       -0.407 | PASS       +2.119 | PASS        -0.379 [1, 2, 3, 4, 5, 6] | P6F0U0 | P3F3U0
+254   38.8542   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+256   39.0625   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+258   39.2708   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+262   39.4792   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+266   39.6875   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+271   39.8958   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+276   40.1042   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+282   40.5208   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+288   40.9375   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+293   41.3541   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+295   41.5625   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+297   41.7708   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+301   41.9791   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+305   42.1875   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+310   42.3958   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+315   42.6041   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+321   43.0208   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+327   43.4375   G5    0.427  | PASS       +0.014 | PASS       +2.533 | PASS        -0.528 [1, 2, 3, 4, 5, 6] | P6F0U0 | P4F2U0
+734   100.8333  D7    0.462  | PASS       +0.001 | PASS       -4.814 | FAIL        -5.476 [1, 2, 3, 4, 5]    | P4F1U0 | P4F1U0
+746   101.6666  G6    0.462  | PASS       -0.162 | PASS       -0.216 | FAIL        -5.103 [1, 2, 3, 4, 5, 6] | P4F2U0 | P6F0U0
+747   101.8055  F#6   0.427  | PASS       -0.099 | PASS       -2.062 | PASS        -0.893 [1, 2, 3, 4, 5, 6] | P4F2U0 | P6F0U0
+stem verdict now for the 22: Counter({'PASS': 22})
+pitch_via_partials now (same function, run here because the tool skips non-weak-class events): {'PASS': 20, 'FAIL': 2}
+partial slots for the 22 -- now: {'PASS': 126, 'FAIL': 5} ; pre-A14 (09-09 weak run): {'PASS': 91, 'FAIL': 40}
+
+## 5. this run's FAIL set vs pre-A14
+now FAIL 16: [(88, 'E5', 0.278), (92, 'E5', 0.278), (96, 'E5', 0.278), (192, 'A5', 0.452), (279, 'A5', 0.427), (318, 'A5', 0.427), (440, 'E5', 0.278), (444, 'E5', 0.278), (448, 'E5', 0.278), (731, 'A6', 0.427), (740, 'A#6', 0.427), (744, 'A6', 0.427), (756, 'A5', 0.427), (843, 'E5', 0.278), (847, 'E5', 0.278), (851, 'E5', 0.278)]
+their pre-A14 verdicts: Counter({'PASS': 16})
+exit=0
+
+$ python - (2 個 UNVERIFIED 的原文 reason、|cents| 最大的 8 個、partial 不足 6 個的事件)
+UNVERIFIED idx 0 t=0.000 E5 n=5 : partial level -74.0 dBFS at/below -70.0 dBFS (melody_verify.BAND_GATE_DBFS, reused verbatim -- no pre-onset region exists for this event to compare against, t=0.000s) -- too quiet to trust a frequency reading here
+UNVERIFIED idx 0 t=0.000 E5 n=6 : partial level -91.2 dBFS at/below -70.0 dBFS (melody_verify.BAND_GATE_DBFS, reused verbatim -- no pre-onset region exists for this event to compare against, t=0.000s) -- too quiet to trust a frequency reading here
+largest |cents|: idx 324 D5 n=4 FAIL +12.3926 c
+largest |cents|: idx 285 D5 n=4 FAIL +12.3926 c
+largest |cents|: idx 192 A5 n=3 FAIL +12.2714 c
+largest |cents|: idx 294 G4 n=4 FAIL +10.9222 c
+largest |cents|: idx 255 G4 n=4 FAIL +10.9222 c
+largest |cents|: idx 218 G4 n=4 FAIL +10.9222 c
+largest |cents|: idx 818 C4 n=2 FAIL +10.7985 c
+largest |cents|: idx 415 C4 n=2 FAIL +10.7985 c
+events with fewer than 6 partial slots (dump gave 5): [(733, 'E7', 5), (734, 'D7', 5)]
+
+# 讀法附註：
+#  - §2 的 PASS/FAIL 是 partial_verify 自己用既有 ±5 c（melody_verify.PITCH_TOL_CENTS）判的；本卡沒有另設任何容差。
+#  - §3 的 pitch_via_partials 是工具對「弱基頻類」事件自己算的（本輪 16 顆＝D16 那 16 顆）。
+#  - §4 的 pvp_now 是本卡用工具自己的 compute_pitch_via_partials()（import，不重寫）對 A13 那 22 顆補算；
+#    因為這 22 顆 A14 之後基頻已經 PASS、不再屬於弱基頻類，工具本身不會替它們算這一欄。
+#  - §4 的 pvp_pre / parts_pre 取自 09-09 WF0908-P1 的 23 顆弱基頻子集報告（CLI ed1da219，A14 B-2 落地前）；
+#    以 (時間, 音名) 對齊，第 23 顆（103.333 s 的 G5，當時就不是弱基頻類）不在本表。
+#  - summary 腳本的拒答理由分類曾把 t=0 絕對地板 fallback 誤歸成「pre-onset floor」（該 reason 原文含 no pre-onset region），
+#    接手者已改成先比對 BAND_GATE_DBFS；本檔是修正後重跑的輸出。

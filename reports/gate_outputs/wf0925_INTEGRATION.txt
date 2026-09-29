@@ -1,0 +1,186 @@
+WF0925-INTEGRATION（整合卡）全套 GATE 執行記錄（2026-09-25）
+================================================================
+branch fix/deep-physics-audit-20260716，HEAD 18430c4（沒動 HEAD、沒 commit）。
+原始輸出全部在 reports/gate_outputs/wf0925_integration_raw/（檔名前面的編號＝本檔的段落）。
+暫存物在 output/wf0925/INT/（gitignored）。
+
+結論：status=DONE。10 條 GATE 全綠。本輪三個 lane（C++ K1/K2/K1K2fix、Python/CI P1、研究 N1/F5/V1/L1/G1）
+已 staged 的改動合在一起、用重建過的 build\ 跑，沒有互相打架；8 首位元不變 8/8 → R10 沒觸發。
+本卡沒改任何程式或文件，只新增本檔與 wf0925_integration_raw/。
+
+----------------------------------------------------------------------
+0. 開工狀態（raw 00_git_status_start.txt、00b_audit_sha_recheck.txt、00c_staged_lane_attribution.txt）
+----------------------------------------------------------------------
+命令：git status --porcelain；git diff --cached --stat；git diff --stat；git stash list
+- staged：124 檔（git diff --cached --stat 最後一行：124 files changed, 67898 insertions(+), 96 deletions(-)）。
+- 「已 staged 後又改」（MM）：0 檔；追蹤檔的 unstaged 改動：0（git diff --stat 空白）。stash：空。
+- staged 內容＝稽核當時看過的內容：
+    sha256sum -c output/wf0925/R_audit/stage_sha256_before_add.txt       → 75 OK（EXIT=0）
+    sha256sum -c output/wf0925/K_audit2/audited_files_sha256_round2_start.txt → 34 OK（EXIT=0）
+- lane 歸屬（以稽核留下的清單為準，兩份清單不重疊）：
+    研究 lane（N1/F5/V1/L1/G1，R 稽核 stage）75 檔
+    C++ lane（K1/K2/K1K2fix，K 稽核第 2 輪）34 檔：src/ 9 檔、tests/audit_repro.cpp、tests/host_probe.cpp、
+        scores/examples/water_gong_free.score.json（只改 meta.description）、D9 裁決包、K 系證據 21 檔
+    其餘 15 檔＝Python/CI lane P1：.github/workflows 2 檔、tools/ 4 支 .py、tests/ 2 支 .py、
+        render_wf_scores.py、P1 證據 6 檔
+    75＋34＋15＝124。
+- 沒 staged 的（全部是 untracked，追蹤檔沒有 unstaged 改動）：
+    a. reports/gate_outputs/wf0925_X1_*.txt（9 檔）、wf0925_X2_*.txt（6 檔）＝商品 lane X1/X2 的證據。
+       沒 stage 的原因：商品稽核沒 PASS。依據：output/wf0925/X_audit/xa_zip_text.txt 的
+       「SUMMARY xa_zip_text: 49/52 PASS」，3 條 FAIL（兩個 zip 的 README 時長有 12 處跟 WAV 標頭不合、
+       README 的 TP 範圍寫 -0.97..-1.05 但實測 -0.9631..-1.0475）；X_audit 資料夾裡沒有 PASS 裁決檔。
+       Q1 規劃卡的裁決包 reports/decision_packets/WF0925_open_decisions.zh-TW.md 也寫
+       「X1/X2 的 15 個證據檔還是 untracked，因為商品稽核 FAIL、在等修正」。
+       商品檔本身在 exports/（gitignored），本卡沒碰。
+    b. reports/status_check_2026-09-25/（09-25 盤點報告本身，本輪的輸入，不屬於任何 lane）。
+    c. docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md（09-16 就存在的變現計畫，不屬於本輪）。
+    d. reports/decision_packets/WF0925_open_decisions.zh-TW.md：開工時還沒有，本卡跑到一半（10:57）出現，
+       是 Q1 規劃卡寫的（檔頭寫「本卡只寫了這一個檔…沒 git add」）。不是本卡的檔，本卡沒 stage。
+       見 raw 11_git_status_end_before_add.txt 與 00_git_status_start.txt 的差異（只多這一行）。
+
+----------------------------------------------------------------------
+GATE 1：cmake 設定（raw 01_cmake_configure.txt）
+----------------------------------------------------------------------
+命令：cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+結果：-- Configuring done (2.3s) / -- Generating done (0.9s) / Build files have been written to: …/build
+      EXIT_CODE=0（generator Visual Studio 18 2026，cmake 4.3.2）
+[PASS]
+
+----------------------------------------------------------------------
+GATE 2：三個主 target（raw 02_build_main_targets.txt）
+----------------------------------------------------------------------
+命令：cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+結果：EXIT_CODE=0；重編的 .cpp＝RenderApp.cpp、PluginEditor.cpp、PluginProcessor.cpp（跟 K1K2fix 回報相同）；
+      error C / error LNK / warning C / warning LNK：0 行。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 3：五個測試 target（X4 規約，ctest 前先重建；raw 03_build_test_targets.txt）
+----------------------------------------------------------------------
+命令：cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest
+      TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+結果：EXIT_CODE=0；重編 audit_repro.cpp、physics_models_repro.cpp、host_probe.cpp；error/warning 0 行。
+      TunerTest、SpectrumViewTest 判定為最新、沒重編：它們只 include analyzer/PitchDetector.h、
+      score/SampleRateContract.h、dsp/AudioFIFO.h、dsp/MidiNoteTracker.h、analyzer/SpectrumView.h，
+      本輪 staged 的 src 檔都不在裡面。
+[PASS]
+
+build\ 執行檔 sha256（前：raw 01a_bin_sha256_before.txt；後：raw 03b_bin_sha256_after.txt）
+  TsukiSynthCLI.exe        9123db8f63390bfe… → b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66
+  VST3 dll                 cff47572c20b6fa4… → c5b6b2f1c6e83f84a9b470261247db34425f207460808cd2b4210bcaceb8201c
+  Standalone TsukiSynth.exe 3c8d3fcc8c4157e5… → 407f9d0ce63bee0f62dcebe712c9790b38da0595bddb21f089d2d2c081dbdf21
+  TsukiSynthHostProbe.exe  4d44c902dc9e5ca6… → 3293ccf1e3b9d69d0c69fd85480860972e1844707af5da27231ae1954037900e
+  （MSVC 重編不是逐位元組可重現，所以跟 build-wf\ 的雜湊不同是正常的；聲音相同由 GATE 10 證明。）
+
+----------------------------------------------------------------------
+GATE 4：ctest（raw 04_ctest.txt；另直接跑 AuditTest 取逐條輸出 raw 04b_audit_repro_direct.txt）
+----------------------------------------------------------------------
+命令：ctest --test-dir build -C Release --output-on-failure
+結果：1/4 audit_repro Passed、2/4 tuner_repro Passed、3/4 physics_models_repro Passed、4/4 spectrum_view_repro Passed
+      「100% tests passed, 0 tests failed out of 4」EXIT_CODE=0
+直接跑 build/Release/TsukiSynthAuditTest.exe：[PASS] 110 行、[FAIL] 0 行、「PASS (0 failures)」、EXIT_CODE=0；
+      「[D9c-guard] EffectChain::kIrWetMakeupGain = 26.8999996」→ [PASS]；
+      「[K-02] RMS difference (IR - ALGO) = 0.112 dB」（只印數字、不判定，跟 K1/K2/K1K2fix 相同）。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 5：pytest 全套（raw 05_pytest.txt；收集清單對照 raw 05a_pytest_collect_diff.txt）
+----------------------------------------------------------------------
+命令：python -m pytest tests -q -rsxX（Python 3.13.3、pytest 8.4.2；-rsxX 只多印 skip/xfail 原因摘要，
+      不改變收集或執行的測試）
+結果：「282 passed, 1 skipped, 5 xfailed in 419.12s (0:06:59)」EXIT_CODE=0
+
+新基線：288 個測試＝282 passed＋1 skipped＋5 xfailed，0 failed、0 xpass。
+對照舊基線 270（264 passed＋1 skip＋5 xfail，09-15 整合卡、09-25 盤點重跑皆同）：
+  - HEAD 18430c4 的收集數用 git archive HEAD 解到 output/wf0925/INT/head_tree 再 --collect-only：270（跟舊基線相符）。
+  - 現在工作樹 --collect-only：288。逐條 diff：新增 18、移除 0（沒有測試被刪）。
+  - 新增 18 條都來自 P1：
+      tests/test_measurement_selfcal.py::test_holdout_grid_pins_match_record（1 條，一般測試，PASS）
+      tests/test_stem_stream.py（新檔，17 條：15 個測試函式，其中 test_header_odd_sized_chunk_pad_byte 參數化 [1][5][7]
+        算 3 條，其餘 14 個各 1 條）
+  - 264＋18＝282 passed；skip 1、xfail 5 跟舊基線是同樣幾條（SKIPPED/XFAIL 摘要行排序後跟 09-15 整合卡
+    wf0914_integration_raw/05b_pytest_verbose_xfail_skip_reasons.txt 逐字 diff，EXIT=0）：
+      SKIPPED test_render_app_filename_safety.py:135（unreachable through export.filename，WF0907 既有）
+      XFAIL test_measurement_selfcal.py 的 development/holdout/release_development/release_holdout/gain_fidelity
+            五條 within_one_cent（WF0909-C10C 既有，strict=True）
+[PASS]
+
+----------------------------------------------------------------------
+GATE 6：physics_verify --full（raw 06_physics_verify_full.txt；對照 raw 06b_physics_verify_full_vs_Kaudit2.txt）
+----------------------------------------------------------------------
+命令：python tools/physics_verify.py --full
+      （沒帶 --cli；log 第 2 行 find_cli 選到 build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe＝本卡重建的 CLI）
+結果：F1 PASS／1b PASS／1c CHECKED CASES PASS; 3 UNVERIFIED/N/A／1d PASS／2d PASS／5b PASS／
+      F5 residual PASS（cimbalom -67.3、tongue_drum -75.9、water_gong -72.7、water_gong_free -77.9、piano -63.9 dB，limit -60.0）
+      UNVERIFIED：cimbalom/rubber、tongue_drum/rubber、water_gong/rubber（既有，T60 短於量測窗）
+      「RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED」EXIT_CODE=0
+對照：跟 K 稽核第 2 輪（build-wf CLI）的 log 去掉命令列/CLI 路徑/時間/EXIT 行後逐行 diff，621 行對 621 行，DIFF_EXIT=0。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 7：physics_verify --selftest（raw 07_physics_verify_selftest.txt；對照 raw 07b_selftest_vs_wf0914.txt）
+----------------------------------------------------------------------
+命令：python tools/physics_verify.py --selftest
+結果：13 項全部 PASS（short_t60_f0 -0.259 cents … residual_energy_unmodeled_peak_rejected），FAIL 0 行，EXIT_CODE=0。
+      13 行結果跟 09-15 整合卡 raw（wf0914_integration_raw/07_physics_verify_selftest.txt）逐行相同。
+      順帶記錄：09-15 整合摘要 wf0914_INTEGRATION.txt 寫「15 項自我測試」，但它自己的 raw 檔只有 13 行 PASS，
+      15 是當時的筆誤（本卡沒改那個檔）。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 8：verify_score --all（raw 08_verify_score_all.txt；對照 raw 08b_verify_score_vs_Kaudit2.txt）
+----------------------------------------------------------------------
+命令：python tools/verify_score.py --all（沒帶 --cli；find_cli 選到 build\ 的新 CLI）
+結果：「Found 75 score file(s) to verify.」…
+      「75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.」EXIT_CODE=0
+      75 個 render manifest 的 renderer 欄位全部是 b84c775b04ab（＝本卡重建的 build\ CLI sha256 前 12 碼），
+      configured source=18430c4d9307 dirty。豁免仍是既有的 1 項。
+對照：跟 K 稽核第 2 輪（build-wf CLI）比，只遮 renderer／configured source 兩個欄位，3836 行對 3836 行，
+      DIFF_EXIT=0（每首的 WAV 雜湊都相同）。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 9：HostProbe，跑兩次（raw 09_hostprobe_cwd_repo.txt、09b_hostprobe_cwd_output_wf0925_INT.txt、09c_hostprobe_compare.txt）
+----------------------------------------------------------------------
+9a. cwd＝repo 根目錄
+命令：build/Release/TsukiSynthHostProbe.exe build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 output/wf0925/INT/hostprobe_repo
+結果：[PASS] 215 行、[FAIL] 0 行、「PASS (0 failures)」EXIT_CODE=0
+      「H8 materials.json used: …\tsuki-synth\data\materials.json (found in the current working directory)」
+
+9b. cwd＝output/wf0925/INT（這裡沒有 data/materials.json，也沒設 TSUKI_REPO_ROOT）→ 驗證 K2 的 cwd 修正
+命令：../../../build/Release/TsukiSynthHostProbe.exe ../../../build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 hostprobe_intcwd
+結果：[PASS] 215 行、[FAIL] 0 行、「PASS (0 failures)」EXIT_CODE=0
+      「H8 materials.json used: …\tsuki-synth\data\materials.json (found in an ancestor of the executable's directory)」
+      → K2 的修正有效：不在 repo 根目錄跑也不會出現以前那 4 個 H8 假 FAIL。
+
+對照（output/wf0925/INT/hp_norm.py＝K 稽核的比對腳本，只多一條「路徑中 \build-wf\ 當成 \build\」）：
+  - K 稽核第 2 輪 215 行 vs 9a：少了 0 行、多了 0 行。
+  - 9a vs 9b：少了 0 行、多了 0 行。兩次 run 的非判定行只差 H8 那一行「怎麼找到 materials.json」。
+  - 兩次跑完 %APPDATA%\TsukiSynth\IR、\Presets 都是 0 項（沒有殘留）。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 10：位元不變 8/8（raw 10_render_wf_scores_bit_identity.txt）
+----------------------------------------------------------------------
+命令（P1 的 --outdir 已落地，所以輸出導到 output/wf0925/INT/render；腳本在 output/wf0925/INT/run_bitid.sh）：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0925_INT
+    --workdir <scratchpad>\wf0925_INT_render_work（repo 外）
+    --cli C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe（sha256 b84c775b…）
+    --outdir output/wf0925/INT/render
+結果：RENDER_EXIT=0
+  diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt output/wf0925/INT/render/sha256_wf0925_INT.txt
+  → 沒有輸出，DIFF_STRIP_CR_EXIT=0
+  逐首：moonlight_yangqin 49514b007e3e01fc、yangqin_tongue_mix 280cbdac3c117c14、physical_piano 1233b53f1e8660bc、
+        restraint_metal_click be634798c4a0bf71、tongue_drum f539aefa91919cbf、water_gong_free 31b539c6ac08d942、
+        ai_radiance_m1 74122637a0c71278、fur_elise_opening b0877774da9e5fc5 → 「8/8 IDENTICAL」
+  wf0907_method/ 資料夾沒有多出新檔（git status 只有 P1 本來就 staged 的 render_wf_scores.py）。
+  → R10 沒觸發。
+[PASS]
+
+----------------------------------------------------------------------
+收尾
+----------------------------------------------------------------------
+- git add 範圍：只有本檔 reports/gate_outputs/wf0925_INTEGRATION.txt 和 reports/gate_outputs/wf0925_integration_raw/。
+  其他 untracked（X1/X2 證據、盤點報告、MONETIZATION_PLAN、Q1 裁決包）不是本卡的，沒動。
+- 本卡沒做：部署 VST3 到系統資料夾（盤點說部署版落後，這不在本卡範圍）、改任何交接文件、commit/push。
+- 本卡沒有新增任何常數、容差或判定門檻；所有「PASS/FAIL」都是既有工具原本的判定。

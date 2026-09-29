@@ -1,0 +1,116 @@
+WF0925-F5 evidence 2/6: reproduce the F5 numbers (exact physics_verify.report_residual_energy)
+generated: 2026-09-25 06:21:27 +0800
+
+## fresh output dirs (TsukiSynthCLI refuses to overwrite an existing wav/manifest)
+$ rm -rf output/wf0925/F5/run_build output/wf0925/F5/run_before_own output/wf0925/F5/run_after
+[exit=0]
+
+$ python output/wf0925/F5/f5_probe.py --tools output/wf0925/F5/tools_before --cli output/wf0925/F5/cli_build/TsukiSynthCLI.exe --outdir output/wf0925/F5/run_build
+physics_verify module: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\tools_before\physics_verify.py
+cli: output/wf0925/F5/cli_build/TsukiSynthCLI.exe
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands กำ3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -63.9 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+F5 overall: PASS
+dump saved: probe_cimbalom_60_85_20_resid.score.json rc= 0
+dump saved: probe_piano_60_85_20_resid.score.json rc= 0
+dump saved: probe_tongue_drum_60_85_20_resid.score.json rc= 0
+dump saved: probe_water_gong_60_85_20_resid.score.json rc= 0
+dump saved: probe_water_gong_free_60_85_20_resid.score.json rc= 0
+[exit=0]
+
+$ python output/wf0925/F5/f5_probe.py --tools output/wf0925/F5/tools_before --cli output/wf0925/F5/cli_before_own/TsukiSynthCLI.exe --outdir output/wf0925/F5/run_before_own
+physics_verify module: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\tools_before\physics_verify.py
+cli: output/wf0925/F5/cli_before_own/TsukiSynthCLI.exe
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands กำ3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -63.9 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+F5 overall: PASS
+dump saved: probe_cimbalom_60_85_20_resid.score.json rc= 0
+dump saved: probe_piano_60_85_20_resid.score.json rc= 0
+dump saved: probe_tongue_drum_60_85_20_resid.score.json rc= 0
+dump saved: probe_water_gong_60_85_20_resid.score.json rc= 0
+dump saved: probe_water_gong_free_60_85_20_resid.score.json rc= 0
+[exit=0]
+
+$ python output/wf0925/F5/f5_probe.py --tools output/wf0925/F5/tools_after --cli output/wf0925/F5/cli_after/TsukiSynthCLI.exe --outdir output/wf0925/F5/run_after
+physics_verify module: C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\tools_after\physics_verify.py
+cli: output/wf0925/F5/cli_after/TsukiSynthCLI.exe
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands กำ3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -62.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+   water_gong  residual:   -72.7 dB re total (12 predicted modes, limit -60.0 dB) -> PASS
+   water_gong_free residual:   -77.9 dB re total (7 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -58.5 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (ค๋ค๋ approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+F5 overall: FAIL
+dump saved: probe_cimbalom_60_85_20_resid.score.json rc= 0
+dump saved: probe_piano_60_85_20_resid.score.json rc= 0
+dump saved: probe_tongue_drum_60_85_20_resid.score.json rc= 0
+dump saved: probe_water_gong_60_85_20_resid.score.json rc= 0
+dump saved: probe_water_gong_free_60_85_20_resid.score.json rc= 0
+[exit=0]
+
+$ sha256sum output/wf0925/F5/run_*/probe_piano_60_85_20_resid.wav output/wf0925/F5/run_*/probe_cimbalom_60_85_20_resid.wav
+fc1f209ad22bf868dfea03029cf683bf118c5242a194ddbc6b575c3c82c306ba *output/wf0925/F5/run_after/probe_piano_60_85_20_resid.wav
+ed3174b2902a1954af3e4709a3cf539314d1cdc9086f3e4cf72773e35053a8af *output/wf0925/F5/run_before_own/probe_piano_60_85_20_resid.wav
+ed3174b2902a1954af3e4709a3cf539314d1cdc9086f3e4cf72773e35053a8af *output/wf0925/F5/run_build/probe_piano_60_85_20_resid.wav
+f31f2de883dfdf661d736cf93c001a755019dba4adafeb2cbc0f6b57c3ea92be *output/wf0925/F5/run_after/probe_cimbalom_60_85_20_resid.wav
+739c04a343ce9b987012c7f3caa2165f7ec05dc19fbab96cd4343c00a358ecb2 *output/wf0925/F5/run_before_own/probe_cimbalom_60_85_20_resid.wav
+739c04a343ce9b987012c7f3caa2165f7ec05dc19fbab96cd4343c00a358ecb2 *output/wf0925/F5/run_build/probe_cimbalom_60_85_20_resid.wav
+[exit=0]
+
+$ cmp output/wf0925/F5/run_build/probe_piano_60_85_20_resid.dump.json output/wf0925/F5/run_before_own/probe_piano_60_85_20_resid.dump.json && echo DUMP_IDENTICAL_build_vs_before_own
+DUMP_IDENTICAL_build_vs_before_own
+[exit=0]
+
+## historical F5 piano residual in versioned gate outputs (date = first commit of the file)
+$ for f in $(grep -l 'piano       residual' reports/gate_outputs/*.txt | grep -v wf0925_F5_); do d=$(git log --diff-filter=A --format=%ad --date=short -- $f | tail -1); v=$(grep -m1 'piano       residual' $f | sed 's/.*residual: *//; s/ dB.*//'); echo "$d $v $(basename $f)"; done | sort
+2026-07-23 -74.7 deepfix2_gate_full.txt
+2026-07-23 -74.7 deepfix3_gate_full.txt
+2026-07-23 -74.7 deepfix4_gate_full.txt
+2026-08-16 -62.6 b1_gate_full.txt
+2026-08-21 -62.6 x1_regression_fix.txt
+2026-08-22 -62.6 b2_gate_full_final.txt
+2026-08-26 -62.6 b3_gate_full.txt
+2026-08-28 -62.6 b4_baseline_full.txt
+2026-08-28 -64.4 b4_gate_full.txt
+2026-08-28 -64.4 b4_gate_full_FAIL.txt
+2026-08-28 -64.4 b4_gate_full_after_f3_redefine.txt
+2026-08-28 -64.4 b4_independent_recheck.txt
+2026-08-28 -64.4 b5_full.txt
+2026-08-28 -64.4 b6_gate_full_phase1.txt
+2026-08-28 -64.4 b6_gate_full_phase34.txt
+2026-08-28 -64.4 b6_gate_full_phase4.txt
+2026-08-28 -64.4 b6_gate_full_recheck.txt
+2026-09-13 -63.9 wf0908_P2_tauc.txt
+2026-09-13 -63.9 wf0908_P2_tauc_physics_verify_full.txt
+2026-09-13 -63.9 wf0910_A14_apply.txt
+2026-09-13 -64.4 wf0907_E5_physics_verify_full.txt
+2026-09-13 -64.4 wf0907_E7_reverb.txt
+2026-09-13 -64.4 wf0907_E8_build_ctest_full_bitidentity.txt
+2026-09-13 -64.4 wf0907_E8_physics_verify_full.txt
+2026-09-13 -64.4 wf0907_E9_layered.txt
+2026-09-13 -64.4 wf0907_INTEGRATION.txt
+2026-09-13 -64.4 wf0908_E10b_glide_h7.txt
+2026-09-13 -64.4 wf0908_INTEGRATION.txt
+2026-09-13 -64.4 wf0909_INTEGRATION.txt
+2026-09-25 -58.5 wf0914_D11_physics_verify_full.txt
+2026-09-25 -63.9 wf0914_B7P1_baseline_full.txt
+2026-09-25 -63.9 wf0914_B7P1_gate_full.txt
+2026-09-25 -63.9 wf0914_B7P1_gate_full_auditfix.txt
+2026-09-25 -63.9 wf0914_D12_physics_verify_full.txt
+[exit=0]
+

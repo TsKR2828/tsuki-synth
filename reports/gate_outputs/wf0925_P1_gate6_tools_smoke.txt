@@ -1,0 +1,406 @@
+WF0925-P1 證據檔（Python/CI lane 工兵）— GATE 6：melody_roll_video / physics_verify / verify_score 沒壞（--help＋最小執行）＋ffmpeg 順序與 find_cli 檢查
+日期：2026-09-25　repo HEAD：18430c4（branch fix/deep-physics-audit-20260716），本卡改動未 commit
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<repo> = repo 根目錄；<scratchpad> = 本 session 暫存目錄（repo 外）；
+<tmp> = 系統暫存目錄；<home> = 使用者家目錄。原始 log 在 output/wf0925/P1/（gitignored）。
+Python：3.13.3（本機實際版本；pytest 8.4.2）
+================================================================================
+任務 5（engineering-gaps:E17）
+
+A. --help（repo 根目錄；三個都 exit=0）
+$ python tools/physics_verify.py --help
+usage: physics_verify.py [-h] [--cli CLI]
+                         [--engines {cimbalom,tongue_drum,water_gong,water_gong_free,fm,piano} [{cimbalom,tongue_drum,water_gong,water_gong_free,fm,piano} ...]]
+                         [--notes NOTES [NOTES ...]] [--keep] [--levels]
+                         [--t60] [--amps] [--full] [--skip-amps] [--selftest]
+
+Verify rendered audio vs physics model.
+
+options:
+  -h, --help            show this help message and exit
+  --cli CLI             path to TsukiSynthCLI executable
+  --engines {cimbalom,tongue_drum,water_gong,water_gong_free,fm,piano} [{cimbalom,tongue_drum,water_gong,water_gong_free,fm,piano} ...]
+  --notes NOTES [NOTES ...]
+                        MIDI notes (default C4 A4)
+  --keep                keep temp renders
+  --levels              report per-engine output levels instead of partials
+  --t60                 M5: judge modal decay T60 (measured/model ratio) vs
+                        the damping model, all modal engines (FM excluded);
+                        ratio tol 0.80-1.25
+  --amps                M2-2d: judge first-5-partial relative amplitude (dB re
+                        fundamental) vs --dump-modes theory, all modal engines
+                        (FM excluded) at MIDI 60; tol +/-3.0 dB
+                        (ROADMAP_PHYSICS.md §6)
+  --full                complete implementation gate: note-range, material
+                        sensitivity, velocity, modal amplitude, and measured
+                        T60; exit 0 only if every sub-check passes
+  --skip-amps           with --full: restrict to M1 scope (1b+1c+1d), omit the
+                        M2-2d amplitude judgment. For CI while M2 remediation
+                        is in progress (月月-approved 2026-07-09); the M2 GATE
+                        `--amps` is unaffected. No effect without --full.
+  --selftest            synthetic metrology suite: short-decay f0, known T60
+                        on the peak-relative time axis, adversarial partial
+                        injections (50% shift, missing p3-p5, super-Nyquist,
+                        overlapping-window peak reuse), a +6dB wrong-amplitude
+                        partial (4a), a fundamental-band velocity delta
+                        violating the +6.02dB law plus a uniform-scale legacy
+                        variant (4b), a tau_c(v)/Felt claim-domain sentinel
+                        (4c, 2026-08-27 ruling (b): injected render-vs-model
+                        mismatch rejected, self-consistent pair passes, domain
+                        boundary = Felt path only), and an unmodeled -40dB
+                        peak outside every predicted mode's band violating the
+                        F5 residual-energy threshold
+                        (RESIDUAL_ENERGY_LIMIT_DB)
+
+$ python tools/verify_score.py --help
+usage: verify_score.py [-h] [--all] [--shard-index SHARD_INDEX]
+                       [--shard-count SHARD_COUNT] [--html SCORE]
+                       [--html-out PATH] [--cli CLI] [--quiet]
+                       [score]
+
+Whole-score verification for TsukiSynth (ROADMAP_PHYSICS.md M3). Checks
+schema, modal data, rests, peak/clipping, and determinism without relying on
+listening to the result.
+
+positional arguments:
+  score                 path to a .score.json file
+
+options:
+  -h, --help            show this help message and exit
+  --all                 verify every .score.json under scores/examples,
+                        scores/classical (recursive),
+                        scores/originals/ai_radiance, and scores/library
+                        (recursive)
+  --shard-index SHARD_INDEX
+                        with --all, verify only this zero-based deterministic
+                        shard
+  --shard-count SHARD_COUNT
+                        with --all, split the sorted corpus into this many
+                        shards
+  --html SCORE          generate a single-file, self-contained HTML visual
+                        verification report for SCORE (ROADMAP_PHYSICS.md M4)
+  --html-out PATH       override the output path for --html (default:
+                        <score_basename>.report.html next to the score)
+  --cli CLI             path to TsukiSynthCLI executable
+  --quiet               only print failing checks, not every passing one
+
+$ python tools/melody_roll_video.py --help
+usage: melody_roll_video.py [-h] [--wav WAV] [--json JSON] [--out OUT]
+                            [--fps FPS] [--width WIDTH] [--height HEIGHT]
+                            [--window-s WINDOW_S] [--theme {neon,slate}]
+                            [--ffmpeg FFMPEG] [--still-at STILL_AT]
+                            score
+
+positional arguments:
+  score
+
+options:
+  -h, --help            show this help message and exit
+  --wav WAV
+  --json JSON
+  --out OUT
+  --fps FPS
+  --width WIDTH
+  --height HEIGHT
+  --window-s WINDOW_S
+  --theme {neon,slate}  neon (default, glowing violet/magenta) or slate
+                        (original monochrome slate-blue)
+  --ffmpeg FFMPEG       ffmpeg executable; if omitted: $TSUKI_FFMPEG, then
+                        ffmpeg on PATH, then the built-in fallback path
+  --still-at STILL_AT   write a single PNG frame at this time (seconds)
+                        instead of a video -- for quick palette review
+
+
+B. find_cli 與 resolve_ffmpeg 行為檢查
+命令：PYTHONIOENCODING=utf-8 PYTHONDONTWRITEBYTECODE=1 python <scratchpad>/p1_findcli_ffmpeg_check.py
+（[1] 真 repo：兩個 find_cli 都選 build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe，印一次 stdout；
+  [2] 臨時假 repo：Debug 比 Release 新時，舊規則 max(mtime) 會選 Debug、新規則選 Release；把 mtime 對調後選擇不變；
+  [3] ffmpeg 順序 --ffmpeg > TSUKI_FFMPEG > PATH > 寫死路徑；本機 PATH 找到的就是原本寫死的同一個 ffmpeg，行為不變。）
+[1] real repo
+  physics_verify.find_cli() -> <repo>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  stdout: '[find_cli] TsukiSynthCLI selected: <repo>\\build\\TsukiSynthCLI_artefacts\\Release\\TsukiSynthCLI.exe\n'
+  PASS  physics_verify picks build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  PASS  physics_verify prints the chosen path to stdout exactly once for two calls
+  verify_score.find_cli() -> <repo>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  stdout: '[find_cli] TsukiSynthCLI selected: <repo>\\build\\TsukiSynthCLI_artefacts\\Release\\TsukiSynthCLI.exe\n'
+  PASS  verify_score picks build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  PASS  verify_score prints the chosen path to stdout exactly once for two calls
+
+[2] fake repo: Debug newer than Release
+  physics_verify: old max(mtime) rule -> build\TsukiSynthCLI_artefacts\Debug\TsukiSynthCLI.exe
+  physics_verify: new find_cli()      -> build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe   stdout='[find_cli] TsukiSynthCLI selected: <tmp>\\p1_findcli_w0ksiq47\\build\\TsukiSynthCLI_artefacts\\Release\\TsukiSynthCLI.exe'
+  PASS  physics_verify: Release (shallowest) chosen although Debug is newest
+  PASS  physics_verify: same choice after flipping mtimes (not mtime-decided)
+  verify_score: old max(mtime) rule -> build\TsukiSynthCLI_artefacts\Debug\TsukiSynthCLI.exe
+  verify_score: new find_cli()      -> build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe   stdout='[find_cli] TsukiSynthCLI selected: <tmp>\\p1_findcli_w0ksiq47\\build\\TsukiSynthCLI_artefacts\\Release\\TsukiSynthCLI.exe'
+  PASS  verify_score: Release (shallowest) chosen although Debug is newest
+  PASS  verify_score: same choice after flipping mtimes (not mtime-decided)
+  PASS  only Debug present -> Debug returned (printed: '[find_cli] TsukiSynthCLI selected: <tmp>\\p1_findcli_w0ksiq47\\build\\TsukiSynthCLI_artefacts\\Debug\\TsukiSynthCLI.exe')
+  PASS  no candidate -> None, nothing printed
+
+[3] melody_roll_video.resolve_ffmpeg() order
+  PASS  --ffmpeg wins: ('D:/x/ffmpeg.exe', '--ffmpeg')
+  PASS  --ffmpeg still beats TSUKI_FFMPEG: ('D:/x/ffmpeg.exe', '--ffmpeg')
+  PASS  TSUKI_FFMPEG beats PATH: ('E:/env/ffmpeg.exe', 'TSUKI_FFMPEG')
+  this machine, no --ffmpeg/TSUKI_FFMPEG -> ('<home>\\Desktop\\Tools\\ffmpeg-8.1.1-full_build\\bin\\ffmpeg.EXE', 'PATH')
+  PASS  PATH hit here is the same file as the old hard-coded path (behaviour unchanged on this machine)
+  PASS  nothing else -> hard-coded fallback: ('<home>\\Desktop\\Tools\\ffmpeg-8.1.1-full_build\\bin\\ffmpeg.exe', 'DEFAULT_FFMPEG')
+
+RESULT: ALL PASS (0 failed checks)
+
+C. 最小實際執行（都用本卡的 CLI 複本）
+$ PYTHONIOENCODING=utf-8 python tools/physics_verify.py --selftest --cli <repo>\output\wf0925\P1\cli\TsukiSynthCLI.exe
+short_t60_f0: PASS (-0.259 cents)
+relative_axis_t60: PASS (2.0000s span=56.4dB)
+positive_control: PASS
+50pct_shift_rejected: PASS
+missing_p3_p5_rejected: PASS
+super_nyquist_rejected: PASS
+overlap_peak_reuse_rejected: PASS
+partial_negative_suite: PASS
+amps_wrong_amplitude_rejected: PASS (honest=PASS, +6dB-p3 rejected, p3 err=+6.00 dB)
+velocity_law_violation_rejected: PASS (f0-band delta +9.00 dB rejected both ways (wideband would have read +6.03 dB, masking the violation))
+velocity_law_violation_rejected_uniform: PASS (uniform-scale f0-band delta +9.00 dB rejected both ways)
+velocity_taucv_selfconsistency_sentinel: PASS (self-consistent +19.08 dB vs predicted +19.12 dB PASS; injected fixed-tau_c mismatch +6.02 dB rejected; NaN fail-closed; domain = Felt path only (piano=True, cimbalom+felt=True, cimbalom=False, tongue_drum=False, water_gong=False, fm=False); fixed-tau_c law bound still rejects self-consistent +19.12)
+residual_energy_unmodeled_peak_rejected: PASS (clean=PASS (-91.4 dB), unmodeled-peak rejected (-40.0 dB vs limit -60.0 dB))
+
+real	0m28.114s
+user	0m0.000s
+sys	0m0.046s
+exit=0
+
+$ PYTHONIOENCODING=utf-8 python tools/verify_score.py scores/examples/physical_piano.score.json --cli <repo>\output\wf0925\P1\cli\TsukiSynthCLI.exe
+CLI: <repo>\output\wf0925\P1\cli\TsukiSynthCLI.exe
+Loaded 1 registered exemption(s) from <repo>\scores\verify_exemptions.json.
+
+==============================================================================
+SCORE: scores\examples\physical_piano.score.json
+==============================================================================
+  rendered: 7.57s @ 48000 Hz, peak -0.45 dBFS, RMS -18.49 dBFS
+  loudness (info only, no registered tolerance): integrated -15.80 LUFS (ITU-R BS.1770-4)
+    per merged-activity-segment RMS (1 segment(s)):
+      [          events] segment 1         0.00s-   5.00s: -16.7 dBFS
+  [OK    ] file.valid_json: File parses as valid JSON.
+  [OK    ] schema.json_schema: Draft 2020-12 schema validation passed with unknown fields, wrong types, out-of-range values, and extra fields rejected.
+  [OK    ] schema.required_keys: All required top-level keys present (meta, global, export).
+  [OK    ] schema.events_sorted: All 4 events are sorted by time (ascending).
+  [OK    ] schema.event_required_fields: All 4 events have the required fields (time, duration, engine, note, velocity).
+  [OK    ] schema.midi_range: All event notes resolve to a valid MIDI number (0-127).
+  [OK    ] schema.frequency_hz_equal_temperament: No performance.frequency_hz fields present to check (not required).
+  [OK    ] modes.event_identity_contract: Mode dump preserved all event identities: input=4, modal=4, source indices match.
+  [OK    ] modes.dump_modes_ran: --dump-modes ran successfully for 4 modal event(s).
+  [OK    ] modes.no_empty_sets: No empty mode sets (4 modal events checked).
+  [OK    ] modes.no_nan_inf: No NaN/Inf values (139 partials checked across 4 events).
+  [OK    ] modes.frequency_range: All 139 partial frequencies are within [20, 20000] Hz.
+  [OK    ] modes.render_active_energy: Every modal event has render-active modal energy (4 event(s) checked).
+  [OK    ] modes.decay_positive_finite: All 139 partial decay constants are positive and finite.
+  [OK    ] modes.f0_deviation: Fundamental frequency deviation within +/-5.0 cents for all 4 modal events (max observed: 0.009 cents).
+  [OK    ] render.ran: Score rendered successfully to physical_piano.wav.
+  [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 1233b53f1e86..., 1 score dependency file(s), tree 53826bf5c91e..., renderer 9123db8f6339...; version=0.3.0, configured source=766d21daf7de dirty, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.106719, gain=8.90186, samples >= 0 dBFS=0.
+  [OK    ] rests.checked: No rest interval is longer than the 0.5s decay allowance -- nothing to check (score has no exploitable gaps, or is continuously sounding).
+  [OK    ] audio.not_all_zero: Rendered audio is not all zeros.
+  [OK    ] audio.peak_below_limit: Peak level is -0.45 dBFS (limit -0.3 dBFS).
+  [OK    ] audio.no_consecutive_clipping: No consecutive clipped samples found (isolated single-sample peaks at threshold: 0).
+  [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 1233b53f1e8660bc...).
+  -> PASS
+
+RESULT: ALL CHECKS PASSED
+
+real	0m28.003s
+user	0m0.000s
+sys	0m0.015s
+exit=0
+
+$ PYTHONIOENCODING=utf-8 PYTHONDONTWRITEBYTECODE=1 python <scratchpad>/p1_mrv_min_run.py
+（跑 melody_roll_video.main() 原路徑；只把 vs.find_cli 指到 CLI 複本（melody_roll_video 沒有 --cli 參數），
+  WAV 用 GATE 5 以複本渲染的 fur_elise_opening.wav；不給 --ffmpeg、不設 TSUKI_FFMPEG → 走 PATH。
+  melody_verify 的 PASS/FAIL/UNVERIFIED 只是工具照常輸出的內容，不是本卡要判的東西。）
+[verify] running melody_verify.verify() ...
+  [UNVERIFIED] ev0 t=0.000 note=E5 onset_err=-4.08ms  <- pitch refused: concurrent ev2 partial inside fundamental band (onset PASS, err -4.08 ms)
+  [UNVERIFIED] ev1 t=0.250 note=D#5  <- pitch refused: concurrent ev3 partial inside fundamental band (onset also refused)
+  [UNVERIFIED] ev2 t=0.500 note=E5  <- prior same-band event ev0 has no predictable tail (no T60)
+  [UNVERIFIED] ev3 t=0.750 note=D#5  <- prior same-band event ev1 has no predictable tail (no T60)
+  [UNVERIFIED] ev4 t=1.000 note=E5  <- prior same-band event ev0 has no predictable tail (no T60)
+  [FAIL] ev5 t=1.250 note=B4 onset_err=-11.25ms  <- refined onset off by -11.25 ms (limit 10 ms)
+  [UNVERIFIED] ev6 t=1.500 note=D5 pitch=-2.40c  <- pre-onset band floor -43.5 dBFS already energised (> -64.0): rise unmeasurable (Rd); pitch verified -2.40 c
+  [UNVERIFIED] ev7 t=1.750 note=C5 pitch=-1.45c  <- pre-onset band floor -38.4 dBFS already energised (> -64.0): rise unmeasurable (Rd); pitch verified -1.45 c
+  [FAIL] ev8 t=2.000 note=A4 onset_err=+51.29ms  <- refined onset off by +51.29 ms (limit 10 ms)
+  [FAIL] ev9 t=2.000 note=A3 onset_err=-24.02ms  <- refined onset off by -24.02 ms (limit 10 ms)
+  [UNVERIFIED] ev10 t=2.350 note=E4 pitch=-1.89c  <- pre-onset band floor -49.6 dBFS already energised (> -64.0): rise unmeasurable (Rd); pitch verified -1.89 c
+  [UNVERIFIED] ev11 t=2.700 note=A4  <- prior same-band event ev8 has no predictable tail (no T60)
+  [extra-scan] PASS
+  summary: 0 PASS / 3 FAIL / 9 UNVERIFIED
+[verify] summary: 0 PASS / 3 FAIL / 9 UNVERIFIED  extra-scan: PASS
+[layout] 12 events, 8 bands, pitch range 55.0..78.0 semitones (MIDI)
+[strip] 492x180 px, timeline 3.15s
+[ffmpeg] using <home>\Desktop\Tools\ffmpeg-8.1.1-full_build\bin\ffmpeg.EXE (from PATH)
+[video] <repo>\output\wf0925\P1\mrv_min_fur_elise_opening.mp4  frames=68  duration=6.80s  size=0.18 MB
+exists=True size=185791 bytes
+exit=0
+stream|codec_name=h264|width=320|height=180
+stream|codec_name=aac
+format|duration=6.780000
+
+---------------------------------------------------------------- 附錄：檢查腳本原文
+"""WF0925-P1 scratch check for engineering-gaps:E17.
+(1) find_cli() in tools/physics_verify.py and tools/verify_score.py on the
+    real repo: which CLI is chosen, printed once per process.
+(2) The same two find_cli() bodies exec'd with __file__ pointing into a
+    throw-away fake repo, to show Release beats a NEWER Debug build and that
+    the choice does not move when mtimes are flipped (old rule shown too).
+(3) melody_roll_video.resolve_ffmpeg() lookup order.
+Nothing in the repo is written."""
+import contextlib
+import importlib.util
+import io
+import os
+import sys
+import tempfile
+import time
+import types
+from pathlib import Path
+
+ROOT = Path(r"<repo>")
+sys.path.insert(0, str(ROOT / "tools"))
+fails = 0
+
+
+def check(cond, msg):
+    global fails
+    print(("  PASS  " if cond else "  FAIL  ") + msg)
+    if not cond:
+        fails += 1
+
+
+def load(name, path, fake_file=None):
+    src = Path(path).read_text(encoding="utf-8")
+    mod = types.ModuleType(name)
+    mod.__file__ = str(fake_file or path)
+    sys.modules[name] = mod
+    exec(compile(src, str(path), "exec"), mod.__dict__)
+    return mod
+
+
+def old_rule(build):
+    cands = list(build.rglob("TsukiSynthCLI.exe")) + list(build.rglob("tsukisynth-cli*")) \
+        + list(build.rglob("TsukiSynthCLI"))
+    cands = [c for c in cands if c.is_file()]
+    return max(cands, key=lambda p: p.stat().st_mtime) if cands else None
+
+
+print("[1] real repo")
+for tool in ("physics_verify", "verify_score"):
+    mod = load("chk_" + tool, ROOT / "tools" / (tool + ".py"))
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        first = mod.find_cli()
+        second = mod.find_cli()
+    out = buf.getvalue()
+    print("  %s.find_cli() -> %s" % (tool, first))
+    print("  stdout: %r" % out)
+    check(first == second == ROOT / "build" / "TsukiSynthCLI_artefacts" / "Release" / "TsukiSynthCLI.exe",
+          "%s picks build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe" % tool)
+    check(out.count("[find_cli] TsukiSynthCLI selected:") == 1 and str(first) in out,
+          "%s prints the chosen path to stdout exactly once for two calls" % tool)
+
+print("\n[2] fake repo: Debug newer than Release")
+with tempfile.TemporaryDirectory(prefix="p1_findcli_") as td:
+    fake = Path(td)
+    (fake / "tools").mkdir()
+    build = fake / "build"
+    rel = build / "TsukiSynthCLI_artefacts" / "Release" / "TsukiSynthCLI.exe"
+    dbg = build / "TsukiSynthCLI_artefacts" / "Debug" / "TsukiSynthCLI.exe"
+    deep_rel = build / "sub" / "x" / "Release" / "TsukiSynthCLI.exe"
+    for p in (rel, dbg, deep_rel):
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(b"stub")
+    now = time.time()
+    os.utime(rel, (now - 3600, now - 3600))
+    os.utime(deep_rel, (now - 1800, now - 1800))
+    os.utime(dbg, (now, now))
+    for tool in ("physics_verify", "verify_score"):
+        mod = load("fake_" + tool, ROOT / "tools" / (tool + ".py"), fake / "tools" / (tool + ".py"))
+        with contextlib.redirect_stdout(io.StringIO()) as buf:
+            chosen = mod.find_cli()
+        print("  %s: old max(mtime) rule -> %s" % (tool, old_rule(build).relative_to(fake)))
+        print("  %s: new find_cli()      -> %s   stdout=%r" % (tool, chosen.relative_to(fake), buf.getvalue().strip()))
+        check(chosen == rel, "%s: Release (shallowest) chosen although Debug is newest" % tool)
+        # flip the mtimes: the choice must not move
+        os.utime(rel, (now + 60, now + 60))
+        os.utime(dbg, (now - 7200, now - 7200))
+        os.utime(deep_rel, (now + 120, now + 120))
+        with contextlib.redirect_stdout(io.StringIO()):
+            again = mod.find_cli()
+        check(again == rel, "%s: same choice after flipping mtimes (not mtime-decided)" % tool)
+        os.utime(rel, (now - 3600, now - 3600))
+        os.utime(deep_rel, (now - 1800, now - 1800))
+        os.utime(dbg, (now, now))
+    # only a Debug build present -> still found (falls back, and says so)
+    rel.unlink()
+    deep_rel.unlink()
+    mod = load("fake2_verify_score", ROOT / "tools" / "verify_score.py", fake / "tools" / "verify_score.py")
+    with contextlib.redirect_stdout(io.StringIO()) as buf:
+        only = mod.find_cli()
+    check(only == dbg, "only Debug present -> Debug returned (printed: %r)" % buf.getvalue().strip())
+    dbg.unlink()
+    with contextlib.redirect_stdout(io.StringIO()) as buf:
+        none = mod.find_cli()
+    check(none is None and buf.getvalue() == "", "no candidate -> None, nothing printed")
+
+print("\n[3] melody_roll_video.resolve_ffmpeg() order")
+mrv = load("chk_mrv", ROOT / "tools" / "melody_roll_video.py")
+saved_env = os.environ.pop("TSUKI_FFMPEG", None)
+saved_which = mrv.shutil.which
+try:
+    r = mrv.resolve_ffmpeg("D:/x/ffmpeg.exe")
+    check(r == ("D:/x/ffmpeg.exe", "--ffmpeg"), "--ffmpeg wins: %r" % (r,))
+    os.environ["TSUKI_FFMPEG"] = "E:/env/ffmpeg.exe"
+    r = mrv.resolve_ffmpeg("D:/x/ffmpeg.exe")
+    check(r[1] == "--ffmpeg", "--ffmpeg still beats TSUKI_FFMPEG: %r" % (r,))
+    r = mrv.resolve_ffmpeg(None)
+    check(r == ("E:/env/ffmpeg.exe", "TSUKI_FFMPEG"), "TSUKI_FFMPEG beats PATH: %r" % (r,))
+    del os.environ["TSUKI_FFMPEG"]
+    r = mrv.resolve_ffmpeg(None)
+    print("  this machine, no --ffmpeg/TSUKI_FFMPEG -> %r" % (r,))
+    check(r[1] == "PATH" and Path(r[0]).resolve() == Path(str(mrv.DEFAULT_FFMPEG)).resolve(),
+          "PATH hit here is the same file as the old hard-coded path (behaviour unchanged on this machine)")
+    mrv.shutil.which = lambda _name: None
+    r = mrv.resolve_ffmpeg(None)
+    check(r == (str(mrv.DEFAULT_FFMPEG), "DEFAULT_FFMPEG"), "nothing else -> hard-coded fallback: %r" % (r,))
+finally:
+    mrv.shutil.which = saved_which
+    if saved_env is not None:
+        os.environ["TSUKI_FFMPEG"] = saved_env
+
+print("\nRESULT: %s (%d failed checks)" % ("ALL PASS" if fails == 0 else "FAILURES", fails))
+sys.exit(1 if fails else 0)
+
+"""WF0925-P1 minimal real execution of tools/melody_roll_video.py main():
+same code path as the command line, except vs.find_cli is pointed at this
+card's COPY of the build\\ CLI (common rule: Python lane uses a copy), and
+the WAV is the one this card already rendered with that copy. The video goes
+to output/wf0925/P1/ (gitignored). No --ffmpeg and no TSUKI_FFMPEG, so the
+lookup falls through to PATH."""
+import importlib.util
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(r"<repo>")
+CLI_COPY = ROOT / "output" / "wf0925" / "P1" / "cli" / "TsukiSynthCLI.exe"
+WAV = Path(r"<tmp>\claude\C--Users-admin-Desktop-Claude"
+           r"\7c5a84c1-762b-4e45-b6e9-c2ce9556d699\scratchpad\wf0925_P1_render_work"
+           r"\fur_elise_opening\fur_elise_opening.wav")
+OUT = ROOT / "output" / "wf0925" / "P1" / "mrv_min_fur_elise_opening.mp4"
+
+os.environ.pop("TSUKI_FFMPEG", None)
+sys.path.insert(0, str(ROOT / "tools"))  # same as running the script from tools/
+os.chdir(ROOT)
+spec = importlib.util.spec_from_file_location("melody_roll_video", ROOT / "tools" / "melody_roll_video.py")
+mrv = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mrv)
+mrv.vs.find_cli = lambda: CLI_COPY
+sys.argv = ["melody_roll_video.py", "scores/examples/fur_elise_opening.score.json",
+            "--wav", str(WAV), "--out", str(OUT),
+            "--fps", "10", "--width", "320", "--height", "180"]
+mrv.main()
+print("exists=%s size=%d bytes" % (OUT.exists(), OUT.stat().st_size if OUT.exists() else -1))

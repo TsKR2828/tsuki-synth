@@ -1,0 +1,695 @@
+# WF0925-V1 B：外掛 voice 釋放／搶音規則的程式碼出處（逐段原文；報告 §1 的每一條都對到這裡）
+$ python reports/wf0925_method/voice_pool_code_citations.py   (cwd = repo root；只讀 git show HEAD:<file> 與工作樹檔案，不改任何檔)
+# All line numbers below are HEAD 18430c4. For each range the text in the current working tree
+# (which carries other cards' uncommitted edits, e.g. WF0925-K1 in PluginProcessor.cpp / CimbalomEngine.h /
+# ChromaticEngine.h / host_probe.cpp) is searched for verbatim: 'WT: identical at line N' = same text, shifted.
+
+=== HEAD:src/PluginProcessor.cpp:34-36  -- pool: Cimbalom addSound + 16-voice loop  [WT: identical at line 34]
+   34          cimbalomSynth.addSound (new CimbalomSound());
+   35  
+   36          for (int i = 0; i < 16; ++i)
+
+=== HEAD:src/PluginProcessor.cpp:69-71  -- pool: Chromatic addSound + 16-voice loop  [WT: identical at line 69]
+   69          chromaticSynth.addSound (new ChromaticSound());
+   70  
+   71          for (int i = 0; i < 16; ++i)
+
+=== HEAD:src/PluginProcessor.cpp:103-105  -- pool: FM Piano addSound + 16-voice loop  [WT: identical at line 103]
+  103          fmPianoSynth.addSound (new FMPianoSound());
+  104  
+  105          for (int i = 0; i < 16; ++i)
+
+=== HEAD:src/PluginProcessor.cpp:305-305  -- processBlock ScopedNoDenormals  [WT: identical at line 330]
+  305      juce::ScopedNoDenormals noDenormals;
+
+=== HEAD:src/PluginProcessor.cpp:350-359  -- only the selected engine receives MIDI (engine 0/3 -> cimbalomSynth)  [WT: identical at line 375]
+  350      // Render every engine each block so tails from ANY previously-played engine
+  351      // ring out naturally (idle synths early-return). Only the current engine
+  352      // receives MIDI; the others get an empty buffer.
+  353      juce::MidiBuffer empty;
+  354      cimbalomSynth.renderNextBlock  (buffer, (currentEngine == 0 || currentEngine == 3) ? midiMessages : empty,
+  355                                      0, buffer.getNumSamples());
+  356      chromaticSynth.renderNextBlock (buffer, currentEngine == 1 ? midiMessages : empty,
+  357                                      0, buffer.getNumSamples());
+  358      fmPianoSynth.renderNextBlock   (buffer, currentEngine == 2 ? midiMessages : empty,
+  359                                      0, buffer.getNumSamples());
+
+=== HEAD:src/ParameterLayout.cpp:26-28  -- engine choice: Cimbalom, Chromatic, FM Piano, Piano  [WT: identical at line 26]
+   26      global->addChild (std::make_unique<ChoiceParam> (
+   27          PID { "engine", 1 }, "Engine",
+   28          juce::StringArray { "Cimbalom", "Chromatic", "FM Piano", "Piano" }, 0));
+
+=== HEAD:src/ParameterLayout.cpp:30-48  -- Macro defaults 0.5  [WT: identical at line 30]
+   30      auto macro = std::make_unique<Group> ("macro", "Macro", "|");
+   31      macro->addChild (std::make_unique<FloatParam> (
+   32          PID { "macro_material", 1 }, "Material",
+   33          Range (0.0f, 1.0f, 0.0f), 0.5f));
+   34      macro->addChild (std::make_unique<FloatParam> (
+   35          PID { "macro_tension", 1 }, "Tension",
+   36          Range (0.0f, 1.0f, 0.0f), 0.5f));
+   37      macro->addChild (std::make_unique<FloatParam> (
+   38          PID { "macro_damping", 1 }, "Damping",
+   39          Range (0.0f, 1.0f, 0.0f), 0.5f));
+   40      macro->addChild (std::make_unique<FloatParam> (
+   41          PID { "macro_strike", 1 }, "Strike",
+   42          Range (0.0f, 1.0f, 0.0f), 0.5f));
+   43      macro->addChild (std::make_unique<FloatParam> (
+   44          PID { "macro_brightness", 1 }, "Brightness",
+   45          Range (0.0f, 1.0f, 0.0f), 0.5f));
+   46      macro->addChild (std::make_unique<FloatParam> (
+   47          PID { "macro_body", 1 }, "Body",
+   48          Range (0.0f, 1.0f, 0.0f), 0.5f));
+
+=== HEAD:src/engines/CimbalomEngine.h:246-249  -- startNote: Macro scales (1.0 at 0.5)  [WT: identical at line 269]
+  246          // Macro: Tension → mode frequency, Material → sustain, Damping → decay
+  247          float tScale = 0.85f + mTension * 0.30f;
+  248          float matScale = 0.5f + mMaterial;
+  249          float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
+
+=== HEAD:src/engines/CimbalomEngine.h:265-266  -- startNote: applyStringDecayTimes(..., dampingOverride=-1, ...)  [WT: identical at line 288]
+  265          applyStringDecayTimes (baseModes, *mat, -1.0f, bridgeLoss,
+  266                                 sp.diameter * 0.5f, sp.tension, matScale, dmpScale);
+
+=== HEAD:src/engines/CimbalomEngine.h:323-324  -- startNote: second applyStringDecayTimes(..., -1, ...)  [WT: identical at line 346]
+  323              applyStringDecayTimes (modes, *mat, -1.0f, bridgeLoss,
+  324                                     sp.diameter * 0.5f, sp.tension, matScale, dmpScale);
+
+=== HEAD:src/engines/CimbalomEngine.h:345-367  -- stopNote (tail-off -> applyDamp; steal -> damp(0.002)+clearCurrentNote) and CC64 release  [WT: identical at line 368]
+  345      void stopNote (float, bool allowTailOff) override
+  346      {
+  347          if (allowTailOff)
+  348          {
+  349              applyDamp();
+  350          }
+  351          else
+  352          {
+  353              // Quick fade-out to avoid click on voice stealing
+  354              for (int s = 0; s < numActiveStrings; ++s)
+  355                  strings[s].damp (0.002f);
+  356              clearCurrentNote();
+  357          }
+  358      }
+  359  
+  360      void pitchWheelMoved (int) override {}
+  361  
+  362      void controllerMoved (int controller, int value) override
+  363      {
+  364          // CC#64 Sustain Pedal：放開時制音
+  365          if (controller == 64 && value < 64)
+  366              applyDamp();
+  367      }
+
+=== HEAD:src/engines/CimbalomEngine.h:817-870  -- renderNextBlock (clearCurrentNote when no string mode / exciter active) + applyDamp damp(0.05)  [WT: identical at line 846]
+  817      void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
+  818                            int startSample, int numSamples) override
+  819      {
+  820          bool anyActive = false;
+  821  
+  822          while (--numSamples >= 0)
+  823          {
+  824              float sample = 0.0f;
+  825  
+  826              // 弦共振
+  827              for (int s = 0; s < numActiveStrings; ++s)
+  828              {
+  829                  if (strings[s].isActive())
+  830                  {
+  831                      sample += strings[s].processSample();
+  832                      anyActive = true;
+  833                  }
+  834              }
+  835  
+  836              // 槌頭瞬態噪音
+  837              if (exciterEnv.isActive())
+  838              {
+  839                  float noise = noiseGen.processSample();
+  840                  noise = exciterFilter.processSample (noise);
+  841                  sample += noise * exciterEnv.process();
+  842                  anyActive = true;
+  843              }
+  844  
+  845              // Body resonance layer
+  846              sample += bodyRes.processSample (sample);
+  847  
+  848              // 輸出（master gain 防 clipping）
+  849              sample *= 0.069f;   // equal-RMS re-calibrated (2026-07, see getNextSample())
+  850  
+  851              for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
+  852                  outputBuffer.addSample (ch, startSample, sample);
+  853  
+  854              ++startSample;
+  855          }
+  856  
+  857          if (! anyActive)
+  858              clearCurrentNote();
+  859      }
+  860  
+  861  private:
+  862      void applyDamp()
+  863      {
+  864          if (! damped)
+  865          {
+  866              for (int s = 0; s < numActiveStrings; ++s)
+  867                  strings[s].damp (0.05f);
+  868              damped = true;
+  869          }
+  870      }
+
+=== HEAD:src/engines/ChromaticEngine.h:267-293  -- stopNote damp(0.08) / steal / CC64  [WT: identical at line 275]
+  267      void stopNote (float, bool allowTailOff) override
+  268      {
+  269          if (allowTailOff)
+  270          {
+  271              if (! damped)
+  272              {
+  273                  resonator.damp (0.08f);
+  274                  damped = true;
+  275              }
+  276          }
+  277          else
+  278          {
+  279              resonator.damp (0.002f);
+  280              clearCurrentNote();
+  281          }
+  282      }
+  283  
+  284      void pitchWheelMoved (int) override {}
+  285      void controllerMoved (int cc, int val) override
+  286      {
+  287          if (cc == 64 && val < 64 && ! damped)
+  288          {
+  289              resonator.damp (0.08f);
+  290              damped = true;
+  291          }
+  292      }
+  293  
+
+=== HEAD:src/engines/ChromaticEngine.h:406-413  -- standalone noteOff damp(0.08) (CLI path)  [WT: identical at line 414]
+  406      void noteOff()
+  407      {
+  408          if (! damped)
+  409          {
+  410              resonator.damp (0.08f);
+  411              damped = true;
+  412          }
+  413      }
+
+=== HEAD:src/engines/ChromaticEngine.h:645-672  -- renderNextBlock: active = resonator modes or exciter; clearCurrentNote when inactive  [WT: identical at line 656]
+  645              float sample = 0.0f;
+  646  
+  647              if (resonator.isActive())
+  648              {
+  649                  sample += resonator.processSample();
+  650                  anyActive = true;
+  651              }
+  652  
+  653              if (exciterEnv.isActive())
+  654              {
+  655                  float noise = noiseGen.processSample();
+  656                  noise = exciterFilter.processSample (noise);
+  657                  sample += noise * exciterEnv.process();
+  658                  anyActive = true;
+  659              }
+  660  
+  661              sample += bodyRes.processSample (sample);
+  662              sample *= outputGain;   // per-sub-engine, equal-RMS calibrated
+  663  
+  664              for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
+  665                  outputBuffer.addSample (ch, startSample, sample);
+  666  
+  667              ++startSample;
+  668          }
+  669  
+  670          if (! anyActive)
+  671              clearCurrentNote();
+  672      }
+
+=== HEAD:src/dsp/ModalResonator.h:89-98  -- excite: stopAmp = 0.001*start (-60 dB), decayCoeff from decayTime  [WT: identical at line 89]
+   89              m.currentAmp = m.baseAmp * velocity;
+   90              m.stopAmp    = std::abs (m.currentAmp) * 0.001f; // exactly -60 dB
+   91              m.phase      = 0.0f;
+   92              m.phaseDelta = m.freq * (float) juce::MathConstants<double>::twoPi / (float) sampleRate;
+   93  
+   94              // decay coefficient: reach -60dB (~0.001) after decayTime seconds
+   95              if (m.decayTime > 0.0f)
+   96                  m.decayCoeff = std::exp (-6.9078f / (m.decayTime * (float) sampleRate));
+   97              else
+   98                  m.decayCoeff = 0.0f;
+
+=== HEAD:src/dsp/ModalResonator.h:106-117  -- damp(factor): decayTime*factor  [WT: identical at line 106]
+  106      /// Damp (damper off / note off - accelerate decay)
+  107      void damp (float factor = 0.05f)
+  108      {
+  109          for (auto& m : modes)
+  110          {
+  111              float shortened = m.decayTime * factor;
+  112              if (shortened > 0.0f)
+  113                  m.decayCoeff = std::exp (-6.9078f / (shortened * (float) sampleRate));
+  114              else
+  115                  m.decayCoeff = 0.0f;
+  116          }
+  117      }
+
+=== HEAD:src/dsp/ModalResonator.h:175-181  -- processSample: mode skipped once |amp| <= stopAmp  [WT: identical at line 175]
+  175          float output = 0.0f;
+  176          bool anyActive = false;
+  177  
+  178          for (auto& m : modes)
+  179          {
+  180              if (std::abs (m.currentAmp) <= m.stopAmp || m.stopAmp <= 0.0f)
+  181                  continue;
+
+=== HEAD:src/engines/FMPianoEngine.h:40-48  -- FMParams defaults attack 5 ms / release 500 ms  [WT: identical at line 40]
+   40  struct FMParams
+   41  {
+   42      FMPreset preset    = FMPreset::Piano;
+   43      float    ratio     = 1.0f;       // must match APVTS default
+   44      float    index     = 4.5f;       // must match APVTS default
+   45      float    brightness = 0.6f;      // must match APVTS default
+   46      float    feedback  = 0.02f;      // must match APVTS default
+   47      float    attackMs  = 5.0f;       // must match APVTS default
+   48      float    releaseMs = 500.0f;     // must match APVTS default
+
+=== HEAD:src/engines/FMPianoEngine.h:125-146  -- startNote release*dmpScale; stopNote tail-off -> ampEnv.noteOff(); steal -> clearCurrentNote  [WT: identical at line 125]
+  125          float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
+  126          releaseMs *= dmpScale;
+  127  
+  128          initVoice (midiNoteNumber, velocity, type, ratio, index,
+  129                     brightness, feedback, attackMs, releaseMs, sr,
+  130                     0x504C5547494Eull, noiseEventCounter++);
+  131      }
+  132  
+  133      void stopNote (float, bool allowTailOff) override
+  134      {
+  135          if (allowTailOff)
+  136          {
+  137              ampEnv.noteOff();
+  138          }
+  139          else
+  140          {
+  141              // Force quick release to avoid click on voice stealing
+  142              ampEnv.setRelease (0.005f);
+  143              ampEnv.noteOff();
+  144              clearCurrentNote();
+  145          }
+  146      }
+
+=== HEAD:src/engines/FMPianoEngine.h:194-215  -- renderNextBlock: clearCurrentNote when envelope Idle  [WT: identical at line 194]
+  194      void renderNextBlock (juce::AudioBuffer<float>& outputBuffer,
+  195                            int startSample, int numSamples) override
+  196      {
+  197          if (! ampEnv.isActive())
+  198          {
+  199              clearCurrentNote();
+  200              return;
+  201          }
+  202  
+  203          while (--numSamples >= 0)
+  204          {
+  205              float sample = processSingleSample();
+  206  
+  207              for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
+  208                  outputBuffer.addSample (ch, startSample, sample);
+  209  
+  210              ++startSample;
+  211          }
+  212  
+  213          if (! ampEnv.isActive())
+  214              clearCurrentNote();
+  215      }
+
+=== HEAD:src/engines/FMPianoEngine.h:393-394  -- preset decay / sustain tables  [WT: identical at line 393]
+  393          static constexpr float decays[]   = { 3.5f,  1.2f,  2.0f,  3.5f, 0.01f, 0.01f, 0.3f,  0.5f  };
+  394          static constexpr float sustains[] = { 0.0f,  0.3f,  0.15f, 0.0f, 1.0f,  0.8f,  0.1f,  0.4f  };
+
+=== HEAD:src/dsp/Envelope.h:29-42  -- noteOff: restarts release from current level whenever state != Idle; isActive  [WT: identical at line 29]
+   29      void noteOff()
+   30      {
+   31          if (state != State::Idle)
+   32          {
+   33              releaseSamplesRemaining = std::max (
+   34                  1, static_cast<int> (
+   35                      std::lround (releaseTime * sampleRate)));
+   36              releaseRate = currentLevel
+   37                  / static_cast<float> (releaseSamplesRemaining);
+   38              state = State::Release;
+   39          }
+   40      }
+   41  
+   42      bool isActive() const { return state != State::Idle; }
+
+=== HEAD:src/dsp/Envelope.h:76-85  -- Release -> Idle  [WT: identical at line 76]
+   76  
+   77              case State::Release:
+   78                  currentLevel -= releaseRate;
+   79                  --releaseSamplesRemaining;
+   80                  if (releaseSamplesRemaining <= 0 || currentLevel <= 0.0f)
+   81                  {
+   82                      currentLevel = 0.0f;
+   83                      state = State::Idle;
+   84                  }
+   85                  break;
+
+=== HEAD:src/score/ScoreRenderer.h:1197-1229  -- CLI renderCimbalom: one voice per event, noteOff at 0.9*duration, loop while isActive  [WT: identical at line 1197]
+ 1197          CimbalomVoice voice;
+ 1198          voice.prepare (sr);
+ 1199          voice.noteOn (midiNote, ev.velocity, *mat, *soundboardMat, cp);
+ 1200          if (! hasRenderableModalEnergy (voice.getAllStringModes(), sr))
+ 1201          {
+ 1202              renderWarnings.push_back (
+ 1203                  "Event " + std::to_string (sourceIndex)
+ 1204                  + " has no render-active modal energy in ["
+ 1205                  + std::to_string ((int) ModalResonator::minimumRenderableFrequency)
+ 1206                  + ", " + std::to_string ((int) ModalResonator::maximumRenderableFrequency (sr))
+ 1207                  + "] Hz; refusing attack-only output");
+ 1208              return false;
+ 1209          }
+ 1210  
+ 1211          int noteOffSample = juce::jlimit (start, end,
+ 1212              start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
+ 1213  
+ 1214          int glideSamples = 0;
+ 1215          double glideStartRatio = 1.0;
+ 1216          bool useExpCurve = false;
+ 1217          if (ev.hasGlide)
+ 1218          {
+ 1219              int fromMidi = noteNameToMidi (ev.glideFromNote);
+ 1220              double fromFreq = juce::MidiMessage::getMidiNoteInHertz (fromMidi);
+ 1221              double toFreq   = juce::MidiMessage::getMidiNoteInHertz (midiNote);
+ 1222              glideStartRatio = fromFreq / toFreq;
+ 1223              glideSamples = static_cast<int> (ev.glideDurationMs / 1000.0 * sr);
+ 1224              useExpCurve = (ev.glideCurve == "exponential");
+ 1225          }
+ 1226  
+ 1227          for (int i = start; i < end && voice.isActive(); ++i)
+ 1228          {
+ 1229              if (i == noteOffSample) voice.noteOff();
+
+=== HEAD:src/score/ScoreRenderer.h:1310-1311  -- CLI chromatic path noteOff at 0.9*duration  [WT: identical at line 1211]
+ 1310          int noteOffSample = juce::jlimit (start, end,
+ 1311              start + static_cast<int> (std::max (0.0, ev.duration) * sr * 0.9));
+
+=== HEAD:src/score/ScoreRenderer.h:1559-1590  -- eventEndTime: buffer sizing uses 0.05 for every modal engine  [WT: identical at line 1559]
+ 1559      double eventEndTime (const ScoreEvent& ev, double sr,
+ 1560                           uint64_t randomSeed, uint64_t eventIdentity) const
+ 1561      {
+ 1562          const double start = std::max (0.0, ev.time);
+ 1563          const double duration = std::max (0.0, ev.duration);
+ 1564          double end = start + duration;
+ 1565  
+ 1566          if (ev.engine == "fm")
+ 1567          {
+ 1568              const double releaseMs = ev.fmReleaseMs >= 0.0f
+ 1569                  ? ev.fmReleaseMs
+ 1570                  : FMParams().releaseMs;
+ 1571              const double noteOff = start + duration * 0.9;
+ 1572              end = std::max (end, noteOff + releaseMs * 0.001);
+ 1573          }
+ 1574          else
+ 1575          {
+ 1576              // ModalResonator reaches -60 dB at T60. noteOff occurs at 90%
+ 1577              // of the authored duration and changes the remaining decay time
+ 1578              // to 5%, so allocate the exact worst-mode active interval rather
+ 1579              // than a fixed five-second tail.
+ 1580              const double maxT60 = eventMaxT60 (ev, sr, randomSeed, eventIdentity);
+ 1581              const double noteOff = duration * 0.9;
+ 1582              const double active = maxT60 <= noteOff
+ 1583                  ? maxT60 : noteOff + (maxT60 - noteOff) * 0.05;
+ 1584              end = std::max (end, start + active);
+ 1585          }
+ 1586  
+ 1587          return end;
+ 1588      }
+ 1589  
+ 1590      static double wallDelaySeconds (const ScoreEffects& effects)
+
+=== HEAD:tests/host_probe.cpp:232-245  -- HostProbe renderNotes: note-off at time+duration  [WT: identical at line 259]
+  232      {
+  233          const int blockStart = b * blockSize;
+  234          midi.clear();
+  235          for (size_t i = 0; i < numNotes; ++i)
+  236          {
+  237              const auto& n = notes[i];
+  238              const int on  = (int) std::llround (n.time * kSampleRate);
+  239              const int off = (int) std::llround ((n.time + n.durS) * kSampleRate);
+  240              if (on >= blockStart && on < blockStart + blockSize)
+  241                  midi.addEvent (juce::MidiMessage::noteOn  (1, n.midi, n.vel),
+  242                                 on - blockStart);
+  243              if (off >= blockStart && off < blockStart + blockSize)
+  244                  midi.addEvent (juce::MidiMessage::noteOff (1, n.midi),
+  245                                 off - blockStart);
+
+=== HEAD:src/dsp/BodyResonance.h:55-68  -- BodyResonance::processSample (runs per sample in every voice's render)  [WT: identical at line 55]
+   55      float processSample (float input)
+   56      {
+   57          if (amount < 0.001f)
+   58              return 0.0f;
+   59  
+   60          // Drive the resonant filters with the input signal
+   61          float low = bpLow.processSample (input);
+   62          float mid = bpMid.processSample (input);
+   63  
+   64          // Low-pass to tame any harshness from the BP resonance
+   65          float body = lpLow.processSample (low * 1.4f + mid * 0.8f);
+   66  
+   67          return body * amount * 4.0f;
+   68      }
+
+$ grep -n "setNoteStealingEnabled" src/PluginProcessor.cpp src/PluginProcessor.h ; echo "exit=$?"
+exit=1 (1 = 沒呼叫 -> JUCE 預設)
+
+$ grep -n "JUCE_MAJOR_VERSION\|JUCE_MINOR_VERSION\|JUCE_BUILDNUMBER" libs/JUCE/modules/juce_core/system/juce_StandardHeader.h
+42:#define JUCE_MAJOR_VERSION      8
+43:#define JUCE_MINOR_VERSION      0
+44:#define JUCE_BUILDNUMBER        12
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.h:252-256
+  252      /** Returns true if a voice is sounding in its release phase **/
+  253      bool isPlayingButReleased() const noexcept
+  254      {
+  255          return isVoiceActive() && ! (isKeyDown() || isSostenutoPedalDown() || isSustainPedalDown());
+  256      }
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.h:636-641
+  636      double sampleRate = 0;
+  637      uint32 lastNoteOnCounter = 0;
+  638      int minimumSubBlockSize = 32;
+  639      bool subBlockSubdivisionIsStrict = false;
+  640      bool shouldStealNotes = true;
+  641      BigInteger sustainPedalsDown;
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:70-73
+   70  bool SynthesiserVoice::wasStartedBefore (const SynthesiserVoice& other) const noexcept
+   71  {
+   72      return noteOnTime < other.noteOnTime;
+   73  }
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:254-258
+  254  void Synthesiser::renderVoices (AudioBuffer<float>& buffer, int startSample, int numSamples)
+  255  {
+  256      for (auto* voice : voices)
+  257          voice->renderNextBlock (buffer, startSample, numSamples);
+  258  }
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:307-327
+  307  void Synthesiser::noteOn (const int midiChannel,
+  308                            const int midiNoteNumber,
+  309                            const float velocity)
+  310  {
+  311      const ScopedLock sl (lock);
+  312  
+  313      for (auto* sound : sounds)
+  314      {
+  315          if (sound->appliesToNote (midiNoteNumber) && sound->appliesToChannel (midiChannel))
+  316          {
+  317              // If hitting a note that's still ringing, stop it first (it could be
+  318              // still playing because of the sustain or sostenuto pedal).
+  319              for (auto* voice : voices)
+  320                  if (voice->getCurrentlyPlayingNote() == midiNoteNumber && voice->isPlayingChannel (midiChannel))
+  321                      stopVoice (voice, 1.0f, true);
+  322  
+  323              startVoice (findFreeVoice (sound, midiChannel, midiNoteNumber, shouldStealNotes),
+  324                          sound, midiChannel, midiNoteNumber, velocity);
+  325          }
+  326      }
+  327  }
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:329-351
+  329  void Synthesiser::startVoice (SynthesiserVoice* const voice,
+  330                                SynthesiserSound* const sound,
+  331                                const int midiChannel,
+  332                                const int midiNoteNumber,
+  333                                const float velocity)
+  334  {
+  335      if (voice != nullptr && sound != nullptr)
+  336      {
+  337          if (voice->currentlyPlayingSound != nullptr)
+  338              voice->stopNote (0.0f, false);
+  339  
+  340          voice->currentlyPlayingNote = midiNoteNumber;
+  341          voice->currentPlayingMidiChannel = midiChannel;
+  342          voice->noteOnTime = ++lastNoteOnCounter;
+  343          voice->currentlyPlayingSound = sound;
+  344          voice->setKeyDown (true);
+  345          voice->setSostenutoPedalDown (false);
+  346          voice->setSustainPedalDown (sustainPedalsDown[midiChannel]);
+  347  
+  348          voice->startNote (midiNoteNumber, velocity, sound,
+  349                            lastPitchWheelValues [midiChannel - 1]);
+  350      }
+  351  }
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:363-390
+  363  void Synthesiser::noteOff (const int midiChannel,
+  364                             const int midiNoteNumber,
+  365                             const float velocity,
+  366                             const bool allowTailOff)
+  367  {
+  368      const ScopedLock sl (lock);
+  369  
+  370      for (auto* voice : voices)
+  371      {
+  372          if (voice->getCurrentlyPlayingNote() == midiNoteNumber
+  373                && voice->isPlayingChannel (midiChannel))
+  374          {
+  375              if (auto sound = voice->getCurrentlyPlayingSound())
+  376              {
+  377                  if (sound->appliesToNote (midiNoteNumber)
+  378                       && sound->appliesToChannel (midiChannel))
+  379                  {
+  380                      jassert (! voice->keyIsDown || voice->isSustainPedalDown() == sustainPedalsDown [midiChannel]);
+  381  
+  382                      voice->setKeyDown (false);
+  383  
+  384                      if (! (voice->isSustainPedalDown() || voice->isSostenutoPedalDown()))
+  385                          stopVoice (voice, velocity, allowTailOff);
+  386                  }
+  387              }
+  388          }
+  389      }
+  390  }
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:450-478
+  450  void Synthesiser::handleSustainPedal (int midiChannel, bool isDown)
+  451  {
+  452      jassert (midiChannel > 0 && midiChannel <= 16);
+  453      const ScopedLock sl (lock);
+  454  
+  455      if (isDown)
+  456      {
+  457          sustainPedalsDown.setBit (midiChannel);
+  458  
+  459          for (auto* voice : voices)
+  460              if (voice->isPlayingChannel (midiChannel) && voice->isKeyDown())
+  461                  voice->setSustainPedalDown (true);
+  462      }
+  463      else
+  464      {
+  465          for (auto* voice : voices)
+  466          {
+  467              if (voice->isPlayingChannel (midiChannel))
+  468              {
+  469                  voice->setSustainPedalDown (false);
+  470  
+  471                  if (! (voice->isKeyDown() || voice->isSostenutoPedalDown()))
+  472                      stopVoice (voice, 1.0f, true);
+  473              }
+  474          }
+  475  
+  476          sustainPedalsDown.clearBit (midiChannel);
+  477      }
+  478  }
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:509-523
+  509  SynthesiserVoice* Synthesiser::findFreeVoice (SynthesiserSound* soundToPlay,
+  510                                                int midiChannel, int midiNoteNumber,
+  511                                                const bool stealIfNoneAvailable) const
+  512  {
+  513      const ScopedLock sl (lock);
+  514  
+  515      for (auto* voice : voices)
+  516          if ((! voice->isVoiceActive()) && voice->canPlaySound (soundToPlay))
+  517              return voice;
+  518  
+  519      if (stealIfNoneAvailable)
+  520          return findVoiceToSteal (soundToPlay, midiChannel, midiNoteNumber);
+  521  
+  522      return nullptr;
+  523  }
+=== libs/JUCE/modules/juce_audio_basics/synthesisers/juce_Synthesiser.cpp:525-609
+  525  SynthesiserVoice* Synthesiser::findVoiceToSteal (SynthesiserSound* soundToPlay,
+  526                                                   int /*midiChannel*/, int midiNoteNumber) const
+  527  {
+  528      // This voice-stealing algorithm applies the following heuristics:
+  529      // - Re-use the oldest notes first
+  530      // - Protect the lowest & topmost notes, even if sustained, but not if they've been released.
+  531  
+  532      // apparently you are trying to render audio without having any voices...
+  533      jassert (! voices.isEmpty());
+  534  
+  535      // These are the voices we want to protect (ie: only steal if unavoidable)
+  536      SynthesiserVoice* low = nullptr; // Lowest sounding note, might be sustained, but NOT in release phase
+  537      SynthesiserVoice* top = nullptr; // Highest sounding note, might be sustained, but NOT in release phase
+  538  
+  539      // All major OSes use double-locking so this will be lock- and wait-free as long as the lock is not
+  540      // contended. This is always the case if you do not call findVoiceToSteal on multiple threads at
+  541      // the same time.
+  542      const ScopedLock sl (stealLock);
+  543  
+  544      // this is a list of voices we can steal, sorted by how long they've been running
+  545      usableVoicesToStealArray.clear();
+  546  
+  547      for (auto* voice : voices)
+  548      {
+  549          if (voice->canPlaySound (soundToPlay))
+  550          {
+  551              jassert (voice->isVoiceActive()); // We wouldn't be here otherwise
+  552  
+  553              usableVoicesToStealArray.add (voice);
+  554  
+  555              // NB: Using a functor rather than a lambda here due to scare-stories about
+  556              // compilers generating code containing heap allocations.
+  557              struct Sorter
+  558              {
+  559                  bool operator() (const SynthesiserVoice* a, const SynthesiserVoice* b) const noexcept { return a->wasStartedBefore (*b); }
+  560              };
+  561  
+  562              std::sort (usableVoicesToStealArray.begin(), usableVoicesToStealArray.end(), Sorter());
+  563  
+  564              if (! voice->isPlayingButReleased()) // Don't protect released notes
+  565              {
+  566                  auto note = voice->getCurrentlyPlayingNote();
+  567  
+  568                  if (low == nullptr || note < low->getCurrentlyPlayingNote())
+  569                      low = voice;
+  570  
+  571                  if (top == nullptr || note > top->getCurrentlyPlayingNote())
+  572                      top = voice;
+  573              }
+  574          }
+  575      }
+  576  
+  577      // Eliminate pathological cases (ie: only 1 note playing): we always give precedence to the lowest note(s)
+  578      if (top == low)
+  579          top = nullptr;
+  580  
+  581      // The oldest note that's playing with the target pitch is ideal.
+  582      for (auto* voice : usableVoicesToStealArray)
+  583          if (voice->getCurrentlyPlayingNote() == midiNoteNumber)
+  584              return voice;
+  585  
+  586      // Oldest voice that has been released (no finger on it and not held by sustain pedal)
+  587      for (auto* voice : usableVoicesToStealArray)
+  588          if (voice != low && voice != top && voice->isPlayingButReleased())
+  589              return voice;
+  590  
+  591      // Oldest voice that doesn't have a finger on it:
+  592      for (auto* voice : usableVoicesToStealArray)
+  593          if (voice != low && voice != top && ! voice->isKeyDown())
+  594              return voice;
+  595  
+  596      // Oldest voice that isn't protected
+  597      for (auto* voice : usableVoicesToStealArray)
+  598          if (voice != low && voice != top)
+  599              return voice;
+  600  
+  601      // We've only got "protected" voices now: lowest note takes priority
+  602      jassert (low != nullptr);
+  603  
+  604      // Duophonic synth: give priority to the bass note:
+  605      if (top != nullptr)
+  606          return top;
+  607  
+  608      return low;
+  609  }

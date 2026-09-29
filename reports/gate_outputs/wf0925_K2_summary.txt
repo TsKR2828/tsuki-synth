@@ -1,0 +1,96 @@
+WF0925-K2 施工摘要（C++ lane，只動測試碼，必須位元不變）
+======================================================
+日期 2026-09-25。branch fix/deep-physics-audit-20260716，HEAD 18430c4 ＋ K1 未 stage 的改動 ＋ 本卡改動。
+建置目錄只用 build-wf\。本卡只改 tests/host_probe.cpp、tests/audit_repro.cpp（physics_models_repro.cpp 沒動）。
+src/、CMakeLists.txt、tools/ 都沒動。完整命令與輸出在同目錄：
+  wf0925_K2_build_ctest.txt          GATE 1（cmake＋3 主 target＋5 測試 target）、GATE 2（ctest）、
+                                     audit_repro 直接執行、D9c-guard 存取手法的 MSVC 機制驗證
+  wf0925_K2_physics_verify_full.txt  GATE 3
+  wf0925_K2_verify_score_all.txt     GATE 4
+  wf0925_K2_hostprobe.txt            GATE 5（repo 根目錄）＋ 任務 1 驗證（cwd=output/wf0925/K2、
+                                     repo 外 + TSUKI_REPO_ROOT、找不到時的負對照）＋ 與 K1 逐行對照
+  wf0925_K2_bit_identity.txt         GATE 6（R10 位元不變）
+  wf0925_K2_e15_sources.txt          E15 期望雜湊的出處（Python hashlib 重算 ＋ FIPS 180-2 原文摘錄）
+  wf0925_K2_diff.txt                 本卡自己的改動（對「開工時快照」的 diff，不含 K1 的部分）
+
+GATE 一覽（數字全部取自上列檔案）
+---------------------------------
+1 建置       三個 cmake 步驟 EXIT=0；兩個改過的測試檔先 touch 再重編（audit_repro.cpp、host_probe.cpp）；
+             error C／error LNK／warning C／warning LNK 0 行。主 target 沒有任何 .cpp 重編（本卡沒碰 src）。
+2 ctest      100% tests passed, 0 tests failed out of 4
+3 physics    RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED（3 個 rubber N/A，跟 K1、09-25 盤點相同）
+4 score      75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.（EXIT=0）
+             用的是 build-wf 的 CLI（renderer a7248ee58374…）。順帶發現：K1 的 GATE 4 原始 log 裡 --cli 是空的，
+             實際跑的是 build\ 的舊 CLI（renderer 9123db8f…）；本次才是第一次用含 K1 改動的 build-wf CLI 跑完 75 首，
+             結果除了 renderer／configured source 欄位外逐行跟 K1 那次相同（WAV 雜湊全同）。
+5 HostProbe  PASS (0 failures)；[PASS] 215 行（K1 後基線 106 ＋ 本卡新增 109：E16 27×4＋1 條負對照）。
+             基線 106 條逐行相同（只差輸出資料夾名 K1→K2）。原始基線 89 → K1 106 → K2 215。
+6 位元不變   8/8 IDENTICAL（對 reports/gate_outputs/b6_method/sha256_before_post_a14.txt，diff --strip-trailing-cr 無差異）
+             → R10 未觸發。CLI／VST3 執行檔的 sha256 跟 K1 建好的那份相同（本卡沒重編它們）。
+
+逐項
+----
+1. live-gate 發現 2（HostProbe 靠 cwd 找 data/materials.json）→ 已改
+   - tests/host_probe.cpp 新增 findMaterialsJson()：先找 cwd/data/materials.json（從 repo 根目錄跑時，
+     行為跟以前一模一樣）；找不到就看環境變數 TSUKI_REPO_ROOT；再找不到就從 exe 所在資料夾一路往上找
+     含 data/materials.json 的資料夾。最後用的路徑和「怎麼找到的」都會印出來
+     （例：「H8 materials.json used: ...\data\materials.json (found in an ancestor of the executable's directory)」）。
+     TSUKI_REPO_ROOT 設了但裡面沒有檔案時，也會印一行說它被略過。
+   - 全部找不到時，退回 cwd 那個路徑，讓 H8 照以前一樣大聲 FAIL（不靜默跳過）。
+   - 驗證（都用同一支 build-wf HostProbe）：
+     a. cwd = repo 根目錄：215 PASS / 0 FAIL（found in the current working directory）
+     b. cwd = output/wf0925/K2（該處沒有 data/materials.json）：215 PASS / 0 FAIL
+        （found in an ancestor of the executable's directory）← 卡上要求的驗證
+     c. exe 複製到 repo 外（sha256 相同）、cwd 也在 repo 外、設 TSUKI_REPO_ROOT=repo：215 PASS / 0 FAIL（found via TSUKI_REPO_ROOT）
+     d. 同 c 但不設 TSUKI_REPO_ROOT（負對照）：4 FAIL，正好是 live-gate 當時踩到的那 4 個 H8 假 FAIL，EXIT=1
+     e. 同 c 但 TSUKI_REPO_ROOT 指向沒有檔案的資料夾：印出「-- ignored」，一樣 4 FAIL、EXIT=1
+
+2. staged-review:D9c-guard → 已加
+   - tests/audit_repro.cpp 新增 testIrWetMakeupGainPinnedToDecision()：
+     CHECK (EffectChain::kIrWetMakeupGain == 26.9f)，訊息引用月月 2026-09-16 裁決（D9 選項 A，
+     reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md 裁決記錄）。輸出：
+       [D9c-guard] EffectChain::kIrWetMakeupGain = 26.8999996   （= 26.9 在 float 的最近值）
+       [PASS] D9c-guard: EffectChain::kIrWetMakeupGain == 26.9f (decision 2026-09-16, D9 option A, ...)
+   - 比對是同一個 float 字面值的完全相等，不是容差。
+   - 沒有加「|IR−ALGO| ≤ 0.25 dB」的 CHECK（0.25 dB 出自施工卡、不是月月裁決，屬 R2 新容差）。
+     K-02／K-02-EXT 仍然只印數字：本次 [K-02] RMS difference (IR - ALGO) = 0.112 dB，跟 K1、live-gate 相同。
+   - 技術說明：kIrWetMakeupGain 是 EffectChain 的 private 成員，本卡不能改 src/。用的是 C++ 標準明文允許的
+     「顯式實例化不做存取檢查」規則（現行草案 [temp.spec.general]/6，已 fetch 原文，引述在程式註解裡），
+     只讀這個常數，不跑任何產品程式。另外在 repo 外用同一支 MSVC（/std:c++17 /W4）編了一個替身類別驗證這個手法：
+     值 26.9f → [PASS]、值 27.0f → [FAIL]，兩次編譯都沒有警告（紀錄在 wf0925_K2_build_ctest.txt）。
+     更乾淨的做法是在 EffectChain.h 開一個 public 的唯讀存取點，但那要改 src，留給 open_items。
+
+3. engineering-gaps:E15（SHA-256 已知答案測試）→ K1 已經做完，本卡只補出處、不重複加測試
+   - K1 已在 tests/audit_repro.cpp（已 include IRLibrary.h 的 TsukiSynthAuditTest）加了三組已知答案：
+     空字串 e3b0c442…、"abc" ba7816bf…、56 位元組（448 位元）兩區塊訊息 248d6a61…，本次三條都 [PASS]。
+   - 本卡重跑 Python hashlib 確認三個完整 digest 跟測試裡寫死的逐字相同。
+   - 本卡 fetch 了 FIPS 180-2 原文（NIST PDF），確認 "abc"（附錄 B.1，印刷頁 35）和 448 位元訊息
+     （附錄 B.2，印刷頁 39）的 digest 跟測試一致，並在測試註解補上出處。
+   - 卡文寫「FIPS 180-2：空字串 e3b0c442…」這點跟原文不符：FIPS 180-2 裡沒有空字串的範例
+     （全文抽出的文字搜尋 0 筆）。空字串那組的出處只有 Python hashlib，註解已照實寫。
+
+4. engineering-gaps:E16（27 個工廠 preset）→ 已加，放在 HostProbe（唯一連結真實參數表 ParameterLayout.cpp
+   又能載入真 VST3 的既有 harness；audit_repro 沒連結 ParameterLayout.cpp，要改 CMakeLists 才行）
+   - 對每個工廠 preset：
+     (a) 每個 paramID 都要在 createTsukiParameterLayout() 建出的 APVTS 裡解析得到（產品用的同一個函式）；
+     (b) 開一個新的真 VST3 實例，program i 的名稱要等於 Presets.h 的名稱，setCurrentProgram(i) 後
+         getCurrentProgram() 要回 i（整數／字串完全相等）；
+     (c) 用 preset 原本的參數（不動 reverb）渲染 C4（MIDI 60、力度 0.7、1.0 秒放鍵、共 2.0 秒），
+         輸出的 192512 個樣本全部要是有限值。
+   - 加一條負對照：一個不存在的 paramID 必須解析失敗（證明 (a) 的檢查真的會說「不」）。
+   - 結果：27 個 preset × 4 條 ＋ 負對照 1 條 = 109 條全 PASS；27 個 preset 的 paramID 全部解析得到。
+   - 沒有加峰值上限、也沒有加靜音 RMS 門檻（R2 新門檻，依 09-25 查證修正）。峰值／RMS 只印出來（描述用、非 GATE）。
+     描述用的觀察（給月月參考，不是判定）：C4 力度 0.7 單音時，有 3 個 preset 峰值超過 0 dBFS：
+       7 'Copper Warm Strings (Body)' +0.33 dBFS、11 'Ethereal Steel Bells' +1.47 dBFS、
+       15 'Bronze Water Gong (Body)' +2.65 dBFS。最小聲的是 13 'Rubber Tongue Pad'（峰值 −39.79、RMS −63.86 dBFS）。
+
+其他
+----
+- 本卡 5 次 HostProbe 執行都會在 %APPDATA%\TsukiSynth\Presets 與 \IR 暫時寫檔再自己刪掉；跑完兩個資料夾都是空的
+  （證據在 wf0925_K2_hostprobe.txt 末段）。
+- 暫存與原始 log：output\wf0925\K2\（gitignored）。repo 外的暫存：scratchpad\wf0925\K2_hp、K2_render、K2_mutation。
+- 注意：tests/host_probe.cpp、tests/audit_repro.cpp 目前同時帶著 K1（未 stage）和 K2 的改動。
+  `git add -- tests/host_probe.cpp` 會把兩張卡的改動一起 stage；只看 K2 的部分請用 wf0925_K2_diff.txt。
+- 跑 GATE 期間看到一個不是本卡啟動的程序：`find.exe / -maxdepth 6 -name juce_Synthesiser.cpp`（PID 13496，06:08 啟動，
+  已累計約 8700 CPU 秒），可能拖慢了 verify_score。本卡沒有動它。
+- 沒有 git add／commit／push／checkout／stash／reset／restore。

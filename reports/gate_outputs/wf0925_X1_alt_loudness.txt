@@ -1,0 +1,77 @@
+# wf0925_X1_alt_loudness.txt
+# generated 2026-09-25T05:41:06  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x1_alt_loudness.py
+# ffmpeg: <TOOLS>\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe
+sfx in catalog: 43
+akashic   akashic_loop_001           src maxM   -7.581 TP  -0.4447 | gain(M)   -2.419 gain(TP)   -0.555 -> applied   -2.4190 dB  (trim rounds 0) | out maxM  -10.000 TP -2.863691 | dist maxM   -8.181 -> change  -1.819 dB
+akashic   akashic_ambient_001        src maxM   -7.676 TP  -0.4455 | gain(M)   -2.324 gain(TP)   -0.554 -> applied   -2.3240 dB  (trim rounds 0) | out maxM  -10.000 TP -2.769530 | dist maxM   -8.276 -> change  -1.724 dB
+akashic   akashic_action_001         src maxM   -9.675 TP  -0.4412 | gain(M)   -0.325 gain(TP)   -0.559 -> applied   -0.5588 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -10.234 TP -1.000001 | dist maxM  -10.275 -> change  +0.041 dB
+akashic   akashic_transition_var01   src maxM   -7.579 TP  -0.4390 | gain(M)   -2.421 gain(TP)   -0.561 -> applied   -2.4210 dB  (trim rounds 0) | out maxM  -10.000 TP -2.859952 | dist maxM   -8.179 -> change  -1.821 dB
+akashic   akashic_transition_001     src maxM   -8.126 TP  -0.4236 | gain(M)   -1.874 gain(TP)   -0.576 -> applied   -1.8740 dB  (trim rounds 0) | out maxM  -10.000 TP -2.297601 | dist maxM   -8.726 -> change  -1.274 dB
+akashic   akashic_ui_001             src maxM  -12.502 TP  -0.3044 | gain(M)   +2.502 gain(TP)   -0.696 -> applied   -0.6956 dB [CAPPED by -1 dBTP] (trim rounds 2) | out maxM  -13.197 TP -1.000001 | dist maxM  -13.202 -> change  +0.005 dB
+akashic   akashic_notify_001         src maxM   -7.561 TP  -0.4455 | gain(M)   -2.439 gain(TP)   -0.554 -> applied   -2.4390 dB  (trim rounds 0) | out maxM  -10.000 TP -2.884526 | dist maxM   -8.161 -> change  -1.839 dB
+akashic   akashic_opening_bell_001   src maxM   -6.402 TP  -0.4455 | gain(M)   -3.598 gain(TP)   -0.554 -> applied   -3.5980 dB  (trim rounds 0) | out maxM  -10.000 TP -4.043526 | dist maxM   -7.002 -> change  -2.998 dB
+rabbit    rabbit_ambient_001         src maxM   -6.722 TP  -0.4284 | gain(M)   -3.278 gain(TP)   -0.572 -> applied   -3.2780 dB  (trim rounds 0) | out maxM  -10.000 TP -3.706427 | dist maxM   -7.322 -> change  -2.678 dB
+rabbit    rabbit_action_001          src maxM  -27.757 TP  -0.4357 | gain(M)  +17.757 gain(TP)   -0.564 -> applied   -0.5643 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -28.321 TP -1.000000 | dist maxM  -28.357 -> change  +0.036 dB
+rabbit    rabbit_loop_001            src maxM   -5.992 TP  -0.4336 | gain(M)   -4.008 gain(TP)   -0.566 -> applied   -4.0080 dB  (trim rounds 0) | out maxM  -10.000 TP -4.441601 | dist maxM   -6.592 -> change  -3.408 dB
+rabbit    rabbit_notify_001          src maxM   -4.757 TP  -0.4257 | gain(M)   -5.243 gain(TP)   -0.574 -> applied   -5.2430 dB  (trim rounds 0) | out maxM  -10.000 TP -5.668696 | dist maxM   -5.357 -> change  -4.643 dB
+rabbit    rabbit_notify_var01        src maxM   -8.939 TP  -0.3005 | gain(M)   -1.061 gain(TP)   -0.700 -> applied   -1.0610 dB  (trim rounds 0) | out maxM  -10.000 TP -1.361496 | dist maxM   -9.639 -> change  -0.361 dB
+rabbit    rabbit_ui_001              src maxM  -18.602 TP  -0.4149 | gain(M)   +8.602 gain(TP)   -0.585 -> applied   -0.5851 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -19.187 TP -1.000001 | dist maxM  -19.202 -> change  +0.015 dB
+rabbit    rabbit_transition_001      src maxM   -5.872 TP  -0.4398 | gain(M)   -4.128 gain(TP)   -0.560 -> applied   -4.1280 dB  (trim rounds 0) | out maxM  -10.000 TP -4.567751 | dist maxM   -6.472 -> change  -3.528 dB
+restraint restraint_ambient_001      src maxM   -9.848 TP  -0.4455 | gain(M)   -0.152 gain(TP)   -0.554 -> applied   -0.5545 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -10.403 TP -1.000001 | dist maxM  -10.448 -> change  +0.045 dB
+restraint restraint_action_001       src maxM  -21.854 TP  -0.4431 | gain(M)  +11.854 gain(TP)   -0.557 -> applied   -0.5569 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -22.410 TP -1.000001 | dist maxM  -22.454 -> change  +0.044 dB
+restraint restraint_loop_001         src maxM   -7.353 TP  -0.4451 | gain(M)   -2.647 gain(TP)   -0.555 -> applied   -2.6470 dB  (trim rounds 0) | out maxM  -10.000 TP -3.092077 | dist maxM   -7.953 -> change  -2.047 dB
+restraint restraint_notify_001       src maxM   -8.456 TP  -0.3673 | gain(M)   -1.544 gain(TP)   -0.633 -> applied   -1.5440 dB  (trim rounds 0) | out maxM  -10.000 TP -1.911318 | dist maxM   -9.056 -> change  -0.944 dB
+restraint restraint_notify_var01     src maxM  -11.248 TP  -0.3209 | gain(M)   +1.248 gain(TP)   -0.679 -> applied   -0.6791 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -11.927 TP -1.000000 | dist maxM  -11.948 -> change  +0.021 dB
+restraint restraint_ui_001           src maxM  -12.237 TP  -0.3427 | gain(M)   +2.237 gain(TP)   -0.657 -> applied   -0.6573 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -12.894 TP -1.000001 | dist maxM  -12.937 -> change  +0.043 dB
+restraint restraint_transition_001   src maxM  -16.898 TP  -0.4373 | gain(M)   +6.898 gain(TP)   -0.563 -> applied   -0.5627 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -17.461 TP -1.000001 | dist maxM  -17.498 -> change  +0.037 dB
+forest    forest_loop_001            src maxM   -9.067 TP  -0.4455 | gain(M)   -0.933 gain(TP)   -0.554 -> applied   -0.9330 dB  (trim rounds 0) | out maxM  -10.000 TP -1.378530 | dist maxM   -9.667 -> change  -0.333 dB
+forest    forest_ambient_001         src maxM   -9.008 TP  -0.4422 | gain(M)   -0.992 gain(TP)   -0.558 -> applied   -0.9920 dB  (trim rounds 0) | out maxM  -10.000 TP -1.434177 | dist maxM   -9.608 -> change  -0.392 dB
+forest    forest_action_001          src maxM  -16.516 TP  -0.4375 | gain(M)   +6.516 gain(TP)   -0.562 -> applied   -0.5625 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -17.078 TP -1.000001 | dist maxM  -17.116 -> change  +0.038 dB
+forest    forest_notify_001          src maxM  -10.683 TP  -0.3361 | gain(M)   +0.683 gain(TP)   -0.664 -> applied   -0.6639 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -11.347 TP -1.000001 | dist maxM  -11.383 -> change  +0.036 dB
+forest    forest_notify_var01        src maxM  -12.899 TP  -0.3663 | gain(M)   +2.899 gain(TP)   -0.634 -> applied   -0.6337 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -13.533 TP -1.000001 | dist maxM  -13.499 -> change  -0.034 dB
+forest    forest_ui_001              src maxM  -18.892 TP  -0.3698 | gain(M)   +8.892 gain(TP)   -0.630 -> applied   -0.6302 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -19.522 TP -1.000001 | dist maxM  -19.492 -> change  -0.030 dB
+forest    forest_transition_001      src maxM   -9.168 TP  -0.4434 | gain(M)   -0.832 gain(TP)   -0.557 -> applied   -0.8320 dB  (trim rounds 0) | out maxM  -10.000 TP -1.275370 | dist maxM   -9.768 -> change  -0.232 dB
+ocean     ocean_loop_001             src maxM   -7.314 TP  -0.4455 | gain(M)   -2.686 gain(TP)   -0.554 -> applied   -2.6860 dB  (trim rounds 0) | out maxM  -10.000 TP -3.131527 | dist maxM   -7.914 -> change  -2.086 dB
+ocean     ocean_ambient_001          src maxM   -9.930 TP  -0.4455 | gain(M)   -0.070 gain(TP)   -0.554 -> applied   -0.5545 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -10.485 TP -1.000001 | dist maxM  -10.530 -> change  +0.045 dB
+ocean     ocean_action_001           src maxM  -10.895 TP  -0.4454 | gain(M)   +0.895 gain(TP)   -0.555 -> applied   -0.5546 dB [CAPPED by -1 dBTP] (trim rounds 2) | out maxM  -11.450 TP -1.000001 | dist maxM  -11.495 -> change  +0.045 dB
+ocean     ocean_ui_001               src maxM   -9.527 TP  -0.4135 | gain(M)   -0.473 gain(TP)   -0.586 -> applied   -0.5865 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -10.114 TP -1.000001 | dist maxM  -10.127 -> change  +0.013 dB
+ocean     ocean_notify_001           src maxM   -8.760 TP  -0.4455 | gain(M)   -1.240 gain(TP)   -0.554 -> applied   -1.2400 dB  (trim rounds 0) | out maxM  -10.000 TP -1.685528 | dist maxM   -9.360 -> change  -0.640 dB
+ocean     ocean_notify_var01         src maxM   -8.904 TP  -0.4434 | gain(M)   -1.096 gain(TP)   -0.557 -> applied   -1.0960 dB  (trim rounds 0) | out maxM  -10.000 TP -1.539371 | dist maxM   -9.504 -> change  -0.496 dB
+ocean     ocean_transition_001       src maxM   -7.670 TP  -0.4455 | gain(M)   -2.330 gain(TP)   -0.554 -> applied   -2.3300 dB  (trim rounds 0) | out maxM  -10.000 TP -2.775527 | dist maxM   -8.270 -> change  -1.730 dB
+clockwork clockwork_ambient_001      src maxM   -8.185 TP  -0.3675 | gain(M)   -1.815 gain(TP)   -0.633 -> applied   -1.8150 dB  (trim rounds 0) | out maxM  -10.000 TP -2.182480 | dist maxM   -8.785 -> change  -1.215 dB
+clockwork clockwork_transition_001   src maxM   -9.528 TP  -0.1130 | gain(M)   -0.472 gain(TP)   -0.887 -> applied   -0.8870 dB [CAPPED by -1 dBTP] (trim rounds 1) | out maxM  -10.415 TP -1.000001 | dist maxM  -10.428 -> change  +0.013 dB
+clockwork clockwork_loop_001         src maxM  -11.280 TP  -0.2320 | gain(M)   +1.280 gain(TP)   -0.768 -> applied   -0.7680 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -12.048 TP -1.000000 | dist maxM  -12.080 -> change  +0.032 dB
+clockwork clockwork_action_001       src maxM  -24.342 TP  -0.4344 | gain(M)  +14.342 gain(TP)   -0.566 -> applied   -0.5656 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -24.908 TP -1.000000 | dist maxM  -24.942 -> change  +0.034 dB
+clockwork clockwork_notify_var01     src maxM   -9.339 TP  -0.4251 | gain(M)   -0.661 gain(TP)   -0.575 -> applied   -0.6610 dB  (trim rounds 0) | out maxM  -10.000 TP -1.086095 | dist maxM   -9.939 -> change  -0.061 dB
+clockwork clockwork_ui_001           src maxM  -15.039 TP  -0.4038 | gain(M)   +5.039 gain(TP)   -0.596 -> applied   -0.5962 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -15.635 TP -1.000001 | dist maxM  -15.639 -> change  +0.004 dB
+clockwork clockwork_notify_001       src maxM  -11.525 TP  -0.4455 | gain(M)   +1.525 gain(TP)   -0.554 -> applied   -0.5545 dB [CAPPED by -1 dBTP] (trim rounds 0) | out maxM  -12.080 TP -1.000001 | dist maxM  -12.125 -> change  +0.045 dB
+
+== SUMMARY
+files written: 43
+capped by -1 dBTP (max momentary ends up below -10 LUFS): 21
+   rabbit    Rabbit Stomp                         out maxM  -28.321 LUFS  TP -1.000000
+   clockwork Clockwork Spring Release             out maxM  -24.908 LUFS  TP -1.000000
+   restraint Restraint Shackle Slam               out maxM  -22.410 LUFS  TP -1.000001
+   forest    Forest Acorn Tap                     out maxM  -19.522 LUFS  TP -1.000001
+   rabbit    Rabbit Carrot Button                 out maxM  -19.187 LUFS  TP -1.000001
+   restraint Restraint Chain Drag                 out maxM  -17.461 LUFS  TP -1.000001
+   forest    Forest Branch Snap                   out maxM  -17.078 LUFS  TP -1.000001
+   clockwork Clockwork Gear Click                 out maxM  -15.635 LUFS  TP -1.000001
+   forest    Forest Bird Call (Alarm)             out maxM  -13.533 LUFS  TP -1.000001
+   akashic   Akashic Light Tap                    out maxM  -13.197 LUFS  TP -1.000001
+   restraint Restraint Bolt Click                 out maxM  -12.894 LUFS  TP -1.000001
+   clockwork Clockwork Bell Strike                out maxM  -12.080 LUFS  TP -1.000001
+   clockwork Clockwork Tick Loop                  out maxM  -12.048 LUFS  TP -1.000000
+   restraint Restraint Lock Click (Distorted)     out maxM  -11.927 LUFS  TP -1.000000
+   ocean     Ocean Depth Slam                     out maxM  -11.450 LUFS  TP -1.000001
+   forest    Forest Bird Call                     out maxM  -11.347 LUFS  TP -1.000001
+   ocean     Ocean Abyss Hum                      out maxM  -10.485 LUFS  TP -1.000001
+   clockwork Clockwork Gear Shift                 out maxM  -10.415 LUFS  TP -1.000001
+   restraint Restraint Iron Drone                 out maxM  -10.403 LUFS  TP -1.000001
+   akashic   Akashic Page Turn                    out maxM  -10.234 LUFS  TP -1.000001
+   ocean     Ocean Droplet Tap                    out maxM  -10.114 LUFS  TP -1.000001
+not capped: 22; their out maxM range -10.000 .. -10.000 LUFS (target -10.000; ebur128 prints 3 decimals)
+[描述用、非 GATE] max-momentary spread: distribution -28.4..-5.4 (spread 23.0 LU, median -9.9)  ->  alt -28.3..-10.0 (spread 18.3 LU, median -10.0)
+GATE out TP <= -1.0 dBTP (full precision): 43/43
+GATE non-capped files at maxM = -10.000 LUFS (to ebur128's printed 3 decimals, i.e. |diff| <= 0.0005 = print rounding): 22/22

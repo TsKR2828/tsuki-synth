@@ -1,0 +1,122 @@
+WF0925-K1 GATE 1 (build) + GATE 2 (ctest) evidence
+==================================================
+Date: 2026-09-25. Branch fix/deep-physics-audit-20260716, HEAD 18430c4 + K1 working-tree edits (unstaged).
+Build dir: build-wf\ only. Before GATE 1 every K1-touched source file was 'touch'ed so every dependent TU
+recompiled from the final sources (RenderApp.cpp / PluginEditor.cpp / PluginProcessor.cpp / audit_repro.cpp /
+physics_models_repro.cpp / host_probe.cpp recompiled, see below).
+
+## GATE 1 -- cmake configure + 3 main targets + 5 test targets (X4)
+# WF0925-K1 GATE 1 (all K1 source files touched first so every dependent TU recompiles from the final sources)
+$ cmake -B build-wf -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Configuring done (1.9s)
+-- Generating done (0.6s)
+-- Build files have been written to: C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+EXIT=0
+
+$ cmake --build build-wf --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthCLI_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_rc_lib.dir\Release\TsukiSynthCLI_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthData.lib
+  RenderApp.cpp
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynthCLI.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthData.lib
+  PluginEditor.cpp
+  PluginProcessor.cpp
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynth_Standalone.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynth_rc_lib.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthData.lib
+  TsukiSynth.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+  TsukiSynth_vst3_helper.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynth_vst3_helper.exe
+     正在建立程式庫 C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.lib 和物件 C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.exp
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynth_VST3.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  removing moduleinfo.json
+  creating C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+EXIT=0
+
+$ cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  audit_repro.cpp
+  TsukiSynthAuditTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthAuditTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthTunerTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthTunerTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  physics_models_repro.cpp
+  TsukiSynthPhysicsModelsTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthPhysicsModelsTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthSpectrumViewTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthSpectrumViewTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  host_probe.cpp
+  TsukiSynthHostProbe.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build-wf\Release\TsukiSynthHostProbe.exe
+EXIT=0
+
+## GATE 2 -- ctest (run after the 5 test targets were rebuilt above)
+$ ctest --test-dir build-wf -C Release --output-on-failure
+Test project C:/Users/admin/Desktop/Claude/tsuki-synth/build-wf
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.40 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.60 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.25 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.07 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   2.53 sec
+EXIT=0
+
+## audit_repro run directly (same binary ctest ran) -- the new E15 lines
+$ build-wf/Release/TsukiSynthAuditTest.exe  (exit 0)
+[PASS] E15: IRLibrary SHA-256 known answer, empty message
+[PASS] E15: IRLibrary SHA-256 known answer, "abc"
+[PASS] E15: IRLibrary SHA-256 known answer, 56-byte two-block message
+[PASS] E15: fixture IR imported into the managed library under its content hash
+[PASS] E15: fresh library entry's bytes hash to its own name
+[PASS] E15: precondition -- truncated library entry no longer matches its name
+[PASS] E15: re-importing the original file repairs a truncated library entry
+[PASS] E15: no .tmp-* file left next to the repaired entry
+[PASS] E15: precondition -- library entry emptied to 0 bytes
+[PASS] E15: re-importing the original file repairs a 0-byte library entry
+[PASS] E15: no .tmp-* file left after the second repair
+[PASS] E15: re-importing onto an intact entry keeps identity and content
+PASS (0 failures)
+[PASS] lines total in this run: 109, [FAIL] lines: 0
+
+## Independent source of the E15 SHA-256 known-answer digests (Python hashlib, not typed from memory)
+$ python -c "import hashlib; [print(len(m), repr(m), hashlib.sha256(m).hexdigest()) for m in [b'', b'abc', b'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq']]"
+0 b'' e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+3 b'abc' ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+56 b'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq' 248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1

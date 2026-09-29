@@ -1,0 +1,33 @@
+# pytest 收集清單對照：HEAD 18430c4（git archive HEAD 解到 output/wf0925/INT/head_tree，--collect-only）vs 現在工作樹（含 staged）
+$ (cd output/wf0925/INT/head_tree && python -m pytest tests --collect-only -q -p no:cacheprovider) | grep :: | sort | wc -l
+270
+$ python -m pytest tests --collect-only -q -p no:cacheprovider | grep :: | sort | wc -l
+288
+$ diff collect_head.txt collect_now.txt
+16a17
+> tests/test_measurement_selfcal.py::test_holdout_grid_pins_match_record
+184a186,202
+> tests/test_stem_stream.py::test_compare_superposition_same_result_for_stream_and_list
+> tests/test_stem_stream.py::test_header_does_not_need_data_bytes
+> tests/test_stem_stream.py::test_header_extensible_fmt
+> tests/test_stem_stream.py::test_header_fmt_after_data
+> tests/test_stem_stream.py::test_header_fmt_with_cbsize_18_bytes
+> tests/test_stem_stream.py::test_header_odd_sized_chunk_pad_byte[1]
+> tests/test_stem_stream.py::test_header_odd_sized_chunk_pad_byte[5]
+> tests/test_stem_stream.py::test_header_odd_sized_chunk_pad_byte[7]
+> tests/test_stem_stream.py::test_header_plain_pcm16_matches_float
+> tests/test_stem_stream.py::test_header_rejects_missing_fmt
+> tests/test_stem_stream.py::test_header_rejects_non_riff
+> tests/test_stem_stream.py::test_header_rejects_truncated_fmt
+> tests/test_stem_stream.py::test_header_skips_list_chunk_before_fmt
+> tests/test_stem_stream.py::test_stream_empty
+> tests/test_stem_stream.py::test_stream_is_reiterable
+> tests/test_stem_stream.py::test_stream_len_and_order
+> tests/test_stem_stream.py::test_stream_reads_lazily_one_file_at_a_time
+(diff EXIT=1)
+# 只有 '>'（新增）沒有 '<'（移除）= 沒有測試被刪
+新增數：18  移除數：0
+
+# SKIPPED/XFAIL 摘要行對照 09-15 整合卡
+$ diff <(grep -E '^(XFAIL|SKIPPED)' reports/gate_outputs/wf0914_integration_raw/05b_pytest_verbose_xfail_skip_reasons.txt | sort) <(grep -E '^(XFAIL|SKIPPED)' reports/gate_outputs/wf0925_integration_raw/05_pytest.txt | sort)
+DIFF_EXIT=0  (比較行數: 6 vs 6)

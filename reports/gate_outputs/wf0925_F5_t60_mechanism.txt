@@ -1,0 +1,150 @@
+WF0925-F5 evidence 5/6: why T60 moved, and how the F5 metric responds to T60
+generated: 2026-09-25 06:22:36 +0800
+
+$ python output/wf0925/F5/t60_terms.py
+[before] L=0.58863 m  d=0.800 mm  T=371.93 N  B=3.0797e-04
+    eta (internal friction) : 0.02378 1/s  (  9.9% of 1/T60)
+    Q_air                   : 0.01541 1/s  (  6.4% of 1/T60)
+    Q_visc                  : 0.00011 1/s  (  0.0% of 1/T60)
+    Q_disl                  : 0.00661 1/s  (  2.7% of 1/T60)
+    bridgeLoss              : 0.19550 1/s  ( 81.0% of 1/T60)
+    total 1/T60 = 0.24140 1/s  ->  T60(f1=261.626) = 4.1425 s
+[after (candidate)] L=0.63900 m  d=1.000 mm  T=684.87 N  B=3.4649e-04
+    eta (internal friction) : 0.02378 1/s  (  6.4% of 1/T60)
+    Q_air                   : 0.01196 1/s  (  3.2% of 1/T60)
+    Q_visc                  : 0.00012 1/s  (  0.0% of 1/T60)
+    Q_disl                  : 0.00661 1/s  (  1.8% of 1/T60)
+    bridgeLoss              : 0.33160 1/s  ( 88.6% of 1/T60)
+    total 1/T60 = 0.37407 1/s  ->  T60(f1=261.626) = 2.6733 s
+[single-var: L only (table L, d=0.8mm)] L=0.63900 m  d=0.800 mm  T=438.32 N  B=2.2175e-04
+    eta (internal friction) : 0.02378 1/s  (  9.2% of 1/T60)
+    Q_air                   : 0.01541 1/s  (  6.0% of 1/T60)
+    Q_visc                  : 0.00008 1/s  (  0.0% of 1/T60)
+    Q_disl                  : 0.00661 1/s  (  2.6% of 1/T60)
+    bridgeLoss              : 0.21223 1/s  ( 82.2% of 1/T60)
+    total 1/T60 = 0.25810 1/s  ->  T60(f1=261.626) = 3.8744 s
+[single-var: d only (old L, d=1.00mm)] L=0.58863 m  d=1.000 mm  T=581.15 N  B=4.8121e-04
+    eta (internal friction) : 0.02378 1/s  (  6.8% of 1/T60)
+    Q_air                   : 0.01196 1/s  (  3.4% of 1/T60)
+    Q_visc                  : 0.00017 1/s  (  0.0% of 1/T60)
+    Q_disl                  : 0.00661 1/s  (  1.9% of 1/T60)
+    bridgeLoss              : 0.30546 1/s  ( 87.8% of 1/T60)
+    total 1/T60 = 0.34798 1/s  ->  T60(f1=261.626) = 2.8737 s
+
+change in 1/T60 (after - before), by channel:
+    eta (internal friction) : +0.00000 1/s  (   0.0% of the change)
+    Q_air                   : -0.00345 1/s  (  -2.6% of the change)
+    Q_visc                  : +0.00001 1/s  (   0.0% of the change)
+    Q_disl                  : +0.00000 1/s  (   0.0% of the change)
+    bridgeLoss              : +0.13611 1/s  ( 102.6% of the change)
+    total: +0.13267 1/s; bridgeLoss ratio after/before = 1.6962  (closed form d^2*L ratio = 1.6962)
+[exit=0]
+
+$ python output/wf0925/F5/leak_curve.py
+[before] L=0.58863 m  d=0.800 mm  T=371.93 N  B=3.0797e-04
+    eta (internal friction) : 0.02378 1/s  (  9.9% of 1/T60)
+    Q_air                   : 0.01541 1/s  (  6.4% of 1/T60)
+    Q_visc                  : 0.00011 1/s  (  0.0% of 1/T60)
+    Q_disl                  : 0.00661 1/s  (  2.7% of 1/T60)
+    bridgeLoss              : 0.19550 1/s  ( 81.0% of 1/T60)
+    total 1/T60 = 0.24140 1/s  ->  T60(f1=261.626) = 4.1425 s
+[after (candidate)] L=0.63900 m  d=1.000 mm  T=684.87 N  B=3.4649e-04
+    eta (internal friction) : 0.02378 1/s  (  6.4% of 1/T60)
+    Q_air                   : 0.01196 1/s  (  3.2% of 1/T60)
+    Q_visc                  : 0.00012 1/s  (  0.0% of 1/T60)
+    Q_disl                  : 0.00661 1/s  (  1.8% of 1/T60)
+    bridgeLoss              : 0.33160 1/s  ( 88.6% of 1/T60)
+    total 1/T60 = 0.37407 1/s  ->  T60(f1=261.626) = 2.6733 s
+[single-var: L only (table L, d=0.8mm)] L=0.63900 m  d=0.800 mm  T=438.32 N  B=2.2175e-04
+    eta (internal friction) : 0.02378 1/s  (  9.2% of 1/T60)
+    Q_air                   : 0.01541 1/s  (  6.0% of 1/T60)
+    Q_visc                  : 0.00008 1/s  (  0.0% of 1/T60)
+    Q_disl                  : 0.00661 1/s  (  2.6% of 1/T60)
+    bridgeLoss              : 0.21223 1/s  ( 82.2% of 1/T60)
+    total 1/T60 = 0.25810 1/s  ->  T60(f1=261.626) = 3.8744 s
+[single-var: d only (old L, d=1.00mm)] L=0.58863 m  d=1.000 mm  T=581.15 N  B=4.8121e-04
+    eta (internal friction) : 0.02378 1/s  (  6.8% of 1/T60)
+    Q_air                   : 0.01196 1/s  (  3.4% of 1/T60)
+    Q_visc                  : 0.00017 1/s  (  0.0% of 1/T60)
+    Q_disl                  : 0.00661 1/s  (  1.9% of 1/T60)
+    bridgeLoss              : 0.30546 1/s  ( 87.8% of 1/T60)
+    total 1/T60 = 0.34798 1/s  ->  T60(f1=261.626) = 2.8737 s
+
+change in 1/T60 (after - before), by channel:
+    eta (internal friction) : +0.00000 1/s  (   0.0% of the change)
+    Q_air                   : -0.00345 1/s  (  -2.6% of the change)
+    Q_visc                  : +0.00001 1/s  (   0.0% of the change)
+    Q_disl                  : +0.00000 1/s  (   0.0% of the change)
+    bridgeLoss              : +0.13611 1/s  ( 102.6% of the change)
+    total: +0.13267 1/s; bridgeLoss ratio after/before = 1.6962  (closed form d^2*L ratio = 1.6962)
+
+(1) single decaying sinusoid, f=261.626 Hz, bands = own +/-3%:
+    T60 (s) | F5 'residual' = own leakage (dB re own energy)
+     1.0000 |   -46.28
+     1.5000 |   -53.66
+     2.0000 |   -58.35
+     2.5000 |   -61.59
+     2.6733 |   -62.49
+     2.8737 |   -63.43
+     3.0000 |   -63.96
+     3.5000 |   -65.77
+     3.8744 |   -66.86
+     4.1425 |   -67.53
+     5.0000 |   -69.25
+     6.0000 |   -70.67
+     8.0000 |   -72.45
+    10.0000 |   -73.48
+    15.0000 |   -74.70
+    20.0000 |   -75.19
+    50.0000 |   -75.78
+
+(2) mirror check: max |T60_python - T60_dump| / T60_dump over 120 modes = 3.69e-05
+    bridgeLoss x k | fundamental T60 (s) | F5 piano residual (dB re total)
+    0.0000        |  21.7835            |   -73.77
+    0.2500        |  10.5507            |   -71.06
+    0.5000        |   6.9612            |   -68.50
+    0.7500        |   5.1940            |   -66.10
+    1.0000        |   4.1425            |   -63.86
+    1.1000        |   3.8321            |   -63.01
+    1.2000        |   3.5650            |   -62.17
+    1.3000        |   3.3328            |   -61.36
+    1.4000        |   3.1289            |   -60.57
+    1.5000        |   2.9485            |   -59.80
+    1.6000        |   2.7878            |   -59.05
+    1.6962        |   2.6490            |   -58.34
+    1.8000        |   2.5138            |   -57.59
+    2.0000        |   2.2889            |   -56.21
+    2.5000        |   1.8704            |   -53.01
+    3.0000        |   1.5813            |   -50.18
+    existing -60 dB line crossed between k=1.4 and k=1.5: fundamental T60 ~= 2.995 s (linear interpolation, descriptive, not a threshold)
+[exit=0]
+
+$ python output/wf0925/F5/t60_table.py
+MIDI | f1 (Hz) | T60 before d=0.8mm | T60 before d=1.0mm | T60 after (table) | after/before(0.8) | after/before(1.0)
+  21 |    27.50 |   33.012 |   24.892 |   63.351 |  1.919 |  2.545
+  24 |    32.70 |   28.434 |   21.204 |   49.695 |  1.748 |  2.344
+  36 |    65.41 |   15.308 |   11.028 |   17.536 |  1.146 |  1.590
+  48 |   130.81 |    8.031 |    5.655 |    6.710 |  0.836 |  1.187
+  60 |   261.63 |    4.143 |    2.874 |    2.673 |  0.645 |  0.930
+  64 |   329.63 |    3.313 |    2.290 |    2.107 |  0.636 |  0.920
+  67 |   392.00 |    2.800 |    1.930 |    1.803 |  0.644 |  0.934
+  69 |   440.00 |    2.502 |    1.722 |    1.649 |  0.659 |  0.957
+  72 |   523.25 |    2.112 |    1.451 |    1.485 |  0.703 |  1.024
+  79 |   783.99 |    1.419 |    0.970 |    1.002 |  0.706 |  1.033
+  84 |  1046.50 |    1.065 |    0.726 |    0.808 |  0.759 |  1.113
+  91 |  1567.98 |    0.708 |    0.481 |    0.521 |  0.735 |  1.081
+  96 |  2093.00 |    0.526 |    0.356 |    0.409 |  0.778 |  1.147
+ 108 |  4186.01 |    0.243 |    0.163 |    0.219 |  0.902 |  1.340
+[exit=0]
+
+$ python output/wf0925/F5/b_variants.py
+note | B before(d=1.0) | B candidate | B L-only(d=1.0) | T60 f1 before | candidate | L-only
+C2 (36) | 2.5556e-05 | 1.8459e-03 | 1.2601e-03 |  11.031 |  17.545 |  22.525
+G4 (67) | 1.0800e-03 | 5.5743e-04 | 5.9845e-04 |   1.931 |   1.804 |   1.694
+A4 (69) | 1.3609e-03 | 7.0822e-04 | 7.7601e-04 |   1.722 |   1.649 |   1.521
+G5 (79) | 4.3212e-03 | 1.5122e-03 | 1.9201e-03 |   0.971 |   1.002 |   0.811
+G6 (91) | 1.7284e-02 | 3.7370e-03 | 5.3921e-03 |   0.482 |   0.521 |   0.375
+C7 (96) | 3.0798e-02 | 7.1460e-03 | 1.0628e-02 |   0.357 |   0.409 |   0.286
+D7 (98) | 3.8802e-02 | 7.6626e-03 | 1.1679e-02 |   0.315 |   0.361 |   0.247
+[exit=0]
+

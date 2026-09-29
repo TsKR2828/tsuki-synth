@@ -1,0 +1,196 @@
+WF0925-F5 evidence 4/6: render-level single-variable experiments (real CLI renders)
+generated: 2026-09-25 06:22:10 +0800
+
+## fresh output dirs (TsukiSynthCLI refuses to overwrite an existing wav/manifest)
+$ rm -rf output/wf0925/F5/rx_before_cli output/wf0925/F5/rx_after_cli output/wf0925/F5/rx_variant_default output/wf0925/F5/rx_variant_old output/wf0925/F5/rx_variant_L_only output/wf0925/F5/rx_variant_d_only output/wf0925/F5/rx_before_cli_d1p0 output/wf0925/F5/rx_variant_decay_only output/wf0925/F5/rx_numstrings_* output/wf0925/F5/rx_dscan_*
+[exit=0]
+
+$ python output/wf0925/F5/f5_render_exp.py --tools output/wf0925/F5/tools_before --outdir output/wf0925/F5/rx_before_cli --cli output/wf0925/F5/cli_before_own/TsukiSynthCLI.exe
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\cli_before_own\TsukiSynthCLI.exe
+TSUKI_F5_EXP=None piano params={'material': 'steel'}
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -63.9 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+F5 (these engines): PASS
+  piano: wav sha256=ed3174b2902a1954  fundamental(center string) f=261.626 Hz T60=4.1425 s; n=2 T60=3.5968 s; theory-synth residual -63.86 dB
+  cimbalom: wav sha256=739c04a343ce9b98  fundamental(center string) f=261.626 Hz T60=4.1425 s; n=2 T60=3.5968 s; theory-synth residual -67.28 dB
+[exit=0]
+
+$ python output/wf0925/F5/f5_render_exp.py --tools output/wf0925/F5/tools_before --outdir output/wf0925/F5/rx_after_cli --cli output/wf0925/F5/cli_after/TsukiSynthCLI.exe
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\cli_after\TsukiSynthCLI.exe
+TSUKI_F5_EXP=None piano params={'material': 'steel'}
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -62.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -58.5 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (月月 approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+F5 (these engines): FAIL
+  piano: wav sha256=fc1f209ad22bf868  fundamental(center string) f=261.626 Hz T60=2.6733 s; n=2 T60=2.4408 s; theory-synth residual -58.49 dB
+  cimbalom: wav sha256=f31f2de883dfdf66  fundamental(center string) f=261.626 Hz T60=2.6733 s; n=2 T60=2.4408 s; theory-synth residual -62.27 dB
+[exit=0]
+
+$ python output/wf0925/F5/f5_render_exp.py --tools output/wf0925/F5/tools_before --outdir output/wf0925/F5/rx_variant_default --cli output/wf0925/F5/cli_variant/TsukiSynthCLI.exe
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\cli_variant\TsukiSynthCLI.exe
+TSUKI_F5_EXP=None piano params={'material': 'steel'}
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -62.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -58.5 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (月月 approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+F5 (these engines): FAIL
+  piano: wav sha256=fc1f209ad22bf868  fundamental(center string) f=261.626 Hz T60=2.6733 s; n=2 T60=2.4408 s; theory-synth residual -58.49 dB
+  cimbalom: wav sha256=f31f2de883dfdf66  fundamental(center string) f=261.626 Hz T60=2.6733 s; n=2 T60=2.4408 s; theory-synth residual -62.27 dB
+[exit=0]
+
+$ python output/wf0925/F5/f5_render_exp.py --tools output/wf0925/F5/tools_before --outdir output/wf0925/F5/rx_variant_old --cli output/wf0925/F5/cli_variant/TsukiSynthCLI.exe --exp old
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\cli_variant\TsukiSynthCLI.exe
+TSUKI_F5_EXP='old' piano params={'material': 'steel'}
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -63.9 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+F5 (these engines): PASS
+  piano: wav sha256=ed3174b2902a1954  fundamental(center string) f=261.626 Hz T60=4.1425 s; n=2 T60=3.5968 s; theory-synth residual -63.86 dB
+  cimbalom: wav sha256=739c04a343ce9b98  fundamental(center string) f=261.626 Hz T60=4.1425 s; n=2 T60=3.5968 s; theory-synth residual -67.28 dB
+[exit=0]
+
+$ python output/wf0925/F5/f5_render_exp.py --tools output/wf0925/F5/tools_before --outdir output/wf0925/F5/rx_variant_L_only --cli output/wf0925/F5/cli_variant/TsukiSynthCLI.exe --exp L_only
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\cli_variant\TsukiSynthCLI.exe
+TSUKI_F5_EXP='L_only' piano params={'material': 'steel'}
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -66.6 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -63.1 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+F5 (these engines): PASS
+  piano: wav sha256=f79193a594642c30  fundamental(center string) f=261.626 Hz T60=3.8744 s; n=2 T60=3.3956 s; theory-synth residual -63.14 dB
+  cimbalom: wav sha256=fccaac2d5a0132d5  fundamental(center string) f=261.626 Hz T60=3.8744 s; n=2 T60=3.3956 s; theory-synth residual -66.64 dB
+[exit=0]
+
+$ python output/wf0925/F5/f5_render_exp.py --tools output/wf0925/F5/tools_before --outdir output/wf0925/F5/rx_variant_d_only --cli output/wf0925/F5/cli_variant/TsukiSynthCLI.exe --exp d_only
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\cli_variant\TsukiSynthCLI.exe
+TSUKI_F5_EXP='d_only' piano params={'material': 'steel'}
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -63.2 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -59.5 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (月月 approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+F5 (these engines): FAIL
+  piano: wav sha256=d71da84078a6d1f8  fundamental(center string) f=261.626 Hz T60=2.8737 s; n=2 T60=2.6044 s; theory-synth residual -59.47 dB
+  cimbalom: wav sha256=1a2988af9e2f4771  fundamental(center string) f=261.626 Hz T60=2.8737 s; n=2 T60=2.6044 s; theory-synth residual -63.17 dB
+[exit=0]
+
+$ python output/wf0925/F5/f5_render_exp.py --tools output/wf0925/F5/tools_before --outdir output/wf0925/F5/rx_before_cli_d1p0 --cli output/wf0925/F5/cli_before_own/TsukiSynthCLI.exe --piano-diameter-mm 1.0
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\cli_before_own\TsukiSynthCLI.exe
+TSUKI_F5_EXP=None piano params={'material': 'steel', 'diameter_mm': 1.0}
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -67.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -59.5 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (月月 approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+F5 (these engines): FAIL
+  piano: wav sha256=6b33bd428f4581e2  fundamental(center string) f=261.626 Hz T60=2.8737 s; n=2 T60=2.6044 s; theory-synth residual -59.47 dB
+  cimbalom: wav sha256=739c04a343ce9b98  fundamental(center string) f=261.626 Hz T60=4.1425 s; n=2 T60=3.5968 s; theory-synth residual -67.28 dB
+[exit=0]
+
+$ python output/wf0925/F5/f5_render_exp.py --tools output/wf0925/F5/tools_before --outdir output/wf0925/F5/rx_variant_decay_only --cli output/wf0925/F5/cli_variant/TsukiSynthCLI.exe --exp decay_only
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\F5\cli_variant\TsukiSynthCLI.exe
+TSUKI_F5_EXP='decay_only' piano params={'material': 'steel'}
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   cimbalom    residual:   -62.3 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+   piano       residual:   -58.5 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (月月 approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+F5 (these engines): FAIL
+  piano: wav sha256=379ba27b92dd8f87  fundamental(center string) f=261.626 Hz T60=2.6733 s; n=2 T60=2.4408 s; theory-synth residual -58.49 dB
+  cimbalom: wav sha256=a953f59ec13e85a9  fundamental(center string) f=261.626 Hz T60=2.6733 s; n=2 T60=2.4408 s; theory-synth residual -62.27 dB
+[exit=0]
+
+$ python output/wf0925/F5/f5_numstrings.py
+#### before CLI, piano num_strings=1
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -69.1 dB re total (40 predicted modes, limit -60.0 dB) -> PASS
+#### before CLI, piano num_strings=2
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -68.1 dB re total (80 predicted modes, limit -60.0 dB) -> PASS
+#### before CLI, piano num_strings=3
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -63.9 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+#### after CLI, piano num_strings=1
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -64.2 dB re total (40 predicted modes, limit -60.0 dB) -> PASS
+#### after CLI, piano num_strings=2
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -63.0 dB re total (80 predicted modes, limit -60.0 dB) -> PASS
+#### after CLI, piano num_strings=3
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -58.5 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (月月 approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+[exit=0]
+
+$ python output/wf0925/F5/d_scan.py
+#### before CLI (no candidate), piano diameter_mm=0.7
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -65.8 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+#### before CLI (no candidate), piano diameter_mm=0.8
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -63.9 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+#### before CLI (no candidate), piano diameter_mm=0.85
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -62.8 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+#### before CLI (no candidate), piano diameter_mm=0.9
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -61.7 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+#### before CLI (no candidate), piano diameter_mm=0.95
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -60.6 dB re total (120 predicted modes, limit -60.0 dB) -> PASS
+#### before CLI (no candidate), piano diameter_mm=1.0
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -59.5 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (月月 approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+#### before CLI (no candidate), piano diameter_mm=1.1
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -57.1 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (月月 approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+#### before CLI (no candidate), piano diameter_mm=1.2
+
+----------------------------------------------------------------------
+Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, judgment threshold -60.0 dB re total):
+   piano       residual:   -54.7 dB re total (120 predicted modes, limit -60.0 dB) -> FAIL
+   -> FAIL. Do NOT widen the -60.0 dB threshold (月月 approval 2026-07-23) -- unpredicted energy above the ceiling means the render contains something the physics model did not predict; investigate, don't relax the gate.
+[exit=0]
+

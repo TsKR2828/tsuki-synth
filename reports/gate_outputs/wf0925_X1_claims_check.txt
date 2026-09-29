@@ -1,0 +1,16 @@
+# wf0925_X1_claims_check.txt
+# generated 2026-09-25T05:59:50  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x1_claims_check.py
+# ffmpeg: <TOOLS>\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe
+(a) distribution sfx full-precision TP: n=43  > -1.000: 4  (-1.030, -1.000]: 11  <= -1.030: 28  min -1.0455 max -0.9663
+    forest    Forest Bird Call (Alarm)           -0.9663 dBTP
+    restraint Restraint Lock Click               -0.9673 dBTP
+    clockwork Clockwork Ticking Room             -0.9675 dBTP
+    forest    Forest Acorn Tap                   -0.9698 dBTP
+    rabbit    Rabbit Ding (Angry)                -1.0005 dBTP
+    clockwork Clockwork Gear Click               -1.0038 dBTP
+(b) ocean_loop_001 score events (time, duration, velocity, engine): [(0.0, 4.0, 0.3, 'string'), (1.5, 0.3, 0.2, 'beam'), (4.0, 4.0, 0.28, 'string'), (5.5, 0.3, 0.18, 'beam')]
+    seam: 50 ms before -54.3 dBFS, 50 ms after -19.2 dBFS
+    onset  1.5 s (beam): 50 ms before -16.5 dBFS, after -16.7 dBFS
+    onset  4.0 s (string): 50 ms before -42.7 dBFS, after -23.8 dBFS
+    onset  5.5 s (beam): 50 ms before -22.1 dBFS, after -22.9 dBFS

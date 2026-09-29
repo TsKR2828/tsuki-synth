@@ -1,0 +1,5 @@
+# physics_verify --full 本次（build\ 新 CLI）vs K 稽核第 2 輪 output/wf0925/K_audit2/gate3_physics_verify_full.log（build-wf CLI）
+# 過濾掉命令列/CLI 路徑/起訖時間/EXIT 行後逐行 diff
+$ diff <(grep -vE '^\$|EXIT_CODE|EXIT=|cwd=|TsukiSynthCLI|find_cli|^start |^end ' 06_physics_verify_full.txt) <(grep -vE '^\$|EXIT_CODE|EXIT=|cwd=|TsukiSynthCLI|find_cli|^start |^end ' K_audit2/gate3_physics_verify_full.log)
+DIFF_EXIT=0  (0 = 量測行完全相同)
+compared lines: 621 vs 621

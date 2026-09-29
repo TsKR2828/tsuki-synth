@@ -1,0 +1,110 @@
+# wf0925_X1_loop_ready.txt
+# generated 2026-09-25T05:40:28  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x1_loop_ready.py
+# ffmpeg: <TOOLS>\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe
+loops in catalog (sound_type=loop): 6
+
+== akashic/akashic_loop_001  (Akashic Meditation Loop)
+  score meta: loop_bpm=60 loop_bars=4 time_signature(score)=None -> 4/4 used
+  master: masters\sfx_library\akashic\Ambience_Airy_Loop_C4.wav  len=1167588 samples (24.325s) sr=48000
+  exact loop length = 4*4*60*48000/60 = 768000 = 768000.0000 samples -> N = 768000 (round half up; residual +0.0000 samples)
+  tail-wrap: folds=2, wrapped tail = 399588 samples (8.325s)
+  self-check (tail-wrap vs simulated continuous re-trigger, steady cycle) max|diff| = 0.000e+00
+  TP after fold (pre-gain) = -0.4447 dBTP
+  gain round 0: gain -0.555309 dB -> written 24-bit TP -0.999999 dBTP  (> -1.000000 by quantisation; subtract excess and rewrite)
+  gain round 1: gain -0.555310 dB -> written 24-bit TP -1.000000 dBTP
+  OUT loop_ready\akashic\akashic__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav  len=768000  expected N=768000  LENGTH ERROR = 0 samples
+  cross-check TP (ebur128 metadata, 3-dec linear) = -1.0024 dBTP; I = -15.671 LUFS
+  [描述用、非 GATE] seam jump |y[0]-y[N-1]| = 0.000697  -> percentile 38.02% of in-file adjacent diffs (p50 0.001254 p90 0.010254 p99 0.024101 p99.9 0.045038 max 0.063233)
+  [描述用、非 GATE] context: the render itself starts its downbeat with a step 0 -> x[0] of 0.000262 (after gain); seam jump minus that step = +0.000435
+  [描述用、非 GATE] RMS 50ms before/after seam = -15.00 dB; same ratio at the other 3 note onsets: min -23.70 median -22.45 max -17.57 dB
+  [描述用、非 GATE] baseline = current distribution file looped whole: len 1167588 (= exact +399588.0 samples off-grid), seam jump 0.000261 (pct 46.69%), RMS50 before/after -95.37 dB
+
+== rabbit/rabbit_loop_001  (Rabbit Bounce Loop)
+  score meta: loop_bpm=140 loop_bars=2 time_signature(score)=None -> 4/4 used
+  master: masters\sfx_library\rabbit\UI_Bright_Loop_C6.wav  len=257547 samples (5.366s) sr=48000
+  exact loop length = 2*4*60*48000/140 = 1152000/7 = 164571.4286 samples -> N = 164571 (round half up; residual -0.4286 samples)
+  tail-wrap: folds=2, wrapped tail = 92976 samples (1.937s)
+  self-check (tail-wrap vs simulated continuous re-trigger, steady cycle) max|diff| = 0.000e+00
+  TP after fold (pre-gain) = -0.4336 dBTP
+  gain round 0: gain -0.566440 dB -> written 24-bit TP -1.000001 dBTP
+  OUT loop_ready\rabbit\rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav  len=164571  expected N=164571  LENGTH ERROR = 0 samples
+  cross-check TP (ebur128 metadata, 3-dec linear) = -1.0024 dBTP; I = -9.152 LUFS
+  [描述用、非 GATE] seam jump |y[0]-y[N-1]| = 0.003243  -> percentile 10.56% of in-file adjacent diffs (p50 0.019892 p90 0.060319 p99 0.102745 p99.9 0.143505 max 0.197349)
+  [描述用、非 GATE] context: the render itself starts its downbeat with a step 0 -> x[0] of 0.000023 (after gain); seam jump minus that step = +0.003219
+  [描述用、非 GATE] RMS 50ms before/after seam = -17.84 dB; same ratio at the other 7 note onsets: min -22.43 median -12.09 max -7.19 dB
+  [描述用、非 GATE] baseline = current distribution file looped whole: len 257547 (= exact +92975.6 samples off-grid), seam jump 0.000023 (pct 27.28%), RMS50 before/after -133.10 dB
+
+== restraint/restraint_loop_001  (Restraint Industrial Pulse)
+  score meta: loop_bpm=100 loop_bars=2 time_signature(score)=None -> 4/4 used
+  master: masters\sfx_library\restraint\Mechanical_Pulse_Loop_C2.wav  len=409205 samples (8.525s) sr=48000
+  exact loop length = 2*4*60*48000/100 = 230400 = 230400.0000 samples -> N = 230400 (round half up; residual +0.0000 samples)
+  tail-wrap: folds=2, wrapped tail = 178805 samples (3.725s)
+  self-check (tail-wrap vs simulated continuous re-trigger, steady cycle) max|diff| = 0.000e+00
+  TP after fold (pre-gain) = -0.4451 dBTP
+  gain round 0: gain -0.554942 dB -> written 24-bit TP -1.000000 dBTP
+  OUT loop_ready\restraint\restraint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav  len=230400  expected N=230400  LENGTH ERROR = 0 samples
+  cross-check TP (ebur128 metadata, 3-dec linear) = -1.0024 dBTP; I = -13.046 LUFS
+  [描述用、非 GATE] seam jump |y[0]-y[N-1]| = 0.018234  -> percentile 85.40% of in-file adjacent diffs (p50 0.006143 p90 0.023045 p99 0.050516 p99.9 0.071200 max 0.135815)
+  [描述用、非 GATE] context: the render itself starts its downbeat with a step 0 -> x[0] of 0.016461 (after gain); seam jump minus that step = +0.001773
+  [描述用、非 GATE] RMS 50ms before/after seam = -20.39 dB; same ratio at the other 7 note onsets: min -20.88 median -4.19 max -0.45 dB
+  [描述用、非 GATE] baseline = current distribution file looped whole: len 409205 (= exact +178805.0 samples off-grid), seam jump 0.016376 (pct 90.49%), RMS50 before/after -131.87 dB
+
+== forest/forest_loop_001  (Forest Rain Pattern)
+  score meta: loop_bpm=80 loop_bars=4 time_signature(score)=None -> 4/4 used
+  master: masters\sfx_library\forest\Ambience_Soft_Loop_G5.wav  len=800988 samples (16.687s) sr=48000
+  exact loop length = 4*4*60*48000/80 = 576000 = 576000.0000 samples -> N = 576000 (round half up; residual +0.0000 samples)
+  tail-wrap: folds=2, wrapped tail = 224988 samples (4.687s)
+  self-check (tail-wrap vs simulated continuous re-trigger, steady cycle) max|diff| = 0.000e+00
+  TP after fold (pre-gain) = -0.4454 dBTP
+  gain round 0: gain -0.554574 dB -> written 24-bit TP -1.000001 dBTP
+  OUT loop_ready\forest\forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav  len=576000  expected N=576000  LENGTH ERROR = 0 samples
+  cross-check TP (ebur128 metadata, 3-dec linear) = -1.0024 dBTP; I = -17.488 LUFS
+  [描述用、非 GATE] seam jump |y[0]-y[N-1]| = 0.005304  -> percentile 60.69% of in-file adjacent diffs (p50 0.003722 p90 0.016186 p99 0.040114 p99.9 0.065137 max 0.112959)
+  [描述用、非 GATE] context: the render itself starts its downbeat with a step 0 -> x[0] of 0.000606 (after gain); seam jump minus that step = +0.004698
+  [描述用、非 GATE] RMS 50ms before/after seam = +0.19 dB; same ratio at the other 15 note onsets: min -34.50 median -12.85 max -1.21 dB
+  [描述用、非 GATE] baseline = current distribution file looped whole: len 800988 (= exact +224988.0 samples off-grid), seam jump 0.000603 (pct 35.19%), RMS50 before/after -103.77 dB
+
+== ocean/ocean_loop_001  (Ocean Wave Cycle)
+  score meta: loop_bpm=60 loop_bars=2 time_signature(score)=None -> 4/4 used
+  master: masters\sfx_library\ocean\Ambience_Dark_Loop_C2.wav  len=759588 samples (15.825s) sr=48000
+  exact loop length = 2*4*60*48000/60 = 384000 = 384000.0000 samples -> N = 384000 (round half up; residual +0.0000 samples)
+  tail-wrap: folds=2, wrapped tail = 375588 samples (7.825s)
+  self-check (tail-wrap vs simulated continuous re-trigger, steady cycle) max|diff| = 0.000e+00
+  TP after fold (pre-gain) = -0.4522 dBTP
+  gain round 0: gain -0.547824 dB -> written 24-bit TP -1.000000 dBTP  (> -1.000000 by quantisation; subtract excess and rewrite)
+  gain round 1: gain -0.547824 dB -> written 24-bit TP -1.000000 dBTP  (> -1.000000 by quantisation; subtract excess and rewrite)
+  gain round 2: gain -0.547824 dB -> written 24-bit TP -1.000000 dBTP  (> -1.000000 by quantisation; subtract excess and rewrite)
+  gain round 3: gain -0.547824 dB -> written 24-bit TP -1.000001 dBTP
+  OUT loop_ready\ocean\ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav  len=384000  expected N=384000  LENGTH ERROR = 0 samples
+  cross-check TP (ebur128 metadata, 3-dec linear) = -1.0024 dBTP; I = -13.766 LUFS
+  [描述用、非 GATE] seam jump |y[0]-y[N-1]| = 0.000104  -> percentile 14.52% of in-file adjacent diffs (p50 0.000578 p90 0.002807 p99 0.005820 p99.9 0.006991 max 0.009069)
+  [描述用、非 GATE] context: the render itself starts its downbeat with a step 0 -> x[0] of 0.000005 (after gain); seam jump minus that step = +0.000099
+  [描述用、非 GATE] RMS 50ms before/after seam = -35.16 dB; same ratio at the other 3 note onsets: min -18.94 median +0.26 max +0.82 dB
+  [描述用、非 GATE] baseline = current distribution file looped whole: len 759588 (= exact +375588.0 samples off-grid), seam jump 0.000005 (pct 38.13%), RMS50 before/after -122.31 dB
+
+== clockwork/clockwork_loop_001  (Clockwork Tick Loop)
+  score meta: loop_bpm=120 loop_bars=2 time_signature(score)=None -> 4/4 used
+  master: masters\sfx_library\clockwork\Mechanical_Pulse_Loop_F5.wav  len=247955 samples (5.166s) sr=48000
+  exact loop length = 2*4*60*48000/120 = 192000 = 192000.0000 samples -> N = 192000 (round half up; residual +0.0000 samples)
+  tail-wrap: folds=2, wrapped tail = 55955 samples (1.166s)
+  self-check (tail-wrap vs simulated continuous re-trigger, steady cycle) max|diff| = 0.000e+00
+  TP after fold (pre-gain) = -0.2320 dBTP
+  gain round 0: gain -0.767998 dB -> written 24-bit TP -1.000000 dBTP
+  OUT loop_ready\clockwork\clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav  len=192000  expected N=192000  LENGTH ERROR = 0 samples
+  cross-check TP (ebur128 metadata, 3-dec linear) = -1.0024 dBTP; I = -14.895 LUFS
+  [描述用、非 GATE] seam jump |y[0]-y[N-1]| = 0.030340  -> percentile 67.66% of in-file adjacent diffs (p50 0.017756 p90 0.066554 p99 0.161645 p99.9 0.309176 max 0.544970)
+  [描述用、非 GATE] context: the render itself starts its downbeat with a step 0 -> x[0] of 0.024474 (after gain); seam jump minus that step = +0.005866
+  [描述用、非 GATE] RMS 50ms before/after seam = -22.23 dB; same ratio at the other 9 note onsets: min -22.47 median -16.64 max -2.57 dB
+  [描述用、非 GATE] baseline = current distribution file looped whole: len 247955 (= exact +55955.0 samples off-grid), seam jump 0.024449 (pct 69.64%), RMS50 before/after -73.13 dB
+
+== SUMMARY
+id                            N      len  err   TPfold     gain    TPout  seamPct   RMS50
+akashic_loop_001         768000   768000    0   -0.445   -0.555   -1.000    38.02  -15.00
+rabbit_loop_001          164571   164571    0   -0.434   -0.566   -1.000    10.56  -17.84
+restraint_loop_001       230400   230400    0   -0.445   -0.555   -1.000    85.40  -20.39
+forest_loop_001          576000   576000    0   -0.445   -0.555   -1.000    60.69   +0.19
+ocean_loop_001           384000   384000    0   -0.452   -0.548   -1.000    14.52  -35.16
+clockwork_loop_001       192000   192000    0   -0.232   -0.768   -1.000    67.66  -22.23
+GATE length error == 0 samples: 6/6
+GATE true peak <= -1.0 dBTP (full-precision swr192k): 6/6

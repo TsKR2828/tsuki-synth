@@ -1,0 +1,635 @@
+WF0925-G1 發行與授權文件 — 來源與證據檔
+==============================================================================
+產生時間 : 2026-09-25T09:02:07
+產生腳本 : output/wf0925/G1/make_evidence.py（gitignored；本檔內容即其輸出）
+HEAD     : 18430c4d9307ab9f693592663a373f9c5c7cdb10
+分支     : fix/deep-physics-audit-20260716
+
+§0 接手紀錄
+------------------------------------------------------------------------------
+本卡 09-25 第一輪被 session limit 中斷。前任留下：THIRD_PARTY_NOTICES.txt（由 make_notices.py 產生）、
+LICENSE 兩處修改，以及暫存區的網頁抓取檔。前任沒有留下本證據檔，也沒有做第 3～7 項。
+接手做法：(1) 用前任腳本重產 notices，與工作樹檔逐位元組比對 → IDENTICAL（sha256 bde8ef62…）；
+(2) 重新抓取每個網頁，與前任的抓取檔比 sha256 → 全部相同（見 §1）；(3) 逐項核對 notices 的版本、
+旗標、授權全文（§3–§5）；(4) 發現 Standalone 的 Score 控制台依賴同資料夾的 TsukiSynthCLI.exe，
+安裝包會一起裝 CLI，所以把 CLI 補進 notices（v2，差異見 §5）；(5) 完成第 3～7 項。
+
+§1 網頁抓取（2026-09-25；前任 06:3x 一次、接手 08:3x–08:5x 重抓一次）
+------------------------------------------------------------------------------
+https://juce.com/legal/juce-8-licence/
+  前任抓取 sha256 0b3561fcec8db1d03edab6660d8785245c1933884139777d1acccdb477d5da51  (122197 bytes)
+  接手重抓 sha256 0b3561fcec8db1d03edab6660d8785245c1933884139777d1acccdb477d5da51  (122197 bytes)  → 與前任相同
+https://juce.com/legal/juce-9-licence/
+  前任抓取 sha256 79fcc81f7671e1960fe92aa7ae5dd39ed6759c9992d1ddcb1735252d2fa46fe6  (121312 bytes)
+  接手重抓 sha256 79fcc81f7671e1960fe92aa7ae5dd39ed6759c9992d1ddcb1735252d2fa46fe6  (121312 bytes)  → 與前任相同
+https://juce.com/get-juce/
+  前任抓取 sha256 9f759f3c9ce82852906d0a4c41510a34cd5233ba1f23d17942c9bc5299ab513a  (104993 bytes)
+  接手重抓 sha256 9f759f3c9ce82852906d0a4c41510a34cd5233ba1f23d17942c9bc5299ab513a  (104993 bytes)  → 與前任相同
+https://steinbergmedia.github.io/vst3_dev_portal/pages/VST+3+Licensing/VST3+License.html
+  前任抓取 sha256 669363ada553aec9f4743a9fc099587fd3ccba1293f2a9570f50dfbbd14f5696  (16356 bytes)
+  接手重抓 sha256 669363ada553aec9f4743a9fc099587fd3ccba1293f2a9570f50dfbbd14f5696  (16356 bytes)  → 與前任相同
+https://steinbergmedia.github.io/vst3_dev_portal/pages/VST+3+Licensing/Usage+guidelines.html
+  前任抓取 sha256 a3dd1e2d5387bd8a6f220f81d0834a72fc0ba5a2e740d06f6c8ac687c1c351de  (23198 bytes)
+  接手重抓 sha256 a3dd1e2d5387bd8a6f220f81d0834a72fc0ba5a2e740d06f6c8ac687c1c351de  (23198 bytes)  → 與前任相同
+https://steinbergmedia.github.io/vst3_dev_portal/pages/FAQ/Licensing.html
+  前任抓取 sha256 5f58f1c024057e0e6297d1af0da9fdeea774d1b053c16877e37c53539cbf96a5  (20069 bytes)
+  接手重抓 sha256 5f58f1c024057e0e6297d1af0da9fdeea774d1b053c16877e37c53539cbf96a5  (20069 bytes)  → 與前任相同
+https://steinbergmedia.github.io/vst3_dev_portal/pages/VST+3+Licensing/Index.html
+  接手重抓 sha256 2a8743518ec6ec428093f43b83e8be7aae007d081c2c4558e7de82584fd40236  (12586 bytes)
+https://raw.githubusercontent.com/IBM/plex/master/LICENSE.txt
+  前任抓取 sha256 7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da  (4456 bytes)
+  接手重抓 sha256 7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da  (4456 bytes)  → 與前任相同
+https://jrsoftware.org/isdl.php
+  接手重抓 sha256 9c6238c3fd1ab0cacc476b34d618a2a568b2b445e2a1d60f142203de46e396da  (10478 bytes)
+https://jrsoftware.org/files/is6-whatsnew.htm
+  接手重抓 sha256 4e98f32f91bfaae8c2934152734fe58f4feb5dd6cc1c2b419dc51ead1a3bbbf5  (102622 bytes)
+https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170
+  接手重抓 sha256 e789b23ad81537a66924bf7ed5db72bac7f9fe4fdb424cc2181fcfd6679ddc2e  (65446 bytes)
+https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files?view=msvc-170
+  接手重抓 sha256 1d77f40cb7db5467e7bb9d6d66dbf20fdfff3c06ab52494c020d6b8bc4fa630b  (60109 bytes)
+Inno Setup 說明文件（https://jrsoftware.org/ishelp/<topic>.htm，39 頁，用來核對 .iss 的指令與常數）：
+  is_32vs64.htm, is_componentssection.htm, is_consts.htm, is_contents.htm, is_filessection.htm, is_iconssection.htm, is_isxfunc_regquerydwordvalue.htm, is_isxfunc_regquerystringvalue.htm, is_isxfunc_regvalueexists.htm, is_registrysection.htm, is_runsection.htm, is_scriptcheck.htm, is_scriptintro.htm, is_setup_appid.htm, is_setup_appversion.htm, is_setup_architecturesallowed.htm, is_setup_architecturesinstallin64bitmode.htm, is_setup_disabledirpage.htm, is_setup_infobeforefile.htm, is_setup_licensefile.htm, is_setup_minversion.htm, is_setup_outputdir.htm, is_setup_privilegesrequired.htm, is_setup_uninstalldisplayicon.htm, is_setup_uninstalldisplayname.htm, is_setup_usepreviousappdir.htm, is_setup_versioninfoversion.htm, is_setup_wizardstyle.htm, is_typessection.htm, is_uninstalldeletesection.htm, ispp_directives.htm, ispp_error.htm, ispp_expressions.htm, ispp_fileexists.htm, ispp_funcs.htm, ispp_overview.htm, ispp_pragma.htm, ispp_predefinedvars.htm, ispp_rbur.htm
+另：Artifact/WebFetch 未使用；以上皆以 curl 抓原始 HTML／文字，本機轉成純文字後閱讀。
+
+§2 逐字引文（每句都由本腳本在來源文字檔中比對到才會印出）
+------------------------------------------------------------------------------
+[JUCE 8 EULA] https://juce.com/legal/juce-8-licence/
+    "The annual revenue or funding limits applicable to the Licence Types are based on revenue received or obtained by the Licensee over the previous 12 months."
+    "the applicable annual revenue or funding limit is the total revenue or funding generated by that individual or entity’s use of the Framework from all sources, including donations, sponsorship, advertising, and any other indirect revenue from their use of the Framework."
+    "If you exceed the Revenue or Funding Limit for the Licence Type you are using then you must either purchase a new Licence Type appropriate for your new Revenue or Funding Limit or immediately cease developing and Distributing Products."
+    "You may not use the Starter, Indie or Pro Licence Types simultaneously."
+    "internal administration costs in the amount of no less than £1,000."
+    "Any static content that retains its full functionality if the Framework were removed, such as audio and MIDI files, images, and plain text, is exempted."
+    "You may not create, make available as a service, nor Distribute Products that create other Products."
+    "not to disassemble, de-compile, reverse engineer or create derivative works based on the whole or any part of the Framework"
+    "not to delete or in any manner alter any of our copyright, trademark or other proprietary rights notices or markings appearing on or in the Framework;"
+    "to maintain accurate and up-to-date records of the number and locations of all copies of the Framework;"
+    "You may opt out of this publicity by emailing RMS at info@juce.com"
+    "any versions of your Products that have already been distributed to end users may continue to be used by end users."
+    "If you live outside the US, UK and EU, EEA or Switzerland, you agree to the laws and jurisdiction of California as noted in clause 11.8.2."
+    "or by downloading, installing, or using the Framework,"
+    "17th July 2025:"
+    1.2 表格原文（換行保留）：
+      | Starter
+      | Indie
+      | Pro
+      | Educational
+      | Annual Revenue or Funding Limit
+      | Up to $20,000
+      | Up to $300,000
+      | No limit
+      | No limit
+      | Minimum Commitment for a Subscription
+      | N/A
+      | 1 month
+      | 12 months
+      | N/A
+      | Monthly Subscription Price per user
+      | N/A
+      | $40
+      | $175
+      | N/A
+      | Perpetual Price per user
+      | Free
+      | $800
+      | $3500
+      | Free
+    EULA 全文出現次數（不分大小寫）splash       = 0
+    EULA 全文出現次數（不分大小寫）attribution  = 0
+    EULA 全文出現次數（不分大小寫）made with    = 0
+    EULA 全文出現次數（不分大小寫）credit       = 1
+    EULA 全文出現次數（不分大小寫）register     = 3
+    （credit 唯一一筆是 accredited；register 三筆是公司登記與 registered trademark）
+
+[JUCE 9 EULA] https://juce.com/legal/juce-9-licence/
+    changelog: "JUCE 9 EULA Published"
+    "17th June 2026:"
+    diff juce8 juce9（純文字）差異行數 = 102；內容差異只有版本號、目錄編號、空白、大小寫與標點（人工逐行讀過）
+
+[get-juce] https://juce.com/get-juce/
+    "A JUCE 9 licence grants you the right to use all previous versions of JUCE, under the terms of the JUCE 9 licence."
+    "You will need to maintain a licence for at least the duration over which you are distributing closed-source binaries containing JUCE."
+    "The JUCE team does not offer legal advice."
+    "$800 perpetual, paid once"
+    "$3,500 perpetual, paid once"
+    "Revenue up to $20,000"
+
+[Steinberg VST 3 License] https://steinbergmedia.github.io/vst3_dev_portal/pages/VST+3+Licensing/VST3+License.html
+    "Since version 3.8, VST 3 is licensed under MIT license."
+    "Neither fees nor memberships are required."
+    "No need to sign any documents."
+    "Non-compliance with logo guidelines does not affect your MIT rights (but may result in trademark violations)."
+    "VST 2 API source code is NOT part of this VST 3 license!"
+[Steinberg VST usage guidelines] https://steinbergmedia.github.io/vst3_dev_portal/pages/VST+3+Licensing/Usage+guidelines.html
+    "Trademark usage (e.g. "VST" name or logo) is optional under MIT license, but if used, must comply with Steinberg's official trademark rules."
+    "Displaying the VST Compatible Logo only in a site-wide footer or imprint is not sufficient."
+    "The VST Compatible Logo should appear in the About Box or equivalent UI element (e.g., help menu or splash screen)."
+    "The VST Compatible Logo is shown in immediate visual proximity."
+    "It is not permitted to create modified terms or compositions such as “VSTi” or other abbreviations, blends, or derivatives."
+    "The first use of “VST” in any product-related material must include the ® symbol."
+    ""VST is a registered trademark of Steinberg Media Technologies GmbH.""
+    "Included in the VST SDK, the VST compatible Logo can be found in the folder VST_SDK/VST3_SDK/vst3_doc/artwork."
+    "Minimum printing size = 20 x 18,7 mm"
+    usage guidelines 全文「sign」出現次數 = 0
+[Steinberg FAQ Licensing] https://steinbergmedia.github.io/vst3_dev_portal/pages/FAQ/Licensing.html
+    "The only obligations are: You must include the original copyright notice and the MIT license text in all copies or substantial portions of the code."
+
+[IBM Plex LICENSE.txt] https://raw.githubusercontent.com/IBM/plex/master/LICENSE.txt
+    "Copyright © 2017 IBM Corp. with Reserved Font Name "Plex""
+    "This Font Software is licensed under the SIL Open Font License, Version 1.1."
+    前任與接手兩次抓取逐位元組相同；notices 第 11 節收錄的全文與它逐字相同（§5）。
+
+[Inno Setup] 下載頁、更新紀錄、說明文件
+    下載頁: "innosetup-7.1.0-x64.exe"
+    下載頁: "innosetup-6.7.3.exe"
+    更新紀錄: "6.3.0 (2024-06-09)"
+    6.3.0 段: "In ArchitecturesAllowed and ArchitecturesInstallIn64BitMode, change any use of x64 to x64compatible."
+    "Using a BOM in UTF-8 encoded files is not needed and not recommended since Inno Setup 6.3.0."
+    {commoncf64}: "64-bit Windows only: 64-bit Common Files. The path of the system's 64-bit Common Files directory, typically C:\Program Files\Common Files."
+    "ArchitecturesInstallIn64BitMode=x64compatible"
+    LicenseFile: "If a Unicode .txt file is used, it must be UTF-8 (with or without a BOM) or UTF-16LE encoded."
+    64-bit mode: "The Reg* [Code] support functions access the 64-bit view by default."
+    ISPP: "Pascal-style string literals. When off, uses C-style string literals (with escape sequences). Defaults to on."
+    ISPP 函式清單含: "FileExists"
+    ISPP 函式清單含: "RemoveBackslashUnlessRoot"
+
+[Microsoft] VC++ 可轉散發
+    "https://aka.ms/vc14/vc_redist.x64.exe"
+    "Distribution of the Visual C++ Runtime Redistributable package, merge modules, and individual binaries is limited to licensed Visual Studio users and is subject to Microsoft Software License Terms."
+    "HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\{x86|x64|arm64} key."
+    "(You need to check under the Wow6432Node subkey only if you use Regedit to view the version of the installed x86 package on an x64 platform.)"
+    "The version of the Redistributable installed on the machine must be the same or later than the version of the MSVC Build Tools used to create your application."
+    notices 第 12 節連結出處（原始 HTML）: "href="https://aka.ms/VCRedistLicense" data-linktype="external">Microsoft Software License Terms"
+
+§3 repo 內來源（版本、旗標、授權檔）
+------------------------------------------------------------------------------
+$ git submodule status libs/JUCE
+ 501c07674e1ad693085a7e7c398f205c2677f5da libs/JUCE (heads/master)
+
+$ grep -n "Copyright (c) Raw Material Software Limited" libs/JUCE/modules/juce_core/juce_core.h
+5:   Copyright (c) Raw Material Software Limited
+
+$ grep -n "project(JUCE VERSION" libs/JUCE/CMakeLists.txt
+35:project(JUCE VERSION 8.0.12 LANGUAGES C CXX)
+
+$ grep -n "define kVstVersionString" libs/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK/pluginterfaces/vst/vsttypes.h
+27:#define kVstVersionString	"VST 3.8.0"	///< SDK version for PClassInfo2
+
+$ head -2 "libs/JUCE/modules/juce_audio_formats/codecs/flac/JUCE_CHANGES.txt"
+The files in this directory are from the FLAC 1.4.3 release downloaded in a tarball from
+https://github.com/xiph/flac/releases/tag/1.4.3
+
+$ ls -d libs/JUCE/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-*
+libs/JUCE/modules/juce_audio_formats/codecs/oggvorbis/libvorbis-1.3.7
+
+$ grep -n "define JVERSION" libs/JUCE/modules/juce_graphics/image_formats/jpglib/jversion.h
+12:#define JVERSION	"9f  14-Jan-2024"
+
+$ grep -n "define PNG_LIBPNG_VER_STRING" libs/JUCE/modules/juce_graphics/image_formats/pnglib/png.h
+281:#define PNG_LIBPNG_VER_STRING "1.6.37"
+
+$ grep -n "define ZLIB_VERSION" libs/JUCE/modules/juce_core/zip/zlib/zlib.h
+40:#define ZLIB_VERSION "1.3.1"
+
+$ grep -n "define HB_VERSION_STRING" libs/JUCE/modules/juce_graphics/fonts/harfbuzz/hb-version.h
+63:#define HB_VERSION_STRING "10.1.0"
+
+$ grep -n "define SHEENBIDI_VERSION_STRING" libs/JUCE/modules/juce_graphics/unicode/sheenbidi/Headers/SheenBidi/SBVersion.h
+27:#define SHEENBIDI_VERSION_STRING    "2.9.0"
+
+$ find libs/JUCE/modules/juce_graphics/unicode/sheenbidi -iname "NOTICE*" | wc -l
+0
+
+$ grep -n "define JUCE_USE_FLAC\|define JUCE_USE_OGGVORBIS\|define JUCE_USE_MP3AUDIOFORMAT\|define JUCE_USE_LAME" libs/JUCE/modules/juce_audio_formats/juce_audio_formats.h
+75: #define JUCE_USE_FLAC 1
+84: #define JUCE_USE_OGGVORBIS 1
+100: #define JUCE_USE_MP3AUDIOFORMAT 0
+107: #define JUCE_USE_LAME_AUDIO_FORMAT 0
+
+$ grep -n "define JUCE_INCLUDE_PNGLIB_CODE\|define JUCE_INCLUDE_JPEGLIB_CODE" libs/JUCE/modules/juce_graphics/juce_graphics.h
+91: #define JUCE_INCLUDE_PNGLIB_CODE 1
+95: #define JUCE_INCLUDE_JPEGLIB_CODE 1
+
+$ grep -n "define JUCE_INCLUDE_ZLIB_CODE" libs/JUCE/modules/juce_core/juce_core.h
+138: #define JUCE_INCLUDE_ZLIB_CODE 1
+
+$ grep -n -A1 "ifndef JUCE_PLUGINHOST_VST3\|ifndef JUCE_PLUGINHOST_LV2\|ifndef JUCE_PLUGINHOST_ARA" libs/JUCE/modules/juce_audio_processors_headless/juce_audio_processors_headless.h
+84:#ifndef JUCE_PLUGINHOST_VST3
+85- #define JUCE_PLUGINHOST_VST3 0
+--
+109:#ifndef JUCE_PLUGINHOST_LV2
+110- #define JUCE_PLUGINHOST_LV2 0
+--
+120:#ifndef JUCE_PLUGINHOST_ARA
+121- #define JUCE_PLUGINHOST_ARA 0
+
+$ grep -n "define JUCE_ASIO " libs/JUCE/modules/juce_audio_devices/juce_audio_devices.h
+135: #define JUCE_ASIO 0
+
+$ grep -n "moduleinfoparser.cpp\|ipslviewembedding.h" libs/JUCE/modules/juce_audio_processors_headless/format_types/juce_VST3Headers.h
+141: #include <juce_audio_processors_headless/format_types/pslextensions/ipslviewembedding.h>
+192: #include <public.sdk/source/vst/moduleinfo/moduleinfoparser.cpp>
+213: #include <juce_audio_processors_headless/format_types/pslextensions/ipslviewembedding.h>
+
+$ sed -n 2p CMakeLists.txt; sed -n 72,135p CMakeLists.txt | grep -n "option(TSUKI\|PLUGIN_FORMATS\|juce::\|IBMPlexSans\|materials.json\|JUCE_\|COMPANY_NAME"
+project(TsukiSynth VERSION 0.3.0)
+3:option(TSUKI_AAX "Build AAX format (requires Avid AAX SDK)" OFF)
+4:option(TSUKI_AU  "Build AU format (macOS only)" OFF)
+6:set(PLUGIN_FORMATS VST3 Standalone)
+9:    list(APPEND PLUGIN_FORMATS AU)
+18:    list(APPEND PLUGIN_FORMATS AAX)
+23:    COMPANY_NAME "TsKR"
+29:    FORMATS ${PLUGIN_FORMATS}
+35:    data/materials.json
+36:    data/fonts/IBMPlexSans-SemiBold.ttf
+48:    JUCE_WEB_BROWSER=0
+49:    JUCE_USE_CURL=0
+50:    JUCE_VST3_CAN_REPLACE_VST2=0
+56:        juce::juce_audio_formats
+57:        juce::juce_audio_utils
+58:        juce::juce_dsp
+60:        juce::juce_recommended_config_flags
+61:        juce::juce_recommended_lto_flags
+62:        juce::juce_recommended_warning_flags
+
+$ grep -n "JUCE_USE_FLAC\|JUCE_USE_OGGVORBIS\|JUCE_INCLUDE_\|JUCE_ASIO=\|JUCE_PLUGINHOST" CMakeLists.txt || echo "(CMakeLists.txt 沒有覆寫任何上述旗標)"
+271:        JUCE_PLUGINHOST_VST3=1
+
+（唯一命中的 :271 屬於測試程式 TsukiSynthHostProbe 的 target_compile_definitions，不是出貨的外掛／Standalone／CLI：）
+$ grep -n "add_executable(TsukiSynthHostProbe\|target_compile_definitions(TsukiSynthHostProbe" CMakeLists.txt
+266:    add_executable(TsukiSynthHostProbe tests/host_probe.cpp src/ParameterLayout.cpp)
+268:    target_compile_definitions(TsukiSynthHostProbe PRIVATE
+
+$ grep -o "JucePlugin_Build_[A-Za-z0-9]*=[01]" build/TsukiSynth_VST3.vcxproj | sort -u | tr "\n" " "
+JucePlugin_Build_AAX=0 JucePlugin_Build_AU=0 JucePlugin_Build_AUv3=0 JucePlugin_Build_LV2=0 JucePlugin_Build_Standalone=0 JucePlugin_Build_Unity=0 JucePlugin_Build_VST3=1 JucePlugin_Build_VST=0 
+
+$ grep -c "JUCE_PLUGINHOST_VST3=1" build/TsukiSynth.vcxproj build/TsukiSynthCLI.vcxproj
+build/TsukiSynth.vcxproj:0
+build/TsukiSynthCLI.vcxproj:0
+
+$ grep -o "ClCompile Include=\"[^\"]*\"" build/TsukiSynth.vcxproj | sed "s#.*modules[/\\\\]##;s#.*tsuki-synth[/\\\\]##" | tr -d '"' | sort | tr "\n" " "
+juce_audio_basics\juce_audio_basics.cpp juce_audio_devices\juce_audio_devices.cpp juce_audio_formats\juce_audio_formats.cpp juce_audio_processors\juce_audio_processors.cpp juce_audio_processors_headless\juce_audio_processors_headless.cpp juce_audio_processors_headless\juce_audio_processors_headless_ara.cpp juce_audio_processors_headless\juce_audio_processors_headless_lv2_libs.cpp juce_audio_utils\juce_audio_utils.cpp juce_core\juce_core.cpp juce_core\juce_core_CompilationTime.cpp juce_data_structures\juce_data_structures.cpp juce_dsp\juce_dsp.cpp juce_events\juce_events.cpp juce_graphics\juce_graphics.cpp juce_graphics\juce_graphics_Harfbuzz.cpp juce_graphics\juce_graphics_Sheenbidi.c juce_gui_basics\juce_gui_basics.cpp juce_gui_extra\juce_gui_extra.cpp src\ParameterLayout.cpp src\PluginEditor.cpp src\PluginProcessor.cpp 
+
+$ grep -o "ClCompile Include=\"[^\"]*\"" build/TsukiSynthCLI.vcxproj | sed "s#.*modules[/\\\\]##;s#.*tsuki-synth[/\\\\]##" | tr -d '"' | sort | tr "\n" " "
+juce_audio_basics\juce_audio_basics.cpp juce_audio_formats\juce_audio_formats.cpp juce_audio_processors\juce_audio_processors.cpp juce_audio_processors_headless\juce_audio_processors_headless.cpp juce_audio_processors_headless\juce_audio_processors_headless_ara.cpp juce_audio_processors_headless\juce_audio_processors_headless_lv2_libs.cpp juce_core\juce_core.cpp juce_core\juce_core_CompilationTime.cpp juce_data_structures\juce_data_structures.cpp juce_events\juce_events.cpp juce_graphics\juce_graphics.cpp juce_graphics\juce_graphics_Harfbuzz.cpp juce_graphics\juce_graphics_Sheenbidi.c juce_gui_basics\juce_gui_basics.cpp juce_gui_extra\juce_gui_extra.cpp src\cli\RenderApp.cpp 
+
+$ grep -m1 "CMAKE_CXX_COMPILER_VERSION" build/CMakeFiles/*/CMakeCXXCompiler.cmake
+set(CMAKE_CXX_COMPILER_VERSION "19.50.35730.0")
+
+$ sha256sum "libs/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK/VST3_Usage_Guidelines.pdf" "libs/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK/README.md" libs/JUCE/LICENSE.md data/fonts/IBMPlexSans-SemiBold.ttf
+bce8babed784777162e72425bfc186c3f02bea33eb539db4f367bada78899f4c *libs/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK/VST3_Usage_Guidelines.pdf
+c70932b363acf8a0c1bbf481965be35a829c8943a9bcbb6eb44bda8c53eba3a8 *libs/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK/README.md
+ca3a08368c9ed3195253f2df63ef08db1b0ea6be99388bb130c921b7c3e54616 *libs/JUCE/LICENSE.md
+a20caf8286023a6a7a85e40b1d2a4ae9fc3e3b1f9eda8f4c542dd4986af67bb1 *data/fonts/IBMPlexSans-SemiBold.ttf
+
+$ grep -n "Prohibited Use" -A2 libs/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK/README.md; grep -n "that you have to sign" libs/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK/README.md
+276:#### Prohibited Use 
+277-
+278-- Using “VST” (or derivatives like “VSTi”) in company or product names.
+28:- the **Steinberg VST 3 Plug-In SDK Licensing Agreement** that you have to sign if you want to develop or host **VST 3** plug-ins.
+
+$ find libs/JUCE -iname "*artwork*" -o -iname "*vst*logo*" | wc -l
+0
+
+字型 name table（data/fonts/IBMPlexSans-SemiBold.ttf，本腳本直接解析）：
+  nameID  0: Copyright 2018 IBM Corp. All rights reserved.
+  nameID  1: IBM Plex Sans SmBld
+  nameID  2: Regular
+  nameID  3: 3.005;IBM ;IBMPlexSans-SmBld
+  nameID  4: IBM Plex Sans SmBld
+  nameID  5: Version 3.005
+  nameID  6: IBMPlexSans-SmBld
+  nameID  7: IBM Plex® is a trademark of IBM Corp, registered in many jurisdictions worldwide.
+  nameID  8: Bold Monday
+  nameID  9: Mike Abbink, Paul van der Laan, Pieter van Rosmalen
+  nameID 11: http://www.boldmonday.com
+  nameID 12: http://www.ibm.com
+  nameID 13: This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL
+  nameID 14: http://scripts.sil.org/OFL
+
+§4 binary 掃描（第三方字串與 DLL imports；output/wf0925/G1/scan_binaries.py，本次重跑）
+------------------------------------------------------------------------------
+scan date: 2026-09-25T09:02:15
+======================================================================
+VST3 C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  size 7945216 mtime 2026-09-25T03:13:30
+  sha256 cff47572c20b6fa4360c66e624533f107930ad148bf88f5556249ae06174a8ab
+  reference libFLAC 1.4.3              count=1    ........reference libFLAC 1.4.3 20230623....1.4.3........aiff .aif.....
+  Xiph.Org libVorbis 1.3.7             count=1    lt).....Xiph.Org libVorbis 1.3.7....vorbis......Xiph.Org libVorbis I 202
+  libpng version 1.6.37                count=1    7...... libpng version 1.6.37 - April 14, 2019.........Ignoring inval
+  Thomas G. Lane, Guido Vollbeding     count=1    ) 2024, Thomas G. Lane, Guido Vollbeding....Unknown APP14 marker (not Adobe), le
+  inflate 1.3.1                        count=0    
+  deflate 1.3.1                        count=0    
+  harfbuzz                             count=1    ........harfbuzz ...=%u.U+%04X..<%d,%d,%d,%d>...#%X.,%d.
+  VST 3.8.0                            count=1    ........VST 3.8.0.......FObject.Unknown exception.......b
+  Steinberg                            count=69   quoia...Steinberg Cubase 7......Steinberg Cubase 8......S
+  IPlugInViewEmbedding                 count=0    
+  FObject                              count=2    0.......FObject.Unknown exception.......bad allocation.
+  incorrect header check               count=1     code...incorrect header check..1.3.1...invalid window size.....unknow
+  Copyright (C) 2024, Thomas G. Lane, Guido Vollbeding count=1    led.....Copyright (C) 2024, Thomas G. Lane, Guido Vollbeding....Unknown APP14 marker (not Adobe), le
+  SIL Open Font License                count=1    der the SIL Open Font License, Version 1.1. This license is available
+  IBM Plex                             count=3    eserved.IBM Plex Sans SmBldRegular3.005;IBM ;IBMPlexSans
+  Copyright 2018 IBM Corp              count=1    .....0..Copyright 2018 IBM Corp. All rights reserved.IBM Plex Sans SmBl
+  Version 3.005                        count=1    ns-SmBldVersion 3.005IBMPlexSans-SmBldIBM Plex. is a trademar
+  [utf-16be] IBM Plex                  count=3
+  [utf-16be] SIL Open Font License     count=1
+  [utf-16be] Version 3.005             count=1
+  DLL imports: KERNEL32.dll, USER32.dll, GDI32.dll, SHELL32.dll, ole32.dll, OLEAUT32.dll, COMDLG32.dll, ADVAPI32.dll, MSVCP140.dll, MSVCP140_2.dll, WININET.dll, WS2_32.dll, SHLWAPI.dll, WINMM.dll, d2d1.dll, dxgi.dll, d3d11.dll, dcomp.dll, IMM32.dll, COMCTL32.dll, dwmapi.dll, VCRUNTIME140_1.dll, VCRUNTIME140.dll, api-ms-win-crt-stdio-l1-1-0.dll, api-ms-win-crt-heap-l1-1-0.dll, api-ms-win-crt-string-l1-1-0.dll, api-ms-win-crt-convert-l1-1-0.dll, api-ms-win-crt-runtime-l1-1-0.dll, api-ms-win-crt-math-l1-1-0.dll, api-ms-win-crt-time-l1-1-0.dll, api-ms-win-crt-locale-l1-1-0.dll, api-ms-win-crt-environment-l1-1-0.dll, api-ms-win-crt-utility-l1-1-0.dll
+======================================================================
+Standalone C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+  size 7817216 mtime 2026-09-25T03:12:36
+  sha256 3c8d3fcc8c4157e51b7ba9129334cea5c4ee1d981d5ee1afe44bbcc533595355
+  reference libFLAC 1.4.3              count=1    ........reference libFLAC 1.4.3 20230623....1.4.3.......PADDING.STREAMI
+  Xiph.Org libVorbis 1.3.7             count=1    rb......Xiph.Org libVorbis 1.3.7....vorbis......Xiph.Org libVorbis I 202
+  libpng version 1.6.37                count=1    de..... libpng version 1.6.37 - April 14, 2019.....1.6.37......bad pa
+  Thomas G. Lane, Guido Vollbeding     count=1    ) 2024, Thomas G. Lane, Guido Vollbeding....Define Huffman Table 0x%02x.....Defi
+  inflate 1.3.1                        count=0    
+  deflate 1.3.1                        count=0    
+  harfbuzz                             count=1    =%u.....harfbuzz .......buffer verify error: clusters ar
+  VST 3.8.0                            count=0    
+  Steinberg                            count=22   ........Steinberg Cubase 6......Steinberg Cubase 7......S
+  IPlugInViewEmbedding                 count=0    
+  FObject                              count=0    
+  incorrect header check               count=1    od......incorrect header check..1.3.1...invalid block type......header
+  Copyright (C) 2024, Thomas G. Lane, Guido Vollbeding count=1    an-2024.Copyright (C) 2024, Thomas G. Lane, Guido Vollbeding....Define Huffman Table 0x%02x.....Defi
+  SIL Open Font License                count=1    der the SIL Open Font License, Version 1.1. This license is available
+  IBM Plex                             count=3    eserved.IBM Plex Sans SmBldRegular3.005;IBM ;IBMPlexSans
+  Copyright 2018 IBM Corp              count=1    .....0..Copyright 2018 IBM Corp. All rights reserved.IBM Plex Sans SmBl
+  Version 3.005                        count=1    ns-SmBldVersion 3.005IBMPlexSans-SmBldIBM Plex. is a trademar
+  [utf-16be] IBM Plex                  count=3
+  [utf-16be] SIL Open Font License     count=1
+  [utf-16be] Version 3.005             count=1
+  DLL imports: KERNEL32.dll, USER32.dll, GDI32.dll, SHELL32.dll, ole32.dll, OLEAUT32.dll, COMDLG32.dll, ADVAPI32.dll, MSVCP140.dll, MSVCP140_2.dll, WININET.dll, WS2_32.dll, SHLWAPI.dll, WINMM.dll, IMM32.dll, COMCTL32.dll, dwmapi.dll, d2d1.dll, dxgi.dll, d3d11.dll, dcomp.dll, VCRUNTIME140_1.dll, VCRUNTIME140.dll, api-ms-win-crt-heap-l1-1-0.dll, api-ms-win-crt-math-l1-1-0.dll, api-ms-win-crt-runtime-l1-1-0.dll, api-ms-win-crt-time-l1-1-0.dll, api-ms-win-crt-string-l1-1-0.dll, api-ms-win-crt-stdio-l1-1-0.dll, api-ms-win-crt-convert-l1-1-0.dll, api-ms-win-crt-locale-l1-1-0.dll, api-ms-win-crt-environment-l1-1-0.dll, api-ms-win-crt-utility-l1-1-0.dll
+======================================================================
+CLI C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  size 7132160 mtime 2026-09-15T02:07:56
+  sha256 9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8
+  reference libFLAC 1.4.3              count=1    if......reference libFLAC 1.4.3 20230623....1.4.3.......PARTITIONED_RIC
+  Xiph.Org libVorbis 1.3.7             count=1    rb......Xiph.Org libVorbis 1.3.7........encoder.Ogg-Vorbis file.id3artis
+  libpng version 1.6.37                count=1    de..... libpng version 1.6.37 - April 14, 2019.........missing LZ dic
+  Thomas G. Lane, Guido Vollbeding     count=1    ) 2024, Thomas G. Lane, Guido Vollbeding....Obtained EMS handle %u..Freed EMS ha
+  inflate 1.3.1                        count=0    
+  deflate 1.3.1                        count=0    
+  harfbuzz                             count=1    =%u.....harfbuzz ...10.1.0..%u..invalid.C.......HB_OPTIO
+  VST 3.8.0                            count=0    
+  Steinberg                            count=22   Reason..Steinberg Cubase 5 Bridged......Steinberg Cubase 
+  IPlugInViewEmbedding                 count=0    
+  FObject                              count=0    
+  incorrect header check               count=1    1.......incorrect header check..unknown compression method......invali
+  Copyright (C) 2024, Thomas G. Lane, Guido Vollbeding count=1    an-2024.Copyright (C) 2024, Thomas G. Lane, Guido Vollbeding....Obtained EMS handle %u..Freed EMS ha
+  SIL Open Font License                count=1    der the SIL Open Font License, Version 1.1. This license is available
+  IBM Plex                             count=3    eserved.IBM Plex Sans SmBldRegular3.005;IBM ;IBMPlexSans
+  Copyright 2018 IBM Corp              count=1    .....0..Copyright 2018 IBM Corp. All rights reserved.IBM Plex Sans SmBl
+  Version 3.005                        count=1    ns-SmBldVersion 3.005IBMPlexSans-SmBldIBM Plex. is a trademar
+  [utf-16be] IBM Plex                  count=3
+  [utf-16be] SIL Open Font License     count=1
+  [utf-16be] Version 3.005             count=1
+  DLL imports: KERNEL32.dll, USER32.dll, GDI32.dll, SHELL32.dll, ole32.dll, OLEAUT32.dll, COMDLG32.dll, ADVAPI32.dll, MSVCP140_2.dll, MSVCP140.dll, WININET.dll, WS2_32.dll, SHLWAPI.dll, WINMM.dll, IMM32.dll, COMCTL32.dll, dwmapi.dll, d2d1.dll, dxgi.dll, d3d11.dll, dcomp.dll, VCRUNTIME140_1.dll, VCRUNTIME140.dll, api-ms-win-crt-math-l1-1-0.dll, api-ms-win-crt-heap-l1-1-0.dll, api-ms-win-crt-convert-l1-1-0.dll, api-ms-win-crt-stdio-l1-1-0.dll, api-ms-win-crt-runtime-l1-1-0.dll, api-ms-win-crt-time-l1-1-0.dll, api-ms-win-crt-string-l1-1-0.dll, api-ms-win-crt-locale-l1-1-0.dll, api-ms-win-crt-utility-l1-1-0.dll, api-ms-win-crt-environment-l1-1-0.dll
+======================================================================
+IBMPlexSans-SemiBold.ttf sha256 a20caf8286023a6a7a85e40b1d2a4ae9fc3e3b1f9eda8f4c542dd4986af67bb1 size 202632
+  font bytes embedded verbatim in VST3      : True
+  font bytes embedded verbatim in Standalone: True
+  font bytes embedded verbatim in CLI       : True
+
+§5 THIRD_PARTY_NOTICES.txt：重產、逐字比對、與前任版本差異
+------------------------------------------------------------------------------
+前任版本（v1）sha256 bde8ef625bf94df9c6a759e1ae7bf036bac9a89b56aaea780f63687ce342ce9c（接手時以前任腳本重產，逐位元組相同）
+前任腳本 output/wf0925/G1/make_notices.py sha256 5ed26db6c0a71df43c9ea623af6767600479a8f1c7fc9db87fa271108b28e009
+v2 腳本   output/wf0925/G1/make_notices_v2.py sha256 e646a2d94a6fdfa7d015b08079bec99599fd9ef35e344215f9ce1c99e1072c0d
+wrote C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\G1\_regen_tmp.txt 975 lines
+v2 重產 sha256 aa955545d249e2c521f1d6b38b5a1b9e1c8b76c0f74ee811f25c5814bf32a985 ；repo 檔 sha256 aa955545d249e2c521f1d6b38b5a1b9e1c8b76c0f74ee811f25c5814bf32a985 ；相同=True
+
+逐字比對（output/wf0925/G1/notices_verbatim_check.py）：
+VST3 SDK LICENSE.txt                          verbatim=True  src_sha256=bcefe3f3928dbc39  lines=24
+Flac Licence.txt                              verbatim=True  src_sha256=6295cb91009a7aac  lines=51
+Ogg Vorbis Licence.txt                        verbatim=True  src_sha256=ab9da06ccd87ea13  lines=49
+pnglib/LICENSE                                verbatim=True  src_sha256=0ad3bfee8be10e55  lines=134
+zlib/LICENSE                                  verbatim=True  src_sha256=1de41f50c9b1bd33  lines=30
+harfbuzz/COPYING                              verbatim=True  src_sha256=bd836c0ddca8ea0b  lines=42
+sheenbidi/LICENSE                             verbatim=True  src_sha256=3ddf9be5c28fe27d  lines=202
+IBM Plex LICENSE.txt (fetched 2026-09-25)     verbatim=True  src_sha256=7e6b2818edbd8f6a  lines=93
+jpglib/README LEGAL ISSUES section            verbatim=True
+json.h header                                 verbatim=True
+ipslviewembedding.h header                    verbatim=True
+JUCE disclaimer                               in LICENSE.md=True in notices=True
+notices sha256 aa955545d249e2c521f1d6b38b5a1b9e1c8b76c0f74ee811f25c5814bf32a985 bytes 51483 lines 975 CRLF-only: True
+ALL VERBATIM: True
+
+v1 → v2 差異（diff 前任版本 本版）：
+4,5c4,6
+< Product : TsukiSynth 0.3.0 (Windows x64: VST3 plug-in "TsukiSynth.vst3" and
+<           Standalone application "TsukiSynth.exe")
+---
+> Product : TsukiSynth 0.3.0 (Windows x64: VST3 plug-in "TsukiSynth.vst3",
+>           Standalone application "TsukiSynth.exe", and command-line renderer
+>           "TsukiSynthCLI.exe" that the Standalone's Score console runs)
+44,45c45,47
+< Items 1 and 4-11 are contained in both the VST3 plug-in and the Standalone
+< application. Items 2, 3 and 3b are contained in the VST3 plug-in only.
+---
+> Items 1 and 4-11 are contained in the VST3 plug-in, the Standalone
+> application and the command-line renderer. Items 2, 3 and 3b are contained
+> in the VST3 plug-in only.
+814c816,817
+<             the plug-in and the Standalone via juce_add_binary_data)
+---
+>             the plug-in, the Standalone and the command-line renderer via
+>             juce_add_binary_data)
+943a947,950
+>   The command-line renderer (TsukiSynthCLI) links juce_core,
+>   juce_audio_formats and juce_audio_processors; its compiled JUCE modules
+>   (build/TsukiSynthCLI.vcxproj) are a subset of the list above and it does
+>   not host or contain the VST 3 SDK (JUCE_PLUGINHOST_VST3 is 0 by default).
+950c957,958
+<   plug-in only, and the IBM Plex name table).
+---
+>   plug-in only, and the IBM Plex name table). The command-line renderer built
+>   on 2026-09-15 was scanned the same way and matches the Standalone list.
+
+「待確認」項目：
+106:Version   : as bundled in VST 3 SDK 3.8.0 (upstream version not stated: 待確認)
+237:            string "Xiph.Org libVorbis 1.3.7"); libogg version: 待確認 (not
+819:            release this file came from: 待確認.
+
+§6 LICENSE 變更（只動第三方元件段的 JUCE 描述與商標句；授權條款本身未動）
+------------------------------------------------------------------------------
+diff --git a/LICENSE b/LICENSE
+index 81c654e..808872e 100644
+--- a/LICENSE
++++ b/LICENSE
+@@ -19,13 +19,21 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ IN THE SOFTWARE.
+ 
+ Third-party components:
+-- JUCE 8 (submodule, libs/JUCE): licensed separately under the JUCE 8
+-  license terms. This project currently qualifies for the JUCE Starter tier
+-  (free; revenue below USD 20,000; closed-source commercial distribution
+-  permitted). Before any public release, review the JUCE 8 EULA attribution
+-  requirements.
++- JUCE 8 (submodule, libs/JUCE, version 8.0.12): licensed separately under
++  the JUCE 8 End User Licence Agreement (https://juce.com/legal/juce-8-licence/),
++  Starter licence type. Under that agreement (sections 1.2 and 1.2.1) the
++  Starter licence type is free and applies while the licensee's annual
++  revenue or funding, measured over the previous 12 months, is up to
++  USD 20,000; for an individual this counts all revenue or funding generated
++  by the use of the Framework, including donations, sponsorship, advertising
++  and other indirect revenue. The agreement contains no splash-screen or
++  attribution requirement and does not require the source code of Products
++  to be disclosed. If the limit is exceeded, a licence type for the higher
++  limit must be purchased or development and distribution must stop
++  immediately (section 1.14). EULA text reviewed 2026-09-25; see
++  docs/legal/JUCE8_LICENSE_REVIEW.zh-TW.md.
+ - VST3 SDK (bundled within JUCE 8): MIT licensed.
+-- "VST" is a trademark of Steinberg Media Technologies GmbH.
++- VST is a registered trademark of Steinberg Media Technologies GmbH.
+ 
+ ────────────────────────────────────────────────────────────
+ 
+@@ -34,4 +42,8 @@ Third-party components:
+ 本專案版權為 TsKR2828（月月）所有，保留一切權利（含商業權利）。
+ 未經書面同意，任何人不得使用、複製、修改、散布或販售本軟體的
+ 任何部分。第三方元件（JUCE 8 / VST3 SDK）依其各自授權條款處理；
+-正式發行前需複查 JUCE 8 EULA 的署名條款（TODO A7 註記）。
++JUCE 8 採 Starter 方案（近 12 個月營收或資金 US$20,000 以下免費；
++個人身分須把因使用 JUCE 而來的捐款、贊助、廣告等間接收入一併計入；
++無啟動畫面／署名要求；超過門檻須升級方案或立即停止開發與散布），
++EULA 原文已於 2026-09-25 複查，見 docs/legal/JUCE8_LICENSE_REVIEW.zh-TW.md。
++VST 是 Steinberg Media Technologies GmbH 的註冊商標。
+
+條款段（第 1–19 行）與 HEAD 相同：True
+
+§7 安裝包腳本靜態自檢（非編譯；本機無 Inno Setup）
+------------------------------------------------------------------------------
+file C:\Users\admin\Desktop\Claude\tsuki-synth\tools\installer\TsukiSynth.iss lines 192
+utf8 BOM present: False | CRLF lines: 0
+defines: ['AppIdGuid', 'AppName', 'AppPublisher', 'AppVersion', 'BuildDir', 'CliExe', 'EulaFile', 'InstallerDir', 'NoticesFile', 'RepoRoot', 'StandaloneExe', 'Vst3BundleDir']
+{#...} used outside comments: ['AppIdGuid', 'AppName', 'AppPublisher', 'AppVersion', 'CliExe', 'EulaFile', 'NoticesFile', 'RepoRoot', 'StandaloneExe', 'Vst3BundleDir']
+undefined {#...}: []
+#if count 6 #endif count 6
+active sections: ['[Setup]', '[Types]', '[Components]', '[Files]', '[Icons]', '[Run]']
+unknown sections: []
+components defined: ['cli', 'standalone', 'vst3'] | referenced: ['cli', 'standalone', 'vst3'] | undefined refs: []
+Vst3 binary                                        exists=True  C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+Vst3 moduleinfo                                    exists=True  C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\Resources\moduleinfo.json
+StandaloneExe                                      exists=True  C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+CliExe                                             exists=True  C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+NoticesFile                                        exists=True  C:\Users\admin\Desktop\Claude\tsuki-synth\THIRD_PARTY_NOTICES.txt
+EulaFile (expected MISSING until 月月 approves)      exists=False  C:\Users\admin\Desktop\Claude\tsuki-synth\tools\installer\EULA.txt
+AppVersion 0.3.0 | CMakeLists project VERSION 0.3.0 | match: True
+
+§8 KNOWN_LIMITS_INDEX 引文與行號核對
+------------------------------------------------------------------------------
+OK  strict docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md | 它不是乳突鑼（泰國鑼、爪哇鑼等常見的 boss+盤面構造）的模型
+OK  strict docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md | 量測器自身系統誤差 ≤1.18 cent，未達 ≤1 cent 門檻，為已知並接受的上限
+OK  strict docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md | 任何量到 3.8–5.0 cent 之間的數字，都不得單獨用來斷言渲染正確或錯誤
+OK  strict docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md | 放鍵/阻尼段的音高判定不得引用 ≤1.18 cent 的主張，其已知誤差上界為 ~7.2 cent
+OK  strict docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md | 給愛麗絲 score、模態表、渲染決定性、逐軌疊加已驗；乾聲 883 顆有音高證據，其中 671 顆
+OK  strict docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md | 905 顆音高與泛音全部驗過
+OK  strict docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md | 仍不在主張範圍內：泛音的頻率與振幅、以及一切美學/聽感主張
+OK  strict TODO.md | 只適用 Cimbalom/Piano；Chromatic 在 D2 補搜完成前不得套用
+OK  strict TODO.md | 劃界為已文件化 creative 層（不算入物理主張）
+OK  strict TODO.md | 已文件化校準層、比照 spectralTilt 劃界
+OK  strict ROADMAP_PHYSICS.md | | FM Piano | ❌ 域外 | 已誠實標註「非物理合成」，維持此標註 |
+OK  strict ROADMAP_PHYSICS.md | | Custom Harmonics | ⚠️ 半域內 | 加法合成，頻率比可驗但非物理推導 |
+OK  strict ROADMAP_PHYSICS.md | 驗證一律 FX 全關；用了效果的 score 不在物理主張範圍
+OK  strict ROADMAP_PHYSICS.md | 混合系統：物理決定頻譜形狀、平均律決定基頻，不得宣稱絕對尺寸音高
+OK  strict ROADMAP_PHYSICS.md | 仍需真實試體量測才能升級為 specimen-level 主張
+OK  strict reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md | 標為 DECIDED CONVENTION，非物理常數
+OK  strict TODO.md | 這是月月裁決的慣例錨定，不是實測也不是推導
+OK  strict src/physics/BeamModel.h | 全音域一律 2 倍過阻尼、不再有任何錨點理由
+OK  space-insensitive docs/MATERIALS_SOURCES.md | no one paged through this codebase's history to co
+missing: 0
+（MATERIALS_SOURCES 那句原文跨行，比對時去掉換行空白，所以標 space-insensitive；索引裡的引文與原文用字相同）
+被引用檔與 HEAD 的差異（clean＝行號可直接對 HEAD）：
+  clean    docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+  clean    ROADMAP_PHYSICS.md
+  clean    TODO.md
+  clean    docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+  clean    reports/decision_packets/A13_partial_gate_domain.zh-TW.md
+  clean    reports/decision_packets/B7_phase2_and_open_items.zh-TW.md
+  clean    reports/decision_packets/C10_selfcal_domain.zh-TW.md
+  clean    reports/decision_packets/D13_gong_2x_partial.zh-TW.md
+  clean    reports/decision_packets/B6_calibration_choice.md
+  clean    reports/decision_packets/POLYPHONIC_VERIFICATION_OPTIONS.zh-TW.md
+  clean    reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md
+  clean    docs/MATERIALS_SOURCES.md
+  clean    docs/HAMMER_CONTACT_SOURCES.md
+  clean    reports/damping_broadband_findings.md
+  clean    src/physics/BeamModel.h
+  MODIFIED reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
+  MODIFIED reports/decision_packets/D11_string_scale_candidate.zh-TW.md
+（D9、D11 兩份裁決包在工作樹有其他卡的補記；索引引用它們的行號取 HEAD，補記部分標「未入庫」）
+
+git 歷史日期（索引 A15–A20 的日期來源）：
+  | FM Piano | ❌ 域外                             最早 7c150d1 2026-07-09
+  | Custom Harmonics | ⚠️ 半域內                   最早 7c150d1 2026-07-09
+  | 效果鏈（Reverb/Delay/Comp/Dist） | ❌ 域外          最早 7c150d1 2026-07-09
+  | `frequency_mode: midi` | ⚠️ 設計聲明            最早 e0eb06a 2026-07-23
+  | `frequency_mode: geometry` | ✅ 域內（方程層）      最早 e0eb06a 2026-07-23
+  ## 5. 明確不做 / 域外聲明                             最早 7c150d1 2026-07-09
+
+§9 兩封信檔頭狀態行
+------------------------------------------------------------------------------
+diff --git a/docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md b/docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+index 6c213f3..3961374 100644
+--- a/docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
++++ b/docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+@@ -1,6 +1,6 @@
+ # 信件草稿 2：向 University of Iowa MIS 確認泰國鑼錄音的器材與取樣率
+ 
+-> 狀態：**草稿，由月月自行寄出**（AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
++> 狀態：**已寄出（2026-09-15，依月月記錄），等回覆**（月月自行寄出，AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
+ > 收件人：Lawrence Fritts（Musical Instrument Samples 建置者，網頁署名）。**信箱請自行從 https://theremin.music.uiowa.edu/MIS.html 或 University of Iowa School of Music 教職員頁確認**，本文件不臆測。
+ > 語言：英文。下方附中文對照。
+ 
+diff --git a/docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md b/docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+index d5ecfaf..6093620 100644
+--- a/docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
++++ b/docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+@@ -1,6 +1,6 @@
+ # 信件草稿 1：向 TU Berlin 請求樂器指向性資料庫的商業使用許可
+ 
+-> 狀態：**草稿，由月月自行寄出**（AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
++> 狀態：**已寄出（2026-09-15，依月月記錄），等回覆**（月月自行寄出，AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
+ > 收件人：David Ackermann <david.ackermann@tu-berlin.de>（信箱來源：SOFA 檔 `AuthorContact` 屬性與論文通訊欄，見 `docs/EXTERNAL_DATASET_A8.zh-TW.md` §4.1）
+ > 建議副本：Fabian Brinkmann、Stefan Weinzierl（論文共同作者；信箱請自行從 TU Berlin Audio Communication Group 網頁確認，本文件不臆測）
+ > 語言：英文（收件人為德國學者）。下方附中文對照，寄英文版即可。
+「已寄出 09-15」的依據：
+TODO.md:37:**兩封信已寄出（2026-09-15，TU Berlin 授權請求＋Iowa 器材詢問），等回覆**；月月待辦剩：~~裝 Limbus 並啟用、Yamaha 裝好後叫 AI 清 Downloads 殘留~~。
+TODO.md:179:- [ ] **兩封信的回覆**（TU Berlin 指向性資料商業授權／Iowa MIS 泰國鑼器材，09-15 寄出）：repo 沒有回覆記錄；收到時轉給 AI 登記。`[open-work:W1-letters]`
+DEVLOG.md:67:## 2026-09-15（下） — 月月五項裁決「五題全照建議」落地 + 兩封信寄出
+DEVLOG.md:84:**兩封信（TU Berlin 授權請求、Iowa 器材詢問）月月 09-15 已寄出，等回覆。**
+HANDOVER.md:31:   細節見 `TODO.md` 開頭快照。**兩封信（TU Berlin、Iowa MIS）09-15 已寄出，等回覆**（repo 裡查不到回信記錄）。
+HANDOVER.md:114:| 兩封信 | 草稿 `docs/correspondence/2026-09-10_TU_Berlin_*.md`、`_Iowa_MIS_*.md`，月月自寄 → **09-15 已寄出，等回覆** |
+
+§10 EULA 草稿查過的程式事實
+------------------------------------------------------------------------------
+$ git grep -n "juce::URL\|WebInputStream\|http://\|https://\|StreamingSocket" HEAD -- src || echo "(HEAD 的 src/ 沒有任何一筆)"
+(HEAD 的 src/ 沒有任何一筆)
+
+$ git grep -n "getChildFile (\"Presets\")\|getChildFile (\"IR\")\|getChildFile (\"Recordings\")\|getChildFile (\"TsukiSynth_Renders\")" HEAD -- src
+HEAD:src/IRLibrary.h:123:                       .getChildFile ("IR");
+HEAD:src/PluginProcessor.cpp:446:                   .getChildFile ("Recordings");
+HEAD:src/PresetManager.h:447:                       .getChildFile ("Presets");
+HEAD:src/ScoreConsole.h:88:                   .getChildFile ("TsukiSynth_Renders");
+
+$ git grep -n "TsukiSynthCLI.exe" HEAD -- src/ScoreConsole.h
+HEAD:src/ScoreConsole.h:12: * through the same TsukiSynthCLI.exe that the verified render contract
+HEAD:src/ScoreConsole.h:98:        auto sibling = exe.getSiblingFile ("TsukiSynthCLI.exe");
+HEAD:src/ScoreConsole.h:102:        //          -> .../build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+HEAD:src/ScoreConsole.h:109:                             .getChildFile ("TsukiSynthCLI.exe");
+HEAD:src/ScoreConsole.h:219:                    "[錯誤] 找不到 TsukiSynthCLI.exe（應與 Standalone 同資料夾）"));
+
+
+§11 本卡觸碰的檔案（git status）
+------------------------------------------------------------------------------
+ M LICENSE
+ M docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+ M docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+?? THIRD_PARTY_NOTICES.txt
+?? docs/KNOWN_LIMITS_INDEX.zh-TW.md
+?? docs/legal/
+?? reports/gate_outputs/wf0925_G1_sources.txt
+?? tools/installer/
+
+END

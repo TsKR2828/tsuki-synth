@@ -1,0 +1,59 @@
+# staged 124 檔的 lane 歸屬（以稽核留下的 sha256 清單為準）
+$ git diff --cached --name-only | sort > staged.txt
+124
+研究 lane（R 稽核 stage 清單 output/wf0925/R_audit/stage_sha256_before_add.txt）: 75 檔，其中在 staged 內: 75
+C++ lane（K 稽核第 2 輪 output/wf0925/K_audit2/audited_files_sha256_round2_start.txt）: 34 檔，其中在 staged 內: 34
+兩清單重疊: 0
+其餘 staged（不在兩份清單內 → Python/CI lane P1，由 P1 稽核 stage）:
+  .github/workflows/physics.yml
+  .github/workflows/release-physics.yml
+  reports/gate_outputs/wf0907_method/render_wf_scores.py
+  reports/gate_outputs/wf0925_P1_gate1_workflow_yaml.txt
+  reports/gate_outputs/wf0925_P1_gate2_pytest_collect.txt
+  reports/gate_outputs/wf0925_P1_gate3_pytest_selfcal.txt
+  reports/gate_outputs/wf0925_P1_gate4_pytest_related.txt
+  reports/gate_outputs/wf0925_P1_gate5_render_outdir_8of8.txt
+  reports/gate_outputs/wf0925_P1_gate6_tools_smoke.txt
+  tests/test_measurement_selfcal.py
+  tests/test_stem_stream.py
+  tools/melody_roll_video.py
+  tools/partial_verify.py
+  tools/physics_verify.py
+  tools/verify_score.py
+  共 15 檔
+
+C++ lane 34 檔:
+  reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
+  reports/gate_outputs/wf0925_K1K2fix_bit_identity.txt
+  reports/gate_outputs/wf0925_K1K2fix_build_ctest.txt
+  reports/gate_outputs/wf0925_K1K2fix_diff.txt
+  reports/gate_outputs/wf0925_K1K2fix_hostprobe.txt
+  reports/gate_outputs/wf0925_K1K2fix_physics_verify_full.txt
+  reports/gate_outputs/wf0925_K1K2fix_summary.txt
+  reports/gate_outputs/wf0925_K1K2fix_verify_score_all.txt
+  reports/gate_outputs/wf0925_K1_bit_identity.txt
+  reports/gate_outputs/wf0925_K1_build_ctest.txt
+  reports/gate_outputs/wf0925_K1_hostprobe.txt
+  reports/gate_outputs/wf0925_K1_physics_verify_full.txt
+  reports/gate_outputs/wf0925_K1_summary.txt
+  reports/gate_outputs/wf0925_K1_verify_score_all.txt
+  reports/gate_outputs/wf0925_K2_bit_identity.txt
+  reports/gate_outputs/wf0925_K2_build_ctest.txt
+  reports/gate_outputs/wf0925_K2_diff.txt
+  reports/gate_outputs/wf0925_K2_e15_sources.txt
+  reports/gate_outputs/wf0925_K2_hostprobe.txt
+  reports/gate_outputs/wf0925_K2_physics_verify_full.txt
+  reports/gate_outputs/wf0925_K2_summary.txt
+  reports/gate_outputs/wf0925_K2_verify_score_all.txt
+  scores/examples/water_gong_free.score.json
+  src/IRLibrary.h
+  src/PluginProcessor.cpp
+  src/PluginProcessor.h
+  src/PresetManager.h
+  src/effects/EffectChain.h
+  src/engines/ChromaticEngine.h
+  src/engines/CimbalomEngine.h
+  src/physics/HammerImpulse.h
+  src/physics/PlateModel.h
+  tests/audit_repro.cpp
+  tests/host_probe.cpp

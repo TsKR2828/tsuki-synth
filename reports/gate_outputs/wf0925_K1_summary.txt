@@ -1,0 +1,96 @@
+WF0925-K1 施工摘要（C++ lane，src 小修，必須位元不變）
+======================================================
+日期 2026-09-25。branch fix/deep-physics-audit-20260716，HEAD 18430c4 ＋ 本卡未 stage 的改動。
+建置目錄只用 build-wf\。完整 GATE 命令與輸出在同目錄：
+  wf0925_K1_build_ctest.txt          GATE 1（cmake＋3 主 target＋5 測試 target）、GATE 2（ctest）
+  wf0925_K1_physics_verify_full.txt  GATE 3
+  wf0925_K1_verify_score_all.txt     GATE 4
+  wf0925_K1_hostprobe.txt            GATE 5（含改前基線、改後、逐行對照）
+  wf0925_K1_bit_identity.txt         GATE 6（R10 位元不變）
+
+GATE 一覽（數字全部取自上列檔案）
+---------------------------------
+1 建置     三個 cmake 步驟 EXIT=0，無 error／C 級 warning
+2 ctest    4/4 passed（audit_repro／tuner_repro／physics_models_repro／spectrum_view_repro）
+3 physics  RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED（3 個 rubber N/A，和 09-25 盤點相同；量測行逐行相同）
+4 score    75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.
+           更正（K 稽核第 1 輪發現，K1K2fix 修正輪補記）：上面這個 75/75 沒有測到 K1 的程式碼。K1 跑的命令是
+           「--cli 」後面空白，find_cli 自己選了 build\ 裡 K1 改動前的舊 CLI（manifest renderer 9123db8f6339...），
+           不是 build-wf。K1 回報寫的「--cli <build-wf CLI>」不實。有效的 GATE 4 是 wf0925_K2_verify_score_all.txt
+           （build-wf CLI，renderer a7248ee58374...，75/75 passed，0 failed），以及 K1K2fix 修正輪的
+           wf0925_K1K2fix_verify_score_all.txt（重編的 build-wf CLI，renderer fcea648ae5a4...，75/75 passed，0 failed）。
+5 HostProbe  PASS (0 failures)；[PASS] 106 行（基線 89，新增 17）
+6 位元不變  8/8 IDENTICAL（對 sha256_before_post_a14.txt）→ R10 未觸發
+
+逐項（對應 APPENDIX 條目 id）
+----------------------------
+1. engineering-gaps:E8（Cimbalom 每音配置 juce::String）
+   - CimbalomEngine.h：新增 `static inline const juce::String kBridgeSoundboardMaterialKeyString`
+     （靜態初始化時建一次）；startNote() 與 worstCaseTailSeconds() 改用它查 wood_spruce。
+     同一個 key、同一個 std::map 查找、同一個 Material*，DSP 數字不變（GATE 6 8/8 證明）。
+     選 static const juce::String 而不是在 setMaterialDB() 快取 Material*：後者在「先 setMaterialDB
+     後載入材質庫」的呼叫順序下語意會變，前者在任何呼叫順序都跟原本完全一樣。
+   - 兩個引擎的 setMaterialDB() 先呼叫一次 MaterialDB::getOrderedKeys()，讓它的函式內 static
+     （9 個 juce::String）在設定執行緒建好，不會在第一個音符時於音訊執行緒初始化。
+   - 順手檢查 Cimbalom／Chromatic startNote() 路徑其他逐音配置（讀程式碼，非工具量測）：
+     StringModel/BeamModel/PlateModel::calculateModes 都是 clear()+reserve(numModes)，迴圈上限
+     = numModes（弦 40／梁 12／板 20），而 scratch 在建構子已 reserve 40（Cimbalom）／20（Chromatic）；
+     ModalResonator::setModes 是 clear()+reserve(n)+push_back，resonator 已 reserveModes 40／20；
+     modes.assign / baseModes = modes 的長度不超過既有容量；buildCustomModes reserve(8) < 20；
+     BodyResonance::prepare/setFrequencies、BiquadFilter、NoiseGen、HammerImpulse 各 τc 函式都是純
+     純量運算。結論：除了上面兩處，沒找到其他明確的逐音配置。沒有 RealtimeSanitizer 之類工具，
+     「零配置」仍是人工讀碼結論，不是 GATE 輸出（見 open_items）。
+2. engineering-gaps:E9（tail 快取同步）→ 有做
+   - PluginProcessor 加 private juce::Timer（20 Hz，與 PluginEditor.cpp 既有 startTimerHz(20) 同頻率；
+     工程選擇，不是物理常數，沒有 GATE 門檻依賴它）。refreshEngineTailCache() 呼叫 voice 0 的
+     getWorstCaseTailSecondsCached()，結果存進兩個 std::atomic<double>；只在建構子、以及訊息執行緒上的
+     prepareToPlay()／setStateInformation()／timer 裡跑。getTailLengthSeconds() 只讀 atomic。
+   - ChromaticVoice::tailParamHash() 多混入 getSampleRate()：worstCaseTailSeconds() 本來就讀取樣率
+     （44100 備援），不加的話「建構子先算一次、prepareToPlay 換成 48000 後」會回傳舊值。
+   - 程式碼行數（不含註解）：新增約 25 行、刪除 8 行（git diff 逐行列過），在 ≤約 40 行內。
+   - H8 前後比對：cimbalom 34.4814 s、tongue_drum 178.734 s、water_gong 319.848 s、sustain 178.734 s，
+     改前改後逐字相同（HostProbe 以 6 位有效數字印出，所以證明到 6 位有效數字，不是逐位元）。
+   - 行為差異（誠實記錄）：以前 host 任何時候問 tail 都當場算；現在是 prepareToPlay／狀態還原當下
+     同步更新，其餘參數變動最多延遲一個 timer 週期（50 ms）才反映。
+3. engineering-gaps:E14（版本欄位）
+   - PluginProcessor.h：kStateVersion = 3，註解寫版本史（1、2 為回溯編號從未寫入：1＝cbffebd 前、
+     2＝cbffebd..31eb7ae^ 的裸 reverb_ir_path；3＝31eb7ae 的 reverb_ir 區塊＋f1b2448 的 D12 遷移，
+     K1 起第一次真的寫入）。commit 編號用 git log -S 查過。
+   - getStateInformation() 一律寫 state_version=3。
+   - setStateInformation()：沒有版本＝K1 以前的 state，走跟以前完全一樣的路（含 D12 判斷）；
+     版本 ≤3 同樣不變；版本比 3 新 → 參數、reverb_ir 區塊、preset 記帳照常讀，但保守跳過 D12
+     舊鍵遷移；非數字版本讀成 0（＝沒有版本），不會崩潰。state_version 在 replaceState 前移除，
+     apvts.state 內容和以前一樣。
+   - PresetManager.h：kPresetFormatVersion = 2（1＝3b92e99、2＝e0eb06a 起，已用 git log -S 查過）；
+     scanUserPresets 讀 version（缺值＝1）；v1/v2 照常；比 2 新的照樣列出、照樣載入（參數靠 ID 讀），
+     但 saveUserPreset() 拒絕覆寫它（回傳 false，檔案不動）。新增唯讀 getUserPresetFormatVersion()。
+   - HostProbe 新檢查（全 PASS）：H5 擷取的 state 有 state_version=3、還原後再擷取仍是 3；
+     無版本舊 state 仍遷移且回存為 3；state_version=99 的 state 不崩潰、參數讀到、D12 遷移被跳過、
+     回存為 3；H7 存的 preset 讀回格式 2；version=99 的 preset 檔列得出、載得進、拒絕覆寫、清掉。
+4. staged-review:D12-legacykey：HostProbe D12 情境 1、2 各加「輸出 state 不含 reverb_ir_path」斷言（PASS）。
+   情境 3 產品行為沒動。合成 blob 一律移除 state_version（模擬 K1 以前存的 state）。
+5. engineering-gaps:E15（IR 庫損壞修不好）
+   - IRLibrary.h：目標檔已存在就先重算 sha256，不符（含 0 位元組／讀不到）就重寫；新增
+     copyIntoLibraryAtomically()：先複製到同目錄 .tmp-<uuid>、重算雜湊必須等於來源雜湊、再用
+     juce::File::replaceFileIn()（Windows 是 ReplaceFile/MoveFile，已讀 JUCE 原始碼確認）換上。
+     新檔匯入也走同一條路。
+   - tests/audit_repro.cpp 新測試（進 ctest，全 PASS）：SHA-256 已知答案 3 組（""、"abc"、56 位元組
+     兩區塊訊息；期望值用 Python hashlib 獨立算出，見 wf0925_K1_build_ctest.txt 末段）＋ 故意把庫檔
+     截成一半 → 重新匯入 → 雜湊正確、無 .tmp 殘留；再清成 0 位元組 → 重新匯入 → 正確。
+   - 沒有統一兩套 SHA-256 實作（要動 CMakeLists，記 open_items）。
+6. 註解／描述同步
+   - staged-review:B7-residual：HammerImpulse.h 三處（原 :334、:342-343、:513）改成「目前沒有呼叫點
+     （B7 09-15 裁決撤回 Path C 欄位），重新接回前先解裁決包 §1.1」。
+   - D13-sync：PlateModel.h 檔頭改寫主張域（自由邊平板、不是乳突鑼，引 ENGINE_DOMAIN_CLAIMS §1 與
+     wf0914_D13_plate_ratios.txt 的 bronze ν=0.34 比值）；water_gong_free.score.json 只改 meta.description
+     （拿掉「physically-appropriate boundary for a hung gong」，改寫成不是乳突鑼的聲明，比值換成
+     D13 證據檔的 1 : 1.738 : 2.329 : 3.925）。WAV 位元不變（GATE 6），render manifest 的
+     root_score_sha256 會變（預期）。
+   - staged-review:D9c-calib：EffectChain.h kIrWetMakeupGain 註解補對齊參考與 −1.4～+4.0 dB／
+     −2.4～+5.3 dB（Python 複製版估計，出處 reports/status_check_2026-09-25/probes/
+     reverb_gain_replica_output.txt）；D9 裁決包檔尾附同一段（只附加，9 行）。
+   - PluginProcessor.cpp 過時的 debug.log 註解行刪除。
+
+本卡沒有新增任何物理常數、容差或 GATE 門檻。唯一新數字：timer 20 Hz（沿用 editor 既有值）、
+版本號 3／2（格式編號）、HostProbe/audit 測試用的 fixture 參數（種子、長度），都不是判定門檻；
+測試比較沿用既有的 1e-6（H5／H7 同一條）。

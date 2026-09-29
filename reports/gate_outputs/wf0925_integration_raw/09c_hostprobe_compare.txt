@@ -1,0 +1,20 @@
+# HostProbe [PASS]/[FAIL] 行對照（output/wf0925/INT/hp_norm.py = K 稽核的 hp_norm.py 加一條：路徑中的 \build-wf\ 視為 \build\；output\wf0925\<任意>\<檔名> 正規化為 OUTDIR\<檔名>）
+
+## A. 參考 = K 稽核第 2 輪 output/wf0925/K_audit2/gate5_hostprobe_repo_cwd.log（build-wf，cwd=repo 根）；比對 = 本次 09_hostprobe_cwd_repo.txt
+$ python output/wf0925/INT/hp_norm.py output/wf0925/K_audit2/gate5_hostprobe_repo_cwd.log reports/gate_outputs/wf0925_integration_raw/09_hostprobe_cwd_repo.txt +
+reference lines: 215 audit lines: 215
+reference lines not in audit run: 0
+audit lines not in reference: 0
+
+## B. 參考 = 本次 09_hostprobe_cwd_repo.txt；比對 = 本次 09b（cwd=output/wf0925/INT）
+$ python output/wf0925/INT/hp_norm.py reports/gate_outputs/wf0925_integration_raw/09_hostprobe_cwd_repo.txt reports/gate_outputs/wf0925_integration_raw/09b_hostprobe_cwd_output_wf0925_INT.txt +
+reference lines: 215 audit lines: 215
+reference lines not in audit run: 0
+audit lines not in reference: 0
+
+## C. 兩次本次 run 的非 [PASS]/[FAIL] 行差異（只印出來看，不判定）
+41c41
+<   H8 materials.json used: C:\Users\admin\Desktop\Claude\tsuki-synth\data\materials.json (found in the current working directory)
+---
+>   H8 materials.json used: C:\Users\admin\Desktop\Claude\tsuki-synth\data\materials.json (found in an ancestor of the executable's directory)
+(diff EXIT=1)

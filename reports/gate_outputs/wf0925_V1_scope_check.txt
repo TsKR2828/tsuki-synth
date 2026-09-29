@@ -1,0 +1,60 @@
+# WF0925-V1 範圍核對：本卡只新增 reports/ 底下的報告、腳本、證據檔；沒有改 src/ tools/ tests/ scores/ docs/ 或任何既有檔。
+# 本卡新增的檔（全部 untracked，稽核 PASS 後才由稽核 git add）：
+$ git status --short --untracked-files=all -- reports/wf0925_method reports/gate_outputs/wf0925_V1_* reports/voice_pool_occupancy_2026-09-25.zh-TW.md reports/partial_verify_full_2026-09-25.zh-TW.md
+?? reports/gate_outputs/wf0925_V1_cli_provenance.txt
+?? reports/gate_outputs/wf0925_V1_partial_offset_diagnostic.txt
+?? reports/gate_outputs/wf0925_V1_partial_stem_verify_full.txt
+?? reports/gate_outputs/wf0925_V1_partial_verify_full.txt
+?? reports/gate_outputs/wf0925_V1_scope_check.txt
+?? reports/gate_outputs/wf0925_V1_voice_pool_cpu_bench.txt
+?? reports/gate_outputs/wf0925_V1_voice_pool_dumps.txt
+?? reports/gate_outputs/wf0925_V1_voice_pool_lifetime_probe.txt
+?? reports/gate_outputs/wf0925_V1_voice_pool_side_checks.txt
+?? reports/gate_outputs/wf0925_V1_voice_pool_sources.txt
+?? reports/gate_outputs/wf0925_V1_voice_pool_summary.txt
+?? reports/partial_verify_full_2026-09-25.zh-TW.md
+?? reports/voice_pool_occupancy_2026-09-25.zh-TW.md
+?? reports/wf0925_method/chromatic_tail_budget_check.py
+?? reports/wf0925_method/dump_corpus_modes.py
+?? reports/wf0925_method/fm_zombie_check.py
+?? reports/wf0925_method/make_plugin_reachable_scores.py
+?? reports/wf0925_method/partial_full_summary.py
+?? reports/wf0925_method/partial_offset_decomposition.py
+?? reports/wf0925_method/voice_cpu_bench.py
+?? reports/wf0925_method/voice_lifetime_probe.py
+?? reports/wf0925_method/voice_pool_code_citations.py
+?? reports/wf0925_method/voice_pool_occupancy.py
+?? reports/wf0925_method/voice_pool_summary.py
+
+# 工作樹裡 src/ tools/ tests/ scores/ 的既有修改都不是本卡做的（其他 WF0925 卡，例如 K1、P1、X1）。
+# 下列 mtime 對照：本卡最早的產出是 output/wf0925/V1/cli.exe（06:06:23）；有些檔在那之後才被改，
+# 那是同時在跑的其他卡（本卡全程只讀這些檔，沒有寫入）。
+$ git status --short -- src tools tests scores ; ls -la --time-style=+%F_%T <those files>
+scores/examples/water_gong_free.score.json    2026-09-25 05:46:50
+src/IRLibrary.h                               2026-09-25 05:52:42
+src/PluginProcessor.cpp                       2026-09-25 05:52:42
+src/PluginProcessor.h                         2026-09-25 05:52:42
+src/PresetManager.h                           2026-09-25 05:52:42
+src/effects/EffectChain.h                     2026-09-25 05:52:42
+src/engines/ChromaticEngine.h                 2026-09-25 05:52:42
+src/engines/CimbalomEngine.h                  2026-09-25 05:52:42
+src/physics/HammerImpulse.h                   2026-09-25 05:52:42
+src/physics/PlateModel.h                      2026-09-25 05:52:42
+tests/audit_repro.cpp                         2026-09-25 08:24:02
+tests/host_probe.cpp                          2026-09-25 08:24:02
+tests/test_measurement_selfcal.py             2026-09-25 05:40:00
+tests/test_stem_stream.py                     2026-09-25 05:41:34
+tools/melody_roll_video.py                    2026-09-25 05:38:18
+tools/partial_verify.py                       2026-09-25 05:38:33
+tools/physics_verify.py                       2026-09-25 05:37:39
+tools/verify_score.py                         2026-09-25 05:37:39
+
+# 本卡沒有對 build\ 跑 cmake、沒有建置任何東西；用的 CLI 只有 build\ 現成那支（及其複本）。
+$ ls -la --time-style=+%F_%T build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+-rwxr-xr-x 1 admin 197609 7132160 2026-09-15_02:07:56 build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+
+# R10：本卡沒有任何會改變 score 渲染結果的修改（沒有改 src/、scores/、渲染參數）；故未跑 8/8 位元不變（那是改 src 的卡的 GATE）。
+# 暫存輸出：output/wf0925/V1/（gitignored）；分軌 17 GB 在 repo 外 E:\tsuki_wf0925_V1\stem_full\。
+$ git check-ignore -v output/wf0925/V1/cli.exe reports/wf0925_method/__pycache__/voice_pool_occupancy.cpython-313.pyc
+.gitignore:23:output/	output/wf0925/V1/cli.exe
+.gitignore:34:__pycache__/	reports/wf0925_method/__pycache__/voice_pool_occupancy.cpython-313.pyc

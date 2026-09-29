@@ -1,0 +1,25 @@
+$ cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe   (cwd=<repo>, start 2026-09-25 10:41:24)
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  audit_repro.cpp
+  TsukiSynthAuditTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthAuditTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthTunerTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthTunerTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  physics_models_repro.cpp
+  TsukiSynthPhysicsModelsTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthPhysicsModelsTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthSpectrumViewTest.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthSpectrumViewTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  host_probe.cpp
+  TsukiSynthHostProbe.vcxproj -> C:\Users\admin\Desktop\Claude\tsuki-synth\build\Release\TsukiSynthHostProbe.exe
+EXIT_CODE=0  (end 2026-09-25 10:41:51)

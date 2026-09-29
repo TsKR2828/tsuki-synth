@@ -1,0 +1,59 @@
+# WF0925-V1 A：給愛麗絲鋼琴版全曲 905 顆 stem_verify（乾聲、--keep-stems）——partial_verify 的輸入
+# 身分：informational 的前置步驟（stem_verify 自己的 FAIL=16 是既有 GATE 判定原樣照抄，本卡不改）
+# 執行：前任在 2026-09-25 06:06:30–06:37:22 跑完（被中斷前已完成、rc=1 是因 n_fail=16，屬預期），本輪接手者重讀並核對，未重跑。
+# 命令（依報告 JSON 還原；前任沒留命令列原文）：
+#   python tools/stem_verify.py scores/classical/fur_elise/fur_elise_complete.score.json \
+#       --out-dir E:\tsuki_wf0925_V1\stem_full --keep-stems --json output/wf0925/V1/stem_full_report.json
+#   （預設 --analysis-dry；stems 放 E: 是因為 C: 只剩約 24 GB、stems 共 17 GB）
+
+$ cat output/wf0925/V1/stem_full_timing.txt output/wf0925/V1/stem_full_log.txt
+start 2026-09-25 06:06:30
+rc=1
+end 2026-09-25 06:37:22
+[find_cli] TsukiSynthCLI selected: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[stem_verify] scores\classical\fur_elise\fur_elise_complete.score.json
+  events total=905  velocity>0=905  used=905
+[find_cli] TsukiSynthCLI selected: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  stem_verify summary: 677 PASS / 16 FAIL / 212 UNVERIFIED
+  baseline (whole-file melody_verify): 8 PASS / 33 FAIL / 865 UNVERIFIED
+  superposition: NOT bit-exact / ESTABLISHED (criterion: see report json)
+    max_abs_diff=1.069158e-06  budget=5.394220e-05  peak=-119.42 dBFS  rms=-134.09 dBFS  first_diff@0.0
+  stems kept at: E:\tsuki_wf0925_V1\stem_full\stems
+  [exit=1] n_fail=16
+
+$ sha256sum output/wf0925/V1/stem_full_report.json scores/classical/fur_elise/fur_elise_complete.score.json
+a4647c96246999fad03334e1abdcefc7f5048b67f295db78e8364d9f9525ec67 *output/wf0925/V1/stem_full_report.json
+3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7 *scores/classical/fur_elise/fur_elise_complete.score.json
+$ ls /e/tsuki_wf0925_V1/stem_full/stems | wc -l ; ls /e/tsuki_wf0925_V1/stem_full/stems/*/*.wav | wc -l ; du -sh /e/tsuki_wf0925_V1/stem_full
+905
+905
+17G	/e/tsuki_wf0925_V1/stem_full
+
+$ python - (讀 stem_full_report.json 的 provenance / summary / superposition，並與 09-14 D14 全量、08-30 A14 前全量逐顆比對)
+status ok | events total/used 905 905 | limited_run False | render_errors {}
+provenance.analysis_dry True | leaf_diff [{'path': 'global/effects/reverb/wet', 'before': 0.1, 'after': 0}, {'path': 'global/effects/reverb/decay', 'before': 1.4, 'after': 0}]
+provenance.cli {'path': 'build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe', 'sha256': '9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8'}
+superposition: n_stems_summed=905 bit_exact=False established=True max_abs_diff=1.069158e-06 residual_budget=5.394220e-05 peak=-119.42 dBFS rms=-134.09 dBFS
+THIS RUN  (09-25, cli 9123db8f): {'pass': 677, 'fail': 16, 'unverified': 212}
+D14 RUN   (09-14, cli 683fdd7b): {'pass': 677, 'fail': 16, 'unverified': 212}
+PRE-A14   (08-30): {'pass': 671, 'fail': 22, 'unverified': 212}
+vs D14: verdict differences 0 ; max |d pitch_cents| 0.000000 ; max |d onset_err_ms| 0.000000
+pitch measured on 889/905 events ; max |pitch_cents| 3.0355 c
+FAIL 16:
+   idx   88 t=  16.2500 E5   velocity 0.278
+   idx   92 t=  17.0833 E5   velocity 0.278
+   idx   96 t=  17.9167 E5   velocity 0.278
+   idx  192 t=  32.3958 A5   velocity 0.452
+   idx  279 t=  40.4166 A5   velocity 0.427
+   idx  318 t=  42.9166 A5   velocity 0.427
+   idx  440 t=  63.7500 E5   velocity 0.278
+   idx  444 t=  64.5833 E5   velocity 0.278
+   idx  448 t=  65.4166 E5   velocity 0.278
+   idx  731 t= 100.4166 A6   velocity 0.427
+   idx  740 t= 101.2500 A#6  velocity 0.427
+   idx  744 t= 101.3888 A6   velocity 0.427
+   idx  756 t= 103.0555 A5   velocity 0.427
+   idx  843 t= 118.7500 E5   velocity 0.278
+   idx  847 t= 119.5833 E5   velocity 0.278
+   idx  851 t= 120.4166 E5   velocity 0.278
+these 16 at pre-A14 (08-30): {'PASS': 16}

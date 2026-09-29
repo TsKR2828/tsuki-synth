@@ -1,0 +1,333 @@
+WF0925-P1 證據檔（Python/CI lane 工兵）— GATE 4：本卡動到/新增的測試檔＋對應工具的既有測試檔（非全套）
+日期：2026-09-25　repo HEAD：18430c4（branch fix/deep-physics-audit-20260716），本卡改動未 commit
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<repo> = repo 根目錄；<scratchpad> = 本 session 暫存目錄（repo 外）；
+<tmp> = 系統暫存目錄；<home> = 使用者家目錄。原始 log 在 output/wf0925/P1/（gitignored）。
+Python：3.13.3（本機實際版本；pytest 8.4.2）
+================================================================================
+任務 6（staged-review:D14-tests）的新測試＋任務 5/7 動到的工具之既有測試
+
+命令（repo 根目錄）：
+  PYTHONIOENCODING=utf-8 python -m pytest tests/test_stem_stream.py tests/test_stem_verify.py \
+    tests/test_partial_verify.py tests/test_physics_verify.py tests/test_verify_score_contract.py \
+    tests/test_render_app_filename_safety.py tests/test_specimen_verify.py -v -rxXs -p no:cacheprovider
+結果：179 passed, 1 skipped（skip 是既有的 trailing-space 不可達說明，非本卡造成）
+  逐檔：stem_stream 17 / stem_verify 49 / partial_verify 10 / physics_verify 45 / verify_score_contract 37 /
+        render_app_filename_safety 7（含 1 skip）/ specimen_verify 15 ＝ 180
+  （test_render_app_filename_safety、test_specimen_verify 直接呼叫 verify_score.find_cli()，用來確認 find_cli 改寫沒壞；
+   test_measurement_selfcal 見 GATE 3。）
+
+tests/test_stem_stream.py 全部用 Python 自己合成 WAV（struct+numpy），不叫 CLI：
+  read_wav_header：fmt 前有 LIST chunk、奇數大小 chunk 的 pad byte（1/5/7 bytes，fmt 前後各一）、18-byte fmt、
+  fmt 在 data 之後、WAVE_FORMAT_EXTENSIBLE（40-byte fmt）、data 宣告長度超過檔案；每個合法檔都比對
+  read_wav_float 的 sr/ch 一致；非 RIFF／缺 fmt／fmt 截斷三種壞檔要丟 ValueError。
+  StemArrayStream：len、依 entries 順序迭代、惰性（建構與 len() 不讀檔、每次 next 只讀一個檔）、可重複迭代、空清單、
+  compare_superposition 餵 stream 與餵 list 結果 dict 完全相同。
+  發現（未改 stem_verify.py，範圍外）：EXTENSIBLE 檔 read_wav_header 回 (48000, 2)，但 read_wav_float 不解 0xFFFE，
+  會丟 ValueError「unsupported wav format」——是大聲失敗、不是靜默算錯；測試把這兩個現況都釘住。
+
+---------------------------------------------------------------- pytest 輸出
+============================= test session starts =============================
+platform win32 -- Python 3.13.3, pytest-8.4.2, pluggy-1.6.0 -- <home>\AppData\Local\Programs\Python\Python313\python.exe
+rootdir: <repo>
+plugins: anyio-4.13.0, cov-7.1.0, mock-3.15.1
+collecting ... collected 180 items
+
+tests/test_stem_stream.py::test_header_plain_pcm16_matches_float PASSED  [  0%]
+tests/test_stem_stream.py::test_header_skips_list_chunk_before_fmt PASSED [  1%]
+tests/test_stem_stream.py::test_header_odd_sized_chunk_pad_byte[1] PASSED [  1%]
+tests/test_stem_stream.py::test_header_odd_sized_chunk_pad_byte[5] PASSED [  2%]
+tests/test_stem_stream.py::test_header_odd_sized_chunk_pad_byte[7] PASSED [  2%]
+tests/test_stem_stream.py::test_header_fmt_with_cbsize_18_bytes PASSED   [  3%]
+tests/test_stem_stream.py::test_header_fmt_after_data PASSED             [  3%]
+tests/test_stem_stream.py::test_header_extensible_fmt PASSED             [  4%]
+tests/test_stem_stream.py::test_header_does_not_need_data_bytes PASSED   [  5%]
+tests/test_stem_stream.py::test_header_rejects_non_riff PASSED           [  5%]
+tests/test_stem_stream.py::test_header_rejects_missing_fmt PASSED        [  6%]
+tests/test_stem_stream.py::test_header_rejects_truncated_fmt PASSED      [  6%]
+tests/test_stem_stream.py::test_stream_len_and_order PASSED              [  7%]
+tests/test_stem_stream.py::test_stream_reads_lazily_one_file_at_a_time PASSED [  7%]
+tests/test_stem_stream.py::test_stream_is_reiterable PASSED              [  8%]
+tests/test_stem_stream.py::test_stream_empty PASSED                      [  8%]
+tests/test_stem_stream.py::test_compare_superposition_same_result_for_stream_and_list PASSED [  9%]
+tests/test_stem_verify.py::test_s1_unperturbed_sum_is_bit_exact PASSED   [ 10%]
+tests/test_stem_verify.py::test_s1_amplitude_perturbation_breaks_superposition PASSED [ 10%]
+tests/test_stem_verify.py::test_s1_sample_shift_perturbation_breaks_superposition PASSED [ 11%]
+tests/test_stem_verify.py::test_s1_pad_to_length_rejects_stem_longer_than_reference PASSED [ 11%]
+tests/test_stem_verify.py::test_s2_mis_declared_time_is_fail_not_unverified_or_pass PASSED [ 12%]
+tests/test_stem_verify.py::test_s3_distortion_enabled_is_refused PASSED  [ 12%]
+tests/test_stem_verify.py::test_s3_layered_score_is_refused PASSED       [ 13%]
+tests/test_stem_verify.py::test_s3_gate_check_pure_function_matches_cli_behaviour PASSED [ 13%]
+tests/test_stem_verify.py::test_bonus_read_wav_float_roundtrips_pcm16 PASSED [ 14%]
+tests/test_stem_verify.py::test_bonus_read_wav_float_roundtrips_ieee_float32 PASSED [ 15%]
+tests/test_stem_verify.py::test_bonus_read_wav_float_roundtrips_pcm24 PASSED [ 15%]
+tests/test_stem_verify.py::test_completeness_check_accepts_consistent_counts PASSED [ 16%]
+tests/test_stem_verify.py::test_completeness_check_catches_stem_list_undercount PASSED [ 16%]
+tests/test_stem_verify.py::test_completeness_check_catches_compare_superposition_disagreement PASSED [ 17%]
+tests/test_stem_verify.py::test_superposition_tail_margin_ms_sourced_reverb_formula PASSED [ 17%]
+tests/test_stem_verify.py::test_clamped_tail_silence_ms_respects_schema_cap PASSED [ 18%]
+tests/test_stem_verify.py::test_blocker_near_silent_event_no_longer_false_passes PASSED [ 18%]
+tests/test_stem_verify.py::test_e2e_run_on_real_fixture_stem_count_matches_and_established PASSED [ 19%]
+tests/test_stem_verify.py::test_e2e_dropped_stem_is_caught_not_silently_summed PASSED [ 20%]
+tests/test_stem_verify.py::test_limited_run_superposition_is_not_applicable_not_bit_exact PASSED [ 20%]
+tests/test_stem_verify.py::test_cli_exit_code_is_nonzero_when_events_fail PASSED [ 21%]
+tests/test_stem_verify.py::test_f01_preexisting_nonempty_stems_dir_is_refused_before_render PASSED [ 21%]
+tests/test_stem_verify.py::test_f01_force_clean_removes_preexisting_stems_dir PASSED [ 22%]
+tests/test_stem_verify.py::test_f01_preexisting_empty_stems_dir_is_used_not_blocked PASSED [ 22%]
+tests/test_stem_verify.py::test_f01_own_temp_success_and_failure_paths_unaffected PASSED [ 23%]
+tests/test_stem_verify.py::test_p2_empty_subdir_linked_outside_out_dir_is_refused[stems] PASSED [ 23%]
+tests/test_stem_verify.py::test_p2_empty_subdir_linked_outside_out_dir_is_refused[reference] PASSED [ 24%]
+tests/test_stem_verify.py::test_p2_subdir_that_is_a_plain_file_is_refused[stems] PASSED [ 25%]
+tests/test_stem_verify.py::test_p2_subdir_that_is_a_plain_file_is_refused[reference] PASSED [ 25%]
+tests/test_stem_verify.py::test_p2_ordinary_subdirs_inside_out_dir_still_pass_the_gate PASSED [ 26%]
+tests/test_stem_verify.py::test_c11_extract_rule_ids_is_exact_string_only_never_guessed PASSED [ 26%]
+tests/test_stem_verify.py::test_c11_judge_stem_passes_reason_through_verbatim_and_derives_rules PASSED [ 27%]
+tests/test_stem_verify.py::test_c11_judge_stem_never_overwrites_an_existing_rules_field PASSED [ 27%]
+tests/test_stem_verify.py::test_c11_judge_stem_wrong_event_count_gets_empty_rules PASSED [ 28%]
+tests/test_stem_verify.py::test_c11_refusal_histogram_counts_only_unverified_verbatim PASSED [ 28%]
+tests/test_stem_verify.py::test_c11_refusal_histogram_empty_when_no_unverified_events PASSED [ 29%]
+tests/test_stem_verify.py::test_c11_e2e_run_wires_reason_rules_and_histograms_into_the_report PASSED [ 30%]
+tests/test_stem_verify.py::test_c11_e2e_unverified_event_populates_refusal_histogram PASSED [ 30%]
+tests/test_stem_verify.py::test_derive_dry_score_only_zeroes_three_leaves_diff_is_precise PASSED [ 31%]
+tests/test_stem_verify.py::test_derive_dry_score_no_reverb_block_diff_is_empty PASSED [ 31%]
+tests/test_stem_verify.py::test_derive_dry_score_missing_global_block_diff_is_empty PASSED [ 32%]
+tests/test_stem_verify.py::test_derive_dry_score_already_zero_leaves_produce_no_diff PASSED [ 32%]
+tests/test_stem_verify.py::test_dry_score_filename_strips_score_json_suffix_only PASSED [ 33%]
+tests/test_stem_verify.py::test_analysis_dry_flag_default_true_and_no_flag_sets_false PASSED [ 33%]
+tests/test_stem_verify.py::test_c12_default_analysis_dry_true_no_warning PASSED [ 34%]
+tests/test_stem_verify.py::test_c12_no_analysis_dry_sets_false_and_adds_warning PASSED [ 35%]
+tests/test_stem_verify.py::test_c12_e2e_provenance_hashes_and_leaf_diff_match_real_files PASSED [ 35%]
+tests/test_stem_verify.py::test_c12_baseline_judges_the_same_analysis_score_not_the_wet_original PASSED [ 36%]
+tests/test_stem_verify.py::test_c12_own_temp_cleanup_marks_deleted_flag_not_path_suffix PASSED [ 36%]
+tests/test_partial_verify.py::test_a_exact_synthetic_signal_all_partials_pass PASSED [ 37%]
+tests/test_partial_verify.py::test_b_single_partial_shifted_8_cents_only_that_partial_fails PASSED [ 37%]
+tests/test_partial_verify.py::test_c_silent_partial_is_unverified_not_pass PASSED [ 38%]
+tests/test_partial_verify.py::test_d_amplitude_boost_does_not_change_frequency_verdict PASSED [ 38%]
+tests/test_partial_verify.py::test_e_gate_ready_is_always_false PASSED   [ 39%]
+tests/test_partial_verify.py::test_infer_B_and_least_squares_roundtrip PASSED [ 40%]
+tests/test_partial_verify.py::test_infer_B_handles_bad_input PASSED      [ 40%]
+tests/test_partial_verify.py::test_is_weak_fundamental_class_matches_literal_marker_only PASSED [ 41%]
+tests/test_partial_verify.py::test_c13_pitch_via_partials_recovers_f0_when_fundamental_unmeasurable PASSED [ 41%]
+tests/test_partial_verify.py::test_is_weak_fundamental_class_marker_matches_melody_verify_source_string PASSED [ 42%]
+tests/test_physics_verify.py::PhysicsVerifyMetrologyTests::test_internal_adversarial_suite PASSED [ 42%]
+tests/test_physics_verify.py::PhysicsVerifyMetrologyTests::test_material_observability_requires_eight_cycles PASSED [ 43%]
+tests/test_physics_verify.py::PhysicsVerifyMetrologyTests::test_out_of_band_is_explicit_and_fails_when_required PASSED [ 43%]
+tests/test_physics_verify.py::PhysicsVerifyMetrologyTests::test_overlapping_windows_cannot_reuse_one_peak PASSED [ 44%]
+tests/test_physics_verify.py::PhysicsVerifyMetrologyTests::test_stiff_string_oracle_is_not_integer_harmonics PASSED [ 45%]
+tests/test_physics_verify.py::EigenvalueAnchorTests::test_cantilever_betal_are_characteristic_equation_roots PASSED [ 45%]
+tests/test_physics_verify.py::EigenvalueAnchorTests::test_free_free_betal_are_characteristic_equation_roots PASSED [ 46%]
+tests/test_physics_verify.py::EigenvalueAnchorTests::test_free_plate_solver_is_poisson_sensitive PASSED [ 46%]
+tests/test_physics_verify.py::EigenvalueAnchorTests::test_free_plate_solver_reproduces_leissa_nu033 PASSED [ 47%]
+tests/test_physics_verify.py::EigenvalueAnchorTests::test_ratio_judgment_negative_cases PASSED [ 47%]
+tests/test_physics_verify.py::EqualTemperamentAnchorTests::test_et_anchor_passes_on_pitch_and_keeps_conformance PASSED [ 48%]
+tests/test_physics_verify.py::EqualTemperamentAnchorTests::test_et_anchor_rejects_agreeing_but_detuned_pair PASSED [ 48%]
+tests/test_physics_verify.py::EqualTemperamentAnchorTests::test_et_anchor_rejects_render_off_both PASSED [ 49%]
+tests/test_physics_verify.py::VelocityLawTests::test_fundamental_band_counterexample_isolates_violation PASSED [ 50%]
+tests/test_physics_verify.py::VelocityLawTests::test_fundamental_band_lawful_pair_passes PASSED [ 50%]
+tests/test_physics_verify.py::VelocityLawTests::test_law_constant_value PASSED [ 51%]
+tests/test_physics_verify.py::VelocityLawTests::test_lawful_pair_passes PASSED [ 51%]
+tests/test_physics_verify.py::VelocityLawTests::test_model_violating_law_fails_even_when_render_matches PASSED [ 52%]
+tests/test_physics_verify.py::VelocityLawTests::test_nan_prediction_fails PASSED [ 52%]
+tests/test_physics_verify.py::VelocityLawTests::test_render_mismatch_fails PASSED [ 53%]
+tests/test_physics_verify.py::VelocityLawTests::test_selftest_velocity_law_negative PASSED [ 53%]
+tests/test_physics_verify.py::VelocityLawTests::test_selftest_velocity_law_negative_uniform_scale PASSED [ 54%]
+tests/test_physics_verify.py::VelocityTaucVDomainTests::test_fixed_tauc_law_still_armed PASSED [ 55%]
+tests/test_physics_verify.py::VelocityTaucVDomainTests::test_match_break_fails_taucv_domain PASSED [ 55%]
+tests/test_physics_verify.py::VelocityTaucVDomainTests::test_nan_fails_taucv_domain PASSED [ 56%]
+tests/test_physics_verify.py::VelocityTaucVDomainTests::test_probe_domain_boundary PASSED [ 56%]
+tests/test_physics_verify.py::VelocityTaucVDomainTests::test_selfconsistent_pair_passes_taucv_domain PASSED [ 57%]
+tests/test_physics_verify.py::VelocityTaucVDomainTests::test_selftest_velocity_taucv_domain PASSED [ 57%]
+tests/test_physics_verify.py::VelocityTaucVDomainTests::test_tolerance_shared_not_widened PASSED [ 58%]
+tests/test_physics_verify.py::T60JudgmentTests::test_good_ratio_and_sufficient_span_pass PASSED [ 58%]
+tests/test_physics_verify.py::T60JudgmentTests::test_good_ratio_with_insufficient_span_fails PASSED [ 59%]
+tests/test_physics_verify.py::T60JudgmentTests::test_non_finite_measurement_fails_closed PASSED [ 60%]
+tests/test_physics_verify.py::AmplitudeCounterexampleTests::test_plus_6db_partial_fails_through_shared_judgment PASSED [ 60%]
+tests/test_physics_verify.py::AmplitudeCounterexampleTests::test_selftest_amps_wrong_amplitude PASSED [ 61%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_clean_signal_has_low_residual PASSED [ 61%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_dump_modes_event_returns_none_not_traceback_on_timeout PASSED [ 62%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_judge_fails_unmodeled_strong_peak_above_limit PASSED [ 62%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_judge_passes_clean_signal_below_limit PASSED [ 63%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_judge_treats_unmeasurable_none_as_fail PASSED [ 63%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_limit_constant_value PASSED [ 64%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_model_fundamental_decay_returns_none_not_traceback_on_timeout PASSED [ 65%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_render_probe_reports_clear_timeout_not_traceback PASSED [ 65%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_selftest_residual_energy_negative PASSED [ 66%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_unpredicted_partial_dominates_residual PASSED [ 66%]
+tests/test_physics_verify.py::ResidualEnergyTests::test_unusable_segment_returns_none PASSED [ 67%]
+tests/test_verify_score_contract.py::VerifyScoreRoutingTests::test_event_score_still_delegates_to_real_mode_check PASSED [ 67%]
+tests/test_verify_score_contract.py::VerifyScoreRoutingTests::test_layered_top_level_mode_scan_is_explicit_na PASSED [ 68%]
+tests/test_verify_score_contract.py::CourseF0Tests::test_empty_strings_list_falls_back_to_partials0 PASSED [ 68%]
+tests/test_verify_score_contract.py::CourseF0Tests::test_missing_amplitude_degrades_to_arithmetic_mean PASSED [ 69%]
+tests/test_verify_score_contract.py::CourseF0Tests::test_no_strings_key_falls_back_to_partials0 PASSED [ 70%]
+tests/test_verify_score_contract.py::CourseF0Tests::test_no_usable_fundamental_returns_none PASSED [ 70%]
+tests/test_verify_score_contract.py::CourseF0Tests::test_non_finite_amplitude_degrades_to_arithmetic_mean PASSED [ 71%]
+tests/test_verify_score_contract.py::CourseF0Tests::test_single_string_engine_falls_back_to_partials0 PASSED [ 71%]
+tests/test_verify_score_contract.py::CourseF0Tests::test_symmetric_detune_course_centroid_is_near_zero_cents PASSED [ 72%]
+tests/test_verify_score_contract.py::CourseF0Tests::test_symmetric_detune_with_exactly_equal_amplitudes_is_exact PASSED [ 72%]
+tests/test_verify_score_contract.py::ModeF0ToleranceTests::test_course_centroid_within_5_cents_passes PASSED [ 73%]
+tests/test_verify_score_contract.py::ModeF0ToleranceTests::test_old_string0_only_reading_would_have_exceeded_new_5c_limit PASSED [ 73%]
+tests/test_verify_score_contract.py::ModeF0ToleranceTests::test_single_string_deviation_over_5_cents_fails PASSED [ 74%]
+tests/test_verify_score_contract.py::ModeF0ToleranceTests::test_single_string_deviation_under_5_cents_passes PASSED [ 75%]
+tests/test_verify_score_contract.py::ModeAudibilityContractTests::test_attack_only_zero_amplitude_fails_closed PASSED [ 75%]
+tests/test_verify_score_contract.py::ModeAudibilityContractTests::test_subaudible_geometry_mode_fails_closed PASSED [ 76%]
+tests/test_verify_score_contract.py::ModeAudibilityContractTests::test_twenty_hz_boundary_is_renderable PASSED [ 76%]
+tests/test_verify_score_contract.py::RestRmsPerChannelTests::test_anti_correlated_rest_noise_fails_despite_silent_mixdown PASSED [ 77%]
+tests/test_verify_score_contract.py::RestRmsPerChannelTests::test_max_channel_rms_reports_loudest_channel_not_mixdown PASSED [ 77%]
+tests/test_verify_score_contract.py::RestRmsPerChannelTests::test_quiet_rest_passes_on_every_channel PASSED [ 78%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_missing_manifest_file_fails PASSED [ 78%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_unknown_contract_fails PASSED [ 79%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v1_legacy_still_accepted_without_hash PASSED [ 80%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v2_detects_wav_bytes_changed_after_manifest_written PASSED [ 80%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v2_event_count_mismatch_fails_even_with_valid_hash PASSED [ 81%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v2_hash_comparison_is_case_insensitive PASSED [ 81%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v2_missing_wav_sha256_fails PASSED [ 82%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v2_with_matching_hash_passes PASSED [ 82%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v2_with_wrong_hash_fails PASSED [ 83%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v3_detects_different_renderer_binary PASSED [ 83%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v3_detects_root_score_changed_after_render PASSED [ 84%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v3_dirty_flag_must_be_boolean PASSED [ 85%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v3_is_rejected_for_layered_score PASSED [ 85%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v3_missing_provenance_field_fails PASSED [ 86%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v3_with_matching_artifacts_and_provenance_passes PASSED [ 86%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v4_detects_layer_changed_after_render PASSED [ 87%]
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v4_with_complete_dependency_tree_passes PASSED [ 87%]
+tests/test_render_app_filename_safety.py::RenderAppFilenameSafetyTests::test_control_character_is_rejected PASSED [ 88%]
+tests/test_render_app_filename_safety.py::RenderAppFilenameSafetyTests::test_legal_filename_still_renders PASSED [ 88%]
+tests/test_render_app_filename_safety.py::RenderAppFilenameSafetyTests::test_reserved_device_name_is_rejected PASSED [ 89%]
+tests/test_render_app_filename_safety.py::RenderAppFilenameSafetyTests::test_reserved_device_name_is_rejected_case_insensitively PASSED [ 90%]
+tests/test_render_app_filename_safety.py::RenderAppFilenameSafetyTests::test_trailing_dot_is_rejected PASSED [ 90%]
+tests/test_render_app_filename_safety.py::RenderAppFilenameSafetyTests::test_trailing_space_is_rejected SKIPPED [ 91%]
+tests/test_render_app_filename_safety.py::RenderAppFilenameSafetyTests::test_windows_reserved_character_is_rejected PASSED [ 91%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_exact_supported_observables_pass PASSED [ 92%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_frequency_counterexample_fails PASSED [ 92%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_low_coherence_fails_data_quality PASSED [ 93%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_nan_is_refused_even_though_python_json_accepts_it PASSED [ 93%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_requested_missing_phase_is_unverified_not_pass PASSED [ 94%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_tampered_raw_artifact_is_refused PASSED [ 95%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_v2_complex_phase_absolute_level_and_directivity_pass PASSED [ 95%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_v2_directivity_counterexample_fails PASSED [ 96%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_v2_inconsistent_spl_is_refused PASSED [ 96%]
+tests/test_specimen_verify.py::SpecimenVerificationTests::test_v2_missing_model_direction_is_unverified PASSED [ 97%]
+tests/test_specimen_verify.py::RealDumpModesRadiationSentinelTests::test_fm_engine_produces_no_dump_events_at_all PASSED [ 97%]
+tests/test_specimen_verify.py::RealDumpModesRadiationSentinelTests::test_piano_path_gets_radiated_power_relative_not_forbidden_fields PASSED [ 98%]
+tests/test_specimen_verify.py::RealDumpModesRadiationSentinelTests::test_water_gong_path_never_gets_radiated_power_relative_per_partial PASSED [ 98%]
+tests/test_specimen_verify.py::Phase4SelfConsistencyTests::test_real_dump_self_consistency_absolute_spl_passes PASSED [ 99%]
+tests/test_specimen_verify.py::Phase4SelfConsistencyTests::test_real_dump_tampered_10db_fails PASSED [100%]
+
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_render_app_filename_safety.py:135: unreachable through export.filename: ScoreParser::readString() (src/score/ScoreParser.h:1153) calls .trim() on every string field at parse time, so a trailing space never survives to reach isSafeOutputName() through this entry point. The fallback path (scoreFile.getFileNameWithoutExtension(), used when export.filename is absent) *could* carry a trailing space, but constructing such a file on Windows requires an NT '\\?\' path to bypass Win32's own trailing-space stripping -- out of scope for this sentinel. The isSafeOutputName() rejection branch for a trailing space still exists in the fix (see src/cli/RenderApp.cpp) as defense-in-depth for any future caller that skips ScoreParser's trim.
+================= 179 passed, 1 skipped in 118.77s (0:01:58) ==================
+
+real	2m7.217s
+user	0m0.000s
+sys	0m0.015s
+exit=0
+
+---------------------------------------------------------------- 突變檢查（新測試有沒有牙齒）
+命令：PYTHONIOENCODING=utf-8 PYTHONDONTWRITEBYTECODE=1 python <scratchpad>/p1_mutation_check.py
+（在記憶體裡對 tools/stem_verify.py 原始碼做一次一個突變，換進測試模組跑全部測試；repo 檔不寫。）
+unmutated: 17/17 pass
+M1 header ignores pad byte             caught by 3 test(s): test_header_odd_sized_chunk_pad_byte[1], test_header_odd_sized_chunk_pad_byte[5], test_header_odd_sized_chunk_pad_byte[7]
+M2 stream reads eagerly in __init__    caught by 1 test(s): test_stream_reads_lazily_one_file_at_a_time
+M3 stream iterates in reverse          caught by 3 test(s): test_stream_len_and_order, test_stream_reads_lazily_one_file_at_a_time, test_stream_is_reiterable
+M4 stream len off by one               caught by 5 test(s): test_stream_len_and_order, test_stream_reads_lazily_one_file_at_a_time, test_stream_is_reiterable, test_stream_empty, test_compare_superposition_same_result_for_stream_and_list
+M5 header swaps sr/ch                  caught by 9 test(s): test_header_plain_pcm16_matches_float, test_header_skips_list_chunk_before_fmt, test_header_odd_sized_chunk_pad_byte[1], test_header_odd_sized_chunk_pad_byte[5], test_header_odd_sized_chunk_pad_byte[7], test_header_fmt_with_cbsize_18_bytes, test_header_fmt_after_data, test_header_extensible_fmt, test_header_does_not_need_data_bytes
+
+---------------------------------------------------------------- 附錄：突變檢查腳本原文
+"""WF0925-P1 scratch: mutation check for tests/test_stem_stream.py.
+Loads tools/stem_verify.py source, applies one mutation at a time IN MEMORY
+(the repo file is never written), swaps the mutated module into the test
+module's `sv`, runs every test function, and reports which tests catch it."""
+import importlib.util
+import inspect
+import sys
+import tempfile
+import types
+from pathlib import Path
+
+ROOT = Path(r"<repo>")
+sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "tests"))
+
+SRC = (ROOT / "tools" / "stem_verify.py").read_text(encoding="utf-8")
+
+MUTANTS = {
+    "M1 header ignores pad byte": (
+        "            f.seek(chunk_size + (chunk_size & 1), 1)  # chunks word-align",
+        "            f.seek(chunk_size, 1)  # MUTANT"),
+    "M2 stream reads eagerly in __init__": (
+        "    def __init__(self, entries):\n        self._entries = entries\n",
+        "    def __init__(self, entries):\n        self._entries = entries\n"
+        "        self._pre = [read_wav_float(p)[2] for _i, p in entries]\n"),
+    "M3 stream iterates in reverse": (
+        "        for _orig_idx, wav_path in self._entries:\n            _sr, _ch, arr = read_wav_float(wav_path)",
+        "        for _orig_idx, wav_path in reversed(self._entries):\n            _sr, _ch, arr = read_wav_float(wav_path)"),
+    "M4 stream len off by one": (
+        "    def __len__(self):\n        return len(self._entries)",
+        "    def __len__(self):\n        return len(self._entries) + 1"),
+    "M5 header swaps sr/ch": (
+        "                return sample_rate, n_channels\n",
+        "                return n_channels, sample_rate\n"),
+}
+
+
+def load_module(name, src):
+    mod = types.ModuleType(name)
+    mod.__file__ = str(ROOT / "tools" / "stem_verify.py")
+    exec(compile(src, mod.__file__, "exec"), mod.__dict__)
+    return mod
+
+
+spec = importlib.util.spec_from_file_location("t_stem_stream", ROOT / "tests" / "test_stem_stream.py")
+tmod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(tmod)
+tests = [(n, f) for n, f in vars(tmod).items() if n.startswith("test_") and callable(f)]
+
+
+class MP:
+    """minimal monkeypatch stand-in"""
+    def __init__(self):
+        self._undo = []
+
+    def setattr(self, obj, name, value):
+        self._undo.append((obj, name, getattr(obj, name)))
+        setattr(obj, name, value)
+
+    def undo(self):
+        for obj, name, old in reversed(self._undo):
+            setattr(obj, name, old)
+
+
+def run_all(sv_mod):
+    tmod.sv = sv_mod
+    results = {}
+    for name, fn in tests:
+        params = inspect.signature(fn).parameters
+        variants = [{}]
+        if "odd_size" in params:
+            variants = [{"odd_size": k} for k in (1, 5, 7)]
+        for v in variants:
+            label = name + ("[%s]" % v["odd_size"] if v else "")
+            mp = MP()
+            with tempfile.TemporaryDirectory() as td:
+                kwargs = dict(v)
+                if "tmp_path" in params:
+                    kwargs["tmp_path"] = Path(td)
+                if "monkeypatch" in params:
+                    kwargs["monkeypatch"] = mp
+                try:
+                    fn(**kwargs)
+                    results[label] = "pass"
+                except BaseException as e:  # noqa: BLE001
+                    results[label] = "FAIL(%s)" % type(e).__name__
+                finally:
+                    mp.undo()
+    return results
+
+
+base = run_all(load_module("stem_verify_orig", SRC))
+print("unmutated: %d/%d pass" % (sum(r == "pass" for r in base.values()), len(base)))
+for mname, (old, new) in MUTANTS.items():
+    assert SRC.count(old) == 1, (mname, SRC.count(old))
+    res = run_all(load_module("stem_verify_mut", SRC.replace(old, new)))
+    caught = [k for k, r in res.items() if r != "pass"]
+    print("%-38s caught by %d test(s): %s" % (mname, len(caught), ", ".join(caught) or "NONE"))

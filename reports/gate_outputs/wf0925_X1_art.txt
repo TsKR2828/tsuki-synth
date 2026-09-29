@@ -1,0 +1,20 @@
+# wf0925_X1_art.txt
+# generated 2026-09-25T05:51:33  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x1_art.py
+# ffmpeg: <TOOLS>\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe
+fonts: latin=C:\Windows\Fonts\GARA.TTF  cjk=<USER_FONTS>\GenRyuMin-M.ttc
+palette (Charta guide :116-135): {'navy_deep': '#111925', 'navy': '#1a2332', 'navy_mid': '#2a3750', 'navy_soft': '#334466', 'gold': '#c9a961', 'gold_dim': '#a08448', 'cream': '#f5f0e6', 'warm_gray': '#8a8070'}
+art\thumb_akashic.png: tiles 01 Akashic Meditation Loop (24.325s); 02 Akashic Library Drone (33.501s); 03 Akashic Page Turn (3.248s); 04 Akashic Gate Open (Dark) (21.971s); 05 Akashic Gate Open (17.572s); 06 Akashic Light Tap (1.266s); 07 Akashic Record Chime (4.43s); 08 開館鈴 — Library Opening Bell (29.611s)
+art\thumb_rabbit.png: tiles 01 Rabbit Wind Chimes (10.65s); 02 Rabbit Stomp (1.575s); 03 Rabbit Bounce Loop (5.366s); 04 Rabbit Ding (2.047s); 05 Rabbit Ding (Angry) (2.325s); 06 Rabbit Carrot Button (0.775s); 07 Rabbit Hop Transition (2.74s)
+art\thumb_restraint.png: tiles 01 Restraint Iron Drone (19.015s); 02 Restraint Shackle Slam (2.704s); 03 Restraint Industrial Pulse (8.525s); 04 Restraint Lock Click (1.86s); 05 Restraint Lock Click (Distorted) (1.86s); 06 Restraint Bolt Click (1.605s); 07 Restraint Chain Drag (5.967s)
+art\thumb_forest.png: tiles 01 Forest Rain Pattern (16.687s); 02 Forest Bamboo Rain (10.625s); 03 Forest Branch Snap (0.875s); 04 Forest Bird Call (2.045s); 05 Forest Bird Call (Alarm) (1.435s); 06 Forest Acorn Tap (0.615s); 07 Forest Leaf Sweep (5.235s)
+art\thumb_ocean.png: tiles 01 Ocean Wave Cycle (15.825s); 02 Ocean Abyss Hum (20.375s); 03 Ocean Depth Slam (6.289s); 04 Ocean Droplet Tap (1.093s); 05 Ocean Bubble Pop (1.995s); 06 Ocean Bubble Pop (Deep) (4.655s); 07 Ocean Tide Wash (10.267s)
+art\thumb_clockwork.png: tiles 01 Clockwork Ticking Room (7.668s); 02 Clockwork Gear Shift (2.93s); 03 Clockwork Tick Loop (5.166s); 04 Clockwork Spring Release (1.375s); 05 Clockwork Bell Strike (Wavefold) (3.134s); 06 Clockwork Gear Click (0.514s); 07 Clockwork Bell Strike (2.725s)
+  thumb_akashic.png: 1200x1200 px, sha256 d4e3ccda6cf0c7e3…, distinct colours 4448
+  thumb_rabbit.png: 1200x1200 px, sha256 48af2f2880999a4b…, distinct colours 5244
+  thumb_restraint.png: 1200x1200 px, sha256 87d347d3f4942286…, distinct colours 4697
+  thumb_forest.png: 1200x1200 px, sha256 2ee3a66e03a15b00…, distinct colours 4142
+  thumb_ocean.png: 1200x1200 px, sha256 f86d4962fe372b9d…, distinct colours 3236
+  thumb_clockwork.png: 1200x1200 px, sha256 f70d344c3a4c0e29…, distinct colours 4769
+  cover_draft.png: 1600x1600 px, sha256 c3ffc1aa7ea8f05b…, distinct colours 872
+GATE images written: 7 (6 world thumbnails + 1 cover draft)

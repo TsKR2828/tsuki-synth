@@ -1,0 +1,195 @@
+# WF0925-N1 evidence — generated 2026-09-25 05:57:57 +0800
+# cwd: /c/Users/admin/Desktop/Claude/tsuki-synth
+# git HEAD: 18430c4
+# CLI: output/wf0925/N1/cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8
+$ python reports/weak_fundamental_null_map/validate_fur_elise.py --cli output/wf0925/N1/cli.exe --workdir output/wf0925/N1/fe_stems --jobs 4
+
+[find_cli] TsukiSynthCLI selected: C:\Users\admin\Desktop\Claude\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+stem ev0    E5   v=0.462 rerun=PASS       d14=PASS       band_peak=-46.6 dBFS
+stem ev1    D#5  v=0.427 rerun=PASS       d14=PASS       band_peak=-45.3 dBFS
+stem ev2    E5   v=0.427 rerun=PASS       d14=PASS       band_peak=-49.1 dBFS
+stem ev5    B4   v=0.427 rerun=PASS       d14=PASS       band_peak=-41.6 dBFS
+stem ev6    D5   v=0.427 rerun=PASS       d14=PASS       band_peak=-45.4 dBFS
+stem ev7    C5   v=0.427 rerun=PASS       d14=PASS       band_peak=-43.2 dBFS
+stem ev8    A4   v=0.462 rerun=PASS       d14=PASS       band_peak=-38.7 dBFS
+stem ev9    A2   v=0.338 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-44.4 dBFS
+stem ev10   E3   v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-43.4 dBFS
+stem ev11   A3   v=0.278 rerun=PASS       d14=PASS       band_peak=-44.6 dBFS
+stem ev12   C4   v=0.427 rerun=PASS       d14=PASS       band_peak=-38.3 dBFS
+stem ev13   E4   v=0.462 rerun=PASS       d14=PASS       band_peak=-36.8 dBFS
+stem ev14   A4   v=0.427 rerun=PASS       d14=PASS       band_peak=-40.0 dBFS
+stem ev16   E2   v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-47.5 dBFS
+stem ev18   G#3  v=0.313 rerun=PASS       d14=PASS       band_peak=-42.5 dBFS
+stem ev19   E4   v=0.427 rerun=PASS       d14=PASS       band_peak=-37.9 dBFS
+stem ev20   G#4  v=0.427 rerun=PASS       d14=PASS       band_peak=-39.4 dBFS
+stem ev22   C5   v=0.462 rerun=PASS       d14=PASS       band_peak=-41.6 dBFS
+stem ev52   A3   v=0.303 rerun=PASS       d14=PASS       band_peak=-43.5 dBFS
+stem ev61   C3   v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-45.2 dBFS
+stem ev62   G3   v=0.303 rerun=PASS       d14=PASS       band_peak=-43.6 dBFS
+stem ev63   C4   v=0.313 rerun=PASS       d14=PASS       band_peak=-42.2 dBFS
+stem ev64   G4   v=0.427 rerun=PASS       d14=PASS       band_peak=-38.7 dBFS
+stem ev65   F5   v=0.427 rerun=PASS       d14=PASS       band_peak=-50.0 dBFS
+stem ev67   D5   v=0.462 rerun=PASS       d14=PASS       band_peak=-43.4 dBFS
+stem ev68   G2   v=0.338 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-44.6 dBFS
+stem ev70   B3   v=0.278 rerun=PASS       d14=PASS       band_peak=-44.9 dBFS
+stem ev71   F4   v=0.427 rerun=PASS       d14=PASS       band_peak=-37.9 dBFS
+stem ev75   A2   v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-45.5 dBFS
+stem ev77   A3   v=0.313 rerun=PASS       d14=PASS       band_peak=-43.1 dBFS
+stem ev81   B4   v=0.462 rerun=PASS       d14=PASS       band_peak=-40.1 dBFS
+stem ev82   E2   v=0.338 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-46.5 dBFS
+stem ev84   E4   v=0.278 rerun=PASS       d14=PASS       band_peak=-44.4 dBFS
+stem ev86   E5   v=0.437 rerun=PASS       d14=PASS       band_peak=-48.4 dBFS
+stem ev87   E4   v=0.303 rerun=PASS       d14=PASS       band_peak=-43.0 dBFS
+stem ev88   E5   v=0.278 rerun=FAIL       d14=FAIL       band_peak=-77.9 dBFS
+stem ev90   E6   v=0.437 rerun=PASS       d14=PASS       band_peak=-53.8 dBFS
+stem ev91   D#5  v=0.303 rerun=PASS       d14=PASS       band_peak=-60.2 dBFS
+stem ev157  A3   v=0.338 rerun=PASS       d14=PASS       band_peak=-42.1 dBFS
+stem ev159  C5   v=0.452 rerun=PASS       d14=PASS       band_peak=-42.0 dBFS
+stem ev160  A#3  v=0.303 rerun=PASS       d14=PASS       band_peak=-42.6 dBFS
+stem ev161  C4   v=0.328 rerun=PASS       d14=PASS       band_peak=-41.6 dBFS
+stem ev171  C4   v=0.303 rerun=PASS       d14=PASS       band_peak=-42.7 dBFS
+stem ev175  F3   v=0.338 rerun=PASS       d14=PASS       band_peak=-43.1 dBFS
+stem ev179  F5   v=0.462 rerun=PASS       d14=PASS       band_peak=-47.1 dBFS
+stem ev180  C4   v=0.338 rerun=PASS       d14=PASS       band_peak=-41.3 dBFS
+stem ev182  E5   v=0.452 rerun=PASS       d14=PASS       band_peak=-47.3 dBFS
+stem ev184  F3   v=0.303 rerun=PASS       d14=PASS       band_peak=-44.3 dBFS
+stem ev187  D4   v=0.338 rerun=PASS       d14=PASS       band_peak=-42.3 dBFS
+stem ev189  A#5  v=0.427 rerun=PASS       d14=PASS       band_peak=-61.7 dBFS
+stem ev190  D4   v=0.303 rerun=PASS       d14=PASS       band_peak=-43.9 dBFS
+stem ev192  A5   v=0.452 rerun=FAIL       d14=FAIL       band_peak=-71.2 dBFS
+stem ev193  A5   v=0.462 rerun=PASS       d14=PASS       band_peak=-66.1 dBFS
+stem ev195  G5   v=0.427 rerun=PASS       d14=PASS       band_peak=-57.5 dBFS
+stem ev205  G3   v=0.338 rerun=PASS       d14=PASS       band_peak=-42.3 dBFS
+stem ev206  A#3  v=0.338 rerun=PASS       d14=PASS       band_peak=-41.3 dBFS
+stem ev209  A#4  v=0.427 rerun=PASS       d14=PASS       band_peak=-40.7 dBFS
+stem ev238  D3   v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-44.2 dBFS
+stem ev249  F4   v=0.303 rerun=PASS       d14=PASS       band_peak=-43.3 dBFS
+stem ev261  G4   v=0.328 rerun=PASS       d14=PASS       band_peak=-43.1 dBFS
+stem ev274  E4   v=0.338 rerun=PASS       d14=PASS       band_peak=-41.3 dBFS
+stem ev275  G4   v=0.338 rerun=PASS       d14=PASS       band_peak=-42.6 dBFS
+stem ev277  C6   v=0.427 rerun=PASS       d14=PASS       band_peak=-55.5 dBFS
+stem ev278  B5   v=0.427 rerun=PASS       d14=PASS       band_peak=-57.2 dBFS
+stem ev279  A5   v=0.427 rerun=FAIL       d14=FAIL       band_peak=-73.2 dBFS
+stem ev287  B3   v=0.338 rerun=PASS       d14=PASS       band_peak=-42.4 dBFS
+stem ev326  B3   v=0.363 rerun=PASS       d14=PASS       band_peak=-41.5 dBFS
+stem ev331  G#3  v=0.278 rerun=PASS       d14=PASS       band_peak=-43.9 dBFS
+stem ev499  A4   v=0.437 rerun=PASS       d14=PASS       band_peak=-39.6 dBFS
+stem ev500  A2   v=0.363 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-43.7 dBFS
+stem ev501  A2   v=0.328 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-44.7 dBFS
+stem ev509  C#5  v=0.427 rerun=PASS       d14=PASS       band_peak=-42.3 dBFS
+stem ev516  F4   v=0.462 rerun=PASS       d14=PASS       band_peak=-36.9 dBFS
+stem ev523  C#5  v=0.462 rerun=PASS       d14=PASS       band_peak=-40.5 dBFS
+stem ev526  D5   v=0.452 rerun=PASS       d14=PASS       band_peak=-44.0 dBFS
+stem ev527  F5   v=0.452 rerun=PASS       d14=PASS       band_peak=-47.8 dBFS
+stem ev552  D2   v=0.328 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-46.0 dBFS
+stem ev556  D2   v=0.363 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-45.1 dBFS
+stem ev564  D4   v=0.427 rerun=PASS       d14=PASS       band_peak=-39.2 dBFS
+stem ev566  D2   v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-46.8 dBFS
+stem ev568  C4   v=0.462 rerun=PASS       d14=PASS       band_peak=-37.3 dBFS
+stem ev569  F#4  v=0.462 rerun=PASS       d14=PASS       band_peak=-37.1 dBFS
+stem ev571  D#2  v=0.363 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-45.0 dBFS
+stem ev573  D#2  v=0.328 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-46.0 dBFS
+stem ev579  C4   v=0.487 rerun=PASS       d14=PASS       band_peak=-36.7 dBFS
+stem ev580  A4   v=0.487 rerun=PASS       d14=PASS       band_peak=-37.8 dBFS
+stem ev583  D#2  v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-46.8 dBFS
+stem ev587  E2   v=0.328 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-46.8 dBFS
+stem ev593  E2   v=0.363 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-45.8 dBFS
+stem ev600  G#2  v=0.328 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-45.2 dBFS
+stem ev602  G#2  v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-46.0 dBFS
+stem ev605  A1   v=0.338 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-46.5 dBFS
+stem ev647  A#2  v=0.363 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-42.9 dBFS
+stem ev648  A#2  v=0.328 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-43.9 dBFS
+stem ev662  D#4  v=0.427 rerun=PASS       d14=PASS       band_peak=-38.3 dBFS
+stem ev665  D4   v=0.462 rerun=PASS       d14=PASS       band_peak=-38.2 dBFS
+stem ev667  A#4  v=0.462 rerun=PASS       d14=PASS       band_peak=-39.2 dBFS
+stem ev672  D4   v=0.487 rerun=PASS       d14=PASS       band_peak=-37.5 dBFS
+stem ev673  F4   v=0.487 rerun=PASS       d14=PASS       band_peak=-36.1 dBFS
+stem ev676  A#2  v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-44.7 dBFS
+stem ev680  B2   v=0.328 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-44.0 dBFS
+stem ev682  B2   v=0.363 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-43.0 dBFS
+stem ev688  B2   v=0.303 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-44.9 dBFS
+stem ev689  C4   v=0.437 rerun=PASS       d14=PASS       band_peak=-38.0 dBFS
+stem ev690  E4   v=0.437 rerun=PASS       d14=PASS       band_peak=-37.6 dBFS
+stem ev692  C3   v=0.313 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-44.9 dBFS
+stem ev693  E4   v=0.402 rerun=PASS       d14=PASS       band_peak=-38.7 dBFS
+stem ev694  B4   v=0.402 rerun=PASS       d14=PASS       band_peak=-42.8 dBFS
+stem ev695  E3   v=0.278 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-44.3 dBFS
+stem ev697  A3   v=0.462 rerun=PASS       d14=PASS       band_peak=-38.5 dBFS
+stem ev698  A1   v=0.313 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-47.3 dBFS
+stem ev705  A3   v=0.363 rerun=PASS       d14=PASS       band_peak=-41.3 dBFS
+stem ev706  C4   v=0.363 rerun=PASS       d14=PASS       band_peak=-40.3 dBFS
+stem ev707  E4   v=0.363 rerun=PASS       d14=PASS       band_peak=-40.2 dBFS
+stem ev712  C4   v=0.278 rerun=PASS       d14=PASS       band_peak=-43.9 dBFS
+stem ev718  E6   v=0.427 rerun=PASS       d14=PASS       band_peak=-54.2 dBFS
+stem ev719  D6   v=0.427 rerun=PASS       d14=PASS       band_peak=-53.5 dBFS
+stem ev720  A3   v=0.328 rerun=PASS       d14=PASS       band_peak=-42.5 dBFS
+stem ev722  E4   v=0.328 rerun=PASS       d14=PASS       band_peak=-41.7 dBFS
+stem ev728  E4   v=0.313 rerun=PASS       d14=PASS       band_peak=-42.5 dBFS
+stem ev731  A6   v=0.427 rerun=FAIL       d14=FAIL       band_peak=-73.2 dBFS
+stem ev732  C7   v=0.427 rerun=PASS       d14=PASS       band_peak=-63.8 dBFS
+stem ev733  E7   v=0.427 rerun=PASS       d14=PASS       band_peak=-66.4 dBFS
+stem ev734  D7   v=0.462 rerun=PASS       d14=PASS       band_peak=-61.9 dBFS
+stem ev739  B6   v=0.427 rerun=PASS       d14=PASS       band_peak=-67.1 dBFS
+stem ev740  A#6  v=0.427 rerun=FAIL       d14=FAIL       band_peak=-77.0 dBFS
+stem ev745  G#6  v=0.427 rerun=PASS       d14=PASS       band_peak=-64.2 dBFS
+stem ev746  G6   v=0.462 rerun=PASS       d14=PASS       band_peak=-56.5 dBFS
+stem ev747  F#6  v=0.427 rerun=PASS       d14=PASS       band_peak=-57.1 dBFS
+stem ev748  F6   v=0.427 rerun=PASS       d14=PASS       band_peak=-55.3 dBFS
+stem ev750  D#6  v=0.427 rerun=PASS       d14=PASS       band_peak=-53.6 dBFS
+stem ev752  C#6  v=0.462 rerun=PASS       d14=PASS       band_peak=-54.5 dBFS
+stem ev757  G#5  v=0.427 rerun=PASS       d14=PASS       band_peak=-66.0 dBFS
+stem ev758  G5   v=0.462 rerun=PASS       d14=PASS       band_peak=-52.6 dBFS
+stem ev759  F#5  v=0.427 rerun=PASS       d14=PASS       band_peak=-53.0 dBFS
+stem ev904  A2   v=0.313 rerun=UNVERIFIED d14=UNVERIFIED band_peak=-45.1 dBFS
+stem ev92   E5   v=0.278 rerun=FAIL       d14=FAIL       band_peak=-77.9 dBFS
+stem ev96   E5   v=0.278 rerun=FAIL       d14=FAIL       band_peak=-77.9 dBFS
+stem ev318  A5   v=0.427 rerun=FAIL       d14=FAIL       band_peak=-73.2 dBFS
+stem ev440  E5   v=0.278 rerun=FAIL       d14=FAIL       band_peak=-77.9 dBFS
+stem ev444  E5   v=0.278 rerun=FAIL       d14=FAIL       band_peak=-77.8 dBFS
+stem ev448  E5   v=0.278 rerun=FAIL       d14=FAIL       band_peak=-77.8 dBFS
+stem ev716  A5   v=0.462 rerun=PASS       d14=PASS       band_peak=-66.1 dBFS
+stem ev725  A5   v=0.462 rerun=PASS       d14=PASS       band_peak=-66.2 dBFS
+stem ev744  A6   v=0.427 rerun=FAIL       d14=FAIL       band_peak=-73.0 dBFS
+stem ev756  A5   v=0.427 rerun=FAIL       d14=FAIL       band_peak=-73.1 dBFS
+stem ev843  E5   v=0.278 rerun=FAIL       d14=FAIL       band_peak=-77.9 dBFS
+stem ev847  E5   v=0.278 rerun=FAIL       d14=FAIL       band_peak=-77.9 dBFS
+stem ev851  E5   v=0.278 rerun=FAIL       d14=FAIL       band_peak=-77.9 dBFS
+
+==== fur_elise_complete validation ====
+D14 (post-A14) verdicts: {'PASS': 677, 'UNVERIFIED': 212, 'FAIL': 16}
+08-30 (pre-A14) verdicts: {'PASS': 671, 'UNVERIFIED': 212, 'FAIL': 22}
+16 FAIL: null_depth<=-10dB: 16/16 ; n1/n2(course)<-10dB: 13/16
+16 FAIL: x1 range 2.957..5.082 ; null orders {3: 13, 5: 3} ; null depth -24.5..-14.9 dB
+judged PASS: 677 ; of which null_depth<=-10dB: 31 {'D#5@0.303': 6, 'A#5@0.427': 2, 'A5@0.462': 3, 'G5@0.427': 19, 'G#5@0.427': 1}
+judged PASS with n1/n2<-10dB: 4 {'A5@0.462': 3, 'G#5@0.427': 1}
+UNVERIFIED with null_depth<=-10dB: 0
+old 22 (08-30 FAIL) under B4 tau_c: x1 / depth ->
+   ev195  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev254  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev256  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev258  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev262  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev266  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev271  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev276  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev282  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev288  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev293  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev295  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev297  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev301  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev305  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev310  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev315  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev321  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev327  G5   v=0.427  x1_B4=2.983 depth_B4=-31.2 dB | x1_now=2.807 depth_now=-10.5 dB
+   ev734  D7   v=0.462  x1_B4=7.027 depth_B4=-27.4 dB | x1_now=5.720 depth_now=-0.9 dB
+   ev746  G6   v=0.462  x1_B4=4.998 depth_B4=-50.8 dB | x1_now=4.342 depth_now=-1.3 dB
+   ev747  F#6  v=0.427  x1_B4=4.959 depth_B4=-23.9 dB | x1_now=4.338 depth_now=-1.3 dB
+stems rendered: 149 ; rerun verdict == D14 verdict: 149/149
+stem offset (band_peak - (L1 + 20log10(0.069*master))): {"n": 149, "min": -7.77082997370848, "max": -5.303554001781627, "mean": -6.6678917867293634}
+stems: FAIL band peak max = -71.2 dBFS ; PASS band peak min = -67.1 dBFS  (gate -70, melody_verify.BAND_GATE_DBFS)
+dump-predicted band peak vs D14 verdict (judged events): {'PASS|pred_above_-70': 677, 'FAIL|pred_below_-70': 16}
+  min predicted among PASS = -67.2 dBFS ; max predicted among FAIL = -72.1 dBFS
+
+# rc=0

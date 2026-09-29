@@ -1,0 +1,242 @@
+WF0925-P1 證據檔（Python/CI lane 工兵）— GATE 1：兩個 workflow 用 python yaml 解析＋結構檢查＋HostProbe 步驟本機模擬
+日期：2026-09-25　repo HEAD：18430c4（branch fix/deep-physics-audit-20260716），本卡改動未 commit
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<repo> = repo 根目錄；<scratchpad> = 本 session 暫存目錄（repo 外）；
+<tmp> = 系統暫存目錄；<home> = 使用者家目錄。原始 log 在 output/wf0925/P1/（gitignored）。
+Python：3.13.3（本機實際版本；pytest 8.4.2）
+================================================================================
+任務 1（engineering-gaps:E1 / staged-review:CI-release）、任務 2（engineering-gaps:E5 / CI-hostprobe）
+
+命令（repo 根目錄）：
+  PYTHONIOENCODING=utf-8 PYTHONDONTWRITEBYTECODE=1 python <scratchpad>/p1_workflow_check.py
+
+說明：
+- yaml.safe_load 兩檔都要成功；PyYAML 依 YAML 1.1 把裸鍵 `on` 讀成布林 True，腳本已處理（非錯誤）。
+- 結構檢查：建置清單、pytest 取代 unittest、requirements（pin pytest==8.4.2）先安裝、HostProbe 執行步驟
+  （cwd=${{ github.workspace }}＝repo 根目錄、指向本 job 建出的 VST3）、log 以 if: always() 上傳、
+  Linux leg label 未改、ASan job 未動。
+- 本機模擬：把 HostProbe 步驟的 run 區塊原樣取出，照 GitHub `shell: pwsh` 的包法（前加
+  $ErrorActionPreference = 'stop'、後加 LASTEXITCODE exit）用 pwsh 7.6.6 執行，probe 換成 .cmd 樁
+  （exit 0 / exit 1），另測 binary 不存在、VST3 不存在。**沒有**執行真的 HostProbe（避免寫 %APPDATA%
+  與其他 lane 相撞）；真 runner 能否無頭載入 VST3 要等月月 push 後才驗得到（見 open_items）。
+- 另外只用「不帶參數」叫一次本機真的 build\Release\TsukiSynthHostProbe.exe，確認 CI 用的相對路徑
+  佈局（VS 產生器 build/Release/）在本機成立；argc<3 時程式在 JUCE 初始化前就 return 2，無副作用。
+
+---------------------------------------------------------------- 輸出
+release-physics.yml: yaml.safe_load OK; jobs=['build-and-host-validate', 'complete-score-corpus']; steps=17; triggers=['workflow_dispatch', 'push']
+physics.yml: yaml.safe_load OK; jobs=['build-and-verify', 'cross-platform-emit', 'cross-platform-compare', 'cpp-address-sanitizer']; steps=37; triggers=['push', 'pull_request']
+
+[release-physics.yml build-and-host-validate]
+  PASS  build target list contains TsukiSynthAuditTest
+  PASS  build target list contains TsukiSynthTunerTest
+  PASS  build target list contains TsukiSynthPhysicsModelsTest
+  PASS  build target list contains TsukiSynthSpectrumViewTest
+  PASS  build target list contains TsukiSynthHostProbe
+  PASS  build target list contains TsukiSynth_VST3
+  PASS  gates step runs `python -m pytest tests -q`
+  PASS  gates step no longer uses unittest
+  PASS  requirements (pins pytest==8.4.2) installed before the pytest step
+  PASS  tools/requirements-physics.txt pins pytest (['pytest==8.4.2'])
+  PASS  HostProbe run step present
+  PASS  HostProbe step cwd = repo root (${{ github.workspace }})
+  PASS  HostProbe points at the VST3 this job built
+  PASS  HostProbe step runs after the build step
+  PASS  HostProbe log uploaded with if: always()
+
+[physics.yml build-and-verify]
+  PASS  test build target list contains TsukiSynthAuditTest
+  PASS  test build target list contains TsukiSynthTunerTest
+  PASS  test build target list contains TsukiSynthPhysicsModelsTest
+  PASS  test build target list contains TsukiSynthSpectrumViewTest
+  PASS  test build target list contains TsukiSynthHostProbe
+  PASS  HostProbe run step present
+  PASS  HostProbe step cwd = repo root
+  PASS  HostProbe step runs after VST3 + HostProbe are built
+  PASS  HostProbe log uploaded with if: always()
+  PASS  both workflows use the identical HostProbe script
+  PASS  cross-platform labels unchanged (Linux label left for 月月's ruling)
+  PASS  ASan job untouched (HostProbe not added there)
+
+[local simulation of the HostProbe step script, GitHub pwsh wrapper, stub probes]
+  PASS  probe exits 0          -> exit 0 (want 0)
+          | stub cwd=<tmp>\p1_hp_sim_uitvu8hu\workspace
+          | stub args=<tmp>\p1_hp_sim_uitvu8hu\workspace\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 <home>\AppData\Local\Te
+          | PASS (0 failures)
+          | TsukiSynthHostProbe exit code: 0
+  PASS  probe exits 0          -> log file captured the probe's verdict line
+  PASS  probe exits 0          -> probe ran with cwd = workspace root
+  PASS  probe exits 1          -> exit 1 (want 1)
+          | stub cwd=<tmp>\p1_hp_sim_uitvu8hu\workspace
+          | stub args=<tmp>\p1_hp_sim_uitvu8hu\workspace\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 <home>\AppData\Local\Te
+          | FAIL (1 failures)
+          | TsukiSynthHostProbe exit code: 1
+  PASS  probe exits 1          -> log file captured the probe's verdict line
+  PASS  probe exits 1          -> probe ran with cwd = workspace root
+  PASS  probe binary missing   -> exit 1 (want nonzero)
+          | Line |
+          |    2 |  … ype Leaf)) { throw "HostProbe binary not found: $env:HOSTPROBE_EXE" }
+          |      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          |      | HostProbe binary not found: build/Release/TsukiSynthHostProbe.exe
+  PASS  VST3 bundle missing    -> exit 1 (want nonzero)
+          | Line |
+          |    3 |  … STPROBE_VST3)) { throw "VST3 bundle not found: $env:HOSTPROBE_VST3" }
+          |      |                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          |      | VST3 bundle not found: build/nope/TsukiSynth.vst3
+
+RESULT: ALL PASS (0 failed checks)
+
+---------------------------------------------------------------- 本機 HostProbe 路徑佈局確認（無參數）
+$ build/Release/TsukiSynthHostProbe.exe ; echo exit=$?
+usage: TsukiSynthHostProbe <TsukiSynth.vst3> <out-dir>
+exit=2
+
+---------------------------------------------------------------- 附錄：檢查腳本原文
+"""WF0925-P1: parse both workflows with PyYAML, check the structural facts
+this card changed, and simulate the new HostProbe step's pwsh script locally
+the way GitHub's `shell: pwsh` runs it (prepend $ErrorActionPreference =
+'stop', append the LASTEXITCODE exit), against STUB probes (no real
+HostProbe run -> nothing written to %APPDATA%)."""
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+import yaml
+
+ROOT = Path(r"<repo>")
+WF = {
+    "release-physics.yml": ROOT / ".github" / "workflows" / "release-physics.yml",
+    "physics.yml": ROOT / ".github" / "workflows" / "physics.yml",
+}
+fails = 0
+
+
+def check(cond, msg):
+    global fails
+    print(("  PASS  " if cond else "  FAIL  ") + msg)
+    if not cond:
+        fails += 1
+
+
+docs = {}
+for name, path in WF.items():
+    with open(path, encoding="utf-8") as f:
+        doc = yaml.safe_load(f)
+    docs[name] = doc
+    jobs = doc.get("jobs", {})
+    n_steps = sum(len(j.get("steps", [])) for j in jobs.values())
+    # PyYAML (YAML 1.1) reads the bare key `on` as boolean True.
+    trig = doc.get("on", doc.get(True))
+    print("%s: yaml.safe_load OK; jobs=%s; steps=%d; triggers=%s"
+          % (name, list(jobs), n_steps, list(trig) if isinstance(trig, dict) else trig))
+
+
+def step(job, name_prefix):
+    for s in job["steps"]:
+        if s.get("name", "").startswith(name_prefix):
+            return s
+    return None
+
+
+def index_of(job, name_prefix):
+    for i, s in enumerate(job["steps"]):
+        if s.get("name", "").startswith(name_prefix):
+            return i
+    return -1
+
+
+print("\n[release-physics.yml build-and-host-validate]")
+rj = docs["release-physics.yml"]["jobs"]["build-and-host-validate"]
+build = step(rj, "Configure and build all release targets")["run"]
+for tgt in ("TsukiSynthAuditTest", "TsukiSynthTunerTest", "TsukiSynthPhysicsModelsTest",
+            "TsukiSynthSpectrumViewTest", "TsukiSynthHostProbe", "TsukiSynth_VST3"):
+    check(tgt in build.split(), "build target list contains %s" % tgt)
+gates = step(rj, "Run C++ and Python physics gates")["run"]
+check("python -m pytest tests -q" in gates, "gates step runs `python -m pytest tests -q`")
+check("unittest" not in gates, "gates step no longer uses unittest")
+i_install = index_of(rj, "Install Python dependencies")
+install = rj["steps"][i_install]["run"]
+check("-r tools/requirements-physics.txt" in install and i_install < index_of(rj, "Run C++ and Python physics gates"),
+      "requirements (pins pytest==8.4.2) installed before the pytest step")
+req = (ROOT / "tools" / "requirements-physics.txt").read_text(encoding="utf-8")
+check("pytest==" in req, "tools/requirements-physics.txt pins pytest (%s)"
+      % [l for l in req.splitlines() if l.startswith("pytest")])
+hp = step(rj, "Run L2 HostProbe")
+check(hp is not None, "HostProbe run step present")
+check(hp.get("working-directory") == "${{ github.workspace }}", "HostProbe step cwd = repo root (${{ github.workspace }})")
+check(hp["env"]["HOSTPROBE_VST3"] == "build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3",
+      "HostProbe points at the VST3 this job built")
+check(index_of(rj, "Configure and build all release targets") < index_of(rj, "Run L2 HostProbe"),
+      "HostProbe step runs after the build step")
+up = step(rj, "Upload HostProbe log")
+check(up is not None and up.get("if") == "always()", "HostProbe log uploaded with if: always()")
+
+print("\n[physics.yml build-and-verify]")
+pj = docs["physics.yml"]["jobs"]["build-and-verify"]
+tb = step(pj, "Build regression tests")["run"]
+for tgt in ("TsukiSynthAuditTest", "TsukiSynthTunerTest", "TsukiSynthPhysicsModelsTest",
+            "TsukiSynthSpectrumViewTest", "TsukiSynthHostProbe"):
+    check(tgt in tb.split(), "test build target list contains %s" % tgt)
+hp2 = step(pj, "Run L2 HostProbe")
+check(hp2 is not None, "HostProbe run step present")
+check(hp2.get("working-directory") == "${{ github.workspace }}", "HostProbe step cwd = repo root")
+check(index_of(pj, "Build VST3") < index_of(pj, "Run L2 HostProbe")
+      and index_of(pj, "Build regression tests") < index_of(pj, "Run L2 HostProbe"),
+      "HostProbe step runs after VST3 + HostProbe are built")
+up2 = step(pj, "Upload HostProbe log")
+check(up2 is not None and up2.get("if") == "always()", "HostProbe log uploaded with if: always()")
+check(hp["run"] == hp2["run"], "both workflows use the identical HostProbe script")
+xp = docs["physics.yml"]["jobs"]["cross-platform-emit"]["strategy"]["matrix"]["include"]
+check([m["label"] for m in xp] == ["windows-2022-msvc", "ubuntu-24.04-clang", "macos-14-appleclang"],
+      "cross-platform labels unchanged (Linux label left for 月月's ruling)")
+asan = step(docs["physics.yml"]["jobs"]["cpp-address-sanitizer"], "Build AddressSanitizer")["run"]
+check("TsukiSynthHostProbe" not in asan, "ASan job untouched (HostProbe not added there)")
+
+# ---- simulate the pwsh step -------------------------------------------------
+print("\n[local simulation of the HostProbe step script, GitHub pwsh wrapper, stub probes]")
+script = hp["run"]
+wrapper = ("$ErrorActionPreference = 'stop'\n" + script +
+           "\nif ((Test-Path -LiteralPath variable:\\LASTEXITCODE)) { exit $LASTEXITCODE }\n")
+with tempfile.TemporaryDirectory(prefix="p1_hp_sim_") as td:
+    td = Path(td)
+    ws = td / "workspace"
+    (ws / "build" / "Release").mkdir(parents=True)
+    (ws / "build" / "TsukiSynth_artefacts" / "Release" / "VST3" / "TsukiSynth.vst3").mkdir(parents=True)
+    ps1 = td / "step.ps1"
+    ps1.write_text(wrapper, encoding="utf-8")
+
+    def stub(name, code, text):
+        p = td / name
+        p.write_text("@echo off\r\necho stub cwd=%%CD%%\r\necho stub args=%%*\r\necho %s\r\nexit /b %d\r\n"
+                     % (text, code), encoding="ascii")
+        return p
+
+    ok_stub = stub("probe_ok.cmd", 0, "PASS (0 failures)")
+    bad_stub = stub("probe_fail.cmd", 1, "FAIL (1 failures)")
+    cases = [
+        ("probe exits 0", str(ok_stub), "build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3", 0),
+        ("probe exits 1", str(bad_stub), "build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3", 1),
+        ("probe binary missing", "build/Release/TsukiSynthHostProbe.exe",
+         "build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3", "nonzero"),
+        ("VST3 bundle missing", str(ok_stub), "build/nope/TsukiSynth.vst3", "nonzero"),
+    ]
+    for label, exe, vst3, want in cases:
+        out = td / ("out_" + label.replace(" ", "_"))
+        env = dict(os.environ, HOSTPROBE_EXE=exe, HOSTPROBE_VST3=vst3, HOSTPROBE_OUT=str(out))
+        r = subprocess.run(["pwsh", "-NoProfile", "-command", ". '%s'" % ps1], cwd=ws, env=env,
+                           capture_output=True, text=True)
+        log = out / "hostprobe_log.txt"
+        good = (r.returncode == want) if want != "nonzero" else (r.returncode != 0)
+        check(good, "%-22s -> exit %d (want %s)" % (label, r.returncode, want))
+        tail = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()][-4:]
+        for l in tail:
+            print("          | " + re.sub(r"\[[0-9;]*m", "", l)[:160])
+        if want in (0, 1):
+            txt = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
+            check(("PASS (0 failures)" if want == 0 else "FAIL (1 failures)") in txt,
+                  "%-22s -> log file captured the probe's verdict line" % label)
+            check(("stub cwd=%s" % ws) in txt, "%-22s -> probe ran with cwd = workspace root" % label)
+
+print("\nRESULT: %s (%d failed checks)" % ("ALL PASS" if fails == 0 else "FAILURES", fails))
+sys.exit(1 if fails else 0)

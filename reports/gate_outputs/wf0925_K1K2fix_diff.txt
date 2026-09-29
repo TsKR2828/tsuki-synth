@@ -1,0 +1,75 @@
+WF0925-K1K2fix: the only content edits of this round (two K1 evidence text files), as a diff against the audited
+round-1 versions (snapshots in output/wf0925/K1K2fix/pre, whose sha256 match output/wf0925/K_audit/audited_files_sha256_round1.txt):
+06b62f0612ab07863b44db32fad30646cb9e712748f245db62881891d65e2cd4 *output/wf0925/K1K2fix/pre/wf0925_K1_verify_score_all.txt
+7427c6e34eef34baed4dc220e8c41b76450af58e814fc54b79814502765425a0 *output/wf0925/K1K2fix/pre/wf0925_K1_summary.txt
+after:
+042ceba255f8ec8074f7e6aa196bcc877ce75524011a9d4f6e56898fd393b1ce *reports/gate_outputs/wf0925_K1_verify_score_all.txt
+d3b5b3b3ddbe2b2dc3d018679e844df561c3249a05ba2b9467e0c2eaced5de61 *reports/gate_outputs/wf0925_K1_summary.txt
+
+$ diff -u output/wf0925/K1K2fix/pre/wf0925_K1_verify_score_all.txt reports/gate_outputs/wf0925_K1_verify_score_all.txt
+--- output/wf0925/K1K2fix/pre/wf0925_K1_verify_score_all.txt	2026-09-25 06:27:52.250674300 +0800
++++ reports/gate_outputs/wf0925_K1_verify_score_all.txt	2026-09-25 10:04:08.982922000 +0800
+@@ -1,4 +1,12 @@
+-WF0925-K1 GATE 4 evidence: verify_score --all with the build-wf CLI (GATE 1 build)
++WF0925-K1 GATE 4 證據（verify_score --all）——注意：這份 log 沒有測到 K1 的程式碼。
++（本段是 2026-09-25 K 稽核第 1 輪發現後，K1K2fix 修正輪照實改寫的；原本這行寫「with the build-wf CLI (GATE 1 build)」，那是不實陳述。）
++  - 下面的命令行是「$ python tools/verify_score.py --all --cli 」，--cli 後面是空的，執行時沒有把 build-wf 的路徑帶進去。
++  - 所以 find_cli 自己挑了 build\ 裡的舊 CLI（下面「[find_cli] TsukiSynthCLI selected: ...\build\...」那行），不是 GATE 1 建出的 build-wf CLI。
++  - 每一首的 manifest 都寫 renderer 9123db8f6339...、configured source=766d21daf7de dirty，這是 K1 改動之前的程式。
++  - K1 當初回報裡的 GATE 4 命令寫成「--cli <build-wf CLI 絕對路徑>」，一樣不實。
++  - 有效的 GATE 4（真的用含 K1 改動的 build-wf CLI 跑）：wf0925_K2_verify_score_all.txt（renderer a7248ee58374...，75/75 passed，0 failed），
++    以及 K1K2fix 修正輪重跑的 wf0925_K1K2fix_verify_score_all.txt（本輪重編的 build-wf CLI，renderer fcea648ae5a4...，75/75 passed，0 failed）。
++  - 以下內容保持原樣不動，只能當「build\ 舊 CLI 跑出 75/75」的參考，不能當 K1 的 GATE 4。
+ 
+ # tools/ state at run time (other lanes' uncommitted edits, not K1's):
+  tools/physics_verify.py | 44 ++++++++++++++++++++++++++++++++++++++------
+(diff exit 1; the body of the log -- original lines 2..end -- is byte-identical to new lines 10..end:
+ BODY_IDENTICAL)
+
+$ diff -u output/wf0925/K1K2fix/pre/wf0925_K1_summary.txt reports/gate_outputs/wf0925_K1_summary.txt
+--- output/wf0925/K1K2fix/pre/wf0925_K1_summary.txt	2026-09-25 06:28:42.222175500 +0800
++++ reports/gate_outputs/wf0925_K1_summary.txt	2026-09-25 10:04:08.983422000 +0800
+@@ -14,6 +14,11 @@
+ 2 ctest    4/4 passed（audit_repro／tuner_repro／physics_models_repro／spectrum_view_repro）
+ 3 physics  RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED（3 個 rubber N/A，和 09-25 盤點相同；量測行逐行相同）
+ 4 score    75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.
++           更正（K 稽核第 1 輪發現，K1K2fix 修正輪補記）：上面這個 75/75 沒有測到 K1 的程式碼。K1 跑的命令是
++           「--cli 」後面空白，find_cli 自己選了 build\ 裡 K1 改動前的舊 CLI（manifest renderer 9123db8f6339...），
++           不是 build-wf。K1 回報寫的「--cli <build-wf CLI>」不實。有效的 GATE 4 是 wf0925_K2_verify_score_all.txt
++           （build-wf CLI，renderer a7248ee58374...，75/75 passed，0 failed），以及 K1K2fix 修正輪的
++           wf0925_K1K2fix_verify_score_all.txt（重編的 build-wf CLI，renderer fcea648ae5a4...，75/75 passed，0 failed）。
+ 5 HostProbe  PASS (0 failures)；[PASS] 106 行（基線 89，新增 17）
+ 6 位元不變  8/8 IDENTICAL（對 sha256_before_post_a14.txt）→ R10 未觸發
+ 
+(diff exit 1)
+
+## Other audited files: sha256sum -c output/wf0925/K_audit/audited_files_sha256_round1.txt
+src/engines/CimbalomEngine.h: OK
+src/engines/ChromaticEngine.h: OK
+src/physics/HammerImpulse.h: OK
+src/physics/PlateModel.h: OK
+src/effects/EffectChain.h: OK
+src/PluginProcessor.cpp: OK
+src/PluginProcessor.h: OK
+src/PresetManager.h: OK
+src/IRLibrary.h: OK
+tests/host_probe.cpp: OK
+tests/audit_repro.cpp: OK
+scores/examples/water_gong_free.score.json: OK
+reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md: OK
+reports/gate_outputs/wf0925_K1_summary.txt: FAILED
+reports/gate_outputs/wf0925_K1_build_ctest.txt: OK
+reports/gate_outputs/wf0925_K1_physics_verify_full.txt: OK
+reports/gate_outputs/wf0925_K1_verify_score_all.txt: FAILED
+reports/gate_outputs/wf0925_K1_hostprobe.txt: OK
+reports/gate_outputs/wf0925_K1_bit_identity.txt: OK
+reports/gate_outputs/wf0925_K2_summary.txt: OK
+reports/gate_outputs/wf0925_K2_build_ctest.txt: OK
+reports/gate_outputs/wf0925_K2_physics_verify_full.txt: OK
+reports/gate_outputs/wf0925_K2_verify_score_all.txt: OK
+reports/gate_outputs/wf0925_K2_hostprobe.txt: OK
+reports/gate_outputs/wf0925_K2_bit_identity.txt: OK
+reports/gate_outputs/wf0925_K2_e15_sources.txt: OK
+reports/gate_outputs/wf0925_K2_diff.txt: OK
+sha256sum: WARNING: 2 computed checksums did NOT match
+(expected: exactly the two files above FAILED, all other 25 OK)

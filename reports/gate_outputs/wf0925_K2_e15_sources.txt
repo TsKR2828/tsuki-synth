@@ -1,0 +1,51 @@
+WF0925-K2 E15 evidence: sources of the SHA-256 known-answer digests in tests/audit_repro.cpp
+======================================================================================
+The three known-answer CHECKs themselves were added by WF0925-K1 (testIRLibrarySha256AndCorruptEntryRepair);
+K2 did NOT add duplicate tests. K2 (a) re-ran Python hashlib, (b) fetched FIPS 180-2 and compared, (c) added a
+source note to the test comment. Their [PASS] lines in the final K2 run are in wf0925_K2_build_ctest.txt.
+Finding: the card's wording 'FIPS 180-2: empty string e3b0c442...' does not match the document -- FIPS 180-2
+contains no zero-length-message example (0 hits below). The empty-string vector's only source is hashlib.
+
+$ python -c "import hashlib; [print(len(m), repr(m), hashlib.sha256(m).hexdigest()) for m in [b\"\", b\"abc\", b\"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq\"]]"
+0 b'' e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+3 b'abc' ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+56 b'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq' 248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1
+
+$ grep -n -F each expected digest in tests/audit_repro.cpp
+1063:               == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+1066:               == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+1071:               == "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+
+== FIPS 180-2 (https://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf, fetched 2026-09-25 via WebFetch; 76 PDF pages, text extracted with PyMuPDF) ==
+-- PDF page 38 / printed p.33: Appendix B heading --
+APPENDIX B: SHA-256 EXAMPLES 
+This appendix is for informational purposes only and is not required to meet the standard. 
+B.1 
+SHA-256 Example (One-Block Message) 
+Let the message, M, be the 24-bit (l = 24) ASCII string "abc ", which is equivalent to the 
+following binary string: 
+01100001 01100010 01100011. 
+The message is padded by appending a "1" bit, followed by 423 "0" bits, and ending with the 
+-- PDF page 40 / printed p.35: end of B.1 --
+The resulting 256-bit message digest is 
+ba7816bf 8f01cfea 414140de 5dae2223 b00361a3 96177a9c b410ff61 f20015ad. 
+-- PDF page 40 / printed p.35: start of B.2 --
+B.2 
+SHA-256 Example (Multi-Block Message) 
+Let the message, M, be the 448-bit ( l = 448) ASCII string 
+"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq". 
+-- PDF page 44 / printed p.39: end of B.2 --
+The resulting 256-bit message digest is 
+248d6a61 d20638b8 e5c02693 0c3e6039 a33ce459 64ff2167 f6ecedd4 19db06c1. 
+39
+-- zero-length / empty-message example anywhere in the extracted text? --
+0
+
+PDF fetched 2026-09-25 with WebFetch from https://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
+(1,491,132 bytes, 'ARCHIVED PUBLICATION ... FIPS Publication 180-2 (dated August 1, 2002), was superseded on
+February 25, 2004'); text extracted with PyMuPDF to output/wf0925/K2/fips180-2_text.txt (gitignored).
+
+## the K1 CHECK lines as they ran in the final K2 build
+[PASS] E15: IRLibrary SHA-256 known answer, empty message
+[PASS] E15: IRLibrary SHA-256 known answer, "abc"
+[PASS] E15: IRLibrary SHA-256 known answer, 56-byte two-block message

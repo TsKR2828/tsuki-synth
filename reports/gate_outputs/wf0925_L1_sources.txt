@@ -1,0 +1,580 @@
+WF0925-L1 研究 lane 證據檔：D1 梁／板阻尼文獻補搜＋D4＋D6
+日期：2026-09-25　repo HEAD：18430c4（branch fix/deep-physics-audit-20260716）
+產出文件：docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md
+本卡沒有改 src/、tools/、tests/、scores/、data/ 任何檔；沒有渲染音訊；沒有建置；沒有 git add/commit。
+工具：WebSearch、WebFetch（讀網頁與開放 PDF）；curl 只用來看 HTTP 狀態碼（-o /dev/null）與讀 HTML/XML 文字頁。
+PDF 原檔只存在本機 Claude 暫存區（tool-results/），沒有放進 repo；本檔只記 SHA256、大小與頁碼。
+本卡分兩輪：第一輪（§1–§7 原文）被 session 用量上限中斷；第二輪（接手）保留第一輪成果、親自重核關鍵數字與引文，
+並補：§1 S16/S17、§2 兩條失敗、§3 第 14–15 條、§4 Table 5-16 頁碼更正、§6 計算新增 C 節（重跑後 A/B 節逐字不變）、
+§7 git 狀態更新、§8 接手核對紀錄（新）。第二輪標記為「【接手輪】」。
+
+======================================================================
+§1 D1 取得全文的來源（存取日期全部 2026-09-25）
+======================================================================
+代號 | URL（實際 fetch 的那一條） | 方法→結果 | 大小 bytes | SHA256（fetch 到的原始位元組）
+S1 Chaigne & Lambourg 2001, JASA 109(4) 1422-1432
+   作者首頁 https://sites.google.com/view/achaigne-homepage/home-page/publications （WebFetch 200，列出 Dropbox 自存連結）
+   https://www.dropbox.com/s/9fccwknzcmoxq8i/chaigne_plate_jasa01.pdf?dl=1 → 302 → dl.dropboxusercontent.com（WebFetch 200, %PDF-1.2）
+   141466 | fae55bac7497e9e9a508338afb5d70fe145339d0cb2013a49b099bd5882f8098
+S2 Ege, Boutillon, David 2009（arXiv:0909.0885 = JSV 325 852-869）
+   https://arxiv.org/abs/0909.0885（WebFetch 200，摘要頁）；https://arxiv.org/pdf/0909.0885（WebFetch 200）
+   3388249 | 4f4d3001347ca87579a285d6d13dcb965c2e564d77479e26696abb9b998688a4
+S3 Arcas & Chaigne 2010, Applied Acoustics 71 147-156
+   https://www.dropbox.com/s/xo45kyknt5aja4g/AA_Arcas_Chaigne.pdf?dl=1 → 302 → dropboxusercontent（WebFetch 200）
+   958151 | c1f2f848369b9a807fe56e350336e7d6f81670387a3eb8bda0a7d571b818cf4c
+S4 Chaigne & Doutaut 1997, JASA 101(1) 539-557
+   https://www.dropbox.com/s/uskhd4mmf96kgn6/chaigne_xylo_jasa97.pdf?dl=1 → 302 → dropboxusercontent（WebFetch 200）
+   402514 | 0db784dd3e1e6e3212a550bb26d44774f6aa6cb7d65d079494a7b3e53874ea60
+S5 Humbert et al., arXiv:1709.09438
+   https://arxiv.org/pdf/1709.09438（WebFetch 200）
+   1779719 | de2f2e2b5d8ad898834632e55b5b2c337718520ca9a05a1b06c0f94d5d99be67
+S6 Cross & Lifshitz 2001, arXiv:cond-mat/0011501（PRB 64 085324）
+   https://arxiv.org/pdf/cond-mat/0011501（WebFetch 200）
+   598230 | bb73ba0b3b12cbdea31dfaf77bd3ba4b94a3921f83c0cc8ec7117911deee107c
+S7 Zeng, Sanders, Wiegerink, Lötters 2022, Sensors 22(2):673, CC BY 4.0
+   https://www.mdpi.com/1424-8220/22/2/673 → WebFetch 403（改走 PMC）
+   Europe PMC 查號 https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.3390/s22020673&format=json → PMC8778587, isOpenAccess=Y
+   https://pmc.ncbi.nlm.nih.gov/articles/PMC8778587/（WebFetch 200）
+   https://www.ebi.ac.uk/europepmc/webservices/rest/PMC8778587/fullTextXML（curl 200, 173727 bytes）| 2dae81f31fb1b72aa517199498e248e616ac04c74c295c8a3ee8be405b973669
+   授權原文（XML <license>）："...distributed under the terms and conditions of the Creative Commons Attribution (CC BY) license"
+S8 Irvine, Damping Properties of Materials Rev D (2010)
+   https://cdm.ing.unimo.it/dokuwiki/_media/wikipaom2017/damping_cross-reference_and_material_properties.pdf → WebFetch 404
+   http://vibrationdata.com/tutorials_alt/damping.pdf（WebFetch 200）
+   40105 | 9b98634a14d4440f7654ef07f6752340b66baa464bd6666141e5bc5dd67adf1a
+S9  https://euphonics.org/2-2-7-vibration-damping/（WebFetch 200；curl HTML 200）| html sha256 64ae3b52dc25ca619e52131d20c470addea4715c9b4a472faf97999b552e3604
+S10 https://euphonics.org/10-3-3-material-damping-and-complex-moduli/（WebFetch 200；curl HTML 200）| cc198a861bd0625e94d7fadb49e08c5cd7e2d7f35111843e091d51b304fbbede
+S11 https://euphonics.org/4-3-sound-radiation/（WebFetch 200；curl HTML 200）| e2d6f4158ab15a7e8efe4d4acbe9fb40115b382b86bb88ef18963f358c56210d
+    （同輪另讀 https://euphonics.org/3-3-marimbas-and-xylophones/：WebFetch 200，無阻尼數字，未引用）
+S12 Wood Handbook FPL-GTR-282 Ch.5（Senalik & Farber 2021）
+   https://research.fs.usda.gov/treesearch/62244（curl 200，紀錄頁；PDF 5.24 MB）
+   https://research.fs.usda.gov/download/treesearch/62244.pdf（WebFetch 200, application/pdf）
+   5244804 | 724c99666ad364c4bd13022b5b1db09bb391166eace37bd920fee1f8d2d23204
+S13 Wood Handbook FPL-GTR-190 Ch.5（Kretschmann 2010）非官方鏡像，只做對照
+   https://www.precisebits.com/PDF/USFS_mechanical_properties_of_wood.pdf（WebFetch 200）
+   2226339 | 8014031cf51970c446484d52d67ef374fbccf6412f5b0555437278672371eec9
+S14 Chaigne, Touzé, Thomas 2005, AST 26(5)（無阻尼數字，未引數字）
+   https://www.dropbox.com/s/v14wqhm3ddqr8ca/Gongs_cymbals_ASJ26_05.pdf?dl=1 → 302 → dropboxusercontent（WebFetch 200）
+   451856 | 5fbb660d1c6ffa65dc7335a252aab47da20b08bde5d44e57a6bf32b150716ab3
+S15 Schäfer, Werner, Rabenstein, DAGA 2019（無物理阻尼數值，未引數字）
+   https://pub.dega-akustik.de/DAGA_2019/data/articles/000460.pdf（WebFetch 200）
+   617680 | 7d0071717f71ab85947913511a57462859ccd7f85c869631ed6a0c36be81dc97
+S16【接手輪】Rossing, Morrison, Hansen, Rohner, Schärer, "ACOUSTICS OF THE HANG: A hand-played steel instrument", ISMA 2007（8 頁；無阻尼數字，未引數字）
+   來源線索：WebSearch "Hang handpan acoustics Rossing Hansen Rohner ISMA 2007 pdf decay time modes"
+   https://www.hangblog.org/panart/2-S2-4-IsmaRossing.pdf（WebFetch 200，application/pdf；PyMuPDF 讀文字層）
+   1211536 | e12c06606dc68c734e91c5b70d648477f6dfd1ca5ef3d48f3a6b1c81ad388971
+   全文關鍵字搜尋（decay/damp/t60/sustain/"q "/loss/support/rim/shell，不分大小寫）：decay、damp、t60、sustain、"q "、loss 零命中；support 在第 3、7 頁命中（全像干涉的氣墊光學桌、消音室吊架）、shell 命中（兩片半球殼構造）、rim 命中為 "experimenting" 的子字串 → 無阻尼數字
+S17【接手輪】Bryde & Mahadevan, "Localization in musical steelpans", arXiv:2212.14465（17 頁；無阻尼數字，未引數字）
+   https://arxiv.org/pdf/2212.14465（WebFetch 200，application/pdf）
+   6710296 | 593653f3476c543f673cd38ef69d6cfc420d8ce49ab9751e126806d921b113fe
+   全文關鍵字搜尋（damping/decay/quality factor/q factor/loss factor/t60）：零命中
+
+圖像核對（PDF 文字層會丟希臘字母、負號、上下標，以下條目是把該頁渲染成 PNG 後逐格目視）：
+  S1 p.1423 式(5)(6)；p.1424 式(7)(8)；p.1425 式(19)-(22)；p.1428 Table I、Fig.1 說明；p.1429 式(40)-(42)、Fig.2；p.1431 Table II
+  S2 p.3 式(1)-(4)；p.24 式(25)、「≈ 4 s-1 to ≈ 15 s-1」；p.25 Table 7、Fig.16 說明（α∞ = ρa ca/(ρh), ρa = 1.2 kg m-3）
+  S3 p.152 式(15)-(21)；p.153 式(22)-(26)、Table 2、Table 3
+  S4 p.540 式(1)(2)；p.544 Table I；p.546 式(18)(19)、Fig.4
+  S5 p-2 材料參數；p-3 Fig.2 說明、γ 定義
+  S8 p.2 Table 2
+  S12/S13 p.5-36 Table 5-15（兩版逐格相同）
+
+======================================================================
+§2 D1 沒拿到全文的來源（本檔與文件都不引它們的數字）
+======================================================================
+Zoghaib & Mattei 2013 "Damping analysis of a free aluminum plate"（J. Vib. Control, DOI 10.1177/1077546313507098）
+  https://hal.science/hal-01024479 → WebFetch 回 Anubis「Access Denied」頁
+  https://hal.science/hal-01024479/file/Article-JVC_HAL.pdf → WebFetch 回 Anubis 頁；curl range 請求回 text/html 12604 bytes（防爬蟲頁）
+  https://hal.archives-ouvertes.fr/hal-01024479/file/Article-JVC_HAL.pdf、/document → 同上
+  HAL API https://api.archives-ouvertes.fr/search/?q=halId_s:hal-01024479&fl=... → 200，只有書目（作者 Lionel Zoghaib, Pierre-Olivier Mattei；檔名 Article-JVC_HAL.pdf）
+  ResearchGate 頁 → 搜尋結果列出，未 fetch（ResearchGate 全站對本工具 403）
+Hosaka, Itao, Kuroda 1995（Sens. Actuators A 49 87-95）→ 只有 WebSearch 摘要（ScienceDirect 付費）
+Sader 1998（J. Appl. Phys. 84 64）→ 只有 WebSearch 摘要；未 fetch 全文
+Xie, Thompson, Jones 2005（JSV 280 181-209）
+  https://ui.adsabs.harvard.edu/abs/2005JSV...280..181X/abstract → WebFetch 405
+  https://eprints.soton.ac.uk/28034 → WebFetch 403
+Judge et al. 2007（JAP 101 013521）→ 只有 WebSearch 摘要
+Sumali & Carne（OSTI）https://www.osti.gov/servlets/purl/1146543 → WebFetch ECONNRESET、再試 self signed certificate 錯誤
+Naeli & Brand（Georgia Tech repository）https://repository.gatech.edu/server/api/core/bitstreams/54bf0dac-e0dd-4613-9cc0-25d2e0811667/content → WebFetch 403
+Chaigne & Lambourg 2001 的 ResearchGate 頁 → 未用（已由 S1 作者自存版取得）
+【接手輪】Alon 2015, "Analysis and Synthesis of the Handpan Sound"（MSc by research, University of York）
+  https://etheses.whiterose.ac.uk/id/eprint/12260/1/EyalMSc.pdf → WebFetch 錯誤 "maxContentLength size of 10485760 exceeded"（檔案 >10 MB，未取得）
+  https://etheses.whiterose.ac.uk/id/eprint/12260/ → WebFetch 200：書目＋摘要；授權 "Creative Commons Attribution-NonCommercial-NoDerivs 2.5 License"
+  摘要只說演奏方式影響 spectral content、decay time、amplitude envelope，沒有數字 → 僅摘要，不引數字
+  （沒有用 curl 下載：研究 lane 規約只用 WebSearch/WebFetch，下載檔案需要月月同意）
+【接手輪】Van Eysden & Sader 2007（JAP 101 044908，矩形懸臂梁在黏性流體中的頻率響應，任意模態階數）
+  https://www.ampc.ms.unimelb.edu.au/afm/ref_files/VanEysden_JAP_2007.pdf → WebFetch 錯誤 "self signed certificate"（未取得）
+  WebSearch "Sader 1998 ... pdf hydrodynamic function rectangular" 其餘結果為 ResearchGate/scribd（未 fetch），Sader 1998 原文仍未取得
+
+======================================================================
+§3 D4 ICSV27 2021 舌鼓論文：試過的路徑與結果（全部失敗）
+======================================================================
+ 1 https://unige.iris.cineca.it/bitstream/11567/1063604/1/full_paper_1117_20210430223100647.pdf
+     WebFetch → HTTP 403；curl（瀏覽器 UA，-o /dev/null）→ 403 5928
+ 2 https://unige.iris.cineca.it/handle/11567/1063604 → curl 403；/retrieve/handle/11567/1063604 → curl 403
+ 3 http://hdl.handle.net/11567/1063604 → curl 500
+ 4 https://iris.unige.it/ 與 /handle/11567/1063604 → curl 000（連線失敗）
+ 5 https://www.researchgate.net/profile/Davide-Borelli/publication/353818565_Experimental_characterization_of_the_steel_tongue_drum/links/63b40a6ba03100368a4ddba7/Experimental-characterization-of-the-steel-tongue-drum.pdf → WebFetch 403
+   https://www.researchgate.net/publication/353818565_Experimental_characterization_of_the_steel_tongue_drum → curl 403
+ 6 https://www.iiav.org/content/archives_icsv_web/icsv27/ → WebFetch/curl 200；頁內無論文集連結（連結清單已列出，只有節目表/摘要/投稿頁與已過期的 icsv27.gcon.me）
+   https://www.iiav.org/content/archives_icsv_web/icsv27/index327c.html?va=viewpage&vaid=175（Submitted Abstracts）→ curl 200；#1117 列：
+     "EXPERIMENTAL CHARACTERIZATION OF THE STEEL TONGUE DRUM" / "Bocanegra Cifuentes Johan Augusto, Borelli Davide*" / Italy / "T14 RS01 Musical and virtual acoustics"（只有書目，無全文連結）
+ 7 https://www.iiav.org/content/archives_icsv_last/2021_icsv27/content/papers/papers/full_paper_1117_20210430223100647.pdf → 404（本卡依其他屆命名方式猜的路徑）
+   https://www.iiav.org/content/archives_icsv_last/2021_icsv27/ → 404
+ 8 https://docplayer.net/230849594-27th-international-congress-on-sound-and-vibration-2021-icsv27.html → WebFetch getaddrinfo ENOTFOUND；curl 000
+ 9 Wayback：https://archive.org/wayback/available?url=unige.iris.cineca.it/bitstream/11567/1063604/1/full_paper_1117_20210430223100647.pdf → "archived_snapshots": {}
+   CDX url=unige.iris.cineca.it/bitstream/11567/1063604* → 0 筆
+   CDX url=researchgate.net/profile/Davide-Borelli/publication/353818565* → 只有 2 張圖檔（Main-peak-in-relation-with-tongue-length_Q320/Q640.jpg）
+10 ORCID https://pub.orcid.org/v3.0/0000-0003-1696-2741/works → 200；該作品只有 eid 2-s2.0-85117493987（Scopus），無 DOI、無 OA 連結
+   OpenAlex https://api.openalex.org/works?search="steel tongue drum" → 無此論文；Crossref query.bibliographic → 無此論文
+11 Semantic Scholar API（/graph/v1/search/match、/paper/search）→ 404／429 Too Many Requests（兩次）
+12 https://scholar.archive.org/search?q="steel tongue drum" → 防爬蟲驗證頁；https://core.ac.uk/search?q=... → 403
+13 https://unige-it1.academia.edu/JohanAugustoBocanegraCifuentes → 403
+14【接手輪】https://unige.iris.cineca.it/bitstream/11567/1063604/1/full_paper_1117_20210430223100647.pdf → WebFetch "The server returned HTTP 403 Forbidden."
+15【接手輪】WebSearch ""steel tongue drum" Bocanegra Borelli ICSV27 pdf" 與 "Bocanegra Cifuentes tongue drum modal analysis vibration handpan paper open access"
+     → 只回到第 1 條（unige IRIS）與第 5 條（ResearchGate）同樣的網址；沒有新的公開副本
+搜尋引擎摘要中出現的頻率/長度數字與 "fixed-free" 描述：僅摘要，不採用。
+
+======================================================================
+§4 D6 Wood Handbook Table 5-15
+======================================================================
+官方：https://research.fs.usda.gov/download/treesearch/62244.pdf（S12，見 §1）
+  PDF 共 48 頁；Table 5-15 在第 36 頁（印刷頁碼 5-36）；"Reversible Effects" 段在 5-35 起、續到 5-36；木材內耗段在 5-21。
+失敗的官方路徑（curl 狀態）：
+  https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr282/chapter_05_fpl_gtr282.pdf → 403
+  https://www.fpl.fs.usda.gov/documnts/fplgtr/fplgtr190/chapter_05.pdf → 403
+  https://www.fs.usda.gov/research/treesearch/62200 → 403
+  https://www.fs.usda.gov/rm/pubs_other/fpl_gtr282.pdf → 403；https://www.fs.usda.gov/research/sites/default/files/2021-12/fpl_gtr282.pdf → 403
+  https://research.fs.usda.gov/download/treesearch/62200.pdf（整本 103,951,597 bytes）→ 只看 HEAD 200，未下載整本
+對照：S13（GTR-190 鏡像）第 36 頁（印刷 5-36）Table 5-15 逐格與 GTR-282 相同。
+【接手輪更正】Table 5-16 不在 5-36 同頁：PyMuPDF 對 S12 第 35–40 頁文字層搜尋 "Table 5–16"，只在第 37 頁命中兩次
+  （內文 "Table 5–16 provides equations that have been used to adjust some lumber propert..." 與表題 "Table 5–16. Percentage change in bending properties of lumber with change in te..."）。
+  文件 §7 已改為「下一頁（5–37）」。
+【接手輪】S12 第 36 頁以 110 dpi 重新渲染後目視，Table 5-15 全部 20 列（9 項性質）、兩個溫度欄逐格與文件 §7 相同；
+  "Reversible Effects" 小節標題在第 35 頁文字層（'Temperature\nReversible Effects\nIn general, the mechanical properties of '）；
+  "below approximately 150 °C (302 °F)" 與 "approximately linearly related to temperature" 在 35→36 頁跨頁處。
+
+======================================================================
+§5 引文自我核對（命令與完整輸出）
+======================================================================
+命令：PYTHONIOENCODING=utf-8 python output/wf0925/L1/verify_quotes.py
+說明：文件中每一條英文逐字引述，都在本卡實際 fetch 到的全文裡找（空白正規化；PDF 排版斷字無法和真連字號區分，比對時兩邊都刪連字號）。
+      文件裡部分引述是下列字串的子字串（為了守 ≤15 字），子字串必然同樣存在。
+      exit code 0 = 全部找到。
+[FOUND] S1_ChaigneLambourg2001 | PDF第[1]頁(1起算) | "metallic plates will be subjected to thermoelastic damping"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[2]頁(1起算) | "the thermoelastic losses decrease as the thickness h of the plate increases"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[3]頁(1起算) | "experimental decay factors usually tend to a constant"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[3]頁(1起算) | "viscoelastic and/or thermoelastic losses are the main causes of damping"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[3]頁(1起算) | "there is no damping due to coupling at the boundaries"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[3]頁(1起算) | "the damping is mainly governed by radiation for low dissipative materials"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[6]頁(1起算) | "about four times greater for plate a1 than for plate a3"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[6]頁(1起算) | "the radiation clearly becomes the dominant damping mechanism above the critical frequency"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[8]頁(1起算) | "an almost linear relationship between the decay factors and the eigenfrequencies"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[8]頁(1起算) | "nearly ten times greater than those obtained for an aluminum plate"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[8]頁(1起算) | "a noticeable increase around the critical frequency followed by an almost constant value"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[8]頁(1起算) | "constant Q values around 250"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[9]頁(1起算) | "nearly equal to 80"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[10]頁(1起算) | "the radiation effects are masked by the intrinsic damping of the material"
+[FOUND] S1_ChaigneLambourg2001 | PDF第[3]頁(1起算) | "an arbitrary viscous damping term"
+[FOUND] S2_Ege2009_arXiv0909.0885 | PDF第[24]頁(1起算) | "the sudden increase in acoustical radiation when the frequency approaches the coincidence frequency"
+[FOUND] S2_Ege2009_arXiv0909.0885 | PDF第[24]頁(1起算) | "In our case, the coincidence frequency is about 2.4 kHz."
+[FOUND] S2_Ege2009_arXiv0909.0885 | PDF第[24]頁(1起算) | "for a finite plate, the increase in radiation efficiency is gradual"
+[FOUND] S2_Ege2009_arXiv0909.0885 | PDF第[25]頁(1起算) | "0.14 s-1 for this aluminium plate"
+[FOUND] S2_Ege2009_arXiv0909.0885 | PDF第[25]頁(1起算) | "This value is very small compared with radiation damping in this frequency range of interest."
+[FOUND] S2_Ege2009_arXiv0909.0885 | PDF第[25]頁(1起算) | "damping factor α of an infinite plate above the coincidence frequency"
+[FOUND] S2_Ege2009_arXiv0909.0885 | PDF第[16]頁(1起算) | "Without the block of foam, damping factors are around 3 s-1"
+[FOUND] S2_Ege2009_arXiv0909.0885 | PDF第[23]頁(1起算) | "the vibrations of the plate are more strongly transmitted to the suspension frame by the nylon lines than by rubber bands"
+[FOUND] S3_ArcasChaigne2010 | PDF第[6]頁(1起算) | "Thermoelasticity is the dominant internal damping in thin metallic plates"
+[FOUND] S3_ArcasChaigne2010 | PDF第[6]頁(1起算) | "We also ignore viscoelasticity since it is negligible in most structural metals"
+[FOUND] S3_ArcasChaigne2010 | PDF第[6]頁(1起算) | "the losses at the attachment points cannot be easily modeled"
+[FOUND] S3_ArcasChaigne2010 | PDF第[9]頁(1起算) | "the plate is usually attached to its supports on punctual locations"
+[FOUND] S3_ArcasChaigne2010 | PDF第[7]頁(1起算) | "radiation damping is small compared to thermoelastic damping in almost all the audible range"
+[FOUND] S3_ArcasChaigne2010 | PDF第[6]頁(1起算) | "Increasing the thickness of the plate reduces the damping"
+[FOUND] S3_ArcasChaigne2010 | PDF第[7]頁(1起算) | "For frequencies above fc, the plate radiates efficiently"
+[FOUND] S3_ArcasChaigne2010 | PDF第[6]頁(1起算) | "We consider four main sources of damping in metallic plates"
+[FOUND] S4_ChaigneDoutaut1997 | PDF第[8]頁(1起算) | "the decay process is mainly determined by internal losses, for wooden bars without resonators"
+[FOUND] S4_ChaigneDoutaut1997 | PDF第[8]頁(1起算) | "radiation losses are small compared to internal losses"
+[FOUND] S4_ChaigneDoutaut1997 | PDF第[8]頁(1起算) | "significant for frequencies below the fundamental of the lowest bar only"
+[FOUND] S4_ChaigneDoutaut1997 | PDF第[7]頁(1起算) | "For wooden bars, the damping factors increase with frequency"
+[FOUND] S4_ChaigneDoutaut1997 | PDF第[16]頁(1起算) | "the complicated frequency dependence of damping for materials such as aluminum, steel, glass"
+[FOUND] S4_ChaigneDoutaut1997 | PDF第[8]頁(1起算) | "described by an empirical law of the form"
+[FOUND] S5_Humbert2017_arXiv1709.09438 | PDF第[2]頁(1起算) | "the thickness of the plate is h = 0.5mm"
+[FOUND] S5_Humbert2017_arXiv1709.09438 | PDF第[3]頁(1起算) | "thermoelasticity, acoustic radiation and dissipation at the boundaries"
+[FOUND] S5_Humbert2017_arXiv1709.09438 | PDF第[3]頁(1起算) | "coincidence frequency for acoustic radiation can be estimated in the vicinity of 20 kHz"
+[FOUND] S5_Humbert2017_arXiv1709.09438 | PDF第[3]頁(1起算) | "roughly estimated at 0.8s-1 for our plate"
+[FOUND] S5_Humbert2017_arXiv1709.09438 | PDF第[3]頁(1起算) | "A part of the energy is also dissipated at the clamped boundary"
+[FOUND] S5_Humbert2017_arXiv1709.09438 | PDF第[3]頁(1起算) | "This energy decrease can fitted for each frequency by an exponential law"
+[FOUND] S5_Humbert2017_arXiv1709.09438 | PDF第[3]頁(1起算) | "an exponent close to 0.6"
+[FOUND] S5_Humbert2017_arXiv1709.09438 | PDF第[3]頁(1起算) | "which leads to a frequency-independent"
+[FOUND] S6_CrossLifshitz2001_arXiv0011501 | PDF第[3]頁(1起算) | "also treated as thin plates of the same thickness"
+[FOUND] S6_CrossLifshitz2001_arXiv0011501 | PDF第[34]頁(1起算) | "L/w for the fundamental compression mode, torsion mode, and flexural-bending mode"
+[FOUND] S6_CrossLifshitz2001_arXiv0011501 | PDF第[34]頁(1起算) | "suppose that all the energy communicated to the support modes is lost"
+[FOUND] S6_CrossLifshitz2001_arXiv0011501 | PDF第[5]頁(1起算) | "In practice this expression for the dissipation may be an overestimate"
+[FOUND] S7_Zeng2022_PMC8778587 | 全文 | "with b 1 = 3.8 and b 2 = 2.7"
+[FOUND] S7_Zeng2022_PMC8778587 | 全文 | "the Q factor increases when the resonance frequency increases"
+[FOUND] S7_Zeng2022_PMC8778587 | 全文 | "Viscosity of air"
+[FOUND] S7_Zeng2022_PMC8778587 | 全文 | "a relatively simple expression can be found for"
+[FOUND] S7_Zeng2022_PMC8778587 | 全文 | "Creative Commons"
+[FOUND] S8_Irvine2010 | PDF第[1]頁(1起算) | "The data in Tables 1 and 2 is taken from Reference 1."
+[FOUND] S8_Irvine2010 | PDF第[6]頁(1起算) | "boundaries and bearings contribute damping"
+[FOUND] S8_Irvine2010 | PDF第[6]頁(1起算) | "L. Cremer and M. Heckl, Structure-Borne Sound"
+[FOUND] S9_Euphonics_2.2.7 | 全文 | "Tuning fork: $\zeta_n \approx 10^{-4}$"
+[FOUND] S10_Euphonics_10.3.3 | 全文 | "it is difficult to support the test sample with adding significant extra damping"
+[FOUND] S10_Euphonics_10.3.3 | 全文 | "Stiff materials like ceramics or hardened steel tend to have low damping"
+[FOUND] S10_Euphonics_10.3.3 | 全文 | "For the quarter-cut plate, the values were $\eta_1 = 0.0051$"
+[FOUND] S11_Euphonics_4.3 | 全文 | "a plate of finite size can always radiate some sound even at frequencies well below critical"
+[FOUND] S11_Euphonics_4.3 | 全文 | "is called the critical frequency of the plate"
+[FOUND] S12_WoodHandbook_GTR282_ch5 | PDF第[36]頁(1起算) | "Table 5–15. Approximate middle-trend effects of"
+[FOUND] S12_WoodHandbook_GTR282_ch5 | PDF第[36]頁(1起算) | "mechanical properties are approximately linearly related"
+[FOUND] S12_WoodHandbook_GTR282_ch5 | PDF第[35]頁(1起算) | "In general, the mechanical properties of wood decrease"
+[FOUND] S12_WoodHandbook_GTR282_ch5 | PDF第[21]頁(1起算) | "ranges from about 0.1 for hot, moist wood to"
+[FOUND] S12_WoodHandbook_GTR282_ch5 | PDF第[21]頁(1起算) | "less than 0.02 for hot, dry wood"
+[FOUND] S12_WoodHandbook_GTR282_ch5 | PDF第[1]頁(1起算) | "C. Adam Senalik"
+[FOUND] S13_WoodHandbook_GTR190_ch5_mirror | PDF第[36]頁(1起算) | "Table 5–15. Approximate middle-trend effects of"
+[FOUND] S13_WoodHandbook_GTR190_ch5_mirror | PDF第[1]頁(1起算) | "David E. Kretschmann"
+
+SUMMARY: 71/71 quotes found verbatim; NOTFOUND=0
+verify_quotes.py exit code: 0
+【接手輪】重跑 verify_quotes.py（同一份本機來源檔，SHA256 見 §8-1）：exit 0、SUMMARY 71/71，輸出與第一輪 output/wf0925/L1/verify_quotes_out.txt 逐字相同（diff 無差異；重跑輸出存 verify_quotes_out_rerun2.txt）。
+
+======================================================================
+§6 描述用計算（非 GATE）命令與完整輸出（【接手輪】重跑版）
+======================================================================
+命令：PYTHONIOENCODING=utf-8 python output/wf0925/L1/calc_d1.py
+腳本 sha256：26eb989d3e947297cc822bd3a496affdcb8a91381d205db0761a1f95cbcaaff0（第一輪版 b49a3ded577cf45e21e1a8153f4ffbd9b6cf839c220673f6274157a6e5af2d40）
+exit code: 0
+【接手輪】對第一輪輸出 calc_d1_out.txt 的差異（git diff --no-index -U0）：
+  刪除行 1 行（只有第 2 行檔頭：行號由工作樹 :187-188 改成 HEAD :179-180）；新增行 35 行（檔頭 1 行＋C 節）
+  -# repo HEAD 材料檔: data/materials.json；預設舌片幾何 w=0.02 m, h=0.003 m（ChromaticEngine.h:187-188）
+  → A、B 兩節（文件 §3.1–3.3 的所有數字）逐字未變。
+
+# WF0925-L1 描述用推導（非 GATE）— 由 output/wf0925/L1/calc_d1.py 產生
+# repo HEAD 材料檔: data/materials.json；外掛路徑預設舌片幾何 w=0.02 m, h=0.003 m（HEAD 18430c4 ChromaticEngine.h:179-180 + ParameterLayout.cpp:91-92）
+
+## A. BeamModel 四分項（換成振幅衰減率 alpha = ln1000/T60，單位 1/s）
+### steel: eta=0.0002, beta_air=1.2e-07, gamma_rad=2e-05
+   f(Hz)   int*2    int*1    beta_air  gamma_rad | T60(x2)  T60(x1)  x2佔總衰減率%
+    130.8   0.1643   0.0821    0.0142    0.0181 |   35.15    60.38   41.8
+    261.6   0.3286   0.1643    0.0567    0.0361 |   16.39    26.86   39.0
+    523.2   0.6572   0.3286    0.2270    0.0723 |    7.22    11.00   34.4
+   1046.5   1.3144   0.6572    0.9078    0.1446 |    2.92     4.04   27.8
+   2093.0   2.6287   1.3144    3.6313    0.2892 |    1.05     1.32   20.1
+   4186.0   5.2574   2.6287   14.5250    0.5783 |    0.34     0.39   12.9
+   8372.0  10.5149   5.2574   58.1001    1.1566 |    0.10     0.11    7.5
+### aluminum: eta=0.0001, beta_air=8e-08, gamma_rad=1.5e-05
+   f(Hz)   int*2    int*1    beta_air  gamma_rad | T60(x2)  T60(x1)  x2佔總衰減率%
+    130.8   0.0821   0.0411    0.0095    0.0136 |   65.69   107.79   39.1
+    261.6   0.1643   0.0821    0.0378    0.0271 |   30.13    46.96   35.8
+    523.2   0.3286   0.1643    0.1513    0.0542 |   12.93    18.68   30.8
+   1046.5   0.6572   0.3286    0.6052    0.1084 |    5.04     6.63   24.0
+   2093.0   1.3144   0.6572    2.4208    0.2169 |    1.75     2.10   16.6
+   4186.0   2.6287   1.3144    9.6833    0.4337 |    0.54     0.60   10.3
+   8372.0   5.2574   2.6287   38.7334    0.8675 |    0.15     0.16    5.9
+### brass: eta=0.0015, beta_air=1.4e-07, gamma_rad=2.3e-05
+   f(Hz)   int*2    int*1    beta_air  gamma_rad | T60(x2)  T60(x1)  x2佔總衰減率%
+    130.8   1.2322   0.6161    0.0165    0.0208 |    5.44    10.57   48.5
+    261.6   2.4645   1.2322    0.0662    0.0416 |    2.69     5.16   47.9
+    523.2   4.9288   2.4644    0.2648    0.0831 |    1.31     2.46   46.7
+   1046.5   9.8577   4.9288    1.0591    0.1663 |    0.62     1.12   44.5
+   2093.0  19.7154   9.8577    4.2365    0.3325 |    0.28     0.48   40.6
+   4186.0  39.4307  19.7154   16.9459    0.6651 |    0.12     0.19   34.6
+   8372.0  78.8614  39.4307   67.7834    1.3301 |    0.05     0.06   26.6
+### bronze: eta=0.001, beta_air=1.3e-07, gamma_rad=2.2e-05
+   f(Hz)   int*2    int*1    beta_air  gamma_rad | T60(x2)  T60(x1)  x2佔總衰減率%
+    130.8   0.8215   0.4107    0.0154    0.0199 |    8.06    15.49   47.9
+    261.6   1.6430   0.8215    0.0615    0.0398 |    3.96     7.49   47.1
+    523.2   3.2859   1.6429    0.2459    0.0795 |    1.91     3.51   45.5
+   1046.5   6.5718   3.2859    0.9835    0.1590 |    0.90     1.56   42.6
+   2093.0  13.1436   6.5718    3.9339    0.3181 |    0.40     0.64   37.8
+   4186.0  26.2871  13.1436   15.7354    0.6361 |    0.16     0.23   30.8
+   8372.0  52.5743  26.2871   62.9417    1.2723 |    0.06     0.08   22.5
+
+## B. 文獻機制在 h=3 mm 上的量級（描述用；公式與常數出處見文件來源表）
+### B1. 熱彈性（Arcas & Chaigne 2010 Eq.21 + Table 2 常數，把 h 從 0.5 mm 換成 3 mm）
+  steel 1 (Arcas T2): alpha_inf(h=0.5mm 自算)=2.818 1/s；alpha_inf(h=3mm)=0.0783 1/s；f_0.5(h=3mm)=2.65 Hz；alpha(f)= 262Hz:0.0783, 1046Hz:0.0783, 4186Hz:0.0783
+  steel 2 (Arcas T2): alpha_inf(h=0.5mm 自算)=3.585 1/s；alpha_inf(h=3mm)=0.0996 1/s；f_0.5(h=3mm)=3.28 Hz；alpha(f)= 262Hz:0.0996, 1046Hz:0.0996, 4186Hz:0.0996
+  aluminum (Arcas T2): alpha_inf(h=0.5mm 自算)=19.471 1/s；alpha_inf(h=3mm)=0.5409 1/s；f_0.5(h=3mm)=17.26 Hz；alpha(f)= 262Hz:0.5385, 1046Hz:0.5407, 4186Hz:0.5409
+  copper (Arcas T2): alpha_inf(h=0.5mm 自算)=13.067 1/s；alpha_inf(h=3mm)=0.3630 1/s；f_0.5(h=3mm)=20.30 Hz；alpha(f)= 262Hz:0.3608, 1046Hz:0.3628, 4186Hz:0.3630
+  Chaigne&Lambourg 2001 Table II 鋁（實測擬合常數）同式換算: h=2mm:alpha_inf=0.845 1/s, h=3mm:alpha_inf=0.376 1/s, h=4mm:alpha_inf=0.211 1/s
+  Humbert 2017（0.5 mm 鋼板）熱彈性「約 0.8 s^-1」是能量衰減率 gamma（exp(-gamma t) 描述能量）→ 振幅 alpha≈0.4 1/s；Arcas Table 2 同厚度鋼 alpha_inf=2.79~3.55 1/s → 兩文獻差 7.0~8.9 倍（本卡不裁定）
+### B2-check. fc 公式自我核對（Ege Eq.25，用 repo 鋁/玻璃材料值；對照論文印出的 fc）
+  C&L Table I 鋁 a1: h=2 mm → 算得 fc=6013 Hz；論文印 6 kHz
+  C&L Table I 鋁 a3: h=4 mm → 算得 fc=3006 Hz；論文印 3 kHz
+  Ege 2009 plate C (AU4G): h=5 mm → 算得 fc=2405 Hz；論文印 about 2.4 kHz
+  C&L Table I 玻璃 v1: h=2 mm → 算得 fc=5979 Hz；論文印 5.8 kHz
+### B2. 重合（臨界）頻率 fc（Ege 2009 Eq.25；材料值用 repo materials.json）
+  steel: fc(h=3mm)=4086 Hz；fc 以上無限板漸近輻射衰減 alpha_inf = rho_a c_a/(rho h) = 17.59 1/s（T60=0.393 s）
+      對照 BeamModel 在 f=fc 的 gamma_rad 項 alpha=0.5645 1/s、beta_air 項 alpha=13.8416 1/s
+  aluminum: fc(h=3mm)=4008 Hz；fc 以上無限板漸近輻射衰減 alpha_inf = rho_a c_a/(rho h) = 50.81 1/s（T60=0.136 s）
+      對照 BeamModel 在 f=fc 的 gamma_rad 項 alpha=0.4153 1/s、beta_air 項 alpha=8.8792 1/s
+  brass: fc(h=3mm)=5928 Hz；fc 以上無限板漸近輻射衰減 alpha_inf = rho_a c_a/(rho h) = 16.14 1/s（T60=0.428 s）
+      對照 BeamModel 在 f=fc 的 gamma_rad 項 alpha=0.9418 1/s、beta_air 項 alpha=33.9851 1/s
+  bronze: fc(h=3mm)=5751 Hz；fc 以上無限板漸近輻射衰減 alpha_inf = rho_a c_a/(rho h) = 15.59 1/s（T60=0.443 s）
+      對照 BeamModel 在 f=fc 的 gamma_rad 項 alpha=0.8740 1/s、beta_air 項 alpha=29.7012 1/s
+### B3. 黏性空氣阻尼（Zeng 2022 Eq.10/23，係數轉引 Maali；公式只在 1<beta<1000 驗過）
+  steel f=  130.8: beta=   5449.1（beta 超出 1..1000 驗證範圍＝外插）; alpha_visc=0.0121 1/s；BeamModel beta_air 項 alpha=0.0142 1/s
+  steel f=  261.6: beta=  10898.6（beta 超出 1..1000 驗證範圍＝外插）; alpha_visc=0.0171 1/s；BeamModel beta_air 項 alpha=0.0567 1/s
+  steel f= 1046.5: beta=  43593.5（beta 超出 1..1000 驗證範圍＝外插）; alpha_visc=0.0342 1/s；BeamModel beta_air 項 alpha=0.9078 1/s
+  steel f= 4186.0: beta= 174374.0（beta 超出 1..1000 驗證範圍＝外插）; alpha_visc=0.0682 1/s；BeamModel beta_air 項 alpha=14.5250 1/s
+  aluminum f=  130.8: beta=   5449.1（beta 超出 1..1000 驗證範圍＝外插）; alpha_visc=0.0350 1/s；BeamModel beta_air 項 alpha=0.0095 1/s
+  aluminum f=  261.6: beta=  10898.6（beta 超出 1..1000 驗證範圍＝外插）; alpha_visc=0.0495 1/s；BeamModel beta_air 項 alpha=0.0378 1/s
+  aluminum f= 1046.5: beta=  43593.5（beta 超出 1..1000 驗證範圍＝外插）; alpha_visc=0.0987 1/s；BeamModel beta_air 項 alpha=0.6052 1/s
+  aluminum f= 4186.0: beta= 174374.0（beta 超出 1..1000 驗證範圍＝外插）; alpha_visc=0.1972 1/s；BeamModel beta_air 項 alpha=9.6833 1/s
+### B4. 表列材料損耗因子（Irvine 2010 Table 2，其標示出處 Cremer & Heckl 1988）換成 alpha = pi f eta
+  aluminum flexural ≈1e-4: 262Hz:0.0822, 1046Hz:0.3288, 4186Hz:1.3151
+  steel longitudinal 0.2e-4: 262Hz:0.0164, 1046Hz:0.0658, 4186Hz:0.2630
+  steel longitudinal 3e-4: 262Hz:0.2466, 1046Hz:0.9863, 4186Hz:3.9452
+  brass flexural <1e-3 (上限): 262Hz:0.8219, 1046Hz:3.2877, 4186Hz:13.1507
+  repo steel eta=0.0002：x1 等效 eta=2.0e-04；x2 等效 eta=4.0e-04
+  repo aluminum eta=0.0001：x1 等效 eta=1.0e-04；x2 等效 eta=2.0e-04
+  repo brass eta=0.0015：x1 等效 eta=1.5e-03；x2 等效 eta=3.0e-03
+
+## C. 幾何依賴（描述用、非 GATE）：模型 T60 只看「發聲頻率＋材料」，文獻機制看厚度 h
+# 模型端：HEAD ChromaticEngine.h:346-347（score 路徑）與 :210-212（外掛路徑）在調音到 MIDI 之後，
+#   以 decayTimeForMode(發聲頻率, 材料) 重算 T60（:692-698 → BeamModel::decayTimeForFrequency，不含任何幾何量）。
+# 幾何來源：scores/examples/moonlight_sonata_movement1_tongue_drum.score.json（與 HEAD 相同）三組 (材料,厚,寬) 與 MIDI 範圍；
+#   score 未指定時的預設 thickness_mm=2.0、width_mm=25.0（HEAD ScoreParser.h:70,73）。
+# 懸臂模態比值（HEAD BeamModel.h:95-96 cantileverBetaL 前三根平方比）: 1.0000, 6.2669, 17.5475
+### 月光空靈鼓 低音群: steel h=3.2 mm, b=30 mm, MIDI 29-44（43.7-103.8 Hz）, 176 個事件
+  熱彈性 alpha_inf: steel 1 (Arcas T2)=0.0688, steel 2 (Arcas T2)=0.0875；Humbert 0.5 mm 振幅值 0.4 1/s 依 1/h^2 換算=0.0098 1/s（兩文獻分歧，見 B1）
+  重合頻率 fc=3831 Hz；fc 以上無限板輻射 alpha_inf=16.49 1/s
+  MIDI 29 f0=   43.7 Hz: 模型 alpha x2=0.0624 (T60 110.63 s)、x1=0.0350 (T60 197.23 s)；黏性空氣外插=0.0066 1/s (beta=4092)；前三模態頻率=44/274/766 Hz，高於 fc 的模態序號=無
+      模型各模態 alpha(1/s): 模態1 x2=0.062（其中 beta_air 項 0.002）；模態2 x2=0.443（其中 beta_air 項 0.062）；模態3 x2=1.554（其中 beta_air 項 0.486）
+  MIDI 44 f0=  103.8 Hz: 模型 alpha x2=0.1537 (T60  44.95 s)、x1=0.0885 (T60  78.07 s)；黏性空氣外插=0.0101 1/s (beta=9731)；前三模態頻率=104/651/1822 Hz，高於 fc 的模態序號=無
+      模型各模態 alpha(1/s): 模態1 x2=0.154（其中 beta_air 項 0.009）；模態2 x2=1.258（其中 beta_air 項 0.351）；模態3 x2=5.291（其中 beta_air 項 2.751）
+### 月光空靈鼓 主體群: steel h=2.6 mm, b=24 mm, MIDI 45-76（110.0-659.3 Hz）, 952 個事件
+  熱彈性 alpha_inf: steel 1 (Arcas T2)=0.1042, steel 2 (Arcas T2)=0.1326；Humbert 0.5 mm 振幅值 0.4 1/s 依 1/h^2 換算=0.0148 1/s（兩文獻分歧，見 B1）
+  重合頻率 fc=4715 Hz；fc 以上無限板輻射 alpha_inf=20.30 1/s
+  MIDI 45 f0=  110.0 Hz: 模型 alpha x2=0.1634 (T60  42.28 s)、x1=0.0943 (T60  73.25 s)；黏性空氣外插=0.0128 1/s (beta=6598)；前三模態頻率=110/689/1930 Hz，高於 fc 的模態序號=無
+      模型各模態 alpha(1/s): 模態1 x2=0.163（其中 beta_air 項 0.010）；模態2 x2=1.355（其中 beta_air 項 0.394）；模態3 x2=5.779（其中 beta_air 項 3.088）
+  MIDI 76 f0=  659.3 Hz: 模型 alpha x2=1.2793 (T60   5.40 s)、x1=0.8653 (T60   7.98 s)；黏性空氣外插=0.0313 1/s (beta=39546)；前三模態頻率=659/4131/11568 Hz，高於 fc 的模態序號=[3]
+      模型各模態 alpha(1/s): 模態1 x2=1.279（其中 beta_air 項 0.360）；模態2 x2=19.909（其中 beta_air 項 14.149）；模態3 x2=127.059（其中 beta_air 項 110.931）
+### 月光空靈鼓 高音群: aluminum h=2.0 mm, b=18 mm, MIDI 78-87（740.0-1244.5 Hz）, 14 個事件
+  熱彈性 alpha_inf: aluminum (Arcas T2)=1.2169, Chaigne&Lambourg Table II=0.8450 1/s
+  重合頻率 fc=6013 Hz；fc 以上無限板輻射 alpha_inf=76.22 1/s
+  MIDI 78 f0=  740.0 Hz: 模型 alpha x2=0.8440 (T60   8.18 s)、x1=0.6116 (T60  11.29 s)；黏性空氣外插=0.1246 1/s (beta=24969)；前三模態頻率=740/4637/12985 Hz，高於 fc 的模態序號=[3]
+      模型各模態 alpha(1/s): 模態1 x2=0.844（其中 beta_air 項 0.303）；模態2 x2=15.277（其中 beta_air 項 11.885）；模態3 x2=102.676（其中 beta_air 項 93.177）
+  MIDI 87 f0= 1244.5 Hz: 模型 alpha x2=1.7664 (T60   3.91 s)、x1=1.3756 (T60   5.02 s)；黏性空氣外插=0.1615 1/s (beta=41992)；前三模態頻率=1245/7799/21838 Hz，高於 fc 的模態序號=[2, 3]
+      模型各模態 alpha(1/s): 模態1 x2=1.766（其中 beta_air 項 0.856）；模態2 x2=39.320（其中 beta_air 項 33.615）；模態3 x2=279.520（其中 beta_air 項 263.543）
+### 外掛預設（對照 B 節）: steel h=3.0 mm, b=20 mm
+  熱彈性 alpha_inf: steel 1 (Arcas T2)=0.0783, steel 2 (Arcas T2)=0.0996；Humbert 0.5 mm 振幅值 0.4 1/s 依 1/h^2 換算=0.0111 1/s（兩文獻分歧，見 B1）
+  重合頻率 fc=4086 Hz；fc 以上無限板輻射 alpha_inf=17.59 1/s
+### score 未指定時預設: steel h=2.0 mm, b=25 mm
+  熱彈性 alpha_inf: steel 1 (Arcas T2)=0.1761, steel 2 (Arcas T2)=0.2241；Humbert 0.5 mm 振幅值 0.4 1/s 依 1/h^2 換算=0.0250 1/s（兩文獻分歧，見 B1）
+  重合頻率 fc=6130 Hz；fc 以上無限板輻射 alpha_inf=26.38 1/s
+
+======================================================================
+§7 本卡碰到的檔案與 git 狀態（【接手輪】更新）
+======================================================================
+命令：git status --short -- docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md reports/gate_outputs/wf0925_L1_sources.txt src tools tests scores data
+ M scores/examples/water_gong_free.score.json
+ M src/IRLibrary.h
+ M src/PluginProcessor.cpp
+ M src/PluginProcessor.h
+ M src/PresetManager.h
+ M src/effects/EffectChain.h
+ M src/engines/ChromaticEngine.h
+ M src/engines/CimbalomEngine.h
+ M src/physics/HammerImpulse.h
+ M src/physics/PlateModel.h
+ M tests/audit_repro.cpp
+ M tests/host_probe.cpp
+M  tests/test_measurement_selfcal.py
+A  tests/test_stem_stream.py
+M  tools/melody_roll_video.py
+M  tools/partial_verify.py
+M  tools/physics_verify.py
+M  tools/verify_score.py
+?? docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md
+?? reports/gate_outputs/wf0925_L1_sources.txt
+git rev-parse --short HEAD → 18430c4
+（src/tools/tests/scores 的 M 項都是其他 lane 的變更，本卡兩輪都沒有碰；兩輪都沒有 git add/commit/stash/checkout。）
+本卡進版控的檔案：docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md、reports/gate_outputs/wf0925_L1_sources.txt
+本卡暫存（output/ 已 gitignore）：output/wf0925/L1/{calc_d1.py, calc_d1_out.txt, calc_d1_out_v2.txt, verify_quotes.py, verify_quotes_out.txt, verify_quotes_out_rerun2.txt, check_doc_quotes.py, check_doc_quotes_out.txt, evidence_header.txt, build_evidence_round2.py}
+docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md sha256（接手輪定稿）：7e3ae872037ed72178e88b1825d143fe64b758bcfed43ce0d9339bdb1b987589（第一輪 647bfdffb3ac47782eb1dceb703bbaaff6ab38be476e196814d5a89dfb975e00）
+
+======================================================================
+§8 【接手輪】核對紀錄（2026-09-25，第二輪親自重核）
+======================================================================
+8-1 來源檔雜湊重算（本機暫存，與 §1 記錄比對）
+  S1     141466 bytes  fae55bac7497e9e9a508338afb5d70fe145339d0cb2013a49b099bd5882f8098  MATCH
+  S2    3388249 bytes  4f4d3001347ca87579a285d6d13dcb965c2e564d77479e26696abb9b998688a4  MATCH
+  S3     958151 bytes  c1f2f848369b9a807fe56e350336e7d6f81670387a3eb8bda0a7d571b818cf4c  MATCH
+  S4     402514 bytes  0db784dd3e1e6e3212a550bb26d44774f6aa6cb7d65d079494a7b3e53874ea60  MATCH
+  S5    1779719 bytes  de2f2e2b5d8ad898834632e55b5b2c337718520ca9a05a1b06c0f94d5d99be67  MATCH
+  S6     598230 bytes  bb73ba0b3b12cbdea31dfaf77bd3ba4b94a3921f83c0cc8ec7117911deee107c  MATCH
+  S7     173727 bytes  2dae81f31fb1b72aa517199498e248e616ac04c74c295c8a3ee8be405b973669  MATCH
+  S8      40105 bytes  9b98634a14d4440f7654ef07f6752340b66baa464bd6666141e5bc5dd67adf1a  MATCH
+  S12   5244804 bytes  724c99666ad364c4bd13022b5b1db09bb391166eace37bd920fee1f8d2d23204  MATCH
+  S13   2226339 bytes  8014031cf51970c446484d52d67ef374fbccf6412f5b0555437278672371eec9  MATCH
+  → 10/10 MATCH（S9–S11 是 HTML 純文字暫存、S14/S15 未引數字，未重算）
+
+8-2 引文正向核對（verify_quotes.py 重跑）：見 §5 末行，71/71、輸出逐字相同。
+
+8-3 引文反向核對（新腳本）：文件內每段含英文的「」都要命中已核清單、或列為有理由的非來源字串，且少於 15 字
+命令：PYTHONIOENCODING=utf-8 python output/wf0925/L1/check_doc_quotes.py
+[NON-SOURCE] words= 2 | 描述用、非 GATE | 理由：repo 規約用語（R2）
+[NON-SOURCE] words= 3 | BeamModel `*2` 阻尼加權去留 | 理由：TODO.md:138 項目名（HEAD 已登記）
+[NON-SOURCE] words= 2 | decay time | 理由：Alon 2015 論文頁摘要中的詞（僅摘要，無數字）
+[OK]         words= 8 S1_ChaigneLambourg2001               | metallic plates will be subjected to thermoelastic damping
+[OK]         words=12 S1_ChaigneLambourg2001               | the thermoelastic losses decrease as the thickness h of the plate increases
+[OK]         words=11 S1_ChaigneLambourg2001               | about four times greater for plate a1 than for plate a3
+[OK]         words=10 S3_ArcasChaigne2010                  | Thermoelasticity is the dominant internal damping in thin metallic plates
+[OK]         words=12 S3_ArcasChaigne2010                  | We also ignore viscoelasticity since it is negligible in most structural metals
+[OK]         words= 6 S2_Ege2009_arXiv0909.0885            | 0.14 s-1 for this aluminium plate
+[OK]         words=12 S2_Ege2009_arXiv0909.0885            | very small compared with radiation damping in this frequency range of interest
+[OK]         words= 7 S5_Humbert2017_arXiv1709.09438       | roughly estimated at 0.8s-1 for our plate
+[OK]         words=12 S5_Humbert2017_arXiv1709.09438       | This energy decrease can fitted for each frequency by an exponential law
+[OK]         words=10 S7_Zeng2022_PMC8778587               | with b 1 = 3.8 and b 2 = 2.7
+[OK]         words= 8 S7_Zeng2022_PMC8778587               | a relatively simple expression can be found for
+[OK]         words= 9 S7_Zeng2022_PMC8778587               | the Q factor increases when the resonance frequency increases
+[OK]         words= 3 S2_Ege2009_arXiv0909.0885            | about 2.4 kHz
+[OK]         words=10 S1_ChaigneLambourg2001               | viscoelastic and/or thermoelastic losses are the main causes of damping
+[OK]         words=11 S11_Euphonics_4.3                    | can always radiate some sound even at frequencies well below critical
+[OK]         words=14 S5_Humbert2017_arXiv1709.09438       | coincidence frequency for acoustic radiation can be estimated in the vicinity of 20 kHz
+[OK]         words= 5 S5_Humbert2017_arXiv1709.09438       | an exponent close to 0.6
+[OK]         words=13 S2_Ege2009_arXiv0909.0885            | the sudden increase in acoustical radiation when the frequency approaches the coincidence frequency
+[OK]         words=11 S2_Ege2009_arXiv0909.0885            | for a finite plate, the increase in radiation efficiency is gradual
+[OK]         words=11 S2_Ege2009_arXiv0909.0885            | damping factor α of an infinite plate above the coincidence frequency
+[OK]         words=11 S1_ChaigneLambourg2001               | the damping is mainly governed by radiation for low dissipative materials
+[OK]         words=12 S1_ChaigneLambourg2001               | the radiation clearly becomes the dominant damping mechanism above the critical frequency
+[OK]         words=13 S1_ChaigneLambourg2001               | a noticeable increase around the critical frequency followed by an almost constant value
+[OK]         words= 8 S3_ArcasChaigne2010                  | For frequencies above fc, the plate radiates efficiently
+[OK]         words=10 S1_ChaigneLambourg2001               | there is no damping due to coupling at the boundaries
+[OK]         words=10 S3_ArcasChaigne2010                  | We consider four main sources of damping in metallic plates
+[OK]         words=10 S3_ArcasChaigne2010                  | the losses at the attachment points cannot be easily modeled
+[OK]         words=11 S3_ArcasChaigne2010                  | the plate is usually attached to its supports on punctual locations
+[OK]         words=11 S2_Ege2009_arXiv0909.0885            | more strongly transmitted to the suspension frame by the nylon lines
+[OK]         words=12 S5_Humbert2017_arXiv1709.09438       | A part of the energy is also dissipated at the clamped boundary
+[OK]         words=11 S4_ChaigneDoutaut1997                | significant for frequencies below the fundamental of the lowest bar only
+[OK]         words=13 S10_Euphonics_10.3.3                 | it is difficult to support the test sample with adding [原文如此] significant extra damping
+[OK]         words= 5 S8_Irvine2010                        | boundaries and bearings contribute damping
+[OK]         words= 9 S6_CrossLifshitz2001_arXiv0011501    | also treated as thin plates of the same thickness
+[OK]         words=11 S6_CrossLifshitz2001_arXiv0011501    | L/w for the fundamental compression mode, torsion mode, and flexural-bending mode
+[OK]         words=12 S6_CrossLifshitz2001_arXiv0011501    | suppose that all the energy communicated to the support modes is lost
+[OK]         words=11 S6_CrossLifshitz2001_arXiv0011501    | In practice this expression for the dissipation may be an overestimate
+[OK]         words= 8 S1_ChaigneLambourg2001               | experimental decay factors usually tend to a constant
+[OK]         words= 5 S1_ChaigneLambourg2001               | an arbitrary viscous damping term
+[OK]         words= 8 S4_ChaigneDoutaut1997                | described by an empirical law of the form
+[OK]         words= 1 S5_Humbert2017_arXiv1709.09438       | frequency-independent
+[OK]         words= 5 S9_Euphonics_2.2.7                   | Tuning fork: ζ_n ≈ 10⁻⁴
+[OK]         words=11 S2_Ege2009_arXiv0909.0885            | Without the block of foam, damping factors are around 3 s-1
+[OK]         words= 4 S1_ChaigneLambourg2001               | an almost linear relationship
+[OK]         words= 4 S1_ChaigneLambourg2001               | nearly ten times greater
+[OK]         words= 5 S1_ChaigneLambourg2001               | constant Q values around 250
+[OK]         words= 4 S1_ChaigneLambourg2001               | nearly equal to 80
+[OK]         words=10 S10_Euphonics_10.3.3                 | For the quarter-cut plate, the values were η₁ = 0.0051
+[OK]         words= 9 S12_WoodHandbook_GTR282_ch5          | ranges from about 0.1 for hot, moist wood to
+[OK]         words= 7 S12_WoodHandbook_GTR282_ch5          | less than 0.02 for hot, dry wood
+[OK]         words=12 S10_Euphonics_10.3.3                 | Stiff materials like ceramics or hardened steel tend to have low damping
+[NON-SOURCE] words= 2 | Beam/Plate 仍未溯源 | 理由：TODO.md 用語
+[OK]         words=11 S1_ChaigneLambourg2001               | about four times greater for plate a1 than for plate a3
+[OK]         words= 9 S3_ArcasChaigne2010                  | Increasing the thickness of the plate reduces the damping
+[OK]         words= 5 S9_Euphonics_2.2.7                   | Tuning fork: ζ_n ≈ 10⁻⁴
+[NON-SOURCE] words= 2 | DECIDED CONVENTION，經驗係數，無文獻錨點 | 理由：建議的註解措辭（選項 A），非引述
+[NON-SOURCE] words= 2 | decay time | 理由：Alon 2015 論文頁摘要中的詞（僅摘要，無數字）
+[NON-SOURCE] words= 1 | strips | 理由：Xie/Thompson/Jones 2005 題名中的單字（僅摘要來源，未引數字）
+[NON-SOURCE] words= 4 | Musical and virtual acoustics | 理由：IIAV ICSV27 摘要清單的主題欄（書目，證據檔 §3 第 6 條）
+[NON-SOURCE] words= 2 | fixed-free rod | 理由：搜尋引擎摘要用語，文件明寫「僅摘要，不採用」
+[NON-SOURCE] words= 2 | Reversible Effects | 理由：S12 第 5–35 頁小節標題（接手輪以 PDF 文字層確認，證據檔 §8）
+[OK]         words= 8 S12_WoodHandbook_GTR282_ch5          | In general, the mechanical properties of wood decrease
+[OK]         words= 6 S12_WoodHandbook_GTR282_ch5          | mechanical properties are approximately linearly related
+[NON-SOURCE] words= 2 | 溫度相依的逐項係數表（Table 5–15）未取得 | 理由：docs/WOOD_ANISOTROPY_SOURCES.md:198 勾選項原文（接手輪 grep 確認）
+
+SUMMARY: 67 段含英文的「」；來源引述命中=56；非來源（有理由）=11；MISS=0；>=15 字=0
+exit code: 0
+（第一輪文件有 1 條 15 字的引述〔S2 "This value is very small ... of interest."〕，接手輪截成 12 字的子字串；其餘未動。）
+
+8-4 關鍵數字目視重核（把原 PDF 頁以 110 dpi 渲染成 PNG、親眼逐格比對文件數字；PNG 在本機暫存區 scratchpad/L1b/，未進 repo）
+  S3 p.153 Table 2：Steel 1 R1×10³=9.416、C1×10³=0.14965、α∞=2.79、f0.5=95、f0.95=415；Steel 2 9.664/0.1855/3.55/118/514；Copper 5.691/1.148/13.00/731/3187；Aluminum 9.975/0.976/19.28/621/2708；同頁式(25) α_rad=(ρa ca/(ρh))σ → 與文件 §2.2 表、§2.4 相符
+  S1 p.1431 Table II：鋁 R1=8.45×10⁻³、c1=8.0×10⁻⁴ rad m² s⁻¹；R_f 鋁 0.032、玻璃 0.88、碳纖 0.8、木 2.4 s⁻¹ → 與文件 §2.2、§2.6 相符
+  S2 p.24：「≈ 4 s-1 to ≈ 15 s-1」、式(25) f_c=(c_a²/(2πh))√(12ρ(1−ν²)/E)、c_a≈343 m/s、"about 2.4 kHz"；p.25 Table 7：f=2069.1–2097.5 Hz、α=10.3/10.6/15.6/15.8/18.8 s⁻¹；α_therm<0.14 s⁻¹；圖16說明 α∞=ρa ca/(ρh)、ρa=1.2 kg m⁻³ → 相符
+  S4 p.544 Table I：Padouk η=9.16×10⁻⁸ s、γ_B=12.44 s⁻¹；Rosewood η=2.35×10⁻⁷ s、γ_B=51.58 s⁻¹；p.546 式(18) α(f)=1/t_d=a0+a2 f²、式(19) η=a2/2π²、γ_B=2a0 → 相符
+  S8 p.2 Table 2：鋁 縱向 0.3–10 (10⁻⁵)／彎曲 ≈10⁻⁴；鐵 1–4／2–6 (10⁻⁴)；鋼 縱向 0.2–3 (10⁻⁴)、彎曲欄空白；銅(多晶) ≈2 (10⁻³)／≈2 (10⁻³)；黃銅 0.2–1 (10⁻³)／<10⁻³；註 η=2ξ → 相符
+  S12 p.5-36 Table 5-15：20 列（9 項性質）×兩溫度欄逐格相符；Table 5-16 在 p.5-37（§4 更正）
+  S7（Europe PMC XML 文字層）：「in the range 1 < β < 1000」、b1=3.8、b2=2.7、式(10)、Table 2 空氣密度 1.2 kg/m³、黏度 1.81×10⁻⁵ kg/(m·s) → 相符；式(10) 由式(7)(8)(9) 代入的代數接手輪重推一次，一致
+
+8-5 程式端事實重核（git show HEAD:<path>，HEAD=18430c4）
+  --- HEAD:src/physics/BeamModel.h:50-58
+    50|     static float decayTimeForFrequency (
+    51|         float frequency, const MaterialDB::Material& material)
+    52|     {
+    53|         const float denominator = MaterialDB::internalFrictionRate (
+    54|                 material.damping.eta, frequency) * 2.0f
+    55|             + material.damping.beam_plate_beta_air * frequency * frequency
+    56|             + material.damping.beam_plate_gamma_radiation * frequency;
+    57|         return denominator > 0.0f ? 1.0f / denominator : 5.0f;
+    58|     }
+  --- HEAD:src/physics/BeamModel.h:94-96
+    94|         static constexpr float cantileverBetaL[] = {
+    95|             1.8751041f, 4.6940911f, 7.8547574f, 10.9955407f, 14.1371684f
+    96|         };
+  --- HEAD:src/physics/PlateModel.h:32-33
+    32|         float radius      = 0.15f;    // 半徑 (m)
+    33|         float thickness   = 0.003f;   // 板厚 (m)
+  --- HEAD:src/physics/PlateModel.h:39-50
+    39|     /// T60(f) = 1 / (eta·f/2.2 + beam_plate_beta_air·f² + beam_plate_gamma_radiation·f)
+    40|     /// 內部摩擦項自 2026-08-10 起寬頻化，與 StringModel 同一條律
+    41|     /// （推導與理由見 MaterialDB.h 頂端註解）。
+    42|     static float decayTimeForFrequency (
+    43|         float frequency, const MaterialDB::Material& material)
+    44|     {
+    45|         const float denominator = MaterialDB::internalFrictionRate (
+    46|                 material.damping.eta, frequency)
+    47|             + material.damping.beam_plate_beta_air * frequency * frequency
+    48|             + material.damping.beam_plate_gamma_radiation * frequency;
+    49|         return denominator > 0.0f ? 1.0f / denominator : 8.0f;
+    50|     }
+  --- HEAD:src/engines/ChromaticEngine.h:179-180
+   179|             bp.width     = 0.02f;
+   180|             bp.thickness = thickness > 0.0001f ? thickness : 0.003f;
+  --- HEAD:src/engines/ChromaticEngine.h:203-212
+   203|         // Macro: Tension → frequency, Material → sustain, Damping → decay
+   204|         float tScale = 0.85f + mTension * 0.30f;
+   205|         float matScale = 0.5f + mMaterial;
+   206|         float dmpScale = 1.0f + (0.5f - mDamping) * 1.4f;
+   207| 
+   208|         for (auto& m : modes)
+   209|         {
+   210|             m.frequency *= tScale;
+   211|             m.decayTime = decayTimeForMode (subEngine, m.frequency, *mat)
+   212|                         * matScale * dmpScale;
+  --- HEAD:src/engines/ChromaticEngine.h:344-347
+   344| 
+   345|         filterChromaticModesForSampleRate (modes, sr);
+   346|         for (auto& mode : modes)
+   347|             mode.decayTime = decayTimeForMode (subEng, mode.frequency, mat);
+  --- HEAD:src/engines/ChromaticEngine.h:692-698
+   692|     static float decayTimeForMode (
+   693|         int subEngine, float frequency, const MaterialDB::Material& material)
+   694|     {
+   695|         return subEngine == 0
+   696|             ? BeamModel::decayTimeForFrequency (frequency, material)
+   697|             : PlateModel::decayTimeForFrequency (frequency, material);
+   698|     }
+  --- HEAD:src/ParameterLayout.cpp:91-92
+    91|         PID { "chr_thickness", 1 }, "Thickness (mm)",
+    92|         Range (0.5f, 10.0f, 0.0f), 3.0f));
+  --- HEAD:src/score/ScoreParser.h:70-73
+    70|     double      thicknessMm    = 2.0;
+    71|     double      radiusMm       = 120.0;
+    72|     double      lengthMm       = 100.0;
+    73|     double      widthMm        = 25.0;
+  --- HEAD:src/physics/MaterialDB.h:90-93
+    90|     static float internalFrictionRate (float eta, float frequency)
+    91|     {
+    92|         return eta * frequency / kEtaToDecayRate;
+    93|     }
+  git diff --stat HEAD -- BeamModel.h MaterialDB.h materials.json src/score moonlight_tongue_drum.score.json → （空：與 HEAD 相同）
+  git diff --stat HEAD -- ChromaticEngine.h PlateModel.h →
+    src/engines/ChromaticEngine.h | 25 ++++++++++++++++++++++---
+     src/physics/PlateModel.h      | 10 +++++++++-
+     2 files changed, 31 insertions(+), 4 deletions(-)
+  → 第一輪文件寫的 ChromaticEngine.h:187-188、PlateModel.h:40-41／:50-58 是含其他 lane 未 commit 修改的工作樹行號；接手輪改成 HEAD 行號 :179-180、:32-33、:39-50。BeamModel.h:52-56 本來就對。
+  結論（寫進文件 §1 與 §3.4）：調音到 MIDI 之後才用發聲頻率呼叫 decayTimeForMode()（score 路徑 :346-347、外掛 :211-212），衰減律不含長、寬、厚。
+  交叉核對 D8 裁決包 §3.1：MIDI 37 = 69.30 Hz，鋼的衰減律（×2）T60 = 68.675 s；D8 表記 68.68 s（68.675）→ 一致，證實 T60 是在發聲頻率上算的。
+  出貨月光空靈鼓樂譜的舌片組合（材料, 厚 mm, 寬 mm, 長 mm, frequency_mode）事件數 最低 MIDI 最高 MIDI：
+    ('steel', 3.2, 30, 100, None) 176 29 44
+    ('steel', 2.6, 24, 100, None) 952 45 76
+    ('aluminum', 2.0, 18, 100, None) 14 78 87
+
+8-6 補搜（接手輪）：D4 兩條（§3 第 14–15 條）、handpan／鋼盤三份（§1 S16、S17；§2 Alon 2015）、高 β 黏性阻尼一份（§2 Van Eysden & Sader 2007）。拿到全文的兩份都沒有阻尼數字，文件不引任何新數字。
+8-7 沒做的事：沒有渲染、沒有建置、沒有改 src/tools/tests/scores/data、沒有 git add/commit；沒有用 curl 下載任何檔案（Alon 論文 >10 MB 只記網址，留給月月決定要不要手動下載）。

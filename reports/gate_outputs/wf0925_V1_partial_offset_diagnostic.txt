@@ -1,0 +1,58 @@
+# WF0925-V1 A：partial FAIL 偏正的來源對照（描述用、非 GATE；不改、不重判任何工具寫下的 PASS/FAIL）
+# 背景：partial_verify 的期望 partial 頻率取自 --dump-modes 的「第 0 根弦」（工具自己的 caveat 有寫），
+#       而鋼琴一個音有 3 根互相微調開的弦，量測器量到的是 3 根弦合起來的頻帶質心。
+#       本檔只把「量到的偏差」和「3 弦加權平均 vs 第 0 根弦的差」並排列出來。
+$ python reports/wf0925_method/partial_offset_decomposition.py --partial-report output/wf0925/V1/partial_full_report.json --dump output/wf0925/V1/dumps/scores__classical__fur_elise__fur_elise_complete.score.json.dump.json
+# DESCRIPTIVE ONLY -- no verdict is changed; tolerance of the tool: 5.0 c
+events by number of strings in the course (dump): {3: 905}
+partial slots compared (tool PASS+FAIL): 5426 ; string-0 freq != partial_verify expected_hz: 0
+measured_cents (vs string 0)       n=5426 mean +4.367  sd 1.445  min -6.188 p5 +2.017 p25 +4.033 median +4.449 p75 +4.806 p95 +6.333 max +12.393
+course_offset_c (mean - string 0)  n=5426 mean +5.006  sd 0.540  min +1.756 p5 +4.553 p25 +4.921 median +4.985 p75 +5.058 p95 +5.650 max +8.226
+measured - course_offset           n=5426 mean -0.639  sd 1.175  min -9.670 p5 -2.171 p25 -0.858 median -0.477 p75 -0.233 p95 +0.278 max +5.893
+Pearson r(measured_cents, course_offset_c) = 0.6410
+
+# the tool's own FAIL partials only (849)
+measured_cents                     n=849 mean +6.227  sd 1.655  min -6.188 p5 +5.009 p25 +5.169 median +5.533 p75 +6.408 p95 +10.343 max +12.393
+course_offset_c                    n=849 mean +5.661  sd 0.795  min +1.959 p5 +5.068 p25 +5.170 median +5.302 p75 +5.825 p95 +7.109 max +8.226
+measured - course_offset           n=849 mean +0.566  sd 1.285  min -8.147 p5 -0.285 p25 -0.076 median +0.033 p75 +0.507 p95 +3.533 max +5.893
+
+# by n (all measured partials): median measured / median course_offset / median residual
+  n=1  count  905  median measured +3.980  median offset +4.990  median residual -0.979  max|residual| 5.812
+  n=2  count  905  median measured +4.161  median offset +4.974  median residual -0.806  max|residual| 6.097
+  n=3  count  905  median measured +4.413  median offset +4.960  median residual -0.502  max|residual| 5.893
+  n=4  count  905  median measured +4.708  median offset +5.026  median residual -0.300  max|residual| 5.412
+  n=5  count  904  median measured +4.558  median offset +4.977  median residual -0.408  max|residual| 7.958
+  n=6  count  902  median measured +4.677  median offset +4.985  median residual -0.362  max|residual| 9.670
+
+# DESCRIPTIVE: if the expected value were the course mean instead of string 0, |measured - course_offset| > 5.0 c for 120 of 5426 measured partials (tool verdict now: FAIL 4 / PASS 116)
+  by (note, n): [(('A2', 1), 97), (('B2', 1), 6), (('F3', 6), 4), (('D5', 4), 2), (('A6', 6), 2), (('C7', 6), 2), (('A5', 3), 1), (('D#4', 2), 1), (('D7', 4), 1), (('D7', 5), 1), (('B6', 5), 1), (('B6', 6), 1), (('G6', 6), 1)]
+
+# string detuning read from the dump (n=1 of every string, cents re string 0; amp) -- a few events
+  idx    0 E5   +0.00 +5.00 +10.00  amps 0.151 0.149 0.147
+  idx    9 A2   +0.00 +5.00 +9.99  amps 0.25 0.25 0.25
+  idx   88 E5   +0.00 +5.00 +10.00  amps 0.00529 0.00673 0.00816
+  idx  500 A2   +0.00 +5.00 +9.99  amps 0.252 0.252 0.252
+  idx  731 A6   +0.00 +5.00 +10.00  amps 0.00786 0.00697 0.00609
+
+# 15 largest |measured - course_offset| (listed only)
+  idx  732 C7   n=6 PASS measured -2.489 offset +7.181 residual -9.670
+  idx  738 C7   n=6 PASS measured -2.489 offset +7.181 residual -9.670
+  idx  746 G6   n=6 FAIL measured -6.188 offset +1.959 residual -8.147
+  idx  734 D7   n=5 PASS measured -2.105 offset +5.853 residual -7.958
+  idx  731 A6   n=6 PASS measured -2.925 offset +3.745 residual -6.670
+  idx  744 A6   n=6 PASS measured -2.925 offset +3.745 residual -6.670
+  idx  739 B6   n=6 PASS measured -1.770 offset +4.872 residual -6.642
+  idx  662 D#4  n=2 PASS measured -2.686 offset +3.411 residual -6.097
+  idx  192 A5   n=3 FAIL measured +12.271 offset +6.378 residual +5.893
+  idx  500 A2   n=1 PASS measured -0.813 offset +4.999 residual -5.812
+  idx  504 A2   n=1 PASS measured -0.813 offset +4.999 residual -5.812
+  idx  512 A2   n=1 PASS measured -0.813 offset +4.999 residual -5.812
+  idx  519 A2   n=1 PASS measured -0.813 offset +4.999 residual -5.812
+  idx  525 A2   n=1 PASS measured -0.813 offset +4.999 residual -5.812
+  idx  534 A2   n=1 PASS measured -0.813 offset +4.999 residual -5.812
+exit=0
+
+# 輸入的 dump 是同一支 CLI（9123db8f）對整首 score 的 --dump-modes；上面第 3 行已核對：第 0 根弦的頻率與 partial_verify 報告的 expected_hz 逐顆相同（不符 0 筆）。
+$ python -c (讀 output/wf0925/V1/dumps/manifest.json 中 fur_elise_complete 那一列)
+cli_sha256 9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8
+[{'score': 'scores/classical/fur_elise/fur_elise_complete.score.json', 'score_sha256': '3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7', 'rc': 0, 'json_ok': True, 'seconds': 0.77, 'bytes': 10256674}]

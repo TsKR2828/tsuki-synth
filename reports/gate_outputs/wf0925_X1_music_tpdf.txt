@@ -1,0 +1,131 @@
+# wf0925_X1_music_tpdf.txt
+# generated 2026-09-25T05:43:20  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x1_music_tpdf.py
+# ffmpeg: <TOOLS>\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe
+music tracks in catalog: 7
+
+== fur_elise_complete  (Für Elise (WoO 59) — Complete)
+  distribution: distribution\music\fur_elise_complete_44k16.wav  44100 Hz PCM_16 ch=2
+  master      : masters\classical\fur_elise_complete.wav  48000 Hz PCM_24 ch=2
+  pass-1 loudnorm: input_i=-19.97 input_tp=-0.44 lra=8.10 thresh=-30.32 offset=-0.12
+  repro (original chain, no dither) sha256 e875958da29549a8c155086d7d2127f86fa41176502ca52df8c3da97dbcb6804
+  original distribution          sha256 e875958da29549a8c155086d7d2127f86fa41176502ca52df8c3da97dbcb6804  catalog e875958da29549a8c155086d7d2127f86fa41176502ca52df8c3da97dbcb6804
+  CHAIN REPRODUCED BIT-EXACT: True
+  dither round 0: trim +0.000000 dB -> TP -0.997109 dBTP
+  dither round 1: trim -0.002891 dB -> TP -0.999844 dBTP
+  dither round 2: trim -0.003048 dB -> TP -1.000067 dBTP
+  deterministic re-render (same sha256 twice): True
+  OUT music_tpdf\fur_elise_complete_44k16_tpdf.wav  44100/PCM_16/ch2
+  LUFS  old -13.98 (loudnorm) / -13.944 (ebur128)   new -13.98 / -13.947
+  TP    old -0.9968 full-precision / -1.00 loudnorm   new -1.0001 / -1.00
+  [描述用、非 GATE] quantisation error vs double reference: no-dither repro RMS 0.2877 LSB (max 0.500); TPDF RMS 0.4995 LSB (max 1.493); theory 0.2887 / 0.5000
+  [描述用、非 GATE] quiet blocks (<-60 dBFS): 1.90s; exact-zero output fraction there: no-dither 0.6026256116481681 vs TPDF 0.4614512471655329
+
+== fur_elise_complete_cimbalom  (Für Elise (WoO 59) — Complete (Cimbalom variant))
+  distribution: distribution\music\fur_elise_complete_cimbalom_44k16.wav  44100 Hz PCM_16 ch=2
+  master      : masters\classical\fur_elise_complete_cimbalom.wav  48000 Hz PCM_24 ch=2
+  pass-1 loudnorm: input_i=-21.24 input_tp=-0.44 lra=4.40 thresh=-31.35 offset=0.35
+  repro (original chain, no dither) sha256 6d4fcd0ad8b83dbad99ba117d452f552db4034969c6d35247bf4d4459b920043
+  original distribution          sha256 6d4fcd0ad8b83dbad99ba117d452f552db4034969c6d35247bf4d4459b920043  catalog 6d4fcd0ad8b83dbad99ba117d452f552db4034969c6d35247bf4d4459b920043
+  CHAIN REPRODUCED BIT-EXACT: True
+  dither round 0: trim +0.000000 dB -> TP -0.968139 dBTP
+  dither round 1: trim -0.031861 dB -> TP -1.000026 dBTP
+  deterministic re-render (same sha256 twice): True
+  OUT music_tpdf\fur_elise_complete_cimbalom_44k16_tpdf.wav  44100/PCM_16/ch2
+  LUFS  old -14.10 (loudnorm) / -14.067 (ebur128)   new -14.13 / -14.099
+  TP    old -0.9682 full-precision / -0.97 loudnorm   new -1.0000 / -1.00
+  [描述用、非 GATE] quantisation error vs double reference: no-dither repro RMS 0.2876 LSB (max 0.500); TPDF RMS 0.4995 LSB (max 1.493); theory 0.2887 / 0.5000
+  [描述用、非 GATE] quiet blocks (<-60 dBFS): 2.00s; exact-zero output fraction there: no-dither 0.6214512471655329 vs TPDF 0.4767063492063492
+
+== ai_radiance_complete  (AI Radiance / 光之驗算 — Complete Suite)
+  distribution: distribution\music\Original_AI_Radiance_Complete_44k16.wav  44100 Hz PCM_16 ch=2
+  master      : masters\originals\Original_AI_Radiance_Complete.wav  48000 Hz PCM_24 ch=2
+  pass-1 loudnorm: input_i=-15.67 input_tp=-0.45 lra=22.40 thresh=-28.41 offset=0.65
+  repro (original chain, no dither) sha256 8a634e09cbe306c5a184bfca953fcd6a9e804b26a0f2af732498ddffb1b47302
+  original distribution          sha256 8a634e09cbe306c5a184bfca953fcd6a9e804b26a0f2af732498ddffb1b47302  catalog 8a634e09cbe306c5a184bfca953fcd6a9e804b26a0f2af732498ddffb1b47302
+  CHAIN REPRODUCED BIT-EXACT: True
+  dither round 0: trim +0.000000 dB -> TP -0.991757 dBTP
+  dither round 1: trim -0.008243 dB -> TP -1.000101 dBTP
+  deterministic re-render (same sha256 twice): True
+  OUT music_tpdf\Original_AI_Radiance_Complete_44k16_tpdf.wav  44100/PCM_16/ch2
+  LUFS  old -14.34 (loudnorm) / -14.306 (ebur128)   new -14.35 / -14.314
+  TP    old -0.9919 full-precision / -0.99 loudnorm   new -1.0001 / -1.00
+  [描述用、非 GATE] quantisation error vs double reference: no-dither repro RMS 0.2732 LSB (max 0.500); TPDF RMS 0.4995 LSB (max 1.495); theory 0.2887 / 0.5000
+  [描述用、非 GATE] quiet blocks (<-60 dBFS): 30.90s; exact-zero output fraction there: no-dither 0.6069608641730695 vs TPDF 0.46715797430083145
+
+== ai_radiance_m1  (AI Radiance / 光之驗算 — 1. 露珠格點 / Dew Lattice)
+  distribution: distribution\music\Original_AI_Radiance_Movement1_44k16.wav  44100 Hz PCM_16 ch=2
+  master      : masters\originals\Original_AI_Radiance_Movement1.wav  48000 Hz PCM_24 ch=2
+  pass-1 loudnorm: input_i=-12.92 input_tp=-0.44 lra=11.90 thresh=-25.14 offset=0.57
+  repro (original chain, no dither) sha256 95101cb9af9694db806322cd7b9d85b6ee85bbbe5b4afef8c52bd1a0a11eadd3
+  original distribution          sha256 95101cb9af9694db806322cd7b9d85b6ee85bbbe5b4afef8c52bd1a0a11eadd3  catalog 95101cb9af9694db806322cd7b9d85b6ee85bbbe5b4afef8c52bd1a0a11eadd3
+  CHAIN REPRODUCED BIT-EXACT: True
+  dither round 0: trim +0.000000 dB -> TP -1.825243 dBTP
+  deterministic re-render (same sha256 twice): True
+  OUT music_tpdf\Original_AI_Radiance_Movement1_44k16_tpdf.wav  44100/PCM_16/ch2
+  LUFS  old -14.00 (loudnorm) / -13.969 (ebur128)   new -14.00 / -13.969
+  TP    old -1.8254 full-precision / -1.83 loudnorm   new -1.8252 / -1.83
+  [描述用、非 GATE] quantisation error vs double reference: no-dither repro RMS 0.2692 LSB (max 0.500); TPDF RMS 0.4996 LSB (max 1.491); theory 0.2887 / 0.5000
+  [描述用、非 GATE] quiet blocks (<-60 dBFS): 8.40s; exact-zero output fraction there: no-dither 0.6970454054637728 vs TPDF 0.5322008962315085
+
+== ai_radiance_m2  (AI Radiance / 光之驗算 — 2. 方程風暴 / Storm of Equations)
+  distribution: distribution\music\Original_AI_Radiance_Movement2_44k16.wav  44100 Hz PCM_16 ch=2
+  master      : masters\originals\Original_AI_Radiance_Movement2.wav  48000 Hz PCM_24 ch=2
+  pass-1 loudnorm: input_i=-13.15 input_tp=-0.45 lra=5.20 thresh=-24.05 offset=0.69
+  repro (original chain, no dither) sha256 379ad751f1b613cf32b104cb707ccbe14de968c0ede7728dcd4e4c078bd19731
+  original distribution          sha256 379ad751f1b613cf32b104cb707ccbe14de968c0ede7728dcd4e4c078bd19731  catalog 379ad751f1b613cf32b104cb707ccbe14de968c0ede7728dcd4e4c078bd19731
+  CHAIN REPRODUCED BIT-EXACT: True
+  dither round 0: trim +0.000000 dB -> TP -1.294411 dBTP
+  deterministic re-render (same sha256 twice): True
+  OUT music_tpdf\Original_AI_Radiance_Movement2_44k16_tpdf.wav  44100/PCM_16/ch2
+  LUFS  old -14.00 (loudnorm) / -13.97 (ebur128)   new -14.00 / -13.97
+  TP    old -1.2947 full-precision / -1.29 loudnorm   new -1.2944 / -1.29
+  [描述用、非 GATE] quantisation error vs double reference: no-dither repro RMS 0.2817 LSB (max 0.500); TPDF RMS 0.4996 LSB (max 1.485); theory 0.2887 / 0.5000
+  [描述用、非 GATE] quiet blocks (<-60 dBFS): 5.80s; exact-zero output fraction there: no-dither 0.4635311595902729 vs TPDF 0.36340214246618185
+
+== ai_radiance_m3  (AI Radiance / 光之驗算 — 3. 記憶果園 / Memory Orchard)
+  distribution: distribution\music\Original_AI_Radiance_Movement3_44k16.wav  44100 Hz PCM_16 ch=2
+  master      : masters\originals\Original_AI_Radiance_Movement3.wav  48000 Hz PCM_24 ch=2
+  pass-1 loudnorm: input_i=-14.58 input_tp=-0.45 lra=4.10 thresh=-25.17 offset=0.23
+  repro (original chain, no dither) sha256 74ccae49970684a7ea3facc4384b10d6683a401d2c1e7eb5341cd067d8aedcb8
+  original distribution          sha256 74ccae49970684a7ea3facc4384b10d6683a401d2c1e7eb5341cd067d8aedcb8  catalog 74ccae49970684a7ea3facc4384b10d6683a401d2c1e7eb5341cd067d8aedcb8
+  CHAIN REPRODUCED BIT-EXACT: True
+  dither round 0: trim +0.000000 dB -> TP -0.999060 dBTP
+  dither round 1: trim -0.000940 dB -> TP -0.999957 dBTP
+  dither round 2: trim -0.000983 dB -> TP -1.000069 dBTP
+  deterministic re-render (same sha256 twice): True
+  OUT music_tpdf\Original_AI_Radiance_Movement3_44k16_tpdf.wav  44100/PCM_16/ch2
+  LUFS  old -14.02 (loudnorm) / -13.986 (ebur128)   new -14.02 / -13.988
+  TP    old -0.9993 full-precision / -1.00 loudnorm   new -1.0001 / -1.00
+  [描述用、非 GATE] quantisation error vs double reference: no-dither repro RMS 0.2742 LSB (max 0.500); TPDF RMS 0.4995 LSB (max 1.490); theory 0.2887 / 0.5000
+  [描述用、非 GATE] quiet blocks (<-60 dBFS): 6.70s; exact-zero output fraction there: no-dither 0.6236301485768436 vs TPDF 0.4791400142146411
+
+== ai_radiance_m4  (AI Radiance / 光之驗算 — 4. 零度星冠 / Crown at Absolute Zero)
+  distribution: distribution\music\Original_AI_Radiance_Movement4_44k16.wav  44100 Hz PCM_16 ch=2
+  master      : masters\originals\Original_AI_Radiance_Movement4.wav  48000 Hz PCM_24 ch=2
+  pass-1 loudnorm: input_i=-13.57 input_tp=-0.44 lra=12.70 thresh=-24.58 offset=1.75
+  repro (original chain, no dither) sha256 3825412f775e1205d641100ec9a72801b1f41a5cfde196d38193056d53686567
+  original distribution          sha256 3825412f775e1205d641100ec9a72801b1f41a5cfde196d38193056d53686567  catalog 3825412f775e1205d641100ec9a72801b1f41a5cfde196d38193056d53686567
+  CHAIN REPRODUCED BIT-EXACT: True
+  dither round 0: trim +0.000000 dB -> TP -1.149813 dBTP
+  deterministic re-render (same sha256 twice): True
+  OUT music_tpdf\Original_AI_Radiance_Movement4_44k16_tpdf.wav  44100/PCM_16/ch2
+  LUFS  old -14.00 (loudnorm) / -13.973 (ebur128)   new -14.00 / -13.973
+  TP    old -1.1497 full-precision / -1.15 loudnorm   new -1.1498 / -1.15
+  [描述用、非 GATE] quantisation error vs double reference: no-dither repro RMS 0.2741 LSB (max 0.500); TPDF RMS 0.4997 LSB (max 1.489); theory 0.2887 / 0.5000
+  [描述用、非 GATE] quiet blocks (<-60 dBFS): 10.20s; exact-zero output fraction there: no-dither 0.5712296029522921 vs TPDF 0.4422680183184385
+
+== SUMMARY
+id                             bitexact      trim  LUFSold  LUFSnew    TPold    TPnew  eRMSold  eRMSnew  det
+fur_elise_complete                 True   -0.0030   -13.98   -13.98  -0.9968  -1.0001   0.2877   0.4995    T
+fur_elise_complete_cimbalom        True   -0.0319   -14.10   -14.13  -0.9682  -1.0000   0.2876   0.4995    T
+ai_radiance_complete               True   -0.0082   -14.34   -14.35  -0.9919  -1.0001   0.2732   0.4995    T
+ai_radiance_m1                     True   +0.0000   -14.00   -14.00  -1.8254  -1.8252   0.2692   0.4996    T
+ai_radiance_m2                     True   +0.0000   -14.00   -14.00  -1.2947  -1.2944   0.2817   0.4996    T
+ai_radiance_m3                     True   -0.0010   -14.02   -14.02  -0.9993  -1.0001   0.2742   0.4995    T
+ai_radiance_m4                     True   +0.0000   -14.00   -14.00  -1.1497  -1.1498   0.2741   0.4997    T
+higher-res source available: 7/7
+GATE original chain reproduced bit-exact (sha256 == distribution == catalog): 7/7
+GATE new files 44100 Hz PCM_16 stereo: 7/7
+GATE new TP <= -1.0 dBTP (full precision): 7/7
+GATE deterministic re-render: 7/7

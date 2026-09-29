@@ -1,0 +1,59 @@
+WF0925-K1K2fix 修正輪摘要（C++ lane，K1＋K2 稽核第 1 輪 FAIL 的修正）
+======================================================================
+日期 2026-09-25。branch fix/deep-physics-audit-20260716，HEAD 18430c4 ＋ K1/K2 未 stage 的改動。
+建置目錄只用 build-wf\。
+
+一、這輪修了什麼（只有稽核標 severity=fix 的那一條）
+----------------------------------------------------
+稽核發現：K1 的 GATE 4 證據檔 wf0925_K1_verify_score_all.txt 第 1 行寫「用 build-wf 的 CLI」，但實際命令是
+「--cli 」後面空白，find_cli 選到 build\ 裡 K1 改動前的舊 CLI（renderer 9123db8f6339...），所以 K1 自己的
+GATE 4 沒測到 K1 的程式碼。
+
+修法（稽核給的第一種）：
+  1. wf0925_K1_verify_score_all.txt：第 1 行換成照實寫的說明段（8 行）：--cli 是空的、選到 build\ 的舊 CLI、
+     manifest 是改動前的 renderer、K1 回報寫的 --cli build-wf 不實；有效的 GATE 4 是
+     wf0925_K2_verify_score_all.txt（renderer a7248ee58374...）和本輪的 wf0925_K1K2fix_verify_score_all.txt
+     （renderer fcea648ae5a4...）。原本第 2 行到最後一行一個位元組都沒動（新檔第 10 行起逐位元組相同）。
+  2. wf0925_K1_summary.txt：GATE 4 那行（原第 16 行）下面補 5 行同樣的更正。其他行沒動。
+  逐字 diff 在 wf0925_K1K2fix_diff.txt。
+
+沒動的：src/、tests/、CMakeLists.txt、tools/、其他 25 個稽核過的檔案。
+  sha256sum -c output/wf0925/K_audit/audited_files_sha256_round1.txt → 25 OK，只有上面 2 個檔 FAILED（預期）。
+稽核的 note 級項目（D12 邊角、preset 覆寫錯誤訊息、E9 timer、D9c-guard 寫法、find.exe、HostProbe cwd 規約、
+稽核私有複本空間）都只記錄、不用改，本輪沒有動。
+
+二、GATE（R6 全套，build-wf，數字全部取自同目錄 wf0925_K1K2fix_*.txt）
+----------------------------------------------------------------------
+建置前先 touch K1/K2 改過的 11 個 src/tests 檔（只改 mtime，內容不變），讓 build 真的從現在的原始碼重編。
+
+1 建置      cmake configure EXIT=0；三主 target EXIT=0（重編 RenderApp.cpp、PluginEditor.cpp、PluginProcessor.cpp）；
+            五測試 target EXIT=0（重編 audit_repro.cpp、physics_models_repro.cpp、host_probe.cpp）；
+            error C／error LNK／warning C／warning LNK 共 0 行。                     → wf0925_K1K2fix_build_ctest.txt
+2 ctest     100% tests passed, 0 tests failed out of 4；直接跑 AuditTest：[PASS] 110 行、[FAIL] 0 行、
+            PASS (0 failures)；D9c-guard 讀到 26.8999996 → PASS；K-02 = 0.112 dB（只印數字）。
+                                                                                  → wf0925_K1K2fix_build_ctest.txt
+3 physics   RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED（3 個 rubber N/A）；EXIT=0；
+            跟 K2 的 GATE 3 log 比（去掉命令列、時間、EXIT 行）0 行不同。          → wf0925_K1K2fix_physics_verify_full.txt
+4 score     75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.；EXIT=0；
+            這次 --cli 真的帶了 build-wf 的絕對路徑：log 的 CLI 行是 build-wf、沒有 [find_cli] 行、
+            75 個 manifest 全部是 renderer fcea648ae5a4（＝本輪重編的 build-wf CLI sha256 前 12 碼）、
+            configured source=18430c4d9307 dirty。跟 K2 的 GATE 4 比（只遮 renderer 欄位）0 行不同。
+                                                                                  → wf0925_K1K2fix_verify_score_all.txt
+5 HostProbe cwd＝repo 根目錄；PASS (0 failures)；EXIT=0；[PASS] 215 行、[FAIL] 0 行（基線 89 → K1 106 → K2 215 → 本輪 215）。
+            跟 K2 的 215 行比（輸出資料夾路徑正規化後）0 行不同，連 E16 描述行在內整份 log 0 行不同；
+            K1 改前基線 89 行全部還在，只有 H5 state 3819 → 3843 bytes（多寫了 state_version，已知）。
+            materials.json：found in the current working directory。跑完 %APPDATA%\TsukiSynth\IR、\Presets 都是空的。
+                                                                                  → wf0925_K1K2fix_hostprobe.txt
+6 位元不變  render_wf_scores.py（--workdir 在 repo 外的 scratchpad、--cli 用 Windows 絕對路徑）RENDER_EXIT=0；
+            diff --strip-trailing-cr sha256_before_post_a14.txt 本輪 sha256 → DIFF_STRIP_CR_EXIT=0，8/8 IDENTICAL
+            （water_gong_free 31b539c6ac08d942、physical_piano 1233b53f1e8660bc…）→ R10 未觸發。
+                                                                                  → wf0925_K1K2fix_bit_identity.txt
+
+三、本輪 build-wf 執行檔 sha256（前後都記在 wf0925_K1K2fix_build_ctest.txt）
+------------------------------------------------------------------------
+TsukiSynthCLI.exe       fcea648ae5a488066ed38e1fa47c95d2a62c67eb1b35e579ebad69c0b2a58db3
+VST3 dll                6b57297f5513ce0657899e1bf5f8cf458e3a5909f6c5bfa2be94f1244c74e9d3
+TsukiSynthHostProbe.exe 50880815b97b0b3e1136f77f0776caacad7e2fe5c30e887846877844e2de20f9
+（跟稽核那次 5444fa713fe2… 不同，因為本輪 touch 後重編；MSVC 重編不是逐位元組可重現。音訊位元不變由 GATE 6 證明。）
+
+本輪沒有新增任何常數、容差或判定門檻。

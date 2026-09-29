@@ -1,0 +1,29 @@
+# wf0925_X2_catalog.txt
+# generated 2026-09-25T08:32:38  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_catalog.py
+written: catalog_v1_1.json (50 rows), catalog_v1_1.csv (37 columns)
+non-zero pre_normalize_samples_at_or_above_full_scale: {'ai_radiance_complete': 41, 'akashic_transition_var01': 2767, 'rabbit_action_001': 18, 'restraint_action_001': 20}
+  loop akashic_loop_001     loop_ready/akashic/akashic__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav  768000 fr 16.000000 s  file check True
+  loop clockwork_loop_001   loop_ready/clockwork/clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav  192000 fr 4.000000 s  file check True
+  loop forest_loop_001      loop_ready/forest/forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav  576000 fr 12.000000 s  file check True
+  loop ocean_loop_001       loop_ready/ocean/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav     384000 fr 8.000000 s  file check True
+  loop rabbit_loop_001      loop_ready/rabbit/rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav  164571 fr 3.428562 s  file check True
+  loop restraint_loop_001   loop_ready/restraint/restraint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav  230400 fr 4.800000 s  file check True
+
+columns (37): ['composer', 'description', 'description_en', 'description_ja', 'description_score_meta', 'dist_lufs', 'dist_sha256', 'dist_tp', 'distribution', 'duration_s', 'gain_db', 'group', 'id', 'kind', 'license_note', 'loop_bars', 'loop_bpm', 'loop_ready_duration_s', 'loop_ready_file', 'loop_ready_samples', 'loop_ready_sha256', 'loop_ready_zip_path', 'master', 'master_lufs', 'master_sample_peak_dbfs', 'master_samples_at_or_above_full_scale', 'master_tp', 'pre_normalize_peak', 'pre_normalize_samples_at_or_above_full_scale', 'preview', 'primary_type', 'render_applied_gain', 'score', 'sound_type', 'tags', 'title', 'use_case']
+
+[PASS] rows json == 50 and == original
+[PASS] ids/order identical to original
+[PASS] 'clipped_samples' absent from every json row and csv header
+[PASS] 'pre_normalize_samples_at_or_above_full_scale' present in all 50 rows
+[PASS] non-zero set == {ai_radiance_complete:41, akashic_transition_var01:2767, rabbit_action_001:18, restraint_action_001:20}
+[PASS] master_samples_at_or_above_full_scale == 0 in all 50 rows
+[PASS] all other original fields byte-identical in value
+[PASS] loop rows == 6 and == sound_type 'loop' rows
+[PASS] loop_ready samples/sha/duration re-read from disk match catalog
+[PASS] no '可無縫循環/自然循環/seamless/シームレス' in v1.1 descriptions
+[PASS] csv rows == 50 and csv ids == json ids
+[PASS] all 43 sfx rows have zh/ja/en descriptions
+
+GATE catalog_v1_1 checks: 12/12
+RESULT: PASS

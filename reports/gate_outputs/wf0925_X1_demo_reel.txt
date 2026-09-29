@@ -1,0 +1,16 @@
+# wf0925_X1_demo_reel.txt
+# generated 2026-09-25T05:48:05  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x1_demo_reel.py
+# ffmpeg: <TOOLS>\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe
+clips: 43; reel length 17450860 samples = 363.560 s (06:03.560)
+unity-gain concatenation: integrated I = -13.794 LUFS, TP = -0.9673 dBTP (full precision)
+gain needed for -14 LUFS = -0.2060 dB -> predicted TP -1.1733 dBTP
+  round 0: gain -0.2060 dB -> I -14.000 LUFS, TP -1.1733 dBTP
+WAV  demo\TsukiSynth_Worldview_SE_Pack_Vol1_demo_reel.wav: I -14.000 LUFS (ebur128) / -14.03 (loudnorm); TP -1.1733 dBTP full / -1.17 loudnorm
+MP3  demo\TsukiSynth_Worldview_SE_Pack_Vol1_demo_reel.mp3 (320k CBR, decoded): I -14.000 LUFS; TP -1.0805 dBTP
+self-check: max |reel segment - gain x source| over 43 clips = 1.190e-07 (24-bit quantisation step = 1.192e-07)
+self-check: all gaps are exact digital silence: True
+GATE clips in reel == 43: True (43)
+GATE reel integrated == -14.000 LUFS (ebur128 3-dec): True (-14.000)
+GATE reel WAV TP <= -1.0 dBTP (full precision): True (-1.1733)
+GATE reel MP3 TP <= -1.0 dBTP (decoded, full precision): True (-1.0805)

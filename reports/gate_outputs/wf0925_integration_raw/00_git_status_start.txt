@@ -1,0 +1,403 @@
+# 2026-09-25 10:37:52 +0800  cwd=<repo>
+$ git rev-parse HEAD
+18430c4d9307ab9f693592663a373f9c5c7cdb10
+$ git branch --show-current
+fix/deep-physics-audit-20260716
+$ git status --porcelain
+M  .github/workflows/physics.yml
+M  .github/workflows/release-physics.yml
+M  LICENSE
+A  THIRD_PARTY_NOTICES.txt
+A  docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md
+A  docs/KNOWN_LIMITS_INDEX.zh-TW.md
+M  docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+M  docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+A  docs/legal/EULA_BUYER_DRAFT.md
+A  docs/legal/JUCE8_LICENSE_REVIEW.zh-TW.md
+A  reports/d11_f5_root_cause_2026-09-25.zh-TW.md
+M  reports/decision_packets/D11_string_scale_candidate.zh-TW.md
+M  reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
+M  reports/gate_outputs/wf0907_method/render_wf_scores.py
+A  reports/gate_outputs/wf0925_F5_decomposition.txt
+A  reports/gate_outputs/wf0925_F5_isolated_build.txt
+A  reports/gate_outputs/wf0925_F5_reproduce.txt
+A  reports/gate_outputs/wf0925_F5_scripts.txt
+A  reports/gate_outputs/wf0925_F5_single_variable.txt
+A  reports/gate_outputs/wf0925_F5_t60_mechanism.txt
+A  reports/gate_outputs/wf0925_G1_sources.txt
+A  reports/gate_outputs/wf0925_K1K2fix_bit_identity.txt
+A  reports/gate_outputs/wf0925_K1K2fix_build_ctest.txt
+A  reports/gate_outputs/wf0925_K1K2fix_diff.txt
+A  reports/gate_outputs/wf0925_K1K2fix_hostprobe.txt
+A  reports/gate_outputs/wf0925_K1K2fix_physics_verify_full.txt
+A  reports/gate_outputs/wf0925_K1K2fix_summary.txt
+A  reports/gate_outputs/wf0925_K1K2fix_verify_score_all.txt
+A  reports/gate_outputs/wf0925_K1_bit_identity.txt
+A  reports/gate_outputs/wf0925_K1_build_ctest.txt
+A  reports/gate_outputs/wf0925_K1_hostprobe.txt
+A  reports/gate_outputs/wf0925_K1_physics_verify_full.txt
+A  reports/gate_outputs/wf0925_K1_summary.txt
+A  reports/gate_outputs/wf0925_K1_verify_score_all.txt
+A  reports/gate_outputs/wf0925_K2_bit_identity.txt
+A  reports/gate_outputs/wf0925_K2_build_ctest.txt
+A  reports/gate_outputs/wf0925_K2_diff.txt
+A  reports/gate_outputs/wf0925_K2_e15_sources.txt
+A  reports/gate_outputs/wf0925_K2_hostprobe.txt
+A  reports/gate_outputs/wf0925_K2_physics_verify_full.txt
+A  reports/gate_outputs/wf0925_K2_summary.txt
+A  reports/gate_outputs/wf0925_K2_verify_score_all.txt
+A  reports/gate_outputs/wf0925_L1_sources.txt
+A  reports/gate_outputs/wf0925_N1_cli_provenance.txt
+A  reports/gate_outputs/wf0925_N1_corpus_scan.txt
+A  reports/gate_outputs/wf0925_N1_fur_elise_validation.txt
+A  reports/gate_outputs/wf0925_N1_grid_scan.txt
+A  reports/gate_outputs/wf0925_N1_option_d.txt
+A  reports/gate_outputs/wf0925_N1_plots.txt
+A  reports/gate_outputs/wf0925_P1_gate1_workflow_yaml.txt
+A  reports/gate_outputs/wf0925_P1_gate2_pytest_collect.txt
+A  reports/gate_outputs/wf0925_P1_gate3_pytest_selfcal.txt
+A  reports/gate_outputs/wf0925_P1_gate4_pytest_related.txt
+A  reports/gate_outputs/wf0925_P1_gate5_render_outdir_8of8.txt
+A  reports/gate_outputs/wf0925_P1_gate6_tools_smoke.txt
+A  reports/gate_outputs/wf0925_V1_cli_provenance.txt
+A  reports/gate_outputs/wf0925_V1_partial_offset_diagnostic.txt
+A  reports/gate_outputs/wf0925_V1_partial_stem_verify_full.txt
+A  reports/gate_outputs/wf0925_V1_partial_verify_full.txt
+A  reports/gate_outputs/wf0925_V1_scope_check.txt
+A  reports/gate_outputs/wf0925_V1_voice_pool_cpu_bench.txt
+A  reports/gate_outputs/wf0925_V1_voice_pool_dumps.txt
+A  reports/gate_outputs/wf0925_V1_voice_pool_lifetime_probe.txt
+A  reports/gate_outputs/wf0925_V1_voice_pool_side_checks.txt
+A  reports/gate_outputs/wf0925_V1_voice_pool_sources.txt
+A  reports/gate_outputs/wf0925_V1_voice_pool_summary.txt
+A  reports/partial_verify_full_2026-09-25.zh-TW.md
+A  reports/voice_pool_occupancy_2026-09-25.zh-TW.md
+A  reports/weak_fundamental_null_map/corpus_events_flagged.csv
+A  reports/weak_fundamental_null_map/corpus_file_summary.csv
+A  reports/weak_fundamental_null_map/corpus_flagged_by_note_velocity.csv
+A  reports/weak_fundamental_null_map/corpus_summary.json
+A  reports/weak_fundamental_null_map/fur_elise_events.csv
+A  reports/weak_fundamental_null_map/fur_elise_note_velocity.csv
+A  reports/weak_fundamental_null_map/fur_elise_stems.csv
+A  reports/weak_fundamental_null_map/fur_elise_validation.json
+A  reports/weak_fundamental_null_map/fur_elise_validation.png
+A  reports/weak_fundamental_null_map/grid_cimbalom_felt.csv
+A  reports/weak_fundamental_null_map/grid_cimbalom_wood.csv
+A  reports/weak_fundamental_null_map/grid_piano_felt.csv
+A  reports/weak_fundamental_null_map/grid_string_bow.csv
+A  reports/weak_fundamental_null_map/grid_summary.json
+A  reports/weak_fundamental_null_map/map_four_configs.png
+A  reports/weak_fundamental_null_map/map_piano_felt.png
+A  reports/weak_fundamental_null_map/mechanism_H.png
+A  reports/weak_fundamental_null_map/null_map_lib.py
+A  reports/weak_fundamental_null_map/option_d_velocity_candidates.csv
+A  reports/weak_fundamental_null_map/option_d_velocity_table.py
+A  reports/weak_fundamental_null_map/plot_maps.py
+A  reports/weak_fundamental_null_map/scan_corpus.py
+A  reports/weak_fundamental_null_map/scan_grid.py
+A  reports/weak_fundamental_null_map/validate_fur_elise.py
+A  reports/weak_fundamental_null_map_2026-09-25.zh-TW.md
+A  reports/wf0925_method/chromatic_tail_budget_check.py
+A  reports/wf0925_method/dump_corpus_modes.py
+A  reports/wf0925_method/fm_zombie_check.py
+A  reports/wf0925_method/make_plugin_reachable_scores.py
+A  reports/wf0925_method/partial_full_summary.py
+A  reports/wf0925_method/partial_offset_decomposition.py
+A  reports/wf0925_method/voice_cpu_bench.py
+A  reports/wf0925_method/voice_lifetime_probe.py
+A  reports/wf0925_method/voice_pool_code_citations.py
+A  reports/wf0925_method/voice_pool_occupancy.py
+A  reports/wf0925_method/voice_pool_summary.py
+M  scores/examples/water_gong_free.score.json
+M  src/IRLibrary.h
+M  src/PluginProcessor.cpp
+M  src/PluginProcessor.h
+M  src/PresetManager.h
+M  src/effects/EffectChain.h
+M  src/engines/ChromaticEngine.h
+M  src/engines/CimbalomEngine.h
+M  src/physics/HammerImpulse.h
+M  src/physics/PlateModel.h
+M  tests/audit_repro.cpp
+M  tests/host_probe.cpp
+M  tests/test_measurement_selfcal.py
+A  tests/test_stem_stream.py
+A  tools/installer/README.md
+A  tools/installer/TsukiSynth.iss
+M  tools/melody_roll_video.py
+M  tools/partial_verify.py
+M  tools/physics_verify.py
+M  tools/verify_score.py
+?? docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md
+?? reports/gate_outputs/wf0925_X1_alt_loudness.txt
+?? reports/gate_outputs/wf0925_X1_alt_loudness_table.txt
+?? reports/gate_outputs/wf0925_X1_art.txt
+?? reports/gate_outputs/wf0925_X1_claims_check.txt
+?? reports/gate_outputs/wf0925_X1_demo_reel.txt
+?? reports/gate_outputs/wf0925_X1_loop_ready.txt
+?? reports/gate_outputs/wf0925_X1_music_tpdf.txt
+?? reports/gate_outputs/wf0925_X1_tp_crosscheck.txt
+?? reports/gate_outputs/wf0925_X1_verify.txt
+?? reports/gate_outputs/wf0925_X2_catalog.txt
+?? reports/gate_outputs/wf0925_X2_facts.txt
+?? reports/gate_outputs/wf0925_X2_listening_kit.txt
+?? reports/gate_outputs/wf0925_X2_packages.txt
+?? reports/gate_outputs/wf0925_X2_verify.txt
+?? reports/gate_outputs/wf0925_X2_web_sources.txt
+?? reports/gate_outputs/wf0925_integration_raw/
+?? reports/status_check_2026-09-25/
+$ git diff --cached --stat
+ .github/workflows/physics.yml                      |    40 +-
+ .github/workflows/release-physics.yml              |    45 +-
+ LICENSE                                            |    26 +-
+ THIRD_PARTY_NOTICES.txt                            |   975 ++
+ docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md         |   468 +
+ docs/KNOWN_LIMITS_INDEX.zh-TW.md                   |    83 +
+ ...026-09-10_Iowa_MIS_thai_gong_equipment_query.md |     2 +-
+ ...-09-10_TU_Berlin_directivity_license_request.md |     2 +-
+ docs/legal/EULA_BUYER_DRAFT.md                     |   218 +
+ docs/legal/JUCE8_LICENSE_REVIEW.zh-TW.md           |   141 +
+ reports/d11_f5_root_cause_2026-09-25.zh-TW.md      |   247 +
+ .../D11_string_scale_candidate.zh-TW.md            |    35 +
+ .../D9_ir_loudness_alignment.zh-TW.md              |     9 +
+ .../gate_outputs/wf0907_method/render_wf_scores.py |    18 +-
+ reports/gate_outputs/wf0925_F5_decomposition.txt   |   203 +
+ reports/gate_outputs/wf0925_F5_isolated_build.txt  |   157 +
+ reports/gate_outputs/wf0925_F5_reproduce.txt       |   116 +
+ reports/gate_outputs/wf0925_F5_scripts.txt         |   744 ++
+ reports/gate_outputs/wf0925_F5_single_variable.txt |   196 +
+ reports/gate_outputs/wf0925_F5_t60_mechanism.txt   |   150 +
+ reports/gate_outputs/wf0925_G1_sources.txt         |   635 +
+ .../gate_outputs/wf0925_K1K2fix_bit_identity.txt   |    53 +
+ .../gate_outputs/wf0925_K1K2fix_build_ctest.txt    |   257 +
+ reports/gate_outputs/wf0925_K1K2fix_diff.txt       |    75 +
+ reports/gate_outputs/wf0925_K1K2fix_hostprobe.txt  |   313 +
+ .../wf0925_K1K2fix_physics_verify_full.txt         |   639 +
+ reports/gate_outputs/wf0925_K1K2fix_summary.txt    |    59 +
+ .../wf0925_K1K2fix_verify_score_all.txt            |  3865 ++++++
+ reports/gate_outputs/wf0925_K1_bit_identity.txt    |    85 +
+ reports/gate_outputs/wf0925_K1_build_ctest.txt     |   122 +
+ reports/gate_outputs/wf0925_K1_hostprobe.txt       |   338 +
+ .../gate_outputs/wf0925_K1_physics_verify_full.txt |   632 +
+ reports/gate_outputs/wf0925_K1_summary.txt         |    96 +
+ .../gate_outputs/wf0925_K1_verify_score_all.txt    |  3854 ++++++
+ reports/gate_outputs/wf0925_K2_bit_identity.txt    |    66 +
+ reports/gate_outputs/wf0925_K2_build_ctest.txt     |   298 +
+ reports/gate_outputs/wf0925_K2_diff.txt            |   354 +
+ reports/gate_outputs/wf0925_K2_e15_sources.txt     |    51 +
+ reports/gate_outputs/wf0925_K2_hostprobe.txt       |   731 ++
+ .../gate_outputs/wf0925_K2_physics_verify_full.txt |   639 +
+ reports/gate_outputs/wf0925_K2_summary.txt         |    96 +
+ .../gate_outputs/wf0925_K2_verify_score_all.txt    |  3859 ++++++
+ reports/gate_outputs/wf0925_L1_sources.txt         |   580 +
+ reports/gate_outputs/wf0925_N1_cli_provenance.txt  |    78 +
+ reports/gate_outputs/wf0925_N1_corpus_scan.txt     |   123 +
+ .../wf0925_N1_fur_elise_validation.txt             |   195 +
+ reports/gate_outputs/wf0925_N1_grid_scan.txt       |   373 +
+ reports/gate_outputs/wf0925_N1_option_d.txt        |    38 +
+ reports/gate_outputs/wf0925_N1_plots.txt           |     9 +
+ .../gate_outputs/wf0925_P1_gate1_workflow_yaml.txt |   242 +
+ .../wf0925_P1_gate2_pytest_collect.txt             |    36 +
+ .../wf0925_P1_gate3_pytest_selfcal.txt             |   171 +
+ .../wf0925_P1_gate4_pytest_related.txt             |   333 +
+ .../wf0925_P1_gate5_render_outdir_8of8.txt         |    83 +
+ .../gate_outputs/wf0925_P1_gate6_tools_smoke.txt   |   406 +
+ reports/gate_outputs/wf0925_V1_cli_provenance.txt  |    47 +
+ .../wf0925_V1_partial_offset_diagnostic.txt        |    58 +
+ .../wf0925_V1_partial_stem_verify_full.txt         |    59 +
+ .../gate_outputs/wf0925_V1_partial_verify_full.txt |   156 +
+ reports/gate_outputs/wf0925_V1_scope_check.txt     |    60 +
+ .../wf0925_V1_voice_pool_cpu_bench.txt             |    41 +
+ .../gate_outputs/wf0925_V1_voice_pool_dumps.txt    |    42 +
+ .../wf0925_V1_voice_pool_lifetime_probe.txt        |    47 +
+ .../wf0925_V1_voice_pool_side_checks.txt           |    38 +
+ .../gate_outputs/wf0925_V1_voice_pool_sources.txt  |   695 +
+ .../gate_outputs/wf0925_V1_voice_pool_summary.txt  |  1149 ++
+ reports/partial_verify_full_2026-09-25.zh-TW.md    |   192 +
+ reports/voice_pool_occupancy_2026-09-25.zh-TW.md   |   254 +
+ .../corpus_events_flagged.csv                      |  5730 ++++++++
+ .../corpus_file_summary.csv                        |    76 +
+ .../corpus_flagged_by_note_velocity.csv            |   644 +
+ .../weak_fundamental_null_map/corpus_summary.json  |    38 +
+ .../weak_fundamental_null_map/fur_elise_events.csv |   906 ++
+ .../fur_elise_note_velocity.csv                    |   137 +
+ .../weak_fundamental_null_map/fur_elise_stems.csv  |   150 +
+ .../fur_elise_validation.json                      |   259 +
+ .../fur_elise_validation.png                       |   Bin 0 -> 117000 bytes
+ .../grid_cimbalom_felt.csv                         |  3609 ++++++
+ .../grid_cimbalom_wood.csv                         | 12937 +++++++++++++++++++
+ .../weak_fundamental_null_map/grid_piano_felt.csv  |  4489 +++++++
+ .../weak_fundamental_null_map/grid_string_bow.csv  |  6777 ++++++++++
+ .../weak_fundamental_null_map/grid_summary.json    |   368 +
+ .../weak_fundamental_null_map/map_four_configs.png |   Bin 0 -> 258319 bytes
+ .../weak_fundamental_null_map/map_piano_felt.png   |   Bin 0 -> 233795 bytes
+ reports/weak_fundamental_null_map/mechanism_H.png  |   Bin 0 -> 129050 bytes
+ reports/weak_fundamental_null_map/null_map_lib.py  |   358 +
+ .../option_d_velocity_candidates.csv               |    31 +
+ .../option_d_velocity_table.py                     |   123 +
+ reports/weak_fundamental_null_map/plot_maps.py     |   249 +
+ reports/weak_fundamental_null_map/scan_corpus.py   |   173 +
+ reports/weak_fundamental_null_map/scan_grid.py     |   195 +
+ .../validate_fur_elise.py                          |   298 +
+ .../weak_fundamental_null_map_2026-09-25.zh-TW.md  |   287 +
+ .../wf0925_method/chromatic_tail_budget_check.py   |   115 +
+ reports/wf0925_method/dump_corpus_modes.py         |    90 +
+ reports/wf0925_method/fm_zombie_check.py           |    80 +
+ .../wf0925_method/make_plugin_reachable_scores.py  |    88 +
+ reports/wf0925_method/partial_full_summary.py      |   237 +
+ .../wf0925_method/partial_offset_decomposition.py  |   147 +
+ reports/wf0925_method/voice_cpu_bench.py           |   145 +
+ reports/wf0925_method/voice_lifetime_probe.py      |   146 +
+ reports/wf0925_method/voice_pool_code_citations.py |    64 +
+ reports/wf0925_method/voice_pool_occupancy.py      |   672 +
+ reports/wf0925_method/voice_pool_summary.py        |   125 +
+ scores/examples/water_gong_free.score.json         |     2 +-
+ src/IRLibrary.h                                    |    52 +-
+ src/PluginProcessor.cpp                            |    78 +-
+ src/PluginProcessor.h                              |    37 +-
+ src/PresetManager.h                                |    41 +-
+ src/effects/EffectChain.h                          |     8 +
+ src/engines/ChromaticEngine.h                      |    25 +-
+ src/engines/CimbalomEngine.h                       |    49 +-
+ src/physics/HammerImpulse.h                        |    17 +-
+ src/physics/PlateModel.h                           |    10 +-
+ tests/audit_repro.cpp                              |   149 +
+ tests/host_probe.cpp                               |   428 +-
+ tests/test_measurement_selfcal.py                  |   102 +-
+ tests/test_stem_stream.py                          |   337 +
+ tools/installer/README.md                          |    78 +
+ tools/installer/TsukiSynth.iss                     |   191 +
+ tools/melody_roll_video.py                         |    37 +-
+ tools/partial_verify.py                            |    25 +-
+ tools/physics_verify.py                            |    44 +-
+ tools/verify_score.py                              |    44 +-
+ 124 files changed, 67898 insertions(+), 96 deletions(-)
+$ git diff --cached --name-status
+M	.github/workflows/physics.yml
+M	.github/workflows/release-physics.yml
+M	LICENSE
+A	THIRD_PARTY_NOTICES.txt
+A	docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md
+A	docs/KNOWN_LIMITS_INDEX.zh-TW.md
+M	docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+M	docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+A	docs/legal/EULA_BUYER_DRAFT.md
+A	docs/legal/JUCE8_LICENSE_REVIEW.zh-TW.md
+A	reports/d11_f5_root_cause_2026-09-25.zh-TW.md
+M	reports/decision_packets/D11_string_scale_candidate.zh-TW.md
+M	reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
+M	reports/gate_outputs/wf0907_method/render_wf_scores.py
+A	reports/gate_outputs/wf0925_F5_decomposition.txt
+A	reports/gate_outputs/wf0925_F5_isolated_build.txt
+A	reports/gate_outputs/wf0925_F5_reproduce.txt
+A	reports/gate_outputs/wf0925_F5_scripts.txt
+A	reports/gate_outputs/wf0925_F5_single_variable.txt
+A	reports/gate_outputs/wf0925_F5_t60_mechanism.txt
+A	reports/gate_outputs/wf0925_G1_sources.txt
+A	reports/gate_outputs/wf0925_K1K2fix_bit_identity.txt
+A	reports/gate_outputs/wf0925_K1K2fix_build_ctest.txt
+A	reports/gate_outputs/wf0925_K1K2fix_diff.txt
+A	reports/gate_outputs/wf0925_K1K2fix_hostprobe.txt
+A	reports/gate_outputs/wf0925_K1K2fix_physics_verify_full.txt
+A	reports/gate_outputs/wf0925_K1K2fix_summary.txt
+A	reports/gate_outputs/wf0925_K1K2fix_verify_score_all.txt
+A	reports/gate_outputs/wf0925_K1_bit_identity.txt
+A	reports/gate_outputs/wf0925_K1_build_ctest.txt
+A	reports/gate_outputs/wf0925_K1_hostprobe.txt
+A	reports/gate_outputs/wf0925_K1_physics_verify_full.txt
+A	reports/gate_outputs/wf0925_K1_summary.txt
+A	reports/gate_outputs/wf0925_K1_verify_score_all.txt
+A	reports/gate_outputs/wf0925_K2_bit_identity.txt
+A	reports/gate_outputs/wf0925_K2_build_ctest.txt
+A	reports/gate_outputs/wf0925_K2_diff.txt
+A	reports/gate_outputs/wf0925_K2_e15_sources.txt
+A	reports/gate_outputs/wf0925_K2_hostprobe.txt
+A	reports/gate_outputs/wf0925_K2_physics_verify_full.txt
+A	reports/gate_outputs/wf0925_K2_summary.txt
+A	reports/gate_outputs/wf0925_K2_verify_score_all.txt
+A	reports/gate_outputs/wf0925_L1_sources.txt
+A	reports/gate_outputs/wf0925_N1_cli_provenance.txt
+A	reports/gate_outputs/wf0925_N1_corpus_scan.txt
+A	reports/gate_outputs/wf0925_N1_fur_elise_validation.txt
+A	reports/gate_outputs/wf0925_N1_grid_scan.txt
+A	reports/gate_outputs/wf0925_N1_option_d.txt
+A	reports/gate_outputs/wf0925_N1_plots.txt
+A	reports/gate_outputs/wf0925_P1_gate1_workflow_yaml.txt
+A	reports/gate_outputs/wf0925_P1_gate2_pytest_collect.txt
+A	reports/gate_outputs/wf0925_P1_gate3_pytest_selfcal.txt
+A	reports/gate_outputs/wf0925_P1_gate4_pytest_related.txt
+A	reports/gate_outputs/wf0925_P1_gate5_render_outdir_8of8.txt
+A	reports/gate_outputs/wf0925_P1_gate6_tools_smoke.txt
+A	reports/gate_outputs/wf0925_V1_cli_provenance.txt
+A	reports/gate_outputs/wf0925_V1_partial_offset_diagnostic.txt
+A	reports/gate_outputs/wf0925_V1_partial_stem_verify_full.txt
+A	reports/gate_outputs/wf0925_V1_partial_verify_full.txt
+A	reports/gate_outputs/wf0925_V1_scope_check.txt
+A	reports/gate_outputs/wf0925_V1_voice_pool_cpu_bench.txt
+A	reports/gate_outputs/wf0925_V1_voice_pool_dumps.txt
+A	reports/gate_outputs/wf0925_V1_voice_pool_lifetime_probe.txt
+A	reports/gate_outputs/wf0925_V1_voice_pool_side_checks.txt
+A	reports/gate_outputs/wf0925_V1_voice_pool_sources.txt
+A	reports/gate_outputs/wf0925_V1_voice_pool_summary.txt
+A	reports/partial_verify_full_2026-09-25.zh-TW.md
+A	reports/voice_pool_occupancy_2026-09-25.zh-TW.md
+A	reports/weak_fundamental_null_map/corpus_events_flagged.csv
+A	reports/weak_fundamental_null_map/corpus_file_summary.csv
+A	reports/weak_fundamental_null_map/corpus_flagged_by_note_velocity.csv
+A	reports/weak_fundamental_null_map/corpus_summary.json
+A	reports/weak_fundamental_null_map/fur_elise_events.csv
+A	reports/weak_fundamental_null_map/fur_elise_note_velocity.csv
+A	reports/weak_fundamental_null_map/fur_elise_stems.csv
+A	reports/weak_fundamental_null_map/fur_elise_validation.json
+A	reports/weak_fundamental_null_map/fur_elise_validation.png
+A	reports/weak_fundamental_null_map/grid_cimbalom_felt.csv
+A	reports/weak_fundamental_null_map/grid_cimbalom_wood.csv
+A	reports/weak_fundamental_null_map/grid_piano_felt.csv
+A	reports/weak_fundamental_null_map/grid_string_bow.csv
+A	reports/weak_fundamental_null_map/grid_summary.json
+A	reports/weak_fundamental_null_map/map_four_configs.png
+A	reports/weak_fundamental_null_map/map_piano_felt.png
+A	reports/weak_fundamental_null_map/mechanism_H.png
+A	reports/weak_fundamental_null_map/null_map_lib.py
+A	reports/weak_fundamental_null_map/option_d_velocity_candidates.csv
+A	reports/weak_fundamental_null_map/option_d_velocity_table.py
+A	reports/weak_fundamental_null_map/plot_maps.py
+A	reports/weak_fundamental_null_map/scan_corpus.py
+A	reports/weak_fundamental_null_map/scan_grid.py
+A	reports/weak_fundamental_null_map/validate_fur_elise.py
+A	reports/weak_fundamental_null_map_2026-09-25.zh-TW.md
+A	reports/wf0925_method/chromatic_tail_budget_check.py
+A	reports/wf0925_method/dump_corpus_modes.py
+A	reports/wf0925_method/fm_zombie_check.py
+A	reports/wf0925_method/make_plugin_reachable_scores.py
+A	reports/wf0925_method/partial_full_summary.py
+A	reports/wf0925_method/partial_offset_decomposition.py
+A	reports/wf0925_method/voice_cpu_bench.py
+A	reports/wf0925_method/voice_lifetime_probe.py
+A	reports/wf0925_method/voice_pool_code_citations.py
+A	reports/wf0925_method/voice_pool_occupancy.py
+A	reports/wf0925_method/voice_pool_summary.py
+M	scores/examples/water_gong_free.score.json
+M	src/IRLibrary.h
+M	src/PluginProcessor.cpp
+M	src/PluginProcessor.h
+M	src/PresetManager.h
+M	src/effects/EffectChain.h
+M	src/engines/ChromaticEngine.h
+M	src/engines/CimbalomEngine.h
+M	src/physics/HammerImpulse.h
+M	src/physics/PlateModel.h
+M	tests/audit_repro.cpp
+M	tests/host_probe.cpp
+M	tests/test_measurement_selfcal.py
+A	tests/test_stem_stream.py
+A	tools/installer/README.md
+A	tools/installer/TsukiSynth.iss
+M	tools/melody_roll_video.py
+M	tools/partial_verify.py
+M	tools/physics_verify.py
+M	tools/verify_score.py
+$ git diff --stat   (unstaged tracked changes)
+(end of unstaged diff stat)
+$ git stash list
+(end)

@@ -1,0 +1,5 @@
+# selftest 結果行對照 09-15 整合卡
+$ diff <(grep -E ': (PASS|FAIL)' reports/gate_outputs/wf0914_integration_raw/07_physics_verify_selftest.txt) <(grep -E ': (PASS|FAIL)' reports/gate_outputs/wf0925_integration_raw/07_physics_verify_selftest.txt)
+DIFF_EXIT=0  (行數: 13 vs 13)
+$ grep -n '15 項' reports/gate_outputs/wf0914_INTEGRATION.txt
+97:結果：15 項自我測試全部 PASS（short_t60_f0 / relative_axis_t60 / positive_control /

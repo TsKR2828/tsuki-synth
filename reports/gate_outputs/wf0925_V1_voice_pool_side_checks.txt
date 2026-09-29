@@ -1,0 +1,38 @@
+# WF0925-V1 B：三個旁支核對（描述用、非 GATE）
+
+## 1. 月光全曲 FM 需求 196 的成因（在需求最高那一瞬間，逐顆看 envelope）
+$ python reports/wf0925_method/fm_zombie_check.py
+peak demand 196 at t=661.700 s ; voices alive at that instant (recomputed): 196
+envelope level bins at the peak (DESCRIPTIVE, not a GATE): {'<=-138.5 (below 24-bit LSB 2^-23, reference line only)': 184, '(-138.5,-60]': 4, '(-60,-10]': 3, '(-10,0]': 2, 'level 0': 3}
+key_down=True: 3 ; released: 193
+voices by (note, key_down), top 10: [((32, False), 100), ((44, False), 92), ((75, False), 1), ((33, True), 1), ((61, True), 1), ((64, True), 1)]
+fm_release values in this score (s): [0.15, 0.38, 0.95]
+exit=0
+# 分箱只為方便讀數字；-138.5 dB 是 2^-23（24-bit 最小一階相對滿刻度）的參考線，不是判定門檻。
+# envelope 是相對它自己峰值 1.0 的比例；FM voice 輸出 = carrier×envelope×gain（src/engines/FMPianoEngine.h processSingleSample），
+# 所以 envelope 低於這條線的 voice，輸出只會更小。槌擊雜訊項不乘 envelope，但它在起音後 15～45 ms 內就自己衰減完
+# （FMPianoEngine.h:351-353 hammerTimeSec），需求高峰時這些已放鍵的舊 voice 早就沒有這一項。
+
+## 2. CLI 自己的 buffer 長度 vs Chromatic 真正放鍵係數（ScoreRenderer eventEndTime 一律用 0.05，ChromaticVoice 用 0.08）
+$ python reports/wf0925_method/chromatic_tail_budget_check.py --dumps output/wf0925/V1/dumps
+damp factors read from engine code: {'cimbalom': 0.05, 'chromatic': 0.08} ; eventEndTime() rule: 0.05 for all modal engines
+score                                                                            buf_end  true_end   short_s latest chromatic voice at buffer end
+scores/library/restraint/restraint_ui_001.score.json                               1.605     1.878     0.272 id 0 G3 (beam) remaining -69.5 dB re own start
+scores whose last-ringing voice outlives the render buffer: 1
+exit=0
+# 只記錄、不判定。要不要改是 CLI 渲染輸出變更（R10），不在本卡範圍。
+
+## 3. 「按引擎」視角把同一 pool 的不同子引擎算進同一個外掛的曲子（外掛一個 instance 同時只能選一個子引擎）
+$ python - (對 75 首 score，列出同一個 pool 內出現多種 engine 名的曲子)
+   scores/originals/ai_radiance/ai_radiance_m1.score.json {'chromatic': {'water_gong': 4, 'tongue_drum': 16, 'custom': 12}}
+   scores/originals/ai_radiance/ai_radiance_m2.score.json {'chromatic': {'water_gong': 12, 'custom': 18}}
+   scores/originals/ai_radiance/ai_radiance_m3.score.json {'chromatic': {'water_gong': 4, 'tongue_drum': 16}}
+   scores/originals/ai_radiance/ai_radiance_m4.score.json {'chromatic': {'tongue_drum': 32, 'water_gong': 4, 'custom': 6}}
+   scores/library/akashic/akashic_opening_bell_001.score.json {'chromatic': {'tongue_drum': 7, 'water_gong': 1}}
+   scores/library/clockwork/clockwork_ambient_001.score.json {'chromatic': {'beam': 6, 'plate': 1}}
+   scores/library/ocean/ocean_transition_001.score.json {'chromatic': {'plate': 1, 'beam': 1}}
+   scores/library/restraint/restraint_loop_001.score.json {'chromatic': {'plate': 4, 'beam': 4}}
+# （layered 的 ai_radiance_complete 由 m1～m4 組成，同樣混用 chromatic 子引擎；上面只列非 layered 的 score。）
+# cimbalom pool（string/cimbalom/piano）沒有任何一首混用；混用的都是 chromatic 子引擎，這些曲子的需求在情境 A/B 都 <= 8、
+# 情境 C（假設踩踏板）最多 12（見 summary 證據檔），
+# 拆成多個 instance 只會讓每個 pool 的需求更少，不影響「是否超過 16」的結論。

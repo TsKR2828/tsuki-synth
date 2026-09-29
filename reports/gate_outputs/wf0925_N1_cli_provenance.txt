@@ -1,0 +1,78 @@
+# WF0925-N1 evidence — CLI provenance + 8-score bit identity (generated 2026-09-25 05:55:49 +0800)
+# cwd: /c/Users/admin/Desktop/Claude/tsuki-synth ; git HEAD: 18430c4
+
+$ cp build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe output/wf0925/N1/cli.exe   (done once at card start)
+$ ls -la build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe output/wf0925/N1/cli.exe
+-rwxr-xr-x 1 admin 197609 7132160 Sep 15 02:07 build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+-rwxr-xr-x 1 admin 197609 7132160 Sep 25 05:32 output/wf0925/N1/cli.exe
+$ sha256sum build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe output/wf0925/N1/cli.exe
+9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 *output/wf0925/N1/cli.exe
+
+$ output/wf0925/N1/cli.exe --help
+TsukiSynth CLI Renderer
+Usage:
+  tsukisynth-cli <score.json> [--output <dir>]
+  tsukisynth-cli --batch <dir> [--output <dir>]
+  tsukisynth-cli --dump-modes <score.json>
+
+Diagnostic-only flags (NOT part of the verified render
+contract, ROADMAP_PHYSICS.md Sec.1 -- for isolating
+signal-path stages via differential renders only):
+  --body-amount <float>   override BodyResonance mix (0 = bypass)
+  --no-exciter-noise      disable the exciter noise-burst transient
+  --num-strings <int>     override cimbalom/piano string count
+
+# 8 首代表曲位元不變（基準 reports/gate_outputs/b6_method/sha256_before_post_a14.txt）
+$ python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0925_N1_cli_copy --workdir <scratchpad>/n1_bitid --cli C:/Users/admin/Desktop/Claude/tsuki-synth/output/wf0925/N1/cli.exe --outdir output/wf0925/N1/bitid
+rendering moonlight_sonata_movement1_yangqin ...
+  len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+  len=325.869s  RMS=-23.899 dBFS  sha256=280cbdac3c117c14
+rendering physical_piano ...
+  len=7.575s  RMS=-18.485 dBFS  sha256=1233b53f1e8660bc
+rendering restraint_metal_click ...
+  len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...
+  len=327.289s  RMS=-21.589 dBFS  sha256=f539aefa91919cbf
+rendering water_gong_free ...
+  len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...
+  len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+rendering fur_elise_opening ...
+  len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+wrote C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\N1\bitid\render_wf0925_N1_cli_copy.csv
+wrote C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\N1\bitid\sha256_wf0925_N1_cli_copy.txt
+rc=0
+
+$ cat output/wf0925/N1/bitid/sha256_wf0925_N1_cli_copy.txt
+49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+280cbdac3c117c142dd89853eaec0706ef6d6afec604de37621577d57bf637d1  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b  physical_piano/physical_piano.wav
+be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click/restraint_metal_click_001.wav
+f539aefa91919cbfe3b22e7fb4d17f404e758aca39d1b08b173e6f44cd63f67e  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free/water_gong_free.wav
+74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening/fur_elise_opening.wav
+
+$ diff <(awk "{print \$1, \$2}" reports/gate_outputs/b6_method/sha256_before_post_a14.txt) <(awk "{print \$1, \$2}" output/wf0925/N1/bitid/sha256_wf0925_N1_cli_copy.txt) && echo "RESULT: 8/8 IDENTICAL"
+RESULT: 8/8 IDENTICAL (diff empty)
+
+# 註：本卡不改 src/tools/tests；工作樹裡其他 WF0925 卡同時在改的 src 檔（git status 顯示 M）不影響這顆 09-15 binary。
+$ git status --short -- src/physics/HammerImpulse.h src/engines/CimbalomEngine.h src/score/ScoreRenderer.h
+ M src/engines/CimbalomEngine.h
+ M src/physics/HammerImpulse.h
+$ git diff -- src/physics/HammerImpulse.h | grep "^[+-]" | grep -v "^[+-][[:space:]]*\(//\|\*\)" | grep -v "^\(+++\|---\)"   (非註解行變更；空 = 只改註解)
+# (end)
+
+# ---- 商品母帶與本卡分析對象是同一顆 binary + 同一份 score（appended 05:56:11）----
+$ cat exports/products/clean_batch2/masters/classical/fur_elise_complete.wav.render.json
+{"contract": "TsukiSynth Render Manifest v4", "score": "../../../../../scores/classical/fur_elise/fur_elise_complete.score.json", "output": "fur_elise_complete.wav", "wav_sha256": "3a444ccfa346b6f9bf3cb9136202f7df29cc8968c52f59f367ca251d0aa84a79", "root_score_sha256": "3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7", "input_dependencies": [{"role": "root_score", "path": "fur_elise_complete.score.json", "sha256": "3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7"}], "dependency_tree_sha256": "f78f0c3ccbd047ba6046d933b1e3aceb4f8bb43b606d206f8f62d335c38fc177", "renderer_executable": "TsukiSynthCLI.exe", "renderer_executable_sha256": "9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8", "renderer_version": "0.3.0", "configured_source_commit": "766d21daf7def40fe3ea6ff5b1cbaf910806da46", "configured_source_dirty": true, "compiler": "MSVC 19.50.35730.0", "target": "Windows AMD64", "build_configuration": "Release", "sample_rate": 48000, "random_seed": 6076294104094038350, "input_event_count": 905, "input_layer_count": 0, "normalize": true, "pre_normalize_peak": 0.13407975435257, "applied_gain": 7.085335254669189, "samples_at_or_above_full_scale": 0}
+$ sha256sum scores/classical/fur_elise/fur_elise_complete.score.json exports/products/clean_batch2/masters/classical/fur_elise_complete.wav output/wf0925/N1/cli.exe
+3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7 *scores/classical/fur_elise/fur_elise_complete.score.json
+3a444ccfa346b6f9bf3cb9136202f7df29cc8968c52f59f367ca251d0aa84a79 *exports/products/clean_batch2/masters/classical/fur_elise_complete.wav
+9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 *output/wf0925/N1/cli.exe
+# => renderer_executable_sha256 (9123db8f…) == output/wf0925/N1/cli.exe；root_score_sha256 (3d409960…) == 現行 score == D14 g2_full_report provenance.source_score.sha256
+$ python -c "import json;print(json.load(open(\"output/wf0914/D14/g2_full_report.json\",encoding=\"utf-8\"))[\"provenance\"][\"source_score\"])"
+{'path': 'scores/classical/fur_elise/fur_elise_complete.score.json', 'sha256': '3d4099608ca0f2495eae5abc3f6d88ab03d582fadd0e4d1ca746c1dfdf5568a7'}
+# 註：D14 當時的 CLI sha256 是 683fdd7b…（09-14 build），與現行 9123db8f…（09-15 build）不同；本卡用現行 binary 重新渲染 149 顆 stem 重判，149/149 與 D14 判定一致（見 wf0925_N1_fur_elise_validation.txt）。

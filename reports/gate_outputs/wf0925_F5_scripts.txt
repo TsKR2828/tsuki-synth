@@ -1,0 +1,744 @@
+WF0925-F5 evidence 6/6: analysis script sources (output/ is gitignored, so the exact sources are archived here)
+generated: 2026-09-25 06:23:31 +0800
+All scripts import tools/physics_verify.py (HEAD copy in output/wf0925/F5/tools_before or the patched copy in output/wf0925/F5/tools_after) and reuse its F5 functions unchanged.
+
+$ sha256sum (sources)
+1129e38fb62d566f40fb0a8136db3997c10a1af1dfac07f0c93db20b056e2bcd *f5_probe.py
+c04fa1fe1ad30c8854e5647802c77bb2b182816e0abc98989309bfb7d7d883b4 *analyze_residual.py
+1465f8b2a0c3711b8511cdd6caca01e472c8127600276c913e76cb475011f726 *hybrid_theory.py
+fe222ddc01dc77d51e358d4246d0cf30c8970ac372b7c022706de0c6f44fd766 *f5_render_exp.py
+00742991621c96f0df29ca7d1d271107e0ac8b4e2fb3b25997605d0e0b37e669 *f5_numstrings.py
+118fa3c77fae54351662ffeb5fcb1807161e212b35ea4aeb68eb0f538f27789a *d_scan.py
+517c92ab66921878471f0c089aa53171d1370d0c225ee21699b3ae6cf0861049 *beat_check.py
+5dec8511595dcc9e94da591277db94e396ee0e057b9428fa64444c5d33ba5167 *t60_terms.py
+67bb0140da33fdf382d29d1d0b192dbf84ffc13199e893744bce2ee60b00aa83 *leak_curve.py
+359cd34edaa7de5a557bb2b06563d1ab4d4649cfbf985cde71b0d0ceaa943bae *t60_table.py
+2aac52385980c25ce9bfa34c196ae9146e22eb45e074aafbfb9e01dbd6ca1c97 *b_variants.py
+6dec2cf658ec000081ddd743875fed2139537ee3ec37ca36aadaea80550c52df *gen_evidence.sh
+5766ce57411949927c5c5bf4983f8c3d60452b7b41800a70b5db0bc085c1dedb *variant.diff
+
+==================== output/wf0925/F5/f5_probe.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5 driver: run physics_verify.report_residual_energy() (the exact
+F5 function --full calls) against a given CLI + a given copy of tools/,
+then save the --dump-modes JSON of the same probe score for analysis.
+
+Usage: python f5_probe.py --tools <tools dir> --cli <exe> --outdir <dir>
+                          [--engines piano ...]
+"""
+import argparse, json, subprocess, sys
+from pathlib import Path
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--tools", required=True)
+ap.add_argument("--cli", required=True)
+ap.add_argument("--outdir", required=True)
+ap.add_argument("--engines", nargs="+", default=None)
+a = ap.parse_args()
+
+sys.path.insert(0, str(Path(a.tools).resolve()))
+import physics_verify as pv  # noqa: E402
+
+print("physics_verify module:", pv.__file__)
+print("cli:", a.cli)
+out = Path(a.outdir)
+out.mkdir(parents=True, exist_ok=True)
+ok = pv.report_residual_energy(Path(a.cli), a.engines, out)
+print("F5 overall:", "PASS" if ok else "FAIL")
+
+# Save the dump for every probe score this call wrote.
+for sf in sorted(out.glob("probe_*_resid.score.json")):
+    r = subprocess.run([str(Path(a.cli).resolve()), "--dump-modes", str(sf.resolve())],
+                       capture_output=True, text=True, timeout=1800)
+    (out / (sf.name.replace(".score.json", ".dump.json"))).write_text(
+        r.stdout, encoding="utf-8")
+    print("dump saved:", sf.name, "rc=", r.returncode)
+
+==================== output/wf0925/F5/analyze_residual.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5: decompose the F5 residual energy of one probe render.
+
+Re-implements NOTHING new for the metric itself: the residual is computed by
+importing physics_verify.measure_residual_energy() (same window, same bands,
+same Hann, same analysis limit). This script only adds *descriptive*
+break-downs (where in frequency the residual power sits; how much a pure
+theory synthesis from --dump-modes gives), none of which is a GATE.
+
+Usage: python analyze_residual.py --tools <dir> --run <run dir> --eng piano
+"""
+import argparse, json, math, sys
+from pathlib import Path
+import numpy as np
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--tools", required=True)
+ap.add_argument("--run", required=True)
+ap.add_argument("--eng", default="piano")
+ap.add_argument("--top", type=int, default=12)
+a = ap.parse_args()
+sys.path.insert(0, str(Path(a.tools).resolve()))
+import physics_verify as pv  # noqa: E402
+
+run = Path(a.run)
+stem = f"probe_{a.eng}_60_85_20_resid"
+sr, x = pv.read_wav_mono(run / (stem + ".wav"))
+dump = json.loads((run / (stem + ".dump.json")).read_text(encoding="utf-8"))
+ev = dump["events"][0]
+strings = ev.get("strings") or [ev["partials"]]
+mode_freqs = sorted({float(m["freq"]) for v in strings for m in v})
+noteoff = 2.0 * pv.T60_NOTEOFF_RATIO
+
+rdb = pv.measure_residual_energy(sr, x, mode_freqs, noteoff)
+print(f"[{run.name}/{a.eng}] physics_verify.measure_residual_energy = {rdb:+.2f} dB re total")
+
+
+def spectrum(sig):
+    i0 = int(pv.EXCITER_NOISE_SKIP_S * sr)
+    i1 = min(len(sig), int(noteoff * sr))
+    seg = np.asarray(sig[i0:i1], dtype=np.float64) * np.hanning(i1 - i0)
+    nfft = 1 << int(math.ceil(math.log2(len(seg))))
+    spec = np.abs(np.fft.rfft(seg, nfft)) ** 2
+    binhz = sr / nfft
+    limit = pv.analysis_frequency_limit(sr)
+    kmax = min(len(spec) - 1, int(limit / binhz))
+    power = spec[1:kmax + 1]
+    freqs = np.arange(1, kmax + 1) * binhz
+    inband = np.zeros(len(power), dtype=bool)
+    for f in mode_freqs:
+        if not (0.0 < f <= limit * (1.0 + pv.RESIDUAL_BAND_HALF_WIDTH)):
+            continue
+        inband |= ((freqs >= f * (1.0 - pv.RESIDUAL_BAND_HALF_WIDTH))
+                   & (freqs <= f * (1.0 + pv.RESIDUAL_BAND_HALF_WIDTH)))
+    return freqs, power, inband
+
+
+freqs, power, inband = spectrum(x)
+total = power.sum()
+resid = power[~inband].sum()
+print(f"  re-computed here: {10*math.log10(resid/total):+.2f} dB (must equal above)")
+
+# Region break-down: contiguous out-of-band runs.
+out = ~inband
+edges = np.flatnonzero(np.diff(np.concatenate([[0], out.astype(int), [0]])))
+runs = list(zip(edges[0::2], edges[1::2]))
+rows = []
+for s, e in runs:
+    p = power[s:e].sum()
+    rows.append((p, freqs[s], freqs[e - 1]))
+rows.sort(reverse=True)
+print(f"  out-of-band regions: {len(rows)}; top {a.top} by power "
+      f"(share of residual, dB re total):")
+for p, f0, f1 in rows[:a.top]:
+    print(f"    {f0:9.1f} - {f1:9.1f} Hz : {100*p/resid:6.2f}% of residual, "
+          f"{10*math.log10(p/total):+7.2f} dB re total")
+
+# Octave-ish coarse buckets of the residual.
+buckets = [(0, 250), (250, 1000), (1000, 2000), (2000, 4000), (4000, 8000),
+           (8000, 12000), (12000, 16000), (16000, 20001)]
+print("  residual by coarse band (dB re total):")
+for lo, hi in buckets:
+    m = out & (freqs >= lo) & (freqs < hi)
+    if not m.any():
+        print(f"    {lo:6d}-{hi:6d} Hz: (no out-of-band bins: the +/-3% bands "
+              f"of neighbouring partials overlap and cover this whole range)")
+        continue
+    p = power[m].sum()
+    print(f"    {lo:6d}-{hi:6d} Hz: {10*math.log10(max(p,1e-300)/total):+8.2f} dB "
+          f"({100*p/resid:6.2f}% of residual)")
+
+# Pure theory synthesis from the dump (no exciter noise, no -60 dB stop).
+dur = len(x) / sr
+th = pv.synth_theory_signal(strings, sr, dur)
+tf, tp, tin = spectrum(th)
+tres = tp[~tin].sum() / tp.sum()
+print(f"  theory synthesis (dump modes only) residual: {10*math.log10(tres):+.2f} dB re total")
+print(f"  highest predicted mode: {max(mode_freqs):.1f} Hz; n modes {len(mode_freqs)}")
+
+==================== output/wf0925/F5/hybrid_theory.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5: single-variable experiments at the THEORY level.
+
+Premise (checked by analyze_residual.py): a pure synthesis of the --dump-modes
+partials (physics_verify.synth_theory_signal(), no exciter noise, no -60 dB
+mode stop) gives the SAME F5 residual as the real CLI render, to 0.01 dB,
+both before and after the candidate. So the F5 number is a property of the
+dumped (freq, amp, decay) set + the F5 metrology, and we can swap ONE of
+those three quantities at a time between the before/after dumps.
+
+The metric itself is physics_verify.measure_residual_energy() (imported,
+unchanged). Everything printed here is descriptive, not a GATE.
+"""
+import argparse, copy, json, math, sys
+from pathlib import Path
+import numpy as np
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--tools", required=True)
+ap.add_argument("--before", required=True)
+ap.add_argument("--after", required=True)
+ap.add_argument("--eng", default="piano")
+a = ap.parse_args()
+sys.path.insert(0, str(Path(a.tools).resolve()))
+import physics_verify as pv  # noqa: E402
+
+SR, DUR = 48000, 2.2
+NOTEOFF = 2.0 * pv.T60_NOTEOFF_RATIO
+stem = f"probe_{a.eng}_60_85_20_resid.dump.json"
+
+
+def load(run):
+    ev = json.loads((Path(run) / stem).read_text(encoding="utf-8"))["events"][0]
+    return ev["strings"]
+
+
+def resid(strings):
+    freqs = sorted({float(m["freq"]) for v in strings for m in v})
+    x = pv.synth_theory_signal(strings, SR, DUR)
+    return pv.measure_residual_energy(SR, x, freqs, NOTEOFF)
+
+
+B, A = load(a.before), load(a.after)
+assert len(B) == len(A) and all(len(b) == len(c) for b, c in zip(B, A))
+
+
+def hybrid(base, donor, fields):
+    out = copy.deepcopy(base)
+    for s in range(len(out)):
+        for i in range(len(out[s])):
+            for f in fields:
+                out[s][i][f] = donor[s][i][f]
+    return out
+
+
+print(f"== {a.eng}, MIDI 60 probe, theory synthesis of dumped modes ==")
+print(f"before (all before)            : {resid(B):+7.2f} dB")
+print(f"after  (all after)             : {resid(A):+7.2f} dB")
+print("-- start from BEFORE, import ONE quantity from AFTER --")
+for f in ("freq", "amp", "decay"):
+    print(f"before + after {f:5s}           : {resid(hybrid(B, A, [f])):+7.2f} dB")
+print("-- start from AFTER, restore ONE quantity from BEFORE --")
+for f in ("freq", "amp", "decay"):
+    print(f"after + before {f:5s}           : {resid(hybrid(A, B, [f])):+7.2f} dB")
+
+# Only the fundamental's decay (all 3 strings) swapped.
+def swap_decay_index(base, donor, idxs):
+    out = copy.deepcopy(base)
+    for s in range(len(out)):
+        for i in idxs:
+            out[s][i]["decay"] = donor[s][i]["decay"]
+    return out
+
+print("-- decay swaps restricted to specific partial indices --")
+print(f"before + after decay of n=1 only       : {resid(swap_decay_index(B, A, [0])):+7.2f} dB")
+print(f"before + after decay of n=1,2          : {resid(swap_decay_index(B, A, [0, 1])):+7.2f} dB")
+print(f"after + before decay of n=1 only       : {resid(swap_decay_index(A, B, [0])):+7.2f} dB")
+print(f"after + before decay of n=1,2          : {resid(swap_decay_index(A, B, [0, 1])):+7.2f} dB")
+
+# Per-partial-index contribution to the residual (all strings of index n),
+# relative to the FULL signal's total energy in the same window.
+def spectrum(x, freqs):
+    i0 = int(pv.EXCITER_NOISE_SKIP_S * SR); i1 = int(NOTEOFF * SR)
+    seg = x[i0:i1] * np.hanning(i1 - i0)
+    nfft = 1 << int(math.ceil(math.log2(len(seg))))
+    spec = np.abs(np.fft.rfft(seg, nfft)) ** 2
+    binhz = SR / nfft
+    lim = pv.analysis_frequency_limit(SR)
+    kmax = min(len(spec) - 1, int(lim / binhz))
+    p = spec[1:kmax + 1]; fr = np.arange(1, kmax + 1) * binhz
+    inb = np.zeros(len(p), dtype=bool)
+    for f in freqs:
+        if 0 < f <= lim * (1 + pv.RESIDUAL_BAND_HALF_WIDTH):
+            inb |= (fr >= f * (1 - pv.RESIDUAL_BAND_HALF_WIDTH)) & (fr <= f * (1 + pv.RESIDUAL_BAND_HALF_WIDTH))
+    return p, inb
+
+for tag, S in (("before", B), ("after", A)):
+    freqs = sorted({float(m["freq"]) for v in S for m in v})
+    ptot, inb = spectrum(pv.synth_theory_signal(S, SR, DUR), freqs)
+    tot = ptot.sum()
+    print(f"-- {tag}: residual contribution of each partial index alone "
+          f"(dB re FULL-signal total; top 5) --")
+    rows = []
+    for i in range(len(S[0])):
+        sub = [[S[s][i]] for s in range(len(S))]
+        p, _ = spectrum(pv.synth_theory_signal(sub, SR, DUR), freqs)
+        r = p[~inb].sum()
+        rows.append((r, i + 1, S[1][i]["freq"], S[1][i]["amp"], S[1][i]["decay"],
+                     p.sum()))
+    rows.sort(reverse=True)
+    for r, n, f, amp, dec, e in rows[:5]:
+        print(f"    n={n:2d} f={f:8.2f} Hz amp={amp:.5f} T60={dec:.4f} s : "
+              f"resid {10*math.log10(r/tot):+7.2f} dB re total; "
+              f"own leak fraction {10*math.log10(r/e):+7.2f} dB re own energy; "
+              f"own energy share {100*e/tot:5.1f}%")
+
+==================== output/wf0925/F5/f5_render_exp.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5 render-level single-variable experiments.
+
+Runs physics_verify.report_residual_energy() (the exact F5 function) for the
+given engines with an optional TSUKI_F5_EXP switch (only understood by the
+isolated-tree variant CLI) and an optional piano diameter_mm override, then
+saves --dump-modes and prints the fundamental T60 + theory-synthesis residual.
+Descriptive only; not a GATE.
+"""
+import argparse, hashlib, json, os, subprocess, sys
+from pathlib import Path
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--tools", required=True)
+ap.add_argument("--cli", required=True)
+ap.add_argument("--outdir", required=True)
+ap.add_argument("--exp", default=None, help="TSUKI_F5_EXP value (variant CLI only)")
+ap.add_argument("--piano-diameter-mm", type=float, default=None)
+ap.add_argument("--engines", nargs="+", default=["piano", "cimbalom"])
+a = ap.parse_args()
+
+if a.exp is None:
+    os.environ.pop("TSUKI_F5_EXP", None)
+else:
+    os.environ["TSUKI_F5_EXP"] = a.exp
+
+sys.path.insert(0, str(Path(a.tools).resolve()))
+import physics_verify as pv  # noqa: E402
+
+if a.piano_diameter_mm is not None:
+    pv.ENGINES["piano"]["params"]["diameter_mm"] = a.piano_diameter_mm
+
+cli = Path(a.cli).resolve()
+out = Path(a.outdir).resolve()
+out.mkdir(parents=True, exist_ok=True)
+print(f"cli={cli}\nTSUKI_F5_EXP={os.environ.get('TSUKI_F5_EXP')!r} "
+      f"piano params={pv.ENGINES['piano']['params']}")
+ok = pv.report_residual_energy(cli, a.engines, out)
+print("F5 (these engines):", "PASS" if ok else "FAIL")
+
+for eng in a.engines:
+    stem = f"probe_{eng}_60_85_20_resid"
+    sf = out / (stem + ".score.json")
+    r = subprocess.run([str(cli), "--dump-modes", str(sf)],
+                       capture_output=True, text=True, timeout=1800)
+    (out / (stem + ".dump.json")).write_text(r.stdout, encoding="utf-8")
+    ev = json.loads(r.stdout)["events"][0]
+    strings = ev["strings"]
+    freqs = sorted({float(m["freq"]) for v in strings for m in v})
+    sr, x = pv.read_wav_mono(out / (stem + ".wav"))
+    th = pv.synth_theory_signal(strings, sr, len(x) / sr)
+    rth = pv.measure_residual_energy(sr, th, freqs, 2.0 * pv.T60_NOTEOFF_RATIO)
+    wav_sha = hashlib.sha256((out / (stem + ".wav")).read_bytes()).hexdigest()
+    mid = strings[len(strings) // 2]
+    print(f"  {eng}: wav sha256={wav_sha[:16]}  fundamental(center string) "
+          f"f={mid[0]['freq']:.3f} Hz T60={mid[0]['decay']:.4f} s; "
+          f"n=2 T60={mid[1]['decay']:.4f} s; theory-synth residual {rth:+.2f} dB")
+
+==================== output/wf0925/F5/f5_numstrings.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5: is multi-string beating the cause? Re-run the exact F5
+function for piano with num_strings = 1 / 2 / 3 (score param), before vs
+after CLI. Descriptive only."""
+import sys, json
+from pathlib import Path
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE / "tools_before"))
+import physics_verify as pv
+for label, cli in (("before", HERE / "cli_before_own/TsukiSynthCLI.exe"),
+                   ("after", HERE / "cli_after/TsukiSynthCLI.exe")):
+    for ns in (1, 2, 3):
+        pv.ENGINES["piano"]["params"] = {"material": "steel", "num_strings": ns}
+        out = HERE / f"rx_numstrings_{label}_{ns}"
+        out.mkdir(exist_ok=True)
+        print(f"#### {label} CLI, piano num_strings={ns}")
+        pv.report_residual_energy(cli, ["piano"], out)
+
+==================== output/wf0925/F5/d_scan.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5: current engine (NO candidate), F5 piano probe with only the
+probe's diameter_mm changed. Exact F5 function. Descriptive."""
+import sys
+from pathlib import Path
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE / "tools_before"))
+import physics_verify as pv
+cli = HERE / "cli_before_own/TsukiSynthCLI.exe"
+for d in (0.7, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2):
+    pv.ENGINES["piano"]["params"] = {"material": "steel", "diameter_mm": d}
+    out = HERE / f"rx_dscan_{int(round(d*100))}"; out.mkdir(exist_ok=True)
+    print(f"#### before CLI (no candidate), piano diameter_mm={d}")
+    pv.report_residual_energy(cli, ["piano"], out)
+
+==================== output/wf0925/F5/beat_check.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5: why a 3-string course leaks more than one string (descriptive).
+Fundamental only (index 0 of every string), from the real dumps; F5 metric
+imported unchanged. Also prints the beat-envelope nulls and the edge
+amplitude that sets the window's far-sidelobe level."""
+import json, math, sys
+from pathlib import Path
+import numpy as np
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE / "tools_before"))
+import physics_verify as pv
+SR, DUR, NOFF = 48000, 2.2, 1.8
+for tag in ("run_before_own", "run_after"):
+    S = json.loads((HERE / tag / "probe_piano_60_85_20_resid.dump.json").read_text(encoding="utf-8"))["events"][0]["strings"]
+    fund3 = [[S[s][0]] for s in range(3)]
+    fund1 = [[S[1][0]]]
+    f3 = sorted(m[0]["freq"] for m in fund3)
+    r3 = pv.measure_residual_energy(SR, pv.synth_theory_signal(fund3, SR, DUR), f3, NOFF)
+    r1 = pv.measure_residual_energy(SR, pv.synth_theory_signal(fund1, SR, DUR), [S[1][0]["freq"]], NOFF)
+    spacing = S[1][0]["freq"] - S[0][0]["freq"]
+    t = np.arange(int(DUR*SR))/SR
+    x3 = pv.synth_theory_signal(fund3, SR, DUR); x1 = pv.synth_theory_signal(fund1, SR, DUR)
+    i0, i1 = int(0.03*SR), int(NOFF*SR)
+    w = np.hanning(i1-i0)
+    e3 = np.sum((x3[i0:i1]*w)**2); e1 = np.sum((x1[i0:i1]*w)**2)
+    print(f"[{tag}] fundamental T60={S[1][0]['decay']:.4f}s, string spacing {spacing:.4f} Hz "
+          f"(beat nulls of a 3-line course at t={1/(3*spacing):.3f}s and {2/(3*spacing):.3f}s)")
+    print(f"    3 strings: F5 own leakage {r3:+.2f} dB; 1 string: {r1:+.2f} dB; "
+          f"difference {r3-r1:+.2f} dB")
+    print(f"    windowed energy ratio 3-string/1-string = {e3/e1:.3f} "
+          f"(coherent max would be 9, incoherent 3)")
+
+==================== output/wf0925/F5/t60_terms.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5: split the MIDI 60 piano fundamental 1/T60 into the four loss
+channels of StringModel::decayTimeForFrequency() (internal friction eta,
+Cuesta&Valette air+visc+disl, bridge loss), for before (L=0.35*2^(-9/12),
+d=0.8 mm score default) and after (table L=0.639 m, d=1.00 mm).
+
+Pure Python mirror of the C++ formulas (tree/src/physics/StringModel.h,
+MaterialDB.h) -- analysis only, cross-checked below against the --dump-modes
+"decay" field of the actual CLI runs. Not a GATE.
+"""
+import json, math
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+mats = json.loads((HERE / "tree/data/materials.json").read_text(encoding="utf-8"))["materials"]
+steel, spruce = mats["steel"], mats["wood_spruce"]
+
+AIR_RHO, AIR_NU, DISL = 1.225, 1.619e-5, 1.0 / 18000.0
+ETA_TO_RATE, LN1000 = 2.2, 6.907755278982137
+H = 0.009  # kBridgeSoundboardThicknessM
+
+
+def q_air_visc_disl(f, r, T, m):
+    w = 2 * math.pi * f
+    M = (r * 0.5) * math.sqrt(w / AIR_NU)
+    qa = (AIR_RHO / m["density"]) * (math.sqrt(2) / M + 1 / (2 * M * M))
+    qv = 0.003 * m["youngs_modulus"] * m["density"] * math.pi ** 2 * r ** 6 * w * w / (4 * T * T)
+    return qa, qv, DISL
+
+
+def bridge_loss(T, L, sb):
+    E, nu, rho = sb["youngs_modulus"], sb["poisson_ratio"], sb["density"]
+    D = E * H ** 3 / (12 * (1 - nu * nu))
+    rhoS = rho * H
+    G = 1 / (8 * math.sqrt(D * rhoS))
+    return T * G / (LN1000 * L)
+
+
+def tension(midi, L, d, rho):
+    f = 440 * 2 ** ((midi - 69) / 12)
+    mu = rho * math.pi * (d / 2) ** 2
+    return mu * (2 * L * f) ** 2
+
+
+def B_coeff(L, d, T, E):
+    return math.pi ** 3 * E * d ** 4 / (64 * T * L * L)
+
+
+def report(tag, L, d, f=261.626):
+    T = tension(60, L, d, steel["density"])
+    r = d / 2
+    qa, qv, qd = q_air_visc_disl(f, r, T, steel)
+    eta = steel["damping"]["eta"]
+    rates = {
+        "eta (internal friction)": eta * f / ETA_TO_RATE,
+        "Q_air": qa * f / ETA_TO_RATE,
+        "Q_visc": qv * f / ETA_TO_RATE,
+        "Q_disl": qd * f / ETA_TO_RATE,
+        "bridgeLoss": bridge_loss(T, L, spruce),
+    }
+    tot = sum(rates.values())
+    print(f"[{tag}] L={L:.5f} m  d={d*1000:.3f} mm  T={T:.2f} N  "
+          f"B={B_coeff(L, d, T, steel['youngs_modulus']):.4e}")
+    for k, v in rates.items():
+        print(f"    {k:24s}: {v:.5f} 1/s  ({100*v/tot:5.1f}% of 1/T60)")
+    print(f"    total 1/T60 = {tot:.5f} 1/s  ->  T60(f1={f}) = {1/tot:.4f} s")
+    return rates, tot
+
+
+Lb = 0.35 * 2 ** (-(60 - 69) / 12)
+rb, tb = report("before", Lb, 0.0008)
+ra, ta = report("after (candidate)", 0.639, 0.00100)
+report("single-var: L only (table L, d=0.8mm)", 0.639, 0.0008)
+report("single-var: d only (old L, d=1.00mm)", Lb, 0.00100)
+print("\nchange in 1/T60 (after - before), by channel:")
+for k in rb:
+    print(f"    {k:24s}: {ra[k]-rb[k]:+.5f} 1/s  ({100*(ra[k]-rb[k])/(ta-tb):6.1f}% of the change)")
+print(f"    total: {ta-tb:+.5f} 1/s; bridgeLoss ratio after/before = "
+      f"{ra['bridgeLoss']/rb['bridgeLoss']:.4f}  "
+      f"(closed form d^2*L ratio = {(1.0/0.8)**2*(0.639/Lb):.4f})")
+
+==================== output/wf0925/F5/leak_curve.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5: how the F5 metric responds to decay time alone.
+
+(1) One decaying sinusoid at 261.626 Hz, bands = its own +/-3%: the fraction
+    of its windowed energy that F5 counts as 'residual' (pure window/decay
+    leakage; the signal contains nothing but the predicted mode).
+(2) The real MIDI 60 piano probe (before dump), with ONLY the bridge-loss
+    channel scaled by k (per-mode T60 recomputed with the StringModel
+    formula, mirrored in t60_terms.py), to show the F5 value vs the
+    fundamental's T60 and where the existing -60 dB line is crossed.
+All numbers are descriptive (not a GATE, no new threshold). The metric is
+physics_verify.measure_residual_energy(), imported unchanged.
+"""
+import copy, json, math, sys
+from pathlib import Path
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE / "tools_before"))
+import physics_verify as pv  # noqa: E402
+sys.path.insert(0, str(HERE))
+import t60_terms as tt  # noqa: E402  (prints its own report on import)
+
+SR, DUR = 48000, 2.2
+NOTEOFF = 2.0 * pv.T60_NOTEOFF_RATIO
+F = 261.626
+
+print("\n(1) single decaying sinusoid, f=261.626 Hz, bands = own +/-3%:")
+print("    T60 (s) | F5 'residual' = own leakage (dB re own energy)")
+for t60 in (1.0, 1.5, 2.0, 2.5, 2.6733, 2.8737, 3.0, 3.5, 3.8744, 4.1425,
+            5.0, 6.0, 8.0, 10.0, 15.0, 20.0, 50.0):
+    x = pv.synth_theory_signal([[{"freq": F, "amp": 1.0, "decay": t60}]], SR, DUR)
+    r = pv.measure_residual_energy(SR, x, [F], NOTEOFF)
+    print(f"    {t60:7.4f} | {r:+8.2f}")
+
+# (2) bridge-loss scan on the real before dump.
+ev = json.loads((HERE / "run_before_own/probe_piano_60_85_20_resid.dump.json")
+                .read_text(encoding="utf-8"))["events"][0]
+S0 = ev["strings"]
+Lb = 0.35 * 2 ** (-(60 - 69) / 12)
+db = 0.0008
+Tb = tt.tension(60, Lb, db, tt.steel["density"])
+bl0 = tt.bridge_loss(Tb, Lb, tt.spruce)
+eta = tt.steel["damping"]["eta"]
+
+
+def t60_of(f, k):
+    qa, qv, qd = tt.q_air_visc_disl(f, db / 2, Tb, tt.steel)
+    return 1.0 / ((eta + qa + qv + qd) * f / tt.ETA_TO_RATE + k * bl0)
+
+
+# validate the mirror against the dump at k=1
+maxrel = max(abs(t60_of(m["freq"], 1.0) - m["decay"]) / m["decay"]
+             for v in S0 for m in v)
+print(f"\n(2) mirror check: max |T60_python - T60_dump| / T60_dump over 120 modes "
+      f"= {maxrel:.2e}")
+freqs = sorted({float(m["freq"]) for v in S0 for m in v})
+print("    bridgeLoss x k | fundamental T60 (s) | F5 piano residual (dB re total)")
+rows = []
+for k in (0.0, 0.25, 0.5, 0.75, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.6962, 1.8, 2.0, 2.5, 3.0):
+    S = copy.deepcopy(S0)
+    for v in S:
+        for m in v:
+            m["decay"] = t60_of(m["freq"], k)
+    x = pv.synth_theory_signal(S, SR, DUR)
+    r = pv.measure_residual_energy(SR, x, freqs, NOTEOFF)
+    rows.append((k, S[1][0]["decay"], r))
+    print(f"    {k:6.4f}        | {S[1][0]['decay']:8.4f}            | {r:+8.2f}")
+# linear interpolation of the -60 dB crossing (descriptive only)
+for (k1, t1, r1), (k2, t2, r2) in zip(rows, rows[1:]):
+    if (r1 - (-60.0)) * (r2 - (-60.0)) <= 0 and r1 != r2:
+        w = (-60.0 - r1) / (r2 - r1)
+        print(f"    existing -60 dB line crossed between k={k1} and k={k2}: "
+              f"fundamental T60 ~= {t1 + w*(t2-t1):.3f} s "
+              f"(linear interpolation, descriptive, not a threshold)")
+
+==================== output/wf0925/F5/t60_table.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5: fundamental T60 across the keyboard, before vs after candidate,
+straight from --dump-modes (engine truth), piano engine, steel, v=0.85.
+before is shown for diameter_mm 0.8 (probe/score default) and 1.0
+(physical_piano.score.json). after ignores diameter_mm (table). Descriptive."""
+import json, subprocess, sys
+from pathlib import Path
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE / "tools_before"))
+import physics_verify as pv
+out = HERE / "t60_table"; out.mkdir(exist_ok=True)
+clis = {"before": HERE / "cli_before_own/TsukiSynthCLI.exe",
+        "after": HERE / "cli_after/TsukiSynthCLI.exe"}
+def f1_t60(cli, midi, dmm):
+    pv.ENGINES["piano"]["params"] = {"material": "steel", "diameter_mm": dmm}
+    sf, _ = pv.build_probe_score("piano", midi, out, dur=0.05, tag=f"_d{int(dmm*10)}")
+    r = subprocess.run([str(cli), "--dump-modes", str(sf)], capture_output=True, text=True, timeout=600)
+    ev = json.loads(r.stdout)["events"][0]; s = ev["strings"]; mid = s[len(s)//2]
+    return mid[0]["freq"], mid[0]["decay"]
+print("MIDI | f1 (Hz) | T60 before d=0.8mm | T60 before d=1.0mm | T60 after (table) | after/before(0.8) | after/before(1.0)")
+for m in (21, 24, 36, 48, 60, 64, 67, 69, 72, 79, 84, 91, 96, 108):
+    f, tb8 = f1_t60(clis["before"], m, 0.8)
+    _, tb10 = f1_t60(clis["before"], m, 1.0)
+    _, ta = f1_t60(clis["after"], m, 0.8)
+    print(f"{m:4d} | {f:8.2f} | {tb8:8.3f} | {tb10:8.3f} | {ta:8.3f} | {ta/tb8:6.3f} | {ta/tb10:6.3f}")
+
+==================== output/wf0925/F5/b_variants.py ====================
+# -*- coding: utf-8 -*-
+"""WF0925-F5: inharmonicity B (closed form B=(r-1)/(4-r), r=(f2/2f1)^2, the
+same definition as reports/d11_string_scale_before_after.md §2) and
+fundamental T60 for: before (d=1.0 mm score), full candidate (table L+d),
+and the L-only variant (table L, score d=1.0 mm; variant CLI with
+TSUKI_F5_EXP=L_only). Piano engine, steel, from --dump-modes string 0.
+Descriptive only; A14 §3.10 measured B=2e-4 (G5/G6) quoted from the D11 report."""
+import json, os, subprocess, sys
+from pathlib import Path
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE / "tools_before"))
+import physics_verify as pv
+out = HERE / "b_variants"; out.mkdir(exist_ok=True)
+cfg = [("before d=1.0", HERE / "cli_before_own/TsukiSynthCLI.exe", None),
+       ("candidate", HERE / "cli_after/TsukiSynthCLI.exe", None),
+       ("L-only d=1.0", HERE / "cli_variant/TsukiSynthCLI.exe", "L_only")]
+def dump(cli, exp, midi):
+    env = dict(os.environ)
+    env.pop("TSUKI_F5_EXP", None)
+    if exp: env["TSUKI_F5_EXP"] = exp
+    pv.ENGINES["piano"]["params"] = {"material": "steel", "diameter_mm": 1.0}
+    sf, _ = pv.build_probe_score("piano", midi, out, vel=0.45, dur=0.05, tag="_b")
+    r = subprocess.run([str(cli), "--dump-modes", str(sf)], capture_output=True, text=True, env=env, timeout=600)
+    p = json.loads(r.stdout)["events"][0]["partials"]
+    f1, f2 = p[0]["freq"], p[1]["freq"]
+    rr = (f2 / (2 * f1)) ** 2
+    return (rr - 1) / (4 - rr), p[0]["decay"]
+notes = [(36, "C2"), (67, "G4"), (69, "A4"), (79, "G5"), (91, "G6"), (96, "C7"), (98, "D7")]
+print("note | B before(d=1.0) | B candidate | B L-only(d=1.0) | T60 f1 before | candidate | L-only")
+for m, name in notes:
+    vals = [dump(c, e, m) for _, c, e in cfg]
+    print(f"{name:3s}({m}) | {vals[0][0]:.4e} | {vals[1][0]:.4e} | {vals[2][0]:.4e} | "
+          f"{vals[0][1]:7.3f} | {vals[1][1]:7.3f} | {vals[2][1]:7.3f}")
+
+==================== output/wf0925/F5/gen_evidence.sh ====================
+#!/usr/bin/env bash
+# WF0925-F5 evidence generator. Run from the repo root:
+#   bash output/wf0925/F5/gen_evidence.sh
+# Every block prints the exact command ("$ ...") followed by its output.
+set -u
+cd /c/Users/admin/Desktop/Claude/tsuki-synth || exit 1
+F=output/wf0925/F5
+G=reports/gate_outputs
+run() { echo "\$ $*"; eval "$@" 2>&1; echo "[exit=$?]"; echo; }
+
+# ---------------------------------------------------------------------------
+{
+echo "WF0925-F5 evidence 1/6: isolated build (HEAD archive + D11 patch), CLI identities"
+echo "generated: $(date '+%Y-%m-%d %H:%M:%S %z')   HEAD: $(git rev-parse --short HEAD)"
+echo
+echo "## Commands used to build the isolated tree (run once earlier in this card):"
+echo "#   mkdir -p $F/tree && git archive HEAD | tar -x -C $F/tree"
+echo "#   rmdir $F/tree/libs/JUCE   (empty submodule placeholder)"
+echo "#   cmd /c mklink /J JUCE C:\\Users\\admin\\Desktop\\Claude\\tsuki-synth\\libs\\JUCE   (in $F/tree/libs, PowerShell)"
+echo "#   GIT_CEILING_DIRECTORIES=<abs>/$F  cmake -B build -DCMAKE_BUILD_TYPE=Release -A x64   (in $F/tree)"
+echo "#   cmake --build build --config Release --target TsukiSynthCLI   -> copied to $F/cli_before_own/"
+echo "#   patch -p1 < reports/d11_string_scale_candidate.patch ; rebuild TsukiSynthCLI -> $F/cli_after/"
+echo "#   (then an experiment-switch variant, see variant.diff below) ; rebuild -> $F/cli_variant/"
+echo "#   (git apply was NOT used: the scratch tree sits inside the main work tree, so git would"
+echo "#    resolve paths against the main repo; GNU patch -p1 is purely cwd-relative.)"
+echo
+echo "## Re-verification on a FRESH archive (tree_check, no junction inside):"
+run "rm -rf $F/tree_check && mkdir -p $F/tree_check && git archive HEAD | tar -x -C $F/tree_check && ls $F/tree_check/libs"
+run "(cd $F/tree_check && patch -p1 --dry-run < ../../../../reports/d11_string_scale_candidate.patch)"
+run "(cd $F/tree_check && patch -p1 < ../../../../reports/d11_string_scale_candidate.patch)"
+echo "## tree_check (HEAD + patch) vs the pure-patched source that cli_after was built from:"
+run "diff --strip-trailing-cr $F/tree_check/src/engines/CimbalomEngine.h $F/cli_after/CimbalomEngine.h.patched_pure && echo IDENTICAL_CimbalomEngine"
+run "diff --strip-trailing-cr $F/tree_check/src/physics/StringModel.h $F/tree/src/physics/StringModel.h && echo IDENTICAL_StringModel"
+run "diff --strip-trailing-cr $F/tree_check/tools/physics_verify.py $F/tools_after/physics_verify.py && echo IDENTICAL_physics_verify_after"
+run "git show HEAD:tools/physics_verify.py | diff --strip-trailing-cr - $F/tools_before/physics_verify.py && echo tools_before_equals_HEAD"
+run "rm -rf $F/tree_check"
+echo "## experiment-switch variant (scratch tree only; env TSUKI_F5_EXP; unset = pure candidate):"
+run "cat $F/variant.diff"
+echo "## build log tails"
+run "tail -2 $F/build_before.log"
+run "tail -2 $F/build_after.log"
+run "tail -2 $F/build_variant.log"
+echo "## CLI binaries used"
+run "sha256sum build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe $F/cli_build/TsukiSynthCLI.exe $F/cli_before_own/TsukiSynthCLI.exe $F/cli_after/TsukiSynthCLI.exe $F/cli_variant/TsukiSynthCLI.exe reports/d11_string_scale_candidate.patch"
+echo "## safety: junction removed (cmd rmdir, link only), JUCE file count unchanged, main repo untouched"
+run "cat $F/juce_filecount_before.txt; find libs/JUCE -type f | wc -l"
+run "ls -la $F/tree/libs/"
+run "grep -c 'lengthFromScaleTable\|diameterFromScaleTable\|TSUKI_F5_EXP\|_d11_anchor' src/physics/StringModel.h src/engines/CimbalomEngine.h tools/physics_verify.py || echo '(grep exit 1 = zero matches in every file)'"
+run "git diff --stat HEAD -- src/physics/StringModel.h"
+run "git status --porcelain -- src/physics/StringModel.h src/engines/CimbalomEngine.h tools/physics_verify.py reports/d11_string_scale_candidate.patch"
+} > $G/wf0925_F5_isolated_build.txt
+
+# ---------------------------------------------------------------------------
+{
+echo "WF0925-F5 evidence 2/6: reproduce the F5 numbers (exact physics_verify.report_residual_energy)"
+echo "generated: $(date '+%Y-%m-%d %H:%M:%S %z')"
+echo
+echo "## fresh output dirs (TsukiSynthCLI refuses to overwrite an existing wav/manifest)"
+run "rm -rf $F/run_build $F/run_before_own $F/run_after"
+run "python $F/f5_probe.py --tools $F/tools_before --cli $F/cli_build/TsukiSynthCLI.exe --outdir $F/run_build"
+run "python $F/f5_probe.py --tools $F/tools_before --cli $F/cli_before_own/TsukiSynthCLI.exe --outdir $F/run_before_own"
+run "python $F/f5_probe.py --tools $F/tools_after --cli $F/cli_after/TsukiSynthCLI.exe --outdir $F/run_after"
+run "sha256sum $F/run_*/probe_piano_60_85_20_resid.wav $F/run_*/probe_cimbalom_60_85_20_resid.wav"
+run "cmp $F/run_build/probe_piano_60_85_20_resid.dump.json $F/run_before_own/probe_piano_60_85_20_resid.dump.json && echo DUMP_IDENTICAL_build_vs_before_own"
+echo "## historical F5 piano residual in versioned gate outputs (date = first commit of the file)"
+run "for f in \$(grep -l 'piano       residual' $G/*.txt | grep -v wf0925_F5_); do d=\$(git log --diff-filter=A --format=%ad --date=short -- \$f | tail -1); v=\$(grep -m1 'piano       residual' \$f | sed 's/.*residual: *//; s/ dB.*//'); echo \"\$d \$v \$(basename \$f)\"; done | sort"
+} > $G/wf0925_F5_reproduce.txt
+
+# ---------------------------------------------------------------------------
+{
+echo "WF0925-F5 evidence 3/6: where the residual sits, and which dumped quantity moves it"
+echo "generated: $(date '+%Y-%m-%d %H:%M:%S %z')"
+echo "(all numbers descriptive; metric = physics_verify.measure_residual_energy imported unchanged)"
+echo
+run "python $F/analyze_residual.py --tools $F/tools_before --run $F/run_before_own --eng piano"
+run "python $F/analyze_residual.py --tools $F/tools_after --run $F/run_after --eng piano"
+run "python $F/analyze_residual.py --tools $F/tools_before --run $F/run_before_own --eng cimbalom --top 4"
+run "python $F/analyze_residual.py --tools $F/tools_after --run $F/run_after --eng cimbalom --top 4"
+run "python $F/hybrid_theory.py --tools $F/tools_before --before $F/run_before_own --after $F/run_after --eng piano"
+run "python $F/hybrid_theory.py --tools $F/tools_before --before $F/run_before_own --after $F/run_after --eng cimbalom"
+run "python - <<'EOF'
+import json
+for v in ['run_before_own','run_after']:
+    s=json.load(open('$F/'+v+'/probe_piano_60_85_20_resid.dump.json',encoding='utf-8'))['events'][0]['strings']
+    print(v, 'piano MIDI60, center string, partials n=1..8: freq / amp / T60')
+    for i in range(8):
+        m=s[1][i]; print('   n=%d  %9.3f Hz  %.5f  %.4f s' % (i+1, m['freq'], m['amp'], m['decay']))
+EOF"
+run "python $F/beat_check.py"
+} > $G/wf0925_F5_decomposition.txt
+
+# ---------------------------------------------------------------------------
+{
+echo "WF0925-F5 evidence 4/6: render-level single-variable experiments (real CLI renders)"
+echo "generated: $(date '+%Y-%m-%d %H:%M:%S %z')"
+echo
+echo "## fresh output dirs (TsukiSynthCLI refuses to overwrite an existing wav/manifest)"
+run "rm -rf $F/rx_before_cli $F/rx_after_cli $F/rx_variant_default $F/rx_variant_old $F/rx_variant_L_only $F/rx_variant_d_only $F/rx_before_cli_d1p0 $F/rx_variant_decay_only $F/rx_numstrings_* $F/rx_dscan_*"
+V=$F/cli_variant/TsukiSynthCLI.exe; B=$F/cli_before_own/TsukiSynthCLI.exe; A=$F/cli_after/TsukiSynthCLI.exe
+run "python $F/f5_render_exp.py --tools $F/tools_before --outdir $F/rx_before_cli --cli $B"
+run "python $F/f5_render_exp.py --tools $F/tools_before --outdir $F/rx_after_cli --cli $A"
+run "python $F/f5_render_exp.py --tools $F/tools_before --outdir $F/rx_variant_default --cli $V"
+run "python $F/f5_render_exp.py --tools $F/tools_before --outdir $F/rx_variant_old --cli $V --exp old"
+run "python $F/f5_render_exp.py --tools $F/tools_before --outdir $F/rx_variant_L_only --cli $V --exp L_only"
+run "python $F/f5_render_exp.py --tools $F/tools_before --outdir $F/rx_variant_d_only --cli $V --exp d_only"
+run "python $F/f5_render_exp.py --tools $F/tools_before --outdir $F/rx_before_cli_d1p0 --cli $B --piano-diameter-mm 1.0"
+run "python $F/f5_render_exp.py --tools $F/tools_before --outdir $F/rx_variant_decay_only --cli $V --exp decay_only"
+run "python $F/f5_numstrings.py"
+run "python $F/d_scan.py"
+} > $G/wf0925_F5_single_variable.txt
+
+# ---------------------------------------------------------------------------
+{
+echo "WF0925-F5 evidence 5/6: why T60 moved, and how the F5 metric responds to T60"
+echo "generated: $(date '+%Y-%m-%d %H:%M:%S %z')"
+echo
+run "python $F/t60_terms.py"
+run "python $F/leak_curve.py"
+run "python $F/t60_table.py"
+run "python $F/b_variants.py"
+} > $G/wf0925_F5_t60_mechanism.txt
+echo done

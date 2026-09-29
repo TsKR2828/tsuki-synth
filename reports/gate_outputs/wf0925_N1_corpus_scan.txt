@@ -1,0 +1,123 @@
+# WF0925-N1 evidence — generated 2026-09-25 06:01:21 +0800
+# cwd: /c/Users/admin/Desktop/Claude/tsuki-synth
+# git HEAD: 18430c4
+# CLI: output/wf0925/N1/cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8
+$ python reports/weak_fundamental_null_map/scan_corpus.py --cli output/wf0925/N1/cli.exe
+
+scores/examples/akashic_bell.score.json                                                                     strings=    0 near=   0 weak=   0 either=   0
+scores/examples/epiano_3stack_test.score.json                                                               strings=    0 near=   0 weak=   0 either=   0
+scores/examples/fur_elise_opening.score.json                                                                strings=    0 near=   0 weak=   0 either=   0
+scores/examples/layered_transition.score.json                                                               strings=    1 near=   0 weak=   0 either=   0
+scores/examples/moonlight_sonata_complete.score.json                                                        strings=    0 near=   0 weak=   0 either=   0
+scores/examples/moonlight_sonata_movement1_tongue_drum.score.json                                           strings=    0 near=   0 weak=   0 either=   0
+scores/examples/moonlight_sonata_movement1_yangqin.score.json                                               strings= 1142 near=   0 weak=   0 either=   0
+scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json                                    strings= 1142 near=   0 weak=   0 either=   0
+scores/examples/physical_piano.score.json                                                                   strings=    4 near=   0 weak=   0 either=   0
+scores/examples/rabbit_warning.score.json                                                                   strings=    0 near=   0 weak=   0 either=   0
+scores/examples/restraint_metal_click.score.json                                                            strings=    1 near=   0 weak=   0 either=   0
+scores/examples/water_gong_clamped.score.json                                                               strings=    0 near=   0 weak=   0 either=   0
+scores/examples/water_gong_free.score.json                                                                  strings=    0 near=   0 weak=   0 either=   0
+scores/classical/fur_elise/fur_elise_complete.score.json                         fur_elise_complete         strings=  905 near=  47 weak=  17 either=  47
+scores/classical/fur_elise/fur_elise_complete_cimbalom.score.json                fur_elise_complete_cimbalo strings=  905 near=   0 weak=   0 either=   0
+scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m1.score.json                            strings= 3111 near= 721 weak= 183 either= 721
+scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m2.score.json                            strings=  187 near=  32 weak=  14 either=  32
+scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m3.score.json                            strings= 2582 near= 404 weak=  77 either= 404
+scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m1.score.json                            strings= 3173 near= 714 weak= 248 either= 714
+scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m2.score.json                            strings= 1042 near= 267 weak= 163 either= 267
+scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m3.score.json                            strings= 2071 near= 545 weak= 257 either= 545
+scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m1.score.json                            strings= 3621 near= 614 weak= 203 either= 614
+scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m2.score.json                            strings=  629 near= 224 weak=  59 either= 224
+scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m3.score.json                            strings= 5158 near=1054 weak= 510 either=1054
+scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m1.score.json                            strings= 3255 near= 534 weak= 228 either= 534
+scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m2.score.json                            strings=  851 near= 113 weak=  86 either= 113
+scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m3.score.json                            strings= 2696 near= 460 weak=  99 either= 460
+scores/originals/ai_radiance/ai_radiance_complete.score.json                     ai_radiance_complete       strings=  136 near=   0 weak=   0 either=   0
+scores/originals/ai_radiance/ai_radiance_m1.score.json                           ai_radiance_m1             strings=   32 near=   0 weak=   0 either=   0
+scores/originals/ai_radiance/ai_radiance_m2.score.json                           ai_radiance_m2             strings=   72 near=   0 weak=   0 either=   0
+scores/originals/ai_radiance/ai_radiance_m3.score.json                           ai_radiance_m3             strings=   16 near=   0 weak=   0 either=   0
+scores/originals/ai_radiance/ai_radiance_m4.score.json                           ai_radiance_m4             strings=   16 near=   0 weak=   0 either=   0
+scores/library/akashic/akashic_action_001.score.json                             akashic_action_001         strings=    1 near=   0 weak=   0 either=   0
+scores/library/akashic/akashic_ambient_001.score.json                            akashic_ambient_001        strings=    0 near=   0 weak=   0 either=   0
+scores/library/akashic/akashic_loop_001.score.json                               akashic_loop_001           strings=    0 near=   0 weak=   0 either=   0
+scores/library/akashic/akashic_notify_001.score.json                             akashic_notify_001         strings=    0 near=   0 weak=   0 either=   0
+scores/library/akashic/akashic_opening_bell_001.score.json                       akashic_opening_bell_001   strings=    0 near=   0 weak=   0 either=   0
+scores/library/akashic/akashic_transition_001.score.json                         akashic_transition_001     strings=    0 near=   0 weak=   0 either=   0
+scores/library/akashic/akashic_transition_var01.score.json                       akashic_transition_var01   strings=    0 near=   0 weak=   0 either=   0
+scores/library/akashic/akashic_ui_001.score.json                                 akashic_ui_001             strings=    0 near=   0 weak=   0 either=   0
+scores/library/clockwork/clockwork_action_001.score.json                         clockwork_action_001       strings=    1 near=   0 weak=   0 either=   0
+scores/library/clockwork/clockwork_ambient_001.score.json                        clockwork_ambient_001      strings=    0 near=   0 weak=   0 either=   0
+scores/library/clockwork/clockwork_loop_001.score.json                           clockwork_loop_001         strings=    0 near=   0 weak=   0 either=   0
+scores/library/clockwork/clockwork_notify_001.score.json                         clockwork_notify_001       strings=    0 near=   0 weak=   0 either=   0
+scores/library/clockwork/clockwork_notify_var01.score.json                       clockwork_notify_var01     strings=    0 near=   0 weak=   0 either=   0
+scores/library/clockwork/clockwork_transition_001.score.json                     clockwork_transition_001   strings=    0 near=   0 weak=   0 either=   0
+scores/library/clockwork/clockwork_ui_001.score.json                             clockwork_ui_001           strings=    0 near=   0 weak=   0 either=   0
+scores/library/forest/forest_action_001.score.json                               forest_action_001          strings=    0 near=   0 weak=   0 either=   0
+scores/library/forest/forest_ambient_001.score.json                              forest_ambient_001         strings=    0 near=   0 weak=   0 either=   0
+scores/library/forest/forest_loop_001.score.json                                 forest_loop_001            strings=    0 near=   0 weak=   0 either=   0
+scores/library/forest/forest_notify_001.score.json                               forest_notify_001          strings=    0 near=   0 weak=   0 either=   0
+scores/library/forest/forest_notify_var01.score.json                             forest_notify_var01        strings=    0 near=   0 weak=   0 either=   0
+scores/library/forest/forest_transition_001.score.json                           forest_transition_001      strings=    0 near=   0 weak=   0 either=   0
+scores/library/forest/forest_ui_001.score.json                                   forest_ui_001              strings=    0 near=   0 weak=   0 either=   0
+scores/library/ocean/ocean_action_001.score.json                                 ocean_action_001           strings=    1 near=   0 weak=   0 either=   0
+scores/library/ocean/ocean_ambient_001.score.json                                ocean_ambient_001          strings=    2 near=   0 weak=   0 either=   0
+scores/library/ocean/ocean_loop_001.score.json                                   ocean_loop_001             strings=    2 near=   0 weak=   0 either=   0
+scores/library/ocean/ocean_notify_001.score.json                                 ocean_notify_001           strings=    0 near=   0 weak=   0 either=   0
+scores/library/ocean/ocean_notify_var01.score.json                               ocean_notify_var01         strings=    0 near=   0 weak=   0 either=   0
+scores/library/ocean/ocean_transition_001.score.json                             ocean_transition_001       strings=    1 near=   0 weak=   0 either=   0
+scores/library/ocean/ocean_ui_001.score.json                                     ocean_ui_001               strings=    0 near=   0 weak=   0 either=   0
+scores/library/rabbit/rabbit_action_001.score.json                               rabbit_action_001          strings=    1 near=   0 weak=   0 either=   0
+scores/library/rabbit/rabbit_ambient_001.score.json                              rabbit_ambient_001         strings=    0 near=   0 weak=   0 either=   0
+scores/library/rabbit/rabbit_loop_001.score.json                                 rabbit_loop_001            strings=    0 near=   0 weak=   0 either=   0
+scores/library/rabbit/rabbit_notify_001.score.json                               rabbit_notify_001          strings=    0 near=   0 weak=   0 either=   0
+scores/library/rabbit/rabbit_notify_var01.score.json                             rabbit_notify_var01        strings=    0 near=   0 weak=   0 either=   0
+scores/library/rabbit/rabbit_transition_001.score.json                           rabbit_transition_001      strings=    0 near=   0 weak=   0 either=   0
+scores/library/rabbit/rabbit_ui_001.score.json                                   rabbit_ui_001              strings=    0 near=   0 weak=   0 either=   0
+scores/library/restraint/restraint_action_001.score.json                         restraint_action_001       strings=    1 near=   0 weak=   0 either=   0
+scores/library/restraint/restraint_ambient_001.score.json                        restraint_ambient_001      strings=    2 near=   0 weak=   0 either=   0
+scores/library/restraint/restraint_loop_001.score.json                           restraint_loop_001         strings=    0 near=   0 weak=   0 either=   0
+scores/library/restraint/restraint_notify_001.score.json                         restraint_notify_001       strings=    0 near=   0 weak=   0 either=   0
+scores/library/restraint/restraint_notify_var01.score.json                       restraint_notify_var01     strings=    0 near=   0 weak=   0 either=   0
+scores/library/restraint/restraint_transition_001.score.json                     restraint_transition_001   strings=    2 near=   0 weak=   0 either=   0
+scores/library/restraint/restraint_ui_001.score.json                             restraint_ui_001           strings=    0 near=   0 weak=   0 either=   0
+
+==== corpus scan ====
+{
+ "cli": "C:\\Users\\admin\\Desktop\\Claude\\tsuki-synth\\output\\wf0925\\N1\\cli.exe",
+ "stem_offset_db_used": -6.6678917867293634,
+ "files_scanned": 75,
+ "products_in_catalog": 50,
+ "products_found_in_corpus": 50,
+ "totals": {
+  "string_family_events": 32762,
+  "near_null": 5729,
+  "weak_n1n2": 2144,
+  "either": 5729
+ },
+ "flagged_events": 5729,
+ "flagged_in_products": 47,
+ "flagged_products": {
+  "fur_elise_complete": 47
+ },
+ "flagged_by_file": {
+  "scores/classical/fur_elise/fur_elise_complete.score.json": 47,
+  "scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m1.score.json": 721,
+  "scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m2.score.json": 32,
+  "scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m3.score.json": 404,
+  "scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m1.score.json": 714,
+  "scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m2.score.json": 267,
+  "scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m3.score.json": 545,
+  "scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m1.score.json": 614,
+  "scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m2.score.json": 224,
+  "scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m3.score.json": 1054,
+  "scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m1.score.json": 534,
+  "scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m2.score.json": 113,
+  "scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m3.score.json": 460
+ },
+ "flagged_by_engine_hardness": {
+  "piano/Felt": 47,
+  "string/Cotton": 5682
+ },
+ "files_with_string_family": 34
+}
+
+# rc=0

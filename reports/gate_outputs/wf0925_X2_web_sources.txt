@@ -1,0 +1,54 @@
+# wf0925_X2_web_sources.txt
+# generated 2026-09-25T08:32:27  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_web_sources.py
+
+== steinberg_usage_guidelines
+URL: https://steinbergmedia.github.io/vst3_dev_portal/pages/VST+3+Licensing/Usage+guidelines.html
+curl rc=0 -> 200 23198 https://steinbergmedia.github.io/vst3_dev_portal/pages/VST+3+Licensing/Usage+guidelines.html
+raw bytes sha256: a3dd1e2d5387bd8a6f220f81d0834a72fc0ba5a2e740d06f6c8ac687c1c351de  (saved: output/wf0925/X2/web/steinberg_usage_guidelines.html, gitignored)
+  [FOUND] “Trademark usage (e.g. "VST" name or logo) is optional under MIT license, but if used, must comply with Steinberg's official trademark rules.”
+  [FOUND] “Included in the VST SDK, the VST compatible Logo can be found in the folder VST_SDK/VST3_SDK/vst3_doc/artwork.”
+  [FOUND] “The VST Compatible Logo must be visible on every web page referencing or promoting a product using or created with the VST SDK. Displaying the VST Compatible Logo only in a site-wide footer or imprint is not sufficient.”
+  [FOUND] “The VST Compatible Logo should appear in the About Box or equivalent UI element (e.g., help menu or splash screen). If space is insufficient, the attribution notice must be used.”
+  [FOUND] “In all cases, the VST Compatible Logo must appear in relevant context, adjacent to or associated with the use of the term “VST”.”
+  [FOUND] ““VST” is used in plain text, e.g., “MyCoolEngine for VST”.”
+  [FOUND] “The VST Compatible Logo is shown in immediate visual proximity.”
+  [FOUND] ““VST” is not graphically stylized, embedded into the VST Compatible Logo, or merged into the core product brand.”
+  [FOUND] “If a still frame from the video includes the term “VST”, the VST Compatible Logo must also be present in the frame or immediately adjacent context.”
+  [FOUND] “It is not permitted to create modified terms or compositions such as “VSTi” or other abbreviations, blends, or derivatives.”
+  [FOUND] “Minimum printing size = 15 x 10 mm”
+  [FOUND] “The first use of “VST” in any product-related material must include the ® symbol.”
+  [FOUND] “"VST is a registered trademark of Steinberg Media Technologies GmbH."”
+
+== fab_licenses_and_pricing
+URL: https://dev.epicgames.com/documentation/en-us/fab/licenses-and-pricing-in-fab
+curl rc=0 -> 200 99031 https://dev.epicgames.com/documentation/en-us/fab/licenses-and-pricing-in-fab
+raw bytes sha256: 059dd5f1111f595f1dc8f8e95386a6c7a3bdd46f548a8c6706b1a39a8f7e2d07  (saved: output/wf0925/X2/web/fab_licenses_and_pricing.html, gitignored)
+  [FOUND] “Creative Commons Attribution (CC-BY) (Free)”
+  [FOUND] “Standard (Free or For Sale)”
+  [FOUND] “The NoAI meta tag indicates that an asset must not be used for generative AI data collection. However, NoAI meta tags might not be compatible with Creative Commons licenses. This means that you cannot offer an asset with the NoAI meta tag under the Creative Commons Attribution license. In order to be able to use the NoAI tag you must offer the asset under the Standard license.”
+  [FOUND] “Publishers must offer their products under the Personal tier and the Professional tier. They can set the same price for both tiers, or different prices for each tier.”
+  [FOUND] “Epic Games is phasing out the UE Marketplace License. This means that new products cannot be published under that license.”
+
+== fab_asset_file_format_requirements
+URL: https://dev.epicgames.com/documentation/fab/asset-file-format-and-structure-requirements-in-fab
+curl rc=0 -> 200 478105 https://dev.epicgames.com/documentation/fab/asset-file-format-and-structure-requirements-in-fab
+raw bytes sha256: 7ecd83fd957502e0b06f12ac3934a95bdbb2344722ece4c468aad5da9b9bacfa  (saved: output/wf0925/X2/web/fab_asset_file_format_requirements.html, gitignored)
+  [FOUND] “If you include additional files, they must relate to the product listing they are included with.”
+  [FOUND] “Audio / Sounds and music. / Game engines / UEFN Source / Unreal Engine / Unity”
+  [FOUND] “Standard Sound Effects: Approximately 20+ high-quality sounds.”
+  [FOUND] “The product page must contain a way for Fab users to listen to samples of the sound effects.”
+  [FOUND] “For files with the type "Additional Files", the size limit is 6GB.”
+  [FOUND] “Minimum Image size: 1920 x 1080 pixels”
+  [FOUND] “File size: less than 3MB”
+  [FOUND] “You must declare whether your product includes, uses, depends on, or distributes third-party software of any kind.”
+  [FOUND] “Provide audio at the highest quality possible, with no unintended hitching or distortion.”
+
+== fab_eula
+URL: https://www.fab.com/eula
+curl rc=0 -> 403 25201 https://www.fab.com/eula
+raw bytes sha256: d572cdaaf762aec8d5e998f26de56c034e4bd3b934d189c391f87d48a08ab625  (saved: output/wf0925/X2/web/fab_eula.html, gitignored)
+  HTTP 403; bot challenge page detected: True -> NOT READ, NOT BYPASSED
+
+GATE verbatim quotes found in fetched pages: 27/27
+RESULT: PASS

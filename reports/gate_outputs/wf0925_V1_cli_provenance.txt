@@ -1,0 +1,47 @@
+# WF0925-V1 CLI / 環境出處（研究 lane；不動 src/tools/tests；本檔由 V1 接手者 2026-09-25 產生）
+# cwd = repo root: /c/Users/admin/Desktop/Claude/tsuki-synth
+# HEAD = 18430c4d9307ab9f693592663a373f9c5c7cdb10  branch = fix/deep-physics-audit-20260716
+
+$ sha256sum output/wf0925/V1/cli.exe build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 *output/wf0925/V1/cli.exe
+9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+$ ls -la --time-style=full-iso output/wf0925/V1/cli.exe build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+-rwxr-xr-x 1 admin 197609 7132160 2026-09-15 02:07:56.001343900 +0800 build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+-rwxr-xr-x 1 admin 197609 7132160 2026-09-25 06:06:23.173173200 +0800 output/wf0925/V1/cli.exe
+
+# 哪支工具用哪支 exe：
+#  - reports/wf0925_method/*.py（dump_corpus_modes / voice_lifetime_probe / voice_cpu_bench）都用 --cli 指向複本 output/wf0925/V1/cli.exe
+#  - tools/stem_verify.py 與 tools/partial_verify.py 沒有 --cli 參數（見下方 --help），一律走 verify_score.find_cli()，
+#    實際用到的是 build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe（log 的 [find_cli] 行與報告 JSON 的 cli.sha256 為證），
+#    與複本 SHA256 相同（上方 sha256sum）。
+$ python tools/stem_verify.py --help | grep -n -- "--cli" ; echo "exit=$?"
+exit=1 (1 = 沒有 --cli 參數)
+$ python tools/partial_verify.py --help | grep -n -- "--cli" ; echo "exit=$?"
+exit=1 (1 = 沒有 --cli 參數)
+$ grep -n "vs.find_cli()" tools/stem_verify.py tools/partial_verify.py
+tools/stem_verify.py:898:    cli = vs.find_cli()
+tools/partial_verify.py:536:    cli = vs.find_cli()
+tools/partial_verify.py:769:    cli = vs.find_cli()
+
+$ python -c "import json;...stem_full_report.json provenance.cli / partial_full_report.json cli"
+stem_full_report.json   cli = {'path': 'build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe', 'sha256': '9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8'}
+partial_full_report.json cli = {'path': 'build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe', 'sha256': '9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8'}
+$ grep -h cli_sha256 output/wf0925/V1/dumps/manifest.json output/wf0925/V1/dumps_reachable/manifest.json
+ "cli_sha256": "9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8",
+ "cli_sha256": "9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8",
+
+# 工作樹中其他卡（WF0925-P1）對 tools/verify_score.py、tools/partial_verify.py 的未 commit 修改：只動 find_cli() 的選檔規則與
+# gate_ready_reason 說明字串，不影響任何量測數字（下方 diff 摘要）。stem_verify.py / melody_verify.py 與 HEAD 相同。
+$ git diff --stat HEAD -- tools/stem_verify.py tools/melody_verify.py tools/verify_score.py tools/partial_verify.py
+ tools/partial_verify.py | 25 ++++++++++++++++++++-----
+ tools/verify_score.py   | 44 ++++++++++++++++++++++++++++++++++++++------
+ 2 files changed, 58 insertions(+), 11 deletions(-)
+
+$ python --version ; python -c "import numpy,scipy;print(numpy.__version__,scipy.__version__)"
+Python 3.13.3
+numpy 2.4.4 scipy 1.17.1
+# 註：PATH 上的 python 是 3.13.3（共同規約寫 3.12；本機 py -3.12 找不到）。本輪全部用這支；前任的 log 沒記版本，推定是同一支 PATH python。
+
+# clean_batch2 商品（50 件）渲染時記下的 CLI SHA256，與本卡用的 CLI 相同：
+$ grep -rho '"renderer_executable_sha256": *"[0-9a-f]*"' exports/products/clean_batch2 | sort | uniq -c
+     50 "renderer_executable_sha256": "9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8"

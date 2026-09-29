@@ -1,0 +1,203 @@
+WF0925-F5 evidence 3/6: where the residual sits, and which dumped quantity moves it
+generated: 2026-09-25 06:21:51 +0800
+(all numbers descriptive; metric = physics_verify.measure_residual_energy imported unchanged)
+
+$ python output/wf0925/F5/analyze_residual.py --tools output/wf0925/F5/tools_before --run output/wf0925/F5/run_before_own --eng piano
+[run_before_own/piano] physics_verify.measure_residual_energy = -63.86 dB re total
+  re-computed here: -63.86 dB (must equal above)
+  out-of-band regions: 17; top 12 by power (share of residual, dB re total):
+        270.3 -     506.1 Hz :  54.28% of residual,  -66.51 dB re total
+          0.4 -     252.7 Hz :  44.79% of residual,  -67.35 dB re total
+        540.9 -     759.9 Hz :   0.92% of residual,  -84.21 dB re total
+        811.9 -    1014.4 Hz :   0.00% of residual, -110.93 dB re total
+       1083.6 -    1269.7 Hz :   0.00% of residual, -111.35 dB re total
+      13205.9 -   19999.9 Hz :   0.00% of residual, -112.43 dB re total
+       3313.8 -    3373.5 Hz :   0.00% of residual, -120.06 dB re total
+       3027.5 -    3102.5 Hz :   0.00% of residual, -123.33 dB re total
+       3603.1 -    3647.1 Hz :   0.00% of residual, -124.58 dB re total
+       2462.4 -    2568.6 Hz :   0.00% of residual, -124.61 dB re total
+       2743.7 -    2834.1 Hz :   0.00% of residual, -124.93 dB re total
+       1356.4 -    1526.4 Hz :   0.00% of residual, -126.33 dB re total
+  residual by coarse band (dB re total):
+         0-   250 Hz:   -73.70 dB ( 10.38% of residual)
+       250-  1000 Hz:   -64.34 dB ( 89.61% of residual)
+      1000-  2000 Hz:  -108.51 dB (  0.00% of residual)
+      2000-  4000 Hz:  -115.67 dB (  0.00% of residual)
+      4000-  8000 Hz:  -134.33 dB (  0.00% of residual)
+      8000- 12000 Hz: (no out-of-band bins: the +/-3% bands of neighbouring partials overlap and cover this whole range)
+     12000- 16000 Hz:  -116.25 dB (  0.00% of residual)
+     16000- 20001 Hz:  -114.76 dB (  0.00% of residual)
+  theory synthesis (dump modes only) residual: -63.86 dB re total
+  highest predicted mode: 12821.0 Hz; n modes 120
+[exit=0]
+
+$ python output/wf0925/F5/analyze_residual.py --tools output/wf0925/F5/tools_after --run output/wf0925/F5/run_after --eng piano
+[run_after/piano] physics_verify.measure_residual_energy = -58.49 dB re total
+  re-computed here: -58.49 dB (must equal above)
+  out-of-band regions: 18; top 12 by power (share of residual, dB re total):
+        270.3 -     506.1 Hz :  54.33% of residual,  -61.14 dB re total
+          0.4 -     252.7 Hz :  44.73% of residual,  -61.99 dB re total
+        540.9 -     759.9 Hz :   0.93% of residual,  -78.79 dB re total
+        811.9 -    1014.8 Hz :   0.00% of residual, -105.54 dB re total
+       1084.0 -    1270.4 Hz :   0.00% of residual, -106.01 dB re total
+      13475.5 -   19999.9 Hz :   0.00% of residual, -107.73 dB re total
+       3322.6 -    3383.8 Hz :   0.00% of residual, -110.53 dB re total
+       3034.1 -    3110.6 Hz :   0.00% of residual, -110.83 dB re total
+       2748.8 -    2840.7 Hz :   0.00% of residual, -110.90 dB re total
+       2466.1 -    2573.4 Hz :   0.00% of residual, -112.51 dB re total
+       3614.1 -    3660.3 Hz :   0.00% of residual, -119.91 dB re total
+       1357.2 -    1527.1 Hz :   0.00% of residual, -121.01 dB re total
+  residual by coarse band (dB re total):
+         0-   250 Hz:   -68.33 dB ( 10.39% of residual)
+       250-  1000 Hz:   -58.97 dB ( 89.61% of residual)
+      1000-  2000 Hz:  -103.14 dB (  0.00% of residual)
+      2000-  4000 Hz:  -104.83 dB (  0.00% of residual)
+      4000-  8000 Hz:  -134.13 dB (  0.00% of residual)
+      8000- 12000 Hz: (no out-of-band bins: the +/-3% bands of neighbouring partials overlap and cover this whole range)
+     12000- 16000 Hz:  -111.82 dB (  0.00% of residual)
+     16000- 20001 Hz:  -109.87 dB (  0.00% of residual)
+  theory synthesis (dump modes only) residual: -58.49 dB re total
+  highest predicted mode: 13082.7 Hz; n modes 120
+[exit=0]
+
+$ python output/wf0925/F5/analyze_residual.py --tools output/wf0925/F5/tools_before --run output/wf0925/F5/run_before_own --eng cimbalom --top 4
+[run_before_own/cimbalom] physics_verify.measure_residual_energy = -67.28 dB re total
+  re-computed here: -67.28 dB (must equal above)
+  out-of-band regions: 17; top 4 by power (share of residual, dB re total):
+        270.3 -     506.1 Hz :  54.10% of residual,  -69.95 dB re total
+          0.4 -     252.7 Hz :  43.59% of residual,  -70.88 dB re total
+        540.9 -     759.9 Hz :   2.22% of residual,  -83.82 dB re total
+        811.9 -    1014.4 Hz :   0.07% of residual,  -98.84 dB re total
+  residual by coarse band (dB re total):
+         0-   250 Hz:   -77.23 dB ( 10.11% of residual)
+       250-  1000 Hz:   -67.74 dB ( 89.86% of residual)
+      1000-  2000 Hz:  -105.11 dB (  0.02% of residual)
+      2000-  4000 Hz:  -109.21 dB (  0.01% of residual)
+      4000-  8000 Hz:  -128.00 dB (  0.00% of residual)
+      8000- 12000 Hz: (no out-of-band bins: the +/-3% bands of neighbouring partials overlap and cover this whole range)
+     12000- 16000 Hz:  -117.08 dB (  0.00% of residual)
+     16000- 20001 Hz:  -115.48 dB (  0.00% of residual)
+  theory synthesis (dump modes only) residual: -67.28 dB re total
+  highest predicted mode: 12821.0 Hz; n modes 120
+[exit=0]
+
+$ python output/wf0925/F5/analyze_residual.py --tools output/wf0925/F5/tools_after --run output/wf0925/F5/run_after --eng cimbalom --top 4
+[run_after/cimbalom] physics_verify.measure_residual_energy = -62.26 dB re total
+  re-computed here: -62.26 dB (must equal above)
+  out-of-band regions: 18; top 4 by power (share of residual, dB re total):
+        270.3 -     506.1 Hz :  54.12% of residual,  -64.93 dB re total
+          0.4 -     252.7 Hz :  43.50% of residual,  -65.88 dB re total
+        540.9 -     759.9 Hz :   2.24% of residual,  -78.76 dB re total
+        811.9 -    1014.8 Hz :   0.07% of residual,  -93.70 dB re total
+  residual by coarse band (dB re total):
+         0-   250 Hz:   -72.22 dB ( 10.11% of residual)
+       250-  1000 Hz:   -62.73 dB ( 89.82% of residual)
+      1000-  2000 Hz:   -99.31 dB (  0.02% of residual)
+      2000-  4000 Hz:   -95.26 dB (  0.05% of residual)
+      4000-  8000 Hz:  -121.23 dB (  0.00% of residual)
+      8000- 12000 Hz: (no out-of-band bins: the +/-3% bands of neighbouring partials overlap and cover this whole range)
+     12000- 16000 Hz:  -112.61 dB (  0.00% of residual)
+     16000- 20001 Hz:  -110.63 dB (  0.00% of residual)
+  theory synthesis (dump modes only) residual: -62.27 dB re total
+  highest predicted mode: 13082.7 Hz; n modes 120
+[exit=0]
+
+$ python output/wf0925/F5/hybrid_theory.py --tools output/wf0925/F5/tools_before --before output/wf0925/F5/run_before_own --after output/wf0925/F5/run_after --eng piano
+== piano, MIDI 60 probe, theory synthesis of dumped modes ==
+before (all before)            :  -63.86 dB
+after  (all after)             :  -58.49 dB
+-- start from BEFORE, import ONE quantity from AFTER --
+before + after freq            :  -63.86 dB
+before + after amp             :  -63.86 dB
+before + after decay           :  -58.49 dB
+-- start from AFTER, restore ONE quantity from BEFORE --
+after + before freq            :  -58.49 dB
+after + before amp             :  -58.49 dB
+after + before decay           :  -63.86 dB
+-- decay swaps restricted to specific partial indices --
+before + after decay of n=1 only       :  -62.50 dB
+before + after decay of n=1,2          :  -58.70 dB
+after + before decay of n=1 only       :  -61.53 dB
+after + before decay of n=1,2          :  -63.80 dB
+-- before: residual contribution of each partial index alone (dB re FULL-signal total; top 5) --
+    n= 1 f=  261.63 Hz amp=0.44799 T60=4.1425 s : resid  -63.94 dB re total; own leak fraction  -60.03 dB re own energy; own energy share  40.7%
+    n= 2 f=  523.49 Hz amp=0.35898 T60=3.5968 s : resid  -81.19 dB re total; own leak fraction  -78.76 dB re own energy; own energy share  57.2%
+    n= 4 f= 1048.92 Hz amp=0.09804 T60=2.8332 s : resid -108.36 dB re total; own leak fraction  -91.31 dB re own energy; own energy share   2.0%
+    n= 3 f=  785.84 Hz amp=0.01162 T60=3.1769 s : resid -120.13 dB re total; own leak fraction  -86.23 dB re own energy; own energy share   0.0%
+    n= 6 f= 1578.19 Hz amp=0.02886 T60=2.2861 s : resid -129.30 dB re total; own leak fraction  -98.53 dB re own energy; own energy share   0.1%
+-- after: residual contribution of each partial index alone (dB re FULL-signal total; top 5) --
+    n= 1 f=  261.63 Hz amp=0.48745 T60=2.6733 s : resid  -58.57 dB re total; own leak fraction  -54.04 dB re own energy; own energy share  35.2%
+    n= 2 f=  523.52 Hz amp=0.39054 T60=2.4408 s : resid  -75.81 dB re total; own leak fraction  -73.74 dB re own energy; own energy share  62.1%
+    n= 4 f= 1049.22 Hz amp=0.10663 T60=2.0664 s : resid -102.98 dB re total; own leak fraction  -86.94 dB re own energy; own energy share   2.5%
+    n= 3 f=  785.96 Hz amp=0.01250 T60=2.2427 s : resid -114.85 dB re total; own leak fraction  -81.73 dB re own energy; own energy share   0.0%
+    n= 6 f= 1579.24 Hz amp=0.03137 T60=1.7560 s : resid -124.01 dB re total; own leak fraction  -94.56 dB re own energy; own energy share   0.1%
+[exit=0]
+
+$ python output/wf0925/F5/hybrid_theory.py --tools output/wf0925/F5/tools_before --before output/wf0925/F5/run_before_own --after output/wf0925/F5/run_after --eng cimbalom
+== cimbalom, MIDI 60 probe, theory synthesis of dumped modes ==
+before (all before)            :  -67.28 dB
+after  (all after)             :  -62.27 dB
+-- start from BEFORE, import ONE quantity from AFTER --
+before + after freq            :  -67.28 dB
+before + after amp             :  -67.28 dB
+before + after decay           :  -62.27 dB
+-- start from AFTER, restore ONE quantity from BEFORE --
+after + before freq            :  -62.27 dB
+after + before amp             :  -62.27 dB
+after + before decay           :  -67.28 dB
+-- decay swaps restricted to specific partial indices --
+before + after decay of n=1 only       :  -66.88 dB
+before + after decay of n=1,2          :  -63.93 dB
+after + before decay of n=1 only       :  -63.67 dB
+after + before decay of n=1,2          :  -66.63 dB
+-- before: residual contribution of each partial index alone (dB re FULL-signal total; top 5) --
+    n= 1 f=  261.63 Hz amp=0.33046 T60=4.1425 s : resid  -67.48 dB re total; own leak fraction  -60.03 dB re own energy; own energy share  18.0%
+    n= 2 f=  523.49 Hz amp=0.40954 T60=3.5968 s : resid  -80.94 dB re total; own leak fraction  -78.76 dB re own energy; own energy share  60.6%
+    n= 3 f=  785.84 Hz amp=0.20915 T60=3.1769 s : resid  -95.94 dB re total; own leak fraction  -86.13 dB re own energy; own energy share  10.4%
+    n= 5 f= 1312.95 Hz amp=0.23588 T60=2.5409 s : resid -107.21 dB re total; own leak fraction  -95.36 dB re own energy; own energy share   6.5%
+    n= 4 f= 1048.92 Hz amp=0.07996 T60=2.8332 s : resid -111.03 dB re total; own leak fraction  -91.31 dB re own energy; own energy share   1.1%
+-- after: residual contribution of each partial index alone (dB re FULL-signal total; top 5) --
+    n= 1 f=  261.63 Hz amp=0.35849 T60=2.6733 s : resid  -62.47 dB re total; own leak fraction  -54.04 dB re own energy; own energy share  14.4%
+    n= 2 f=  523.52 Hz amp=0.44426 T60=2.4408 s : resid  -75.91 dB re total; own leak fraction  -73.74 dB re own energy; own energy share  60.6%
+    n= 3 f=  785.96 Hz amp=0.22687 T60=2.2427 s : resid  -90.91 dB re total; own leak fraction  -81.62 dB re own energy; own energy share  11.8%
+    n= 5 f= 1313.55 Hz amp=0.25575 T60=1.9055 s : resid -102.18 dB re total; own leak fraction  -91.14 dB re own energy; own energy share   7.9%
+    n= 4 f= 1049.22 Hz amp=0.08672 T60=2.0664 s : resid -106.00 dB re total; own leak fraction  -86.94 dB re own energy; own energy share   1.2%
+[exit=0]
+
+$ python - <<'EOF'
+import json
+for v in ['run_before_own','run_after']:
+    s=json.load(open('output/wf0925/F5/'+v+'/probe_piano_60_85_20_resid.dump.json',encoding='utf-8'))['events'][0]['strings']
+    print(v, 'piano MIDI60, center string, partials n=1..8: freq / amp / T60')
+    for i in range(8):
+        m=s[1][i]; print('   n=%d  %9.3f Hz  %.5f  %.4f s' % (i+1, m['freq'], m['amp'], m['decay']))
+EOF
+run_before_own piano MIDI60, center string, partials n=1..8: freq / amp / T60
+   n=1    261.626 Hz  0.44799  4.1425 s
+   n=2    523.493 Hz  0.35898  3.5968 s
+   n=3    785.843 Hz  0.01162  3.1769 s
+   n=4   1048.916 Hz  0.09804  2.8332 s
+   n=5   1312.952 Hz  0.00521  2.5409 s
+   n=6   1578.188 Hz  0.02886  2.2861 s
+   n=7   1844.862 Hz  0.00102  2.0600 s
+   n=8   2113.206 Hz  0.00000  1.8573 s
+run_after piano MIDI60, center string, partials n=1..8: freq / amp / T60
+   n=1    261.626 Hz  0.48745  2.6733 s
+   n=2    523.523 Hz  0.39054  2.4408 s
+   n=3    785.963 Hz  0.01250  2.2427 s
+   n=4   1049.217 Hz  0.10663  2.0664 s
+   n=5   1313.554 Hz  0.00544  1.9055 s
+   n=6   1579.240 Hz  0.03137  1.7560 s
+   n=7   1846.540 Hz  0.00099  1.6158 s
+   n=8   2115.718 Hz  0.00000  1.4836 s
+[exit=0]
+
+$ python output/wf0925/F5/beat_check.py
+[run_before_own] fundamental T60=4.1425s, string spacing 0.7550 Hz (beat nulls of a 3-line course at t=0.442s and 0.883s)
+    3 strings: F5 own leakage -60.03 dB; 1 string: -67.53 dB; difference +7.50 dB
+    windowed energy ratio 3-string/1-string = 1.054 (coherent max would be 9, incoherent 3)
+[run_after] fundamental T60=2.6733s, string spacing 0.7550 Hz (beat nulls of a 3-line course at t=0.442s and 0.883s)
+    3 strings: F5 own leakage -54.04 dB; 1 string: -62.49 dB; difference +8.45 dB
+    windowed energy ratio 3-string/1-string = 0.848 (coherent max would be 9, incoherent 3)
+[exit=0]
+

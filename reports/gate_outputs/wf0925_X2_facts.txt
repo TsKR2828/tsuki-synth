@@ -1,0 +1,111 @@
+# wf0925_X2_facts.txt
+# generated 2026-09-25T08:32:31  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_facts.py
+
+(a) 50 masters: render manifest pre-normalize fields vs. measured master sample peak
+id                                pre_peak      gain  pre*gain n>=FS(pre) | master max|x|    dBFS n@peak run@peak n>=1.0
+fur_elise_complete                 0.13408  7.085335  0.950000          0 |    0.94999993  -0.446      1        1      0
+fur_elise_complete_cimbalom        0.30867  3.077675  0.950000          0 |    0.94999993  -0.446      1        1      0
+ai_radiance_complete               1.13231  0.838997  0.950000         41 |    0.94999993  -0.446      1        1      0
+ai_radiance_m1                     0.23187  4.097091  0.950000          0 |    0.94999993  -0.446      1        1      0
+ai_radiance_m2                     0.92518  1.026826  0.950000          0 |    0.94999993  -0.446      1        1      0
+ai_radiance_m3                     0.14360  6.615673  0.950000          0 |    0.95000005  -0.446      1        1      0
+ai_radiance_m4                     0.32442  2.928279  0.950000          0 |    0.94999993  -0.446      1        1      0
+akashic_loop_001                   0.00840 113.145767  0.950000          0 |    0.95000005  -0.446      1        1      0
+akashic_ambient_001                0.00553 171.825409  0.950000          0 |    0.94999981  -0.446      1        1      0
+akashic_action_001                 0.02130 44.610012  0.950000          0 |    0.94999981  -0.446      1        1      0
+akashic_transition_var01           1.64799  0.576458  0.950000       2767 |    0.94999981  -0.446      1        1      0
+akashic_transition_001             0.63663  1.492232  0.950000          0 |    0.95000005  -0.446      1        1      0
+akashic_ui_001                     0.05511 17.237791  0.950000          0 |    0.95000005  -0.446      2        1      0
+akashic_notify_001                 0.19712  4.819340  0.950000          0 |    0.95000005  -0.446      1        1      0
+akashic_opening_bell_001           0.06914 13.740780  0.950000          0 |    0.95000005  -0.446      1        1      0
+clockwork_ambient_001              0.01989 47.767670  0.950000          0 |    0.95000005  -0.446      1        1      0
+clockwork_transition_001           0.11403  8.330969  0.950000          0 |    0.94999993  -0.446      1        1      0
+clockwork_loop_001                 0.04568 20.798973  0.950000          0 |    0.94999981  -0.446      1        1      0
+clockwork_action_001               0.71184  1.334567  0.950000          0 |    0.94999993  -0.446      2        1      0
+clockwork_notify_var01             0.54485  1.743588  0.950000          0 |    0.95000005  -0.446      1        1      0
+clockwork_ui_001                   0.08382 11.333691  0.950000          0 |    0.94999993  -0.446      2        1      0
+clockwork_notify_001               0.09702  9.792276  0.950000          0 |    0.94999993  -0.446      2        1      0
+forest_loop_001                    0.00168 566.829773  0.950000          0 |    0.94999993  -0.446      1        1      0
+forest_ambient_001                 0.00146 652.675171  0.950000          0 |    0.94999993  -0.446      1        1      0
+forest_action_001                  0.15132  6.278130  0.950000          0 |    0.94999993  -0.446      2        1      0
+forest_notify_001                  0.11048  8.598749  0.950000          0 |    0.94999993  -0.446      2        1      0
+forest_notify_var01                0.17229  5.513891  0.950000          0 |    0.94999993  -0.446      2        1      0
+forest_ui_001                      0.09879  9.616748  0.950000          0 |    0.94999993  -0.446      2        1      0
+forest_transition_001              0.00403 235.537491  0.950000          0 |    0.94999993  -0.446      1        1      0
+ocean_loop_001                     0.06027 15.761986  0.950000          0 |    0.95000005  -0.446      1        1      0
+ocean_ambient_001                  0.05272 18.019533  0.950000          0 |    0.94999993  -0.446      1        1      0
+ocean_action_001                   0.45896  2.069906  0.950000          0 |    0.94999993  -0.446      1        1      0
+ocean_ui_001                       0.00305 311.099487  0.950000          0 |    0.94999993  -0.446      2        1      0
+ocean_notify_001                   0.00595 159.660980  0.950000          0 |    0.94999993  -0.446      1        1      0
+ocean_notify_var01                 0.07948 11.953114  0.950000          0 |    0.94999993  -0.446      1        1      0
+ocean_transition_001               0.13142  7.228972  0.950000          0 |    0.95000005  -0.446      1        1      0
+rabbit_ambient_001                 0.00248 383.096222  0.950000          0 |    0.95000005  -0.446      1        1      0
+rabbit_action_001                  1.55598  0.610547  0.950000         18 |    0.94999981  -0.446      2        1      0
+rabbit_loop_001                    0.04630 20.516996  0.950000          0 |    0.94999993  -0.446      1        1      0
+rabbit_notify_001                  0.03721 25.531942  0.950000          0 |    0.95000005  -0.446      2        1      0
+rabbit_notify_var01                0.07368 12.893993  0.950000          0 |    0.95000005  -0.446      2        1      0
+rabbit_ui_001                      0.11433  8.309436  0.950000          0 |    0.94999993  -0.446      2        1      0
+rabbit_transition_001              0.13573  6.999030  0.950000          0 |    0.95000005  -0.446      1        1      0
+restraint_ambient_001              0.10731  8.853215  0.950000          0 |    0.94999993  -0.446      1        1      0
+restraint_action_001               1.15870  0.819887  0.950000         20 |    0.94999993  -0.446      2        1      0
+restraint_loop_001                 0.45777  2.075260  0.950000          0 |    0.94999993  -0.446      1        1      0
+restraint_notify_001               0.07694 12.346740  0.950000          0 |    0.95000005  -0.446      1        1      0
+restraint_notify_var01             0.06468 14.687861  0.950000          0 |    0.94999993  -0.446      1        1      0
+restraint_ui_001                   0.06567 14.466894  0.950000          0 |    0.94999993  -0.446      2        1      0
+restraint_transition_001           0.61024  1.556768  0.950000          0 |    0.94999993  -0.446      2        1      0
+
+rows: 50 ; normalize=true in all manifests: True
+pre-normalize count > 0: 4 -> ai_radiance_complete=41, akashic_transition_var01=2767, rabbit_action_001=18, restraint_action_001=20
+max master sample peak over 50 files: 0.95000005
+master samples at or above full scale (|x|>=1.0), all 50 files: 0
+longest run of consecutive samples sitting at a file's own peak value: 1
+
+(b) engines / materials / effect types actually used per world (scores/library)
+  akashic    engines=['beam', 'plate', 'string', 'tongue_drum', 'water_gong'] materials=['brass', 'bronze', 'copper', 'glass', 'steel'] distortion=['Akashic Gate Open (Dark):overdrive']
+  rabbit     engines=['beam', 'string'] materials=['aluminum', 'steel', 'wood_maple'] distortion=[]
+  restraint  engines=['beam', 'plate', 'string'] materials=['iron', 'steel'] distortion=['Restraint Industrial Pulse:overdrive', 'Restraint Lock Click (Distorted):bitcrush']
+  forest     engines=['beam'] materials=['bamboo', 'wood_birch', 'wood_oak'] distortion=[]
+  ocean      engines=['beam', 'plate', 'string'] materials=['aluminum', 'bronze', 'glass', 'nylon'] distortion=[]
+  clockwork  engines=['beam', 'plate', 'string'] materials=['brass', 'steel'] distortion=['Clockwork Bell Strike (Wavefold):wavefold']
+
+(c) Fur Elise piano: master (48k) vs distribution (44.1k) time alignment [descriptive]
+  distribution sr=44100, frames=5882473 (133.389 s); master resampled frames=5882473 (133.389 s)
+  cross-correlation (first 30 s, mono) best lag = 0 samples at 44.1 kHz (0.000 ms)
+
+(d) loop_ready files (read from disk) vs X1 loop_ready_report.json
+  akashic_loop_001      768000 fr @ 48000 PCM_24 = 16.000000 s (60 BPM x 4 bars, exact 768000) | original 1167588 fr = 24.325 s | matches X1 report (len+sha): True
+  rabbit_loop_001       164571 fr @ 48000 PCM_24 = 3.428562 s (140 BPM x 2 bars, exact 1152000/7) | original 257547 fr = 5.366 s | matches X1 report (len+sha): True
+  restraint_loop_001    230400 fr @ 48000 PCM_24 = 4.800000 s (100 BPM x 2 bars, exact 230400) | original 409205 fr = 8.525 s | matches X1 report (len+sha): True
+  forest_loop_001       576000 fr @ 48000 PCM_24 = 12.000000 s (80 BPM x 4 bars, exact 576000) | original 800988 fr = 16.687 s | matches X1 report (len+sha): True
+  ocean_loop_001        384000 fr @ 48000 PCM_24 = 8.000000 s (60 BPM x 2 bars, exact 384000) | original 759588 fr = 15.825 s | matches X1 report (len+sha): True
+  clockwork_loop_001    192000 fr @ 48000 PCM_24 = 4.000000 s (120 BPM x 2 bars, exact 192000) | original 247955 fr = 5.166 s | matches X1 report (len+sha): True
+
+(e) distribution-file peak position for listening checklist items [descriptive]
+  rabbit_action_001          Rabbit Stomp                 peak at sample 6 = 0.12 ms ; file 1.575 s ; distortion=None
+  clockwork_action_001       Clockwork Spring Release     peak at sample 8 = 0.17 ms ; file 1.375 s ; distortion=None
+  restraint_action_001       Restraint Shackle Slam       peak at sample 973 = 20.27 ms ; file 2.704 s ; distortion=None
+  akashic_transition_var01   Akashic Gate Open (Dark)     peak at sample 26702 = 556.29 ms ; file 21.971 s ; distortion={'type': 'overdrive', 'drive': 0.3, 'instability': 0.15, 'wet': 0.25}
+
+(f) Fur Elise piano: 16 weak-fundamental FAIL events (read from N1 csv, not recomputed)
+  (the csv 'time' column is truncated to 4 decimals, so the exact time is read from the score event
+   at the csv 'index'; note and velocity must match the csv)
+  idx   88  score t=16.249993 s  csv t=16.2500  E5   vel=0.278  null_depth= -24.0 dB  note/velocity match: True
+  idx   92  score t=17.083326 s  csv t=17.0833  E5   vel=0.278  null_depth= -24.0 dB  note/velocity match: True
+  idx   96  score t=17.916659 s  csv t=17.9167  E5   vel=0.278  null_depth= -24.0 dB  note/velocity match: True
+  idx  192  score t=32.395820 s  csv t=32.3958  A5   vel=0.452  null_depth= -23.5 dB  note/velocity match: True
+  idx  279  score t=40.416650 s  csv t=40.4166  A5   vel=0.427  null_depth= -24.5 dB  note/velocity match: True
+  idx  318  score t=42.916649 s  csv t=42.9166  A5   vel=0.427  null_depth= -24.5 dB  note/velocity match: True
+  idx  440  score t=63.749974 s  csv t=63.7500  E5   vel=0.278  null_depth= -24.0 dB  note/velocity match: True
+  idx  444  score t=64.583307 s  csv t=64.5833  E5   vel=0.278  null_depth= -24.0 dB  note/velocity match: True
+  idx  448  score t=65.416640 s  csv t=65.4166  E5   vel=0.278  null_depth= -24.0 dB  note/velocity match: True
+  idx  731  score t=100.416626 s  csv t=100.4166  A6   vel=0.427  null_depth= -14.9 dB  note/velocity match: True
+  idx  740  score t=101.249959 s  csv t=101.2500  A#6  vel=0.427  null_depth= -17.9 dB  note/velocity match: True
+  idx  744  score t=101.388848 s  csv t=101.3888  A6   vel=0.427  null_depth= -14.9 dB  note/velocity match: True
+  idx  756  score t=103.055514 s  csv t=103.0555  A5   vel=0.427  null_depth= -24.5 dB  note/velocity match: True
+  idx  843  score t=118.749952 s  csv t=118.7500  E5   vel=0.278  null_depth= -24.0 dB  note/velocity match: True
+  idx  847  score t=119.583285 s  csv t=119.5833  E5   vel=0.278  null_depth= -24.0 dB  note/velocity match: True
+  idx  851  score t=120.416618 s  csv t=120.4166  E5   vel=0.278  null_depth= -24.0 dB  note/velocity match: True
+  count: 16 ; all note/velocity match: True
+
+facts written: output\wf0925\X2\facts.json

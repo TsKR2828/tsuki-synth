@@ -1,0 +1,42 @@
+# WF0925-V1 B：各音 T60 來源（CLI --dump-modes）與「外掛做得到版」score 副本的產生與重現核對
+# 前任（06:16/06:23/06:24）產生 output/wf0925/V1/{dumps,reachable,dumps_reachable}；本輪接手者重跑一次到 output/wf0925/V1/recheck/ 逐檔比對。
+
+## 1. 前任的 dump log（原樣）
+$ head -3 output/wf0925/V1/dump_log.txt ; tail -2 output/wf0925/V1/dump_log.txt
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\V1\cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 scores=75
+scores/examples/akashic_bell.score.json                                                    rc=0 ok=True 0.0s 2861 B
+scores/examples/epiano_3stack_test.score.json                                              rc=0 ok=True 0.0s 381 B
+done: 75 scores, 0 failed
+rc=0
+$ head -2 output/wf0925/V1/dump_reachable_log.txt ; tail -2 output/wf0925/V1/dump_reachable_log.txt
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\V1\cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 scores=75
+output/wf0925/V1/reachable/scores/examples/akashic_bell.score.json                         rc=0 ok=True 0.1s 2861 B
+output/wf0925/V1/reachable/scores/library/restraint/restraint_ui_001.score.json            rc=0 ok=True 0.0s 1468 B
+done: 75 scores, 0 failed
+
+## 2. 本輪重跑（同一支複本 CLI）
+$ python reports/wf0925_method/dump_corpus_modes.py --cli output/wf0925/V1/cli.exe --out-dir output/wf0925/V1/recheck/dumps
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\V1\cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 scores=75
+done: 75 scores, 0 failed
+$ python reports/wf0925_method/make_plugin_reachable_scores.py --out output/wf0925/V1/recheck/reachable
+wrote 75 scores under C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\V1\recheck\reachable; removed 30827 param entries (damping_override/tension_n) in 30 scores
+$ diff -r output/wf0925/V1/reachable output/wf0925/V1/recheck/reachable && echo IDENTICAL
+REACHABLE TREE IDENTICAL (76 files)
+$ python reports/wf0925_method/dump_corpus_modes.py --cli output/wf0925/V1/cli.exe --out-dir output/wf0925/V1/recheck/dumps_reachable --root output/wf0925/V1/reachable
+cli=C:\Users\admin\Desktop\Claude\tsuki-synth\output\wf0925\V1\cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 scores=75
+done: 75 scores, 0 failed
+$ for each of the 75 cached dumps: cmp output/wf0925/V1/<dumps|dumps_reachable>/X output/wf0925/V1/recheck/<...>/X
+dumps: compared 75 dump files, differing 0
+dumps_reachable: compared 75 dump files, differing 0
+
+## 3. manifest 的 score SHA256 與現在的 score 檔逐檔核對（score 在 dump 之後沒被改過）
+output/wf0925/V1/dumps: cli_sha256=9123db8f63390bfe scores=75 mismatched_or_failed=0
+output/wf0925/V1/dumps_reachable: cli_sha256=9123db8f63390bfe scores=75 mismatched_or_failed=0
+# 註：scores/examples/water_gong_free.score.json 在工作樹有其他卡的未 commit 修改（05:46，只改 meta.description 一行），
+#     dump 在其後產生、SHA 相符；description 不影響任何模態數字。
+$ git diff --stat HEAD -- scores/
+ scores/examples/water_gong_free.score.json | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+## 4. 外掛沒有的兩個參數（damping_override / tension_n）被拿掉的數量
+scores using them: 30 ; events using them: 30813 ; param entries removed: {'damping_override': 30812, 'tension_n': 15} (total 30827)

@@ -1,0 +1,13 @@
+# verify_score --all 本次（build\ 新 CLI，renderer b84c775b04ab…）vs K 稽核第 2 輪 output/wf0925/K_audit2/gate4_verify_score_all.log（build-wf CLI）
+# 過濾命令列/CLI 行/起訖時間/EXIT 行，並把 'renderer <12 碼>' 遮成 'renderer <R>'、'configured source=<12 碼>' 遮成 <S> 後逐行 diff
+$ diff <(grep -vE '^\$|EXIT_CODE|EXIT=|^start |^end |find_cli|^CLI: ' 08 | sed mask) <(grep -vE '^\$|EXIT_CODE|EXIT=|^start |^end |find_cli|^CLI: ' K_audit2/gate4 | sed mask)
+DIFF_EXIT=0  (0 = 除 renderer/source 欄位外逐行相同，含每首 WAV 雜湊)
+compared lines: 3836 vs 3836
+
+# renderer 欄位統計（本次）
+     75 renderer b84c775b04ab
+# configured source 欄位統計（本次）
+     75 configured source=18430c4d9307 dirty
+# PASS/FAIL 計數
+PASS scores: 75  FAIL scores: 0
+258:  [EXEMPT] rests.rms_below_limit: REST CHECK FAILED: Rest at 316.52s-316.80s has RMS -26.6 dBFS (limit: -50.0 dBFS) -- previous note may be ringing too long. 13/14 rest interval(s) exceed the limit. FX-bypass render 

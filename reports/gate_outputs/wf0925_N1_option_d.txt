@@ -1,0 +1,38 @@
+# WF0925-N1 evidence — generated 2026-09-25 06:02:36 +0800
+# cwd: /c/Users/admin/Desktop/Claude/tsuki-synth
+# git HEAD: 18430c4
+# CLI: output/wf0925/N1/cli.exe sha256=9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8
+$ python reports/weak_fundamental_null_map/option_d_velocity_table.py --cli output/wf0925/N1/cli.exe --workdir output/wf0925/N1/optd
+
+D#5  x6  original v=0.303 (dv=+0.000, +0.00 dB)  x1=2.806 depth= -10.5 dB  n1/n2=  -1.2 dB  stem_pred= -61.5 dBFS  [FAIL 0 / PASS 6]
+D#5  x6  down     v=0.227 (dv=-0.076, -2.51 dB)  x1=3.205 depth= -10.0 dB  n1/n2=  -0.2 dB  stem_pred= -66.1 dBFS  [FAIL 0 / PASS 6]
+D#5  x6  up       v=0.306 (dv=+0.003, +0.09 dB)  x1=2.793 depth=  -9.9 dB  n1/n2=  -0.4 dB  stem_pred= -60.8 dBFS  [FAIL 0 / PASS 6]
+E5   x9  original v=0.278 (dv=+0.000, +0.00 dB)  x1=3.040 depth= -24.0 dB  n1/n2= -16.3 dB  stem_pred= -77.4 dBFS  [FAIL 9 / PASS 0]
+E5   x9  down     v=0.248 (dv=-0.030, -0.99 dB)  x1=3.205 depth= -10.0 dB  n1/n2=  -0.2 dB  stem_pred= -65.4 dBFS  [FAIL 9 / PASS 0]
+E5   x9  up       v=0.334 (dv=+0.056, +1.59 dB)  x1=2.793 depth=  -9.9 dB  n1/n2=  -0.4 dB  stem_pred= -60.0 dBFS  [FAIL 9 / PASS 0]
+G5   x19 original v=0.427 (dv=+0.000, +0.00 dB)  x1=2.807 depth= -10.5 dB  n1/n2=  -1.3 dB  stem_pred= -58.6 dBFS  [FAIL 0 / PASS 19]
+G5   x19 down     v=0.321 (dv=-0.106, -2.48 dB)  x1=3.208 depth=  -9.9 dB  n1/n2=   0.2 dB  stem_pred= -63.0 dBFS  [FAIL 0 / PASS 19]
+G5   x19 up       v=0.431 (dv=+0.004, +0.08 dB)  x1=2.795 depth= -10.0 dB  n1/n2=  -0.6 dB  stem_pred= -57.9 dBFS  [FAIL 0 / PASS 19]
+G#5  x1  original v=0.427 (dv=+0.000, +0.00 dB)  x1=2.920 depth= -18.1 dB  n1/n2= -10.2 dB  stem_pred= -66.9 dBFS  [FAIL 0 / PASS 1]
+G#5  x1  down     v=0.350 (dv=-0.077, -1.73 dB)  x1=3.207 depth=  -9.9 dB  n1/n2=   0.2 dB  stem_pred= -62.3 dBFS  [FAIL 0 / PASS 1]
+G#5  x1  up       v=0.469 (dv=+0.042, +0.81 dB)  x1=2.794 depth= -10.0 dB  n1/n2=  -0.5 dB  stem_pred= -57.1 dBFS  [FAIL 0 / PASS 1]
+A5   x3  original v=0.427 (dv=+0.000, +0.00 dB)  x1=3.038 depth= -24.5 dB  n1/n2= -16.6 dB  stem_pred= -74.1 dBFS  [FAIL 3 / PASS 0]
+A5   x3  down     v=0.381 (dv=-0.046, -0.99 dB)  x1=3.206 depth=  -9.9 dB  n1/n2=   0.2 dB  stem_pred= -61.6 dBFS  [FAIL 3 / PASS 0]
+A5   x3  up       v=0.510 (dv=+0.083, +1.54 dB)  x1=2.794 depth=  -9.9 dB  n1/n2=  -0.5 dB  stem_pred= -56.4 dBFS  [FAIL 3 / PASS 0]
+A5   x1  original v=0.452 (dv=+0.000, +0.00 dB)  x1=2.957 depth= -23.5 dB  n1/n2= -15.8 dB  stem_pred= -72.1 dBFS  [FAIL 1 / PASS 0]
+A5   x1  down     v=0.381 (dv=-0.071, -1.48 dB)  x1=3.206 depth=  -9.9 dB  n1/n2=   0.2 dB  stem_pred= -61.6 dBFS  [FAIL 1 / PASS 0]
+A5   x1  up       v=0.510 (dv=+0.058, +1.05 dB)  x1=2.794 depth=  -9.9 dB  n1/n2=  -0.5 dB  stem_pred= -56.4 dBFS  [FAIL 1 / PASS 0]
+A5   x3  original v=0.462 (dv=+0.000, +0.00 dB)  x1=2.927 depth= -18.8 dB  n1/n2= -11.0 dB  stem_pred= -67.0 dBFS  [FAIL 0 / PASS 3]
+A5   x3  down     v=0.381 (dv=-0.081, -1.67 dB)  x1=3.206 depth=  -9.9 dB  n1/n2=   0.2 dB  stem_pred= -61.6 dBFS  [FAIL 0 / PASS 3]
+A5   x3  up       v=0.510 (dv=+0.048, +0.86 dB)  x1=2.794 depth=  -9.9 dB  n1/n2=  -0.5 dB  stem_pred= -56.4 dBFS  [FAIL 0 / PASS 3]
+A#5  x2  original v=0.427 (dv=+0.000, +0.00 dB)  x1=3.161 depth= -12.0 dB  n1/n2=  -2.8 dB  stem_pred= -62.4 dBFS  [FAIL 0 / PASS 2]
+A#5  x2  down     v=0.414 (dv=-0.013, -0.27 dB)  x1=3.207 depth=  -9.9 dB  n1/n2=   0.4 dB  stem_pred= -60.8 dBFS  [FAIL 0 / PASS 2]
+A#5  x2  up       v=0.554 (dv=+0.127, +2.26 dB)  x1=2.793 depth=  -9.9 dB  n1/n2=  -0.6 dB  stem_pred= -55.6 dBFS  [FAIL 0 / PASS 2]
+A6   x2  original v=0.427 (dv=+0.000, +0.00 dB)  x1=4.885 depth= -14.9 dB  n1/n2=  -7.2 dB  stem_pred= -73.4 dBFS  [FAIL 2 / PASS 0]
+A6   x2  down     v=0.375 (dv=-0.052, -1.13 dB)  x1=5.209 depth=  -9.8 dB  n1/n2=   5.9 dB  stem_pred= -70.6 dBFS  [FAIL 2 / PASS 0]
+A6   x2  up       v=0.444 (dv=+0.017, +0.34 dB)  x1=4.791 depth=  -9.8 dB  n1/n2=  -2.0 dB  stem_pred= -67.6 dBFS  [FAIL 2 / PASS 0]
+A#6  x1  original v=0.427 (dv=+0.000, +0.00 dB)  x1=5.082 depth= -17.9 dB  n1/n2=  -6.9 dB  stem_pred= -77.1 dBFS  [FAIL 1 / PASS 0]
+A#6  x1  down     v=0.406 (dv=-0.021, -0.44 dB)  x1=5.210 depth=  -9.8 dB  n1/n2=   7.6 dB  stem_pred= -69.9 dBFS  [FAIL 1 / PASS 0]
+A#6  x1  up       v=0.480 (dv=+0.053, +1.02 dB)  x1=4.795 depth= -10.0 dB  n1/n2=  -2.2 dB  stem_pred= -67.1 dBFS  [FAIL 1 / PASS 0]
+
+# rc=0
