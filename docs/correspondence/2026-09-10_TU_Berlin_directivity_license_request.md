@@ -1,6 +1,6 @@
-# 信件草稿 1：向 TU Berlin 請求樂器指向性資料庫的商業使用許可
+# 信件 1（已寄出 2026-09-15）：向 TU Berlin 請求樂器指向性資料庫的商業使用許可
 
-> 狀態：**草稿，由月月自行寄出**（AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
+> 狀態：**已寄出（2026-09-15，依月月記錄），等回覆**（月月自行寄出，AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
 > 收件人：David Ackermann <david.ackermann@tu-berlin.de>（信箱來源：SOFA 檔 `AuthorContact` 屬性與論文通訊欄，見 `docs/EXTERNAL_DATASET_A8.zh-TW.md` §4.1）
 > 建議副本：Fabian Brinkmann、Stefan Weinzierl（論文共同作者；信箱請自行從 TU Berlin Audio Communication Group 網頁確認，本文件不臆測）
 > 語言：英文（收件人為德國學者）。下方附中文對照，寄英文版即可。

@@ -19,13 +19,21 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 
 Third-party components:
-- JUCE 8 (submodule, libs/JUCE): licensed separately under the JUCE 8
-  license terms. This project currently qualifies for the JUCE Starter tier
-  (free; revenue below USD 20,000; closed-source commercial distribution
-  permitted). Before any public release, review the JUCE 8 EULA attribution
-  requirements.
+- JUCE 8 (submodule, libs/JUCE, version 8.0.12): licensed separately under
+  the JUCE 8 End User Licence Agreement (https://juce.com/legal/juce-8-licence/),
+  Starter licence type. Under that agreement (sections 1.2 and 1.2.1) the
+  Starter licence type is free and applies while the licensee's annual
+  revenue or funding, measured over the previous 12 months, is up to
+  USD 20,000; for an individual this counts all revenue or funding generated
+  by the use of the Framework, including donations, sponsorship, advertising
+  and other indirect revenue. The agreement contains no splash-screen or
+  attribution requirement and does not require the source code of Products
+  to be disclosed. If the limit is exceeded, a licence type for the higher
+  limit must be purchased or development and distribution must stop
+  immediately (section 1.14). EULA text reviewed 2026-09-25; see
+  docs/legal/JUCE8_LICENSE_REVIEW.zh-TW.md.
 - VST3 SDK (bundled within JUCE 8): MIT licensed.
-- "VST" is a trademark of Steinberg Media Technologies GmbH.
+- VST is a registered trademark of Steinberg Media Technologies GmbH.
 
 ────────────────────────────────────────────────────────────
 
@@ -34,4 +42,8 @@ Third-party components:
 本專案版權為 TsKR2828（月月）所有，保留一切權利（含商業權利）。
 未經書面同意，任何人不得使用、複製、修改、散布或販售本軟體的
 任何部分。第三方元件（JUCE 8 / VST3 SDK）依其各自授權條款處理；
-正式發行前需複查 JUCE 8 EULA 的署名條款（TODO A7 註記）。
+JUCE 8 採 Starter 方案（近 12 個月營收或資金 US$20,000 以下免費；
+個人身分須把因使用 JUCE 而來的捐款、贊助、廣告等間接收入一併計入；
+無啟動畫面／署名要求；超過門檻須升級方案或立即停止開發與散布），
+EULA 原文已於 2026-09-25 複查，見 docs/legal/JUCE8_LICENSE_REVIEW.zh-TW.md。
+VST 是 Steinberg Media Technologies GmbH 的註冊商標。

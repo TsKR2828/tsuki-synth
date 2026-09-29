@@ -1,6 +1,6 @@
-# 信件草稿 2：向 University of Iowa MIS 確認泰國鑼錄音的器材與取樣率
+# 信件 2（已寄出 2026-09-15）：向 University of Iowa MIS 確認泰國鑼錄音的器材與取樣率
 
-> 狀態：**草稿，由月月自行寄出**（AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
+> 狀態：**已寄出（2026-09-15，依月月記錄），等回覆**（月月自行寄出，AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
 > 收件人：Lawrence Fritts（Musical Instrument Samples 建置者，網頁署名）。**信箱請自行從 https://theremin.music.uiowa.edu/MIS.html 或 University of Iowa School of Music 教職員頁確認**，本文件不臆測。
 > 語言：英文。下方附中文對照。
 
