@@ -1,0 +1,168 @@
+WF0925b-TF 證據 — Q12 GATE 1：兩支 workflow 的 YAML 解析＋靜態結構檢查（改前／改後）
+日期：2026-09-25　repo HEAD：18430c4（WF0925 154 檔 staged、本卡改動 unstaged，未 commit）
+卡號：WF0925b-TF（CI/tools lane 工兵）　Python 3.13.3、pytest 8.4.2、pwsh 7.6.6
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<REPO> = repo 根目錄；<SCRATCH> = 本 session
+暫存目錄（repo 外）；<SIMTMP> = 模擬腳本在 output/wf0925b/TF/sim/ 下開的暫存資料夾。
+原始 log 與腳本都在 output/wf0925b/TF/（gitignored）。
+接手說明：本卡第一個 session 在 12:11 組好證據後被 session limit 中斷；接手 session 逐項核對改動、
+收尾時把本檔所有 GATE 全部重跑一次，下面的輸出都是重跑的結果（第一次的原始 log 與證據備份在
+output/wf0925b/TF/run1_20260925_1211/，重跑的判定結果跟第一次全部一致，差異只在耗時、暫存路徑名稱和本檔另外註明的地方）。
+================================================================================
+命令（repo 根目錄）：
+  改前：python output/wf0925b/TF/sim/yaml_check.py output/wf0925b/TF/before/physics.yml output/wf0925b/TF/before/release-physics.yml
+  改後：python output/wf0925b/TF/sim/yaml_check.py .github/workflows/physics.yml .github/workflows/release-physics.yml
+  （output/wf0925b/TF/before/ 是開工前從 working tree 複製的檔案，已核對跟 git index（WF0925 staged 版）逐位元組相同，
+   只差 CRLF/LF 正規化。）
+
+檢查內容（白話）：
+- yaml.safe_load 兩檔都要成功。
+- 每個「多行 run:」步驟：如果 shell 是 pwsh（Windows runner 的預設），裡面每一行原生指令（python、ctest、cmake、
+  git、sudo、HostProbe exe）的下一行必須是 `if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }`；
+  自己處理 exit code 的兩個步驟（HostProbe 的 `$code = $LASTEXITCODE`、整曲 smoke 的 `$fail = 1`）另外標出。
+- 列出每個 job 的步驟順序、needs、if、outputs，用來看 HostProbe 有沒有排到最後、corpus job 的條件。
+- 改前 exit=1（7 個步驟有沒檢查的原生指令），改後 exit=0。
+
+---------------------------------------------------------------- 改前輸出（exit=1）
+## physics.yml: yaml.safe_load OK, 12714 bytes, CRLF=True, jobs=['build-and-verify', 'cross-platform-emit', 'cross-platform-compare', 'cpp-address-sanitizer']
+  job build-and-verify  runs-on=windows-2022  needs=None  if=None  outputs=None
+     0 Checkout code (with submodules)
+     1 Setup Python
+     2 Install Python dependencies [multi-line]  <-- UNCHECKED native: ['python -m pip install pip==24.3.1', 'python -m pip install -r tools/requirements-physic']
+     3 Setup MSVC developer environment
+     4 Configure CMake
+     5 Build CLI (TsukiSynthCLI)
+     6 Build Standalone (TsukiSynth_Standalone)
+     7 Build VST3 (TsukiSynth_VST3)
+     8 Build regression tests
+     9 Run C++ audit and tuner regression tests
+    10 Run L2 HostProbe against the built VST3 [multi-line]  (handles $LASTEXITCODE itself)
+    11 Upload HostProbe log
+    12 Run spectral and T60 metrology self-tests [multi-line]  <-- UNCHECKED native: ['python -m pytest tests -q', 'python tools/physics_verify.py --selftest']
+    13 Run standalone T60 gate
+    14 Run complete physics implementation gate (M1+M2+M5)
+    15 Whole-score verification (CI smoke subset) [multi-line]  (handles $LASTEXITCODE itself)
+    16 Run event-specific consonance gate
+  job cross-platform-emit  runs-on=${{ matrix.os }}  needs=None  if=None  outputs=None
+     0 Checkout code (with submodules)
+     1 Install JUCE build dependencies (Linux only) [multi-line]  (shell=(default))
+     2 Setup Python
+     3 Install numpy
+     4 Setup MSVC developer environment
+     5 Configure CMake (CLI only)
+     6 Build CLI
+     7 Render probe set
+     8 Upload platform renders
+  job cross-platform-compare  runs-on=ubuntu-24.04  needs=cross-platform-emit  if=None  outputs=None
+     0 Checkout code
+     1 Setup Python
+     2 Install numpy
+     3 Download every platform's renders
+     4 Compare against the Windows/MSVC reference [multi-line]  (shell=bash)
+     5 Upload comparison report
+  job cpp-address-sanitizer  runs-on=windows-2022  needs=None  if=None  outputs=None
+     0 Checkout code (with submodules)
+     1 Setup MSVC developer environment
+     2 Configure AddressSanitizer regression build
+     3 Build AddressSanitizer regression tests
+     4 Run AddressSanitizer regression tests
+## release-physics.yml: yaml.safe_load OK, 7328 bytes, CRLF=True, jobs=['build-and-host-validate', 'complete-score-corpus']
+  job build-and-host-validate  runs-on=windows-2022  needs=None  if=None  outputs=None
+     0 Checkout code (with submodules)
+     1 Setup Python
+     2 Install Python dependencies [multi-line]  <-- UNCHECKED native: ['python -m pip install pip==24.3.1', 'python -m pip install -r tools/requirements-physic']
+     3 Setup MSVC developer environment
+     4 Configure and build all release targets [multi-line]  <-- UNCHECKED native: ['cmake -B build -DTSUKI_BUILD_TESTS=ON', 'cmake --build build --config Release --target Tsuk']
+     5 Run C++ and Python physics gates [multi-line]  <-- UNCHECKED native: ['ctest --test-dir build -C Release --output-on-fail', 'python -m pytest tests -q', 'python tools/physics_verify.py --selftest', 'python tools/physics_verify.py --full']
+     6 Run L2 HostProbe against the built VST3 [multi-line]  (handles $LASTEXITCODE itself)
+     7 Upload HostProbe log
+     8 Download pinned pluginval binary [multi-line]  (no native command; cmdlets/.ps1 only)
+     9 Build pinned official Steinberg VST3 validator [multi-line]  <-- UNCHECKED native: ['git clone --filter=blob:none --no-checkout https:/', 'git -C $sdk checkout --detach $env:VST3SDK_COMMIT', 'git -C $sdk submodule update --init --depth 1 base', 'cmake -S $sdk -B "$sdk-build" -DSMTG_CREATE_PLUGIN', 'cmake --build "$sdk-build" --config Release --targ']
+    10 Validate VST3 in two independent hosts [multi-line]  (no native command; cmdlets/.ps1 only)
+    11 Upload CLI for corpus shards
+  job complete-score-corpus  runs-on=windows-2022  needs=build-and-host-validate  if=None  outputs=None
+     0 Checkout score corpus
+     1 Setup Python
+     2 Install Python dependencies [multi-line]  <-- UNCHECKED native: ['python -m pip install pip==24.3.1', 'python -m pip install -r tools/requirements-physic']
+     3 Download built CLI
+     4 Verify deterministic corpus shard
+RESULT: FAIL (7 step(s) with unchecked native commands)
+exit=1
+
+---------------------------------------------------------------- 改後輸出（exit=0）
+## physics.yml: yaml.safe_load OK, 14832 bytes, CRLF=True, jobs=['build-and-verify', 'cross-platform-emit', 'cross-platform-compare', 'cpp-address-sanitizer']
+  job build-and-verify  runs-on=windows-2022  needs=None  if=None  outputs=None
+     0 Checkout code (with submodules)
+     1 Setup Python
+     2 Install Python dependencies [multi-line]  (every native command checked)
+     3 Setup MSVC developer environment
+     4 Configure CMake
+     5 Build CLI (TsukiSynthCLI)
+     6 Build Standalone (TsukiSynth_Standalone)
+     7 Build VST3 (TsukiSynth_VST3)
+     8 Build regression tests
+     9 Run C++ audit and tuner regression tests
+    10 Run spectral and T60 metrology self-tests [multi-line]  (every native command checked)
+    11 Run standalone T60 gate
+    12 Run complete physics implementation gate (M1+M2+M5)
+    13 Whole-score verification (CI smoke subset) [multi-line]  (handles $LASTEXITCODE itself)
+    14 Run event-specific consonance gate
+    15 Run L2 HostProbe against the built VST3 [multi-line]  (handles $LASTEXITCODE itself)
+    16 Upload HostProbe log
+  job cross-platform-emit  runs-on=${{ matrix.os }}  needs=None  if=None  outputs=None
+     0 Checkout code (with submodules)
+     1 Install JUCE build dependencies (Linux only) [multi-line]  (shell=bash)
+     2 Setup Python
+     3 Install numpy
+     4 Setup MSVC developer environment
+     5 Configure CMake (CLI only)
+     6 Build CLI
+     7 Render probe set
+     8 Upload platform renders
+  job cross-platform-compare  runs-on=ubuntu-24.04  needs=cross-platform-emit  if=None  outputs=None
+     0 Checkout code
+     1 Setup Python
+     2 Install numpy
+     3 Download every platform's renders
+     4 Compare against the Windows/MSVC reference [multi-line]  (shell=bash)
+     5 Upload comparison report
+  job cpp-address-sanitizer  runs-on=windows-2022  needs=None  if=None  outputs=None
+     0 Checkout code (with submodules)
+     1 Setup MSVC developer environment
+     2 Configure AddressSanitizer regression build
+     3 Build AddressSanitizer regression tests
+     4 Run AddressSanitizer regression tests
+## release-physics.yml: yaml.safe_load OK, 10791 bytes, CRLF=True, jobs=['build-and-host-validate', 'complete-score-corpus']
+  job build-and-host-validate  runs-on=windows-2022  needs=None  if=None  outputs={'cli_uploaded': "${{ steps.upload_cli.outcome == 'success' }}"}
+     0 Checkout code (with submodules)
+     1 Setup Python
+     2 Install Python dependencies [multi-line]  (every native command checked)
+     3 Setup MSVC developer environment
+     4 Configure and build all release targets [multi-line]  (every native command checked)
+     5 Run C++ and Python physics gates [multi-line]  (every native command checked)
+     6 Download pinned pluginval binary [multi-line]  (no native command; cmdlets/.ps1 only)
+     7 Build pinned official Steinberg VST3 validator [multi-line]  (every native command checked)
+     8 Validate VST3 in two independent hosts [multi-line]  (no native command; cmdlets/.ps1 only)
+     9 Upload CLI for corpus shards
+    10 Run L2 HostProbe against the built VST3 [multi-line]  (handles $LASTEXITCODE itself)
+    11 Upload HostProbe log
+  job complete-score-corpus  runs-on=windows-2022  needs=build-and-host-validate  if=${{ !cancelled() && needs.build-and-host-validate.outputs.cli_uploaded == 'true' }}  outputs=None
+     0 Checkout score corpus
+     1 Setup Python
+     2 Install Python dependencies [multi-line]  (every native command checked)
+     3 Download built CLI
+     4 Verify deterministic corpus shard
+RESULT: PASS
+exit=0
+
+---------------------------------------------------------------- 結論
+- 改後兩檔 YAML 都能解析；7 個有「沒檢查的原生指令」的多行 pwsh 步驟全部補上檢查（RESULT: PASS）。
+- physics.yml build-and-verify：HostProbe 從第 10 步移到第 15 步（倒數第 2，只剩「Upload HostProbe log」，
+  if: always()），排在 ctest、pytest＋--selftest、T60、--full、整曲 smoke、協和度 gate 全部之後。
+- release-physics.yml build-and-host-validate：HostProbe 從第 6 步移到第 10 步，排在物理 gate、pluginval、
+  Steinberg validator、CLI 上傳之後；job 多了 outputs.cli_uploaded（= 上傳 CLI 那一步的 outcome 是否 success）；
+  complete-score-corpus 多了 if: ${{ !cancelled() && needs.build-and-host-validate.outputs.cli_uploaded == 'true' }}，
+  所以 HostProbe 失敗時 corpus 分片照跑（整條 workflow 還是紅的），CLI 上傳之前任何一步失敗則照舊跳過。
+- Linux 的「Install JUCE build dependencies」加了明寫 `shell: bash`（runner 會用 bash --noprofile --norc -eo pipefail）；
+  原本不寫時 Linux 預設是 `bash -e {0}`，本來就是遇錯即停，這裡只是不再依賴預設。
+- 注意：這些 job 層級的條件（outputs、!cancelled()）只能靠 YAML 解析和 GitHub 文件核對，本機沒辦法真的跑；
+  要 push 之後在 GitHub 上才驗得到（見 summary 的 open_items）。

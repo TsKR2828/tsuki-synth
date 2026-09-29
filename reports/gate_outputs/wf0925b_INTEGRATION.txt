@@ -1,0 +1,155 @@
+WF0925b-INT2（收尾輪整合卡）全套 GATE 執行記錄（2026-09-25）
+================================================================
+branch fix/deep-physics-audit-20260716，HEAD 18430c4（沒動 HEAD、沒 commit、沒 push）。
+原始輸出全部在 reports/gate_outputs/wf0925b_integration_raw/（檔名前面的編號＝本檔的段落）。
+本機路徑一律換成代稱：<REPO>＝repo 根目錄、<SCRATCH>＝本 session 暫存目錄（repo 外）、<APPDATA>＝使用者 AppData\Roaming。
+換代稱之前的原始 log、腳本、render 輸出在 output/wf0925b/INT2/（gitignored；換代稱用 output/wf0925b/INT2/sanitize.py，
+只換路徑、其他文字不動，每個檔換了幾處印在執行紀錄裡）。
+接手說明：本卡在使用者用量上限之前沒有留下任何產出（開工時 output/wf0925b/ 底下沒有 INT2、reports/ 底下沒有 wf0925b_INTEGRATION*），
+所以恢復後從第 1 步整套重跑，下面的數字全部是這一次跑出來的。
+
+結論：status=DONE。全部 GATE 綠燈。
+  pytest 307＝301 passed＋1 skipped＋5 xfailed（新基線；比 288 多 19 條，全部來自 WF0925b-TF，刪除 0 條）；
+  physics_verify --full NO CHECKED FAILURES（3 個 rubber N/A 是既有的）；--selftest 13/13；verify_score --all 75/75；
+  位元不變 8/8 IDENTICAL（--cli 用相對路徑）；HostProbe 在 repo 外的 cwd 跑 215 PASS／0 FAIL。
+  而且 physics_verify、selftest、verify_score、pytest 的 skip/xfail 摘要、HostProbe 判定行，
+  跟 WF0925 整合卡（同一支 CLI b84c775b）的輸出逐行相同。
+本卡沒改任何程式或文件，只新增本檔與 wf0925b_integration_raw/（14 檔）。
+
+----------------------------------------------------------------------
+0. 開工狀態（raw 00_git_status_start.txt、00b_src_build_unchanged_check.txt、00c_staged_lane_attribution.txt）
+----------------------------------------------------------------------
+命令：git status --porcelain；git diff --cached --stat；git diff --stat；git stash list
+- staged：224 檔（git diff --cached --stat 最後一行：224 files changed, 89920 insertions(+), 307 deletions(-)）。
+- 「staged 之後又改」（MM／AM 等）：0 檔；追蹤檔的 unstaged 改動：0（git diff --stat 空白）。stash：空。
+- 沒 staged 的只有 2 項 untracked，都不屬於本輪任何卡，跟 WF0925 整合卡收尾時一樣，本卡沒動：
+    reports/status_check_2026-09-25/（09-25 盤點本身，裁決包 Q34）
+    docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md（09-16 變現計畫，含售價、repo 是 PUBLIC，裁決包 Q34a）
+- 跟 WF0925 收尾時的 154 檔比（raw 00c）：原本 154 檔全部還在 staged；其中 10 檔內容被本輪再改過，另外新進 70 檔。
+  歸屬（照各卡證據檔自己列的 files_touched）：
+    TF（Q12 CI exit code＋O16 tools 小修）：10 檔＝原有 6（兩支 workflow、tools/partial_verify.py、render_wf_scores.py、
+        tests/test_measurement_selfcal.py、tests/test_stem_stream.py）＋新進 4（tools/crossplatform_verify.py、tools/stem_verify.py、
+        tests/test_dump_modes_layered.py、tests/test_stem_verify.py）；證據 6＋TF 稽核證據 1。TF 稽核 PASS。
+    DS（文件同步）：11 檔＝原有 4（D9 裁決包、KNOWN_LIMITS_INDEX、兩封信）＋新進 7（ROADMAP_PHYSICS.md、EARFREE、ENGINE_DOMAIN_CLAIMS、
+        WOOD_ANISOTROPY_SOURCES、WF0907_README、WF0914_README、wf0914_INTEGRATION.txt）；證據 1。DS/BR 稽核 DS=PASS。
+    BR（BeamModel ×2 選項 B 前後數字，研究，不改 src/）：reports/beam_x2_option_b/ 19 檔＋報告 1＋證據 6。DS/BR 稽核 BR=PASS。
+    XF（商品 lane 修正輪）：WF0925 時 untracked 的 X1/X2 證據 15 檔（XF 去掉本機路徑後）＋XF 證據 9。
+  10＋70 都對得上，沒有來源不明的檔（raw 00c 的分類欄沒有 UNKNOWN）。
+- src/ 相對 WF0925 整合卡有沒有新改動（raw 00b）：
+    staged 的 src 檔還是那 9 個；sha256sum -c output/wf0925/K_audit2/audited_files_sha256_round2_start.txt → src/ 9 檔、
+    tests/audit_repro.cpp、tests/host_probe.cpp、scores/examples/water_gong_free.score.json 全部 OK
+    （34 檔裡唯一不符的是 D9 裁決包，屬 DS，且跟 DS 改完的 after_sha256 相同）；
+    工作樹對 index 沒有 src/ 改動；CMakeLists.txt、cmake/、data/ 沒有改動。
+    build\ 6 支執行檔 sha256 跟 WF0925 整合卡重建後（wf0925_integration_raw/03b_bin_sha256_after.txt）完全相同：
+      CLI b84c775b…、VST3 c5b6b2f1…、Standalone 407f9d0c…、AuditTest 2d318364…、PhysicsModelsTest fb3f72c0…、HostProbe 3293ccf1…
+    → 本輪沒有新的 src/ 改動，照卡片指示 build\ 不重建。
+- CLI：規約要求先複製到自己的 output 目錄 → output/wf0925b/INT2/cli/TsukiSynthCLI.exe（sha256 b84c775b04abd5a2…，跟 build\ 相同）。
+  GATE 2、4 都明確帶 --cli 指到這個複本（WF0925 教訓 1），GATE 5 故意用相對路徑。
+
+----------------------------------------------------------------------
+GATE 1：pytest 全套（raw 02_pytest.txt；收集清單 raw 01_pytest_collect_only.txt、對照 raw 01a_pytest_collect_diff.txt）
+----------------------------------------------------------------------
+命令：python -m pytest tests -q -rsxX（Python 3.13.3、pytest 8.4.2；-rsxX 只多印 skip/xfail 原因摘要，不改變收集或執行的測試）
+結果：「301 passed, 1 skipped, 5 xfailed in 436.86s (0:07:16)」PYTEST_EXIT=0
+
+新基線：307 個測試＝301 passed＋1 skipped＋5 xfailed，0 failed、0 xpass。
+對照舊基線 288（282 passed＋1 skip＋5 xfail，WF0925 整合卡）：
+  - --collect-only：「307 tests collected」。跟 WF0925 整合卡當時的收集清單（output/wf0925/INT/collect_now.txt，288 條）逐條 diff：
+    新增 19、移除 0（沒有測試被刪）。
+  - 新增 19 條都來自 WF0925b-TF，跟 TF 自己報的 G5「307（+19：stem_stream +12、stem_verify +7；刪 0）」相同：
+      tests/test_stem_stream.py +12（O16(b) WAVE_FORMAT_EXTENSIBLE：test_extensible_decodes_identically_to_plain_tag 參數化 5 條
+        ［float32/pcm16/pcm24/pcm32/pcm32_valid24］＋7 條邊界／拒讀檢查）
+      tests/test_stem_verify.py +7（O16(d) stem_verify／partial_verify 的 --cli，名稱都是 test_tf_*）
+  - 282＋19＝301 passed；skip 1、xfail 5 跟 WF0925 整合卡是同樣 6 行（SKIPPED/XFAIL 摘要行排序後逐字 diff，DIFF_EXIT=0，6 行對 6 行；raw 08）：
+      SKIPPED test_render_app_filename_safety.py:135（WF0907 既有）
+      XFAIL test_measurement_selfcal.py 的 development/holdout/release_development/release_holdout/gain_fidelity 五條 within_one_cent
+            （WF0909-C10C 既有，strict=True）
+  - TF 把「release 網格 0 拒量」從 strict xfail 移位到 plain test（(i)(m) 兩條），不是新增測試項，所以不影響計數；那兩條 plain test 這次 PASS。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 2：physics_verify --full（raw 03_physics_verify_full.txt）
+----------------------------------------------------------------------
+命令：python tools/physics_verify.py --full --cli <REPO>\output\wf0925b\INT2\cli\TsukiSynthCLI.exe（13:43:30 → 13:45:38）
+      log 第 3 行「CLI: <REPO>\output\wf0925b\INT2\cli\TsukiSynthCLI.exe」＝確實用了指定的複本。
+結果：F1 PASS／1b PASS／1c CHECKED CASES PASS; 3 UNVERIFIED/N/A／1d PASS／2d PASS／5b PASS／
+      F5 residual PASS（cimbalom -67.3、tongue_drum -75.9、water_gong -72.7、water_gong_free -77.9、piano -63.9 dB，limit -60.0）
+      UNVERIFIED：cimbalom/rubber、tongue_drum/rubber、water_gong/rubber（既有，T60 短於量測窗）
+      「RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED」EXIT_CODE=0
+對照：跟 WF0925 整合卡 06_physics_verify_full.txt 去掉命令列／CLI 路徑／時間／EXIT 行後逐行 diff，570 行對 570 行，DIFF_EXIT=0（raw 08）。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 3：physics_verify --selftest（raw 04_physics_verify_selftest.txt）
+----------------------------------------------------------------------
+命令：python tools/physics_verify.py --selftest
+結果：13 項全部 PASS（short_t60_f0 -0.259 cents … residual_energy_unmodeled_peak_rejected），FAIL 0 行，EXIT_CODE=0。
+對照：跟 WF0925 整合卡 07_physics_verify_selftest.txt 逐行相同，13 行對 13 行，DIFF_EXIT=0（raw 08）。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 4：verify_score --all（raw 05_verify_score_all.txt）
+----------------------------------------------------------------------
+命令：python tools/verify_score.py --all --cli <REPO>\output\wf0925b\INT2\cli\TsukiSynthCLI.exe（13:45:41 → 14:09:58）
+結果：「Found 75 score file(s) to verify.」…
+      「75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.」EXIT_CODE=0
+      75 份 render manifest 的 renderer 欄位全部是 b84c775b04ab，configured source 全部是 18430c4d9307 dirty；豁免仍是既有的 1 項。
+對照：跟 WF0925 整合卡 08_verify_score_all.txt 去掉命令列／CLI 路徑／時間／EXIT 行後逐行 diff（這次連 renderer 欄位都不用遮），
+      3836 行對 3836 行，DIFF_EXIT=0（每首的 WAV 雜湊都相同；raw 08）。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 5：位元不變 8/8，--cli 用相對路徑（raw 06_render_wf_scores_bit_identity.txt）
+----------------------------------------------------------------------
+命令（cwd＝<REPO>）：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0925b_INT2
+    --workdir <SCRATCH>\wf0925b\INT2\rw（repo 外、短路徑）
+    --cli output/wf0925b/INT2/cli/TsukiSynthCLI.exe（相對路徑，正斜線）
+    --outdir output/wf0925b/INT2/render
+結果：腳本印「cli: <REPO>\output\wf0925b\INT2\cli\TsukiSynthCLI.exe」（TF 的 abspath 修正有效：WF0925 時同樣的相對路徑會 WinError 2），
+      RENDER_EXIT=0（14:09:58 → 14:11:31）
+  diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt output/wf0925b/INT2/render/sha256_wf0925b_INT2.txt
+  → 沒有輸出，DIFF_STRIP_CR_EXIT=0
+  逐首：moonlight_yangqin 49514b007e3e01fc、yangqin_tongue_mix 280cbdac3c117c14、physical_piano 1233b53f1e8660bc、
+        restraint_metal_click be634798c4a0bf71、tongue_drum f539aefa91919cbf、water_gong_free 31b539c6ac08d942、
+        ai_radiance_m1 74122637a0c71278、fur_elise_opening b0877774da9e5fc5 → 「8/8 IDENTICAL; extra in now: []」
+  wf0907_method/ 開跑前後檔案清單相同（--outdir 有效，沒有多出新檔）；git status 只有 TF 本來就 staged 的 render_wf_scores.py。
+  → R10 沒觸發。
+[PASS]
+
+----------------------------------------------------------------------
+GATE 6：HostProbe，build\ 現成 exe，cwd 在 repo 外（raw 07_hostprobe_cwd_outside_repo.txt、09_hostprobe_compare.txt）
+----------------------------------------------------------------------
+cwd＝<SCRATCH>/wf0925b/INT2（repo 外；這裡沒有 data/materials.json；用 env -u 確保沒設 TSUKI_REPO_ROOT）
+exe sha256 3293ccf1…、VST3 dll sha256 c5b6b2f1…（都跟 WF0925 整合卡相同）
+命令：<REPO>/build/Release/TsukiSynthHostProbe.exe <REPO>/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <SCRATCH>/wf0925b/INT2/hostprobe
+結果：[PASS] 215 行、[FAIL] 0 行、「PASS (0 failures)」EXIT_CODE=0
+      「H8 materials.json used: <REPO>\data\materials.json (found in an ancestor of the executable's directory)」
+      → 任意 cwd 都能跑（K2 的找法：cwd → TSUKI_REPO_ROOT → exe 所在資料夾往上找）。
+對照（output/wf0925b/INT2/hp_norm2.py，做法同 WF0925 整合卡 hp_norm.py，只把 HostProbe 輸出資料夾路徑正規化）：
+  - WF0925 整合卡 09b（cwd=output/wf0925/INT）vs 本輪：215 對 215，少 0 行、多 0 行；非判定行 diff 也是 0。
+  - WF0925 整合卡 09（cwd=repo 根）vs 本輪：215 對 215，少 0 行、多 0 行。
+  - 跑前跑後 <APPDATA>\TsukiSynth\IR、\Presets 都是 0 項（沒有殘留）。
+[PASS]
+
+沒跑的：cmake 設定／建置／ctest。卡片沒列，而且 build\ 沒重建、測試執行檔 sha256 跟 WF0925 整合卡相同（raw 00b），
+WF0925 整合卡的 ctest 4/4、AuditTest 110 PASS 仍然適用在同一批執行檔上。
+
+----------------------------------------------------------------------
+收尾
+----------------------------------------------------------------------
+- 跑 GATE 沒有改到任何追蹤檔，也沒有在 repo 內留下其他新檔（raw 10_git_status_end_before_add.txt：
+  只多了本卡的 wf0925b_integration_raw/；render 輸出在 output/wf0925b/INT2/render（gitignored），HostProbe 輸出在 <SCRATCH>）。
+- git add 範圍：只有本檔 reports/gate_outputs/wf0925b_INTEGRATION.txt 和 reports/gate_outputs/wf0925b_integration_raw/（14 檔）。
+  兩項 untracked（盤點報告、MONETIZATION_PLAN）不是本卡的，沒動。
+- 本卡沒做：重建 build\、部署 VST3、改任何交接文件、commit/push。
+- 本卡沒有新增任何常數、容差或判定門檻；所有 PASS/FAIL 都是既有工具原本的判定。
+
+給交接卡的同步事項（本卡權限外，沒改）：
+  1. pytest 基線 288 → 307（301 passed＋1 skip＋5 xfail），+19 全部來自 TF（stem_stream +12、stem_verify +7）。
+     HANDOVER／WF0925_README §0 的基線數字要更新。
+  2. render_wf_scores.py 的 --cli 用相對路徑已經能跑（本卡 GATE 5 實測）；WF0925_README §0「--cli 要用 Windows 絕對路徑」可以拿掉，
+     改成 TF open_items 8 的「--workdir 路徑要短」（本卡用 <SCRATCH>\wf0925b\INT2\rw 沒有碰到長路徑問題）。
+  3. 本輪 XF 的稽核判定沒有進版控的證據檔：reports/gate_outputs/ 裡只有 XF 自己的 9 個證據（含 wf0925b_XF_audit_rerun.txt＝XF 自己重跑舊稽核腳本），
+     稽核員的輸出只在 output/wf0925b/XF_audit/（gitignored；a3_zips 36/36 PASS、a5_redaction 18/18 PASS、x2_verify_rerun 134/134 PASS）。
+     X1/X2＋XF 共 24 檔已經 staged，交接卡寫 WF0925b 記錄時要從稽核回報補上判定出處。

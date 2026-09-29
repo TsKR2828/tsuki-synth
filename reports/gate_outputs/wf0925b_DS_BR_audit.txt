@@ -1,0 +1,179 @@
+WF0925b 文件＋研究稽核：DS（文件同步）與 BR（BeamModel ×2 選項 B 前後數字）
+日期 2026-09-25。HEAD 18430c4。index tree ef4ce1ce3fcf2685deb3c903ebc4fdf7728426cc（跟 BR 開工時相同）。
+路徑一律 repo 相對；<SCRATCH> = 本 session 的暫存資料夾（在 repo 外）；output/ 開頭的是 gitignored 本機產出。
+本稽核沒有改任何 src/、tools/、tests/、score、商品檔；只寫這個證據檔，另依規約 git add 兩張 PASS 卡的檔。
+稽核用的腳本與輸出（gitignored／repo 外）：<SCRATCH>/wf0925b/AUD2/（v1check.py、t60check.py、corpus2.py、render 輸出）。
+
+判定：DS = PASS；BR = PASS。
+
+======================================================================
+一、DS（WF0925b-DS 文件同步）
+======================================================================
+
+[DS-1] 改動範圍＝DS 回報的 11 個文件，別張卡沒有再動
+  $ sha256sum <11 檔>  vs  output/wf0925b/DS/after_sha256.txt
+    11/11 相同（DS 寫完之後沒有被別的卡改過）。
+  $ git show :<檔> | tr -d '\r' | sha256sum  vs  output/wf0925b/DS/before/<檔>（去 CR）
+    11/11 相同 → DS 的 before 快照＝index 版，所以 `git diff -- <11 檔>` 就是 DS 的全部改動。
+  $ git diff --stat -- <11 檔>
+    11 files changed, 169 insertions(+), 42 deletions(-)
+  換行：11 檔改前改後都各自一致（CRLF 檔全 CRLF、LF 檔全 LF），沒有混用。
+  沒碰：HANDOVER.md、TODO.md、DEVLOG.md、README.md、docs/workcards/WF0925_README.md、
+        reports/decision_packets/WF0925_open_decisions.zh-TW.md 都只有 staged（WF0925）改動，沒有 unstaged 改動。
+
+[DS-2] ROADMAP_PHYSICS.md §1 規則原文與 §6 容差表一字未改
+  §1 = :152-174，十條規則 = :152-167；§6 = :457-479（改前改後、HEAD 三版的節標行號相同）。
+  $ diff <(sed -n 152,167p HEAD版) <(sed -n 152,167p 工作樹)            → 相同（對 HEAD 也相同）
+  $ diff <(sed -n 457,479p HEAD版) <(sed -n 457,479p 工作樹)            → 相同（對 HEAD 也相同）
+  改前 483 行全部沒有位移（:1-483 的差異只在 :17、:21、:26、:27、:28、:170、:171），新段放檔尾 :484-510。
+  :170-171 是十條之後的「待月月裁決」註記（不是規則原文），只在句尾加「→ 見裁決包 Q03／Q02」與 Q02 的
+  include 鏈補記，並寫明「R6 原文未改」。
+
+[DS-3] 只准附加的 4 個檔確實只有檔尾追加
+  做法：改前檔案的全部位元組必須是改後檔案的開頭（cmp 前 N 位元組）。
+    reports/gate_outputs/wf0914_INTEGRATION.txt                     PREFIX-OK（9964 bytes）
+    reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md      PREFIX-OK（13875 bytes）
+    docs/workcards/WF0907_README.md                                 PREFIX-OK（8361 bytes）
+    docs/workcards/WF0914_README.md                                 PREFIX-OK（4003 bytes）
+  git diff 在這 4 檔沒有任何 "-" 行，每檔只有一個在檔尾的 hunk。
+
+[DS-4] EARFREE §8 新數字：稽核自己從 V1 原始 JSON 重算（不是看 DS 的 verify_numbers_out.txt）
+  來源 output/wf0925/V1/stem_full_report.json（sha256 a4647c96…，跟證據檔
+  reports/gate_outputs/wf0925_V1_partial_stem_verify_full.txt 記的相同）、output/wf0925/V1/partial_full_report.json。
+  $ python <SCRATCH>/wf0925b/AUD2/v1check.py
+    N 905 verdicts {'PASS': 677, 'UNVERIFIED': 212, 'FAIL': 16}                 → 文件 677／16／212 ✔
+    [pitch] measured 889 within5 889 max 3.0355                                 → 889/905、889/889、3.0355 c ✔
+    [onset] measured 677 within10 677 max 6.9272                                → 677/905、6.9272 ms ✔
+    [unv] n 212 max f0 164.81 all<167 True                                      → 212 顆全部 f0 < 167 Hz ✔
+    [sup] established True residual_peak -119.42                                → −119.42 dBFS ✔
+    [fail] {('E5',0.278):9, ('A5',0.427):3, ('A5',0.452):1, ('A6',0.427):2, ('A#6',0.427):1}
+           （力度從 score 逐顆對 time 取得；16/16 的 reason 含 'near-silent fundamental band'）   → 16 顆名單 ✔
+    [partial] slots 5428 {'PASS': 4577, 'FAIL': 849, 'UNVERIFIED': 2} up 848 down 1 max 12.39
+    [partial] 只有 5 個泛音的：E7、D7；UNVERIFIED＝第 0 顆 E5 的 n=5、n=6                        → §8.6 新段 ✔
+    [partial] status informational, gate_ready False；caveats[0] 仍含 "C10 self-cal still"      → §8.6 加註 ✔
+    pitch_via_partials：16 顆全部 PASS，範圍 −3.56～+1.33 c                                    → ✔
+  另外兩個引用數字對到出處原文：
+    D7 −5.48 c、G6 −5.10 c、20 PASS／2 FAIL → reports/partial_verify_full_2026-09-25.zh-TW.md:32、:143-144
+    14.9～24.5 dB、另 31 顆、FAIL ≤ −72.1／PASS ≥ −67.2 dBFS → reports/weak_fundamental_null_map_2026-09-25.zh-TW.md:22-24、:160-163
+    （EARFREE 裡這組分界標了「描述用、非 GATE」，沒有新增判定門檻）
+
+[DS-5] §8.4 第 4 點可發布措辭句本身未改、只加註
+  改前 :276-279 與改後 :295-297、:300 逐字相同；改後只在句後插入 :298-299 兩行
+  「（註：句中 883/671 的最新實測為 889/677（2026-09-25），措辭是否隨之更新待月月重新核定。…）」。
+
+[DS-6] 其他同步項屬實（逐項對原始檔）
+  - ENGINE_DOMAIN_CLAIMS 同步記錄：`git diff --cached -- src/physics/PlateModel.h scores/examples/water_gong_free.score.json`
+    確實帶上「不是乳突鑼」主張域與 1 : 1.738 : 2.329 : 3.925；wf0914_D13_plate_ratios.txt 有 ratio=1.738427、3.925280；
+    wf0925_K1K2fix_bit_identity.txt 存在。
+  - WOOD :157、:198：docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md §7（:391-435）確有 Table 5–15 全表、第 5–36 頁、
+    12% 順紋 MOE −50 °C +17%／+50 °C −7%；§2.1 S12／S13 存在。
+  - 兩封信：標題改成「信件 1／2（已寄出 2026-09-15）」，跟兩檔第 3 行既有的狀態行一致；其餘行未動。
+  - wf0914_INTEGRATION 勘誤：原檔 :97 寫「15 項」；
+    $ grep -c -E ': (PASS|FAIL)' reports/gate_outputs/wf0914_integration_raw/07_physics_verify_selftest.txt → 13（FAIL 0）
+    wf0925_integration_raw/07_physics_verify_selftest.txt → 13；07b_selftest_vs_wf0914.txt:3「DIFF_EXIT=0 (行數: 13 vs 13)」。
+  - D9 附記（E18）：libs/JUCE 子模組 501c076（git ls-files -s 相同）；juce_Convolution.cpp:623-629 是
+    calculateNormalisationFactor、:628 是 `return 0.125f / std::sqrt (sumSquaredMagnitude);`、:789-790 是
+    Normalise::yes → normaliseImpulseResponse；.h:240-242 預設 Normalise::yes；juce_StandardHeader.h:42-44 = 8.0.12；
+    staged EffectChain.h:89-96 的呼叫只傳 4 個參數；:631-650 normaliseImpulseResponse 取各聲道平方和最大者。
+    20·log10(0.125) = −18.062 dB；20·log10(26.9) = 28.595 dB；04b_audit_repro_direct.txt:119 [K-02] 0.112 dB、:112 26.8999996。
+  - ROADMAP 檔尾 13 列抽查：H8 tail 34.4814／178.734／319.848 s（wf0925_K1_hostprobe.txt:126-130）；
+    HostProbe 89→106→215（wf0925_K1_summary.txt:22、wf0925_K2_summary.txt:26-27）；負對照 4 個 H8 FAIL（K2_summary:45）；
+    pytest 282 passed, 1 skipped, 5 xfailed（05_pytest.txt 末行）；AuditTest [PASS] 110 行（04b 直接計數 110）；
+    D11-F5 4.1425→2.6733 s、弦徑 1.0 mm −59.5 dB（d11_f5_root_cause_2026-09-25.zh-TW.md:30、:102-106）；
+    E8 稽核 log output/wf0925/K_audit2/alloc/run_current.log、run_negative_control.log 存在。
+  - 本卡引用的證據檔都存在且已在 index（wf0925_V1_*、K1/K2、integration_raw、N1、F5、partial_verify_full 報告等）。
+  - KNOWN_LIMITS_INDEX 新行號：用「改前第 N 行＝改後第 M 行內容相同」核對 A2–A8 的 15 個端點，14 個逐字相同；
+    §8.2 結束行（改前 :230→改後 :237）是 DS 自己在該行句尾加註、延長一行，範圍仍正確。ENGINE_DOMAIN_CLAIMS §1 = :10-37 正確。
+  - 本機絕對路徑：DS 證據檔與 11 檔新增行 grep（磁碟代號 C:／E: 與使用者資料夾樣式）→ 0。
+
+  DS 備註（非阻擋）：
+  - KNOWN_LIMITS_INDEX 指向 TODO.md 的行號仍是 HEAD 版，staged TODO.md 已改寫，對不上（DS 已列 open item，等交接卡定稿後重對）。
+  - §8.5(b) 的弱域描述從「基頻天生弱的高音（22 顆）」改寫成「基頻被壓得很弱的音」並保留 08-30 原數字；這是 WF0925_README §6
+    點名的同步項，沒有放寬任何主張（仍列在弱域）。
+
+======================================================================
+二、BR（WF0925b-BR，Q17 選項 B 的前後數字；描述用、非 GATE）
+======================================================================
+
+[BR-1] 兩支 CLI 就是 BR 回報的那兩支，複本只差 ×2 一處
+  $ sha256sum output/wf0925b/BR/cli_base/TsukiSynthCLI.exe output/wf0925b/BR/cli_noX2/TsukiSynthCLI.exe
+    cc2b0e1afb14843577be817dfd293827ed0718c04e4085bb3d0c0bf034936ec6（base）
+    760fde2dc536683b578d9159025155c9cd84c3c32f2e024997312416e6f5227a（noX2）
+    （複製到 <SCRATCH>/wf0925b/AUD2/cli_base、cli_nox2 後 sha 相同，以下都用複製品跑）
+  $ git show :src/physics/BeamModel.h > <SCRATCH>/…/bm_idx.h ; diff --strip-trailing-cr bm_idx.h output/wf0925b/BR/tree/src/physics/BeamModel.h
+    54c54
+    <                 material.damping.eta, frequency) * 2.0f
+    ---
+    >                 material.damping.eta, frequency)
+  $ git archive ef4ce1ce… src CMakeLists.txt data tests tools | tar -x -C <SCRATCH>/…/idx ; diff -r --strip-trailing-cr idx/src tree/src
+    唯一差異就是上面這一行；data／tests／tools／CMakeLists.txt 完全相同。
+  output/wf0925b/BR/BeamModel.h.base 與 index 版（去 CR）相同。
+  主樹：git diff --quiet -- src → worktree src == index src；index 版 BeamModel.h:54 仍有 `* 2.0f`。
+
+[BR-2] base CLI 對 8 首 8/8 位元不變（稽核親自重跑）
+  $ python reports/gate_outputs/wf0907_method/render_wf_scores.py --label audbase --workdir <SCRATCH>\wf0925b\AUD2\r8b
+        --cli <SCRATCH>\wf0925b\AUD2\cli_base\TsukiSynthCLI.exe --outdir <SCRATCH>\wf0925b\AUD2\sha8      [exit=0]
+  $ diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt <SCRATCH>/wf0925b/AUD2/sha8/sha256_audbase.txt
+    （無輸出，exit 0）→ 8/8 IDENTICAL → 複本＝staged 樹（對音訊而言）
+  （scores/ 與 data/ 的工作樹＝index：git diff --quiet -- scores data。）
+  noX2 同樣重跑（--label audnox2）後比基準：只有 3 首不同，sha 跟 BR 證據一致
+    moonlight tongue_mix 280cbdac… → 563c481f…；moonlight tongue_drum f539aefa… → ef02ce58…；ai_radiance_m1 74122637… → b4edb002…
+    其餘 5 首相同。
+
+[BR-3] 抽 3 個音高重跑 --dump-modes，核對 T60 表（reports/beam_x2_option_b/t60_sweep.csv）
+  探針：tongue_drum，幾何同 BR（2.6／24／100 mm、strike 0.44、wood_mallet），4 個事件：
+  鋼 MIDI 48（C3）、鋼 MIDI 60（C4）、鋁 MIDI 60（C4）、黃銅 MIDI 69（A4）。
+  $ python <SCRATCH>/wf0925b/AUD2/t60check.py   （兩支 CLI 各跑 --dump-modes，逐模態對 csv）
+    steel    48 mode 1 f=130.813  base 35.145  nox2 60.38   ratio 1.71803
+    steel    60 mode 1 f=261.626  base 16.39   nox2 26.86   ratio 1.63880
+    aluminum 60 mode 1 f=261.626  base 30.135  nox2 46.965  ratio 1.55849
+    brass    69 mode 1 f=440.000  base 1.5693  nox2 2.9654  ratio 1.88963
+    modes checked 21 (全部模態)  max rel diff vs csv 0.000e+00；兩支 CLI 頻率逐一相同；模態數跟 csv 相同
+  公式自算（data/materials.json，1/T60 = k·η·f/2.2 + β_air·f² + γ_rad·f，k=2 或 1）：
+    鋼 C3 35.1446／60.3799、鋼 C4 16.3895／26.8597、鋁 C4 30.1346／46.9653、黃銅 A4 1.5693／2.9654 s，跟 dump 一致。
+  t60_sweep.csv 模態 1 倍數範圍：鋼 1.15～1.80、鋁 1.11～1.73（跟報告 §0 相同）。
+
+[BR-4] corpus 變化清單抽 2 檔重算（另加 1 份不該變的對照）
+  $ python <SCRATCH>/wf0925b/AUD2/corpus2.py  （兩支 CLI 各渲染一次；sha256、長度、mono RMS、sample peak）
+    scores/library/forest/forest_ui_001.score.json（清單裡 RMS 變最多的）
+      base sha e74063ba…＝csv、len 0.615、RMS −23.625；noX2 sha 98ee7d26…＝csv、len 0.615、RMS −20.612；ΔRMS +3.013（csv +3.013）
+      商品母帶 masters/sfx_library/forest/UI_Soft_OneShot_F5.wav sha e74063ba…：base＝母帶 True、noX2＝母帶 False
+    scores/library/restraint/restraint_ui_001.score.json（清單裡變長最多的音效）
+      base sha 8cf07afe…＝csv、len 1.605、RMS −23.085；noX2 sha 81f18cc0…＝csv、len 2.371、RMS −24.220；ΔRMS −1.135（csv −1.135）
+      商品母帶 UI_Metallic_OneShot_G3.wav：base＝母帶 True、noX2＝母帶 False
+    scores/examples/akashic_bell.score.json（不含舌鼓，對照）：兩支 sha 都是 830d2089…，相同，跟 csv 一致
+  兩檔峰值都是 −0.446 dBFS（normalize），跟 csv 相同。
+
+[BR-5] 文獻對照只用 D1 文件已引述的數字
+  literature_position.csv 的 7 列＋報告 §5 另兩條，每個文獻數字都在 docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md 找得到：
+    0.11～0.36（:251）、0.376～0.541（:243）、S3 0.069～0.088／S5 0.010（:284）、S3 0.104～0.133／S5 0.015（:285）、
+    S1 0.85／S3 1.22（:286）、4086 Hz 與 17.6 /s（:245-246）、「Tuning fork: ζ_n ≈ 10⁻⁴」（:199、:319）、7～9 倍（:288）、2.56 倍（:292）。
+  模型側 α = ln(1000)/T60 由 t60_sweep.csv 重算相同（例：鋼 C4 0.421／0.257、鋼 4186 Hz 20.36／17.73 /s、鋁 740 Hz 0.844／0.612）。
+  報告沒有新增來源；「S5 換算」是 D1 自己標明的推導，BR 照 D1 的標示引用。
+
+[BR-6] 不替月月選
+  報告 §0／§5／§6 沒有推薦字眼（grep 建議｜推薦｜應選｜較好｜更好 → 0）；§5 總結寫明「不能證明哪一版比較對」，§6 標「清單；不替選」。
+
+[BR-7] 主 repo libs/JUCE 完整、repo 內沒有 junction 殘留
+  $ find libs/JUCE -type f | wc -l ; find libs/JUCE | wc -l          → 4378 ; 4963（跟 BR 開工時相同）
+  $ git -C libs/JUCE ls-files | wc -l                               → 4377（＋ .git 指標檔 = 4378）
+  $ git -C libs/JUCE status --porcelain | wc -l ; rev-parse HEAD     → 0 ; 501c07674e1ad693085a7e7c398f205c2677f5da
+  $ ls -A output/wf0925b/BR/tree/libs/                               → 空（junction 已移除）
+  PowerShell：repo 內所有頂層資料夾（.git 除外）Get-ChildItem -Recurse -Attributes ReparsePoint → 0 個
+  exports/products/clean_batch2 與 src／data／scores 在 BR 開工（11:40）之後沒有任何檔案被改（find -newer → 0）。
+
+[BR-8] 其他
+  - BR 證據 6 的 sha 清單（報告＋reports/beam_x2_option_b/ 19 檔，共 20 列）：sha256sum -c 20/20 OK。
+  - BR 回報 open_items 裡「27 個檔／beam_x2_option_b 20 個」是算錯：實際是報告 1＋資料夾 19＋證據 6 = 26 個（非阻擋）。
+  - physics_verify：稽核沒有重跑 --full；比對 BR 的兩份原始輸出，判定字（PASS/FAIL/N/A/UNVERIFIED）序列逐一相同，
+    兩份都是 RESULT: NO CHECKED FAILURES（exit=0）。
+  - 本機絕對路徑：BR 報告、6 個證據檔、資料夾內 csv／txt → 0；render_compare.py 的 usage 只有 `C:\\...\\cli_base` 佔位字。
+
+======================================================================
+三、git add（稽核 PASS 後）
+======================================================================
+DS：上述 11 個文件＋reports/gate_outputs/wf0925b_DS_changes.txt
+BR：reports/beam_x2_option_b_before_after_2026-09-25.zh-TW.md、reports/beam_x2_option_b/（19 檔）、
+    reports/gate_outputs/wf0925b_BR_{isolated_build,bit_identity,t60_sweep,corpus,physics_verify,literature_closeout}.txt
+本證據檔：reports/gate_outputs/wf0925b_DS_BR_audit.txt
+output/、exports/ 不 add。

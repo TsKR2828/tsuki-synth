@@ -1,0 +1,169 @@
+WF0925b-TF 證據 — stem_verify／partial_verify 的 --help 與最小 --cli 執行（含預設對照、路徑不存在）
+日期：2026-09-25　repo HEAD：18430c4（WF0925 154 檔 staged、本卡改動 unstaged，未 commit）
+卡號：WF0925b-TF（CI/tools lane 工兵）　Python 3.13.3、pytest 8.4.2、pwsh 7.6.6
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<REPO> = repo 根目錄；<SCRATCH> = 本 session
+暫存目錄（repo 外）；<SIMTMP> = 模擬腳本在 output/wf0925b/TF/sim/ 下開的暫存資料夾。
+原始 log 與腳本都在 output/wf0925b/TF/（gitignored）。
+接手說明：本卡第一個 session 在 12:11 組好證據後被 session limit 中斷；接手 session 逐項核對改動、
+收尾時把本檔所有 GATE 全部重跑一次，下面的輸出都是重跑的結果（第一次的原始 log 與證據備份在
+output/wf0925b/TF/run1_20260925_1211/，重跑的判定結果跟第一次全部一致，差異只在耗時、暫存路徑名稱和本檔另外註明的地方）。
+================================================================================
+CLI：output/wf0925b/TF/cli/TsukiSynthCLI.exe（build\ 複本，sha256 b84c775b…，跟 build\ 那支同一個檔）
+樂譜：scores/tests/melody_sentinel.score.json（5 顆單音、無效果的哨兵樂譜）
+所有命令在 repo 根目錄執行，PYTHONIOENCODING=utf-8；整組由 bash output/wf0925b/TF/minrun.sh 一次跑完（先清空 minrun/），
+輸出在 output/wf0925b/TF/minrun/。partial_verify 預設對照那次讀的是同一份 stem_cli.json，只差 CLI 怎麼選。
+
+---------------------------------------------------------------- --help
+$ python tools/stem_verify.py --help
+usage: stem_verify.py [-h] [--out-dir OUT_DIR] [--jobs JOBS] [--limit LIMIT]
+                      [--json JSON] [--keep-stems] [--force-clean]
+                      [--analysis-dry] [--no-analysis-dry] [--cli CLI]
+                      score
+
+Per-event stem rendering + superposition proof for polyphonic score
+verification (decision packet Option A).
+
+positional arguments:
+  score              path to a *.score.json file
+
+options:
+  -h, --help         show this help message and exit
+  --out-dir OUT_DIR  directory for rendered stems/reference (default: temp
+                     dir)
+  --jobs JOBS        parallel render jobs (default 4)
+  --limit LIMIT      only process the first N voiced events (debugging)
+  --json JSON        write the full report as JSON to this path
+  --keep-stems       keep rendered stem WAVs/scores instead of deleting them
+  --force-clean      if --out-dir's stems/ subdirectory already exists and is
+                     non-empty, delete it before rendering (default: refuse
+                     and exit 1, see F-01)
+  --analysis-dry     (default) derive a dry analysis score -- zero
+                     global.effects.reverb.wet/.decay and
+                     global.effects.delay.wet -- before rendering
+                     stems/reference, per design doc §8.3 (WF0907-C12; see
+                     derive_dry_score())
+  --no-analysis-dry  use the score's own (possibly wet) effects as authored,
+                     unmodified; the report is marked
+                     provenance.analysis_dry=false and carries a top-level
+                     warning that pitch verdicts are not GATE evidence in that
+                     case (design doc §8.3)
+  --cli CLI          TsukiSynthCLI executable to use for every render and
+                     --dump-modes call of this run, including the ones
+                     melody_verify.verify() makes (default:
+                     verify_score.find_cli(), Release-first under build/).
+                     Must be an existing file; a relative path is resolved
+                     against the current directory. Recorded in report
+                     provenance.cli.
+exit=0
+$ python tools/partial_verify.py --help
+usage: partial_verify.py [-h] [--partials N_PARTIALS] [--json JSON]
+                         [--html HTML] [--b-report B_REPORT] [--cli CLI]
+                         [stem_report]
+
+Partial-frequency internal-consistency check (informational; A13 decision
+packet 選項 B+) plus harmonic-aware pitch-via-partials for weak-fundamental
+events (C13).
+
+positional arguments:
+  stem_report           tools/stem_verify.py JSON report (run with an explicit
+                        --out-dir and --keep-stems)
+
+options:
+  -h, --help            show this help message and exit
+  --partials N_PARTIALS
+                        how many partials (n=1..N) to measure per event
+                        (default 6)
+  --json JSON           write the full report as JSON to this path
+  --html HTML           write a minimal HTML rendering to this path
+  --b-report B_REPORT   also (or, if stem_report is omitted, ONLY) write the
+                        A13 選項 B+ engine-vs-Hamilton B ratio report to this
+                        path -- sets no pass/fail condition
+  --cli CLI             TsukiSynthCLI executable for the --dump-modes calls
+                        (default: verify_score.find_cli(), Release-first under
+                        build/). Must be an existing file; a relative path is
+                        resolved against the current directory. Use the same
+                        binary the stem_verify report was made with (its
+                        provenance.cli.sha256).
+exit=0
+
+---------------------------------------------------------------- stem_verify --cli（相對路徑、正斜線）
+$ python tools/stem_verify.py scores/tests/melody_sentinel.score.json --cli output/wf0925b/TF/cli/TsukiSynthCLI.exe --out-dir output/wf0925b/TF/minrun/stem_cli --keep-stems --json output/wf0925b/TF/minrun/stem_cli.json
+[stem_verify] --cli TsukiSynthCLI: <REPO>\output\wf0925b\TF\cli\TsukiSynthCLI.exe
+[stem_verify] scores\tests\melody_sentinel.score.json
+  events total=5  velocity>0=5  used=5
+  stem_verify summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+  baseline (whole-file melody_verify): 5 PASS / 0 FAIL / 0 UNVERIFIED
+  superposition: NOT bit-exact / ESTABLISHED (criterion: see report json)
+    max_abs_diff=2.346933e-07  budget=2.980232e-07  peak=-132.59 dBFS  rms=-144.02 dBFS  first_diff@0.0
+  stems kept at: output\wf0925b\TF\minrun\stem_cli\stems
+exit=0
+
+---------------------------------------------------------------- stem_verify 不帶 --cli（預設行為對照）
+$ python tools/stem_verify.py scores/tests/melody_sentinel.score.json --out-dir output/wf0925b/TF/minrun/stem_default --keep-stems --json output/wf0925b/TF/minrun/stem_default.json
+[find_cli] TsukiSynthCLI selected: <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[stem_verify] scores\tests\melody_sentinel.score.json
+  events total=5  velocity>0=5  used=5
+[find_cli] TsukiSynthCLI selected: <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+  stem_verify summary: 5 PASS / 0 FAIL / 0 UNVERIFIED
+  baseline (whole-file melody_verify): 5 PASS / 0 FAIL / 0 UNVERIFIED
+  superposition: NOT bit-exact / ESTABLISHED (criterion: see report json)
+    max_abs_diff=2.346933e-07  budget=2.980232e-07  peak=-132.59 dBFS  rms=-144.02 dBFS  first_diff@0.0
+  stems kept at: output\wf0925b\TF\minrun\stem_default\stems
+exit=0
+
+---------------------------------------------------------------- stem_verify --cli 指到不存在的檔
+$ python tools/stem_verify.py scores/tests/melody_sentinel.score.json --cli output/wf0925b/TF/cli/no_such_cli.exe --out-dir output/wf0925b/TF/minrun/stem_missing --json output/wf0925b/TF/minrun/stem_missing.json
+[ERROR] --cli path does not exist or is not a file: <REPO>\output\wf0925b\TF\cli\no_such_cli.exe
+exit=1
+
+---------------------------------------------------------------- partial_verify --cli（讀上面 stem_verify --cli 的報告）
+$ python tools/partial_verify.py output/wf0925b/TF/minrun/stem_cli.json --cli output/wf0925b/TF/cli/TsukiSynthCLI.exe --json output/wf0925b/TF/minrun/partial_cli.json --b-report output/wf0925b/TF/minrun/b_report_cli.txt
+[partial_verify] --b-report written to output/wf0925b/TF/minrun/b_report_cli.txt
+[partial_verify] output\wf0925b\TF\minrun\stem_cli.json
+  events=5  stem_available=5  stem_missing=0
+  partials verified=30 refused=0  max|cents|=5.3467
+  pitch_via_partials: eligible=0 measured=0 (pass=0 fail=0) unverified=0
+exit=0
+
+---------------------------------------------------------------- partial_verify 不帶 --cli（預設行為對照）
+$ python tools/partial_verify.py output/wf0925b/TF/minrun/stem_cli.json --json output/wf0925b/TF/minrun/partial_default.json --b-report output/wf0925b/TF/minrun/b_report_default.txt
+[find_cli] TsukiSynthCLI selected: <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[partial_verify] --b-report written to output/wf0925b/TF/minrun/b_report_default.txt
+[partial_verify] output\wf0925b\TF\minrun\stem_cli.json
+  events=5  stem_available=5  stem_missing=0
+  partials verified=30 refused=0  max|cents|=5.3467
+  pitch_via_partials: eligible=0 measured=0 (pass=0 fail=0) unverified=0
+exit=0
+
+---------------------------------------------------------------- partial_verify --cli 指到不存在的檔
+$ python tools/partial_verify.py output/wf0925b/TF/minrun/stem_cli.json --cli output/wf0925b/TF/cli/no_such_cli.exe --b-report output/wf0925b/TF/minrun/b_report_missing.txt
+[ERROR] --b-report failed: RuntimeError: --cli path does not exist or is not a file: <REPO>\output\wf0925b\TF\cli\no_such_cli.exe
+[ERROR] --cli path does not exist or is not a file: <REPO>\output\wf0925b\TF\cli\no_such_cli.exe
+exit=1
+
+---------------------------------------------------------------- 兩次執行的報告對照（python 讀 JSON）
+stem_verify provenance.cli  --cli  : {'path': 'output/wf0925b/TF/cli/TsukiSynthCLI.exe', 'sha256': 'b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66', 'selected_by': '--cli'}
+stem_verify provenance.cli  default: {'path': 'build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe', 'sha256': 'b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66', 'selected_by': 'verify_score.find_cli()'}
+stem verdicts --cli: ['PASS', 'PASS', 'PASS', 'PASS', 'PASS']  identical to default (verdict+reason): True
+superposition --cli: {'established': True, 'max_abs_diff': 2.3469328880310059e-07, 'n_stems_summed': 5}
+superposition default: {'established': True, 'max_abs_diff': 2.3469328880310059e-07, 'n_stems_summed': 5}  identical: True
+exit_issues --cli / default: [] []
+partial_verify cli  --cli  : {'path': 'output/wf0925b/TF/cli/TsukiSynthCLI.exe', 'sha256': 'b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66', 'selected_by': '--cli'}
+partial_verify cli  default: {'path': 'build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe', 'sha256': 'b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66', 'selected_by': 'verify_score.find_cli()'}
+partial summary identical: True  partials_verified_total=30 refused=0
+gate_ready: False
+caveats[0]: status=informational, gate_ready=false: this report is NOT GATE evidence (A13 decision packet 選項 B+). C10 self-cal was ruled A on 2026-09-10 and D15 was ruled A' on 2026-09-15 (release-segment measurer error bound ~7.2 c > the reused +/-5 c tolerance); promoting this tool to GATE needs a separate 月月 ruling that has not been made -- see gate_ready_reason.
+b-report identical apart from the cli: line: True
+b-report --cli  : cli: output/wf0925b/TF/cli/TsukiSynthCLI.exe (sha256 b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66)
+b-report default: cli: build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe (sha256 b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66)
+stem_verify missing --cli report: {'status': 'error', 'error': '--cli path does not exist or is not a file: <REPO>\\output\\wf0925b\\TF\\cli\\no_such_cli.exe'}
+compare exit=0
+
+---------------------------------------------------------------- 結論
+- 兩支工具 --help 都列出 --cli；不帶 --cli 時照舊用 find_cli()（log 印出 build\ 那支），跟改前一樣。
+- 帶 --cli：stem_verify 的 stem／reference 渲染和 melody_verify 內部的 --dump-modes、baseline 渲染都用同一支
+  （由 test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary 逐次記錄證明）；報告 provenance.cli 記下路徑、
+  sha256、selected_by="--cli"。結果跟預設那次逐項相同（5 PASS、superposition 數字相同）——因為兩支是同一個檔。
+- partial_verify --cli：報告 cli 欄記 selected_by="--cli"，summary 跟預設那次相同；--b-report 除了 cli 那一行外逐行相同。
+- --cli 指到不存在的檔：兩支都 exit 1、印出解析後的路徑，不會退回 find_cli()，也沒有渲染任何東西。
+- partial_verify 報告的 caveats[0] 已是新字串（C10 09-10 選 A、D15 09-15 選 A'、升 GATE 要月月另裁），gate_ready 仍是 false。

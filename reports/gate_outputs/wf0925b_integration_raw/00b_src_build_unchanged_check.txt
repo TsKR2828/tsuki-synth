@@ -1,0 +1,103 @@
+# 開工檢查：src/ 與 build\ 相對 WF0925 整合卡有沒有新改動（2026-09-25 13:37:22）
+# 結論放最後。本檔所有命令 cwd=<REPO>。
+
+$ git diff --cached --name-only -- src/   (staged 的 src 檔)
+src/IRLibrary.h
+src/PluginProcessor.cpp
+src/PluginProcessor.h
+src/PresetManager.h
+src/effects/EffectChain.h
+src/engines/ChromaticEngine.h
+src/engines/CimbalomEngine.h
+src/physics/HammerImpulse.h
+src/physics/PlateModel.h
+$ git diff --name-only -- src/ CMakeLists.txt tests/*.cpp   (工作樹對 index 的改動；空白＝沒有)
+$ git status --porcelain -- src/ CMakeLists.txt cmake/ data/ tests/*.cpp scores/
+M  scores/examples/water_gong_free.score.json
+M  src/IRLibrary.h
+M  src/PluginProcessor.cpp
+M  src/PluginProcessor.h
+M  src/PresetManager.h
+M  src/effects/EffectChain.h
+M  src/engines/ChromaticEngine.h
+M  src/engines/CimbalomEngine.h
+M  src/physics/HammerImpulse.h
+M  src/physics/PlateModel.h
+M  tests/audit_repro.cpp
+M  tests/host_probe.cpp
+
+$ sha256sum -c output/wf0925/K_audit2/audited_files_sha256_round2_start.txt   (WF0925 C++ lane 稽核第 2 輪看過的 34 檔；含 src/ 9 檔、tests/audit_repro.cpp、tests/host_probe.cpp)
+src/engines/CimbalomEngine.h: OK
+src/engines/ChromaticEngine.h: OK
+src/physics/HammerImpulse.h: OK
+src/physics/PlateModel.h: OK
+src/effects/EffectChain.h: OK
+src/PluginProcessor.cpp: OK
+src/PluginProcessor.h: OK
+src/PresetManager.h: OK
+src/IRLibrary.h: OK
+tests/host_probe.cpp: OK
+tests/audit_repro.cpp: OK
+scores/examples/water_gong_free.score.json: OK
+reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md: FAILED
+reports/gate_outputs/wf0925_K1K2fix_bit_identity.txt: OK
+reports/gate_outputs/wf0925_K1K2fix_build_ctest.txt: OK
+reports/gate_outputs/wf0925_K1K2fix_diff.txt: OK
+reports/gate_outputs/wf0925_K1K2fix_hostprobe.txt: OK
+reports/gate_outputs/wf0925_K1K2fix_physics_verify_full.txt: OK
+reports/gate_outputs/wf0925_K1K2fix_summary.txt: OK
+reports/gate_outputs/wf0925_K1K2fix_verify_score_all.txt: OK
+reports/gate_outputs/wf0925_K1_bit_identity.txt: OK
+reports/gate_outputs/wf0925_K1_build_ctest.txt: OK
+reports/gate_outputs/wf0925_K1_hostprobe.txt: OK
+reports/gate_outputs/wf0925_K1_physics_verify_full.txt: OK
+reports/gate_outputs/wf0925_K1_summary.txt: OK
+reports/gate_outputs/wf0925_K1_verify_score_all.txt: OK
+reports/gate_outputs/wf0925_K2_bit_identity.txt: OK
+reports/gate_outputs/wf0925_K2_build_ctest.txt: OK
+reports/gate_outputs/wf0925_K2_diff.txt: OK
+reports/gate_outputs/wf0925_K2_e15_sources.txt: OK
+reports/gate_outputs/wf0925_K2_hostprobe.txt: OK
+reports/gate_outputs/wf0925_K2_physics_verify_full.txt: OK
+reports/gate_outputs/wf0925_K2_summary.txt: OK
+reports/gate_outputs/wf0925_K2_verify_score_all.txt: OK
+sha256sum: WARNING: 1 computed checksum did NOT match
+EXIT=1
+
+$ sha256sum -c output/wf0925/R_audit/stage_sha256_before_add.txt   (WF0925 研究 lane 稽核 stage 的 75 檔)
+docs/KNOWN_LIMITS_INDEX.zh-TW.md: FAILED
+docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md: FAILED
+docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md: FAILED
+sha256sum: WARNING: 3 computed checksums did NOT match
+OK 行數: 72 / 75
+
+$ sha256sum -c output/wf0925b/DS/after_sha256.txt   (WF0925b-DS 改完的 11 檔；DS/BR 稽核 [DS-1] 用的同一份)
+ROADMAP_PHYSICS.md: OK
+docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md: OK
+docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md: OK
+docs/KNOWN_LIMITS_INDEX.zh-TW.md: OK
+docs/WOOD_ANISOTROPY_SOURCES.md: OK
+docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md: OK
+docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md: OK
+docs/workcards/WF0907_README.md: OK
+docs/workcards/WF0914_README.md: OK
+reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md: OK
+reports/gate_outputs/wf0914_INTEGRATION.txt: OK
+EXIT=0
+
+# build\ 執行檔 sha256，對照 WF0925 整合卡 wf0925_integration_raw/03b_bin_sha256_after.txt
+b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66  2026-09-25 10:39:36  build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe  SAME
+c5b6b2f1c6e83f84a9b470261247db34425f207460808cd2b4210bcaceb8201c  2026-09-25 10:41:15  build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3  SAME
+407f9d0ce63bee0f62dcebe712c9790b38da0595bddb21f089d2d2c081dbdf21  2026-09-25 10:40:27  build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe  SAME
+2d3183648f6d2d3830ac862c227ef41aca14e33315cbd453ae510e96becff69d  2026-09-25 10:41:34  build/Release/TsukiSynthAuditTest.exe  SAME
+fb3f72c056d2b3337d81eb84ef4ea7c3a33c4cdd00ba1fb4501f91665bfef344  2026-09-25 10:41:41  build/Release/TsukiSynthPhysicsModelsTest.exe  SAME
+3293ccf1e3b9d69d0c69fd85480860972e1844707af5da27231ae1954037900e  2026-09-25 10:41:51  build/Release/TsukiSynthHostProbe.exe  SAME
+
+# INT2 自己用的 CLI 複本（規約：要用 CLI 先複製到自己的 output 目錄）
+b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66 *output/wf0925b/INT2/cli/TsukiSynthCLI.exe
+
+結論：src/ 的 9 個 staged 檔、tests/audit_repro.cpp、tests/host_probe.cpp 內容跟 WF0925 C++ 稽核第 2 輪（＝WF0925 整合卡重建 build\ 時）逐位元組相同；
+      工作樹對 index 沒有 src/ 改動；CMakeLists.txt、cmake/、data/ 沒有改動，scores/ 只有 WF0925 已 staged 的 water_gong_free.score.json（上面 K_audit2 清單 OK）；build\ 6 支執行檔 sha256 跟 WF0925 整合卡重建後相同。
+      → 本輪沒有新的 src/ 改動，build\ 不必重建（照卡片指示）。
+      K_audit2 清單唯一不符的是 reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md、R_audit 清單不符的 3 個文件，
+      都在 WF0925b-DS 的 11 檔裡，而且跟 DS 改完的 after_sha256 相同（DS 之後沒人再改）。

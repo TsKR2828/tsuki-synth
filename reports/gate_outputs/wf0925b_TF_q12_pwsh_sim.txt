@@ -1,0 +1,228 @@
+WF0925b-TF 證據 — Q12 GATE 2：照 GitHub runner 包法本機模擬每個多行 run 區塊，改前／改後對照
+日期：2026-09-25　repo HEAD：18430c4（WF0925 154 檔 staged、本卡改動 unstaged，未 commit）
+卡號：WF0925b-TF（CI/tools lane 工兵）　Python 3.13.3、pytest 8.4.2、pwsh 7.6.6
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<REPO> = repo 根目錄；<SCRATCH> = 本 session
+暫存目錄（repo 外）；<SIMTMP> = 模擬腳本在 output/wf0925b/TF/sim/ 下開的暫存資料夾。
+原始 log 與腳本都在 output/wf0925b/TF/（gitignored）。
+接手說明：本卡第一個 session 在 12:11 組好證據後被 session limit 中斷；接手 session 逐項核對改動、
+收尾時把本檔所有 GATE 全部重跑一次，下面的輸出都是重跑的結果（第一次的原始 log 與證據備份在
+output/wf0925b/TF/run1_20260925_1211/，重跑的判定結果跟第一次全部一致，差異只在耗時、暫存路徑名稱和本檔另外註明的地方）。
+================================================================================
+命令（repo 根目錄）：
+  改前：python output/wf0925b/TF/sim/sim_q12.py BEFORE output/wf0925b/TF/before/physics.yml output/wf0925b/TF/before/release-physics.yml
+  改後：python output/wf0925b/TF/sim/sim_q12.py AFTER .github/workflows/physics.yml .github/workflows/release-physics.yml
+
+包法出處（本卡 2026-09-25 讀網頁核對，只讀、沒下載任何執行檔）：
+- actions/runner 原始碼 src/Runner.Worker/Handlers/ScriptHandlerHelpers.cs：
+  預設參數 pwsh = `-command ". '{0}'"`、bash = `--noprofile --norc -e -o pipefail {0}`；
+  FixUpScriptContents 對 pwsh/powershell 在腳本前面加 `$ErrorActionPreference = 'stop'`、
+  後面加 `if ((Test-Path -LiteralPath variable:\LASTEXITCODE)) { exit $LASTEXITCODE }`。
+- GitHub Docs「Workflow syntax」shell 表：不指定 shell 時非 Windows 是 `bash -e {0}`。
+模擬怎麼做：
+- 從 YAML 取出每個多行 run 區塊，照上面的包法寫成暫存 .ps1，用 `pwsh -NoProfile -command ". '<file>'"` 跑
+  （-NoProfile 只是避免本機 profile 干擾）；bash 區塊用 Git Bash 照對應參數跑。
+- python、ctest、cmake、git、sudo、HostProbe exe 全部換成 PATH 最前面的樁（stub）：印出自己的指令列，
+  指令列含 FAIL_MATCH 就 exit 7，否則 exit 0。沒有真的建置、沒有真的下載（pluginval 的 Invoke-WebRequest
+  那步和 validate_plugin.ps1 那步沒有原生指令，不模擬，另外說明）。
+- 每個原生指令輪流「只讓它失敗」，記錄整步的 exit code。整步 exit 0 但裡面有指令失敗＝MASKED（被蓋掉）。
+- 為什麼失敗時整步是 1 不是 7：pwsh 的 -Command 模式會把「最後一個指令是 exit N（N 不是 0/1）」的結果轉成 1，
+  這是 PowerShell 文件寫的行為，GitHub 上的 pwsh 步驟失敗也是顯示 exit code 1；判斷只看 0 或非 0。
+- 單行 run 不模擬：runner 包法最後的 `exit $LASTEXITCODE` 就是那一個指令的結果，不可能被別的指令蓋掉。
+- 另外兩個 .ps1（tools/run_asan_ctest.ps1、tools/validate_plugin.ps1，本卡沒改）有讀過：失敗時都用 throw，
+  在 'stop' 下是終止錯誤，整步一定非 0。
+
+---------------------------------------------------------------- 改前輸出
+=== BEFORE ===
+pwsh wrapper: "$ErrorActionPreference = 'stop'" + <run> + 'if ((Test-Path -LiteralPath variable:\\LASTEXITCODE)) { exit $LASTEXITCODE }' ; pwsh -command ". '<file>'"
+stub FAIL_CODE = 7
+
+## physics.yml
+- build-and-verify / Install Python dependencies [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python -m pip install pip==24.3.1] -> step exit 0  MASKED
+    fail [python -m pip install -r tools/requirements-physics.txt] -> step exit 1  OK (failure reaches step)
+- build-and-verify / Configure CMake [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Build CLI (TsukiSynthCLI) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Build Standalone (TsukiSynth_Standalone) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Build VST3 (TsukiSynth_VST3) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Build regression tests [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Run C++ audit and tuner regression tests [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Run L2 HostProbe against the built VST3 [windows-2022, shell=pwsh]: 1 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [hostprobe] -> step exit 1  OK (failure reaches step)
+- build-and-verify / Run spectral and T60 metrology self-tests [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python -m pytest tests -q] -> step exit 0  MASKED
+    fail [python tools/physics_verify.py --selftest] -> step exit 1  OK (failure reaches step)
+- build-and-verify / Run standalone T60 gate [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Run complete physics implementation gate (M1+M2+M5) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Whole-score verification (CI smoke subset) [windows-2022, shell=pwsh]: 1 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [ai_radiance_m1.score.json] -> step exit 1  OK (failure reaches step)
+    fail [rules_v2_demo_001.score.json] -> step exit 1  OK (failure reaches step)
+    fail [akashic_bell.score.json] -> step exit 1  OK (failure reaches step)
+    fail [water_gong_clamped.score.json] -> step exit 1  OK (failure reaches step)
+    fail [water_gong_free.score.json] -> step exit 1  OK (failure reaches step)
+    fail [physical_piano.score.json] -> step exit 1  OK (failure reaches step)
+- build-and-verify / Run event-specific consonance gate [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Install numpy [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Configure CMake (CLI only) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Build CLI [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Render probe set [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Install JUCE build dependencies (Linux only) [ubuntu-24.04, shell=bash-default]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [sudo apt-get update] -> step exit 7  OK (failure reaches step)
+    fail [apt-get install] -> step exit 7  OK (failure reaches step)
+- cross-platform-emit / Install numpy [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Configure CMake (CLI only) [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Build CLI [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Render probe set [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Install numpy [macos-14, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Configure CMake (CLI only) [macos-14, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Build CLI [macos-14, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Render probe set [macos-14, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-compare / Install numpy [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-compare / Compare against the Windows/MSVC reference [ubuntu-24.04, shell=bash]: 1 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python tools/crossplatform_verify.py --compare] -> step exit 7  OK (failure reaches step)
+    fail [python tools/crossplatform_verify.py --compare] with exit 3 (UNREGISTERED, notice by design) -> step exit 0
+- cpp-address-sanitizer / Configure AddressSanitizer regression build [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cpp-address-sanitizer / Build AddressSanitizer regression tests [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cpp-address-sanitizer / Run AddressSanitizer regression tests [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+
+## release-physics.yml
+- build-and-host-validate / Install Python dependencies [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python -m pip install pip==24.3.1] -> step exit 0  MASKED
+    fail [python -m pip install -r tools/requirements-physics.txt] -> step exit 1  OK (failure reaches step)
+- build-and-host-validate / Configure and build all release targets [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [cmake -B build -DTSUKI_BUILD_TESTS=ON] -> step exit 0  MASKED
+    fail [cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_...] -> step exit 1  OK (failure reaches step)
+- build-and-host-validate / Run C++ and Python physics gates [windows-2022, shell=pwsh]: 4 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [ctest --test-dir build -C Release --output-on-failure] -> step exit 0  MASKED
+    fail [python -m pytest tests -q] -> step exit 0  MASKED
+    fail [python tools/physics_verify.py --selftest] -> step exit 0  MASKED
+    fail [python tools/physics_verify.py --full] -> step exit 1  OK (failure reaches step)
+- build-and-host-validate / Run L2 HostProbe against the built VST3 [windows-2022, shell=pwsh]: 1 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [hostprobe] -> step exit 1  OK (failure reaches step)
+- build-and-host-validate / Download pinned pluginval binary [windows-2022, shell=pwsh]: no native command line (cmdlets / .ps1 script / network only; cmdlet and script errors are terminating under 'stop') -> not simulated
+- build-and-host-validate / Build pinned official Steinberg VST3 validator [windows-2022, shell=pwsh]: 5 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [git clone --filter=blob:none --no-checkout https://github.com/steinbergmedia/vst3sdk.gi...] -> step exit 0  MASKED
+    fail [git -C <SIMTMP>\vst3sdk checkout --detach SIMCOMMIT] -> step exit 0  MASKED
+    fail [git -C <SIMTMP>\vst3sdk submodule update --init --depth 1 base cmake pluginterfaces pub...] -> step exit 0  MASKED
+    fail [cmake -S <SIMTMP>\vst3sdk -B <SIMTMP>\vst3sdk-build -DSMTG_CREATE_PLUGIN_LINK=0 -DSMTG_...] -> step exit 0  MASKED
+    fail [cmake --build <SIMTMP>\vst3sdk-build --config Release --target validator] -> step exit 1  OK (failure reaches step)
+- build-and-host-validate / Validate VST3 in two independent hosts [windows-2022, shell=pwsh]: no native command line (cmdlets / .ps1 script / network only; cmdlet and script errors are terminating under 'stop') -> not simulated
+- complete-score-corpus / Install Python dependencies [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python -m pip install pip==24.3.1] -> step exit 0  MASKED
+    fail [python -m pip install -r tools/requirements-physics.txt] -> step exit 1  OK (failure reaches step)
+- complete-score-corpus / Verify deterministic corpus shard [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+
+SUMMARY BEFORE: cases=30 masked=12
+
+---------------------------------------------------------------- 改後輸出
+=== AFTER ===
+pwsh wrapper: "$ErrorActionPreference = 'stop'" + <run> + 'if ((Test-Path -LiteralPath variable:\\LASTEXITCODE)) { exit $LASTEXITCODE }' ; pwsh -command ". '<file>'"
+stub FAIL_CODE = 7
+
+## physics.yml
+- build-and-verify / Install Python dependencies [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python -m pip install pip==24.3.1] -> step exit 1  OK (failure reaches step)
+    fail [python -m pip install -r tools/requirements-physics.txt] -> step exit 1  OK (failure reaches step)
+- build-and-verify / Configure CMake [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Build CLI (TsukiSynthCLI) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Build Standalone (TsukiSynth_Standalone) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Build VST3 (TsukiSynth_VST3) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Build regression tests [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Run C++ audit and tuner regression tests [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Run spectral and T60 metrology self-tests [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python -m pytest tests -q] -> step exit 1  OK (failure reaches step)
+    fail [python tools/physics_verify.py --selftest] -> step exit 1  OK (failure reaches step)
+- build-and-verify / Run standalone T60 gate [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Run complete physics implementation gate (M1+M2+M5) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Whole-score verification (CI smoke subset) [windows-2022, shell=pwsh]: 1 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [ai_radiance_m1.score.json] -> step exit 1  OK (failure reaches step)
+    fail [rules_v2_demo_001.score.json] -> step exit 1  OK (failure reaches step)
+    fail [akashic_bell.score.json] -> step exit 1  OK (failure reaches step)
+    fail [water_gong_clamped.score.json] -> step exit 1  OK (failure reaches step)
+    fail [water_gong_free.score.json] -> step exit 1  OK (failure reaches step)
+    fail [physical_piano.score.json] -> step exit 1  OK (failure reaches step)
+- build-and-verify / Run event-specific consonance gate [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- build-and-verify / Run L2 HostProbe against the built VST3 [windows-2022, shell=pwsh]: 1 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [hostprobe] -> step exit 1  OK (failure reaches step)
+- cross-platform-emit / Install numpy [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Configure CMake (CLI only) [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Build CLI [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Render probe set [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Install JUCE build dependencies (Linux only) [ubuntu-24.04, shell=bash]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [sudo apt-get update] -> step exit 7  OK (failure reaches step)
+    fail [apt-get install] -> step exit 7  OK (failure reaches step)
+- cross-platform-emit / Install numpy [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Configure CMake (CLI only) [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Build CLI [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Render probe set [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Install numpy [macos-14, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Configure CMake (CLI only) [macos-14, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Build CLI [macos-14, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-emit / Render probe set [macos-14, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-compare / Install numpy [ubuntu-24.04, shell=bash-default]: single-line run, runner exit = that command's exit (not simulated)
+- cross-platform-compare / Compare against the Windows/MSVC reference [ubuntu-24.04, shell=bash]: 1 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python tools/crossplatform_verify.py --compare] -> step exit 7  OK (failure reaches step)
+    fail [python tools/crossplatform_verify.py --compare] with exit 3 (UNREGISTERED, notice by design) -> step exit 0
+- cpp-address-sanitizer / Configure AddressSanitizer regression build [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cpp-address-sanitizer / Build AddressSanitizer regression tests [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+- cpp-address-sanitizer / Run AddressSanitizer regression tests [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+
+## release-physics.yml
+- build-and-host-validate / Install Python dependencies [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python -m pip install pip==24.3.1] -> step exit 1  OK (failure reaches step)
+    fail [python -m pip install -r tools/requirements-physics.txt] -> step exit 1  OK (failure reaches step)
+- build-and-host-validate / Configure and build all release targets [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [cmake -B build -DTSUKI_BUILD_TESTS=ON] -> step exit 1  OK (failure reaches step)
+    fail [cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_VST3 TsukiSynth_...] -> step exit 1  OK (failure reaches step)
+- build-and-host-validate / Run C++ and Python physics gates [windows-2022, shell=pwsh]: 4 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [ctest --test-dir build -C Release --output-on-failure] -> step exit 1  OK (failure reaches step)
+    fail [python -m pytest tests -q] -> step exit 1  OK (failure reaches step)
+    fail [python tools/physics_verify.py --selftest] -> step exit 1  OK (failure reaches step)
+    fail [python tools/physics_verify.py --full] -> step exit 1  OK (failure reaches step)
+- build-and-host-validate / Download pinned pluginval binary [windows-2022, shell=pwsh]: no native command line (cmdlets / .ps1 script / network only; cmdlet and script errors are terminating under 'stop') -> not simulated
+- build-and-host-validate / Build pinned official Steinberg VST3 validator [windows-2022, shell=pwsh]: 5 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [git clone --filter=blob:none --no-checkout https://github.com/steinbergmedia/vst3sdk.gi...] -> step exit 1  OK (failure reaches step)
+    fail [git -C <SIMTMP>\vst3sdk checkout --detach SIMCOMMIT] -> step exit 1  OK (failure reaches step)
+    fail [git -C <SIMTMP>\vst3sdk submodule update --init --depth 1 base cmake pluginterfaces pub...] -> step exit 1  OK (failure reaches step)
+    fail [cmake -S <SIMTMP>\vst3sdk -B <SIMTMP>\vst3sdk-build -DSMTG_CREATE_PLUGIN_LINK=0 -DSMTG_...] -> step exit 1  OK (failure reaches step)
+    fail [cmake --build <SIMTMP>\vst3sdk-build --config Release --target validator] -> step exit 1  OK (failure reaches step)
+- build-and-host-validate / Validate VST3 in two independent hosts [windows-2022, shell=pwsh]: no native command line (cmdlets / .ps1 script / network only; cmdlet and script errors are terminating under 'stop') -> not simulated
+- build-and-host-validate / Run L2 HostProbe against the built VST3 [windows-2022, shell=pwsh]: 1 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [hostprobe] -> step exit 1  OK (failure reaches step)
+- complete-score-corpus / Install Python dependencies [windows-2022, shell=pwsh]: 2 native command line(s)
+    all commands exit 0            -> step exit 0
+    fail [python -m pip install pip==24.3.1] -> step exit 1  OK (failure reaches step)
+    fail [python -m pip install -r tools/requirements-physics.txt] -> step exit 1  OK (failure reaches step)
+- complete-score-corpus / Verify deterministic corpus shard [windows-2022, shell=pwsh]: single-line run, runner exit = that command's exit (not simulated)
+
+SUMMARY AFTER: cases=30 masked=0
+
+---------------------------------------------------------------- 結論
+- 改前：30 個「讓一個指令失敗」的情境裡有 12 個被蓋掉（整步 exit 0）：release 的 ctest、pytest、--selftest
+  三個 gate，validator 建置的 git clone／checkout／submodule／cmake -S，Release 設定的 cmake -B，
+  三個 pip 安裝的第一行，physics.yml 的 pytest。跟 P1 稽核 output/wf0925/P1_audit/pwsh_mask_sim.txt 的結論一致（且範圍更完整）。
+- 改後：同樣 30 個情境 masked=0，每個失敗都讓整步非 0；全部指令成功時整步照樣是 0（沒有誤報）。
+- bash 區塊改前改後都會把失敗帶出來（Linux apt 那步改前是 bash -e、改後是明寫 bash -eo pipefail）；
+  跨平台比對那步 exit 3（還沒登記容差）照原設計只出 notice、不變紅，行為沒變。

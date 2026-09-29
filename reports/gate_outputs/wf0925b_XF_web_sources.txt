@@ -1,0 +1,92 @@
+# wf0925b_XF_web_sources.txt
+# generated 2026-09-25T13:11:37  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/xf_web_sources.py
+# python 3.13.3  numpy 2.4.4  soundfile 0.13.1
+# (A) official pages that can be read: short verbatim anchors checked (whitespace/curly quotes/dashes normalised)
+
+[S1] https://support.spotify.com/us/artists/article/ai-credits/
+     HTTP 200  bytes 209843  sha256 d4409f0e3c56dbfb  title: (no <title>)  saved output/wf0925b/XF/web/S1.html
+   [FOUND] "They apply to individual roles, not the whole track."
+   [FOUND] "You add AI credits through your distributor"
+   [FOUND] "only available with certain distributors"
+   [FOUND] "Instrumental performances"
+   [FOUND] "credit them separately"
+   [FOUND] "AI credits are optional"
+
+[S2] https://newsroom.spotify.com/2025-09-25/spotify-strengthens-ai-protections/
+     HTTP 200  bytes 171273  sha256 8af98f6f286b90f0  title: Spotify Strengthens AI Protections for Artists, Songwriters, and Producers - Spotify  saved output/wf0925b/XF/web/S2.html
+   [FOUND] "AI-generated vocals, instrumentation, or post-production"
+   [FOUND] "CD Baby, DistroKid"
+   [FOUND] "not about punishing artists who use AI responsibly"
+
+[S3] https://newsroom.spotify.com/2026-08-11/ai-persona-badges-transparency/
+     HTTP 200  bytes 160745  sha256 d1c0c5e415922bd8  title: Introducing a New Label for AI-Generated Artist Identities on Spotify - Spotify  saved output/wf0925b/XF/web/S3.html
+   [FOUND] "not about how the music was made"
+   [FOUND] "does not represent a real person"
+
+[Y1] https://support.google.com/youtube/answer/2605065?hl=en
+     HTTP 200  bytes 1600167  sha256 005591e5a8a83211  title: Content eligible for Content ID - YouTube Help  saved output/wf0925b/XF/web/Y1.html
+   [FOUND] "You must have exclusive rights to the material"
+   [FOUND] "Public domain footage, recordings, or compositions"
+   [FOUND] "Content released under Creative Commons"
+   [FOUND] "content for which you don't have sufficient rights"
+
+[Y2] https://support.google.com/youtube/answer/2797370?hl=en
+     HTTP 200  bytes 1605677  sha256 45340f278b022306  title: How Content ID works - YouTube Help  saved output/wf0925b/XF/web/Y2.html
+   [FOUND] "Monetizes the video by running ads against it"
+   [FOUND] "must own exclusive rights to a substantial body of original material"
+
+verbatim quotes found: 17/17
+
+# (B) DistroKid Help Center: HTTP status of each cited article (plain GET, no login, no header changes)
+
+[D1] https://support.distrokid.com/hc/en-us/articles/41182362733715-Can-I-Upload-Music-Made-With-AI-Tools-to-DistroKid
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): AI-tool music accepted with rules: own 100% of rights incl. right to distribute AI-made parts; no impersonation, spam or infringement.
+
+[D2] https://support.distrokid.com/hc/en-us/articles/50784709021971-How-to-Fill-Out-AI-Credits
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): Upload form asks which part was AI-generated: lyrics / music / all of the audio (one summary also listed 'part of the audio', another did not find it; a third search in the successor session listed it again -> 2 of 3); 'all of the audio' triggers a human-or-AI-persona question.
+
+[D3] https://support.distrokid.com/hc/en-us/articles/50784235803411-What-Are-AI-Credits
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): AI Credits disclose AI-generated parts; shown to listeners by Spotify and Apple Music (per the summary).
+
+[D4] https://support.distrokid.com/hc/en-us/articles/360013535314-What-is-YouTube-Content-ID
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): Content ID is part of the yearly Social Media Pack extra; matched videos get ads, revenue minus 20% to the artist.
+
+[D5] https://support.distrokid.com/hc/en-us/articles/360049542553-Eligibility-for-YouTube-Content-ID-Through-The-Social-Media-Pack-Extra
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): Eligibility: own 100% of sounds; no loops/samples/sound effects/public sources; no public-domain recordings or songs; no permission for others to remix/use sounds; not already sent via another company.
+
+[D6] https://support.distrokid.com/hc/en-us/articles/360013535094-Can-I-Upload-Songs-That-Are-in-the-Public-Domain
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): Own arrangements of public-domain songs are usually OK; no US sound recording is public domain; choose the 'original song' option; songwriter = yourself (arrangement) or 'Traditional Music'.
+
+[D7] https://support.distrokid.com/hc/en-us/articles/360013647833-Distributing-Classical-Music-Through-DistroKid
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): Classical-genre releases are not delivered to iTunes/Apple Music; songwriter credits show as primary artists.
+
+[D8] https://support.distrokid.com/hc/en-us/articles/11115755366675-Song-Eligibility-and-Requirements-for-Delivery-to-Facebook-Instagram
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): Classical recordings of public-domain compositions are not delivered to Facebook/Instagram.
+
+[D9] https://support.distrokid.com/hc/en-us/articles/360013535114-Did-Interstreet-Recordings-Make-a-Copyright-Claim-on-Your-Music-in-YouTube
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): YouTube Allowlist: per video, only after a claim; not per channel (summary from the 'Everything YouTube' section; exact article not identified).
+
+[D10] https://support.distrokid.com/hc/en-us/articles/10698719176211-What-is-YouTube-Creator-Music
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): Creator Music: other creators buy a per-video licence; fee minus 20% to the artist; part of Social Media Pack.
+
+[D11] https://support.distrokid.com/hc/en-us/articles/360013649093-Which-Services-and-Stores-Does-DistroKid-Send-Music-To
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): Shazam not listed in the summaries; one summary mentions Shazam data via Apple Music for Artists.
+
+[D12] https://support.distrokid.com/hc/en-us/articles/30785369645843-What-is-Social-Media-Pack
+     HTTP 403  bytes 0
+     our paraphrase of the 2026-09-25 WebSearch summary (非逐字、不是 DistroKid 原文): Yearly extra per release covering YouTube, TikTok, Instagram, Facebook; price not shown in the summaries.
+
+DistroKid articles answering HTTP 403: 12/12 (not bypassed; contents above are search summaries only)
+RESULT: PASS

@@ -1,0 +1,87 @@
+# wf0925b_XF_loop_facts.txt
+# generated 2026-09-25T13:09:32  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/xf_loop_facts.py
+# python 3.13.3  numpy 2.4.4  soundfile 0.13.1
+[PASS] 6 loop rows in catalog_v1_1  -- ['akashic_loop_001', 'rabbit_loop_001', 'restraint_loop_001', 'forest_loop_001', 'ocean_loop_001', 'clockwork_loop_001']
+
+== akashic_loop_001 (Akashic Meditation Loop)  score meta 60 BPM x 4 bars; exact N 768000.0000 -> N 768000
+   loop-ready exports/products/clean_batch2_v1_1_candidate/loop_ready/akashic/akashic__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav  frames 768000  sr 48000  sha256 9dc139196501d259
+[PASS] akashic_loop_001 a length == N  -- file 768000 N 768000 X1 768000
+[PASS] akashic_loop_001 b tail-wrap (pre-gain) == steady state of master re-triggered every N samples  -- max|diff| 0.000e+00 (float64), folds 2
+[PASS] akashic_loop_001 c delivered file == tail-wrap x X1 gain -0.5553 dB, written 24-bit (integer samples identical)  -- rewrite output/wf0925b/XF/rewrite_akashic_loop_001.wav; differing samples 0
+[PASS] akashic_loop_001 d level offset vs original file: fitted +0.0447 dB == X1 gain - catalog gain_db (-0.5553 - (-0.6)) = +0.0447 dB (4 decimals)  -- max|loop-ready - original replay| 38365 LSB24; after removing the constant gain 1.99 LSB24
+[PASS] akashic_loop_001 X1 old percentile reproduced with X1's original (pooled-channel) method  -- 38.0211% vs loop_ready_report 38.0211%
+   [描述用、非 GATE] seam jump 0.00070; consistent method (per-step max over channels): percentile 22.01%  p50 0.00252 p90 0.01430 p99 0.03351 max 0.06323  (n=767999)
+   [描述用、非 GATE] X1 original method (channels pooled, seam = max of channels): percentile 38.02%  p50 0.00125 p90 0.01025 p99 0.02410 max 0.06323
+   gain: X1 -0.555310 dB, fitted -0.555310 dB, residual 1.008 LSB24
+
+== rabbit_loop_001 (Rabbit Bounce Loop)  score meta 140 BPM x 2 bars; exact N 164571.4286 -> N 164571
+   loop-ready exports/products/clean_batch2_v1_1_candidate/loop_ready/rabbit/rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav  frames 164571  sr 48000  sha256 e1e30e372c9386bb
+[PASS] rabbit_loop_001 a length == N  -- file 164571 N 164571 X1 164571
+[PASS] rabbit_loop_001 b tail-wrap (pre-gain) == steady state of master re-triggered every N samples  -- max|diff| 0.000e+00 (float64), folds 2
+[PASS] rabbit_loop_001 c delivered file == tail-wrap x X1 gain -0.5664 dB, written 24-bit (integer samples identical)  -- rewrite output/wf0925b/XF/rewrite_rabbit_loop_001.wav; differing samples 0
+[PASS] rabbit_loop_001 d level offset vs original file: fitted +0.0336 dB == X1 gain - catalog gain_db (-0.5664 - (-0.6)) = +0.0336 dB (4 decimals)  -- max|loop-ready - original replay| 28792 LSB24; after removing the constant gain 1.97 LSB24
+[PASS] rabbit_loop_001 X1 old percentile reproduced with X1's original (pooled-channel) method  -- 10.5587% vs loop_ready_report 10.5587%
+   [描述用、非 GATE] seam jump 0.00324; consistent method (per-step max over channels): percentile 1.38%  p50 0.03048 p90 0.06946 p99 0.11291 max 0.19735  (n=164570)
+   [描述用、非 GATE] X1 original method (channels pooled, seam = max of channels): percentile 10.56%  p50 0.01989 p90 0.06032 p99 0.10274 max 0.19735
+   gain: X1 -0.566440 dB, fitted -0.566440 dB, residual 1.002 LSB24
+
+== restraint_loop_001 (Restraint Industrial Pulse)  score meta 100 BPM x 2 bars; exact N 230400.0000 -> N 230400
+   loop-ready exports/products/clean_batch2_v1_1_candidate/loop_ready/restraint/restraint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav  frames 230400  sr 48000  sha256 a4b26daefef376c9
+[PASS] restraint_loop_001 a length == N  -- file 230400 N 230400 X1 230400
+[PASS] restraint_loop_001 b tail-wrap (pre-gain) == steady state of master re-triggered every N samples  -- max|diff| 0.000e+00 (float64), folds 2
+[PASS] restraint_loop_001 c delivered file == tail-wrap x X1 gain -0.5549 dB, written 24-bit (integer samples identical)  -- rewrite output/wf0925b/XF/rewrite_restraint_loop_001.wav; differing samples 0
+[PASS] restraint_loop_001 d level offset vs original file: fitted +0.0451 dB == X1 gain - catalog gain_db (-0.5549 - (-0.6)) = +0.0451 dB (4 decimals)  -- max|loop-ready - original replay| 38681 LSB24; after removing the constant gain 1.98 LSB24
+[PASS] restraint_loop_001 X1 old percentile reproduced with X1's original (pooled-channel) method  -- 85.4036% vs loop_ready_report 85.4036%
+   [描述用、非 GATE] seam jump 0.01823; consistent method (per-step max over channels): percentile 77.77%  p50 0.00936 p90 0.02953 p99 0.05471 max 0.13582  (n=230399)
+   [描述用、非 GATE] X1 original method (channels pooled, seam = max of channels): percentile 85.40%  p50 0.00614 p90 0.02305 p99 0.05052 max 0.13582
+   gain: X1 -0.554942 dB, fitted -0.554942 dB, residual 1.034 LSB24
+
+== forest_loop_001 (Forest Rain Pattern)  score meta 80 BPM x 4 bars; exact N 576000.0000 -> N 576000
+   loop-ready exports/products/clean_batch2_v1_1_candidate/loop_ready/forest/forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav  frames 576000  sr 48000  sha256 21170b5eb30bc736
+[PASS] forest_loop_001 a length == N  -- file 576000 N 576000 X1 576000
+[PASS] forest_loop_001 b tail-wrap (pre-gain) == steady state of master re-triggered every N samples  -- max|diff| 0.000e+00 (float64), folds 2
+[PASS] forest_loop_001 c delivered file == tail-wrap x X1 gain -0.5546 dB, written 24-bit (integer samples identical)  -- rewrite output/wf0925b/XF/rewrite_forest_loop_001.wav; differing samples 0
+[PASS] forest_loop_001 d level offset vs original file: fitted +0.0454 dB == X1 gain - catalog gain_db (-0.5546 - (-0.6)) = +0.0454 dB (4 decimals)  -- max|loop-ready - original replay| 38999 LSB24; after removing the constant gain 2.00 LSB24
+[PASS] forest_loop_001 X1 old percentile reproduced with X1's original (pooled-channel) method  -- 60.6852% vs loop_ready_report 60.6852%
+   [描述用、非 GATE] seam jump 0.00530; consistent method (per-step max over channels): percentile 44.67%  p50 0.00616 p90 0.02119 p99 0.04714 max 0.11296  (n=575999)
+   [描述用、非 GATE] X1 original method (channels pooled, seam = max of channels): percentile 60.69%  p50 0.00372 p90 0.01619 p99 0.04011 max 0.11296
+   gain: X1 -0.554574 dB, fitted -0.554574 dB, residual 1.040 LSB24
+
+== ocean_loop_001 (Ocean Wave Cycle)  score meta 60 BPM x 2 bars; exact N 384000.0000 -> N 384000
+   loop-ready exports/products/clean_batch2_v1_1_candidate/loop_ready/ocean/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav  frames 384000  sr 48000  sha256 3681d5fa252b9093
+[PASS] ocean_loop_001 a length == N  -- file 384000 N 384000 X1 384000
+[PASS] ocean_loop_001 b tail-wrap (pre-gain) == steady state of master re-triggered every N samples  -- max|diff| 0.000e+00 (float64), folds 2
+[PASS] ocean_loop_001 c delivered file == tail-wrap x X1 gain -0.5478 dB, written 24-bit (integer samples identical)  -- rewrite output/wf0925b/XF/rewrite_ocean_loop_001.wav; differing samples 0
+[PASS] ocean_loop_001 d level offset vs original file: fitted +0.0522 dB == X1 gain - catalog gain_db (-0.5478 - (-0.6)) = +0.0522 dB (4 decimals)  -- max|loop-ready - original replay| 44774 LSB24; after removing the constant gain 1.98 LSB24
+[PASS] ocean_loop_001 X1 old percentile reproduced with X1's original (pooled-channel) method  -- 14.5249% vs loop_ready_report 14.5249%
+   [描述用、非 GATE] seam jump 0.00010; consistent method (per-step max over channels): percentile 4.59%  p50 0.00104 p90 0.00376 p99 0.00625 max 0.00907  (n=383999)
+   [描述用、非 GATE] X1 original method (channels pooled, seam = max of channels): percentile 14.52%  p50 0.00058 p90 0.00281 p99 0.00582 max 0.00907
+   gain: X1 -0.547824 dB, fitted -0.547824 dB, residual 1.030 LSB24
+
+== clockwork_loop_001 (Clockwork Tick Loop)  score meta 120 BPM x 2 bars; exact N 192000.0000 -> N 192000
+   loop-ready exports/products/clean_batch2_v1_1_candidate/loop_ready/clockwork/clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav  frames 192000  sr 48000  sha256 dfd56616db65c7c0
+[PASS] clockwork_loop_001 a length == N  -- file 192000 N 192000 X1 192000
+[PASS] clockwork_loop_001 b tail-wrap (pre-gain) == steady state of master re-triggered every N samples  -- max|diff| 0.000e+00 (float64), folds 2
+[PASS] clockwork_loop_001 c delivered file == tail-wrap x X1 gain -0.7680 dB, written 24-bit (integer samples identical)  -- rewrite output/wf0925b/XF/rewrite_clockwork_loop_001.wav; differing samples 0
+[PASS] clockwork_loop_001 d level offset vs original file: fitted +0.0320 dB == X1 gain - catalog gain_db (-0.7680 - (-0.8)) = +0.0320 dB (4 decimals)  -- max|loop-ready - original replay| 26826 LSB24; after removing the constant gain 1.97 LSB24
+[PASS] clockwork_loop_001 X1 old percentile reproduced with X1's original (pooled-channel) method  -- 67.6576% vs loop_ready_report 67.6576%
+   [描述用、非 GATE] seam jump 0.03034; consistent method (per-step max over channels): percentile 52.68%  p50 0.02830 p90 0.07998 p99 0.16570 max 0.54497  (n=191999)
+   [描述用、非 GATE] X1 original method (channels pooled, seam = max of channels): percentile 67.66%  p50 0.01776 p90 0.06655 p99 0.16165 max 0.54497
+   gain: X1 -0.767998 dB, fitted -0.767998 dB, residual 1.015 LSB24
+
+== SUMMARY (6 loops)
+X1 gain range -0.7680 .. -0.5478 dB  (README: -0.55 to -0.77 dB)
+level offset loop-ready vs original file +0.0320 .. +0.0522 dB
+max|loop-ready - original replay| 26826 .. 44774 LSB24
+id                      pct(consistent)  pct(X1 old)       p50       p90       p99       max
+akashic_loop_001                 22.01%       38.02%   0.00252   0.01430   0.03351   0.06323
+rabbit_loop_001                   1.38%       10.56%   0.03048   0.06946   0.11291   0.19735
+restraint_loop_001               77.77%       85.40%   0.00936   0.02953   0.05471   0.13582
+forest_loop_001                  44.67%       60.69%   0.00616   0.02119   0.04714   0.11296
+ocean_loop_001                    4.59%       14.52%   0.00104   0.00376   0.00625   0.00907
+clockwork_loop_001               52.68%       67.66%   0.02830   0.07998   0.16570   0.54497
+wrote exports/products/clean_batch2_v1_1_candidate/xf_loop_facts.json
+
+GATE XF loop facts: 31/31
+RESULT: PASS

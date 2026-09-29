@@ -1,0 +1,87 @@
+WF0925b-BR evidence 2/6: 8-piece bit-identity -- base CLI (must be 8/8) and noX2 CLI (which pieces change)
+generated: 2026-09-25 11:53:39 +0800
+baseline: reports/gate_outputs/b6_method/sha256_before_post_a14.txt (CRLF; compared with diff --strip-trailing-cr)
+
+$ python reports/gate_outputs/wf0907_method/render_wf_scores.py --label base --workdir <SCRATCH>/wf0925b/BR/render8_base --cli <REPO>\output\wf0925b\BR\cli_base\TsukiSynthCLI.exe --outdir <SCRATCH>/wf0925b/BR/sha8
+rendering moonlight_sonata_movement1_yangqin ...
+  len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+  len=325.869s  RMS=-23.899 dBFS  sha256=280cbdac3c117c14
+rendering physical_piano ...
+  len=7.575s  RMS=-18.485 dBFS  sha256=1233b53f1e8660bc
+rendering restraint_metal_click ...
+  len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...
+  len=327.289s  RMS=-21.589 dBFS  sha256=f539aefa91919cbf
+rendering water_gong_free ...
+  len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...
+  len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+rendering fur_elise_opening ...
+  len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+wrote <SCRATCH>\wf0925b\BR\sha8\render_base.csv
+wrote <SCRATCH>\wf0925b\BR\sha8\sha256_base.txt
+exit=0
+$ diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt <SCRATCH>/wf0925b/BR/sha8/sha256_base.txt && echo '8/8 IDENTICAL (base)'
+8/8 IDENTICAL (base)
+[exit=0]
+=> the isolated index-snapshot build renders exactly like the baseline (base CLI = staged tree for audio).
+
+$ python reports/gate_outputs/wf0907_method/render_wf_scores.py --label nox2 --workdir <SCRATCH>/wf0925b/BR/render8_nox2 --cli <REPO>\output\wf0925b\BR\cli_noX2\TsukiSynthCLI.exe --outdir <SCRATCH>/wf0925b/BR/sha8
+rendering moonlight_sonata_movement1_yangqin ...
+  len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+  len=328.487s  RMS=-23.915 dBFS  sha256=563c481f181a73ba
+rendering physical_piano ...
+  len=7.575s  RMS=-18.485 dBFS  sha256=1233b53f1e8660bc
+rendering restraint_metal_click ...
+  len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...
+  len=329.907s  RMS=-21.270 dBFS  sha256=ef02ce58347356ba
+rendering water_gong_free ...
+  len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...
+  len=35.930s  RMS=-22.375 dBFS  sha256=b4edb002e4af0d37
+rendering fur_elise_opening ...
+  len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+wrote <SCRATCH>\wf0925b\BR\sha8\render_nox2.csv
+wrote <SCRATCH>\wf0925b\BR\sha8\sha256_nox2.txt
+exit=0
+$ diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt <SCRATCH>/wf0925b/BR/sha8/sha256_nox2.txt
+2c2
+< 280cbdac3c117c142dd89853eaec0706ef6d6afec604de37621577d57bf637d1  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+---
+> 563c481f181a73ba5f345bebd620223431b76711b70bff48bdc16155bf48c1f7  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+5c5
+< f539aefa91919cbfe3b22e7fb4d17f404e758aca39d1b08b173e6f44cd63f67e  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+---
+> ef02ce58347356ba7cdf8d2412d49ea97954c349f7f6765eb1e059e62171a3a0  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+7c7
+< 74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+---
+> b4edb002e4af0d3753cea803af8a1b208762420161486629ce98528750b7ed07  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+[exit=1]
+=> noX2: 5/8 identical, 3/8 change: moonlight_sonata_movement1_yangqin_tongue_mix, moonlight_sonata_movement1_tongue_drum, ai_radiance_m1
+   (exactly the 3 of the 8 that contain beam/tongue_drum events; the other 5 have none). R10 would trigger on these 3 if option B landed.
+
+## render csvs
+--- render_base.csv
+piece,score_path,wav,len_s,rms_dbfs,sha256
+moonlight_sonata_movement1_yangqin,scores/examples/moonlight_sonata_movement1_yangqin.score.json,moonlight_sonata_i_yangqin.wav,317.495,-23.906,49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e
+moonlight_sonata_movement1_yangqin_tongue_mix,scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json,moonlight_sonata_i_yangqin_tongue_mix.wav,325.869,-23.899,280cbdac3c117c142dd89853eaec0706ef6d6afec604de37621577d57bf637d1
+physical_piano,scores/examples/physical_piano.score.json,physical_piano.wav,7.575,-18.485,1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b
+restraint_metal_click,scores/examples/restraint_metal_click.score.json,restraint_metal_click_001.wav,4.929,-32.151,be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a
+moonlight_sonata_movement1_tongue_drum,scores/examples/moonlight_sonata_movement1_tongue_drum.score.json,moonlight_sonata_i_tongue_drum.wav,327.289,-21.589,f539aefa91919cbfe3b22e7fb4d17f404e758aca39d1b08b173e6f44cd63f67e
+water_gong_free,scores/examples/water_gong_free.score.json,water_gong_free.wav,10.075,-25.021,31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9
+ai_radiance_m1,scores/originals/ai_radiance/ai_radiance_m1.score.json,Original_AI_Radiance_Movement1.wav,35.930,-22.380,74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d
+fur_elise_opening,scores/examples/fur_elise_opening.score.json,fur_elise_opening.wav,6.780,-17.549,b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5
+--- render_nox2.csv
+piece,score_path,wav,len_s,rms_dbfs,sha256
+moonlight_sonata_movement1_yangqin,scores/examples/moonlight_sonata_movement1_yangqin.score.json,moonlight_sonata_i_yangqin.wav,317.495,-23.906,49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e
+moonlight_sonata_movement1_yangqin_tongue_mix,scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json,moonlight_sonata_i_yangqin_tongue_mix.wav,328.487,-23.915,563c481f181a73ba5f345bebd620223431b76711b70bff48bdc16155bf48c1f7
+physical_piano,scores/examples/physical_piano.score.json,physical_piano.wav,7.575,-18.485,1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b
+restraint_metal_click,scores/examples/restraint_metal_click.score.json,restraint_metal_click_001.wav,4.929,-32.151,be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a
+moonlight_sonata_movement1_tongue_drum,scores/examples/moonlight_sonata_movement1_tongue_drum.score.json,moonlight_sonata_i_tongue_drum.wav,329.907,-21.270,ef02ce58347356ba7cdf8d2412d49ea97954c349f7f6765eb1e059e62171a3a0
+water_gong_free,scores/examples/water_gong_free.score.json,water_gong_free.wav,10.075,-25.021,31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9
+ai_radiance_m1,scores/originals/ai_radiance/ai_radiance_m1.score.json,Original_AI_Radiance_Movement1.wav,35.930,-22.375,b4edb002e4af0d3753cea803af8a1b208762420161486629ce98528750b7ed07
+fur_elise_opening,scores/examples/fur_elise_opening.score.json,fur_elise_opening.wav,6.780,-17.549,b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5

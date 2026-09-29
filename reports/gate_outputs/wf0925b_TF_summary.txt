@@ -1,0 +1,134 @@
+WF0925b-TF 證據 — 總結（Q12 CI exit code＋O16 tools 小修）
+日期：2026-09-25　repo HEAD：18430c4（WF0925 154 檔 staged、本卡改動 unstaged，未 commit）
+卡號：WF0925b-TF（CI/tools lane 工兵）　Python 3.13.3、pytest 8.4.2、pwsh 7.6.6
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<REPO> = repo 根目錄；<SCRATCH> = 本 session
+暫存目錄（repo 外）；<SIMTMP> = 模擬腳本在 output/wf0925b/TF/sim/ 下開的暫存資料夾。
+原始 log 與腳本都在 output/wf0925b/TF/（gitignored）。
+接手說明：本卡第一個 session 在 12:11 組好證據後被 session limit 中斷；接手 session 逐項核對改動、
+收尾時把本檔所有 GATE 全部重跑一次，下面的輸出都是重跑的結果（第一次的原始 log 與證據備份在
+output/wf0925b/TF/run1_20260925_1211/，重跑的判定結果跟第一次全部一致，差異只在耗時、暫存路徑名稱和本檔另外註明的地方）。
+================================================================================
+本卡範圍：裁決包 Q12（建議 A，月月 09-25「剩下 AI 能處理的都處理掉」授權先做、可推翻）＋ O16 tools 小修 (a)–(f)。
+不改 src/，沒有建置 plugin；R10（渲染結果改變）沒觸發：render_wf_scores 8/8 IDENTICAL。
+沒有 git add／commit／push／checkout／stash／reset／restore。
+接手說明：本卡第一個 session 12:11 組好證據後被 session limit 中斷。接手 session 沒有重做改動，而是：
+  逐檔讀 git diff 核對改動內容與卡片範圍（find_cli 規則跟 verify_score／physics_verify 逐行同一條；docstring／caveats 引用的
+  1.18 c、5.2304 c、7.2055 c、C10 09-10 A、D15 09-15 A'、Q18 都對過 EARFREE §8.5 與裁決包原文；HostProbe 註解對過 host_probe.cpp），
+  再把所有 GATE 全部重跑一次（下面 GATE 結果都是重跑的數字；第一次的 log／證據備份在 output/wf0925b/TF/run1_20260925_1211/）。
+
+================================================================ 動到的檔（10 個，都在卡片清單內）
+  .github/workflows/physics.yml
+  .github/workflows/release-physics.yml
+  tools/crossplatform_verify.py            （只動 find_cli）
+  tests/test_dump_modes_layered.py         （只動 _find_cli）
+  tools/stem_verify.py                     （read_wav_float 支援 EXTENSIBLE、加 --cli）
+  tools/partial_verify.py                  （加 --cli、模組 docstring 與 caveats 字串）
+  reports/gate_outputs/wf0907_method/render_wf_scores.py （--cli 轉絕對路徑）
+  tests/test_measurement_selfcal.py        （只加 release 網格 0 拒量的非 xfail 檢查）
+  tests/test_stem_stream.py                （EXTENSIBLE 測試）
+  tests/test_stem_verify.py                （--cli 測試，含 partial_verify 的 --cli 測試）
+證據（本卡新檔）：reports/gate_outputs/wf0925b_TF_{summary,q12_yaml,q12_pwsh_sim,pytest,render_bit_identity,cli_min_runs}.txt
+開工前已核對（接手 session 重核一次）：這 10 個檔（加上沒改的 tests/test_partial_verify.py）的 git index（WF0925 staged 版）
+跟本卡的改前備份 output/wf0925b/TF/before/ 扣掉 CRLF/LF 轉換（本機 core.autocrlf=true）後逐位元組相同，
+所以 `git diff`（unstaged）就是本卡的全部改動；每個檔原本的換行格式（CRLF 或 LF）都沒變。
+
+================================================================ 1. Q12：CI 多行指令的 exit code
+問題：GitHub Windows runner 的 pwsh 步驟只看最後一個指令的 exit code（runner 前加 $ErrorActionPreference='stop'，
+但那只管 PowerShell cmdlet，不管 ctest/python 這類原生程式），前面的 ctest、pytest 失敗會被蓋掉。
+修法（兩支 workflow 一致）：每個多行 pwsh 區塊裡，每一行原生指令後面都接
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+並在這些步驟明寫 shell: pwsh（Windows runner 本來的預設，寫出來只是讓語法歸屬清楚）。
+逐一檢查全檔每個多行 run（兩檔共 14 個多行步驟：physics.yml 6 個、release-physics.yml 8 個）：
+  - 補檢查的 7 個：physics.yml「Install Python dependencies」「Run spectral and T60 metrology self-tests」；
+    release-physics.yml 兩個 job 的「Install Python dependencies」、「Configure and build all release targets」、
+    「Run C++ and Python physics gates」、「Build pinned official Steinberg VST3 validator」（git clone／checkout／submodule／cmake -S／cmake --build 五行）。
+  - 本來就對的 5 個 pwsh 步驟：兩支的 HostProbe（自己 exit $code）、整曲 smoke（$fail 迴圈）、pluginval 下載（只有 cmdlet）、
+    兩個驗證器（呼叫 tools/validate_plugin.ps1，失敗時 throw）。另外 ASan 那步是單行（呼叫 tools/run_asan_ctest.ps1，失敗時 throw）。
+  - 2 個 bash 步驟：Linux「Install JUCE build dependencies」原本不寫 shell（Linux 預設 bash -e，本來就會停），改成明寫 shell: bash
+    （runner 用 bash --noprofile --norc -eo pipefail）；跨平台比對那步原本就是 shell: bash，裡面刻意 set +e 取 exit code 再 set -e，沒改。
+HostProbe 次序：
+  - physics.yml：HostProbe＋log 上傳移到 build-and-verify 的最後（ctest、pytest＋--selftest、T60、--full、整曲 smoke、協和度都在它前面）。
+  - release-physics.yml：HostProbe＋log 上傳移到 build job 最後（物理 gate、pluginval、Steinberg validator、CLI 上傳之後）；
+    build job 加 outputs.cli_uploaded = ${{ steps.upload_cli.outcome == 'success' }}，corpus job 加
+    if: ${{ !cancelled() && needs.build-and-host-validate.outputs.cli_uploaded == 'true' }}，
+    所以 HostProbe 失敗時 corpus 分片照跑（整條 workflow 還是紅），CLI 上傳前任何失敗照舊跳過 corpus。
+  - 兩支 workflow 的 HostProbe 註解「working directory MUST be the repo root」改成現況：cwd → TSUKI_REPO_ROOT →
+    exe 所在資料夾往上找，會印出用了哪條；都找不到 H8 會大聲 FAIL；仍建議在 repo 根執行（步驟本身照舊用 repo 根）。
+驗證：YAML 解析＋靜態檢查改前 FAIL（7 步）→ 改後 PASS；照 runner 包法本機模擬 30 個「只讓一個指令失敗」情境，
+改前 12 個被蓋掉（exit 0）→ 改後 0 個；全部成功時整步照樣 exit 0。
+
+================================================================ 2. O16 tools 小修
+(a) find_cli：crossplatform_verify.find_cli 與 test_dump_modes_layered._find_cli 改成跟 physics_verify／verify_score 同一條規則
+    （路徑有 Release 目錄優先 → 檔名樣式固定順序 TsukiSynthCLI.exe、tsukisynth-cli*、TsukiSynthCLI → 路徑層數少的、再比小寫路徑字串；
+    不看 mtime）。test_dump_modes_layered 仍只找 build-wf/（WF0907 X4 規定），拿掉原本「artefacts Release 路徑優先＋mtime 備援」的寫法，
+    改用同一條排序（artefacts Release 路徑在正常樹裡本來就排第一）。crossplatform_verify 的 --cli 行為沒變。
+    本機實際選到的檔改前改後一樣（build 與 build-wf 各只有一個 Release CLI）；假樹測試證明 Debug／RelWithDebInfo 比較新時也選 Release。
+(b) stem_verify.read_wav_float 支援 WAVE_FORMAT_EXTENSIBLE（0xFFFE）：依 SubFormat GUID 判斷——KSDATAFORMAT_SUBTYPE_PCM → 當 tag 1、
+    _IEEE_FLOAT → 當 tag 3，然後完全照原本的解碼（PCM 16/24/32、float 32；有效位元左對齊在容器裡，所以除數一樣）。
+    大聲丟錯（ValueError）的情況：GUID 不是這兩種（含第一欄是 1 但後段不是 KSDATAFORMAT 的廠商 GUID）、fmt 不到 40 bytes、
+    cbSize < 22、wValidBitsPerSample 大於容器、64-bit float 等原本就不支援的格式。
+    另外順手修一個讀取邊界：fmt chunk 現在只讀自己的 bytes（原本固定讀 16 bytes，fmt 比 16 短時會讀到下一個 chunk），
+    fmt 不到 16 bytes 改丟 ValueError「truncated fmt chunk」（跟 read_wav_header 同一句）。正常檔案結果不變。
+    GUID 常數出處：Microsoft mmreg.h／ksmedia.h 的 KSDATAFORMAT_SUBTYPE_PCM／_IEEE_FLOAT = {0000000X-0000-0010-8000-00AA00389B71}
+    （檔案格式規格，不是物理常數；test_stem_stream.py 原本就有同一組 GUID 尾碼）。
+    既有測試 test_stem_stream.py::test_header_extensible_fmt 原本「釘住」舊行為（read_wav_float 拒絕 EXTENSIBLE），
+    本卡照 O16 改行為，所以把它改成新行為（同一個檔要讀出跟一般 PCM16 逐樣本相同的值），測試名稱保留；「不支援就大聲失敗」
+    的性質改由新的 test_extensible_*_refused 系列保住。
+(c) render_wf_scores.py：--cli 先 os.path.abspath 再用，並印出解析後的路徑；--cli 不是檔案就在渲染前停下。
+    改前：相對路徑（正斜線）→ 第一首就 WinError 2；改後：同一個相對路徑 8/8 IDENTICAL。
+(d) stem_verify、partial_verify 加 --cli（不帶時行為不變，仍用 find_cli()）：
+    - 路徑先轉絕對；不是檔案就 exit 1，絕不退回 find_cli()。
+    - stem_verify 會讓 melody_verify.verify() 內部的 find_cli（它自己私有的 verify_score 實例，用在 --dump-modes 和 baseline 渲染）
+      在這次 run 期間也回傳同一支，run 結束（含例外）就還原；所以一次 run 不會混用兩支 binary。
+      這是因為 tools/melody_verify.py 不在本卡清單，沒辦法幫 verify() 加 cli 參數（見 open_items）。
+    - 報告的 provenance.cli（stem_verify）／cli（partial_verify）多一個欄位 selected_by（"--cli" 或 "verify_score.find_cli()"），
+      只是新增欄位，原有欄位不變。
+    - partial_verify 本身不渲染，只跑 --dump-modes；--cli 同時作用在 run() 和 --b-report。
+(e) partial_verify 模組 docstring 與報告 caveats[0]「C10 self-cal still pending 月月裁決」改成現況：C10 09-10 選 A、D15 09-15 選 A'
+    （放鍵段量測誤差上界約 7.2 c，大於 ±5 c），照 A13 原規劃升 GATE 的前提已不成立，升 GATE 要月月另裁（裁決包 Q18）；
+    gate_ready 維持 false（沒動）。gate_ready_reason 是 P1 已更新的，沒動。
+(f) test_measurement_selfcal：先確認現況 release 網格 0 拒量（dev 1170/1170、hold-out 1040/1040，另外 sustain 也都是 0；重跑時 mut_selfcal.py 把四段的拒量數都印出來）。
+    把「release 0 拒量」從 strict xfail (j)(k) 移位到 plain test：(i) 檢查 production 的 dev 網格 release 格、
+    (m) 檢查 legacy 的 hold-out 網格 release 格（沒有另跑一次 production hold-out，約多 1 分鐘；production 與 legacy
+    逐格相同（含 fail_reason）由 (i) 在 dev 網格保證，而且 tools/melody_verify.py 的 measure_pitch_cents() 現在就是直接
+    return measure_pitch_cents_legacy(...)）。是既有條件移位，不是新門檻（R2）；xfail 裡原本的條件沒刪。
+    突變測試：各網格把 1 格改成拒量 → 改前 plain test 看不到（PASS），改後兩條都 FAIL。
+
+================================================================ GATE 結果
+  G1 YAML 解析＋靜態檢查：改前 FAIL（7 步有沒檢查的原生指令）→ 改後 PASS，兩檔 yaml.safe_load OK    [wf0925b_TF_q12_yaml.txt]
+  G2 pwsh／bash 包法模擬：改前 masked 12/30 → 改後 masked 0/30；全成功情境 exit 0                     [wf0925b_TF_q12_pwsh_sim.txt]
+  G3 pytest 動到的檔＋對應工具既有測試（stem_stream、stem_verify、partial_verify、dump_modes_layered、
+     crossplatform_emit_safety）：100 passed                                                           [wf0925b_TF_pytest.txt]
+  G4 pytest test_measurement_selfcal.py 全檔：8 passed＋5 xfailed（重跑 414.62 s，第一次 403.87 s；跟基線同數，新檢查在 (i)(m) 兩條 plain test 裡）
+  G5 pytest --collect-only：307（基線 288，+19：stem_stream +12、stem_verify +7；刪 0；新增清單由腳本對 git index 算出）
+  G6 突變：新測試 11/11 抓到；selfcal 0 拒量檢查改前 0/2、改後 2/2 抓到（現況四個網格段 release／sustain × dev／hold-out
+     都 0 拒量）；find_cli 規則 PASS
+  G7 render_wf_scores 相對路徑 --cli（build\ 複本 b84c775b…）：8/8 IDENTICAL（改前同一命令 WinError 2；
+     --workdir 要用短路徑，見 open_items 8）  [wf0925b_TF_render_bit_identity.txt]
+  G8 stem_verify／partial_verify --help 列出 --cli；最小 --cli 執行 exit 0，結果跟不帶 --cli 那次逐項相同；
+     --cli 不存在 → 兩支都 exit 1                                                                     [wf0925b_TF_cli_min_runs.txt]
+  全套 pytest 沒跑（照規約只在整合卡跑）。
+
+================================================================ open_items（本卡權限外或要月月／之後處理）
+1. CI 改動只能在本機做到「YAML 解析＋照 runner 包法模擬」。job 層級的 outputs／!cancelled() 條件、HostProbe 在 runner 上能不能無頭載入
+   VST3，要 push 之後（裁決包 Q33）看 physics.yml 那次 run，再手動觸發一次 release-physics.yml 才驗得到。
+2. Q12 是「先做、可推翻」：月月若改選 B（只修 exit code、HostProbe 次序不動）→ 把兩支 workflow 的 HostProbe 步驟移回原位、
+   拿掉 build job 的 outputs 和 corpus job 的 if；選 C（先不修）→ 整個 revert 本卡對兩支 workflow 的改動。
+3. sustain 網格的「0 拒量」也只在 strict xfail (d)(e) 裡檢查（現況 dev 1170/1170、hold-out 1040/1040 都 0 拒量）；
+   本卡只准加 release 的，同樣的移位要另開卡。
+4. melody_verify.verify() 沒有 cli 參數，stem_verify 的 --cli 靠「run 期間暫時替換 melody_verify 私有的 find_cli」；
+   比較乾淨的做法是給 tools/melody_verify.py 的 verify() 加 cli=None（該檔不在本卡清單）。melody_verify 本身也還沒有 --cli。
+5. 交接卡要同步的文件（本卡不准動）：
+   - docs/workcards/WF0925_README.md §0「render_wf_scores.py：--cli 要用 Windows 絕對路徑（相對路徑會 WinError 2）」→ 已不必；
+     §6「兩支 workflow 的 HostProbe 註解」「partial_verify docstring／caveats」兩條已由本卡處理。
+   - 裁決包 Q12（已照 A 做，待 push 驗）、O16（六項已做）的狀態；HANDOVER／TODO 裡同樣的描述。
+   - docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md:371「caveats[0] 還寫 C10 self-cal still pending」→ 已更新（DS 卡或交接卡處理）。
+   - reports/partial_verify_full_2026-09-25.zh-TW.md:181 同一句（歷史報告，要不要加註由交接卡決定）。
+6. release-physics.yml 的 pwsh 失敗時整步 exit code 會顯示 1（pwsh -Command 的規則），原生程式的原始 exit code 會在 log 裡；不影響紅綠判斷。
+7. 本卡沒碰 Q13（Linux label 寫 clang 實際是 GCC）；physics.yml 裡那個 label 原樣保留。
+8. 重跑時發現（跟本卡改動無關、本卡不准動 src/）：CLI 輸出檔的完整路徑太長時會失敗——render manifest 路徑 247 字元時，
+   JUCE 寫檔用的暫存檔名再多最多 14 字元（「.」＋「_temp」＋最多 8 位 16 進位，juce_TemporaryFile.cpp），超過 Windows 260 字元上限，
+   CLI 印「failed to write render manifest」exit 1（src/cli/RenderApp.cpp 的 manifest.replaceWithText）。render_wf_scores 的 --workdir 用短路徑就不會碰到（233、241 字元都成功）。
+   建議交接卡在 WF0925_README §0 render_wf_scores 那條加一句「--workdir 路徑要短」；要不要讓 CLI 支援長路徑另外裁決。
+9. 裁決包 Q18 建議 A 的另一半（在工具說明和 EARFREE 文件寫明「期望值取第 0 根弦，3 弦平均高約 +5 c」）不在本卡 (e) 的範圍，
+   本卡只把 C10／D15 的現況寫進 docstring 與 caveats[0]；那一句要由 DS 卡或交接卡補。

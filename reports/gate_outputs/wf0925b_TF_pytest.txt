@@ -1,0 +1,159 @@
+WF0925b-TF 證據 — pytest：動到的測試檔＋對應工具既有測試、收集數、突變測試（不跑全套）
+日期：2026-09-25　repo HEAD：18430c4（WF0925 154 檔 staged、本卡改動 unstaged，未 commit）
+卡號：WF0925b-TF（CI/tools lane 工兵）　Python 3.13.3、pytest 8.4.2、pwsh 7.6.6
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<REPO> = repo 根目錄；<SCRATCH> = 本 session
+暫存目錄（repo 外）；<SIMTMP> = 模擬腳本在 output/wf0925b/TF/sim/ 下開的暫存資料夾。
+原始 log 與腳本都在 output/wf0925b/TF/（gitignored）。
+接手說明：本卡第一個 session 在 12:11 組好證據後被 session limit 中斷；接手 session 逐項核對改動、
+收尾時把本檔所有 GATE 全部重跑一次，下面的輸出都是重跑的結果（第一次的原始 log 與證據備份在
+output/wf0925b/TF/run1_20260925_1211/，重跑的判定結果跟第一次全部一致，差異只在耗時、暫存路徑名稱和本檔另外註明的地方）。
+================================================================================
+命令（repo 根目錄，PYTHONIOENCODING=utf-8）：
+  (1) python -m pytest tests/test_stem_stream.py tests/test_stem_verify.py tests/test_partial_verify.py tests/test_dump_modes_layered.py tests/test_crossplatform_emit_safety.py -q -rs -p no:cacheprovider
+  (2) python -m pytest tests/test_measurement_selfcal.py -q -rxX -p no:cacheprovider
+  (3) python -m pytest tests -q --collect-only -p no:cacheprovider
+  （-p no:cacheprovider 只是不寫 .pytest_cache，不影響收集與結果）
+  (4) python output/wf0925b/TF/mut_tools.py      （EXTENSIBLE／--cli 新測試的突變測試，在 output/wf0925b/TF/mut_tree/ 的鏡像樹跑（gitignored），不改真的 tools/）
+  (5) python output/wf0925b/TF/mut_selfcal.py    （release 網格 0 拒量檢查的突變測試）
+  (6) python output/wf0925b/TF/find_cli_check.py （find_cli 規則，假 build 樹，Debug 比 Release 新）＋真 repo 上實際選到的 CLI
+  (3) 的新增清單由 python output/wf0925b/TF/collect_summary.py 算出：拿 (3) 的 node id 跟 git index（WF0925 staged 版）
+      同一檔的 test 函式名比對，不是手抄。
+
+---------------------------------------------------------------- (1) 動到的測試檔＋對應工具既有測試
+........................................................................ [ 72%]
+............................                                             [100%]
+100 passed in 36.47s
+exit=0
+
+---------------------------------------------------------------- (2) test_measurement_selfcal.py 全檔
+...xxxx.x....                                                            [100%]
+=========================== short test summary info ===========================
+XFAIL tests/test_measurement_selfcal.py::test_development_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_holdout_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_release_development_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_release_holdout_grid_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+XFAIL tests/test_measurement_selfcal.py::test_gain_fidelity_within_one_cent - WF0909-C10C (2026-09-09, card RED): the production estimator is still the legacy hard-edge centroid, whose own error misses the ratified 1-cent self-certification bar. Six replacement estimators have been tried and rejected -- five bin-reweighting variants (WF0909-C10B) and C10C's time-domain NLS fit, which cleared EVERY synthetic bar in this file (dev 0.2868 c, hold-out 0.0816 c, gain fidelity 0.0090 c, course centre 0.0064 c) and was still rejected because it turns 7 dry-stem PASS into FAIL on the product GATE path and changes 9 of the 30 strong-domain corpus files. That candidate was NOT landed (month-lead ruling, option A, 2026-09-10); it is preserved unlanded in reports/c10c_nls_candidate.patch -- see reports/c10c_nls_estimator_before_after.md and reports/decision_packets/C10_selfcal_domain.zh-TW.md S6/S7. The assertion below is NOT loosened and NOT deleted (R2); it is an xfail so CI names the open gap every run. strict=True: an XPASS means someone landed an estimator that really clears this, and should fail CI as a prompt to promote this back to a plain test.
+8 passed, 5 xfailed in 414.62s (0:06:54)
+exit=0
+
+---------------------------------------------------------------- (3) 收集數
+307 tests collected in 1.74s
+
+每檔數量：
+      7 tests/test_consonance_contract.py
+      3 tests/test_crossplatform_emit_safety.py
+      2 tests/test_dump_modes_layered.py
+     13 tests/test_measurement_selfcal.py
+     13 tests/test_midi_type0.py
+     10 tests/test_partial_verify.py
+     45 tests/test_physics_verify.py
+      7 tests/test_render_app_filename_safety.py
+     29 tests/test_scene_reverb.py
+     11 tests/test_schema_contract_sync.py
+     26 tests/test_score_vs_midi_verify.py
+      4 tests/test_specimen_pipeline.py
+     15 tests/test_specimen_verify.py
+     29 tests/test_stem_stream.py
+     56 tests/test_stem_verify.py
+     37 tests/test_verify_score_contract.py
+
+基線（WF0925 整合卡 reports/gate_outputs/wf0925_integration_raw/05_pytest.txt）：288 個（282 passed＋1 skip＋5 xfail）
+跟 git index（WF0925 staged 版）比，新增的 node id（19 個）：
+tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[pcm16]
+tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[pcm24]
+tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[pcm32]
+tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[pcm32_valid24]
+tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[float32]
+tests/test_stem_stream.py::test_extensible_float_guid_is_not_decoded_as_pcm
+tests/test_stem_stream.py::test_extensible_unsupported_subformat_tag_is_refused
+tests/test_stem_stream.py::test_extensible_foreign_guid_is_refused
+tests/test_stem_stream.py::test_extensible_short_fmt_is_refused
+tests/test_stem_stream.py::test_extensible_small_cbsize_is_refused
+tests/test_stem_stream.py::test_extensible_valid_bits_above_container_is_refused
+tests/test_stem_stream.py::test_extensible_float64_still_unsupported
+tests/test_stem_verify.py::test_tf_cli_flag_defaults_to_none_and_parses
+tests/test_stem_verify.py::test_tf_stem_verify_missing_cli_is_error_not_fallback
+tests/test_stem_verify.py::test_tf_stem_verify_cli_reaches_renders_and_melody_verify
+tests/test_stem_verify.py::test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary
+tests/test_stem_verify.py::test_tf_partial_verify_missing_cli_is_error_not_fallback
+tests/test_stem_verify.py::test_tf_partial_verify_resolve_cli
+tests/test_stem_verify.py::test_tf_partial_verify_b_report_uses_explicit_cli
+收集總數 307 − 新增 19 = 288（= 基線 288 就代表沒有刪掉任何既有測試）
+
+---------------------------------------------------------------- (4) 新測試的突變測試（EXTENSIBLE／--cli）
+unmutated mirror: test_stem_stream -k extensible -> rc=0  13 passed, 16 deselected in 2.75s
+unmutated mirror: test_stem_verify -k tf_       -> rc=0  5 passed, 2 skipped, 49 deselected in 2.11s
+M1 EXTENSIBLE not resolved (tag 0xFFFE left as is)                 -> rc=1  CAUGHT  13 failed, 16 deselected in 4.01s
+M2 GUID tail not checked                                           -> rc=1  CAUGHT  1 failed, 12 passed, 16 deselected in 2.69s
+M3 SubFormat ignored, EXTENSIBLE always decoded as PCM             -> rc=1  CAUGHT  3 failed, 10 passed, 16 deselected in 4.38s
+M4 wValidBitsPerSample > container accepted                        -> rc=1  CAUGHT  1 failed, 12 passed, 16 deselected in 2.26s
+M5 cbSize not checked                                              -> rc=1  CAUGHT  1 failed, 12 passed, 16 deselected in 2.30s
+M6 stem_verify: melody_verify keeps its own find_cli (no override) -> rc=1  CAUGHT  1 failed, 4 passed, 2 skipped, 49 deselected in 2.25s
+M7 stem_verify: missing --cli falls back to find_cli()             -> rc=1  CAUGHT  1 failed, 4 passed, 2 skipped, 49 deselected in 2.38s
+M8 stem_verify: relative --cli not made absolute                   -> rc=1  CAUGHT  1 failed, 4 passed, 2 skipped, 49 deselected in 2.33s
+M9 stem_verify: override not restored after the run                -> rc=1  CAUGHT  2 failed, 3 passed, 2 skipped, 49 deselected in 2.33s
+M10 partial_verify: missing --cli falls back to find_cli()         -> rc=1  CAUGHT  1 failed, 4 passed, 2 skipped, 49 deselected in 2.34s
+M11 partial_verify: --cli ignored (always find_cli())              -> rc=1  CAUGHT  2 failed, 3 passed, 2 skipped, 49 deselected in 2.34s
+RESULT: PASS (every mutant caught)
+exit=0
+
+---------------------------------------------------------------- (5) release 網格「0 拒量」檢查的突變測試
+grids computed once in 112.6s: dev 2340 rows, hold-out 2080 rows
+  dev release: 1170 cells, refused 0
+  dev sustain: 1170 cells, refused 0
+  hold-out release: 1040 cells, refused 0
+  hold-out sustain: 1040 cells, refused 0
+
+== clean grids ==
+  [before] test_measure_pitch_cents_matches_legacy_after_revert    PASS 
+  [before] test_holdout_grid_pins_match_record                     PASS 
+  [after ] test_measure_pitch_cents_matches_legacy_after_revert    PASS 
+  [after ] test_holdout_grid_pins_match_record                     PASS 
+
+== one release cell refused (dev AND hold-out) ==
+  [before] test_measure_pitch_cents_matches_legacy_after_revert    PASS 
+  [before] test_holdout_grid_pins_match_record                     PASS 
+  [after ] test_measure_pitch_cents_matches_legacy_after_revert    FAIL the production estimator refused 1/1170 RELEASE-segment development-grid cells (on record: 0) -- the D15 release corpus no longer measures every cell,
+  [after ] test_holdout_grid_pins_match_record                     FAIL the legacy centroid refused 1/1040 RELEASE-segment hold-out-grid cells (on record: 0) -- the pinned 7.2055 c is no longer a max over all 1040 points: 
+
+RESULT: PASS (clean: 4/4 PASS; mutated: before 2/2 blind, after 2/2 caught)
+exit=0
+
+---------------------------------------------------------------- (6) find_cli 規則
+tree=debug_newer mtimes=Debug/RWDI newest  reference(verify_score.find_cli)=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+    crossplatform_verify.find_cli  before      -> TsukiSynthCLI_artefacts/Debug/TsukiSynthCLI.exe      != reference
+    crossplatform_verify.find_cli  after       -> TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe    == reference
+    test_dump_modes_layered._find_cli before   -> TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe    == reference
+    test_dump_modes_layered._find_cli after    -> TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe    == reference
+tree=debug_newer mtimes=reversed  reference(verify_score.find_cli)=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+    crossplatform_verify.find_cli  before      -> TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe    == reference
+    crossplatform_verify.find_cli  after       -> TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe    == reference
+    test_dump_modes_layered._find_cli before   -> TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe    == reference
+    test_dump_modes_layered._find_cli after    -> TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe    == reference
+tree=relwithdebinfo_newer_no_artefacts mtimes=Debug/RWDI newest  reference(verify_score.find_cli)=Release/TsukiSynthCLI.exe
+    crossplatform_verify.find_cli  before      -> RelWithDebInfo/TsukiSynthCLI.exe                     != reference
+    crossplatform_verify.find_cli  after       -> Release/TsukiSynthCLI.exe                            == reference
+    test_dump_modes_layered._find_cli before   -> RelWithDebInfo/TsukiSynthCLI.exe                     != reference
+    test_dump_modes_layered._find_cli after    -> Release/TsukiSynthCLI.exe                            == reference
+tree=relwithdebinfo_newer_no_artefacts mtimes=reversed  reference(verify_score.find_cli)=Release/TsukiSynthCLI.exe
+    crossplatform_verify.find_cli  before      -> Release/TsukiSynthCLI.exe                            == reference
+    crossplatform_verify.find_cli  after       -> Release/TsukiSynthCLI.exe                            == reference
+    test_dump_modes_layered._find_cli before   -> Release/TsukiSynthCLI.exe                            == reference
+    test_dump_modes_layered._find_cli after    -> Release/TsukiSynthCLI.exe                            == reference
+RESULT: PASS (after == reference rule in every tree/mtime order)
+exit=0
+真 repo 上（改後）實際選到的 CLI（跟改前一樣，因為各只有一個候選）：
+crossplatform_verify.find_cli(None) -> build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+test_dump_modes_layered._find_cli() -> build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+
+---------------------------------------------------------------- 結論
+- (1) 5 個檔 100 passed（含 test_dump_modes_layered 2 條用 build-wf CLI 的實際渲染、test_stem_verify 的真 CLI e2e）。
+- (2) selfcal 13 條＝8 passed＋5 xfailed（跟基線一樣：P1 之後就是 8＋5）；新加的兩個 0 拒量檢查在 (i)、(m) 這兩條 plain test 裡。
+- (3) 收集 288 → 307（+19，刪 0）：test_stem_stream +12（EXTENSIBLE 解碼 5 個參數化＋7 條拒絕／防呆），
+  test_stem_verify +7（--cli）。既有的 test_header_extensible_fmt 保留同名，改成新行為（見 summary）。
+- (4) 11 個突變全部被抓到（每個至少 1 條紅）；未突變的鏡像全綠。
+- (5) 在 dev 與 hold-out 網格各把 1 個 release 格子改成「拒量」：改前的 plain test 兩條照樣 PASS（看不到），
+  改後兩條都 FAIL 並指出拒量的格子；乾淨網格改前改後都 PASS。現況 dev 1170/1170、hold-out 1040/1040 都 0 拒量
+  （sustain 段兩個網格也都 0 拒量，重跑時一併印出）。
+- (6) 改後的兩個 find_cli 在每種假樹、每種 mtime 順序下都跟 verify_score.find_cli() 選一樣的檔（Release 優先、不看 mtime）；
+  改前 crossplatform_verify 在 Debug 較新時會選 Debug、test_dump_modes_layered 在沒有 artefacts 路徑時會選較新的 RelWithDebInfo。

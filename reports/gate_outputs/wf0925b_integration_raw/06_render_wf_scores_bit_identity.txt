@@ -1,0 +1,249 @@
+cwd=<REPO>  (2026-09-25 14:09:58)
+# CLI sha256: b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66  (build\ CLI 的複本；--cli 故意用相對路徑，驗 TF 的 abspath 修正)
+# wf0907_method/ 開跑前的檔案清單：
+__pycache__
+render_audit_d11_opus.csv
+render_audit_e9.csv
+render_audit_integration.csv
+render_audit_wf0908_e10b_after.csv
+render_audit_wf0908_integration_opus.csv
+render_audit_wf0908_p3.csv
+render_audit_wf0909_integration.csv
+render_audit_wf0909_p4b.csv
+render_audit_wf0914_D9c_opus.csv
+render_audit_wf0914_INTEGRATION_opus.csv
+render_wf0907_e5_after.csv
+render_wf0907_e5_before.csv
+render_wf0907_e7_after.csv
+render_wf0907_e8_after.csv
+render_wf0907_e8_audit.csv
+render_wf0907_e8_auditor.csv
+render_wf0907_e8_fixround_after.csv
+render_wf0907_e8_takeover.csv
+render_wf0907_e9_after.csv
+render_wf0907_e9_auditor.csv
+render_wf0907_e9_takeover2.csv
+render_wf0907_e9_verify.csv
+render_wf0907_integration.csv
+render_wf0908_e10b_after.csv
+render_wf0908_e10b_before.csv
+render_wf0908_integration.csv
+render_wf0908_p2_after.csv
+render_wf0908_p2_after_recheck.csv
+render_wf0908_p2_baseline.csv
+render_wf0908_p2_final_revert.csv
+render_wf0908_p3_after.csv
+render_wf0908_p3_before.csv
+render_wf0908_p4_after.csv
+render_wf0909_integration.csv
+render_wf0909_p4b_after.csv
+render_wf0909_p4b_after2.csv
+render_wf0910_a14_AUDIT.csv
+render_wf0910_a14_after.csv
+render_wf0914_D11_after.csv
+render_wf0914_D11_baseline.csv
+render_wf0914_D11_postrevert.csv
+render_wf0914_D12.csv
+render_wf0914_D12_audit2.csv
+render_wf0914_D12_auditfix.csv
+render_wf0914_D9c.csv
+render_wf0914_INTEGRATION.csv
+render_wf0914_b7p1.csv
+render_wf0914_b7p1_auditfix.csv
+render_wf_scores.py
+sha256_audit_d11_opus.txt
+sha256_audit_e9.txt
+sha256_audit_integration.txt
+sha256_audit_wf0908_e10b_after.txt
+sha256_audit_wf0908_integration_opus.txt
+sha256_audit_wf0908_p3.txt
+sha256_audit_wf0909_integration.txt
+sha256_audit_wf0909_p4b.txt
+sha256_audit_wf0914_D9c_opus.txt
+sha256_audit_wf0914_INTEGRATION_opus.txt
+sha256_wf0907_e5_after.txt
+sha256_wf0907_e5_before.txt
+sha256_wf0907_e7_after.txt
+sha256_wf0907_e8_after.txt
+sha256_wf0907_e8_audit.txt
+sha256_wf0907_e8_auditor.txt
+sha256_wf0907_e8_fixround_after.txt
+sha256_wf0907_e8_takeover.txt
+sha256_wf0907_e9_after.txt
+sha256_wf0907_e9_auditor.txt
+sha256_wf0907_e9_takeover2.txt
+sha256_wf0907_e9_verify.txt
+sha256_wf0907_integration.txt
+sha256_wf0908_e10b_after.txt
+sha256_wf0908_e10b_before.txt
+sha256_wf0908_integration.txt
+sha256_wf0908_p2_after.txt
+sha256_wf0908_p2_after_recheck.txt
+sha256_wf0908_p2_baseline.txt
+sha256_wf0908_p2_final_revert.txt
+sha256_wf0908_p3_after.txt
+sha256_wf0908_p3_before.txt
+sha256_wf0908_p4_after.txt
+sha256_wf0909_integration.txt
+sha256_wf0909_p4b_after.txt
+sha256_wf0909_p4b_after2.txt
+sha256_wf0910_a14_AUDIT.txt
+sha256_wf0910_a14_after.txt
+sha256_wf0914_D11_after.txt
+sha256_wf0914_D11_baseline.txt
+sha256_wf0914_D11_postrevert.txt
+sha256_wf0914_D12.txt
+sha256_wf0914_D12_audit2.txt
+sha256_wf0914_D12_auditfix.txt
+sha256_wf0914_D9c.txt
+sha256_wf0914_INTEGRATION.txt
+sha256_wf0914_b7p1.txt
+sha256_wf0914_b7p1_auditfix.txt
+$ python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0925b_INT2 --workdir <SCRATCH>\wf0925b\INT2\rw --cli output/wf0925b/INT2/cli/TsukiSynthCLI.exe --outdir output/wf0925b/INT2/render
+cli: <REPO>\output\wf0925b\INT2\cli\TsukiSynthCLI.exe
+rendering moonlight_sonata_movement1_yangqin ...
+  len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+  len=325.869s  RMS=-23.899 dBFS  sha256=280cbdac3c117c14
+rendering physical_piano ...
+  len=7.575s  RMS=-18.485 dBFS  sha256=1233b53f1e8660bc
+rendering restraint_metal_click ...
+  len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...
+  len=327.289s  RMS=-21.589 dBFS  sha256=f539aefa91919cbf
+rendering water_gong_free ...
+  len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...
+  len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+rendering fur_elise_opening ...
+  len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+wrote <REPO>\output\wf0925b\INT2\render\render_wf0925b_INT2.csv
+wrote <REPO>\output\wf0925b\INT2\render\sha256_wf0925b_INT2.txt
+RENDER_EXIT=0  (2026-09-25 14:11:31)
+
+$ cat output/wf0925b/INT2/render/sha256_wf0925b_INT2.txt
+49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+280cbdac3c117c142dd89853eaec0706ef6d6afec604de37621577d57bf637d1  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b  physical_piano/physical_piano.wav
+be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click/restraint_metal_click_001.wav
+f539aefa91919cbfe3b22e7fb4d17f404e758aca39d1b08b173e6f44cd63f67e  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free/water_gong_free.wav
+74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening/fur_elise_opening.wav
+
+$ diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt output/wf0925b/INT2/render/sha256_wf0925b_INT2.txt
+DIFF_STRIP_CR_EXIT=0
+
+$ python output/wf0925/INT/cmp_sha.py reports/gate_outputs/b6_method/sha256_before_post_a14.txt output/wf0925b/INT2/render/sha256_wf0925b_INT2.txt
+IDENTICAL 49514b007e3e01fc 49514b007e3e01fc moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+IDENTICAL 280cbdac3c117c14 280cbdac3c117c14 moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+IDENTICAL 1233b53f1e8660bc 1233b53f1e8660bc physical_piano/physical_piano.wav
+IDENTICAL be634798c4a0bf71 be634798c4a0bf71 restraint_metal_click/restraint_metal_click_001.wav
+IDENTICAL f539aefa91919cbf f539aefa91919cbf moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+IDENTICAL 31b539c6ac08d942 31b539c6ac08d942 water_gong_free/water_gong_free.wav
+IDENTICAL 74122637a0c71278 74122637a0c71278 ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+IDENTICAL b0877774da9e5fc5 b0877774da9e5fc5 fur_elise_opening/fur_elise_opening.wav
+8/8 IDENTICAL; extra in now: []
+
+# wf0907_method/ 跑完後的檔案清單（--outdir 有效 → 不應多出新檔）：
+__pycache__
+render_audit_d11_opus.csv
+render_audit_e9.csv
+render_audit_integration.csv
+render_audit_wf0908_e10b_after.csv
+render_audit_wf0908_integration_opus.csv
+render_audit_wf0908_p3.csv
+render_audit_wf0909_integration.csv
+render_audit_wf0909_p4b.csv
+render_audit_wf0914_D9c_opus.csv
+render_audit_wf0914_INTEGRATION_opus.csv
+render_wf0907_e5_after.csv
+render_wf0907_e5_before.csv
+render_wf0907_e7_after.csv
+render_wf0907_e8_after.csv
+render_wf0907_e8_audit.csv
+render_wf0907_e8_auditor.csv
+render_wf0907_e8_fixround_after.csv
+render_wf0907_e8_takeover.csv
+render_wf0907_e9_after.csv
+render_wf0907_e9_auditor.csv
+render_wf0907_e9_takeover2.csv
+render_wf0907_e9_verify.csv
+render_wf0907_integration.csv
+render_wf0908_e10b_after.csv
+render_wf0908_e10b_before.csv
+render_wf0908_integration.csv
+render_wf0908_p2_after.csv
+render_wf0908_p2_after_recheck.csv
+render_wf0908_p2_baseline.csv
+render_wf0908_p2_final_revert.csv
+render_wf0908_p3_after.csv
+render_wf0908_p3_before.csv
+render_wf0908_p4_after.csv
+render_wf0909_integration.csv
+render_wf0909_p4b_after.csv
+render_wf0909_p4b_after2.csv
+render_wf0910_a14_AUDIT.csv
+render_wf0910_a14_after.csv
+render_wf0914_D11_after.csv
+render_wf0914_D11_baseline.csv
+render_wf0914_D11_postrevert.csv
+render_wf0914_D12.csv
+render_wf0914_D12_audit2.csv
+render_wf0914_D12_auditfix.csv
+render_wf0914_D9c.csv
+render_wf0914_INTEGRATION.csv
+render_wf0914_b7p1.csv
+render_wf0914_b7p1_auditfix.csv
+render_wf_scores.py
+sha256_audit_d11_opus.txt
+sha256_audit_e9.txt
+sha256_audit_integration.txt
+sha256_audit_wf0908_e10b_after.txt
+sha256_audit_wf0908_integration_opus.txt
+sha256_audit_wf0908_p3.txt
+sha256_audit_wf0909_integration.txt
+sha256_audit_wf0909_p4b.txt
+sha256_audit_wf0914_D9c_opus.txt
+sha256_audit_wf0914_INTEGRATION_opus.txt
+sha256_wf0907_e5_after.txt
+sha256_wf0907_e5_before.txt
+sha256_wf0907_e7_after.txt
+sha256_wf0907_e8_after.txt
+sha256_wf0907_e8_audit.txt
+sha256_wf0907_e8_auditor.txt
+sha256_wf0907_e8_fixround_after.txt
+sha256_wf0907_e8_takeover.txt
+sha256_wf0907_e9_after.txt
+sha256_wf0907_e9_auditor.txt
+sha256_wf0907_e9_takeover2.txt
+sha256_wf0907_e9_verify.txt
+sha256_wf0907_integration.txt
+sha256_wf0908_e10b_after.txt
+sha256_wf0908_e10b_before.txt
+sha256_wf0908_integration.txt
+sha256_wf0908_p2_after.txt
+sha256_wf0908_p2_after_recheck.txt
+sha256_wf0908_p2_baseline.txt
+sha256_wf0908_p2_final_revert.txt
+sha256_wf0908_p3_after.txt
+sha256_wf0908_p3_before.txt
+sha256_wf0908_p4_after.txt
+sha256_wf0909_integration.txt
+sha256_wf0909_p4b_after.txt
+sha256_wf0909_p4b_after2.txt
+sha256_wf0910_a14_AUDIT.txt
+sha256_wf0910_a14_after.txt
+sha256_wf0914_D11_after.txt
+sha256_wf0914_D11_baseline.txt
+sha256_wf0914_D11_postrevert.txt
+sha256_wf0914_D12.txt
+sha256_wf0914_D12_audit2.txt
+sha256_wf0914_D12_auditfix.txt
+sha256_wf0914_D9c.txt
+sha256_wf0914_INTEGRATION.txt
+sha256_wf0914_b7p1.txt
+sha256_wf0914_b7p1_auditfix.txt
+$ git status --porcelain -- reports/gate_outputs/wf0907_method/
+M  reports/gate_outputs/wf0907_method/render_wf_scores.py
+(end)

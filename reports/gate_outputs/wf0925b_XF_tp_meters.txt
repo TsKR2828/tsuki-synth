@@ -1,0 +1,149 @@
+# wf0925b_XF_tp_meters.txt
+# generated 2026-09-25T13:09:38  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/xf_tp_meters.py
+# python 3.13.3  numpy 2.4.4  soundfile 0.13.1
+
+== dist43 (43 files)
+  Akashic Meditation Loop            X1 -1.0447  FIR4 -1.0445  FIR16 -1.0444  spread 0.0003 dB
+  Akashic Library Drone              X1 -1.0455  FIR4 -1.0454  FIR16 -1.0454  spread 0.0001 dB
+  Akashic Page Turn                  X1 -1.0412  FIR4 -1.0409  FIR16 -1.0409  spread 0.0003 dB
+  Akashic Gate Open (Dark)           X1 -1.0390  FIR4 -1.0388  FIR16 -1.0385  spread 0.0004 dB
+  Akashic Gate Open                  X1 -1.0236  FIR4 -1.0234  FIR16 -1.0210  spread 0.0026 dB
+  Akashic Light Tap                  X1 -1.0044  FIR4 -1.0082  FIR16 -1.0005  spread 0.0077 dB
+  Akashic Record Chime               X1 -1.0455  FIR4 -1.0454  FIR16 -1.0437  spread 0.0018 dB
+  開館鈴 — Library Opening Bell         X1 -1.0455  FIR4 -1.0454  FIR16 -1.0453  spread 0.0002 dB
+  Clockwork Ticking Room             X1 -0.9675  FIR4 -0.9687  FIR16 -0.9500  spread 0.0188 dB
+  Clockwork Gear Shift               X1 -1.0130  FIR4 -1.0131  FIR16 -0.9978  spread 0.0153 dB
+  Clockwork Tick Loop                X1 -1.0320  FIR4 -1.0335  FIR16 -1.0288  spread 0.0047 dB
+  Clockwork Spring Release           X1 -1.0344  FIR4 -1.0319  FIR16 -1.0319  spread 0.0025 dB
+  Clockwork Bell Strike (Wavefold)   X1 -1.0251  FIR4 -1.0252  FIR16 -1.0246  spread 0.0006 dB
+  Clockwork Gear Click               X1 -1.0038  FIR4 -1.0036  FIR16 -0.9910  spread 0.0128 dB
+  Clockwork Bell Strike              X1 -1.0455  FIR4 -1.0454  FIR16 -1.0454  spread 0.0001 dB
+  Forest Rain Pattern                X1 -1.0455  FIR4 -1.0454  FIR16 -1.0454  spread 0.0001 dB
+  Forest Bamboo Rain                 X1 -1.0422  FIR4 -1.0418  FIR16 -1.0417  spread 0.0005 dB
+  Forest Branch Snap                 X1 -1.0375  FIR4 -1.0375  FIR16 -1.0375  spread 0.0000 dB
+  Forest Bird Call                   X1 -1.0361  FIR4 -1.0475  FIR16 -1.0412  spread 0.0113 dB
+  Forest Bird Call (Alarm)           X1 -0.9663  FIR4 -1.0068  FIR16 -0.9986  spread 0.0405 dB
+  Forest Acorn Tap                   X1 -0.9698  FIR4 -0.9631  FIR16 -0.9630  spread 0.0068 dB
+  Forest Leaf Sweep                  X1 -1.0434  FIR4 -1.0428  FIR16 -1.0428  spread 0.0005 dB
+  Ocean Wave Cycle                   X1 -1.0455  FIR4 -1.0454  FIR16 -1.0454  spread 0.0001 dB
+  Ocean Abyss Hum                    X1 -1.0455  FIR4 -1.0454  FIR16 -1.0454  spread 0.0001 dB
+  Ocean Depth Slam                   X1 -1.0454  FIR4 -1.0453  FIR16 -1.0453  spread 0.0001 dB
+  Ocean Droplet Tap                  X1 -1.0135  FIR4 -1.0077  FIR16 -1.0068  spread 0.0067 dB
+  Ocean Bubble Pop                   X1 -1.0455  FIR4 -1.0454  FIR16 -1.0454  spread 0.0001 dB
+  Ocean Bubble Pop (Deep)            X1 -1.0434  FIR4 -1.0431  FIR16 -1.0430  spread 0.0003 dB
+  Ocean Tide Wash                    X1 -1.0455  FIR4 -1.0454  FIR16 -1.0454  spread 0.0001 dB
+  Rabbit Wind Chimes                 X1 -1.0284  FIR4 -1.0285  FIR16 -1.0273  spread 0.0012 dB
+  Rabbit Stomp                       X1 -1.0357  FIR4 -1.0408  FIR16 -1.0388  spread 0.0051 dB
+  Rabbit Bounce Loop                 X1 -1.0336  FIR4 -1.0334  FIR16 -1.0333  spread 0.0003 dB
+  Rabbit Ding                        X1 -1.0257  FIR4 -1.0264  FIR16 -1.0201  spread 0.0063 dB
+  Rabbit Ding (Angry)                X1 -1.0005  FIR4 -1.0023  FIR16 -0.9938  spread 0.0086 dB
+  Rabbit Carrot Button               X1 -1.0149  FIR4 -1.0220  FIR16 -1.0220  spread 0.0071 dB
+  Rabbit Hop Transition              X1 -1.0398  FIR4 -1.0398  FIR16 -1.0395  spread 0.0003 dB
+  Restraint Iron Drone               X1 -1.0455  FIR4 -1.0454  FIR16 -1.0454  spread 0.0001 dB
+  Restraint Shackle Slam             X1 -1.0431  FIR4 -1.0409  FIR16 -1.0409  spread 0.0023 dB
+  Restraint Industrial Pulse         X1 -1.0451  FIR4 -1.0449  FIR16 -1.0447  spread 0.0003 dB
+  Restraint Lock Click               X1 -0.9673  FIR4 -0.9671  FIR16 -0.9671  spread 0.0002 dB
+  Restraint Lock Click (Distorted)   X1 -1.0209  FIR4 -1.0165  FIR16 -0.9556  spread 0.0654 dB
+  Restraint Bolt Click               X1 -1.0427  FIR4 -1.0426  FIR16 -1.0426  spread 0.0001 dB
+  Restraint Chain Drag               X1 -1.0373  FIR4 -1.0362  FIR16 -1.0362  spread 0.0011 dB
+  -- summary dist43:
+     X1     range -0.9663 .. -1.0455 dBTP ; files reading above -1.000: 4  [描述用]
+     FIR4   range -0.9631 .. -1.0475 dBTP ; files reading above -1.000: 3  [描述用]
+     FIR16  range -0.9500 .. -1.0454 dBTP ; files reading above -1.000: 8  [描述用]
+     union of meters -0.9500 .. -1.0475 dBTP ; largest per-file spread between meters 0.0654 dB (Restraint Lock Click (Distorted))  [描述用、非 GATE]
+
+== loop6 (6 files)
+  Akashic Meditation Loop            X1 -1.0000  FIR4 -0.9998  FIR16 -0.9997  spread 0.0003 dB
+  Clockwork Tick Loop                X1 -1.0000  FIR4 -1.0015  FIR16 -0.9968  spread 0.0047 dB
+  Forest Rain Pattern                X1 -1.0000  FIR4 -0.9999  FIR16 -0.9999  spread 0.0001 dB
+  Ocean Wave Cycle                   X1 -1.0000  FIR4 -0.9999  FIR16 -0.9999  spread 0.0001 dB
+  Rabbit Bounce Loop                 X1 -1.0000  FIR4 -0.9998  FIR16 -0.9997  spread 0.0003 dB
+  Restraint Industrial Pulse         X1 -1.0000  FIR4 -0.9999  FIR16 -0.9997  spread 0.0003 dB
+  -- summary loop6:
+     X1     range -1.0000 .. -1.0000 dBTP ; files reading above -1.000: 0  [描述用]
+     FIR4   range -0.9998 .. -1.0015 dBTP ; files reading above -1.000: 5  [描述用]
+     FIR16  range -0.9968 .. -0.9999 dBTP ; files reading above -1.000: 6  [描述用]
+     union of meters -0.9968 .. -1.0015 dBTP ; largest per-file spread between meters 0.0047 dB (Clockwork Tick Loop)  [描述用、非 GATE]
+
+== alt43 (43 files)
+  Akashic Meditation Loop            X1 -2.8637  FIR4 -2.8635  FIR16 -2.8634  spread 0.0003 dB
+  Akashic Library Drone              X1 -2.7695  FIR4 -2.7694  FIR16 -2.7694  spread 0.0001 dB
+  Akashic Page Turn                  X1 -1.0000  FIR4 -0.9997  FIR16 -0.9997  spread 0.0003 dB
+  Akashic Gate Open (Dark)           X1 -2.8600  FIR4 -2.8598  FIR16 -2.8595  spread 0.0004 dB
+  Akashic Gate Open                  X1 -2.2976  FIR4 -2.2974  FIR16 -2.2950  spread 0.0026 dB
+  Akashic Light Tap                  X1 -1.0000  FIR4 -1.0038  FIR16 -0.9962  spread 0.0077 dB
+  Akashic Record Chime               X1 -2.8845  FIR4 -2.8844  FIR16 -2.8827  spread 0.0018 dB
+  開館鈴 — Library Opening Bell         X1 -4.0435  FIR4 -4.0434  FIR16 -4.0433  spread 0.0002 dB
+  Clockwork Ticking Room             X1 -2.1825  FIR4 -2.1837  FIR16 -2.1650  spread 0.0188 dB
+  Clockwork Gear Shift               X1 -1.0000  FIR4 -1.0001  FIR16 -0.9848  spread 0.0153 dB
+  Clockwork Tick Loop                X1 -1.0000  FIR4 -1.0015  FIR16 -0.9968  spread 0.0047 dB
+  Clockwork Spring Release           X1 -1.0000  FIR4 -0.9975  FIR16 -0.9975  spread 0.0025 dB
+  Clockwork Bell Strike (Wavefold)   X1 -1.0861  FIR4 -1.0862  FIR16 -1.0856  spread 0.0006 dB
+  Clockwork Gear Click               X1 -1.0000  FIR4 -0.9997  FIR16 -0.9872  spread 0.0128 dB
+  Clockwork Bell Strike              X1 -1.0000  FIR4 -0.9999  FIR16 -0.9999  spread 0.0001 dB
+  Forest Rain Pattern                X1 -1.3785  FIR4 -1.3784  FIR16 -1.3784  spread 0.0001 dB
+  Forest Bamboo Rain                 X1 -1.4342  FIR4 -1.4338  FIR16 -1.4337  spread 0.0005 dB
+  Forest Branch Snap                 X1 -1.0000  FIR4 -1.0000  FIR16 -1.0000  spread 0.0000 dB
+  Forest Bird Call                   X1 -1.0000  FIR4 -1.0113  FIR16 -1.0050  spread 0.0113 dB
+  Forest Bird Call (Alarm)           X1 -1.0000  FIR4 -1.0405  FIR16 -1.0323  spread 0.0405 dB
+  Forest Acorn Tap                   X1 -1.0000  FIR4 -0.9933  FIR16 -0.9932  spread 0.0068 dB
+  Forest Leaf Sweep                  X1 -1.2754  FIR4 -1.2748  FIR16 -1.2748  spread 0.0005 dB
+  Ocean Wave Cycle                   X1 -3.1315  FIR4 -3.1314  FIR16 -3.1314  spread 0.0001 dB
+  Ocean Abyss Hum                    X1 -1.0000  FIR4 -0.9999  FIR16 -0.9999  spread 0.0001 dB
+  Ocean Depth Slam                   X1 -1.0000  FIR4 -0.9999  FIR16 -0.9999  spread 0.0001 dB
+  Ocean Droplet Tap                  X1 -1.0000  FIR4 -0.9942  FIR16 -0.9933  spread 0.0067 dB
+  Ocean Bubble Pop                   X1 -1.6855  FIR4 -1.6854  FIR16 -1.6854  spread 0.0001 dB
+  Ocean Bubble Pop (Deep)            X1 -1.5394  FIR4 -1.5391  FIR16 -1.5390  spread 0.0003 dB
+  Ocean Tide Wash                    X1 -2.7755  FIR4 -2.7754  FIR16 -2.7754  spread 0.0001 dB
+  Rabbit Wind Chimes                 X1 -3.7064  FIR4 -3.7065  FIR16 -3.7053  spread 0.0012 dB
+  Rabbit Stomp                       X1 -1.0000  FIR4 -1.0051  FIR16 -1.0031  spread 0.0051 dB
+  Rabbit Bounce Loop                 X1 -4.4416  FIR4 -4.4414  FIR16 -4.4413  spread 0.0003 dB
+  Rabbit Ding                        X1 -5.6687  FIR4 -5.6694  FIR16 -5.6631  spread 0.0063 dB
+  Rabbit Ding (Angry)                X1 -1.3615  FIR4 -1.3633  FIR16 -1.3548  spread 0.0086 dB
+  Rabbit Carrot Button               X1 -1.0000  FIR4 -1.0071  FIR16 -1.0071  spread 0.0071 dB
+  Rabbit Hop Transition              X1 -4.5678  FIR4 -4.5678  FIR16 -4.5675  spread 0.0003 dB
+  Restraint Iron Drone               X1 -1.0000  FIR4 -0.9999  FIR16 -0.9999  spread 0.0001 dB
+  Restraint Shackle Slam             X1 -1.0000  FIR4 -0.9977  FIR16 -0.9977  spread 0.0023 dB
+  Restraint Industrial Pulse         X1 -3.0921  FIR4 -3.0919  FIR16 -3.0917  spread 0.0003 dB
+  Restraint Lock Click               X1 -1.9113  FIR4 -1.9111  FIR16 -1.9111  spread 0.0002 dB
+  Restraint Lock Click (Distorted)   X1 -1.0000  FIR4 -0.9956  FIR16 -0.9346  spread 0.0654 dB
+  Restraint Bolt Click               X1 -1.0000  FIR4 -0.9999  FIR16 -0.9999  spread 0.0001 dB
+  Restraint Chain Drag               X1 -1.0000  FIR4 -0.9989  FIR16 -0.9989  spread 0.0011 dB
+  -- summary alt43:
+     X1     range -1.0000 .. -5.6687 dBTP ; files reading above -1.000: 0  [描述用]
+     FIR4   range -0.9933 .. -5.6694 dBTP ; files reading above -1.000: 13  [描述用]
+     FIR16  range -0.9346 .. -5.6631 dBTP ; files reading above -1.000: 16  [描述用]
+     union of meters -0.9346 .. -5.6694 dBTP ; largest per-file spread between meters 0.0654 dB (Restraint Lock Click (Distorted))  [描述用、非 GATE]
+
+== music7 (7 files)  [FIR16 skipped: long 44.1 kHz tracks]
+  Für Elise (WoO 59) — Complete      X1 -0.9968  FIR4 -0.9939  spread 0.0030 dB
+  Für Elise (WoO 59) — Complete (Cimbalom variant) X1 -0.9682  FIR4 -0.9738  spread 0.0056 dB
+  AI Radiance / 光之驗算 — Complete Suite X1 -0.9919  FIR4 -0.9939  spread 0.0020 dB
+  AI Radiance / 光之驗算 — 1. 露珠格點 / Dew Lattice X1 -1.8254  FIR4 -1.8269  spread 0.0015 dB
+  AI Radiance / 光之驗算 — 2. 方程風暴 / Storm of Equations X1 -1.2947  FIR4 -1.2939  spread 0.0007 dB
+  AI Radiance / 光之驗算 — 3. 記憶果園 / Memory Orchard X1 -0.9993  FIR4 -0.9992  spread 0.0001 dB
+  AI Radiance / 光之驗算 — 4. 零度星冠 / Crown at Absolute Zero X1 -1.1497  FIR4 -1.1498  spread 0.0001 dB
+  -- summary music7:
+     X1     range -0.9682 .. -1.8254 dBTP ; files reading above -1.000: 4  [描述用]
+     FIR4   range -0.9738 .. -1.8269 dBTP ; files reading above -1.000: 4  [描述用]
+     union of meters -0.9682 .. -1.8269 dBTP ; largest per-file spread between meters 0.0056 dB (Für Elise (WoO 59) — Complete (Cimbalom variant))  [描述用、非 GATE]
+
+== music7_tpdf (7 files)  [FIR16 skipped: long 44.1 kHz tracks]
+  Für Elise (WoO 59) — Complete      X1 -1.0001  FIR4 -0.9970  spread 0.0030 dB
+  Für Elise (WoO 59) — Complete (Cimbalom variant) X1 -1.0000  FIR4 -1.0057  spread 0.0056 dB
+  AI Radiance / 光之驗算 — Complete Suite X1 -1.0001  FIR4 -1.0021  spread 0.0020 dB
+  AI Radiance / 光之驗算 — 1. 露珠格點 / Dew Lattice X1 -1.8252  FIR4 -1.8268  spread 0.0015 dB
+  AI Radiance / 光之驗算 — 2. 方程風暴 / Storm of Equations X1 -1.2944  FIR4 -1.2937  spread 0.0007 dB
+  AI Radiance / 光之驗算 — 3. 記憶果園 / Memory Orchard X1 -1.0001  FIR4 -1.0000  spread 0.0000 dB
+  AI Radiance / 光之驗算 — 4. 零度星冠 / Crown at Absolute Zero X1 -1.1498  FIR4 -1.1499  spread 0.0001 dB
+  -- summary music7_tpdf:
+     X1     range -1.0000 .. -1.8252 dBTP ; files reading above -1.000: 0  [描述用]
+     FIR4   range -0.9970 .. -1.8268 dBTP ; files reading above -1.000: 1  [描述用]
+     union of meters -0.9970 .. -1.8268 dBTP ; largest per-file spread between meters 0.0056 dB (Für Elise (WoO 59) — Complete (Cimbalom variant))  [描述用、非 GATE]
+
+wrote exports/products/clean_batch2_v1_1_candidate/xf_tp_meters.json
+[PASS] meter copy reproduces the audit: dist43 FIR4 range == audit -0.9631..-1.0475 (4 dp)
+[PASS] meter copy reproduces the audit: loop Rabbit FIR4/FIR16 == audit -0.999822/-0.999710 (6 dp)
+[PASS] meter copy reproduces the audit: loop Clockwork FIR4/FIR16 == audit -1.001455/-0.996775 (6 dp)
+RESULT: PASS

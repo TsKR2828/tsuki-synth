@@ -1,0 +1,42 @@
+# wf0925b_XF_recheck.txt
+# generated 2026-09-25T13:12:13  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/xf_recheck.py
+# python 3.13.3  numpy 2.4.4  soundfile 0.13.1
+
+== R1 loop-ready vs original <world>/ file replayed every N samples (24-bit integers)
+[PASS] R1 akashic_loop_001: max|loop-ready - original replay| = 38365 LSB24 == xf_loop_facts 38365  -- N 768000, original frames 1167588
+[PASS] R1 akashic_loop_001: fitted level offset +0.0447 dB == X1 gain - catalog gain_db +0.0447 dB (4 dp)
+[PASS] R1 clockwork_loop_001: max|loop-ready - original replay| = 26826 LSB24 == xf_loop_facts 26826  -- N 192000, original frames 247955
+[PASS] R1 clockwork_loop_001: fitted level offset +0.0320 dB == X1 gain - catalog gain_db +0.0320 dB (4 dp)
+[PASS] R1 forest_loop_001: max|loop-ready - original replay| = 38999 LSB24 == xf_loop_facts 38999  -- N 576000, original frames 800988
+[PASS] R1 forest_loop_001: fitted level offset +0.0454 dB == X1 gain - catalog gain_db +0.0454 dB (4 dp)
+[PASS] R1 ocean_loop_001: max|loop-ready - original replay| = 44774 LSB24 == xf_loop_facts 44774  -- N 384000, original frames 759588
+[PASS] R1 ocean_loop_001: fitted level offset +0.0522 dB == X1 gain - catalog gain_db +0.0522 dB (4 dp)
+[PASS] R1 rabbit_loop_001: max|loop-ready - original replay| = 28792 LSB24 == xf_loop_facts 28792  -- N 164571, original frames 257547
+[PASS] R1 rabbit_loop_001: fitted level offset +0.0336 dB == X1 gain - catalog gain_db +0.0336 dB (4 dp)
+[PASS] R1 restraint_loop_001: max|loop-ready - original replay| = 38681 LSB24 == xf_loop_facts 38681  -- N 230400, original frames 409205
+[PASS] R1 restraint_loop_001: fitted level offset +0.0451 dB == X1 gain - catalog gain_db +0.0451 dB (4 dp)
+   range 26826 .. 44774 LSB24
+
+== R2 seam percentile, one method (per-step max over channels), integers
+[PASS] R2 akashic_loop_001: percentile 22.0129% == xf_loop_facts 22.0129% (QA_REPORT prints 22.0%)
+[PASS] R2 clockwork_loop_001: percentile 52.6763% == xf_loop_facts 52.6763% (QA_REPORT prints 52.7%)
+[PASS] R2 forest_loop_001: percentile 44.6720% == xf_loop_facts 44.6720% (QA_REPORT prints 44.7%)
+[PASS] R2 ocean_loop_001: percentile 4.5883% == xf_loop_facts 4.5883% (QA_REPORT prints 4.6%)
+[PASS] R2 rabbit_loop_001: percentile 1.3824% == xf_loop_facts 1.3824% (QA_REPORT prints 1.4%)
+[PASS] R2 restraint_loop_001: percentile 77.7729% == xf_loop_facts 77.7729% (QA_REPORT prints 77.8%)
+
+== R3 README file-list seconds (decimal ROUND_HALF_UP from the WAV header frame count)
+[PASS] R3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: 49 README durations == decimal ROUND_HALF_UP(frames/sr)  -- bad []
+[PASS] R3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: 49 README durations == decimal ROUND_HALF_UP(frames/sr)  -- bad []
+
+== R4 a fourth true-peak meter (scipy resample_poly, default Kaiser window)  [描述用、非 GATE]
+   dist43 resample_poly x4 : -0.9586 .. -1.0544 dBTP ; files reading above -1.000: 5
+   dist43 resample_poly x8 : -0.9496 .. -1.0521 dBTP ; files reading above -1.000: 8
+   dist43 resample_poly x32: -0.9489 .. -1.0498 dBTP ; files reading above -1.000: 8
+   three meters of xf_tp_meters.json (README range): -0.9500 .. -1.0475 dBTP ; this fourth meter alone: -0.9489 .. -1.0544
+   largest per-file spread over the six readings: 0.0662 dB (Restraint Lock Click (Distorted))  (README says 'up to 0.07 dB apart' for its three meters)
+   讀法：第四支量測器的讀數不會跟 README 那三支完全一樣——上緣最高 -0.9489、下緣最低 -1.0544（4 倍過取樣讀得較低）。README 寫的是「三支量測器合起來的範圍」並註明「小數後幾位看量測器」，這裡只是示範那句話，不是判定。
+
+GATE XF recheck: 20/20
+RESULT: PASS

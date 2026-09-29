@@ -1,0 +1,72 @@
+WF0925b-TF 證據 — render_wf_scores.py 相對路徑 --cli：改前 WinError 2、改後 8/8 IDENTICAL
+日期：2026-09-25　repo HEAD：18430c4（WF0925 154 檔 staged、本卡改動 unstaged，未 commit）
+卡號：WF0925b-TF（CI/tools lane 工兵）　Python 3.13.3、pytest 8.4.2、pwsh 7.6.6
+路徑縮寫（只縮寫路徑前綴，其餘輸出逐字照抄）：<REPO> = repo 根目錄；<SCRATCH> = 本 session
+暫存目錄（repo 外）；<SIMTMP> = 模擬腳本在 output/wf0925b/TF/sim/ 下開的暫存資料夾。
+原始 log 與腳本都在 output/wf0925b/TF/（gitignored）。
+接手說明：本卡第一個 session 在 12:11 組好證據後被 session limit 中斷；接手 session 逐項核對改動、
+收尾時把本檔所有 GATE 全部重跑一次，下面的輸出都是重跑的結果（第一次的原始 log 與證據備份在
+output/wf0925b/TF/run1_20260925_1211/，重跑的判定結果跟第一次全部一致，差異只在耗時、暫存路徑名稱和本檔另外註明的地方）。
+================================================================================
+CLI：build\ 的複本 output/wf0925b/TF/cli/TsukiSynthCLI.exe
+  sha256 b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66（= WF0925 整合卡重建的 build\ CLI）
+基準：reports/gate_outputs/b6_method/sha256_before_post_a14.txt（CRLF，用 diff --strip-trailing-cr 比）
+
+---------------------------------------------------------------- 改前（staged 版腳本，相對路徑、正斜線 --cli）
+命令（repo 根目錄，PYTHONIOENCODING=utf-8）：
+  python output/wf0925b/TF/render_before_harness.py <SCRATCH>/wf0925b/TF/render_before_work_rerun <SCRATCH>/wf0925b/TF/render_before_out_rerun
+  （這個小腳本用 exec 執行 output/wf0925b/TF/before/render_wf_scores.py＝staged 版，__file__ 設成 repo 裡原本的位置，
+   參數 --label before_relcli --workdir <上面第 1 個> --cli output/wf0925b/TF/cli/TsukiSynthCLI.exe --outdir <上面第 2 個>）
+輸出：
+rendering moonlight_sonata_movement1_yangqin ...
+EXCEPTION FileNotFoundError: [WinError 2] 系統找不到指定的檔案。
+另外單獨驗證同一件事（subprocess 直接叫 CLI --help）：正斜線相對路徑 → FileNotFoundError [WinError 2]；
+反斜線相對路徑 → rc 0。os.path.abspath 會把兩種都變成 Windows 絕對路徑。
+
+---------------------------------------------------------------- 改後（工作樹版腳本，同樣的相對路徑 --cli）
+命令（repo 根目錄，PYTHONIOENCODING=utf-8；跑之前先刪掉舊的 sha256／csv，確保比對的是這次寫出的檔）：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0925b_TF --workdir <SCRATCH>/wf0925b/TF/rw2 --cli output/wf0925b/TF/cli/TsukiSynthCLI.exe --outdir output/wf0925b/TF/render
+（重跑時第一次用的 workdir 名稱 render_work_rerun 比較長，第 2 首的 render manifest 完整路徑 247 字元，CLI 寫 manifest 時
+  JUCE（File::replaceWithText → TemporaryFile）會先在同資料夾寫一個暫存檔，檔名多「.」＋「_temp」＋最多 8 位 16 進位
+  ＝最多 14 字元（libs/JUCE/modules/juce_core/files/juce_TemporaryFile.cpp），超過 Windows 260 字元路徑上限 → CLI 回報「failed to write render manifest」exit 1。
+  這跟本卡改動無關（本卡沒動 src/，--cli 已正確解析成絕對路徑且第 1 首成功）；換短名稱 rw2（同一個路徑 233 字元）就過。
+  那次失敗的 log 留在 output/wf0925b/TF/render_run_longpath_fail.log；第一個 session 用 render_work（241 字元）也是成功的。）
+輸出：
+cli: <REPO>\output\wf0925b\TF\cli\TsukiSynthCLI.exe
+rendering moonlight_sonata_movement1_yangqin ...
+  len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+  len=325.869s  RMS=-23.899 dBFS  sha256=280cbdac3c117c14
+rendering physical_piano ...
+  len=7.575s  RMS=-18.485 dBFS  sha256=1233b53f1e8660bc
+rendering restraint_metal_click ...
+  len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...
+  len=327.289s  RMS=-21.589 dBFS  sha256=f539aefa91919cbf
+rendering water_gong_free ...
+  len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...
+  len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+rendering fur_elise_opening ...
+  len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+wrote <REPO>\output\wf0925b\TF\render\render_wf0925b_TF.csv
+wrote <REPO>\output\wf0925b\TF\render\sha256_wf0925b_TF.txt
+exit=0
+
+sha256_wf0925b_TF.txt：
+49514b007e3e01fc8f9bf2c18b96e92f29ac26975a1f07641df08db48f5a687e  moonlight_sonata_movement1_yangqin/moonlight_sonata_i_yangqin.wav
+280cbdac3c117c142dd89853eaec0706ef6d6afec604de37621577d57bf637d1  moonlight_sonata_movement1_yangqin_tongue_mix/moonlight_sonata_i_yangqin_tongue_mix.wav
+1233b53f1e8660bcb46277da814c62190c8f283e20d57ae8297fb865878fc55b  physical_piano/physical_piano.wav
+be634798c4a0bf71009c73d4b7b9be495889744aa9ef95d1260d67ff15e47d3a  restraint_metal_click/restraint_metal_click_001.wav
+f539aefa91919cbfe3b22e7fb4d17f404e758aca39d1b08b173e6f44cd63f67e  moonlight_sonata_movement1_tongue_drum/moonlight_sonata_i_tongue_drum.wav
+31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_free/water_gong_free.wav
+74122637a0c71278d174e9f4b0e4a002e5641a9f4cb5b813852238ec20f8204d  ai_radiance_m1/Original_AI_Radiance_Movement1.wav
+b0877774da9e5fc5e2134d8c1db57cb382e19cfa0d87e47c1784020cbcf9c9c5  fur_elise_opening/fur_elise_opening.wav
+
+比對：diff --strip-trailing-cr output/wf0925b/TF/render/sha256_wf0925b_TF.txt reports/gate_outputs/b6_method/sha256_before_post_a14.txt
+diff exit=0  （0 = 完全相同）
+IDENTICAL 行數：8/8
+
+---------------------------------------------------------------- 結論
+- 改前：相對路徑（正斜線）--cli 在第一首就 WinError 2。改後：同一個相對路徑可用，印出解析後的絕對路徑，
+  8 首的 sha256 跟基準 8/8 IDENTICAL（diff 空）。本卡不改 src/，R10 沒觸發。

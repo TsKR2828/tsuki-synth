@@ -1,0 +1,14 @@
+# 收尾時 git 狀態（2026-09-25 14:12:21），git add 前
+$ git status --porcelain | grep -v "^[AM]  "   (staged 以外的行)
+?? docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md
+?? reports/gate_outputs/wf0925b_integration_raw/
+?? reports/status_check_2026-09-25/
+$ git status --porcelain | wc -l
+227
+$ git diff --stat   (追蹤檔 unstaged 改動；空白＝沒有)
+$ git diff --cached --stat | tail -1
+ 224 files changed, 89920 insertions(+), 307 deletions(-)
+$ git log --oneline -1
+18430c4 交接文件 09-25：WF0914 輪與五項裁決落地記錄、09-25 現況盤點新發現、文件過時/矛盾全面修正
+# 跟開工時（00_git_status_start.txt）比：只多了本卡的 reports/gate_outputs/wf0925b_integration_raw/（跑 GATE 沒有改到任何追蹤檔、沒有在 repo 內留下其他新檔；
+#   render 輸出在 output/wf0925b/INT2/render（gitignored），HostProbe 輸出在 <SCRATCH>）。

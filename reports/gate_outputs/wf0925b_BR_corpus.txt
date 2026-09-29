@@ -1,0 +1,234 @@
+WF0925b-BR evidence 4/6: corpus scope, per-event --dump-modes comparison, base vs noX2 renders, clean_batch2 product masters
+generated: 2026-09-25 12:03:40 +0800   (descriptive, NOT a GATE)
+
+## A. who reaches BeamModel (read-only scan of scores/ and exports/products/clean_batch2/catalog.csv)
+$ python reports/beam_x2_option_b/scan_beam_usage.py
+corpus files: 75 ; reaching BeamModel: 39 ; beam events total: 2516
+  scores/examples/moonlight_sonata_movement1_tongue_drum.score.json       1142  direct×1142 | aluminum×14;steel×1128 | MIDI 29-87 | dur 1.800-13.440 s
+  scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json  1142  direct×1142 | aluminum×14;steel×1128 | MIDI 29-87 | dur 2.400-13.440 s
+  scores/examples/rabbit_warning.score.json                                  2  direct×2 | aluminum×2 | MIDI 88-91 | dur 0.400-0.400 s
+  scores/originals/ai_radiance/ai_radiance_complete.score.json              64  layer:ai_radiance_m1.score.json×16;layer:ai_radiance_m3.score.json×16;layer:ai_radiance_m4.score.json×32 | bamboo×16;glass×40;steel×8 | MIDI 77-89 | dur 0.270-1.198 s
+  scores/originals/ai_radiance/ai_radiance_m1.score.json                    16  direct×16 | glass×8;steel×8 | MIDI 78-80 | dur 0.648-0.648 s
+  scores/originals/ai_radiance/ai_radiance_m3.score.json                    16  direct×16 | bamboo×16 | MIDI 77-88 | dur 1.198-1.198 s
+  scores/originals/ai_radiance/ai_radiance_m4.score.json                    32  direct×32 | glass×32 | MIDI 77-89 | dur 0.270-0.492 s
+  scores/library/akashic/akashic_notify_001.score.json                       2  direct×2 | glass×2 | MIDI 88-93 | dur 1.200-1.500 s
+  scores/library/akashic/akashic_opening_bell_001.score.json                 7  direct×7 | steel×7 | MIDI 62-76 | dur 3.500-5.000 s
+  scores/library/akashic/akashic_ui_001.score.json                           1  direct×1 | glass×1 | MIDI 96-96 | dur 0.300-0.300 s
+  scores/library/clockwork/clockwork_action_001.score.json                   1  direct×1 | brass×1 | MIDI 65-65 | dur 0.200-0.200 s
+  scores/library/clockwork/clockwork_ambient_001.score.json                  6  direct×6 | brass×6 | MIDI 77-77 | dur 0.050-0.050 s
+  scores/library/clockwork/clockwork_loop_001.score.json                    10  direct×10 | brass×10 | MIDI 77-88 | dur 0.050-0.080 s
+  scores/library/clockwork/clockwork_notify_001.score.json                   1  direct×1 | brass×1 | MIDI 76-76 | dur 1.000-1.000 s
+  scores/library/clockwork/clockwork_notify_var01.score.json                 1  direct×1 | brass×1 | MIDI 76-76 | dur 1.000-1.000 s
+  scores/library/clockwork/clockwork_transition_001.score.json               4  direct×4 | brass×4 | MIDI 60-72 | dur 0.250-0.400 s
+  scores/library/clockwork/clockwork_ui_001.score.json                       1  direct×1 | brass×1 | MIDI 74-74 | dur 0.060-0.060 s
+  scores/library/forest/forest_action_001.score.json                         2  direct×2 | wood_oak×2 | MIDI 60-67 | dur 0.080-0.120 s
+  scores/library/forest/forest_ambient_001.score.json                        6  direct×6 | bamboo×6 | MIDI 79-90 | dur 1.500-1.800 s
+  scores/library/forest/forest_loop_001.score.json                          16  direct×16 | bamboo×16 | MIDI 78-90 | dur 0.800-0.800 s
+  scores/library/forest/forest_notify_001.score.json                         2  direct×2 | bamboo×2 | MIDI 95-100 | dur 0.400-0.500 s
+  scores/library/forest/forest_notify_var01.score.json                       3  direct×3 | bamboo×3 | MIDI 100-104 | dur 0.200-0.300 s
+  scores/library/forest/forest_transition_001.score.json                     4  direct×4 | wood_birch×4 | MIDI 74-81 | dur 1.000-1.500 s
+  scores/library/forest/forest_ui_001.score.json                             1  direct×1 | wood_oak×1 | MIDI 77-77 | dur 0.100-0.100 s
+  scores/library/ocean/ocean_loop_001.score.json                             2  direct×2 | glass×2 | MIDI 79-81 | dur 0.300-0.300 s
+  scores/library/ocean/ocean_notify_001.score.json                           1  direct×1 | glass×1 | MIDI 84-84 | dur 0.300-0.300 s
+  scores/library/ocean/ocean_notify_var01.score.json                         1  direct×1 | glass×1 | MIDI 72-72 | dur 0.500-0.500 s
+  scores/library/ocean/ocean_transition_001.score.json                       1  direct×1 | aluminum×1 | MIDI 74-74 | dur 2.000-2.000 s
+  scores/library/ocean/ocean_ui_001.score.json                               1  direct×1 | glass×1 | MIDI 81-81 | dur 0.150-0.150 s
+  scores/library/rabbit/rabbit_ambient_001.score.json                        5  direct×5 | aluminum×5 | MIDI 84-93 | dur 2.000-2.500 s
+  scores/library/rabbit/rabbit_loop_001.score.json                           8  direct×8 | aluminum×8 | MIDI 79-88 | dur 0.200-0.300 s
+  scores/library/rabbit/rabbit_notify_001.score.json                         1  direct×1 | aluminum×1 | MIDI 91-91 | dur 0.800-0.800 s
+  scores/library/rabbit/rabbit_notify_var01.score.json                       1  direct×1 | steel×1 | MIDI 91-91 | dur 0.600-0.600 s
+  scores/library/rabbit/rabbit_transition_001.score.json                     3  direct×3 | aluminum×3 | MIDI 84-93 | dur 0.500-0.600 s
+  scores/library/rabbit/rabbit_ui_001.score.json                             1  direct×1 | wood_maple×1 | MIDI 81-81 | dur 0.150-0.150 s
+  scores/library/restraint/restraint_loop_001.score.json                     4  direct×4 | steel×4 | MIDI 55-57 | dur 0.150-0.150 s
+  scores/library/restraint/restraint_notify_001.score.json                   2  direct×2 | steel×2 | MIDI 64-71 | dur 0.200-0.300 s
+  scores/library/restraint/restraint_notify_var01.score.json                 2  direct×2 | steel×2 | MIDI 64-71 | dur 0.200-0.300 s
+  scores/library/restraint/restraint_ui_001.score.json                       1  direct×1 | steel×1 | MIDI 55-55 | dur 0.080-0.080 s
+all scores under scores/ reaching BeamModel: 45 (in corpus 39, outside 6)
+  outside corpus: scores/originals/rules_v2_demo/rules_v2_demo_001.score.json (6 events)
+  outside corpus: scores/tests/test_distortion.score.json (1 events)
+  outside corpus: scores/tests/test_distortion_bitcrush.score.json (1 events)
+  outside corpus: scores/tests/test_engine_levels.score.json (1 events)
+  outside corpus: scores/tests/test_glide.score.json (2 events)
+  outside corpus: scores/tests/test_layer.score.json (3 events)
+products: 50 ; score missing: 0 ; not in corpus: 0 ; reaching BeamModel: 36
+  product ai_radiance_complete                     scores/originals/ai_radiance/ai_radiance_complete.score.json  64 beam events (layer:ai_radiance_m1.score.json×16;layer:ai_radiance_m3.score.json×16;layer:ai_radiance_m4.score.json×32)
+  product ai_radiance_m1                           scores/originals/ai_radiance/ai_radiance_m1.score.json  16 beam events (direct×16)
+  product ai_radiance_m3                           scores/originals/ai_radiance/ai_radiance_m3.score.json  16 beam events (direct×16)
+  product ai_radiance_m4                           scores/originals/ai_radiance/ai_radiance_m4.score.json  32 beam events (direct×32)
+  product akashic_ui_001                           scores/library/akashic/akashic_ui_001.score.json  1 beam events (direct×1)
+  product akashic_notify_001                       scores/library/akashic/akashic_notify_001.score.json  2 beam events (direct×2)
+  product akashic_opening_bell_001                 scores/library/akashic/akashic_opening_bell_001.score.json  7 beam events (direct×7)
+  product clockwork_ambient_001                    scores/library/clockwork/clockwork_ambient_001.score.json  6 beam events (direct×6)
+  product clockwork_transition_001                 scores/library/clockwork/clockwork_transition_001.score.json  4 beam events (direct×4)
+  product clockwork_loop_001                       scores/library/clockwork/clockwork_loop_001.score.json  10 beam events (direct×10)
+  product clockwork_action_001                     scores/library/clockwork/clockwork_action_001.score.json  1 beam events (direct×1)
+  product clockwork_notify_var01                   scores/library/clockwork/clockwork_notify_var01.score.json  1 beam events (direct×1)
+  product clockwork_ui_001                         scores/library/clockwork/clockwork_ui_001.score.json  1 beam events (direct×1)
+  product clockwork_notify_001                     scores/library/clockwork/clockwork_notify_001.score.json  1 beam events (direct×1)
+  product forest_loop_001                          scores/library/forest/forest_loop_001.score.json  16 beam events (direct×16)
+  product forest_ambient_001                       scores/library/forest/forest_ambient_001.score.json  6 beam events (direct×6)
+  product forest_action_001                        scores/library/forest/forest_action_001.score.json  2 beam events (direct×2)
+  product forest_notify_001                        scores/library/forest/forest_notify_001.score.json  2 beam events (direct×2)
+  product forest_notify_var01                      scores/library/forest/forest_notify_var01.score.json  3 beam events (direct×3)
+  product forest_ui_001                            scores/library/forest/forest_ui_001.score.json  1 beam events (direct×1)
+  product forest_transition_001                    scores/library/forest/forest_transition_001.score.json  4 beam events (direct×4)
+  product ocean_loop_001                           scores/library/ocean/ocean_loop_001.score.json  2 beam events (direct×2)
+  product ocean_ui_001                             scores/library/ocean/ocean_ui_001.score.json  1 beam events (direct×1)
+  product ocean_notify_001                         scores/library/ocean/ocean_notify_001.score.json  1 beam events (direct×1)
+  product ocean_notify_var01                       scores/library/ocean/ocean_notify_var01.score.json  1 beam events (direct×1)
+  product ocean_transition_001                     scores/library/ocean/ocean_transition_001.score.json  1 beam events (direct×1)
+  product rabbit_ambient_001                       scores/library/rabbit/rabbit_ambient_001.score.json  5 beam events (direct×5)
+  product rabbit_loop_001                          scores/library/rabbit/rabbit_loop_001.score.json  8 beam events (direct×8)
+  product rabbit_notify_001                        scores/library/rabbit/rabbit_notify_001.score.json  1 beam events (direct×1)
+  product rabbit_notify_var01                      scores/library/rabbit/rabbit_notify_var01.score.json  1 beam events (direct×1)
+  product rabbit_ui_001                            scores/library/rabbit/rabbit_ui_001.score.json  1 beam events (direct×1)
+  product rabbit_transition_001                    scores/library/rabbit/rabbit_transition_001.score.json  3 beam events (direct×3)
+  product restraint_loop_001                       scores/library/restraint/restraint_loop_001.score.json  4 beam events (direct×4)
+  product restraint_notify_001                     scores/library/restraint/restraint_notify_001.score.json  2 beam events (direct×2)
+  product restraint_notify_var01                   scores/library/restraint/restraint_notify_var01.score.json  2 beam events (direct×2)
+  product restraint_ui_001                         scores/library/restraint/restraint_ui_001.score.json  1 beam events (direct×1)
+[exit=0]
+
+## B. per-score --dump-modes, base vs noX2 (mode-1 T60, amplitude, non-beam events byte-identical)
+$ python reports/beam_x2_option_b/dump_compare.py --cli-base <CLI_BASE> --cli-nox2 <CLI_NOX2>
+scores/examples/moonlight_sonata_movement1_tongue_drum.score.json      n=1142 f1 43.7-1244.5 Hz  T60 med 15.35->25.02 s  ratio 1.2841..1.7828  amp1 -0.377..-0.169 dB  nonbeam 0/0 same
+scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json n=1142 f1 43.7-1244.5 Hz  T60 med 15.35->25.02 s  ratio 1.2841..1.7828  amp1 -0.377..-0.169 dB  nonbeam 1142/1142 same
+scores/examples/rabbit_warning.score.json                              n=   2 f1 1318.5-1568.0 Hz  T60 med 3.172->4.001 s  ratio 1.2445..1.2739  amp1 -0.390..-0.350 dB  nonbeam 0/0 same
+scores/originals/ai_radiance/ai_radiance_complete.score.json           n=  64 f1 698.5-1396.9 Hz  T60 med 0.6701->1.284 s  ratio 1.4317..1.9630  amp1 -1.915..+0.000 dB  nonbeam 196/196 same
+scores/originals/ai_radiance/ai_radiance_m1.score.json                 n=  16 f1 740.0-830.6 Hz  T60 med 2.476->3.786 s  ratio 1.4317..1.9355  amp1 +0.000..+0.000 dB  nonbeam 48/48 same
+scores/originals/ai_radiance/ai_radiance_m3.score.json                 n=  16 f1 698.5-1318.5 Hz  T60 med 0.1123->0.2192 s  ratio 1.9384..1.9630  amp1 +0.000..+0.000 dB  nonbeam 20/20 same
+scores/originals/ai_radiance/ai_radiance_m4.score.json                 n=  32 f1 698.5-1396.9 Hz  T60 med 0.6701->1.284 s  ratio 1.8952..1.9383  amp1 -1.915..+0.000 dB  nonbeam 26/26 same
+scores/library/akashic/akashic_notify_001.score.json                   n=   2 f1 1318.5-1760.0 Hz  T60 med 0.4578->0.8648 s  ratio 1.8743..1.8998  amp1 -2.120..-2.117 dB  nonbeam 0/0 same
+scores/library/akashic/akashic_opening_bell_001.score.json             n=   7 f1 293.7-659.3 Hz  T60 med 8.926->13.88 s  ratio 1.4784..1.6220  amp1 -0.181..+0.000 dB  nonbeam 1/1 same
+scores/library/akashic/akashic_ui_001.score.json                       n=   1 f1 2093.0-2093.0 Hz  T60 med 0.3232->0.5999 s  ratio 1.8561..1.8561  amp1 -2.091..-2.091 dB  nonbeam 0/0 same
+scores/library/clockwork/clockwork_action_001.score.json               n=   1 f1 349.2-349.2 Hz  T60 med 1.995->3.799 s  ratio 1.9046..1.9046  amp1 -1.625..-1.625 dB  nonbeam 1/1 same
+scores/library/clockwork/clockwork_ambient_001.score.json              n=   6 f1 698.5-698.5 Hz  T60 med 0.9645->1.784 s  ratio 1.8496..1.8496  amp1 -1.581..-1.581 dB  nonbeam 1/1 same
+scores/library/clockwork/clockwork_loop_001.score.json                 n=  10 f1 698.5-1318.5 Hz  T60 med 0.9645->1.784 s  ratio 1.7666..1.8496  amp1 -1.828..-1.581 dB  nonbeam 0/0 same
+scores/library/clockwork/clockwork_notify_001.score.json               n=   1 f1 659.3-659.3 Hz  T60 med 1.026->1.903 s  ratio 1.8554..1.8554  amp1 -1.613..-1.613 dB  nonbeam 0/0 same
+scores/library/clockwork/clockwork_notify_var01.score.json             n=   1 f1 659.3-659.3 Hz  T60 med 1.026->1.903 s  ratio 1.8554..1.8554  amp1 -1.613..-1.613 dB  nonbeam 0/0 same
+scores/library/clockwork/clockwork_transition_001.score.json           n=   4 f1 261.6-523.3 Hz  T60 med 1.944->3.699 s  ratio 1.8763..1.9195  amp1 -1.666..-1.566 dB  nonbeam 0/0 same
+scores/library/clockwork/clockwork_ui_001.score.json                   n=   1 f1 587.3-587.3 Hz  T60 med 1.159->2.163 s  ratio 1.8664..1.8664  amp1 -1.562..-1.562 dB  nonbeam 0/0 same
+scores/library/forest/forest_action_001.score.json                     n=   2 f1 261.6-392.0 Hz  T60 med 0.217->0.4298 s  ratio 1.9777..1.9830  amp1 -2.302..-0.302 dB  nonbeam 0/0 same
+scores/library/forest/forest_ambient_001.score.json                    n=   6 f1 784.0-1480.0 Hz  T60 med 0.09976->0.1943 s  ratio 1.9321..1.9595  amp1 +0.000..+0.000 dB  nonbeam 0/0 same
+scores/library/forest/forest_loop_001.score.json                       n=  16 f1 740.0-1480.0 Hz  T60 med 0.1055->0.2057 s  ratio 1.9321..1.9613  amp1 +0.000..+0.000 dB  nonbeam 0/0 same
+scores/library/forest/forest_notify_001.score.json                     n=   2 f1 1975.5-2637.0 Hz  T60 med 0.04622->0.08799 s  ratio 1.8899..1.9136  amp1 -2.198..-2.156 dB  nonbeam 0/0 same
+scores/library/forest/forest_notify_var01.score.json                   n=   3 f1 2637.0-3322.4 Hz  T60 med 0.03928->0.07424 s  ratio 1.8666..1.8899  amp1 -2.156..+0.000 dB  nonbeam 0/0 same
+scores/library/forest/forest_transition_001.score.json                 n=   4 f1 587.3-880.0 Hz  T60 med 0.1106->0.2173 s  ratio 1.9567..1.9686  amp1 +0.000..+0.000 dB  nonbeam 0/0 same
+scores/library/forest/forest_ui_001.score.json                         n=   1 f1 698.5-698.5 Hz  T60 med 0.09672->0.1901 s  ratio 1.9658..1.9658  amp1 -2.287..-2.287 dB  nonbeam 0/0 same
+scores/library/ocean/ocean_loop_001.score.json                         n=   2 f1 784.0-880.0 Hz  T60 med 0.8522->1.645 s  ratio 1.9267..1.9327  amp1 +0.000..+0.000 dB  nonbeam 2/2 same
+scores/library/ocean/ocean_notify_001.score.json                       n=   1 f1 1046.5-1046.5 Hz  T60 med 0.6701->1.284 s  ratio 1.9162..1.9162  amp1 +0.000..+0.000 dB  nonbeam 0/0 same
+scores/library/ocean/ocean_notify_var01.score.json                     n=   1 f1 523.3-523.3 Hz  T60 med 1.365->2.662 s  ratio 1.9496..1.9496  amp1 -1.627..-1.627 dB  nonbeam 0/0 same
+scores/library/ocean/ocean_transition_001.score.json                   n=   1 f1 587.3-587.3 Hz  T60 med 11.14->15.85 s  ratio 1.4230..1.4230  amp1 -0.178..-0.178 dB  nonbeam 2/2 same
+scores/library/ocean/ocean_ui_001.score.json                           n=   1 f1 880.0-880.0 Hz  T60 med 0.8016->1.544 s  ratio 1.9267..1.9267  amp1 +0.000..+0.000 dB  nonbeam 0/0 same
+scores/library/rabbit/rabbit_ambient_001.score.json                    n=   5 f1 1046.5-1760.0 Hz  T60 med 3.588->4.571 s  ratio 1.2259..1.3153  amp1 +0.000..+0.000 dB  nonbeam 0/0 same
+scores/library/rabbit/rabbit_loop_001.score.json                       n=   8 f1 784.0-1318.5 Hz  T60 med 5.039->6.628 s  ratio 1.2739..1.3690  amp1 -0.350..-0.231 dB  nonbeam 0/0 same
+scores/library/rabbit/rabbit_notify_001.score.json                     n=   1 f1 1568.0-1568.0 Hz  T60 med 2.757->3.431 s  ratio 1.2445..1.2445  amp1 -0.391..-0.391 dB  nonbeam 0/0 same
+scores/library/rabbit/rabbit_notify_var01.score.json                   n=   1 f1 1568.0-1568.0 Hz  T60 med 1.635->2.132 s  ratio 1.3040..1.3040  amp1 -0.650..-0.650 dB  nonbeam 0/0 same
+scores/library/rabbit/rabbit_transition_001.score.json                 n=   3 f1 1046.5-1760.0 Hz  T60 med 3.588->4.571 s  ratio 1.2259..1.3153  amp1 -0.415..-0.294 dB  nonbeam 0/0 same
+scores/library/rabbit/rabbit_ui_001.score.json                         n=   1 f1 880.0-880.0 Hz  T60 med 0.1017->0.1987 s  ratio 1.9536..1.9536  amp1 -2.267..-2.267 dB  nonbeam 0/0 same
+scores/library/restraint/restraint_loop_001.score.json                 n=   4 f1 196.0-220.0 Hz  T60 med 22.64->37.95 s  ratio 1.6621..1.6763  amp1 -0.571..-0.552 dB  nonbeam 4/4 same
+scores/library/restraint/restraint_notify_001.score.json               n=   2 f1 329.6-493.9 Hz  T60 med 10.16->16.03 s  ratio 1.5342..1.6041  amp1 -0.610..-0.495 dB  nonbeam 0/0 same
+scores/library/restraint/restraint_notify_var01.score.json             n=   2 f1 329.6-493.9 Hz  T60 med 10.16->16.03 s  ratio 1.5342..1.6041  amp1 -0.610..-0.495 dB  nonbeam 0/0 same
+scores/library/restraint/restraint_ui_001.score.json                   n=   1 f1 196.0-196.0 Hz  T60 med 22.64->37.95 s  ratio 1.6763..1.6763  amp1 -0.552..-0.552 dB  nonbeam 0/0 same
+scores=39  beam events=2516  non-beam events=1443 (identical 1443)
+[exit=0]
+
+## C. renders, 39 beam-using corpus scores (both CLIs; sha, length, RMS, peak, tail energy; product master sha check)
+$ python reports/beam_x2_option_b/render_compare.py --cli-base <CLI_BASE> --cli-nox2 <CLI_NOX2> --workdir <SCRATCH>/wf0925b/BR/cb --list beam --products --out reports/beam_x2_option_b/corpus_beam_before_after.csv
+(a first attempt with a long --workdir aborted on the 2nd score: the CLI could not write <wav>.render.json next to the WAV because the
+ path exceeded the Windows 260-char limit; the script was changed to short numbered sub-folders and the whole list was re-run -- log below)
+scores/examples/moonlight_sonata_movement1_tongue_drum.score.json        beam=1142 same=False len 327.289->329.907  RMS +0.320  peak +0.000  tail +2.220 dB
+scores/examples/moonlight_sonata_movement1_yangqin_tongue_mix.score.json beam=1142 same=False len 325.869->328.487  RMS -0.016  peak +0.000  tail +3.123 dB
+scores/examples/rabbit_warning.score.json                                beam=   2 same=False len 2.152->2.186  RMS +0.044  peak +0.000  tail +0.822 dB
+scores/originals/ai_radiance/ai_radiance_complete.score.json             beam=  64 same=False len 136.603->136.603  RMS +0.006  peak +0.000  tail +0.000 dB  master==base:True
+scores/originals/ai_radiance/ai_radiance_m1.score.json                   beam=  16 same=False len 35.930->35.930  RMS +0.005  peak +0.000  tail +0.006 dB  master==base:True
+scores/originals/ai_radiance/ai_radiance_m3.score.json                   beam=  16 same=False len 32.222->32.222  RMS +0.008  peak +0.000  tail +0.008 dB  master==base:True
+scores/originals/ai_radiance/ai_radiance_m4.score.json                   beam=  32 same=False len 38.580->38.580  RMS +0.041  peak +0.000  tail +0.008 dB  master==base:True
+scores/library/akashic/akashic_notify_001.score.json                     beam=   2 same=False len 4.430->4.430  RMS +0.339  peak +0.000  tail +0.733 dB  master==base:True
+scores/library/akashic/akashic_opening_bell_001.score.json               beam=   7 same=False len 29.611->29.611  RMS +0.047  peak +0.000  tail +0.026 dB  master==base:True
+scores/library/akashic/akashic_ui_001.score.json                         beam=   1 same=False len 1.266->1.266  RMS +1.774  peak +0.000  tail +2.709 dB  master==base:True
+scores/library/clockwork/clockwork_action_001.score.json                 beam=   1 same=False len 1.375->1.386  RMS -0.017  peak +0.000  tail +1.737 dB  master==base:True
+scores/library/clockwork/clockwork_ambient_001.score.json                beam=   6 same=False len 7.668->7.668  RMS +0.561  peak -0.000  tail +0.371 dB  master==base:True
+scores/library/clockwork/clockwork_loop_001.score.json                   beam=  10 same=False len 5.166->5.207  RMS +1.516  peak +0.000  tail +1.801 dB  master==base:True
+scores/library/clockwork/clockwork_notify_001.score.json                 beam=   1 same=False len 2.725->2.725  RMS +1.907  peak +0.000  tail +6.942 dB  master==base:True
+scores/library/clockwork/clockwork_notify_var01.score.json               beam=   1 same=False len 3.134->3.134  RMS +0.693  peak +0.000  tail +6.884 dB  master==base:True
+scores/library/clockwork/clockwork_transition_001.score.json             beam=   4 same=False len 2.930->2.987  RMS +1.605  peak +0.000  tail +4.899 dB  master==base:True
+scores/library/clockwork/clockwork_ui_001.score.json                     beam=   1 same=False len 0.514->0.564  RMS +1.137  peak +0.000  tail +2.577 dB  master==base:True
+scores/library/forest/forest_action_001.score.json                       beam=   2 same=False len 0.875->0.883  RMS +1.384  peak +0.000  tail +1.583 dB  master==base:True
+scores/library/forest/forest_ambient_001.score.json                      beam=   6 same=False len 10.625->10.625  RMS +0.929  peak +0.000  tail +0.799 dB  master==base:True
+scores/library/forest/forest_loop_001.score.json                         beam=  16 same=False len 16.687->16.687  RMS +0.763  peak +0.000  tail +0.245 dB  master==base:True
+scores/library/forest/forest_notify_001.score.json                       beam=   2 same=False len 2.045->2.045  RMS +1.472  peak +0.000  tail +2.186 dB  master==base:True
+scores/library/forest/forest_notify_var01.score.json                     beam=   3 same=False len 1.435->1.435  RMS +2.447  peak +0.000  tail +3.125 dB  master==base:True
+scores/library/forest/forest_transition_001.score.json                   beam=   4 same=False len 5.235->5.235  RMS +0.315  peak +0.000  tail +0.029 dB  master==base:True
+scores/library/forest/forest_ui_001.score.json                           beam=   1 same=False len 0.615->0.615  RMS +3.013  peak +0.000  tail +5.523 dB  master==base:True
+scores/library/ocean/ocean_loop_001.score.json                           beam=   2 same=False len 15.825->15.825  RMS +0.015  peak +0.000  tail +0.887 dB  master==base:True
+scores/library/ocean/ocean_notify_001.score.json                         beam=   1 same=False len 1.995->2.015  RMS -0.150  peak +0.000  tail +0.776 dB  master==base:True
+scores/library/ocean/ocean_notify_var01.score.json                       beam=   1 same=False len 4.655->4.715  RMS +0.489  peak +0.000  tail +1.407 dB  master==base:True
+scores/library/ocean/ocean_transition_001.score.json                     beam=   1 same=False len 10.267->10.502  RMS -0.051  peak +0.000  tail +2.236 dB  master==base:True
+scores/library/ocean/ocean_ui_001.score.json                             beam=   1 same=False len 1.093->1.130  RMS +1.640  peak +0.000  tail +2.751 dB  master==base:True
+scores/library/rabbit/rabbit_ambient_001.score.json                      beam=   5 same=False len 10.650->10.650  RMS +0.441  peak -0.000  tail +3.783 dB  master==base:True
+scores/library/rabbit/rabbit_loop_001.score.json                         beam=   8 same=False len 5.366->5.505  RMS +0.004  peak +0.000  tail +1.108 dB  master==base:True
+scores/library/rabbit/rabbit_notify_001.score.json                       beam=   1 same=False len 2.047->2.080  RMS +0.299  peak +0.000  tail +1.706 dB  master==base:True
+scores/library/rabbit/rabbit_notify_var01.score.json                     beam=   1 same=False len 2.325->2.344  RMS +0.516  peak +0.000  tail +2.050 dB  master==base:True
+scores/library/rabbit/rabbit_transition_001.score.json                   beam=   3 same=False len 2.740->2.819  RMS +0.004  peak +0.000  tail +1.099 dB  master==base:True
+scores/library/rabbit/rabbit_ui_001.score.json                           beam=   1 same=False len 0.775->0.775  RMS +2.773  peak +0.000  tail +2.609 dB  master==base:True
+scores/library/restraint/restraint_loop_001.score.json                   beam=   4 same=False len 8.525->9.291  RMS -0.356  peak +0.000  tail +0.497 dB  master==base:True
+scores/library/restraint/restraint_notify_001.score.json                 beam=   2 same=False len 1.860->2.239  RMS -0.273  peak +0.000  tail +1.739 dB  master==base:True
+scores/library/restraint/restraint_notify_var01.score.json               beam=   2 same=False len 1.860->2.239  RMS -0.500  peak +0.000  tail +2.405 dB  master==base:True
+scores/library/restraint/restraint_ui_001.score.json                     beam=   1 same=False len 1.605->2.371  RMS -1.135  peak +0.000  tail +1.805 dB  master==base:True
+files=39 identical=0 changed=39
+wrote corpus_beam_before_after.csv
+exit=0
+
+## D. renders, 36 corpus scores WITHOUT beam events (both CLIs)
+$ python reports/beam_x2_option_b/render_compare.py --cli-base <CLI_BASE> --cli-nox2 <CLI_NOX2> --workdir <SCRATCH>/wf0925b/BR/corpus_nonbeam --list nonbeam --products --out reports/beam_x2_option_b/corpus_nonbeam_before_after.csv
+(this run started before the short-folder change, so it used <workdir>/<label>/<score name>/ folders; no path hit the limit; measurements identical in both versions of the script)
+scores/examples/akashic_bell.score.json                                  beam=   0 same=True  len 14.645->14.645  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/examples/epiano_3stack_test.score.json                            beam=   0 same=True  len 11.865->11.865  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/examples/fur_elise_opening.score.json                             beam=   0 same=True  len 6.780->6.780  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/examples/layered_transition.score.json                            beam=   0 same=True  len 13.835->13.835  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/examples/moonlight_sonata_complete.score.json                     beam=   0 same=True  len 879.104->879.104  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/examples/moonlight_sonata_movement1_yangqin.score.json            beam=   0 same=True  len 317.495->317.495  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/examples/physical_piano.score.json                                beam=   0 same=True  len 7.575->7.575  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/examples/restraint_metal_click.score.json                         beam=   0 same=True  len 4.929->4.929  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/examples/water_gong_clamped.score.json                            beam=   0 same=True  len 10.075->10.075  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/examples/water_gong_free.score.json                               beam=   0 same=True  len 10.075->10.075  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/fur_elise/fur_elise_complete.score.json                 beam=   0 same=True  len 133.389->133.389  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/classical/fur_elise/fur_elise_complete_cimbalom.score.json        beam=   0 same=True  len 133.389->133.389  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m1.score.json beam=   0 same=True  len 232.825->232.825  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m2.score.json beam=   0 same=True  len 162.204->162.204  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m3.score.json beam=   0 same=True  len 179.464->179.464  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m1.score.json beam=   0 same=True  len 174.221->174.221  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m2.score.json beam=   0 same=True  len 144.514->144.514  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m3.score.json beam=   0 same=True  len 225.491->225.491  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m1.score.json beam=   0 same=True  len 254.980->254.980  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m2.score.json beam=   0 same=True  len 122.662->122.662  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m3.score.json beam=   0 same=True  len 157.747->157.747  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m1.score.json beam=   0 same=True  len 110.904->110.904  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m2.score.json beam=   0 same=True  len 100.525->100.525  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m3.score.json beam=   0 same=True  len 186.447->186.447  RMS +0.000  peak +0.000  tail +0.000 dB
+scores/originals/ai_radiance/ai_radiance_m2.score.json                   beam=   0 same=True  len 29.196->29.196  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/akashic/akashic_action_001.score.json                     beam=   0 same=True  len 3.248->3.248  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/akashic/akashic_ambient_001.score.json                    beam=   0 same=True  len 33.501->33.501  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/akashic/akashic_loop_001.score.json                       beam=   0 same=True  len 24.325->24.325  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/akashic/akashic_transition_001.score.json                 beam=   0 same=True  len 17.572->17.572  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/akashic/akashic_transition_var01.score.json               beam=   0 same=True  len 21.971->21.971  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/ocean/ocean_action_001.score.json                         beam=   0 same=True  len 6.289->6.289  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/ocean/ocean_ambient_001.score.json                        beam=   0 same=True  len 20.375->20.375  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/rabbit/rabbit_action_001.score.json                       beam=   0 same=True  len 1.575->1.575  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/restraint/restraint_action_001.score.json                 beam=   0 same=True  len 2.704->2.704  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/restraint/restraint_ambient_001.score.json                beam=   0 same=True  len 19.015->19.015  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+scores/library/restraint/restraint_transition_001.score.json             beam=   0 same=True  len 5.967->5.967  RMS +0.000  peak +0.000  tail +0.000 dB  master==base:True
+files=36 identical=36 changed=0
+wrote corpus_nonbeam_before_after.csv
+exit=0
+
+## E. product summary (from the two csvs)
+corpus_beam_before_after.csv       scores=39 identical(base==noX2)=0  products=36  base_render==clean_batch2 master=36/36  noX2==master=0/36
+    ai_radiance_complete, ai_radiance_m1, ai_radiance_m3, ai_radiance_m4, akashic_notify_001, akashic_opening_bell_001, akashic_ui_001, clockwork_action_001, clockwork_ambient_001, clockwork_loop_001, clockwork_notify_001, clockwork_notify_var01, clockwork_transition_001, clockwork_ui_001, forest_action_001, forest_ambient_001, forest_loop_001, forest_notify_001, forest_notify_var01, forest_transition_001, forest_ui_001, ocean_loop_001, ocean_notify_001, ocean_notify_var01, ocean_transition_001, ocean_ui_001, rabbit_ambient_001, rabbit_loop_001, rabbit_notify_001, rabbit_notify_var01, rabbit_transition_001, rabbit_ui_001, restraint_loop_001, restraint_notify_001, restraint_notify_var01, restraint_ui_001
+corpus_nonbeam_before_after.csv    scores=36 identical(base==noX2)=36  products=14  base_render==clean_batch2 master=14/14  noX2==master=14/14
+    fur_elise_complete, fur_elise_complete_cimbalom, ai_radiance_m2, akashic_action_001, akashic_ambient_001, akashic_loop_001, akashic_transition_001, akashic_transition_var01, ocean_action_001, ocean_ambient_001, rabbit_action_001, restraint_action_001, restraint_ambient_001, restraint_transition_001
+=> 50/50 clean_batch2 masters are reproduced bit-exactly by the base CLI; 36 of them (those whose score reaches BeamModel) would change under noX2; 14 would not.
+
+## F. peak normalisation of the 39 changed scores (explains d_peak = 0.000 everywhere)
+export.normalize == true in 39/39; max |d_peak_db| = 0.000

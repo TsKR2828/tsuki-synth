@@ -1,0 +1,15 @@
+=== physics_verify --full：本輪 vs WF0925 整合卡 06_physics_verify_full.txt
+$ diff <(filt reports/gate_outputs/wf0925_integration_raw/06_physics_verify_full.txt) <(filt output/wf0925b/INT2/logs/03_physics_verify_full.txt)
+DIFF_EXIT=0  (行數 570 vs 570)
+
+=== physics_verify --selftest：本輪 vs WF0925 整合卡 07_physics_verify_selftest.txt
+DIFF_EXIT=0  (行數 13 vs 13)
+
+=== verify_score --all：本輪 vs WF0925 整合卡 08_verify_score_all.txt（不遮 renderer 欄位）
+DIFF_EXIT=0  (行數 3836 vs 3836)
+renderer 欄位計數（本輪）：
+     75 renderer b84c775b04ab
+     75 configured source=18430c4d9307 dirty
+
+=== pytest SKIPPED/XFAIL/XPASS/FAILED/ERROR 摘要行：本輪 vs WF0925 整合卡 05_pytest.txt
+DIFF_EXIT=0  (行數 6 vs 6)

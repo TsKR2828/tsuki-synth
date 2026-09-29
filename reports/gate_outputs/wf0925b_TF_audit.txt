@@ -1,0 +1,322 @@
+WF0925b-TF 稽核（CI/tools lane 稽核員）— 親自 git diff＋親自重跑 TF 每一條 GATE
+日期：2026-09-25　repo HEAD：18430c4（未動）　Python 3.13.3、pytest 8.4.2、pwsh 7.6.6、Git Bash
+路徑縮寫：<REPO> = repo 根目錄；<SCRATCH> = 本 session 暫存目錄（repo 外）。稽核用的腳本與原始 log 在 output/wf0925b/TF_audit/（gitignored），
+全部是稽核員自己寫的（沒有沿用 TF 的 sim_q12.py / mut_*.py / minrun.sh），改前版本一律直接取自 git index（git show :<path>）。
+判定：PASS（6 個重點全部親自驗過，TF 回報的數字全部重現）。
+
+================================================================ 0. 改動範圍（重點 6）
+git diff（unstaged）只有 10 個檔，全部在卡片範圍（裁決包 Q12＋O16 (a)–(f)）：
+  .github/workflows/physics.yml、.github/workflows/release-physics.yml（Q12）
+  tools/crossplatform_verify.py、tests/test_dump_modes_layered.py（O16 find_cli）
+  tools/stem_verify.py（O16 EXTENSIBLE＋--cli）、tools/partial_verify.py（O16 --cli＋docstring/caveats）
+  reports/gate_outputs/wf0907_method/render_wf_scores.py（O16 --cli 絕對路徑）、tests/test_measurement_selfcal.py（O16 0 拒量移位）
+  tests/test_stem_stream.py、tests/test_stem_verify.py（上面改動的測試）
+沒有碰 src/、HANDOVER/TODO/DEVLOG/README、WF0925_README、裁決包；新檔只有 6 個 wf0925b_TF_*.txt 證據（內容沒有本機絕對路徑，grep 驗過）。
+TF 的改前備份 output/wf0925b/TF/before/ 與 git index 扣掉換行後逐位元組相同（10/10）；每個檔的換行格式沒變
+（9 個 CRLF、tests/test_stem_stream.py 維持 LF，跟 index 一樣）。repo 只有這兩支 workflow（git ls-files .github）。
+partial_verify docstring／caveats 引用的 1.18 c、5.2304 c、7.2055 c、~7.2 c、C10 09-10 A、D15 09-15 A' 對過 docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §8.5（第 320–345 行）；
+gate_ready 仍是 False。
+
+================================================================ 1. Q12：每個多行 run 區塊（重點 1）
+runner 包法（對照 actions/runner 原始碼 src/Runner.Worker/Handlers/ScriptHandlerHelpers.cs，2026-09-25 讀）：
+  pwsh：前面加 $ErrorActionPreference = 'stop'，後面加 if ((Test-Path -LiteralPath variable:\LASTEXITCODE)) { exit $LASTEXITCODE }，
+        以 pwsh -command ". '<檔>.ps1'" 執行；bash：--noprofile --norc -e -o pipefail {0}；沒寫 shell 的 Linux/macOS：bash -e。
+模擬法（output/wf0925b/TF_audit/audit_sim.py）：python/ctest/cmake/git/sudo/hostprobe 換成 PATH 最前面的樁（.cmd 給 pwsh、shell 檔給 bash），
+樁用計數檔記第幾次被叫、第 N 次時 exit 9；每個多行區塊跑「全部成功」＋「只讓第 k 個原生指令失敗」k=1..N。
+validate_plugin.ps1 那步用稽核員的樁腳本 throw（真正的 tools/validate_plugin.ps1 每個失敗分支都是 throw，已讀過）。
+pluginval 下載那步只有 cmdlet、會連網，不執行；另外單獨驗證：包法下 cmdlet 失敗（Get-FileHash 找不到檔）→ 整步 exit 1，後面那行沒跑到。
+
+--- 改前（git index 版）
+
+===== BEFORE: physics.yml
+  SIM      [build-and-verify#2] 'Install Python dependencies' shell=pwsh lines=2  ok-case exit=0 natives=2; fail#1->exit0 MASKED; fail#2->exit1 (ran 2)
+  SINGLE   [build-and-verify#4] 'Configure CMake' shell=pwsh lines=1
+  SINGLE   [build-and-verify#5] 'Build CLI (TsukiSynthCLI)' shell=pwsh lines=1
+  SINGLE   [build-and-verify#6] 'Build Standalone (TsukiSynth_Standalone)' shell=pwsh lines=1
+  SINGLE   [build-and-verify#7] 'Build VST3 (TsukiSynth_VST3)' shell=pwsh lines=1
+  SINGLE   [build-and-verify#8] 'Build regression tests' shell=pwsh lines=1
+  SINGLE   [build-and-verify#9] 'Run C++ audit and tuner regression tests' shell=pwsh lines=1
+  SIM      [build-and-verify#10] 'Run L2 HostProbe against the built VST3' shell=pwsh lines=12  ok-case exit=0 natives=1; fail#1->exit1 (ran 1)
+  SIM      [build-and-verify#12] 'Run spectral and T60 metrology self-tests' shell=pwsh lines=2  ok-case exit=0 natives=2; fail#1->exit0 MASKED; fail#2->exit1 (ran 2)
+  SINGLE   [build-and-verify#13] 'Run standalone T60 gate' shell=pwsh lines=1
+  SINGLE   [build-and-verify#14] 'Run complete physics implementation gate (M1+M2+M5)' shell=pwsh lines=1
+  SIM      [build-and-verify#15] 'Whole-score verification (CI smoke subset)' shell=pwsh lines=14  ok-case exit=0 natives=6; fail#1->exit1 (ran 6); fail#2->exit1 (ran 6); fail#3->exit1 (ran 6); fail#4->exit1 (ran 6); fail#5->exit1 (ran 6); fail#6->exit1 (ran 6)
+  SINGLE   [build-and-verify#16] 'Run event-specific consonance gate' shell=pwsh lines=1
+  SIM      [cross-platform-emit#1] 'Install JUCE build dependencies (Linux only)' shell=bash-e lines=7  ok-case exit=0 natives=2; fail#1->exit9 (ran 1); fail#2->exit9 (ran 2)
+  SINGLE   [cross-platform-emit#3] 'Install numpy' shell=bash-e/pwsh lines=1
+  SINGLE   [cross-platform-emit#5] 'Configure CMake (CLI only)' shell=bash-e/pwsh lines=1
+  SINGLE   [cross-platform-emit#6] 'Build CLI' shell=bash-e/pwsh lines=1
+  SINGLE   [cross-platform-emit#7] 'Render probe set' shell=bash-e/pwsh lines=1
+  SINGLE   [cross-platform-compare#2] 'Install numpy' shell=bash-e lines=1
+  SIM      [cross-platform-compare#4] 'Compare against the Windows/MSVC reference' shell=bash lines=12  ok-case exit=0 natives=1; fail#1->exit9 (ran 1)
+  SINGLE   [cpp-address-sanitizer#2] 'Configure AddressSanitizer regression build' shell=pwsh lines=1
+  SINGLE   [cpp-address-sanitizer#3] 'Build AddressSanitizer regression tests' shell=pwsh lines=1
+  SINGLE   [cpp-address-sanitizer#4] 'Run AddressSanitizer regression tests' shell=pwsh lines=1
+
+===== BEFORE: release-physics.yml
+  SIM      [build-and-host-validate#2] 'Install Python dependencies' shell=pwsh lines=2  ok-case exit=0 natives=2; fail#1->exit0 MASKED; fail#2->exit1 (ran 2)
+  SIM      [build-and-host-validate#4] 'Configure and build all release targets' shell=pwsh lines=2  ok-case exit=0 natives=2; fail#1->exit0 MASKED; fail#2->exit1 (ran 2)
+  SIM      [build-and-host-validate#5] 'Run C++ and Python physics gates' shell=pwsh lines=4  ok-case exit=0 natives=4; fail#1->exit0 MASKED; fail#2->exit0 MASKED; fail#3->exit0 MASKED; fail#4->exit1 (ran 4)
+  SIM      [build-and-host-validate#6] 'Run L2 HostProbe against the built VST3' shell=pwsh lines=12  ok-case exit=0 natives=1; fail#1->exit1 (ran 1)
+  STATIC   [build-and-host-validate#8] 'Download pinned pluginval binary' shell=pwsh lines=5  (network cmdlets only; EAP=stop makes cmdlet errors terminate)
+  SIM      [build-and-host-validate#9] 'Build pinned official Steinberg VST3 validator' shell=pwsh lines=6  ok-case exit=0 natives=5; fail#1->exit0 MASKED; fail#2->exit0 MASKED; fail#3->exit0 MASKED; fail#4->exit0 MASKED; fail#5->exit1 (ran 5)
+  SIM      [build-and-host-validate#10] 'Validate VST3 in two independent hosts' shell=pwsh lines=6  ps1-call: ok-case exit=0; throw-case exit=1 caught
+  SIM      [complete-score-corpus#2] 'Install Python dependencies' shell=pwsh lines=2  ok-case exit=0 natives=2; fail#1->exit0 MASKED; fail#2->exit1 (ran 2)
+  SINGLE   [complete-score-corpus#4] 'Verify deterministic corpus shard' shell=pwsh lines=1
+
+SUMMARY BEFORE: one-failure cases=31 masked=12
+
+--- 改後（工作樹版）
+
+===== AFTER: physics.yml
+  SIM      [build-and-verify#2] 'Install Python dependencies' shell=pwsh lines=4  ok-case exit=0 natives=2; fail#1->exit1 (ran 1); fail#2->exit1 (ran 2)
+  SINGLE   [build-and-verify#4] 'Configure CMake' shell=pwsh lines=1
+  SINGLE   [build-and-verify#5] 'Build CLI (TsukiSynthCLI)' shell=pwsh lines=1
+  SINGLE   [build-and-verify#6] 'Build Standalone (TsukiSynth_Standalone)' shell=pwsh lines=1
+  SINGLE   [build-and-verify#7] 'Build VST3 (TsukiSynth_VST3)' shell=pwsh lines=1
+  SINGLE   [build-and-verify#8] 'Build regression tests' shell=pwsh lines=1
+  SINGLE   [build-and-verify#9] 'Run C++ audit and tuner regression tests' shell=pwsh lines=1
+  SIM      [build-and-verify#10] 'Run spectral and T60 metrology self-tests' shell=pwsh lines=4  ok-case exit=0 natives=2; fail#1->exit1 (ran 1); fail#2->exit1 (ran 2)
+  SINGLE   [build-and-verify#11] 'Run standalone T60 gate' shell=pwsh lines=1
+  SINGLE   [build-and-verify#12] 'Run complete physics implementation gate (M1+M2+M5)' shell=pwsh lines=1
+  SIM      [build-and-verify#13] 'Whole-score verification (CI smoke subset)' shell=pwsh lines=14  ok-case exit=0 natives=6; fail#1->exit1 (ran 6); fail#2->exit1 (ran 6); fail#3->exit1 (ran 6); fail#4->exit1 (ran 6); fail#5->exit1 (ran 6); fail#6->exit1 (ran 6)
+  SINGLE   [build-and-verify#14] 'Run event-specific consonance gate' shell=pwsh lines=1
+  SIM      [build-and-verify#15] 'Run L2 HostProbe against the built VST3' shell=pwsh lines=12  ok-case exit=0 natives=1; fail#1->exit1 (ran 1)
+  SIM      [cross-platform-emit#1] 'Install JUCE build dependencies (Linux only)' shell=bash lines=7  ok-case exit=0 natives=2; fail#1->exit9 (ran 1); fail#2->exit9 (ran 2)
+  SINGLE   [cross-platform-emit#3] 'Install numpy' shell=bash-e/pwsh lines=1
+  SINGLE   [cross-platform-emit#5] 'Configure CMake (CLI only)' shell=bash-e/pwsh lines=1
+  SINGLE   [cross-platform-emit#6] 'Build CLI' shell=bash-e/pwsh lines=1
+  SINGLE   [cross-platform-emit#7] 'Render probe set' shell=bash-e/pwsh lines=1
+  SINGLE   [cross-platform-compare#2] 'Install numpy' shell=bash-e lines=1
+  SIM      [cross-platform-compare#4] 'Compare against the Windows/MSVC reference' shell=bash lines=12  ok-case exit=0 natives=1; fail#1->exit9 (ran 1)
+  SINGLE   [cpp-address-sanitizer#2] 'Configure AddressSanitizer regression build' shell=pwsh lines=1
+  SINGLE   [cpp-address-sanitizer#3] 'Build AddressSanitizer regression tests' shell=pwsh lines=1
+  SINGLE   [cpp-address-sanitizer#4] 'Run AddressSanitizer regression tests' shell=pwsh lines=1
+
+===== AFTER: release-physics.yml
+  SIM      [build-and-host-validate#2] 'Install Python dependencies' shell=pwsh lines=4  ok-case exit=0 natives=2; fail#1->exit1 (ran 1); fail#2->exit1 (ran 2)
+  SIM      [build-and-host-validate#4] 'Configure and build all release targets' shell=pwsh lines=4  ok-case exit=0 natives=2; fail#1->exit1 (ran 1); fail#2->exit1 (ran 2)
+  SIM      [build-and-host-validate#5] 'Run C++ and Python physics gates' shell=pwsh lines=8  ok-case exit=0 natives=4; fail#1->exit1 (ran 1); fail#2->exit1 (ran 2); fail#3->exit1 (ran 3); fail#4->exit1 (ran 4)
+  STATIC   [build-and-host-validate#6] 'Download pinned pluginval binary' shell=pwsh lines=5  (network cmdlets only; EAP=stop makes cmdlet errors terminate)
+  SIM      [build-and-host-validate#7] 'Build pinned official Steinberg VST3 validator' shell=pwsh lines=11  ok-case exit=0 natives=5; fail#1->exit1 (ran 1); fail#2->exit1 (ran 2); fail#3->exit1 (ran 3); fail#4->exit1 (ran 4); fail#5->exit1 (ran 5)
+  SIM      [build-and-host-validate#8] 'Validate VST3 in two independent hosts' shell=pwsh lines=6  ps1-call: ok-case exit=0; throw-case exit=1 caught
+  SIM      [build-and-host-validate#10] 'Run L2 HostProbe against the built VST3' shell=pwsh lines=12  ok-case exit=0 natives=1; fail#1->exit1 (ran 1)
+  SIM      [complete-score-corpus#2] 'Install Python dependencies' shell=pwsh lines=4  ok-case exit=0 natives=2; fail#1->exit1 (ran 1); fail#2->exit1 (ran 2)
+  SINGLE   [complete-score-corpus#4] 'Verify deterministic corpus shard' shell=pwsh lines=1
+
+SUMMARY AFTER: one-failure cases=31 masked=0
+
+判讀：兩支 workflow 共 14 個多行 run 區塊（physics.yml 6：4 pwsh＋2 bash；release-physics.yml 8：全 pwsh），全部列在上面，沒有漏的：
+  - 改前被蓋掉的 12 個情境分布在 7 個區塊（physics：Install Python dependencies、Run spectral and T60 metrology self-tests；
+    release：兩個 Install Python dependencies、Configure and build、Run C++ and Python physics gates、Build Steinberg validator），改後 0。
+  - 另外 5 個 pwsh 多行區塊本來就對（HostProbe×2 自己 exit $code、整曲 smoke 用 $fail、pluginval 下載只有 cmdlet、validate 呼叫會 throw 的 ps1），
+    2 個 bash 區塊（apt-get、跨平台比對）本來就 fail-fast／刻意 set +e 取 exit code，改後 apt-get 那步只是明寫 shell: bash。
+  - 其餘 SINGLE 的步驟（含 >- 摺疊成一行的）只有一個指令，runner 最後那行 exit $LASTEXITCODE 會帶出它的 exit code，不會被蓋。
+  - 全部成功時每個區塊都是 exit 0（沒有誤報）。pwsh 失敗時整步顯示 exit 1 而不是原生程式的 9（pwsh -command 的規則，TF open item 6），紅綠判斷正確。
+  - 稽核員的情境數 31（TF 30）：多算了 validate_plugin.ps1 的 throw 情境；蓋掉數改前 12、改後 0，跟 TF 一致。
+
+================================================================ 2. HostProbe 次序與註解（重點 2）
+physics.yml：HostProbe（+ always() 上傳 log）移到 build-and-verify job 最後，前面依序是 ctest、pytest+--selftest、T60、--full、整曲 smoke、協和度。
+release-physics.yml：HostProbe（+ 上傳 log）移到 build job 最後（物理 gate、pluginval 下載、Steinberg validator、兩個驗證器、CLI 上傳之後）。
+  job outputs cli_uploaded = steps.upload_cli.outcome == 'success'；corpus job 的 if: ${{ !cancelled() && ...cli_uploaded == 'true' }}。
+  對照 actions/runner src/Runner.Worker/JobExtension.cs：FinalizeJob 只檢查 JobOutputs 非空就 evaluate，不看 job 結果 → job 失敗時 output 仍會設；
+  !cancelled() 是狀態函式，所以不會再自動加 success()。CLI 上傳前任何一步失敗 → upload 被 skip → outcome=skipped → 'false' → corpus 照舊跳過。
+  （仍然只有 push 後在 runner 上才算實測，見 TF open item 1。）
+註解：兩支的舊句「working directory MUST be the repo root」已換成 cwd → $TSUKI_REPO_ROOT → exe 所在資料夾往上找、印出用哪條、都找不到 H8 大聲 FAIL；
+  對照 tests/host_probe.cpp findMaterialsJson()（第 612–662 行）與 H8 區塊（第 1744–1754 行）逐條相符；physics.yml 註解多寫的「E16 factory presets」
+  也對得上 host_probe.cpp 第 1834 行起的 E16 區塊。步驟本身仍用 working-directory: ${{ github.workspace }}。Q13 的 clang label 沒動。
+
+================================================================ 3. tools 小修（重點 3）
+--- 3a find_cli（audit_find_cli.py：5 種假樹 × 2 種 mtime 排列，NEW 對照 verify_score／physics_verify 的現行規則；OLD＝git index 版）
+STATIC crossplatform_verify.find_cli NEW        mtime/stat in code (docstring excluded): False
+STATIC test_dump_modes_layered._find_cli NEW    mtime/stat in code (docstring excluded): False
+STATIC crossplatform_verify.find_cli OLD        mtime/stat in code (docstring excluded): True
+STATIC test_dump_modes_layered._find_cli OLD    mtime/stat in code (docstring excluded): True
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\win_multi_config_o0\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\win_multi_config_o0\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+tree=win_multi_config           mtime-newest=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe       ref(verify_score)=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe physics_verify=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe | xplat NEW=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe | dump_modes NEW=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\win_multi_config_o1\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\win_multi_config_o1\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+tree=win_multi_config           mtime-newest=TsukiSynthCLI_artefacts/Debug/TsukiSynthCLI.exe         ref(verify_score)=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe physics_verify=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe | xplat NEW=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=TsukiSynthCLI_artefacts/Debug/TsukiSynthCLI.exe | dump_modes NEW=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+   mtime-permutation stable (NEW): True
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\release_deeper_than_debug_o0\build\x\y\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\release_deeper_than_debug_o0\build\x\y\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+tree=release_deeper_than_debug  mtime-newest=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe   ref(verify_score)=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe physics_verify=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe | xplat NEW=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe | dump_modes NEW=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\release_deeper_than_debug_o1\build\x\y\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\release_deeper_than_debug_o1\build\x\y\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+tree=release_deeper_than_debug  mtime-newest=Debug/TsukiSynthCLI.exe                                 ref(verify_score)=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe physics_verify=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe | xplat NEW=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=Debug/TsukiSynthCLI.exe | dump_modes NEW=x/y/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=Debug/TsukiSynthCLI.exe
+   mtime-permutation stable (NEW): True
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\posix_names_o0\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\posix_names_o0\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI
+tree=posix_names                mtime-newest=other/tsukisynth-cli-old                                ref(verify_score)=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI physics_verify=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI | xplat NEW=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI OLD=other/tsukisynth-cli-old | dump_modes NEW=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI OLD=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\posix_names_o1\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\posix_names_o1\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI
+tree=posix_names                mtime-newest=TsukiSynthCLI_artefacts/Debug/TsukiSynthCLI             ref(verify_score)=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI physics_verify=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI | xplat NEW=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI OLD=TsukiSynthCLI_artefacts/Debug/TsukiSynthCLI | dump_modes NEW=TsukiSynthCLI_artefacts/Release/TsukiSynthCLI OLD=TsukiSynthCLI_artefacts/Debug/TsukiSynthCLI
+   mtime-permutation stable (NEW): True
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\no_release_o0\build\RelWithDebInfo\TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\no_release_o0\build\RelWithDebInfo\TsukiSynthCLI.exe
+tree=no_release                 mtime-newest=RelWithDebInfo/TsukiSynthCLI.exe                        ref(verify_score)=RelWithDebInfo/TsukiSynthCLI.exe physics_verify=RelWithDebInfo/TsukiSynthCLI.exe | xplat NEW=RelWithDebInfo/TsukiSynthCLI.exe OLD=RelWithDebInfo/TsukiSynthCLI.exe | dump_modes NEW=RelWithDebInfo/TsukiSynthCLI.exe OLD=RelWithDebInfo/TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\no_release_o1\build\RelWithDebInfo\TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\no_release_o1\build\RelWithDebInfo\TsukiSynthCLI.exe
+tree=no_release                 mtime-newest=a/Debug/TsukiSynthCLI.exe                               ref(verify_score)=RelWithDebInfo/TsukiSynthCLI.exe physics_verify=RelWithDebInfo/TsukiSynthCLI.exe | xplat NEW=RelWithDebInfo/TsukiSynthCLI.exe OLD=a/Debug/TsukiSynthCLI.exe | dump_modes NEW=RelWithDebInfo/TsukiSynthCLI.exe OLD=a/Debug/TsukiSynthCLI.exe
+   mtime-permutation stable (NEW): True
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\case_RELEASE_o0\build\TsukiSynthCLI_artefacts\RELEASE\TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\case_RELEASE_o0\build\TsukiSynthCLI_artefacts\RELEASE\TsukiSynthCLI.exe
+tree=case_RELEASE               mtime-newest=TsukiSynthCLI_artefacts/Debug/TsukiSynthCLI.exe         ref(verify_score)=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe physics_verify=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe | xplat NEW=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe OLD=TsukiSynthCLI_artefacts/Debug/TsukiSynthCLI.exe | dump_modes NEW=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe OLD=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\case_RELEASE_o1\build\TsukiSynthCLI_artefacts\RELEASE\TsukiSynthCLI.exe
+[find_cli] TsukiSynthCLI selected: <REPO>\output\wf0925b\TF_audit\fc\case_RELEASE_o1\build\TsukiSynthCLI_artefacts\RELEASE\TsukiSynthCLI.exe
+tree=case_RELEASE               mtime-newest=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe       ref(verify_score)=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe physics_verify=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe | xplat NEW=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe OLD=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe | dump_modes NEW=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe OLD=TsukiSynthCLI_artefacts/RELEASE/TsukiSynthCLI.exe
+   mtime-permutation stable (NEW): True
+explicit missing --cli: FileNotFoundError (--cli path does not exist)
+REAL build/    NEW=build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+REAL build-wf/ NEW=build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe OLD=build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+RESULT: PASS
+判讀：NEW 在每棵樹、每種 mtime 排列都跟 verify_score／physics_verify 選同一支，mtime 對調結果不變；函式本體（去掉 docstring 後）沒有 mtime/stat。
+OLD 在 Debug 比較新時會選 Debug（改前確實有這個問題）。真實 repo 的 build/、build-wf/ 改前改後選同一支。--cli 明給路徑的行為沒變。
+
+--- 3b read_wav_float EXTENSIBLE（audit_extensible.py：稽核員自己寫的 WAV 產生器，不用測試檔的 helper）
+== A. EXTENSIBLE decode (NEW) / refuse (OLD)
+  f32_stereo   NEW sr=44100 ch=2 shape=(257, 2) exact=True | OLD ValueError: unsupported wav format (tag=65534 bits=32)
+               plain-tag twin identical: True
+  pcm16_mono   NEW sr=44100 ch=1 shape=(257, 1) exact=True | OLD ValueError: unsupported wav format (tag=65534 bits=16)
+               plain-tag twin identical: True
+  pcm24_3ch    NEW sr=44100 ch=3 shape=(257, 3) exact=True | OLD ValueError: unsupported wav format (tag=65534 bits=24)
+               plain-tag twin identical: True
+  pcm32_v24    NEW sr=44100 ch=2 shape=(257, 2) exact=True | OLD ValueError: unsupported wav format (tag=65534 bits=32)
+               plain-tag twin identical: True
+  pcm32_v32    NEW sr=44100 ch=2 shape=(257, 2) exact=True | OLD ValueError: unsupported wav format (tag=65534 bits=32)
+               plain-tag twin identical: True
+== B. non-EXTENSIBLE files: NEW == OLD bit-for-bit
+  plain_pcm16                identical=True (sr=48000 ch=2 shape=(101, 2))
+  cb0_pcm16                  identical=True (sr=48000 ch=2 shape=(101, 2))
+  list_first_pcm16           identical=True (sr=48000 ch=2 shape=(101, 2))
+  fmt_after_data_pcm16       identical=True (sr=48000 ch=2 shape=(101, 2))
+  plain_pcm24                identical=True (sr=48000 ch=2 shape=(101, 2))
+  cb0_pcm24                  identical=True (sr=48000 ch=2 shape=(101, 2))
+  list_first_pcm24           identical=True (sr=48000 ch=2 shape=(101, 2))
+  fmt_after_data_pcm24       identical=True (sr=48000 ch=2 shape=(101, 2))
+  plain_pcm32                identical=True (sr=48000 ch=2 shape=(101, 2))
+  cb0_pcm32                  identical=True (sr=48000 ch=2 shape=(101, 2))
+  list_first_pcm32           identical=True (sr=48000 ch=2 shape=(101, 2))
+  fmt_after_data_pcm32       identical=True (sr=48000 ch=2 shape=(101, 2))
+  plain_f32                  identical=True (sr=48000 ch=2 shape=(101, 2))
+  cb0_f32                    identical=True (sr=48000 ch=2 shape=(101, 2))
+  list_first_f32             identical=True (sr=48000 ch=2 shape=(101, 2))
+  fmt_after_data_f32         identical=True (sr=48000 ch=2 shape=(101, 2))
+  mono_pcm16                 identical=True (sr=22050 ch=1 shape=(101, 1))
+  odd_data_pcm24_mono        identical=True (sr=48000 ch=1 shape=(5, 1))
+  pcm8 (unsupported)          NEW: unsupported wav format (tag=1 bits=8) | OLD: unsupported wav format (tag=1 bits=8) | same message: True
+== C. unsupported EXTENSIBLE shapes -> ValueError (NEW)
+  alaw_subformat               ValueError: unsupported WAVE_FORMAT_EXTENSIBLE SubFormat GUID 0600000000001000800000aa00389b71 (only KSDATAFORMAT_SUBTYPE_PCM / _IEEE_FLOAT are decoded)
+  vendor_guid_first_field_1    ValueError: unsupported WAVE_FORMAT_EXTENSIBLE SubFormat GUID 01000000aaaabbbb0000000000000000 (only KSDATAFORMAT_SUBTYPE_PCM / _IEEE_FLOAT are decoded)
+  fmt_18_bytes                 ValueError: WAVE_FORMAT_EXTENSIBLE fmt chunk is 18 bytes, needs 40
+  cbsize_10                    ValueError: WAVE_FORMAT_EXTENSIBLE cbSize=10, needs >= 22
+  valid_24_in_16               ValueError: WAVE_FORMAT_EXTENSIBLE wValidBitsPerSample=24 exceeds container wBitsPerSample=16
+  float64                      ValueError: unsupported wav format (tag=3 bits=64, from WAVE_FORMAT_EXTENSIBLE SubFormat)
+  pcm8                         ValueError: unsupported wav format (tag=1 bits=8, from WAVE_FORMAT_EXTENSIBLE SubFormat)
+== D. WAVs already on disk (read-only): NEW == OLD
+  files compared: 40, fmt tags seen: {'0x0001': 40} -> all identical: True
+RESULT: PASS
+判讀：自己合成的 0xFFFE float32／PCM16／PCM24／PCM32(24 有效位元)／PCM32 檔，NEW 逐樣本等於寫進去的值，也等於同一段資料用一般 tag 寫的檔；
+OLD 全部拒絕。一般（非 EXTENSIBLE）檔案 18 種寫法＋磁碟上 40 個實際 WAV（全是 tag 1）NEW 與 OLD 逐位元組相同 → 預設行為沒變。
+不支援的 EXTENSIBLE（A-law、廠商 GUID、fmt 18 bytes、cbSize 10、有效位元大於容器、float64、8-bit）全部 ValueError，沒有猜。
+
+--- 3c stem_verify / partial_verify --cli（minrun：scores/tests/melody_sentinel.score.json，--cli 用相對路徑指到 build\ CLI 的複本）
+== s_cli.json (--cli) vs s_def.json (default): 7 differing leaves
+  /cli                                                         value            cli=<REPO>\output\wf0925b\TF_audit\cli\ | default=<REPO>\build\TsukiSynthCLI_artefact
+  /generated_at                                                value            cli=2026-09-25T13:26:47 | default=2026-09-25T13:26:53
+  /provenance/analysis_score/path                              value            cli=output/wf0925b/TF_audit/minrun/s_cli/derived/melody_sentinel.dry.score | default=output/wf0925b/TF_audit/minrun/s_def/derived/melody_sentinel.dry.score
+  /provenance/cli/path                                         value            cli=output/wf0925b/TF_audit/cli/TsukiSynthCLI.exe | default=build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  /provenance/cli/selected_by                                  value            cli=--cli | default=verify_score.find_cli()
+  /superposition_proof/reference_score                         value            cli=output\wf0925b\TF_audit\minrun\s_cli\reference\score.json | default=output\wf0925b\TF_audit\minrun\s_def\reference\score.json
+  /superposition_proof/reference_wav                           value            cli=output\wf0925b\TF_audit\minrun\s_cli\reference\reference.wav | default=output\wf0925b\TF_audit\minrun\s_def\reference\reference.wav
+  status: cli=ok default=ok
+== p_cli.json (--cli) vs p_def.json (default): 3 differing leaves
+  /cli/path                                                    value            cli=output/wf0925b/TF_audit/cli/TsukiSynthCLI.exe | default=build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  /cli/selected_by                                             value            cli=--cli | default=verify_score.find_cli()
+  /generated_at                                                value            cli=2026-09-25T13:27:01 | default=2026-09-25T13:27:04
+  status: cli=informational default=informational
+  gate_ready: cli=False default=False
+  --help 兩支都列出 [--cli CLI]。exit：stem --cli 0、stem 預設 0、stem --cli 不存在 1；partial --cli 0、partial 預設 0、partial --cli 不存在 1、
+  partial --b-report 配不存在的 --cli 也是 exit 1（RuntimeError「--cli path does not exist」，沒有退回 find_cli()）。
+判讀：帶不帶 --cli，報告只差 CLI 路徑、時間戳、輸出資料夾名稱，以及新增欄位 selected_by；cli sha256、所有判定欄位逐項相同。
+不帶 --cli 時走的是原本的 vs.find_cli() 分支，錯誤訊息「TsukiSynthCLI executable not found under build/」也保留。
+melody_verify.verify() 內部查 CLI 的地方（tools/melody_verify.py:539 的 vs.find_cli()）確實走 stem_verify 替換的 mv.vs.find_cli，run 結束會還原；
+partial_verify 不呼叫 mv.verify()，只用自己的 cli 變數。
+
+================================================================ 4. selfcal「release 0 拒量」是移位不是新門檻（重點 4）
+strict xfail (j)(k) 原本的兩條 assert：not [fail_reason is not None]、len(error_cents 非 None) == len(rows) == 1170／1040。
+新加在 plain test (i)(m) 的條件：not [fail_reason is not None or error_cents is None]＝上面兩條合起來，沒有新數字、沒有新容差；xfail 本身沒改。
+(i) 用 production 列（跟 (j) 同一組），(m) 用 legacy hold-out 列（(k) 跑 production；兩者相同靠 measure_pitch_cents() 直接 return legacy，
+且 (i) 在 dev 網格逐格比 fail_reason；TF 已在註解與證據寫明）。
+--- audit_mut_selfcal.py（真網格算一次，之後換成回傳副本、只把 1 格 release 改成拒量；M1 兩欄都改、M2 只改 fail_reason、M3 只改 error_cents）
+computing production development grid ...
+computing legacy hold-out grid ...
+  dev(production)   release  refused 0 / 1170
+  dev(production)   sustain  refused 0 / 1170
+  hold-out(legacy)  release  refused 0 / 1040
+  hold-out(legacy)  sustain  refused 0 / 1040
+clean     (i) dev grid, production rows    OLD=PASS NEW=PASS
+M1@1      (i) dev grid, production rows    OLD=PASS NEW=FAIL(the production estimator refused 1/1170 RELEASE-segment | xfail(j/k) refusal predicate == new predicate: True
+M2@1      (i) dev grid, production rows    OLD=PASS NEW=FAIL(the production estimator refused 1/1170 RELEASE-segment | xfail(j/k) refusal predicate == new predicate: True
+M3@1      (i) dev grid, production rows    OLD=PASS NEW=FAIL(the production estimator refused 1/1170 RELEASE-segment | xfail(j/k) refusal predicate == new predicate: True
+clean     (m) hold-out grid, legacy rows   OLD=PASS NEW=PASS
+M1@1      (m) hold-out grid, legacy rows   OLD=PASS NEW=FAIL(the legacy centroid refused 1/1040 RELEASE-segment hold | xfail(j/k) refusal predicate == new predicate: True
+M2@1      (m) hold-out grid, legacy rows   OLD=PASS NEW=FAIL(the legacy centroid refused 1/1040 RELEASE-segment hold | xfail(j/k) refusal predicate == new predicate: True
+M3@1      (m) hold-out grid, legacy rows   OLD=PASS NEW=FAIL(the legacy centroid refused 1/1040 RELEASE-segment hold | xfail(j/k) refusal predicate == new predicate: True
+RESULT: PASS
+exit=0
+判讀：現況四段（release／sustain × dev／hold-out）都 0 拒量；乾淨時改前改後都 PASS；三種突變改前 (i)(m) 都看不到（PASS），改後都 FAIL；
+每個突變上 xfail 的拒量判準與新判準結果一致 → 是既有條件移位（R2 沒違反）。
+
+================================================================ 5. render_wf_scores 相對路徑 --cli（重點 5）
+CLI：output/wf0925b/TF_audit/cli/TsukiSynthCLI.exe（build\ 複本，sha256 b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66）
+改前（git index 版腳本，REPO 指回真 repo，同一個相對路徑）：
+rendering moonlight_sonata_movement1_yangqin ...
+BEFORE staged script, relative --cli -> FileNotFoundError [WinError 2] <Big5 主控台訊息，原文亂碼已略>
+  （WinError 2＝系統找不到指定的檔案）
+改後命令（repo 根目錄；outdir 是新資料夾，沒有舊檔）：
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf0925b_TFaudit --workdir <SCRATCH>/wf0925b/TFA/rw \
+    --cli output/wf0925b/TF_audit/cli/TsukiSynthCLI.exe --outdir output/wf0925b/TF_audit/render
+cli: <REPO>\output\wf0925b\TF_audit\cli\TsukiSynthCLI.exe
+rendering moonlight_sonata_movement1_yangqin ...
+  len=317.495s  RMS=-23.906 dBFS  sha256=49514b007e3e01fc
+rendering moonlight_sonata_movement1_yangqin_tongue_mix ...
+  len=325.869s  RMS=-23.899 dBFS  sha256=280cbdac3c117c14
+rendering physical_piano ...
+  len=7.575s  RMS=-18.485 dBFS  sha256=1233b53f1e8660bc
+rendering restraint_metal_click ...
+  len=4.929s  RMS=-32.151 dBFS  sha256=be634798c4a0bf71
+rendering moonlight_sonata_movement1_tongue_drum ...
+  len=327.289s  RMS=-21.589 dBFS  sha256=f539aefa91919cbf
+rendering water_gong_free ...
+  len=10.075s  RMS=-25.021 dBFS  sha256=31b539c6ac08d942
+rendering ai_radiance_m1 ...
+  len=35.930s  RMS=-22.380 dBFS  sha256=74122637a0c71278
+rendering fur_elise_opening ...
+  len=6.780s  RMS=-17.549 dBFS  sha256=b0877774da9e5fc5
+wrote <REPO>\output\wf0925b\TF_audit\render\render_wf0925b_TFaudit.csv
+wrote <REPO>\output\wf0925b\TF_audit\render\sha256_wf0925b_TFaudit.txt
+exit=0
+diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt output/wf0925b/TF_audit/render/sha256_wf0925b_TFaudit.txt → exit 0（無輸出）
+→ 8/8 IDENTICAL，R10 沒觸發。
+
+================================================================ 6. pytest（只跑動到的檔＋對應工具，全套留給整合卡）
+python -m pytest tests/test_stem_stream.py tests/test_stem_verify.py tests/test_partial_verify.py tests/test_dump_modes_layered.py tests/test_crossplatform_emit_safety.py -q -rs -p no:cacheprovider
+  100 passed in 36.21s / exit=0（沒有 skip）
+python -m pytest tests/test_measurement_selfcal.py -q -rxX -p no:cacheprovider
+  8 passed, 5 xfailed in 428.74s (0:07:08) / exit=0（xfail 5 個都是原本那 5 個）
+python -m pytest tests -q --collect-only -p no:cacheprovider → 307 tests collected
+  逐檔：test_stem_stream 17→29（+12）、test_stem_verify 47→54 個 test 函式（+7，無參數化）、test_measurement_selfcal 13→13、test_dump_modes_layered 2→2；
+  兩個檔改前的 test 名稱全部還在（comm 比對空集合）→ 307 − 19 = 288＝基線，沒刪測試。
+
+================================================================ 7. note（不擋 PASS）
+  n1 報告新增欄位 provenance.cli.selected_by（stem_verify）／cli.selected_by（partial_verify）：不帶 --cli 時也會出現（值 verify_score.find_cli()），
+     只是多一個欄位，其他欄位與判定不變；有讀報告 JSON 的下游若做整份比對會看到差異。
+  n2 (m) 的 0 拒量檢查用 legacy hold-out 列；production hold-out 的拒量仍只在 strict xfail (k) 裡（TF 已寫明，因 production 目前直接 return legacy，等價）。
+  n3 physics.yml 的 HostProbe 沒加 if: always()：前面任何 gate 紅了 HostProbe 會被跳過。符合 Q12 選項 A「移到其他 gate 之後」，只是記錄。
+  n4 CI 的 job outputs／!cancelled() 與 runner 無頭載入 VST3 仍要 push 後實跑（TF open item 1、裁決包 Q33）；本稽核只把 runner 原始碼語意核對過。
+  n5 CLI 長路徑（≥約 247 字元）寫 manifest 失敗是 src/ 的既有問題，本輪不准動；本稽核用 <SCRATCH>/wf0925b/TFA/rw 沒碰到。
+
+================================================================ 結論
+PASS。git add 範圍：TF files_touched 的 10 個檔＋TF 的 6 個證據檔＋本稽核證據（本檔）。沒有 commit／push。

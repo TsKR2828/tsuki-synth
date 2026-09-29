@@ -1,0 +1,120 @@
+# staged 內容的 lane 歸屬：WF0925 整合卡收尾時 154 檔 → 現在 224 檔（2026-09-25 13:38:01）
+# 方法：WF0925 的 154 檔清單＝wf0925_integration_raw/11_git_status_end_before_add.txt 的 124 個 A/M 行＋WF0925 整合卡自己 24 檔
+#       （wf0925_INTEGRATION.txt＋wf0925_integration_raw/ 23 檔）＋交接卡 6 檔（HANDOVER/TODO/DEVLOG/README/WF0925_README/WF0925_open_decisions）。
+#       現在 staged 清單＝git diff --cached --name-status。兩份清單排序後 comm 比對。
+#       卡片歸屬依各卡證據檔自己列的 files_touched（TF：wf0925b_TF_summary.txt「動到的檔（10 個）」；
+#       DS：output/wf0925b/DS/after_sha256.txt 的 11 檔；BR：wf0925b_DS_BR_audit.txt；XF：wf0925b_XF_redaction.txt）。
+
+== A. WF0925 的 154 檔裡，現在不在 staged 的：0 檔
+
+== B. WF0925 的 154 檔裡，內容被 WF0925b 再改過的（mtime 晚於 WF0925 交接卡 11:37，且在某張 WF0925b 卡的 files_touched 裡）
+  TF       2026-09-25 11:50:45  .github/workflows/physics.yml
+  TF       2026-09-25 11:51:50  .github/workflows/release-physics.yml
+  DS       2026-09-25 11:56:12  docs/KNOWN_LIMITS_INDEX.zh-TW.md
+  DS       2026-09-25 11:53:36  docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+  DS       2026-09-25 11:53:36  docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+  DS       2026-09-25 11:55:26  reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
+  TF       2026-09-25 11:59:47  reports/gate_outputs/wf0907_method/render_wf_scores.py
+  TF       2026-09-25 12:04:00  tests/test_measurement_selfcal.py
+  TF       2026-09-25 12:01:21  tests/test_stem_stream.py
+  TF       2026-09-25 11:59:33  tools/partial_verify.py
+  其餘 144 檔 mtime 都不晚於 WF0925 交接卡（11:37）；其中有雜湊清單的（K_audit2 33 檔、R_audit 72 檔）逐檔 sha256 OK，見 00b。
+
+== C. 新進 staged 的 70 檔（WF0925 時沒有 staged）
+  DS                   ROADMAP_PHYSICS.md
+  DS                   docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+  DS                   docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+  DS                   docs/WOOD_ANISOTROPY_SOURCES.md
+  DS                   docs/workcards/WF0907_README.md
+  DS                   docs/workcards/WF0914_README.md
+  BR                   reports/beam_x2_option_b/beam_usage_all_scores.csv
+  BR                   reports/beam_x2_option_b/beam_usage_corpus.csv
+  BR                   reports/beam_x2_option_b/beam_usage_products.csv
+  BR                   reports/beam_x2_option_b/corpus_beam_before_after.csv
+  BR                   reports/beam_x2_option_b/corpus_beam_tail_share.csv
+  BR                   reports/beam_x2_option_b/corpus_nonbeam_before_after.csv
+  BR                   reports/beam_x2_option_b/dump_compare.py
+  BR                   reports/beam_x2_option_b/dump_compare_by_score.csv
+  BR                   reports/beam_x2_option_b/fig1_t60_steel_aluminum.png
+  BR                   reports/beam_x2_option_b/fig2_t60_ratio_materials.png
+  BR                   reports/beam_x2_option_b/fig3_corpus_delta.png
+  BR                   reports/beam_x2_option_b/fig4_literature_position.png
+  BR                   reports/beam_x2_option_b/literature_position.csv
+  BR                   reports/beam_x2_option_b/plots_and_literature.py
+  BR                   reports/beam_x2_option_b/render_compare.py
+  BR                   reports/beam_x2_option_b/scan_beam_usage.py
+  BR                   reports/beam_x2_option_b/sweep_t60.py
+  BR                   reports/beam_x2_option_b/t60_formula_check.txt
+  BR                   reports/beam_x2_option_b/t60_sweep.csv
+  BR                   reports/beam_x2_option_b_before_after_2026-09-25.zh-TW.md
+  DS                   reports/gate_outputs/wf0914_INTEGRATION.txt
+  X1/X2                reports/gate_outputs/wf0925_X1_alt_loudness.txt
+  X1/X2                reports/gate_outputs/wf0925_X1_alt_loudness_table.txt
+  X1/X2                reports/gate_outputs/wf0925_X1_art.txt
+  X1/X2                reports/gate_outputs/wf0925_X1_claims_check.txt
+  X1/X2                reports/gate_outputs/wf0925_X1_demo_reel.txt
+  X1/X2                reports/gate_outputs/wf0925_X1_loop_ready.txt
+  X1/X2                reports/gate_outputs/wf0925_X1_music_tpdf.txt
+  X1/X2                reports/gate_outputs/wf0925_X1_tp_crosscheck.txt
+  X1/X2                reports/gate_outputs/wf0925_X1_verify.txt
+  X1/X2                reports/gate_outputs/wf0925_X2_catalog.txt
+  X1/X2                reports/gate_outputs/wf0925_X2_facts.txt
+  X1/X2                reports/gate_outputs/wf0925_X2_listening_kit.txt
+  X1/X2                reports/gate_outputs/wf0925_X2_packages.txt
+  X1/X2                reports/gate_outputs/wf0925_X2_verify.txt
+  X1/X2                reports/gate_outputs/wf0925_X2_web_sources.txt
+  BR-evidence          reports/gate_outputs/wf0925b_BR_bit_identity.txt
+  BR-evidence          reports/gate_outputs/wf0925b_BR_corpus.txt
+  BR-evidence          reports/gate_outputs/wf0925b_BR_isolated_build.txt
+  BR-evidence          reports/gate_outputs/wf0925b_BR_literature_closeout.txt
+  BR-evidence          reports/gate_outputs/wf0925b_BR_physics_verify.txt
+  BR-evidence          reports/gate_outputs/wf0925b_BR_t60_sweep.txt
+  DS/BR-audit          reports/gate_outputs/wf0925b_DS_BR_audit.txt
+  DS-evidence          reports/gate_outputs/wf0925b_DS_changes.txt
+  TF-audit             reports/gate_outputs/wf0925b_TF_audit.txt
+  TF-evidence          reports/gate_outputs/wf0925b_TF_cli_min_runs.txt
+  TF-evidence          reports/gate_outputs/wf0925b_TF_pytest.txt
+  TF-evidence          reports/gate_outputs/wf0925b_TF_q12_pwsh_sim.txt
+  TF-evidence          reports/gate_outputs/wf0925b_TF_q12_yaml.txt
+  TF-evidence          reports/gate_outputs/wf0925b_TF_render_bit_identity.txt
+  TF-evidence          reports/gate_outputs/wf0925b_TF_summary.txt
+  XF-evidence          reports/gate_outputs/wf0925b_XF_audit_rerun.txt
+  XF-evidence          reports/gate_outputs/wf0925b_XF_loop_facts.txt
+  XF-evidence          reports/gate_outputs/wf0925b_XF_originals.txt
+  XF-evidence          reports/gate_outputs/wf0925b_XF_packages.txt
+  XF-evidence          reports/gate_outputs/wf0925b_XF_recheck.txt
+  XF-evidence          reports/gate_outputs/wf0925b_XF_redaction.txt
+  XF-evidence          reports/gate_outputs/wf0925b_XF_tp_meters.txt
+  XF-evidence          reports/gate_outputs/wf0925b_XF_verify.txt
+  XF-evidence          reports/gate_outputs/wf0925b_XF_web_sources.txt
+  TF                   tests/test_dump_modes_layered.py
+  TF                   tests/test_stem_verify.py
+  TF                   tools/crossplatform_verify.py
+  TF                   tools/stem_verify.py
+
+== D. 各類計數（C 段）
+     20 BR
+      6 BR-evidence
+      7 DS
+      1 DS-evidence
+      1 DS/BR-audit
+      4 TF
+      1 TF-audit
+      6 TF-evidence
+     15 X1/X2
+      9 XF-evidence
+
+== E. 各卡 files_touched 合計（B＋C）
+  TF（Q12 CI exit code＋O16 tools 小修）：10 檔（B 段 6＋C 段 4）＋證據 6＋TF 稽核證據 1。TF 稽核 PASS（wf0925b_TF_audit.txt 第 5 行、第 322 行）
+  DS（文件同步）：11 檔（B 段 4＋C 段 7）＋證據 1。DS/BR 稽核 DS=PASS（wf0925b_DS_BR_audit.txt 第 7 行）
+  BR（BeamModel ×2 選項 B 前後數字，研究，不改 src/）：reports/beam_x2_option_b/ 19 檔＋報告 1＋證據 6。DS/BR 稽核 BR=PASS
+  XF（商品 lane 修正輪）：X1/X2 證據 15 檔（WF0925 時 untracked，XF 去掉本機路徑）＋XF 證據 9。商品檔本身在 exports/（gitignored）
+  合計：B 段 10＋C 段 70。
+
+== F. 沒 staged 的（git status 的 ?? 行；追蹤檔沒有 unstaged 改動）
+?? docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md
+?? reports/gate_outputs/wf0925b_integration_raw/
+?? reports/status_check_2026-09-25/
+  reports/status_check_2026-09-25/：09-25 盤點報告本身，WF0925 的輸入，不屬於任何卡（裁決包 Q34）。
+  docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md：09-16 的變現計畫，含售價，repo 是 PUBLIC（裁決包 Q34a）。
+  兩項跟 WF0925 整合卡收尾時相同，本卡不動。

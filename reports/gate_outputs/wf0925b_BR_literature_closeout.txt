@@ -1,0 +1,75 @@
+WF0925b-BR evidence 6/6: literature position (D1 numbers only), figures, file hashes, close-out checks
+generated: 2026-09-25 12:04:05 +0800
+
+## A. literature position (descriptive, NOT a GATE; 'below/inside/above' = where the model number sits vs D1's printed interval edges)
+$ python reports/beam_x2_option_b/plots_and_literature.py
+鋼 3 mm，262 Hz（C4）                            base α=0.421 (above)  noX2 α=0.257 (inside)  lit 0.11..0.36
+鋁 3 mm，262 Hz（C4）                            base α=0.229 (below)  noX2 α=0.147 (below)  lit 0.376..0.541
+鋼 3.2 mm，43.7 Hz（出貨低音群最低音 MIDI 29）           base α=0.062 (below)  noX2 α=0.035 (below)  lit 0.069..0.088
+鋼 2.6 mm，110 Hz（出貨主體群最低音 MIDI 45）            base α=0.163 (above)  noX2 α=0.094 (below)  lit 0.104..0.133
+鋼 2.6 mm，659 Hz（出貨主體群最高音 MIDI 76）            base α=1.279 (above)  noX2 α=0.865 (above)  lit 0.104..0.133
+鋁 2.0 mm，740 Hz（出貨高音群最低音 MIDI 78）            base α=0.844 (below)  noX2 α=0.612 (below)  lit 0.85..1.22
+鋁 2.0 mm，1245 Hz（出貨高音群最高音 MIDI 87）           base α=1.766 (above)  noX2 α=1.376 (above)  lit 0.85..1.22
+figures written
+[exit=0]
+Every lit_low/lit_high value is copied from docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md (section per row in literature_position.csv):
+$ grep -n '0.11～0.36\|0.376～0.541\|0.069～0.088\|0.104～0.133\|S3：1.22；S1：0.85\|S5 換算：0.010\|S5 換算：0.015\|Tuning fork\|17.6 /s' docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md
+30:   - **無法判斷它的量該不該拿掉**——鋼舌片在 262 Hz：已知機制的描述用合計區間是 0.11～0.36 /s，
+199:| 音叉（阻尼比 ζ） | 「Tuning fork: ζ_n ≈ 10⁻⁴」（損耗因子 η = 2ζ，同頁） | S9 |
+243:| 熱彈性 α∞ | 0.078～0.100 /s（音頻範圍固定；轉折頻率 2.7～3.3 Hz） | 0.376～0.541 /s（轉折 17 Hz） | S3 式 (21)＋Table 2（鋼 1／鋼 2／鋁）；鋁另用 S1 Table II 擬合常數 |
+246:| f_c 以上無限板輻射 α∞ | 17.6 /s（T60 0.39 s） | 50.8 /s（T60 0.14 s） | S2 圖 16：ρ_a c_a/(ρh) |
+251:- 文獻已知機制合計（熱彈性＋黏性空氣＋材料表縱向損耗）＝ 0.11～0.36 /s。
+261:無限板在 f_c 以上的輻射漸近值是 17.6 /s。也就是說，**現在 `β_air·f²` 在 4 kHz 附近「碰巧」扮演了輻射的量級**，
+284:| 低音群 | 鋼 3.2 mm／30 mm | MIDI 29–44（43.7–103.8 Hz） | 176 | 110.6／197.2 s → 45.0／78.1 s | S3：0.069～0.088；S5 換算：0.010 | 3831 Hz | 無（第 3 模態最高 1822 Hz） |
+285:| 主體群 | 鋼 2.6 mm／24 mm | MIDI 45–76（110.0–659.3 Hz） | 952 | 42.3／73.3 s → 5.40／7.98 s | S3：0.104～0.133；S5 換算：0.015 | 4715 Hz | 最高音的第 3 模態（11568 Hz） |
+286:| 高音群 | 鋁 2.0 mm／18 mm | MIDI 78–87（740.0–1244.5 Hz） | 14 | 8.18／11.29 s → 3.91／5.02 s | S3：1.22；S1：0.85 | 6013 Hz | 第 3 模態；最高音連第 2 模態（7799 Hz） |
+294:2. **低音群最低的音**：MIDI 29 的模型衰減（×2）是 0.062 /s，**比 S3 算出來的鋼熱彈性單獨一項（0.069～0.088 /s）還小**；
+318:| 7 | 鋼 262 Hz：已知機制描述用合計 0.11～0.36 /s，模型 ×1 = 0.257、×2 = 0.421；支撐與窄條輻射未計 | **無法判斷** | 缺的兩塊只會往上加 |
+319:| 8 | 音叉（鋼製、兩支懸臂）阻尼比量級「Tuning fork: ζ_n ≈ 10⁻⁴」→ η ≈ 2×10⁻⁴（S9；只是「量級舉例」，不是量測）；模型鋼舌片 262 Hz 的等效總損耗因子 ×1 ≈ 3.1×10⁻⁴、×2 ≈ 5.1×10⁻⁴ | **無法判斷** | 兩者都在同一量級內；音叉刻意做成平衡、少漏能量到手柄，和舌片接鼓身不同 |
+322:| 11 | 出貨樂譜最低音（鋼 3.2 mm、43.7 Hz）：模型 ×2 = 0.062 /s，S3 熱彈性單獨 = 0.069～0.088 /s，S5 換算 = 0.010 /s（§3.4） | **無法判斷** | 取決於 S3／S5 哪個對；若 S3 對，低音連 ×2 都不夠，缺的是常數項而不是倍數 |
+Model side cross-check vs D1 §3.2/§3.4 printed model numbers: steel C4 x2/x1 alpha 0.421/0.257 (D1: 0.421 / 0.257); aluminum C4 0.229/0.147 (D1: 0.229 / 0.147);
+  MIDI 29 steel T60 110.6/197.2 s (D1 §3.4: 110.6／197.2 s); MIDI 45 42.28/73.25 s (D1: 42.3／73.3 s); MIDI 76 5.399/7.983 s (D1: 5.40／7.98 s);
+  MIDI 78 aluminum 8.185/11.29 s (D1: 8.18／11.29 s); MIDI 87 3.911/5.022 s (D1: 3.91／5.02 s).
+  steel 4186 Hz alpha: ln(1000)/0.33927 = 20.36 /s (x2), ln(1000)/0.38956 = 17.73 /s (x1).
+
+## B. deliverable hashes (final)
+d2cc7cc253e62c6c02389faa228a4cf0077e4522b00de922f73431be6f954f9f *reports/beam_x2_option_b_before_after_2026-09-25.zh-TW.md
+7045b0a8343ac366b09b82d6720c7fd166ea31702cffe8c3edd70654e9285dad *reports/beam_x2_option_b/beam_usage_all_scores.csv
+c28ba85e9f76e3ad2ce17ec0597e7f84c4108eceb6f76f8432c4baa0ac1614b9 *reports/beam_x2_option_b/beam_usage_corpus.csv
+46c9c661c45d57edba3ad2adc5d94493ff378e434239ea7b8587c612329324d4 *reports/beam_x2_option_b/beam_usage_products.csv
+f7c54585faa77120aab884c2333967bc8497dcbf442b4a6e25b6ff9aab72c74b *reports/beam_x2_option_b/corpus_beam_before_after.csv
+8b703d4bd7900dbee3f80a96a5c1c388286e5e90792b2af69e9019dd8d75e87f *reports/beam_x2_option_b/corpus_beam_tail_share.csv
+9e12cdea042a9a07627ed95deff3c1b45cd881e74a0274f575d10ea37a8a9bc4 *reports/beam_x2_option_b/corpus_nonbeam_before_after.csv
+2d448acaf0ed861cc47b39dac8474d7ab6fa97bd4c05e99b83338db02653e97b *reports/beam_x2_option_b/dump_compare.py
+388950b7aea1a5f5708ff21426137dc275dd3d5ab1f80e029d035f2b95d930d1 *reports/beam_x2_option_b/dump_compare_by_score.csv
+5803993762bf1f73f5735b85d2bc34455c4120e8bfcc03721834d5822a841d37 *reports/beam_x2_option_b/fig1_t60_steel_aluminum.png
+58fb2c6f996f66904257a2f41b11e18aca5f78353135b1b93f34e8bfdd5be8f3 *reports/beam_x2_option_b/fig2_t60_ratio_materials.png
+2ef60d80f797c5cf13163c1a5c81de091b20a906ea6cfc752482013be5e6dcf8 *reports/beam_x2_option_b/fig3_corpus_delta.png
+2537882da384ce5a67ad59cb4415aec7b71930b3e6eeb3f4b00a14feaf4f4ffa *reports/beam_x2_option_b/fig4_literature_position.png
+1c0cc8380a1f5d85344f903e71ab34fba1472e05864ad32d4263b31795a3cef6 *reports/beam_x2_option_b/literature_position.csv
+fdf45fa3ce7ae58398f5142c5c7db42ef2bd7477f31dc312c69c0968d1735456 *reports/beam_x2_option_b/plots_and_literature.py
+2dd8df30ae08f827432a19b9b63c9b0d24e02e366c0b5480aec535c83dd802b5 *reports/beam_x2_option_b/render_compare.py
+5ebcc19f216c9df1509a64e5ac7ff2a6282b840c294ac89acb0bf3507bce9e7b *reports/beam_x2_option_b/scan_beam_usage.py
+c6b396097e999384a88d48e801190ae24deb196b8292c5621c143226d660c73d *reports/beam_x2_option_b/sweep_t60.py
+d8dea965d6f2130de50da1098434e9b4a0bcf71d1a87260293022514c5f3e5c0 *reports/beam_x2_option_b/t60_formula_check.txt
+f817459dd952ef6dd48e63b17d7e613d4338e80b200229365c2b883455bb25ab *reports/beam_x2_option_b/t60_sweep.csv
+
+## C. close-out
+$ cmd //c rmdir output\wf0925b\BR\tree\libs\JUCE     (junction only, non-recursive; done before this file was written)
+$ ls -A output/wf0925b/BR/tree/libs/ | wc -l     (0 = link gone)
+0
+$ find libs/JUCE -type f | wc -l ; find libs/JUCE | wc -l     (card start: 4378 / 4963)
+4378
+4963
+$ git -C libs/JUCE rev-parse HEAD ; git -C libs/JUCE status --porcelain | wc -l
+501c07674e1ad693085a7e7c398f205c2677f5da
+0
+$ git diff --quiet -- src && echo 'worktree src == index src' ; git diff --cached --quiet -- src/physics/BeamModel.h && echo 'BeamModel.h staged == HEAD'
+worktree src == index src
+BeamModel.h staged == HEAD
+$ grep -n '\* 2.0f' src/physics/BeamModel.h      (main work tree still has the x2)
+54:                material.damping.eta, frequency) * 2.0f
+$ git rev-parse --short HEAD
+18430c4
+No git add / commit / push / checkout / stash / reset / restore was run by this card. exports/ untouched (read-only sha256 of masters).
+Scratch left in place (gitignored / outside repo): output/wf0925b/BR/ (tree copy without the junction, both CLIs, build logs), <SCRATCH>/wf0925b/BR/ (renders, probes, logs).

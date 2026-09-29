@@ -1,0 +1,101 @@
+# wf0925b_XF_audit_rerun.txt  generated 2026-09-25T13:13:40  cwd=<REPO>
+# command: python output/wf0925b/XF/audit_rerun/run_audit_rerun.py
+# 商品稽核自己的檢查腳本 output/wf0925/X_audit/xa_zip_text.py（連同它 import 的 xa_measure.py）複製到 output/wf0925b/XF/audit_rerun/，
+# 只改輸出資料夾那一行（不覆寫稽核原本的輸出；複製時 CRLF 變成 LF），對 XF 重打後的 zip 重跑一次。改動（diff --strip-trailing-cr 原檔 新檔）：
+#   [xa_zip_text.py]
+#   14c14
+#   < OUT = ROOT / 'output/wf0925/X_audit'
+#   ---
+#   > OUT = ROOT / 'output/wf0925b/XF/audit_rerun'
+#   [xa_measure.py]
+#   26c26
+#   < OUT = ROOT / 'output/wf0925/X_audit'
+#   ---
+#   > OUT = ROOT / 'output/wf0925b/XF/audit_rerun'
+#
+# 讀法：
+#  - 稽核原本 FAIL 的兩條「README durations == WAV header frames/48000」：這次 2/2 PASS。
+#  - 「README Level: dist TP range -0.97..-1.05 dBTP (2 dp)」這條是稽核腳本把「自己量到的範圍（2 位小數）」跟寫死在腳本裡的舊 README 字面值 -0.97..-1.05 比，
+#    不讀 README 檔（xa_zip_text.py 那一行的比較對象是常數），所以 README 怎麼改都會照樣 FAIL；它證明的是「舊字面值跟實測不合」，正是這輪要修的 note。
+#    新 README（從 zip 讀）寫 -0.949 to -1.048 dBTP；稽核 4 倍量測器實測 -0.9631..-1.0475 落在這個範圍內：YES
+#
+# ---- xa_zip_text.txt (rerun output, unmodified) ----
+=== (4) zip 內容 vs catalog_v1_1 ===
+[PASS] catalog_v1_1 rows :: 50 rows: sfx 43, music 7
+[PASS] catalog_v1_1 dist_sha256 == sha256(clean_batch2 distribution file) for 50 rows :: mismatch []
+[PASS] catalog_v1_1 keeps every other v1.0 field value (except renamed clipped_samples / rewritten description) :: changed []
+[PASS] clipped_samples renamed in all rows :: still present []
+[PASS] v1.0 clipped_samples value == v1.1 pre_normalize_samples_at_or_above_full_scale (music 7 rows) :: []
+[PASS] catalog_v1_1.csv == json (row order, id, sha, loop fields, renamed column) :: 50 rows, diffs []
+[PASS] catalog: loops :: 6 loop rows, worlds ['akashic', 'clockwork', 'forest', 'ocean', 'rabbit', 'restraint']
+[PASS] catalog loop_ready_sha256 == sha256(candidate loop_ready file) :: []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip testzip (CRC of every member) :: first bad None
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip non-audio members :: ['LICENSE.txt', 'README.txt']
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip WAV member set == catalog_v1_1 (43 distribution + 6 loop-ready) :: 49 wav; missing []; extra []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip every WAV member sha256 == catalog_v1_1 (dist_sha256 / loop_ready_sha256) :: mismatch []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip README.txt == zip_readme/README_SE_PACK_v1_1.txt
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip LICENSE.txt == LICENSE_SE_PACK_v1_1.txt
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip README file list covers exactly the WAV members :: 49 listed; missing []; extra []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip README durations == WAV header frames/48000 (2 dp; loop-ready 3 dp) :: 0 differ: []; of which explained by double rounding (frames/48000 -> 3 dp catalog duration_s -> 2 dp half-up): 0
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip README type/BPM/bars == catalog; every WAV 48 kHz PCM_24 stereo :: []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip README loop table (3 languages x 6 rows) == catalog :: 18 rows parsed; bad []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip README "49 WAV files" :: README 49, zip 49
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip testzip (CRC of every member) :: first bad None
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip non-audio members :: ['README.txt']
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip WAV member set == catalog_v1_1 (43 distribution + 6 loop-ready) :: 49 wav; missing []; extra []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip every WAV member sha256 == catalog_v1_1 (dist_sha256 / loop_ready_sha256) :: mismatch []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip README.txt == zip_readme/README_SE_PACK_v1_1_FAB.txt
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip README file list covers exactly the WAV members :: 49 listed; missing []; extra []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip README durations == WAV header frames/48000 (2 dp; loop-ready 3 dp) :: 0 differ: []; of which explained by double rounding (frames/48000 -> 3 dp catalog duration_s -> 2 dp half-up): 0
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip README type/BPM/bars == catalog; every WAV 48 kHz PCM_24 stereo :: []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip README loop table (3 languages x 6 rows) == catalog :: 18 rows parsed; bad []
+[PASS] TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip README "49 WAV files" :: README 49, zip 49
+[PASS] TsukiSynth_Album_Vol1_v1.1_candidate.zip testzip
+[PASS] TsukiSynth_Album_Vol1_v1.1_candidate.zip member set == 6 catalog music rows (WAV+MP3, complete suite excluded) + README.txt :: 13 members; album rows ['fur_elise_complete', 'fur_elise_complete_cimbalom', 'ai_radiance_m1', 'ai_radiance_m2', 'ai_radiance_m3', 'ai_radiance_m4']
+[PASS] TsukiSynth_Album_Vol1_v1.1_candidate.zip WAV sha == catalog dist_sha256, MP3 sha == clean_batch2/preview file :: []
+[PASS] TsukiSynth_Album_Vol1_v1.1_candidate.zip README.txt == zip_readme/README_ALBUM_v1_1.txt
+   album rows dist_lufs [-13.98, -14.1, -14.0, -14.0, -14.02, -14.0] -> README "-13.98 to -14.10 LUFS": -13.98..-14.10
+[PASS] album README LUFS range == catalog dist_lufs of the 6 tracks
+[PASS] PACKAGES_MANIFEST sha/bytes/members for TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip :: manifest 50749a0ea659 actual 50749a0ea659
+[PASS] PACKAGES_MANIFEST sha/bytes/members for TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip :: manifest 082b8e6919e7 actual 082b8e6919e7
+[PASS] PACKAGES_MANIFEST sha/bytes/members for TsukiSynth_Album_Vol1_v1.1_candidate.zip :: manifest 049339ed19f1 actual 049339ed19f1
+
+=== (3) 文案事實 vs repo 證據（可程式化部分） ===
+   50 masters: sample peak min 0.94999981 max 0.95000005 (dBFS -0.4455..-0.4455); |x|>=1.0 count 0; longest run at own peak 1
+[PASS] PRODUCT_SHEET §2.1: 50 masters peak 0.95 (-0.446 dBFS), 0 samples >= full scale, longest run at peak 1
+   render.json non-zero samples_at_or_above_full_scale: {'ai_radiance_complete': 41, 'akashic_transition_var01': 2767, 'rabbit_action_001': 18, 'restraint_action_001': 20}
+[PASS] PRODUCT_SHEET §2.1 non-zero pre-normalize counts: complete 41, Gate Open Dark 2767, Stomp 18, Shackle Slam 20 :: {'ai_radiance_complete': 41, 'akashic_transition_var01': 2767, 'rabbit_action_001': 18, 'restraint_action_001': 20}
+[PASS] complete suite pre-normalize peak 1.132 / gain 0.839
+   render.json configured_source_commit {'766d21d': 50}; dirty {'True': 50}; renderer sha prefix {'9123db8f': 50}
+[PASS] PRODUCT_SHEET header: manifests say 766d21d, dirty=true, renderer 9123db8f
+   akashic: materials ['brass', 'bronze', 'copper', 'glass', 'steel']; engines ['beam', 'plate', 'string', 'tongue_drum', 'water_gong']; roles {'loop': 1, 'ambient': 1, 'action': 1, 'variant': 1, 'transition': 1, 'ui': 1, 'notify': 1, 'opening_bell': 1}
+   rabbit: materials ['aluminum', 'steel', 'wood_maple']; engines ['beam', 'string']; roles {'ambient': 1, 'action': 1, 'loop': 1, 'notify': 1, 'variant': 1, 'ui': 1, 'transition': 1}
+   restraint: materials ['iron', 'steel']; engines ['beam', 'plate', 'string']; roles {'ambient': 1, 'action': 1, 'loop': 1, 'notify': 1, 'variant': 1, 'ui': 1, 'transition': 1}
+   forest: materials ['bamboo', 'wood_birch', 'wood_oak']; engines ['beam']; roles {'loop': 1, 'ambient': 1, 'action': 1, 'notify': 1, 'variant': 1, 'ui': 1, 'transition': 1}
+   ocean: materials ['aluminum', 'bronze', 'glass', 'nylon']; engines ['beam', 'plate', 'string']; roles {'loop': 1, 'ambient': 1, 'action': 1, 'ui': 1, 'notify': 1, 'variant': 1, 'transition': 1}
+   clockwork: materials ['brass', 'steel']; engines ['beam', 'plate', 'string']; roles {'ambient': 1, 'transition': 1, 'loop': 1, 'action': 1, 'variant': 1, 'ui': 1, 'notify': 1}
+[PASS] PRODUCT_SHEET §3 / LISTING_COPY B materials per world == score params.material :: {}
+   role counts (id second token) {'akashic': {'loop': 1, 'ambient': 1, 'action': 1, 'variant': 1, 'transition': 1, 'ui': 1, 'notify': 1, 'opening_bell': 1}, 'clockwork': {'ambient': 1, 'transition': 1, 'loop': 1, 'action': 1, 'variant': 1, 'ui': 1, 'notify': 1}, 'forest': {'loop': 1, 'ambient': 1, 'action': 1, 'notify': 1, 'variant': 1, 'ui': 1, 'transition': 1}, 'ocean': {'loop': 1, 'ambient': 1, 'action': 1, 'ui': 1, 'notify': 1, 'variant': 1, 'transition': 1}, 'rabbit': {'ambient': 1, 'action': 1, 'loop': 1, 'notify': 1, 'variant': 1, 'ui': 1, 'transition': 1}, 'restraint': {'ambient': 1, 'action': 1, 'loop': 1, 'notify': 1, 'variant': 1, 'ui': 1, 'transition': 1}}
+[PASS] each world: transition/notify/action/ambient/ui/variant/loop x1, akashic + opening bell; 6 loops :: {}
+   measuring 43 distribution + 6 loop-ready files with my meter (maxM grid, TP 4x) ...
+   43 dist maxM -28.357..-5.357 LUFS (spread 23.00 LU); TP(4x) -0.9631..-1.0475 dBTP
+   >-1.000 by my 4x meter: [(-0.9687, 'Clockwork Ticking Room'), (-0.9671, 'Restraint Lock Click'), (-0.9631, 'Forest Acorn Tap')]
+   6 loop-ready maxM: {'Akashic Meditation Loop': -8.136, 'Clockwork Tick Loop': -12.048, 'Forest Rain Pattern': -9.622, 'Ocean Wave Cycle': -7.86, 'Rabbit Bounce Loop': -6.559, 'Restraint Industrial Pulse': -7.908}
+[PASS] README Level: dist maxM range -28.4..-5.4 LUFS (1 dp)
+[FAIL] README Level: dist TP range -0.97..-1.05 dBTP (2 dp) :: -0.9631..-1.0475
+[PASS] README Level range also covers the 6 loop-ready files (maxM within -28.4..-5.4) :: {'Akashic Meditation Loop': -8.14, 'Clockwork Tick Loop': -12.05, 'Forest Rain Pattern': -9.62, 'Ocean Wave Cycle': -7.86, 'Rabbit Bounce Loop': -6.56, 'Restraint Industrial Pulse': -7.91}
+   Rabbit Stomp: sample-peak position 0.125 ms (sheet 0.12); maxM -28.357 (sheet -28.4)
+[PASS] PRODUCT_SHEET §3.2 Rabbit Stomp: peak position (2 dp ms) and maxM (1 dp)
+   Clockwork Spring Release: sample-peak position 0.167 ms (sheet 0.17); maxM -24.942 (sheet -24.9)
+[PASS] PRODUCT_SHEET §3.2 Clockwork Spring Release: peak position (2 dp ms) and maxM (1 dp)
+   Restraint Shackle Slam: sample-peak position 20.271 ms (sheet 20.27); maxM -22.454 (sheet -22.5)
+[PASS] PRODUCT_SHEET §3.2 Restraint Shackle Slam: peak position (2 dp ms) and maxM (1 dp)
+   commits adding scores/library: 0ff83b1|Claude Fable 5 <noreply@anthropic.com> ; 60e5c58|Claude Opus 4.6 <noreply@anthropic.com> ; fdf5de2|Claude Opus 4.6 <noreply@anthropic.com> ; 68a3466|Claude Opus 4.6 <noreply@anthropic.com> ; 05f62c0|Claude Opus 4.6 <noreply@anthropic.com> ; c5f9795|Claude Opus 4.6 <noreply@anthropic.com> ; 27fdba7|Claude Opus 4.6 <noreply@anthropic.com> ; cae318c|Claude Opus 4.6 <noreply@anthropic.com>
+[PASS] PRODUCT_SHEET §1: 8 commits adding sfx scores all carry an AI co-author trailer (cae318c, 60e5c58, 0ff83b1 among them) :: 8 commits, 8 with AI trailer
+[PASS] AI Radiance composer field == "Codex"
+[PASS] LISTING_COPY B: every sfx score PASS in K1 verify_score --all (75/75) :: missing []
+
+SUMMARY xa_zip_text: 51/52 PASS
+  FAIL: README Level: dist TP range -0.97..-1.05 dBTP (2 dp) :: -0.9631..-1.0475
+
+RESULT: PASS (audit checker 51/52; durations 2/2 PASS; remaining FAIL(s) = only the audit's hard-coded old-README literal: True; new README range contains the audit measurement: True)

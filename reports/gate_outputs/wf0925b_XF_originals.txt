@@ -1,0 +1,15 @@
+# wf0925b_XF_originals.txt
+# generated 2026-09-25T13:13:58  cwd=<REPO>
+# 收工再驗一次：原始商品 exports/products/clean_batch2/（唯讀）跟 WF0925 X1 開工前記下的 _ORIGINALS_SHA256_before.txt 逐行比。
+# 用 shell 的 sha256sum（跟 x2_verify.py V1 的 Python hashlib 是不同工具），兩邊都排序後 diff。
+# command: (cd exports/products/clean_batch2 && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum -b) > output/wf0925b/XF/originals_shell_now.txt
+#          diff <(LC_ALL=C sort exports/products/clean_batch2_v1_1_candidate/_ORIGINALS_SHA256_before.txt | tr -d '\r') <(LC_ALL=C sort output/wf0925b/XF/originals_shell_now.txt)
+# sha256sum (GNU coreutils) 8.32
+
+files now: 212 ; lines in _ORIGINALS_SHA256_before.txt: 212
+sha256 of _ORIGINALS_SHA256_before.txt: 925d38b46c233932eec58d026c8fd784ebcb37f7d53d7062810df9a7028a5dab
+sha256 of the sorted list now (LF):     3274aa0543fe192e5421582d8ce16ab34b29111f647514783f4cd602a0774ae1
+sha256 of the sorted _before list (LF):  3274aa0543fe192e5421582d8ce16ab34b29111f647514783f4cd602a0774ae1
+diff lines: 0
+
+RESULT: PASS (clean_batch2/ 212 files byte-identical to the list taken before WF0925 X1 started)

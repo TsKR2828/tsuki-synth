@@ -1,0 +1,17 @@
+# HostProbe [PASS]/[FAIL] 行對照（output/wf0925b/INT2/hp_norm2.py：沿用 WF0925 整合卡 hp_norm.py 的做法，只把 HostProbe 輸出資料夾路徑正規化成 OUTDIR\<檔名>；本卡輸出資料夾在 <SCRATCH>，WF0925 在 output\wf0925\INT）
+
+## A. 參考＝WF0925 整合卡 09b（cwd=output/wf0925/INT，ancestor-of-exe 找到 materials.json）；比對＝本輪 07（cwd=<SCRATCH>，repo 外）
+$ python output/wf0925b/INT2/hp_norm2.py reports/gate_outputs/wf0925_integration_raw/09b_hostprobe_cwd_output_wf0925_INT.txt <本輪 07 原始 log>
+reference [PASS]/[FAIL] lines: 215  new run lines: 215
+reference lines not in new run: 0
+new-run lines not in reference: 0
+new run: [PASS] 215  [FAIL] 0
+
+## B. 參考＝WF0925 整合卡 09（cwd=repo 根）；比對＝本輪 07
+reference [PASS]/[FAIL] lines: 215  new run lines: 215
+reference lines not in new run: 0
+new-run lines not in reference: 0
+new run: [PASS] 215  [FAIL] 0
+
+## C. 非 [PASS]/[FAIL] 行跟 WF0925 09b 的差異（只印出來看，不判定；比較用的是原始 log，存進本檔時路徑才換成代稱）
+(diff EXIT=0)

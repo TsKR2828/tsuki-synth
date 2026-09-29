@@ -1,0 +1,83 @@
+WF0925b-BR evidence 3/6: tongue_drum (BeamModel) modal T60 sweep, base vs noX2, via --dump-modes (descriptive, NOT a GATE)
+generated: 2026-09-25 11:55:45 +0800
+
+$ python reports/beam_x2_option_b/sweep_t60.py --cli-base <REPO>\output\wf0925b\BR\cli_base\TsukiSynthCLI.exe --cli-nox2 <REPO>\output\wf0925b\BR\cli_noX2\TsukiSynthCLI.exe --probe-dir <SCRATCH>/wf0925b/BR/probes
+(re-run; the script writes reports/beam_x2_option_b/t60_sweep.csv and t60_formula_check.txt)
+material steel        done (88 events)
+material copper       done (88 events)
+material bronze       done (88 events)
+material aluminum     done (88 events)
+material brass        done (88 events)
+material wood_spruce  done (88 events)
+material wood_maple   done (88 events)
+material rubber       done (88 events)
+material glass        done (88 events)
+material iron         done (88 events)
+material nylon        done (88 events)
+material bamboo       done (88 events)
+material wood_birch   done (88 events)
+material wood_oak     done (88 events)
+rows=7000  materials=14  MIDI 21..108
+max |dump/formula - 1|  base vs x2-law : 4.949e-05
+max |dump/formula - 1|  noX2 vs x1-law : 4.997e-05
+max |base dump / x1-law - 1| (should be large, i.e. base really has x2): 4.998e-01
+
+[exit=0]
+Reading: both CLIs' dumped T60 equal the closed-form law of BeamModel.h:50-58 (x2 for base, x1 for noX2) to within the dump's
+print precision (4 decimals, scientific) -- i.e. the noX2 build differs from base ONLY by that factor; frequencies are identical (asserted).
+
+## mode-1 (fundamental) T60, steel and aluminum, selected MIDI (from t60_sweep.csv)
+material  MIDI   f0_Hz     T60_base_s  T60_noX2_s  ratio   x2_share_of_base_rate  mode1_amp_change_dB
+steel       21    27.500      177.28       318.4 1.79603   0.4432       -0.117
+steel       29    43.654      110.63      197.23 1.78279   0.4391       -0.159
+steel       36    65.406      72.921      128.74 1.76547   0.4336       -0.214
+steel       45   110.000       42.28      73.249 1.73247   0.4228       -0.310
+steel       48   130.813      35.145       60.38 1.71803   0.4179       -0.341
+steel       57   220.000      19.917      33.104 1.66210   0.3983       -0.346
+steel       60   261.626       16.39       26.86 1.63880   0.3898       -0.304
+steel       69   440.000       8.926      13.883 1.55534   0.3570       -0.265
+steel       72   523.251      7.2225      11.003 1.52343   0.3436       -0.308
+steel       76   659.255      5.3995      7.9827 1.47841   0.3236       -0.376
+steel       78   739.989        4.65      6.7667 1.45520   0.3128       -0.414
+steel       84  1046.502      2.9187      4.0406 1.38438   0.2777       -0.535
+steel       87  1244.508      2.2882      3.0875 1.34931   0.2589       -0.594
+steel       96  2093.004      1.0548      1.3196 1.25104   0.2007       -0.676
+steel      108  4186.009     0.33927     0.38956 1.14823   0.1291       +0.000
+aluminum    21    27.500      336.36      580.38 1.72547   0.4205       -0.061
+aluminum    29    43.654      209.39      358.23 1.71083   0.4155       -0.082
+aluminum    36    65.406      137.56      232.76 1.69206   0.4090       -0.112
+aluminum    45   110.000      79.252      131.27 1.65636   0.3963       -0.167
+aluminum    48   130.813      65.689      107.79 1.64091   0.3906       -0.187
+aluminum    57   220.000      36.803      58.234 1.58232   0.3680       -0.212
+aluminum    60   261.626      30.135      46.965 1.55849   0.3584       -0.192
+aluminum    69   440.000      16.106       23.76 1.47523   0.3221       -0.137
+aluminum    72   523.251      12.933      18.679 1.44429   0.3076       -0.160
+aluminum    76   659.255      9.5611        13.4 1.40151   0.2865       -0.199
+aluminum    78   739.989      8.1848      11.294 1.37987   0.2753       -0.220
+aluminum    84  1046.502      5.0391      6.6278 1.31527   0.2397       -0.294
+aluminum    87  1244.508      3.9107      5.0216 1.28407   0.2212       -0.336
+aluminum    96  2093.004      1.7479      2.0965 1.19944   0.1663       -0.443
+aluminum   108  4186.009     0.54196     0.60427 1.11497   0.1031       -0.367
+
+## per material over MIDI 21..108: mode-1 T60 ratio range, mode-1 amplitude change range (dB), all-modes T60 ratio range
+steel        ratio1 1.148..1.796   amp1 -0.679..+0.000 dB   ratio(all modes) 1.036..1.796
+aluminum     ratio1 1.115..1.725   amp1 -0.454..-0.061 dB   ratio(all modes) 1.028..1.725
+brass        ratio1 1.528..1.962   amp1 -1.914..+0.000 dB   ratio(all modes) 1.196..1.962
+bronze       ratio1 1.445..1.947   amp1 -1.708..+0.000 dB   ratio(all modes) 1.149..1.947
+copper       ratio1 1.582..1.969   amp1 -2.026..+0.000 dB   ratio(all modes) 1.232..1.969
+glass        ratio1 1.757..1.984   amp1 -2.126..+0.000 dB   ratio(all modes) 1.405..1.984
+iron         ratio1 1.853..1.992   amp1 -2.307..+0.000 dB   ratio(all modes) 1.558..1.992
+bamboo       ratio1 1.839..1.991   amp1 -2.303..+0.000 dB   ratio(all modes) 1.531..1.991
+wood_spruce  ratio1 1.709..1.982   amp1 -2.247..+0.000 dB   ratio(all modes) 1.346..1.982
+wood_maple   ratio1 1.833..1.991   amp1 -2.302..+0.000 dB   ratio(all modes) 1.521..1.991
+wood_birch   ratio1 1.840..1.992   amp1 -2.307..+0.000 dB   ratio(all modes) 1.532..1.992
+wood_oak     ratio1 1.848..1.992   amp1 -2.309..+0.000 dB   ratio(all modes) 1.547..1.992
+nylon        ratio1 1.882..1.997   amp1 -2.326..+0.000 dB   ratio(all modes) 1.615..1.997
+rubber       ratio1 1.970..1.999   amp1 -2.345..+0.000 dB   ratio(all modes) 1.872..1.999
+
+## amplitude note: mode-1 amp change = change of the per-note loudness-compensation scalar
+## (ModalResonator::loudnessCompensationGain reads the modes' decay times; +0.000 = the scalar is clamped at x4 in both builds).
+## Anchor-condition probe (A4, aluminum, strike 0.3, default geometry = the kChromaticAttackEnergyRefA4[0] condition, ChromaticEngine.h:24-36):
+cli_base mode1 freq 440.0 amp 0.26599 T60 16.106
+cli_noX2 mode1 freq 440.0 amp 0.26172 T60 23.76
+mode-1 amp change at the anchor condition: -0.141 dB (noX2 build keeps the x2-era anchor 0.009504, so gain(A4) is no longer exactly 1)

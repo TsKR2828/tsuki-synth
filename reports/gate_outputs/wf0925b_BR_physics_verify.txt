@@ -1,0 +1,176 @@
+WF0925b-BR evidence 5/6: physics_verify --full with the base CLI and with the noX2 CLI (descriptive comparison, NOT a new GATE)
+generated: 2026-09-25 12:00:26 +0800
+
+$ python tools/physics_verify.py --full --cli <REPO>\output\wf0925b\BR\cli_base\TsukiSynthCLI.exe   > <SCRATCH>/wf0925b/BR/pv_full_base.txt
+$ python tools/physics_verify.py --full --cli <REPO>\output\wf0925b\BR\cli_noX2\TsukiSynthCLI.exe   > <SCRATCH>/wf0925b/BR/pv_full_nox2.txt
+
+## result lines
+base : RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED   exit=0
+noX2 : RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED   exit=0
+
+## base vs the WF0925 integration card's --full log (same staged tree, build/ CLI b84c775b):
+$ diff <(tail -n +2 reports/gate_outputs/wf0925_integration_raw/06_physics_verify_full.txt | tr -d '\r') pv_full_base.txt
+1,2c1
+< [find_cli] TsukiSynthCLI selected: <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+< CLI: <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+---
+> CLI: <REPO>\output\wf0925b\BR\cli_base\TsukiSynthCLI.exe
+624c623
+< EXIT_CODE=0  (end 2026-09-25 10:51:46)
+---
+> exit=0
+[exit=1]  (only the CLI path line and the trailing exit line differ -> base CLI reproduces the integration --full log line for line)
+
+## --full summary blocks
+--- base
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+exit=0
+--- noX2
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.028s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+exit=0
+
+## full diff base -> noX2 (every changed line)
+$ diff pv_full_base.txt pv_full_nox2.txt
+1c1
+< CLI: <REPO>\output\wf0925b\BR\cli_base\TsukiSynthCLI.exe
+---
+> CLI: <REPO>\output\wf0925b\BR\cli_noX2\TsukiSynthCLI.exe
+138,142c138,142
+<     1     130.813     130.813   -0.00    +0.0  134.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+<     2     819.790     819.790   +0.00    +8.0  158.6  PASS model=+7.9dB raw=+9.9dB isolated=+7.9dB
+<     3    2295.435    2295.435   -0.00   -34.3  116.3  PASS model=-34.3dB raw=-25.1dB isolated=-34.3dB
+<     4    4498.136    4498.137   +0.00   -41.0  109.6  PASS model=-41.0dB raw=-16.1dB isolated=-41.0dB
+<     5    7435.740          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-41.9dB isolated=-87.6dB
+---
+>     1     130.813     130.813   -0.00    +0.0  142.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+>     2     819.790     819.790   +0.00    +8.4  159.0  PASS model=+8.4dB raw=+9.9dB isolated=+8.4dB
+>     3    2295.435    2295.435   -0.00   -33.0  117.5  PASS model=-33.0dB raw=-25.1dB isolated=-33.0dB
+>     4    4498.136    4498.137   +0.00   -39.2  111.4  PASS model=-39.2dB raw=-16.1dB isolated=-39.2dB
+>     5    7435.740          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-41.9dB isolated=-86.0dB
+149,153c149,153
+<     1     195.998     195.998   +0.00    +0.0  149.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+<     2    1228.297    1228.297   -0.00    +4.6  154.7  PASS model=+4.6dB raw=+7.9dB isolated=+4.6dB
+<     3    3439.267    3439.267   +0.00   -23.9  126.3  PASS model=-23.9dB raw=-7.0dB isolated=-23.9dB
+<     4    6739.589          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-21.2dB isolated=-62.2dB
+<     5   11141.023          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-76.8dB isolated=-143.1dB
+---
+>     1     195.998     195.998   +0.00    +0.0  150.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+>     2    1228.297    1228.297   -0.00    +5.2  155.4  PASS model=+5.2dB raw=+7.9dB isolated=+5.2dB
+>     3    3439.267    3439.267   +0.00   -22.2  127.9  PASS model=-22.2dB raw=-7.0dB isolated=-22.2dB
+>     4    6739.589          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-21.2dB isolated=-60.5dB
+>     5   11141.023          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-76.5dB isolated=-141.6dB
+160,164c160,164
+<     1     293.665     293.665   +0.00    +0.0  152.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+<     2    1840.366    1840.366   -0.00    -2.0  150.7  PASS model=-2.0dB raw=+4.2dB isolated=-2.0dB
+<     3    5153.077          --      --      --     --  MODEL-WEAK (not required) model=-49.0dB raw=-19.5dB isolated=-49.0dB
+<     4   10097.975          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-27.0dB isolated=-87.8dB
+<     5   16692.674          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-68.9dB isolated=-158.9dB
+---
+>     1     293.665     293.665   +0.00    +0.0  149.3  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+>     2    1840.366    1840.366   -0.00    -1.1  152.7  PASS model=-1.1dB raw=+4.2dB isolated=-1.1dB
+>     3    5153.077          --      --      --     --  MODEL-WEAK (not required) model=-47.3dB raw=-19.5dB isolated=-47.3dB
+>     4   10097.975          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-27.0dB isolated=-86.5dB
+>     5   16692.674          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-68.7dB isolated=-157.8dB
+171,174c171,174
+<     1     466.164     466.164   +0.00    +0.0  155.7  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+<     2    2921.399    2921.398   -0.00   -19.2  136.5  PASS model=-19.2dB raw=-6.6dB isolated=-19.2dB
+<     3    8180.000          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-26.7dB isolated=-76.2dB
+<     4   16029.536          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-31.3dB isolated=-118.2dB
+---
+>     1     466.164     466.164   +0.00    +0.0  155.9  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+>     2    2921.399    2921.398   -0.00   -17.9  138.1  PASS model=-17.9dB raw=-6.6dB isolated=-17.9dB
+>     3    8180.000          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-26.7dB isolated=-74.9dB
+>     4   16029.536          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-31.3dB isolated=-117.5dB
+181,183c181,183
+<     1     698.456     698.457   +0.00    +0.0  156.6  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+<     2    4377.152    4377.152   +0.00   -34.8  121.8  PASS model=-34.8dB raw=-12.3dB isolated=-34.8dB
+<     3   12256.152          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-24.9dB isolated=-95.1dB
+---
+>     1     698.456     698.457   +0.00    +0.0  156.9  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+>     2    4377.152    4377.152   +0.00   -33.4  123.5  PASS model=-33.4dB raw=-12.3dB isolated=-33.4dB
+>     3   12256.152          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-24.9dB isolated=-94.3dB
+190,192c190,192
+<     1    1046.502    1046.502   -0.00    +0.0  147.1  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+<     2    6558.317          --      --      --     --  MODEL-WEAK (not required) model=-52.0dB raw=-14.8dB isolated=-52.0dB
+<     3   18363.479          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-29.5dB isolated=-123.3dB
+---
+>     1    1046.502    1046.502   -0.00    +0.0  147.8  PASS model=+0.0dB raw=+0.0dB isolated=+0.0dB
+>     2    6558.317          --      --      --     --  MODEL-WEAK (not required) model=-50.9dB raw=-14.8dB isolated=-50.9dB
+>     3   18363.479          --      --      --     --  MODEL-WEAK (not required) model=-240.0dB raw=-29.5dB isolated=-123.0dB
+477,486c477,486
+<    tongue_drum material=steel        T60(model)=  16.390s freq=2/2 amp=1 PASS
+<    tongue_drum material=copper       T60(model)=   2.030s freq=2/2 amp=1 PASS
+<    tongue_drum material=bronze       T60(model)=   3.961s freq=2/2 amp=1 PASS
+<    tongue_drum material=aluminum     T60(model)=  30.135s freq=2/2 amp=1 PASS
+<    tongue_drum material=brass        T60(model)=   2.686s freq=2/2 amp=1 PASS
+<    tongue_drum material=wood_spruce  T60(model)=   0.589s freq=2/2 amp=1 PASS
+<    tongue_drum material=wood_maple   T60(model)=   0.347s freq=2/2 amp=1 PASS
+<    tongue_drum material=glass        T60(model)=   2.756s freq=2/2 amp=1 PASS
+<    tongue_drum material=rubber       T60(model)=   0.014s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+<    tongue_drum material T60 sensitivity spread=2153.12x -> PASS (no-op threshold 1.10x)
+---
+>    tongue_drum material=steel        T60(model)=  26.860s freq=2/2 amp=1 PASS
+>    tongue_drum material=copper       T60(model)=   3.927s freq=2/2 amp=1 PASS
+>    tongue_drum material=bronze       T60(model)=   7.486s freq=2/2 amp=1 PASS
+>    tongue_drum material=aluminum     T60(model)=  46.965s freq=2/2 amp=1 PASS
+>    tongue_drum material=brass        T60(model)=   5.155s freq=2/2 amp=1 PASS
+>    tongue_drum material=wood_spruce  T60(model)=   1.155s freq=2/2 amp=1 PASS
+>    tongue_drum material=wood_maple   T60(model)=   0.687s freq=2/2 amp=1 PASS
+>    tongue_drum material=glass        T60(model)=   5.422s freq=2/2 amp=1 PASS
+>    tongue_drum material=rubber       T60(model)=   0.028s -> N/A / UNVERIFIED (needs >= 0.031s for 8 cycles at 261.6Hz)
+>    tongue_drum material T60 sensitivity spread=1679.96x -> PASS (no-op threshold 1.10x)
+509,510c509,510
+<    tongue_drum   60    -42.3    -36.2      +6.1      +6.1  PASS
+<       broadband RMS delta = +6.88 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+---
+>    tongue_drum   60    -42.1    -36.0      +6.1      +6.1  PASS
+>       broadband RMS delta = +6.94 dB (informational -- includes Hertz contact-time spectral-brightening, physically real, see HammerImpulse.h)
+552,553c552,553
+<     2    1639.579    +0.39    +0.39   +0.00  PASS
+<     3    4590.870   -50.09   -50.09      --  MODEL-WEAK (not required)
+---
+>     2    1639.579    +1.26    +1.26   -0.01  PASS
+>     3    4590.870   -48.35   -48.35      --  MODEL-WEAK (not required)
+588,589c588,589
+<    tongue_drum   60   30.14s   30.18s   1.00  (span 26.0dB, probe 15.1s)
+<    tongue_drum   72   12.93s   12.91s   1.00  (span 25.0dB, probe 6.5s)
+---
+>    tongue_drum   60   46.97s   47.33s   1.01  (span 26.2dB, probe 23.5s)
+>    tongue_drum   72   18.68s   18.72s   1.00  (span 25.6dB, probe 9.3s)
+605c605
+<    tongue_drum residual:   -75.9 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+---
+>    tongue_drum residual:   -76.3 dB re total (5 predicted modes, limit -60.0 dB) -> PASS
+619c619
+<    Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+---
+>    Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.028s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+[exit=1]
+
+## reading (descriptive)
+- No check changes verdict: every PASS stays PASS, the same 3 UNVERIFIED/N/A (tongue_drum/rubber T60 0.014 -> 0.028 s, still < 0.031 s).
+- 1b/2d/5b/F5 compare the rendered audio against the SAME CLI's --dump-modes (render faithful to model). They pass for x1 and x2 alike,
+  so they cannot tell which damping is closer to a real tongue drum. 1c only asserts materials differ by > 1.10x. F1 (eigenvalue
+  ratios, the only external anchor here) concerns frequencies, which the x2 does not touch.

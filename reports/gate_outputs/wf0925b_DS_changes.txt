@@ -1,0 +1,706 @@
+# WF0925b-DS：文件同步（WF0925_README §6 點名、交接卡權限外的文件）——逐檔逐處：改前→改後、依據
+# 日期 2026-09-25。HEAD 18430c4。以下改動都在工作樹（unstaged），疊在 WF0925 已 staged 的內容上。
+# 本卡不改 src/、tools/、tests/、任何 score；沒有建置、沒有渲染、沒有跑 pytest（全套 pytest 只在整合卡跑）。
+# 沒有新增任何容差或判定門檻（R2）；ROADMAP_PHYSICS.md §1 規則原文與 §6 容差登記表逐行未動（見「二」的 [7]）。
+# 寫進文件的數字，全部由本卡從證據原始檔重算核對（見「二」），不是照抄回報。
+# 路徑一律 repo 相對；output/ 開頭的是 gitignored 的本機產出。
+# 暫存與腳本（gitignored）：output/wf0925b/DS/
+#   edit_lib.py（精確字串替換：old 必須在檔案裡剛好出現 1 次，否則整檔不寫；保留原檔 LF／CRLF）
+#   edit_earfree.py、edit_others.py、edit_roadmap.py、edit_roadmap2.py、edit_appends.py（本卡套用的改動；
+#   KNOWN_LIMITS_INDEX 的 10 處替換與 ROADMAP E8 列一處措辭，是用同一個 edit_lib.apply 在命令列直接跑的，內容見「四」的 diff）
+#   verify_numbers.py → verify_numbers_out.txt（「二」的原始輸出）
+#   before/（11 個檔的改前備份）、before_sha256.txt、after_sha256.txt、full_diff.txt
+
+======================================================================
+一、逐檔逐處（行號是改後的行號）
+======================================================================
+
+(1) docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md —— 卡片任務 1
+ a. :196 §8.1 標題：證據只列 08-30 的 stem_verify_fur_elise_run.txt → 加 A14 之後的乾聲重測證據
+    reports/gate_outputs/wf0925_V1_partial_stem_verify_full.txt。
+ b. :202 §8.1 表「逐事件分軌（乾聲）」671／22／212 → 677／16／212；:204-207 加註：原數字、
+    09-14 D14 全量與 09-25 V1 全量逐顆相同、前兩列（30/14/862、595/122/188）是 08-30 帶殘響那次的數字、09-25 沒重跑。
+    依據：[1] summary {'pass': 677, 'fail': 16, 'unverified': 212}；wf0925_V1_partial_stem_verify_full.txt:37-40
+    （THIS RUN／D14 RUN 都是 677/16/212、PRE-A14 671/22/212、verdict differences 0）；
+    stem_verify_fur_elise_run.txt:8-22（前兩列出自 08-30 帶殘響那次）。
+ c. :209-210 疊加殘差 −118.60 dBFS → −119.42 dBFS（舊值留在括註）。依據：[1] residual_peak_dbfs=-119.42；
+    wf0925_V1_partial_stem_verify_full.txt:20、:36。
+ d. :213 「C10B 重驗（2026-09-09…）」標題補「當時還在 A14 之前」（段內 671/22/212 是 09-09 當時的數字，內容不改）。
+ e. :225 §8.2 音高：883/905、883/883、最大 2.4266 c → 889/905、889/889、最大 3.0355 c（舊值留括註）。
+    依據：[1] pitch measured 889/905, within +/-5 c: 889, max 3.0355 c；wf0925_V1_partial_stem_verify_full.txt:41。
+ f. :226 §8.2 起音：671/905 → 677/905；最大 6.9272 ms 不變（舊值留括註；帶殘響版 7.0522 ms 標為 08-30 數字）。
+    依據：[1] onset measured 677/905, within +/-10 ms: 677, max 6.9272 ms。V1 證據檔沒有直接印起音最大值，
+    本卡從 output/wf0925/V1/stem_full_report.json（sha256 a4647c96…，與證據檔 :25 相同）重算；
+    另對照證據檔 :40「vs D14 … max |d onset_err_ms| 0.000000」。
+ g. :227 起音拒答「212 顆，全部 f0 < 167 Hz」→ 加「09-25 重測相同」。依據：[1] UNVERIFIED 212、最高 f0 164.81 Hz、rules Re 212。
+ h. :228 起音 FAIL「22 顆高音」→ D16 的 16 顆（E5@0.278×9、A5@0.427×3、A5@0.452×1、A6@0.427×2、A#6@0.427×1），
+    指向 N1 零點地圖與 V1 報告 §4（泛音反推 16/16 在 ±5 c 內）；註明 08-30 那 22 顆（G5×19、D7、G6、F#6）09-25 已全部 PASS。
+    依據：[1] FAIL 16、reason 16/16 含 near-silent fundamental band、按音 E5 9／A5 4／A6 2／A#6 1；
+    wf0925_V1_partial_stem_verify_full.txt:42-59（逐顆名單與力度）；wf0925_N1_fur_elise_validation.txt:161-163；
+    reports/partial_verify_full_2026-09-25.zh-TW.md §4、§5；[2] pitch_via_partials 16 PASS、−3.56～+1.33 c。
+ i. :230、:236-237 C10B 原始回合段：標題補「A14 之前」；「現況＝最大 2.4266 c 不變」後補「這是 A14 之前的數字；
+    A14 之後用同一個估計器實測是 3.0355 c，見上表」。依據：同 e；估計器沒變（C10 選 A，產品估計器 measure_pitch_cents() 未動）。
+ j. :269-271 §8.4 第 1 點「泛音完全沒有實測」句後加註：之後 partial_verify（informational）已量 partial 頻率，
+    09-25 跑完全曲；振幅仍不判定，「泛音已驗證」仍不可宣稱。原句不改。
+    （卡片沒有點名這一點；它是 §8 裡同樣被 V1 取代的量測事實，只加註。）
+ k. :275-284 §8.4 第 3 點「22 顆高音的性質未定」→「弱基頻音的性質（2026-09-25 更新）」：D16 的 16 顆；N1 結論
+    （16/16 基頻落在槌力脈衝頻譜零點、被多壓 14.9～24.5 dB；另 31 顆在凹口內仍 PASS；分開 PASS／FAIL 的是基頻絕對音量
+    FAIL ≤ −72.1、PASS ≥ −67.2 dBFS，對照既有 −70 dBFS，標「描述用、非 GATE」）；泛音反推 16/16；待裁決包 Q15。
+    原本 G5／G6／D7 的單音實測留著，標為 08-30（A14 之前）那 22 顆的歷史記錄。
+    依據：wf0925_N1_fur_elise_validation.txt:161-163、:193；V1 報告 §4、§5；WF0925_open_decisions Q15。
+ l. :298-299 §8.4 第 4 點可發布措辭：**措辭原句一字未改**；句後加註「句中 883/671 的最新實測為 889/677（2026-09-25），
+    措辭是否隨之更新待月月重新核定」＋證據路徑。
+ m. :315-318 §8.5 (b)「基頻天生弱的高音（22 顆）」→「基頻被壓得很弱的音」：08-30 寫作時是 22 顆高音（09-25 已全部 PASS）；
+    A14 之後換成 D16 的 16 顆，成因是基頻落在槌力脈衝頻譜零點（N1）；泛音反推 16/16。
+    拿掉「天生」：N1 查明這 16 顆是 A14 B-2 之後槌力脈衝模型的零點造成的，不是「真鋼琴高音本來就弱」那一類。
+ n. :368-373 §8.6「身分是 informational」段後加註：原理由（C10 自證 informational 或轉 GATE 待裁）已過時；C10 已於 09-10 選 A；
+    WF0925-P1 已把 gate_ready_reason 更新（升 GATE 要另行裁決；D15 A' 後放鍵段誤差上界約 7.2 c > ±5 c，A13 B+ 的前提照原文不成立）；
+    gate_ready 仍 false；09-25 V1 那份報告的 caveats[0] 還是舊字串（出自 WF0925 staged 版 tools/partial_verify.py；O16，本卡不動）；待 Q18。
+    這就是 WF0925_README §6 點名的「:342-344 的 partial_verify 升 GATE 說法是舊的」。
+    依據：git diff --cached -- tools/partial_verify.py（gate_ready_reason 新字串）；[2] caveats[0] 原文；
+    wf0925_V1_partial_verify_full.txt:31-32。
+ o. :390 §8.6 C13 標題「§8.5(b) 那 22 顆基頻天生弱的高音」→「§8.5(b) 的弱基頻音；寫作時指 08-30 那 22 顆高音，A14 之後是 D16 的 16 顆」。
+ p. :399 實跑統計標題加「2026-09-09 WF0908-P1 當時」；:402-403「partial_verify.py 從未在全曲 905 事件規模上執行過」
+    →「partial_verify.py 當時未能在全曲 905 事件規模上執行（2026-09-25 已執行，見本段之後的「全曲 905 顆已執行」段）」。
+ q. :414-428 新段「全曲 905 顆已執行（2026-09-25，WF0925-V1；informational、gate_ready=false，不是 GATE）」：
+    stem 677/16/212、殘差 −119.42；partial 5428 個位置（E7、D7 只給 5 個泛音）、量到 5426：PASS 4577／FAIL 849、
+    拒答 2（第 0 顆 E5 的 n=5、n=6，退回 −70 dBFS 絕對地板）；848 偏高、1 偏低，最大 12.39 c；第 0 根弦慣例約 +5 c
+    （描述用對照、非判定，Q18）；D16 16 顆 pitch_via_partials 16/16 PASS（−3.56～+1.33 c）；08-30 那 22 顆現在基頻直接量
+    22/22 PASS、pitch_via_partials 20 PASS／2 FAIL（D7 −5.48 c、G6 −5.10 c，基頻直接量都在 ±0.2 c 內，Q18b）
+    → 註明上一段 09-09 的可發布措辭「22 顆弱基頻高音的 pitch_via_partials 全數 PASS」對現行 binary 已不成立，新措辭待月月核定。
+    依據：[2] 全部計數；wf0925_V1_partial_verify_full.txt:12-13、:49-50、:127；V1 報告 §0–§5；
+    ROADMAP D12／D14 列（905 事件全量峰值約 1.65 GB）。
+ 沒改（刻意保留的歷史）：§9.4（已撤回段）:576 的「671/22/212」；§8.6 裡 09-09 C10B 撤回段的數字；§8.4 第 3 點原本的 G5/G6/D7 實測。
+
+(2) docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md —— 卡片任務 2
+ :28-37「同步備忘：…尚未帶上這段聲明——留待下一張…順路同步」→「同步記錄（2026-09-25 更新）：已於 WF0925-K1 帶上」，
+ 寫明改了什麼（PlateModel.h 檔頭「主張域」段；water_gong_free 的 description 改寫、換成 bronze ν=0.34 比值）、
+ WAV 8/8 位元不變（water_gong_free 在 8 首內）、root_score_sha256 會變（預期）、staged 未 commit；原備忘原句保留在最後一行。
+ 依據：[5] git diff --cached（PlateModel.h +9/−1、water_gong_free.score.json description 1 行）；
+ wf0925_K1_bit_identity.txt:57、:60、:83；wf0925_K1K2fix_bit_identity.txt:43；wf0925_K1_summary.txt 第 6 項 D13-sync；
+ b6_method/sha256_before_post_a14.txt 第 6 行（water_gong_free 在基準 8 首內）。
+
+(3) docs/WOOD_ANISOTROPY_SOURCES.md —— 卡片任務 3
+ a. :157-163 §5「本文件未取得該線性關係的逐項係數表（Table 5–15…）」→「2026-09-25 更新：Table 5–15 已取得（WF0925-L1）」，
+    指向 docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md §7（FPL-GTR-282 第 5 章第 5–36 頁；GTR-190 同頁同表），
+    舉一格原表數字（12% 含水率順紋 MOE：−50 °C +17%、+50 °C −7%）；原記錄原句保留。
+    依據：D1 文件 §0 第 5 點（:41）、§2.1 S12／S13（:80-81）、§7（:391-432；:430-432 就是點名本檔 :157、:198 可改成已取得）。
+ b. :189 §7 引用清單第 2 列（GTR-282「HTTP 403、未取得」）加註：L1 已從美國林務局官方 Treesearch 取得第 5 章（D1 §2.1 S12）。
+    卡片只點名 :157、:198；這一列是同一件事的狀態，順帶同步。
+ c. :203-204 §8 勾選「- [ ] …（Table 5–15）未取得」→「- [x] …已取得（2026-09-25，WF0925-L1；轉錄見 D1 §7；原記錄為「未取得」）」。
+ D1 文件的節號是用 grep "^## §" 查的：§7 = 「D6：Wood Handbook Table 5–15（溫度對力學性質的影響）」。
+
+(4) ROADMAP_PHYSICS.md —— 卡片任務 4（原有 483 行一行都沒位移；只改 7 行內容＋檔尾附加 27 行）
+ a. :17 檔頭引言句尾加：「WF0925 輪（2026-09-25）的落地狀態記在檔尾…（放檔尾，是為了不讓其他文件引用的本檔行號位移）」。
+ b. :21 A14 列句尾加「09-25 WF0925-N1 更新：零點地圖完成（16/16 落在槌力脈衝頻譜零點），處理方式待裁決包 Q15」。
+ c. :26 D13 列「（尚未做）」→「（~~尚未做~~ 09-25 已由 WF0925-K1 同步，staged 未 commit；見檔尾 WF0925 補記）」。
+ d. :27 D9→D9c 列句尾加「09-25 WF0925-K2 更新：已加 kIrWetMakeupGain == 26.9f 精確相等 CHECK（只釘住常數）；
+    IR 與 ALGO 響度差仍沒有判定（Q01）；約 18.06 dB 來自 JUCE Convolution 0.125 正規化，見 D9 裁決包檔尾」。
+ e. :28 D11 列句尾加「09-25 WF0925-F5 更新：根因已查清（C4 基頻 T60 變短造成的頻譜洩漏），待 Q16」。
+ f. :170 R7 待裁註記句尾加「→ 見裁決包 Q03」（跟 R6 同一個註記區塊，順帶補）。
+ g. :171 R6 待裁註記句尾加「→ 見裁決包 Q02」＋Q02 新發現：CLI 渲染路徑 src/score/ScoreRenderer.h:11 include ../dsp/EffectsChain.h、
+    src/dsp/EffectsChain.h:3-5 再 include ../effects/SimpleReverb.h／StereoDelay.h／Compressor.h，但 R6 字面沒列 src/effects/。
+    規則原文沒改。依據：[6] grep；WF0925_open_decisions.zh-TW.md Q02 背景數字。
+ h. :484-510 新段「2026-09-25 WF0925 輪落地補記」，每條一行＋證據（卡片列的 11 項，加上 WF0925_README §6 也點名的
+    B7-residual、D9c-calib 兩項註解同步，共 13 列）：
+    E8（K1；K 稽核把外掛 DLL 的 malloc／calloc／realloc 換成計數器，5 情境×8 note-on 全 0、負對照每 note-on 1；
+        註明「不是 repo GATE」，正式化待 O08）／E9（atomic；H8 四個 tail 值改前改後逐字相同）／E14（state_version=3、preset 格式 2）／
+    E15（原子替換＋SHA-256 已知答案 3 組＋兩種損壞修復；"abc" 與 448 位元對過 FIPS 180-2，空字串只有 hashlib）／
+    D12（情境 1、2 舊鍵斷言）／D9c-guard（== 26.9f，讀到 26.8999996；不是容差；0.25 dB 沒加，Q01；K-02 0.112 dB）／
+    HostProbe 89→106→215（含 cwd 不再必須是 repo 根目錄、E16 27 個工廠 preset）／pytest 270→288（新增 18、刪除 0）／
+    D13 同步完成／D16 零點地圖完成待 Q15／D11-F5 根因完成待 Q16；最後一句整合卡 10 條 GATE 全綠。
+    依據：wf0925_K1_summary.txt 第 1–6 項、wf0925_K1_hostprobe.txt、wf0925_K2_summary.txt 第 1–2 項、wf0925_K2_hostprobe.txt、
+    wf0925_K2_e15_sources.txt:6-7、:23-33、wf0925_integration_raw/04b_audit_repro_direct.txt:119、05_pytest.txt、05a_pytest_collect_diff.txt、
+    09_hostprobe_cwd_repo.txt、09b_hostprobe_cwd_output_wf0925_INT.txt、wf0925_INTEGRATION.txt:80-82、:91-93、:125、:135、:147-152；
+    output/wf0925/K_audit2/alloc/run_current.log（5 個情境 SCENARIO TOTALS 全 0）、run_negative_control.log（每個 note-on 1 次）；
+    wf0925_N1_fur_elise_validation.txt:161-163、:193；wf0925_F5_reproduce.txt:18、:56、wf0925_F5_decomposition.txt:123、:129、
+    wf0925_F5_single_variable.txt:82、:96。
+ 為什麼放檔尾、不插檔頭：裁決包 reports/decision_packets/WF0925_open_decisions.zh-TW.md 引用本檔 :161／:171（Q02）、:164（Q03）、
+ :474-479（Q04）、:144（Q19），docs/KNOWN_LIMITS_INDEX.zh-TW.md 引用 :27、:140、:143-148、:441、:450-456、:468；插在檔頭會讓這些全部錯位，
+ 而裁決包是交接卡的權限、本卡不能改。[7] 核對：§1、§6 逐行相同；原範圍內只有 17、21、26、27、28、170、171 七行內容變。
+
+(5) docs/correspondence/ 兩封信 —— 卡片任務 5（只改第 1 行標題，其餘不動）
+ 2026-09-10_TU_Berlin_directivity_license_request.md :1「# 信件草稿 1：…」→「# 信件 1（已寄出 2026-09-15）：…」
+ 2026-09-10_Iowa_MIS_thai_gong_equipment_query.md   :1「# 信件草稿 2：…」→「# 信件 2（已寄出 2026-09-15）：…」
+ 依據：兩檔第 3 行狀態行（G1 已改）「已寄出（2026-09-15，依月月記錄），等回覆」；HANDOVER.md:144、TODO.md:46、DEVLOG.md:109、:126。
+
+(6) reports/gate_outputs/wf0914_INTEGRATION.txt —— 卡片任務 6（只在檔尾附加勘誤 :174-185；上方原文一字未改）
+ :97「15 項自我測試全部 PASS」→ 勘誤：應為 13 項，GATE 7 判定不變。
+ 依據：[4] wf0914 raw 13 行 PASS、0 行 FAIL；wf0925 raw 13 行；wf0925_integration_raw/07b_selftest_vs_wf0914.txt「DIFF_EXIT=0  (行數: 13 vs 13)」。
+
+(7) reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md —— 卡片任務 7（只在檔尾附加 :168-179）
+ E18 未竟項：×26.9 裡約 18.06 dB 來自 JUCE Convolution 的 0.125 正規化。行號本卡 grep 確認（[3]）：
+ src/effects/EffectChain.h:89-96（loadImpulseResponse 只傳 4 個參數 → 用預設 Normalise::yes）、
+ libs/JUCE/modules/juce_dsp/frequency/juce_Convolution.h:240-242（宣告預設 Normalise::yes）、
+ juce_Convolution.cpp:789-790（makeEngine 在 Normalise::yes 時呼叫 normaliseImpulseResponse）、:623-629（calculateNormalisationFactor）、
+ :628（return 0.125f / std::sqrt (sumSquaredMagnitude);）；JUCE 8.0.12（juce_StandardHeader.h:42-44）、submodule 501c076。
+ 內容：事實、後果（D9c-guard 擋不住 JUCE 改 0.125）、升 JUCE 前重跑 K-02（整合卡值 0.112 dB，04b:119）／K-02-EXT 並再看這幾處、
+ 有變就停下帶數字給月月（程序提醒，不是新門檻；要不要正式化見 Q01 B／C）；用詞備註 +28.58 dB vs 20·log10(26.9)=28.595 dB
+ （WF0925_README §6 點名的 K 稽核 note）；EffectChain.h 註解還沒補這句（要改 src/ 另開卡）。
+ 另核對：tests/audit_repro.cpp 的 K-02 走 EffectChain::loadImpulseResponse()（:1157），所以 JUCE 改了正規化，K-02 的讀數會跟著變。
+
+(8) docs/KNOWN_LIMITS_INDEX.zh-TW.md —— 卡片「若需同步」（只改內容、不增減行）
+ a. :7 檔頭：註明 A1–A8 指向 EARFREE／ENGINE_DOMAIN_CLAIMS 的行號已改成 WF0925b 同步後的行號；ROADMAP 行號刻意沒位移、仍與 HEAD 相同。
+ b. A1–A8 行號：ENGINE_DOMAIN_CLAIMS §1 :10-30 → :10-37；EARFREE §8.4 item 5 :280-289 → :301-310、§9.7 :676-705 → :722-751、
+    §8.5 :297-309 → :321-333、:310-326 → :334-350、§8.2 :212-230 → :218-237、§8.4 item 4 :276-279 → :295-300、§8.5 :296 → :320、
+    :292-295 → :313-319。依據：[8] 行號對照（:212-230 與 :10-30 的結尾行本身被本卡改過，新結尾 :237／:37 由人工確認）。
+ c. A6：引號內原文不動，後面加註「句中 883/671 的最新實測為 889/677，措辭是否更新待月月重新核定」。
+ d. A8 短標籤「基頻天生弱的高音」→「基頻被壓得很弱的音（08-30 是 22 顆高音；A14 之後是 D16 的 16 顆）」，跟出處 §8.5(b) 同步。
+ e. B14「D9c 常數沒有 GATE 鎖住」→ 補「09-25 K2 已加精確相等 CHECK 釘住 26.9；響度差仍沒判定；約 18.06 dB 綁在 JUCE 0.125 正規化，
+    見 D9 裁決包檔尾與 Q01」。
+
+(9) docs/workcards/WF0907_README.md（檔尾附加 :101-108）、docs/workcards/WF0914_README.md（檔尾附加 :36-44）—— 卡片任務 8
+ 小段「WF0925 後更新」（上方歷史原文不改）：HostProbe 不再依賴 cwd（cwd → TSUKI_REPO_ROOT → exe 往上找；複本放 repo 外又沒設變數會
+ 4 個 H8 FAIL）；pytest 288＝282＋1＋5、HostProbe 215／0（WF0907 另列 AuditTest 110）；本機 Python 3.13.3（CI 3.12.8）；
+ render_wf_scores.py 的 --workdir（repo 外）、--cli（Windows 絕對路徑）、--outdir（P1 新增）、diff --strip-trailing-cr；
+ 位元基準 sha256_before_post_a14.txt（WF0907 那份原文還寫 sha256_before.txt／post_d8）；WF0914 另註 build\ 已由整合卡重建（b84c775b…）、
+ 9123db8f 備份在 exports/renderer_archive/；都指向 WF0925_README §0。
+ 依據：WF0925_README.md §0（:15-22）；wf0925_K2_hostprobe.txt（K2 summary 第 1 項 a–e）；wf0925_INTEGRATION.txt:69、:80-82、:91-93、:147-152；
+ reports/gate_outputs/wf0907_method/render_wf_scores.py:37-42、:111-132；裁決包 O17（Python 3.13.3）。
+
+======================================================================
+二、數字核對（命令：PYTHONIOENCODING=utf-8 python output/wf0925b/DS/verify_numbers.py；cwd＝repo 根目錄；只讀）
+======================================================================
+== [1] V1 stem_verify 全量（output/wf0925/V1/stem_full_report.json，gitignored；sha256 應為 a4647c96…）
+a4647c96246999fad03334e1abdcefc7f5048b67f295db78e8364d9f9525ec67 *output/wf0925/V1/stem_full_report.json
+summary {'pass': 677, 'fail': 16, 'unverified': 212} | events 905
+pitch measured 889/905, within +/-5 c: 889, max |pitch_cents| = 3.0355 c
+onset measured 677/905, within +/-10 ms: 677, max |onset_err_ms| = 6.9272 ms
+UNVERIFIED 212, max expected f0 = 164.81 Hz (<167: True), rules_histogram {'Re': 212}
+FAIL 16, reason contains "near-silent fundamental band": 16
+FAIL by note: {'E5': 9, 'A5': 4, 'A6': 2, 'A#6': 1}
+superposition established=True bit_exact=False residual_peak_dbfs=-119.42 n_stems=905 budget=5.394220e-05 (-85.36 dBFS)
+
+== [2] V1 partial_verify 全量（output/wf0925/V1/partial_full_report.json，gitignored）
+status=informational gate_ready=False amplitude_claim=none
+partial slots 5428: {'PASS': 4577, 'UNVERIFIED': 2, 'FAIL': 849} ; FAIL up 848 / down 1 ; max |FAIL| 12.39 c
+events with != 6 partials: [(733, 'E7', 5), (734, 'D7', 5)]
+event 0 partial verdicts: [(1, 'PASS'), (2, 'PASS'), (3, 'PASS'), (4, 'PASS'), (5, 'UNVERIFIED'), (6, 'UNVERIFIED')]
+pitch_via_partials: 16 events {'PASS': 16}, range -3.56 .. 1.33 c
+caveats[0]: status=informational, gate_ready=false: this report is NOT GATE evidence (A13 decision packet 選項 B+; C10 self-cal still pending 月月裁決).
+
+== [3] JUCE Convolution 0.125 正規化（行號用 grep 確認）
+623:static float calculateNormalisationFactor (float sumSquaredMagnitude)
+628:    return 0.125f / std::sqrt (sumSquaredMagnitude);
+631:static void normaliseImpulseResponse (AudioBuffer<float>& buf)
+789:        if (wantsNormalise == Convolution::Normalise::yes)
+790:            normaliseImpulseResponse (resampled);
+240:    void loadImpulseResponse (const File& fileImpulseResponse,
+241-                              Stereo isStereo, Trim requiresTrimming, size_t size,
+242-                              Normalise requiresNormalisation = Normalise::yes);
+42:#define JUCE_MAJOR_VERSION      8
+43:#define JUCE_MINOR_VERSION      0
+44:#define JUCE_BUILDNUMBER        12
+submodule libs/JUCE: 160000 501c07674e1ad693085a7e7c398f205c2677f5da 0	libs/JUCE
+    void loadImpulseResponse (const juce::File& file)
+    {
+        convolution.loadImpulseResponse (file,
+                                         juce::dsp::Convolution::Stereo::yes,
+                                         juce::dsp::Convolution::Trim::yes,
+                                         0);
+        irLoaded.store (true, std::memory_order_release);
+    }
+20*log10(0.125) = -18.06 dB ; 20*log10(26.9) = 28.595 dB
+119:[K-02] RMS difference (IR - ALGO) = 0.112 dB
+
+== [4] selftest 項數（wf0914_INTEGRATION.txt:97 寫 15）
+wf0914 raw PASS/FAIL lines: 13
+wf0914 raw FAIL lines     : 0
+wf0925 raw PASS/FAIL lines: 13
+結果：15 項自我測試全部 PASS（short_t60_f0 / relative_axis_t60 / positive_control /
+
+== [5] D13 同步（K1）是否已 staged
+ scores/examples/water_gong_free.score.json |  2 +-
+ src/physics/PlateModel.h                   | 10 +++++++++-
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+1 line(s) with 主張域 added in PlateModel.h (staged)
+6:31b539c6ac08d942970e9d9c042b5ac3b0749c0d25ee0091bb51534ecd8ebff9  water_gong_f
+reports/gate_outputs/wf0925_K1_bit_identity.txt:60:8/8 IDENTICAL
+reports/gate_outputs/wf0925_K1_bit_identity.txt:83:# Verdict: 8/8 IDENTICAL -> R10 not triggered. water_gong_free.score.json's meta.description changed (text
+reports/gate_outputs/wf0925_K1K2fix_bit_identity.txt:43:8/8 IDENTICAL; extra in this run: []
+
+== [6] Q02：CLI 渲染路徑 include src/effects/
+11:#include "../dsp/EffectsChain.h"
+3:#include "../effects/SimpleReverb.h"
+4:#include "../effects/StereoDelay.h"
+5:#include "../effects/Compressor.h"
+
+== [7] ROADMAP_PHYSICS.md：§1 規則原文與 §6 整節逐行相同、原有行號沒有位移
+§1 (heading .. before 待裁註記) identical: True
+§6 (whole section incl. note) identical: True
+lines before/after: 483 / 510 ; changed line numbers inside the original range: [17, 21, 26, 27, 28, 170, 171]
+
+== [8] EARFREE／ENGINE_DOMAIN_CLAIMS 行號對照（給 KNOWN_LIMITS_INDEX）
+  EARFREE_MELODY_GATE_DESIGN.zh-TW.md old :212-230 -> new :218-(end line edited; see note)
+  EARFREE_MELODY_GATE_DESIGN.zh-TW.md old :276-279 -> new :295-300
+  EARFREE_MELODY_GATE_DESIGN.zh-TW.md old :280-289 -> new :301-310
+  EARFREE_MELODY_GATE_DESIGN.zh-TW.md old :292-295 -> new :313-319
+  EARFREE_MELODY_GATE_DESIGN.zh-TW.md old :296-296 -> new :320-320
+  EARFREE_MELODY_GATE_DESIGN.zh-TW.md old :297-309 -> new :321-333
+  EARFREE_MELODY_GATE_DESIGN.zh-TW.md old :310-326 -> new :334-350
+  EARFREE_MELODY_GATE_DESIGN.zh-TW.md old :676-705 -> new :722-751
+  ENGINE_DOMAIN_CLAIMS.zh-TW.md old :10-30 -> new :10-(end line edited; see note)
+
+======================================================================
+三、sha256（改前 = 開工時工作樹；改後 = 本卡完成時）
+======================================================================
+-- 改前（output/wf0925b/DS/before_sha256.txt）
+c14c7e98ec7d159e07b38da180c27ee2e3d3f58d470d2f62bc6ecef34e872478 *ROADMAP_PHYSICS.md
+c45b821cac5cae5fb5991744559c29ed97dff00d11611d2b61484f038145e670 *docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+b32018bb7949d77d7b870f91794d58683845e37ad667b0e674cfd5b40cadac66 *docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+683b6e048df5456ac7dc217424d97056b0cfd2b765190d435cb4aa8433da461a *docs/KNOWN_LIMITS_INDEX.zh-TW.md
+c9504f5eedefcc2239da40995048c61bb0f4ccadd35553888d35f8c684253441 *docs/WOOD_ANISOTROPY_SOURCES.md
+f91ff8e301c99f73af5f90aa9d6f27f93289a520a29c07f532c40a1c55869403 *docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+7fdb12b639eb9a8224ecff2b765cb52e0f5e547a2de462215e8cc5ca70c394ce *docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+f4695133175d520a8891b5b432c87dc6d378f962e74edd7449b7ede88fe4d622 *docs/workcards/WF0907_README.md
+6c6d0c8a13bbe4acaa14af14d489be88f57117510f49073414589915ba2473e4 *docs/workcards/WF0914_README.md
+9689aee27f0b4e94a51b4d92fda786bcaeb2855397b4ab4f19b3845e6d5ae10b *reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
+8697d076ec298d6b0b556b1cf7063db73f49bd5dd62060fc8d11c1dc5b192f7b *reports/gate_outputs/wf0914_INTEGRATION.txt
+-- 改後（output/wf0925b/DS/after_sha256.txt）
+7bf8aa7b95b80fa4f60379a2862aaae2d28a76658b83d0654f9277b4aa1849c8 *ROADMAP_PHYSICS.md
+f4a803d8cb67a01a2665b493c4fd250e1507b58617b0f1e1487448e4a97dbc22 *docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+afd245c9a36f0722ff19496023c397f1d2315cc637cdb06100bf14b5bc50d4fd *docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+eba6a7aff389638b7e7156501c1199364bd86fdfb16712bb34e9e090a8c4357d *docs/KNOWN_LIMITS_INDEX.zh-TW.md
+2766e8dc1a84fc971f19f8fca314c8b299d6295373b11736f26f7d796a30a1cd *docs/WOOD_ANISOTROPY_SOURCES.md
+98f1a9a8d1dbbb9d07e915ce3d72584e979200c186c1db3fa3a742dc2c17b37a *docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+d2068a158ad0858456ef4117e3e524f19f8dd49793bcff4e8c7a598884ef9e6b *docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+8c50aac69a5a5c1f6463980588dfd9b8348951c7b79597b5c7c87e889eca4919 *docs/workcards/WF0907_README.md
+d843484beee574b4264d54e41aab276167b9dc2ba2c43d6383fc212f1688e9fc *docs/workcards/WF0914_README.md
+7ac9d3b4e87b3030d1046a48602c28ce413fdbcfa12f7705535c1405558d3d85 *reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
+d441752f757aa006ea970813169df3edc0728f0660758e7e41641bcde18732ae *reports/gate_outputs/wf0914_INTEGRATION.txt
+
+======================================================================
+四、完整 diff（git diff -- <上面 11 個檔>：工作樹 vs index，也就是本卡的改動本身；CRLF 檔的行尾 CR 已去掉以便閱讀）
+======================================================================
+diff --git a/ROADMAP_PHYSICS.md b/ROADMAP_PHYSICS.md
+index 79eb820..70623e8 100644
+--- a/ROADMAP_PHYSICS.md
++++ b/ROADMAP_PHYSICS.md
+@@ -14,18 +14,18 @@
+ > 過程細節見 `DEVLOG.md` 09-07～15 段與 `TODO.md` 開頭快照；逐條查證見 `reports/status_check_2026-09-25/`（2026-09-25 盤點，寫作時未入庫）。
+ > **git 狀態**：本文件較早段落裡的「unstaged 待審／待 push／等 UI mockup 裁決後才 merge」等字樣是當時的狀態，保留作歷史。
+ > 那些批次（08-06 響度校準、B1～B6、WF0907～0910 各卡）都已 commit、push 並 merge `main`（最近一次 merge `3f9b90a`，2026-09-15）。
+-> **WF0914 成果 2026-09-25 依月月裁決分 7 個 commit 入庫（未 push；hash 見 git log）。**
++> **WF0914 成果 2026-09-25 依月月裁決分 7 個 commit 入庫（未 push；hash 見 git log）。** **WF0925 輪（2026-09-25）的落地狀態記在檔尾「2026-09-25 WF0925 輪落地補記」**（放檔尾，是為了不讓其他文件引用的本檔行號位移）。
+ 
+ | 項目 | 裁決（日期） | 做了什麼 | 證據 |
+ |---|---|---|---|
+-| **A14** 高音弱基頻（M2/B4 範圍，會改渲染） | 規劃者 2026-09-08 代決「主因是引擎缺陷，B-2 先做、B-1 等文獻」（月月 09-07 委託，可推翻）；**月月 2026-09-10 放行 B-2 patch** | Felt 槌 `HammerImpulse::pianoHammerTauC()` 的音高形狀改錨已溯源的 `keytrackScale()`（k=0.32），力度形狀不變；G5/G6 基頻不再落進力脈衝深零點。位元不變 7/8，只 physical_piano 變，**8 首位元基準自此改用 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`**。B-1（力脈衝深零點形狀本身）仍等文獻（D10 補摘後兩篇缺口文獻仍付費牆）。**2026-09-25 盤點新發現**：給愛麗絲全曲乾聲 905 顆有 16 顆「基頻帶近乎無聲」FAIL（E5×9、A5×4、A6×2、A♯6×1，只出現在特定力度，例如 E5 只有 velocity 0.278 的 9 顆 FAIL）——深零點是搬到別的音高×力度組合，A14 報告只掃了音高軸。修法未定，**A14 維持開放**（`TODO.md` 登記為 D16） | 裁決包 `reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md`；Rule 10 報告 `reports/a14_tauc_keytrack_before_after.md`；`reports/gate_outputs/wf0910_A14_apply.txt`／`wf0910_A14_apply_AUDIT.txt`；16 顆見 `output/wf0914/D14/g2_full_report.json`（本機，gitignore；summary pass 677／fail 16／unverified 212）與盤點 `STATUS_CHECK.zh-TW.md` §2-1 |
++| **A14** 高音弱基頻（M2/B4 範圍，會改渲染） | 規劃者 2026-09-08 代決「主因是引擎缺陷，B-2 先做、B-1 等文獻」（月月 09-07 委託，可推翻）；**月月 2026-09-10 放行 B-2 patch** | Felt 槌 `HammerImpulse::pianoHammerTauC()` 的音高形狀改錨已溯源的 `keytrackScale()`（k=0.32），力度形狀不變；G5/G6 基頻不再落進力脈衝深零點。位元不變 7/8，只 physical_piano 變，**8 首位元基準自此改用 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`**。B-1（力脈衝深零點形狀本身）仍等文獻（D10 補摘後兩篇缺口文獻仍付費牆）。**2026-09-25 盤點新發現**：給愛麗絲全曲乾聲 905 顆有 16 顆「基頻帶近乎無聲」FAIL（E5×9、A5×4、A6×2、A♯6×1，只出現在特定力度，例如 E5 只有 velocity 0.278 的 9 顆 FAIL）——深零點是搬到別的音高×力度組合，A14 報告只掃了音高軸。修法未定，**A14 維持開放**（`TODO.md` 登記為 D16）。**09-25 WF0925-N1 更新**：零點地圖完成（16/16 落在槌力脈衝頻譜零點），處理方式待裁決包 Q15（見檔尾 WF0925 補記） | 裁決包 `reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md`；Rule 10 報告 `reports/a14_tauc_keytrack_before_after.md`；`reports/gate_outputs/wf0910_A14_apply.txt`／`wf0910_A14_apply_AUDIT.txt`；16 顆見 `output/wf0914/D14/g2_full_report.json`（本機，gitignore；summary pass 677／fail 16／unverified 212）與盤點 `STATUS_CHECK.zh-TW.md` §2-1 |
+ | **D8** 空靈鼓槌具（改 score，會改渲染） | **月月 2026-09-09 裁決 `wood_mallet`** | 兩首月光空靈鼓相關 score 的 tongue_drum 事件 `exciter: finger → wood_mallet`（兩檔各 1142 事件，混音版揚琴事件不動）；獨奏版 200 Hz 以下能量 97.36%→17.55%，f0／T60 逐位元不變 | 裁決包 `reports/decision_packets/D8_tongue_drum_diagnosis.zh-TW.md`；Rule 10 報告 `reports/d8_tongue_drum_exciter_before_after.md`；`reports/gate_outputs/wf0909_D8_exciter.txt` |
+ | **F-03** IR preset 回存（外掛層；效果鏈屬 §0 域外） | 規劃者代決「B＋＋缺檔三態」（月月 2026-09-07 委託 AI 查外部資料決定，可推翻） | 受管理 IR 庫 `src/IRLibrary.h`（sha256 去重）、preset 存 `reverb_ir{kind,sha256,original_name}`、缺檔三態、`getIRStatus()` 為 UI／音訊單一真相 | `reports/decision_packets/F03_IR_PRESET_RECALL.zh-TW.md` §7（§8 裁決欄未勾，代決記錄在 `DEVLOG.md` 09-07～09 段）；`reports/gate_outputs/wf0908_P3_f03.txt` |
+ | **C10** 量測器自證（音高判定用的尺） | 月月 2026-09-09 選 B（改估計器）→ STFT 五候選＋時域 NLS 一候選全否決 → **月月 2026-09-10 改選 A（收窄主張域）** | 音高判定含量測器 ≤1.18 cent 已知系統誤差（開發 1.1721／hold-out 1.0840），±5 cent 門檻不變，**不可宣稱量測器 ≤1 cent**；產品估計器 `measure_pitch_cents()` 未動，NLS 候選只存 patch | `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.5／§9.7；`reports/decision_packets/C10_selfcal_domain.zh-TW.md` §7；`reports/gate_outputs/wf0910_C10A_landing.txt`；`reports/c10c_nls_candidate.patch` |
+ | **D15** 量測器自證補放鍵段語料 | **月月 2026-09-15 選 A'** | 主張域再收窄：≤1.18 cent 只涵蓋持續段；放鍵/阻尼段已知誤差上界 ~7.2 cent（開發 5.2304／hold-out 7.2055）；B'（另找估計器）不追 | `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.5；`reports/gate_outputs/wf0914_D15_gate1_*.txt`；施工卡 `docs/workcards/WF0914_D15_selfcal_corpus.md` |
+-| **D13** 水鑼 2.0× 缺 partial | **月月 2026-09-15 選 B** | 主張域收窄：`water_gong` 是自由邊平板、非乳突鑼，2.0× 附近無模態是域限制、非計算錯誤（已同步 §0 驗證域表 Water Gong 列）。`PlateModel.h` 檔頭與 `scores/examples/water_gong_free.score.json` 描述的同步，照裁決留待下一張動這兩檔的卡順路做（尚未做） | `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §1；裁決包 `reports/decision_packets/D13_gong_2x_partial.zh-TW.md` §4；`docs/GONG_PARTIAL_ANALYSIS.zh-TW.md`；`reports/gate_outputs/wf0914_D13_plate_ratios.txt` |
+-| **D9 → D9c** IR 模式響度（外掛層；效果鏈屬 §0 域外） | 月月 2026-09-15 選 (a)（量真實 IR）→ **月月 2026-09-16 選項 A** | D9b 量出 3 顆真實 IR 與合成 IR 的 wet-vs-ALGO 落差都在 −28.48～−28.73 dB（結構性固定差，與 IR 檔本身響度無關）；D9c 在 `src/effects/EffectChain.h` 只對 IR 模式 wet 乘固定補償 `kIrWetMakeupGain=26.9f`（+28.58 dB），**標為 DECIDED CONVENTION、非物理常數**（R4）；四組落差收斂到 +0.112／−0.131／+0.108／−0.028 dB；CLI／score 渲染不經 EffectChain，8/8 位元不變。**2026-09-25 盤點提出的限制**：對齊參考是 ALGO 預設 room size 0.5、未指定 T60；K-02 只印數字不判定，目前沒有任何 GATE 鎖住這個常數——要不要加硬 CHECK，待月月裁決 | 裁決包 `reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md`（兩次裁決記錄）；`reports/gate_outputs/wf0914_D9b_ir_injection.txt`、`wf0914_D9c_ir_makeup_gain.txt` |
+-| **D11** 弦長／弦徑造成非諧性 B 偏高 | **月月 2026-09-15 選 C** | 候選 patch 存檔不落地；新登記「D11-F5 根因調查」卡：候選修正下 `--full` F5 piano 殘餘能量 −63.9→−58.5 dB（門檻 −60 dB）退化的機制未查，查清後帶數字回來重開 A/B | 裁決包 `reports/decision_packets/D11_string_scale_candidate.zh-TW.md`（文末裁決記錄）；`reports/d11_string_scale_before_after.md`；`reports/d11_string_scale_candidate.patch` |
++| **D13** 水鑼 2.0× 缺 partial | **月月 2026-09-15 選 B** | 主張域收窄：`water_gong` 是自由邊平板、非乳突鑼，2.0× 附近無模態是域限制、非計算錯誤（已同步 §0 驗證域表 Water Gong 列）。`PlateModel.h` 檔頭與 `scores/examples/water_gong_free.score.json` 描述的同步，照裁決留待下一張動這兩檔的卡順路做（~~尚未做~~ **09-25 已由 WF0925-K1 同步**，staged 未 commit；見檔尾 WF0925 補記） | `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §1；裁決包 `reports/decision_packets/D13_gong_2x_partial.zh-TW.md` §4；`docs/GONG_PARTIAL_ANALYSIS.zh-TW.md`；`reports/gate_outputs/wf0914_D13_plate_ratios.txt` |
++| **D9 → D9c** IR 模式響度（外掛層；效果鏈屬 §0 域外） | 月月 2026-09-15 選 (a)（量真實 IR）→ **月月 2026-09-16 選項 A** | D9b 量出 3 顆真實 IR 與合成 IR 的 wet-vs-ALGO 落差都在 −28.48～−28.73 dB（結構性固定差，與 IR 檔本身響度無關）；D9c 在 `src/effects/EffectChain.h` 只對 IR 模式 wet 乘固定補償 `kIrWetMakeupGain=26.9f`（+28.58 dB），**標為 DECIDED CONVENTION、非物理常數**（R4）；四組落差收斂到 +0.112／−0.131／+0.108／−0.028 dB；CLI／score 渲染不經 EffectChain，8/8 位元不變。**2026-09-25 盤點提出的限制**：對齊參考是 ALGO 預設 room size 0.5、未指定 T60；K-02 只印數字不判定，目前沒有任何 GATE 鎖住這個常數——要不要加硬 CHECK，待月月裁決。**09-25 WF0925-K2 更新**：已加 `kIrWetMakeupGain == 26.9f` 精確相等 CHECK（D9c-guard，只釘住常數本身）；IR 與 ALGO 的響度差仍沒有判定（裁決包 Q01）；常數裡約 18.06 dB 來自 JUCE Convolution 的 0.125 正規化，見 D9 裁決包檔尾 | 裁決包 `reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md`（兩次裁決記錄）；`reports/gate_outputs/wf0914_D9b_ir_injection.txt`、`wf0914_D9c_ir_makeup_gain.txt` |
++| **D11** 弦長／弦徑造成非諧性 B 偏高 | **月月 2026-09-15 選 C** | 候選 patch 存檔不落地；新登記「D11-F5 根因調查」卡：候選修正下 `--full` F5 piano 殘餘能量 −63.9→−58.5 dB（門檻 −60 dB）退化的機制未查，查清後帶數字回來重開 A/B。**09-25 WF0925-F5 更新**：根因已查清（C4 基頻 T60 變短造成的頻譜洩漏），待裁決包 Q16（見檔尾 WF0925 補記） | 裁決包 `reports/decision_packets/D11_string_scale_candidate.zh-TW.md`（文末裁決記錄）；`reports/d11_string_scale_before_after.md`；`reports/d11_string_scale_candidate.patch` |
+ | **B7** 第一原理力鏈 | **月月 2026-09-15 選 §5 路徑 C＋驗收基準 (a) 乙案** | In progress——Phase 0 完成、Phase 1 部分完成（欄位撤回版）、Phase 2/3 BLOCKED（月月 09-15 裁決）；詳見 §2 M10 列 B7 段末「B7 現況」 | `reports/decision_packets/B7_phase2_and_open_items.zh-TW.md` §6 |
+ | **D12／D14**（非物理主張的工程缺口） | 月月 2026-09-14 授權「補 D9～D15」；2026-09-15 稽核 PASS 關閉 | D12：舊 DAW state `reverb_ir_path` 三態遷移（HostProbe 89 PASS）；D14：`stem_verify` 記憶體串流化（905 事件全量峰值 ≈1.65 GB，判定逐位元不變） | `reports/gate_outputs/wf0914_D12_*.txt`；`reports/gate_outputs/wf0914_D14_memory_fix.txt` |
+ 
+@@ -167,8 +167,8 @@ ctest 4/4；pytest 270（264 passed＋1 skip＋5 xfail）；`physics_verify.py -
+ 10. **音色會變的改動需告知。** 任何讓既有 preset / score 渲染結果改變的物理修正（如 M2），必須產出前後對照的頻譜差異報告，讓月月知情後決定。
+ 
+ > **待月月裁決（2026-09-25 盤點提出；以上十條原文未改）**：
+-> - **R7 字面與實際流程不一致**：R7 寫「檔案留 unstaged」，但自 WF0907 起的實際流程是稽核 PASS 後由稽核執行 `git add`（staged）供月月審（`docs/workcards/WF0907_README.md`、`docs/workcards/WF0914_README.md` §2）。要不要把 R7 措辭改成「不 commit、不 push；稽核 PASS 後可 `git add`（staged）供審」，由月月決定。
+-> - **R6 範圍沒涵蓋外掛層**：R6 只列 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/`；D12 改的 `src/PluginProcessor.cpp`、D9c 改的 `src/effects/EffectChain.h`，以及 09-13 入庫的 `src/IRLibrary.h`、`src/ParameterLayout.cpp` 都不在強制範圍內（這幾張卡各自有跑 GATE，但規則文字沒有強制）。要不要把 R6 擴大到 `src/effects/` 與外掛層（`PluginProcessor`、`IRLibrary`、`ParameterLayout` 等），由月月決定。
++> - **R7 字面與實際流程不一致**：R7 寫「檔案留 unstaged」，但自 WF0907 起的實際流程是稽核 PASS 後由稽核執行 `git add`（staged）供月月審（`docs/workcards/WF0907_README.md`、`docs/workcards/WF0914_README.md` §2）。要不要把 R7 措辭改成「不 commit、不 push；稽核 PASS 後可 `git add`（staged）供審」，由月月決定。→ 見 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q03（2026-09-25 補記）。
++> - **R6 範圍沒涵蓋外掛層**：R6 只列 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/`；D12 改的 `src/PluginProcessor.cpp`、D9c 改的 `src/effects/EffectChain.h`，以及 09-13 入庫的 `src/IRLibrary.h`、`src/ParameterLayout.cpp` 都不在強制範圍內（這幾張卡各自有跑 GATE，但規則文字沒有強制）。要不要把 R6 擴大到 `src/effects/` 與外掛層（`PluginProcessor`、`IRLibrary`、`ParameterLayout` 等），由月月決定。→ 見裁決包 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q02。Q02 另查到：CLI 渲染路徑也會用到 `src/effects/`（`src/score/ScoreRenderer.h:11` include `../dsp/EffectsChain.h`，`src/dsp/EffectsChain.h:3-5` 再 include `../effects/SimpleReverb.h`、`StereoDelay.h`、`Compressor.h`），但 R6 字面沒列 `src/effects/`（2026-09-25 補記，R6 原文未改）。
+ 
+ ---
+ 
+@@ -481,3 +481,30 @@ python tools/physics_verify.py --t60
+ 
+ - 完成 GATE → 更新 §2 表狀態 + 在 `DEVLOG.md` 記一筆（含 GATE 輸出摘要）。
+ - 本文件的任務勾選框只在 GATE 輸出存在時才能打勾。
++
++---
++
++## 2026-09-25 WF0925 輪落地補記（依 Rule 8；WF0925b-DS 補寫）
++
++> 放在檔尾、不插在檔頭：是為了不讓 `reports/decision_packets/WF0925_open_decisions.zh-TW.md`（Q02 `:161`／`:171`、Q03 `:164`、Q04 `:474-479`、Q19 `:144`）與 `docs/KNOWN_LIMITS_INDEX.zh-TW.md` 引用的本檔行號位移。檔頭「2026-09-07～16」段的引言已加一句指到這裡。
++> **git 狀態**：以下全部 staged、未 commit（HEAD 仍 `18430c4`）；commit 切法見 `docs/workcards/WF0925_README.md` §4 與裁決包 Q33。
++> 本輪沒有任何卡改渲染輸出（8 首代表曲位元不變 8/8 IDENTICAL，R10 未觸發），沒有新增容差或 GATE 判定門檻；§1 規則原文與 §6 容差表都沒動。
++> 證據檔都在 `reports/gate_outputs/`（下表省略這個前綴）；`output/` 開頭的是 gitignored 的稽核產出。
++
++| 項目 | 狀態 | 做了什麼（一行） | 證據 |
++|---|---|---|---|
++| **E8** 音訊執行緒零配置 | 已落地（WF0925-K1）；「零配置」是 K 稽核的實測，**不是 repo GATE** | 揚琴（含鋼琴）每按一個音都在音訊執行緒建一次 `juce::String`，改成 `CimbalomEngine.h` 的 static 常數；K 稽核第 2 輪把外掛 DLL 的 malloc／calloc／realloc 入口換成計數器，5 種引擎情境 × 8 個 note-on 全部 0 次，負對照每個 note-on 1 次 | `wf0925_K1_summary.txt` 第 1 項；稽核實測 `output/wf0925/K_audit2/alloc/run_current.log`、`run_negative_control.log`；做成正式 GATE 待裁（裁決包 O08） |
++| **E9** tail 長度改讀 atomic | 已落地（K1） | `getTailLengthSeconds()` 只讀 20 Hz Timer 在訊息執行緒算好的 atomic 值；HostProbe H8 四個 tail 值改前改後逐字相同（34.4814／178.734／319.848／178.734 s） | `wf0925_K1_summary.txt` 第 2 項；`wf0925_K1_hostprobe.txt` |
++| **E14** plugin state 版本欄位 | 已落地（K1） | plugin state 一律寫 `state_version=3`；user preset 格式版本 2，讀到比 2 新的照樣載入、但拒絕覆寫（永久相容包袱的知情確認見裁決包 O14） | `wf0925_K1_summary.txt` 第 3 項；`wf0925_K1_hostprobe.txt` |
++| **E15** IRLibrary 損壞修復 | 已落地（K1；期望雜湊出處 K2） | 庫檔雜湊不符就寫暫存檔、驗雜湊、原子替換；`audit_repro` 加 SHA-256 已知答案 3 組＋截半／清成 0 位元組兩種損壞修復情境；"abc" 與 448 位元兩組對過 FIPS 180-2 原文（空字串那組原文沒有，只有 hashlib） | `wf0925_K1_summary.txt` 第 5 項；`wf0925_K2_e15_sources.txt` |
++| **D12** 舊鍵斷言 | 已落地（K1） | HostProbe D12 情境 1、2 各加「輸出 state 不含 `reverb_ir_path`」斷言，PASS；情境 3 的產品行為沒動（裁決包 Q10） | `wf0925_K1_summary.txt` 第 4 項；`wf0925_K1_hostprobe.txt` |
++| **D9c-guard** 常數釘住 | 已落地（WF0925-K2） | `audit_repro` 加 `kIrWetMakeupGain == 26.9f` 精確相等 CHECK（讀到 26.8999996，PASS）；這是同一個 float 字面值的相等比較，不是容差。「響度差 ≤0.25 dB」的 CHECK 沒加（0.25 dB 沒裁過，裁決包 Q01）；K-02 仍只印數字（0.112 dB）；常數裡約 18.06 dB 綁在 JUCE 的 0.125 正規化上，見 D9 裁決包檔尾 | `wf0925_K2_summary.txt` 第 2 項；`wf0925_integration_raw/04b_audit_repro_direct.txt` |
++| **B7-residual** 註解同步 | 已落地（K1；純註解） | `src/physics/HammerImpulse.h` 三處 B7 殘留註解改成「目前沒有呼叫點（B7 09-15 裁決撤回 Path C 欄位），重新接回前先解裁決包 §1.1」；同檔另兩處泛指 call site 的歷史描述（約 :422、:471）不在 K1 範圍，仍待處理 | `wf0925_K1_summary.txt` 第 6 項 |
++| **D9c-calib** 對齊參考說明 | 已落地（K1；純說明，數值不變） | `kIrWetMakeupGain` 註解與 D9 裁決包檔尾補「對齊參考＝ALGO 預設 size 0.5、未指定 T60」，其他 size／T60 依 Python 複製版估計差 −1.4～+4.0／−2.4～+5.3 dB（估計，不是對產品 binary 的量測） | `wf0925_K1_summary.txt` 第 6 項；`reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md` 檔尾 |
++| **HostProbe 89→215** | 已落地（K1 +17 → 106；K2 +109 → 215） | K2 另把找 `data/materials.json` 改成 cwd → 環境變數 `TSUKI_REPO_ROOT` → exe 所在資料夾往上找，**不必再以 repo 根目錄為 cwd**；K2 的 E16 逐一檢查 27 個工廠 preset（27×4＋1 條負對照） | `wf0925_K2_hostprobe.txt`；整合卡 `wf0925_integration_raw/09_hostprobe_cwd_repo.txt`、`09b_hostprobe_cwd_output_wf0925_INT.txt`（兩次都 215 PASS／0 FAIL） |
++| **pytest 270→288** | 已落地（WF0925-P1） | 新基線 288＝282 passed＋1 skipped＋5 xfailed；新增 18 條（selfcal hold-out 釘住 1 條＋`tests/test_stem_stream.py` 17 條），刪除 0 條 | `wf0925_integration_raw/05_pytest.txt`、`05a_pytest_collect_diff.txt` |
++| **D13 同步** | 完成（K1） | `src/physics/PlateModel.h` 檔頭與 `scores/examples/water_gong_free.score.json` 的 `meta.description` 帶上「不是乳突鑼」的主張域；WAV 8/8 位元不變 | `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §1 同步記錄；`wf0925_K1_bit_identity.txt` |
++| **D16** 弱基頻零點地圖 | 研究完成（WF0925-N1），**待月月裁決 Q15** | 給愛麗絲 16 顆 FAIL 16/16 落在槌力脈衝頻譜零點（基頻多被壓 14.9～24.5 dB）；真正分開 PASS／FAIL 的是基頻絕對音量（描述用、非 GATE）；商品只有給愛麗絲鋼琴版受影響。A14 仍開放 | `reports/weak_fundamental_null_map_2026-09-25.zh-TW.md`；`wf0925_N1_fur_elise_validation.txt` |
++| **D11-F5** 根因 | 研究完成（WF0925-F5），**待月月裁決 Q16** | 候選 patch 下 F5 piano −63.9 → −58.5 dB 全部來自 C4 基頻 T60 變短（4.1425 → 2.6733 s）；另發現現行引擎只把 F5 探針弦徑 0.8 mm 改成 1.0 mm 就是 −59.5 dB FAIL | `reports/d11_f5_root_cause_2026-09-25.zh-TW.md`；`reports/decision_packets/D11_string_scale_candidate.zh-TW.md` 檔尾；`wf0925_F5_*.txt` |
++
++整合卡（WF0925-INT）對 staged 樹重建 `build\` 跑全套，10 條 GATE 全綠：ctest 4/4（AuditTest 110 PASS／0 FAIL）、pytest 282 passed＋1 skipped＋5 xfailed、`physics_verify.py --full` NO CHECKED FAILURES、`--selftest` 13/13、`verify_score.py --all` 75/75（1 項既有豁免）、HostProbe 215／0、位元不變 8/8 IDENTICAL。證據 `wf0925_INTEGRATION.txt`、`wf0925_integration_raw/`。
+diff --git a/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md b/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+index f9e0aed..1444aae 100644
+--- a/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
++++ b/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+@@ -193,18 +193,24 @@ size 位元相同，見 §10.1）；H7 因架構衝突未實作，待月月裁
+ （逐事件乾聲分軌 + 線性疊加證明，工具 `tools/stem_verify.py`），實測結果如下，
+ **弱域被部分轉強，但轉強的邊界必須寫清楚**。
+ 
+-### 8.1 實測數字（給愛麗絲全曲，證據：`reports/gate_outputs/stem_verify_fur_elise_run.txt`）
++### 8.1 實測數字（給愛麗絲全曲，證據：`reports/gate_outputs/stem_verify_fur_elise_run.txt`；A14 之後的乾聲重測：`reports/gate_outputs/wf0925_V1_partial_stem_verify_full.txt`）
+ 
+ | 做法 | PASS | FAIL | UNVERIFIED |
+ |---|---:|---:|---:|
+ | 整首一起判（L1 原路徑） | 30 | 14 | 862（95.2%） |
+ | 逐事件分軌（帶殘響） | 595 | 122 | 188 |
+-| **逐事件分軌（乾聲）** | **671** | **22** | **212** |
++| **逐事件分軌（乾聲）** | **677** | **16** | **212** |
+ 
+-疊加證明 ESTABLISHED：905 軌相加 vs 成品混音殘差 −118.60 dBFS（門檻 −85 dBFS）。
++（2026-09-25 更新：乾聲列原為 08-30 的 671／22／212。A14 B-2（月月 2026-09-10 放行）之後實測是
++677／16／212：09-14 WF0914-D14 全量與 09-25 WF0925-V1 全量逐顆相同，判定 0 顆不同，證據
++`reports/gate_outputs/wf0925_V1_partial_stem_verify_full.txt`。前兩列是 08-30 帶殘響那次的數字，
++09-25 沒有重跑，保留作歷史。）
++
++疊加證明 ESTABLISHED：905 軌相加 vs 成品混音殘差 −119.42 dBFS（門檻 −85 dBFS；2026-09-25
++WF0925-V1 乾聲全量實測，08-30 A14 之前是 −118.60 dBFS）。
+ => **「逐軌驗過」可在數學上轉移到成品**，這是選項 A 的立論基礎，成立。
+ 
+-**C10B 重驗（2026-09-09，§9 換估計器後）**：`671 / 22 / 212` 這組數字逐顆
++**C10B 重驗（2026-09-09，§9 換估計器後；當時還在 A14 之前）**：`671 / 22 / 212` 這組數字逐顆
+ **100% 維持不變**（同一 905 顆事件，新舊估計器判定完全相同，見
+ `reports/gate_outputs/wf0909_C10B_estimator.txt` item 4）——換句話說本節的
+ 主張域結論不受估計器改善影響，可以繼續引用。
+@@ -216,18 +222,19 @@ size 位元相同，見 §10.1）；H7 因架構衝突未實作，待月月裁
+ 
+ | 維度 | 乾聲全曲結果 |
+ |---|---|
+-| **音高** | 883/905 取得量測，**883/883 全在 ±5 cents 內，最大 \|偏差\| 2.4266 c** |
+-| **起音** | 671/905 取得精測，全在 ±10 ms 內，最大 \|偏差\| 6.9272 ms（帶殘響版 7.0522 ms） |
+-| 起音拒答 | 212 顆，全部 f0 < 167 Hz（Re 低頻頻帶解析度極限） |
+-| 起音 FAIL | 22 顆高音，基頻帶未出現足夠 rise——**不可據此宣稱音高錯** |
++| **音高** | 889/905 取得量測，**889/889 全在 ±5 cents 內，最大 \|偏差\| 3.0355 c**（2026-09-25 WF0925-V1；08-30 A14 之前是 883/883、最大 2.4266 c） |
++| **起音** | 677/905 取得精測，全在 ±10 ms 內，最大 \|偏差\| 6.9272 ms（2026-09-25 WF0925-V1；08-30 A14 之前是 671/905、最大同為 6.9272 ms；帶殘響版 7.0522 ms 是 08-30 的數字） |
++| 起音拒答 | 212 顆，全部 f0 < 167 Hz（Re 低頻頻帶解析度極限；09-25 重測相同） |
++| 起音 FAIL | 16 顆（D16：E5@0.278×9、A5@0.427×3、A5@0.452×1、A6@0.427×2、A#6@0.427×1），基頻帶近乎無聲、未出現足夠 rise——**不可據此宣稱音高錯**。成因見 N1 零點地圖 `reports/weak_fundamental_null_map_2026-09-25.zh-TW.md`（16/16 的基頻落在槌力脈衝頻譜的零點）；這 16 顆用泛音反推基頻 16/16 在 ±5 c 內（informational，`reports/partial_verify_full_2026-09-25.zh-TW.md` §4）。08-30 A14 之前是另一批 22 顆高音（G5×19、D7、G6、F#6），09-25 已全部 PASS |
+ 
+-**C10B 原始回合重驗（2026-09-09，已撤回，僅存檔）**：換上 §9.4 的柔化質心估計器後，
++**C10B 原始回合重驗（2026-09-09，A14 之前，已撤回，僅存檔）**：換上 §9.4 的柔化質心估計器後，
+ 883/905 取得量測、883/883 全在 ±5 cents 內兩個計數都不變；最大 \|偏差\| 一度從
+ 2.4266 c 測得 **1.1217 c**（見 `reports/gate_outputs/wf0909_C10B_estimator.txt`
+ item 4）。**該估計器已於 C10B 修正回合撤回（見 §9.5）：柔化漸層以期望值為中心，
+ 真值離期望值越遠柔化壓得越低，會系統性把偏差往小報，1.1217 c 這個「更準」的
+ 讀數正是這個缺陷的產物，不代表估計器真的更準。現況（估計器＝撤回後與
+-`measure_pitch_cents_legacy()` 位元組相同）＝原始的最大 \|偏差\| 2.4266 c 不變。**
++`measure_pitch_cents_legacy()` 位元組相同）＝原始的最大 \|偏差\| 2.4266 c 不變（這是 A14 之前的數字；
++A14 之後用同一個估計器實測是 3.0355 c，見上表）。**
+ 
+ ### 8.3 新確認的量測偏差機制：殘響對頻帶質心的著色
+ 
+@@ -259,10 +266,22 @@ item 4）。**該估計器已於 C10B 修正回合撤回（見 §9.5）：柔化
+ 1. **泛音（partials）完全沒有實測。** `stem_verify` 只用 `--dump-modes` 的 partials
+    **預判**「別顆音的 partial 是否污染基頻帶」，從未量測任何 partial 的頻率或振幅。
+    **不可**宣稱「泛音已驗證」。
++   （2026-09-25 註：這一點寫於 08-30。之後 `tools/partial_verify.py`（informational、`gate_ready=false`）
++   已實測 partial 頻率，09-25 第一次跑完全曲 905 顆，見 §8.6「全曲 905 顆已執行」段；振幅仍只記錄、
++   不判定，「泛音已驗證」仍不可宣稱。）
+ 2. **±5 cents 是本專案既有裁定的產品門檻，不是 ISO 或業界通用標準。**
+    容差本次未動；但量測器本身應先用合成哨兵證明自身誤差 ≤1 cent，
+    才有資格執行 ±5 cents 的產品 GATE（月月 2026-08-30 查核第 5 點）。
+-3. **22 顆高音的性質未定。** 乾聲單音實測（piano 引擎、velocity 0.427/0.462）：
++3. **弱基頻音的性質（2026-09-25 更新）。** A14 之後的起音 FAIL 是 D16 的 16 顆
++   （E5@0.278×9、A5@0.427×3、A5@0.452×1、A6@0.427×2、A#6@0.427×1）。N1 零點地圖
++   （`reports/weak_fundamental_null_map_2026-09-25.zh-TW.md` §0）已查明：16/16 的基頻都落在
++   槌力脈衝頻譜的零點（凹口）裡，被額外壓掉 14.9～24.5 dB；另有 31 顆也在凹口內但仍 PASS，
++   所以凹口是必要條件、不是充分條件，真正分開 PASS／FAIL 的是基頻的絕對音量
++   （FAIL ≤ −72.1、PASS ≥ −67.2 dBFS，對照既有的 −70 dBFS 門檻；描述用、非 GATE）。
++   這 16 顆用泛音反推基頻 16/16 在 ±5 c 內（informational，`reports/partial_verify_full_2026-09-25.zh-TW.md` §4）。
++   怎麼處理待月月裁決（`reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q15）。
++   以下是 08-30（A14 之前）那 22 顆高音的原始記錄，保留作歷史——這 22 顆 09-25 已全部 PASS
++   （`reports/partial_verify_full_2026-09-25.zh-TW.md` §5）。當時的乾聲單音實測（piano 引擎、velocity 0.427/0.462）：
+    - G5（宣告 784.0 Hz）：整軌峰值 −46.7 dBFS，主導頻率 1571.5 Hz（第二 partial，
+      比值 2.0044），宣告基頻處能量比峰值低 21.9 dB
+    - G6（宣告 1568.0 Hz）：峰值 −54.5 dBFS，主導 3214.9 Hz（比值 2.0503），基頻低 24.0 dB
+@@ -276,6 +295,8 @@ item 4）。**該估計器已於 C10B 修正回合撤回（見 §9.5）：柔化
+ 4. **可發布措辭（月月核定）**：
+    「給愛麗絲 score、模態表、渲染決定性、逐軌疊加已驗；乾聲 883 顆有音高證據，
+    其中 671 顆另有起音證據」。
++   （註：句中 883/671 的最新實測為 889/677（2026-09-25），措辭是否隨之更新待月月重新核定。
++   證據 `reports/gate_outputs/wf0925_V1_partial_stem_verify_full.txt`。）
+    **不可**寫成「905 顆音高與泛音全部驗過」。
+ 5. **不可宣稱量測器 ≤1 cent**（月月 2026-09-10 裁決選 A 後新增）。
+    `measure_pitch_cents()` 在合成哨兵上的最大誤差是 1.1721 cent（開發網格）／
+@@ -291,7 +312,10 @@ item 4）。**該估計器已於 C10B 修正回合撤回（見 §9.5）：柔化
+   （分軌把「音互相遮蔽」消除，但不改變判定慣例本身的能力）。
+ - **弱域（縮小但仍存在）**：
+   (a) f0 < 167 Hz 的起音精測（頻帶解析度極限，212 顆）；
+-  (b) 基頻天生弱的高音（22 顆）——需 harmonic-aware 判定才有解；
++  (b) 基頻被壓得很弱的音——需 harmonic-aware 判定才有解。08-30 寫作時是 22 顆高音（G5×19、D7、G6、F#6，
++  09-25 已全部 PASS）；A14 之後換成 D16 的 16 顆，成因是基頻落在槌力脈衝頻譜的零點
++  （`reports/weak_fundamental_null_map_2026-09-25.zh-TW.md`），這 16 顆用泛音反推基頻 16/16 在 ±5 c 內
++  （informational，`reports/partial_verify_full_2026-09-25.zh-TW.md` §4）；
+   (c) 任何帶殘響訊號的音高判定（§8.3）。
+ - **仍不在主張範圍內**：泛音的頻率與振幅、以及一切美學/聽感主張。
+ - **量測器自身誤差（月月 2026-09-10 裁決選 A 落地）**：音高判定含量測器自身
+@@ -341,6 +365,12 @@ A13 §4 選項 C 查遍文獻找不到可溯源的振幅容差，本工具不自
+ **身分是 informational，非 GATE**：報告 `status="informational"`、
+ `gate_ready=false`，理由是本工具重用的量測器（C10 自證）本身「informational
+ 或轉 GATE」都還待月月裁決——本工具不能比自己的前提主張更強。
++（2026-09-25 更新：上面這個理由已過時。C10 已於 2026-09-10 裁決選 A（§9.7）。WF0925-P1 已把工具的
++`gate_ready_reason` 改成：升 GATE 要月月另行裁決；A13 選項 B+ 原本以 C10 選 A 為升級前提，但 D15 A'
++（2026-09-15）之後，放鍵/阻尼段的量測器已知誤差上界約 7.2 c，大於 ±5 c，這個前提照原文已不成立。
++`gate_ready` 仍是 false。09-25 V1 那份報告的 `caveats[0]` 還寫「C10 self-cal still pending 月月裁決」，是舊字串
++（出自 WF0925 staged 版 `tools/partial_verify.py`；更新這個字串屬裁決包 O16，不在本文件範圍）。要不要升 GATE、期望值慣例怎麼定，見
++`reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q18。）
+ 
+ **拒答（reuse，不新增邏輯）**：partial 帶碰撞（本事件自己的 partial 之間
+ ±3% 帶重疊，`melody_verify.band_of`/`overlaps` 原樣重用）與**能量本底
+@@ -357,7 +387,7 @@ score 的第一顆事件）才退回 `melody_verify.BAND_GATE_DBFS`（−70 dBFS
+ `partial_trusted()`/`partial_pre_onset_floor_dbfs()` 更正；兩個判準用到
+ 的常數皆為既有值，未新增容差，只是「哪個常數用在哪個情境」寫錯了。）
+ 
+-**C13 harmonic-aware 判定（§8.5(b) 那 22 顆基頻天生弱的高音）**：`reason`
++**C13 harmonic-aware 判定（§8.5(b) 的弱基頻音；寫作時指 08-30 那 22 顆高音，A14 之後是 D16 的 16 顆）**：`reason`
+ 含 melody_verify 自己的字面標記「near-silent fundamental band」的事件，
+ 另外用**引擎自己 `--dump-modes` 的 n=1/n=2 比值**反推該音自己的非諧性係數
+ `B`（不引外部 B，不是新常數——`f_n=n·f1·√(1+B·n²)` 對 `B` 反解代數式），
+@@ -366,11 +396,11 @@ score 的第一顆事件）才退回 `melody_verify.BAND_GATE_DBFS`（−70 dBFS
+ `pitch_via_partials_verdict`——`stem_verify` 原本的 `verdict`/`reason`
+ 完全原樣照抄，兩者絕不合併。
+ 
+-**實跑統計（證據：`reports/gate_outputs/wf0908_P1_partial.txt`）**：全曲
++**實跑統計（2026-09-09 WF0908-P1 當時；證據：`reports/gate_outputs/wf0908_P1_partial.txt`）**：全曲
+ 905 事件的 `stem_verify.py --keep-stems` 嘗試過，但該工具自身
+ `compare_superposition` 步驟需同時把全部事件的 stem 陣列留在記憶體，
+-記憶體隨事件數飆到 ~41GB 而被中止，**partial_verify.py 從未在全曲 905
+-事件規模上執行過**（此為 `stem_verify.py` 既有的 O(events) 記憶體設計，
++記憶體隨事件數飆到 ~41GB 而被中止，**partial_verify.py 當時未能在全曲 905
++事件規模上執行**（2026-09-25 已執行，見本段之後的「全曲 905 顆已執行」段；此為 `stem_verify.py` 既有的 O(events) 記憶體設計，
+ 非本卡程式碼所致，細節見證據檔「附註」段）。實際跑成的是兩個子集：
+ (2a)+(2b) 22 顆弱基頻高音（G5/D7/G6/F♯6 全曲出現的全部 23 顆事件）與
+ (2c) 既有的一般 40 事件子集。**可發布措辭**：22 顆弱基頻高音的
+@@ -381,6 +411,22 @@ score 的第一顆事件）才退回 `melody_verify.BAND_GATE_DBFS`（−70 dBFS
+ 「修正回合」段。**不可**寫成「905 顆音高與泛音全部驗過」，也不可只引用
+ 「幾乎全數落在容差內」而不附上述 PASS/FAIL 拆分。
+ 
++**全曲 905 顆已執行（2026-09-25，WF0925-V1；informational、`gate_ready=false`，不是 GATE）**：
++WF0914-D14 把 `stem_verify.py` 改成串流（905 事件全量峰值約 1.65 GB）之後，partial_verify 第一次跑完
++全曲。stem_verify 677 PASS／16 FAIL／212 UNVERIFIED，跟 09-14 D14 全量逐顆相同；疊加殘差
++−119.42 dBFS（ESTABLISHED）。partial 層共 5428 個位置（比 905×6 少 2：E7、D7 的 `--dump-modes`
++只給 5 個泛音），量到 5426 個：**PASS 4577／FAIL 849**，拒答 2 個（第 0 顆 E5 的 n=5、n=6：整首
++第一顆沒有起音前靜音可比，退回既有的 −70 dBFS 絕對地板）。849 個 FAIL 裡 848 個偏高、1 個偏低，
++最大絕對偏差 12.39 c；主因是工具以「第 0 根弦」為期望值，而這首每顆音 3 根弦的振幅加權平均約比
++第 0 根高 +5 c（描述用對照、非判定；期望值慣例怎麼定待裁決包 Q18）。D16 那 16 顆（stem_verify 判
++「基頻帶近乎無聲」）的 `pitch_via_partials` **16/16 PASS**（−3.56～+1.33 c）。08-30 那 22 顆舊弱
++基頻高音現在基頻直接量 22/22 PASS；用同一個 `compute_pitch_via_partials()` 補算是 20 PASS／2 FAIL
++（D7 −5.48 c、G6 −5.10 c，兩顆的基頻直接量都在 ±0.2 c 內；待 Q18b），所以上一段 09-09 的可發布措辭
++「22 顆弱基頻高音的 `pitch_via_partials` 全數 PASS」對現行 binary 已不成立，新措辭待月月核定。
++證據：`reports/partial_verify_full_2026-09-25.zh-TW.md` §0–§5、
++`reports/gate_outputs/wf0925_V1_partial_stem_verify_full.txt`、`reports/gate_outputs/wf0925_V1_partial_verify_full.txt`。
++**仍不可**寫成「泛音已驗證」或「905 顆音高與泛音全部驗過」，也不可只引 PASS 4577 而不附 FAIL 849。
++
+ **C10B 原始回合重驗（2026-09-09，informational，已撤回，僅存檔，見
+ `reports/gate_outputs/wf0909_C10B_estimator.txt` item 9）**：換上 §9.4 的
+ 柔化質心估計器後，一般 40 事件子集 partials_verified=237/240（計數不變）、
+diff --git a/docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md b/docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+index d47f689..f8a37ff 100644
+--- a/docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
++++ b/docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+@@ -25,6 +25,13 @@
+   關鍵原始文獻 Rossing & Shepherd (1982) 全文未取得（見裁決包
+   `reports/decision_packets/D13_gong_2x_partial.zh-TW.md` §2 選項 A 前提）。
+ 
+-**同步備忘**：`src/physics/PlateModel.h` 檔頭註解與
+-`scores/examples/water_gong_free.score.json` 的 `meta.description` 尚未帶上這段聲明——
+-留待下一張本來就要動這兩個檔案的卡順路同步（純註解/描述，不影響渲染，屆時仍照 R6 慣例驗證）。
++**同步記錄（2026-09-25 更新）**：`src/physics/PlateModel.h` 檔頭註解與
++`scores/examples/water_gong_free.score.json` 的 `meta.description` 已於 **WF0925-K1** 帶上這段聲明：
++PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼，引本檔 §1 與 bronze ν=0.34 比值
++1 : 1.738 : 2.329 : 3.925）；water_gong_free 的 description 拿掉「hung gong 的物理上合適邊界」的說法，
++改寫成「不是乳突鑼」的聲明並換成同一組比值（出處 `reports/gate_outputs/wf0914_D13_plate_ratios.txt`）。
++純註解／描述，不影響渲染：8 首代表曲位元不變 8/8 IDENTICAL（water_gong_free 在這 8 首內，
++`reports/gate_outputs/wf0925_K1_bit_identity.txt`、`wf0925_K1K2fix_bit_identity.txt`）；render manifest 的
++`root_score_sha256` 會變（預期）。改動目前 staged、未 commit，可用
++`git diff --cached -- src/physics/PlateModel.h scores/examples/water_gong_free.score.json` 查看。
++原備忘（2026-09-15）：「尚未帶上這段聲明——留待下一張本來就要動這兩個檔案的卡順路同步」。
+diff --git a/docs/KNOWN_LIMITS_INDEX.zh-TW.md b/docs/KNOWN_LIMITS_INDEX.zh-TW.md
+index 06ecdc7..8e06423 100644
+--- a/docs/KNOWN_LIMITS_INDEX.zh-TW.md
++++ b/docs/KNOWN_LIMITS_INDEX.zh-TW.md
+@@ -4,7 +4,7 @@
+ > 只做「已知限制索引」，每條一行、指向原始裁決包或設計文件的段落與日期；
+ > **不新增主張、不改措辭**，也**不是** `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` 的新聲明（正式引擎主張只寫在那份）。
+ > 引號「」內是出處原文（省略原文的粗體標記與換行）；沒加引號的是本索引的短標籤，意思以出處原文為準。
+-> 行號是 HEAD `18430c4` 的行號（本索引引用的檔案除特別註明外，工作樹與 HEAD 相同）。
++> 行號是 HEAD `18430c4` 的行號（本索引引用的檔案除特別註明外，工作樹與 HEAD 相同）。**2026-09-25 WF0925b-DS 更新**：A1–A8 指向 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` 與 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` 的行號，已改成這兩檔在 WF0925b 同步之後的行號（EARFREE §8、ENGINE_DOMAIN_CLAIMS §1 有增補）；`ROADMAP_PHYSICS.md` 的行號 WF0925b 刻意沒有位移，仍與 HEAD 相同。
+ > 標「未入庫」的是 WF0925 同輪其他卡的產出，寫作時還沒 commit，內容可能再變。
+ 
+ 用途：做產品說明或回答「TsukiSynth 驗證了什麼、沒驗證什麼」時，從這裡找到原始出處，**照原文引用**。
+@@ -15,14 +15,14 @@
+ 
+ | # | 範圍 | 限制（短標籤或原文） | 裁決（日期／誰） | 出處 |
+ |---|---|---|---|---|
+-| A1 | `water_gong` 引擎 | 「它不是乳突鑼（泰國鑼、爪哇鑼等常見的 boss+盤面構造）的模型」；2.0× 附近沒有模態是域限制 | 2026-09-15 月月（D13 選 B） | `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §1（:10-30）；`reports/decision_packets/D13_gong_2x_partial.zh-TW.md` §4（:141-147） |
+-| A2 | 音高量測器（工具主張） | 「量測器自身系統誤差 ≤1.18 cent，未達 ≤1 cent 門檻，為已知並接受的上限」；不可宣稱量測器 ≤1 cent | 2026-09-10 月月（C10 選 A） | `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.4 item 5（:280-289）、§9.7（:676-705）；`reports/decision_packets/C10_selfcal_domain.zh-TW.md` §7（:270-） |
+-| A3 | 音高量測器（工具主張） | 「任何量到 3.8–5.0 cent 之間的數字，都不得單獨用來斷言渲染正確或錯誤」；低音區可偵測的走音下限比 ±5 cent 寬 | 2026-09-10 月月（C10 選 A） | EARFREE §8.5（:297-309） |
+-| A4 | 音高量測器（工具主張）放鍵段 | 「放鍵/阻尼段的音高判定不得引用 ≤1.18 cent 的主張，其已知誤差上界為 ~7.2 cent」 | 2026-09-15 月月（D15 選 A'） | EARFREE §8.5（:310-326） |
+-| A5 | 旋律驗證的報告方式 | 音高與起音分兩個維度報，不可壓成單一 verdict | 2026-08-30 月月查核裁定 | EARFREE §8.2（:212-230） |
+-| A6 | 可發布措辭 | 「給愛麗絲 score、模態表、渲染決定性、逐軌疊加已驗；乾聲 883 顆有音高證據，其中 671 顆另有起音證據」；不可寫成「905 顆音高與泛音全部驗過」 | 月月核定（v2，2026-08-30） | EARFREE §8.4 item 4（:276-279） |
+-| A7 | 主張範圍外 | 「仍不在主張範圍內：泛音的頻率與振幅、以及一切美學/聽感主張」 | v2 主張域（2026-08-30） | EARFREE §8.5（:296） |
+-| A8 | 旋律驗證弱域 | f0 < 167 Hz 的起音精測、基頻天生弱的高音、任何帶殘響訊號的音高判定 | v2 主張域（2026-08-30） | EARFREE §8.5（:292-295）、§8.3 |
++| A1 | `water_gong` 引擎 | 「它不是乳突鑼（泰國鑼、爪哇鑼等常見的 boss+盤面構造）的模型」；2.0× 附近沒有模態是域限制 | 2026-09-15 月月（D13 選 B） | `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §1（:10-37）；`reports/decision_packets/D13_gong_2x_partial.zh-TW.md` §4（:141-147） |
++| A2 | 音高量測器（工具主張） | 「量測器自身系統誤差 ≤1.18 cent，未達 ≤1 cent 門檻，為已知並接受的上限」；不可宣稱量測器 ≤1 cent | 2026-09-10 月月（C10 選 A） | `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.4 item 5（:301-310）、§9.7（:722-751）；`reports/decision_packets/C10_selfcal_domain.zh-TW.md` §7（:270-） |
++| A3 | 音高量測器（工具主張） | 「任何量到 3.8–5.0 cent 之間的數字，都不得單獨用來斷言渲染正確或錯誤」；低音區可偵測的走音下限比 ±5 cent 寬 | 2026-09-10 月月（C10 選 A） | EARFREE §8.5（:321-333） |
++| A4 | 音高量測器（工具主張）放鍵段 | 「放鍵/阻尼段的音高判定不得引用 ≤1.18 cent 的主張，其已知誤差上界為 ~7.2 cent」 | 2026-09-15 月月（D15 選 A'） | EARFREE §8.5（:334-350） |
++| A5 | 旋律驗證的報告方式 | 音高與起音分兩個維度報，不可壓成單一 verdict | 2026-08-30 月月查核裁定 | EARFREE §8.2（:218-237） |
++| A6 | 可發布措辭 | 「給愛麗絲 score、模態表、渲染決定性、逐軌疊加已驗；乾聲 883 顆有音高證據，其中 671 顆另有起音證據」；不可寫成「905 顆音高與泛音全部驗過」（2026-09-25 註：句中 883/671 的最新實測為 889/677，措辭是否更新待月月重新核定，見出處的句後註） | 月月核定（v2，2026-08-30） | EARFREE §8.4 item 4（:295-300） |
++| A7 | 主張範圍外 | 「仍不在主張範圍內：泛音的頻率與振幅、以及一切美學/聽感主張」 | v2 主張域（2026-08-30） | EARFREE §8.5（:320） |
++| A8 | 旋律驗證弱域 | f0 < 167 Hz 的起音精測、基頻被壓得很弱的音（08-30 是 22 顆高音；A14 之後是 D16 的 16 顆）、任何帶殘響訊號的音高判定 | v2 主張域（2026-08-30） | EARFREE §8.5（:313-319）、§8.3 |
+ | A9 | partial（泛音）驗證 | 只立 partial 頻率內部一致性（沿用 ±5 cents），不立振幅 GATE；`B` 對照寫成不當 GATE 的報告；工具先以 informational 實作 | 2026-09-08 規劃者代決 B+（月月 09-07 委託，可推翻） | `reports/decision_packets/A13_partial_gate_domain.zh-TW.md`「裁決記錄」（:536-548） |
+ | A10 | F3 velocity 判定 | 主張域二分：固定 tau_c 路徑判定不動；Felt 路徑改「實測 vs 模型自身預測」自洽判定，容差數值未動 | 2026-08-27 月月（B4 選 (b)） | `ROADMAP_PHYSICS.md` §6 velocity 列（:468）；`TODO.md` B4 條目（:408-430）；`reports/decision_packets/B4_f3_velocity_ruling.md` |
+ | A11 | 槌氈接觸求解器適用範圍 | 「只適用 Cimbalom/Piano；Chromatic 在 D2 補搜完成前不得套用」 | 2026-08-27（B4 完工） | `TODO.md` B4 條目（:430） |
+@@ -59,7 +59,7 @@
+ | B11 | 調音器 | 複音／缺基頻模式沒做（只有在能可靠拒答時才做） | — | `TODO.md` Verification gaps 最後一條（:927） |
+ | B12 | 材料常數出處 | 密度、楊氏模量、泊松比標為文獻值，但原文寫明「no one paged through this codebase's history to confirm the exact reference used when they were entered」 | — | `docs/MATERIALS_SOURCES.md:37-44` |
+ | B13 | partial_verify 升 GATE | A13 原規劃的前提被 D15（放鍵段 ~7.2 c）改變，要月月重新確認 | 2026-09-25 | `TODO.md` 09-25 等月月裁決（:139） |
+-| B14 | 外掛 IR 模式 | D9c 常數沒有 GATE 鎖住；IR 模式沒有輸出限幅 | 2026-09-25 | `TODO.md` 09-25 等月月裁決（:119、:125） |
++| B14 | 外掛 IR 模式 | D9c 常數原本沒有 GATE 鎖住（09-25 WF0925-K2 已加精確相等 CHECK 釘住 26.9；但 IR 與 ALGO 的響度差仍沒有判定，常數裡約 18.06 dB 綁在 JUCE 的 0.125 正規化上，見 `reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md` 檔尾與裁決包 Q01）；IR 模式沒有輸出限幅 | 2026-09-25 | `TODO.md` 09-25 等月月裁決（:119、:125） |
+ | B15 | B7 殘留函式 | `hammerVelocityMps()` 在 MIDI 20 不連續（目前沒有呼叫點，不影響渲染） | 2026-09-25 | `TODO.md` 09-25 等月月裁決（:129） |
+ 
+ ---
+diff --git a/docs/WOOD_ANISOTROPY_SOURCES.md b/docs/WOOD_ANISOTROPY_SOURCES.md
+index 85309e0..0c89543 100644
+--- a/docs/WOOD_ANISOTROPY_SOURCES.md
++++ b/docs/WOOD_ANISOTROPY_SOURCES.md
+@@ -154,8 +154,13 @@ P = P12 · (P12/Pg)                        ... Wood Handbook Eq. (5–3)
+ **150 °C (302 °F)** 時，力學性質與溫度**近似線性相關**。快速加熱/冷卻後
+ 在該狀態下量測的變化稱為「immediate effect」（可逆）。
+ 
+-**本文件未取得該線性關係的逐項係數表**（Table 5–15，位於本次取得的 PDF
+-之後續頁面）。要實作溫度相依需補抓該表。
++**2026-09-25 更新：Table 5–15 已取得**（WF0925-L1）。取自 FPL-GTR-282（2021）第 5 章官方 PDF
++第 5–36 頁（GTR-190 同頁同表、數字相同），全表逐格轉錄在
++`docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md` §7（來源分級見該檔 §2.1 S12／S13）。
++例：12% 含水率的順紋 MOE，相對 20 °C 在 −50 °C 是 +17%、+50 °C 是 −7%（原表數字）。
++目前 repo 仍沒有任何消費者（見 §6）。
++原記錄：「本文件未取得該線性關係的逐項係數表（Table 5–15，位於本次取得的 PDF
++之後續頁面）。要實作溫度相依需補抓該表。」
+ 
+ ---
+ 
+@@ -181,7 +186,7 @@ Beam/Plate 的既有 GATE 全部要重驗，換到的物理正確性有限。
+ | # | 出處 | 取得狀態 | 用到什麼 |
+ |---|---|---|---|
+ | 1 | *Wood Handbook — Wood as an Engineering Material*, Chapter 5「Mechanical Properties of Wood」, USDA Forest Service, Forest Products Laboratory, General Technical Report **FPL–GTR–190** | ✅ 免費政府出版品，本文件取自公開鏡像的完整 PDF（46 頁）並在本機解析 | Table 5–1（§2）、Table 5–2（§3）、Eq. 5–3 與 Table 5–13（§4）、溫度段落（§5） |
+-| 2 | 同系列較新版 **FPL–GTR–282**（2021） | ⚠️ FPL 官網對本工具回 HTTP 403 | 未取得；§2／§3 兩表在兩版之間內容相同，本文件引 GTR–190 為準 |
++| 2 | 同系列較新版 **FPL–GTR–282**（2021） | ⚠️ FPL 官網對本工具回 HTTP 403（2026-09-25 更新：WF0925-L1 已從美國林務局官方 Treesearch 下載第 5 章，見 `docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md` §2.1 S12） | 本文件當時未取得；§2／§3 兩表在兩版之間內容相同，本文件引 GTR–190 為準；Table 5–15 見 §5 |
+ 
+ **取得方式說明**：Eq. 5–3 在 PDF 中是排版影像，文字層抽不出來；
+ 本文件將該頁以 150 dpi 轉為點陣圖後逐字轉錄，**未從任何圖形曲線讀值**
+@@ -195,7 +200,8 @@ Beam/Plate 的既有 GATE 全部要重驗，換到的物理正確性有限。
+ - [x] 泊松比（25 樹種）取得
+ - [x] 含水率修正公式 Eq. 5–3 與 `Mp` 表取得
+ - [x] 溫度相依的定性關係與適用上限（150 °C）取得
+-- [ ] 溫度相依的逐項係數表（Table 5–15）未取得
++- [x] 溫度相依的逐項係數表（Table 5–15）已取得（2026-09-25，WF0925-L1；轉錄見
++      `docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md` §7；原記錄為「未取得」）
+ - [x] `materials.json` 的 schema 若要容納 9 個獨立常數，需設計向後相容路徑
+       （比照 `MaterialDB.h` 現行 `alpha`→`eta` 的 fail-closed 做法）
+       → **schema 遷移路徑已設計並落地**（2026-08-28，B5 卡）：orthotropic
+diff --git a/docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md b/docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+index 3961374..d11a764 100644
+--- a/docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
++++ b/docs/correspondence/2026-09-10_Iowa_MIS_thai_gong_equipment_query.md
+@@ -1,4 +1,4 @@
+-# 信件草稿 2：向 University of Iowa MIS 確認泰國鑼錄音的器材與取樣率
++# 信件 2（已寄出 2026-09-15）：向 University of Iowa MIS 確認泰國鑼錄音的器材與取樣率
+ 
+ > 狀態：**已寄出（2026-09-15，依月月記錄），等回覆**（月月自行寄出，AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
+ > 收件人：Lawrence Fritts（Musical Instrument Samples 建置者，網頁署名）。**信箱請自行從 https://theremin.music.uiowa.edu/MIS.html 或 University of Iowa School of Music 教職員頁確認**，本文件不臆測。
+diff --git a/docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md b/docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+index 6093620..ef0a369 100644
+--- a/docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
++++ b/docs/correspondence/2026-09-10_TU_Berlin_directivity_license_request.md
+@@ -1,4 +1,4 @@
+-# 信件草稿 1：向 TU Berlin 請求樂器指向性資料庫的商業使用許可
++# 信件 1（已寄出 2026-09-15）：向 TU Berlin 請求樂器指向性資料庫的商業使用許可
+ 
+ > 狀態：**已寄出（2026-09-15，依月月記錄），等回覆**（月月自行寄出，AI 不代發）。2026-09-10 依月月裁決「兩封信要寫」擬稿。
+ > 收件人：David Ackermann <david.ackermann@tu-berlin.de>（信箱來源：SOFA 檔 `AuthorContact` 屬性與論文通訊欄，見 `docs/EXTERNAL_DATASET_A8.zh-TW.md` §4.1）
+diff --git a/docs/workcards/WF0907_README.md b/docs/workcards/WF0907_README.md
+index 26aba8a..e496e3d 100644
+--- a/docs/workcards/WF0907_README.md
++++ b/docs/workcards/WF0907_README.md
+@@ -98,3 +98,11 @@
+ | R6 | 研究 | Opus | D8 tongue_drum 40 dB 斜率 + 缺泛音 根因診斷 |
+ 
+ lane 內順序：Python = E1 → C10 → C11 → C12；C++ = E5 → E8 → E9 → E7 → E10；研究六張平行。
++
++## WF0925 後更新（2026-09-25，WF0925b-DS 附加；上方原文是 WF0907 輪當時的規約，未改）
++
++- **HostProbe 不再依賴 cwd**：WF0925-K2 之後，HostProbe 找 `data/materials.json` 的順序是 cwd → 環境變數 `TSUKI_REPO_ROOT` → exe 所在資料夾一路往上，用了哪條會印出來；exe 複製到 repo 外、又沒設環境變數時，會大聲出現 4 個 H8 FAIL（不靜默跳過）。證據 `reports/gate_outputs/wf0925_K2_hostprobe.txt`。
++- **新基線**：pytest **288 個測試＝282 passed＋1 skipped＋5 xfailed**（上方 §3 寫的「現況 213 collected」是 WF0907 當時的數字）；HostProbe **215 PASS／0 FAIL**；AuditTest 110 PASS。證據 `reports/gate_outputs/wf0925_INTEGRATION.txt`、`reports/gate_outputs/wf0925_integration_raw/05_pytest.txt`、`09_hostprobe_cwd_repo.txt`。
++- **本機 Python 是 3.13.3**（上方 §1 寫 3.12；CI 固定 3.12.8）。WF0925 輪所有 Python GATE 都在 3.13.3 上跑。
++- **位元不變比對**：基準早已不是上方 §3 的 `sha256_before.txt`／`sha256_before_post_d8.txt`，自 A14（2026-09-10）起是 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`，期望 8/8 IDENTICAL。比對腳本 `reports/gate_outputs/wf0907_method/render_wf_scores.py` 的用法：`--workdir` 必須在 repo 外（腳本會拒絕 repo 內路徑）；`--cli` 用 Windows 絕對路徑（相對路徑會 WinError 2）；WF0925-P1 加了 `--outdir`，把 csv／sha256 寫到指定資料夾（不帶時照舊寫進 `reports/gate_outputs/wf0907_method/`）；跟基準比對用 `diff --strip-trailing-cr`（基準檔是 CRLF）。
++- 細節與其他差異見 `docs/workcards/WF0925_README.md` §0。
+diff --git a/docs/workcards/WF0914_README.md b/docs/workcards/WF0914_README.md
+index 864965f..5e9298d 100644
+--- a/docs/workcards/WF0914_README.md
++++ b/docs/workcards/WF0914_README.md
+@@ -33,3 +33,12 @@
+ 4. **裁決包體例**：比照 `reports/decision_packets/K02_reverb_wet_scale.zh-TW.md`——選項並列、每案代價/前提寫清楚、附看數字就能選的表格、**不替月月選**。
+ 5. 工兵回報一律結構化：`status`（DONE / BLOCKED / RED）、`files_touched`、`gate_results`（每條 GATE 的命令＋關鍵輸出行）、`evidence_paths`、`open_items`。發現卡文與 repo 現況矛盾 → 停下寫進 `open_items`，不要硬做（WF0908-P4 教訓：卡文可能錯）。
+ 6. 下載類（僅 D9）：只從官方來源頁下載；逐檔記 URL、授權原文逐字、SHA256；要登入才能拿的來源直接跳過記錄；下載物放 `external_data/`（gitignored），**不進版控**。
++
++## WF0925 後更新（2026-09-25，WF0925b-DS 附加；上方原文是 WF0914 輪當時的規約，未改）
++
++- **新基線**：pytest **288 個測試＝282 passed＋1 skipped＋5 xfailed**（上方 §0 的 270 是 WF0914 整合後的基線）；HostProbe **215 PASS／0 FAIL**（WF0914 時 89）。證據 `reports/gate_outputs/wf0925_INTEGRATION.txt`。
++- **HostProbe 不必再以 repo 根目錄為 cwd**（WF0925-K2：cwd → `TSUKI_REPO_ROOT` → exe 所在資料夾往上找）。證據 `reports/gate_outputs/wf0925_K2_hostprobe.txt`。
++- **本機 Python 實際是 3.13.3**（CI 固定 3.12.8）。
++- **`render_wf_scores.py`**：WF0925-P1 加了 `--outdir`（csv／sha256 改寫到指定資料夾；不帶時行為照舊）；`--workdir` 放 repo 外、`--cli` 用 Windows 絕對路徑、跟基準比對用 `diff --strip-trailing-cr`。位元不變基準仍是 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`，期望 8/8。
++- **`build\` 已由 WF0925 整合卡重建**（CLI sha256 `b84c775b…`）；上方 §0 說的「`build\` 對應 HEAD `a38bd6a`（09-10 建）」已過時。商品母帶用的舊渲染器 `9123db8f…` 備份在 `exports/renderer_archive/`（gitignored）。
++- 細節見 `docs/workcards/WF0925_README.md` §0。
+diff --git a/reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md b/reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
+index 5b26f76..57662dc 100644
+--- a/reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
++++ b/reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md
+@@ -165,3 +165,15 @@ corpus 75 首不經此路（本包 §4 已核實），落地卡仍須重跑 8/8
+ - 依據：§3 的量測方法段已寫「ALGO 用 reverb 預設」——也就是 `pReverbSize`／`pReverbDecay` 都沒設（roomSize 0.5、沒有指定 T60），見 `tests/audit_repro.cpp` K-02 量測函式內「ALGO, reverb defaults」那段註解。IR 路徑本身不看 size／T60（`src/effects/EffectChain.h` 的 `processBlock()` 在 irMode 時不呼叫 `setRoomSize()`／`setDecayTime()`），所以 ×26.9 讓兩條路響度一致，只在這組預設下成立。本包原本沒寫清楚的是這層依賴。
+ - 數字出處：`reports/status_check_2026-09-25/probes/reverb_gain_replica_output.txt`（同目錄 `reverb_gain_replica.py` 用 Python 複製 SimpleReverb 的 comb／allpass 結構，白噪穩態 wet RMS，相對 size 0.5）：size 0.00 −1.36／0.25 −0.79／0.75 +1.23／1.00 +3.98 dB；decay 0.3 s −2.38／1.0 s −0.40／3.0 s +1.76／10 s +3.89／30 s +5.26 dB。同檔另列複製版的 IR wet（×26.9）減 ALGO@0.5：−0.11／+0.13／+0.57 dB，對照 D9c 實測 −0.131／+0.108／−0.028 dB。**以上都是複製版估計，不是對產品 binary 的量測。**
+ - 純說明：×26.9 數值不變、渲染不變；程式端同一段說明已補進 `src/effects/EffectChain.h` 的 `kIrWetMakeupGain` 註解。要不要做成使用者看得到的說明，仍待月月決定（未裁決）。
++
++---
++
++## 附記（2026-09-25，WF0925b-DS；WF0925 交接 E18 未竟項）：×26.9 裡約 18.06 dB 綁在 JUCE 內部常數上
++
++- **事實**：IR 模式的摺積用 `juce::dsp::Convolution`。`src/effects/EffectChain.h` 的 `loadImpulseResponse()`（:89-96）呼叫 `convolution.loadImpulseResponse (file, Stereo::yes, Trim::yes, 0)`，沒有傳第 5 個參數，所以用宣告預設值 `Normalise::yes`（`libs/JUCE/modules/juce_dsp/frequency/juce_Convolution.h:240-242`）。
++  正規化在 `libs/JUCE/modules/juce_dsp/frequency/juce_Convolution.cpp`：`makeEngine()` 在 `wantsNormalise == Convolution::Normalise::yes` 時呼叫 `normaliseImpulseResponse (resampled)`（:789-790）；係數由 `calculateNormalisationFactor()`（:623-629）算，第 628 行是 `return 0.125f / std::sqrt (sumSquaredMagnitude);`——把能量最大的那個聲道縮到平方和為 1，再乘 0.125。20·log10(0.125) = −18.06 dB。
++  所以 D9c 補回的 ×26.9 裡，約 18.06 dB 是在抵銷 JUCE 這個固定係數，不全是 ALGO 與 IR 兩種演算法本身的差（2026-09-25 盤點 E18 的查證修正；上面三個行號本卡用 grep 重新確認過）。版本：submodule `libs/JUCE` 在 `501c076`，`libs/JUCE/modules/juce_core/system/juce_StandardHeader.h:42-44` 是 JUCE 8.0.12。
++- **後果**：WF0925-K2 加的 D9c-guard 只檢查 `kIrWetMakeupGain == 26.9f`。JUCE 升版如果改了 0.125（或改了正規化方式），26.9 沒變、guard 照樣 PASS，IR 模式的響度卻會漂，現有 GATE 擋不住。要不要加響度判定或做成正式檢查清單，見 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q01（B／C 案）。
++- **升 JUCE 前要做的事**（程序提醒，不是新門檻）：升版後先重建測試 target，直接跑 `TsukiSynthAuditTest`，看 `[K-02] RMS difference (IR - ALGO)` 那行跟升版前有沒有變（WF0925 整合卡的值是 0.112 dB，`reports/gate_outputs/wf0925_integration_raw/04b_audit_repro_direct.txt`）；手上有真實 IR 時也用 `TSUKI_K02_EXTERNAL_IR` 重跑 K-02-EXT；並再看一次上面 `juce_Convolution.cpp` 三處的內容有沒有變。有變就停下來，帶數字給月月裁決，不自己改 26.9。
++- **用詞備註**（WF0925 K 稽核 note，只是用詞）：本包與程式註解寫的「+28.58 dB」是 4 樣本平均落差的原數字；把 26.9 倍嚴格換成 dB 是 20·log10(26.9) = 28.595 dB。數值本身不變。
++- 本附記只加說明：×26.9 數值不變、渲染不變。`EffectChain.h` 的 `kIrWetMakeupGain` 註解還沒補「約 18.06 dB 來自 JUCE 0.125 正規化」這句，要改 `src/` 得另開卡（本卡不動 `src/`）。
+diff --git a/reports/gate_outputs/wf0914_INTEGRATION.txt b/reports/gate_outputs/wf0914_INTEGRATION.txt
+index 07d93b3..668b2ec 100644
+--- a/reports/gate_outputs/wf0914_INTEGRATION.txt
++++ b/reports/gate_outputs/wf0914_INTEGRATION.txt
+@@ -171,3 +171,15 @@ GATE 結果一覽：
+ 位元不變：8/8 IDENTICAL（完整 sha256 逐位元比對，非僅前綴）。
+ 
+ 本輪所有落地互不打架，無任何 GATE 紅燈。
++
++----------------------------------------------------------------------
++勘誤（2026-09-25，WF0925b-DS 附加；上方原文一字未改）
++----------------------------------------------------------------------
++- GATE 7 那段（本檔第 97 行）寫「15 項自我測試全部 PASS」，項數寫錯，應為 13 項。
++  依據 1：本卡自己的 raw 檔 reports/gate_outputs/wf0914_integration_raw/07_physics_verify_selftest.txt
++          只有 13 行「<名稱>: PASS」、0 行 FAIL（grep -c -E ': (PASS|FAIL)' → 13）。
++  依據 2：09-25 WF0925 整合卡重跑也是 13 項
++          （reports/gate_outputs/wf0925_integration_raw/07_physics_verify_selftest.txt）；
++          兩次的結果行逐行 diff 相同（同目錄 07b_selftest_vs_wf0914.txt：「DIFF_EXIT=0  (行數: 13 vs 13)」）。
++- 正確說法：13 項自我測試全部 PASS，EXIT_CODE=0。GATE 7 的判定（PASS）不變，只有項數寫錯。
++- 最早由 WF0925 整合卡順帶發現（docs/workcards/WF0925_README.md §6）。

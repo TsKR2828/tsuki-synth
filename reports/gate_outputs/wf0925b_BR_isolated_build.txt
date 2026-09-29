@@ -1,0 +1,49 @@
+WF0925b-BR evidence 1/6: isolated build (index snapshot) + base/noX2 CLI identities
+generated: 2026-09-25 11:52:51 +0800   HEAD: 18430c4   index tree (git write-tree): ef4ce1ce3fcf2685deb3c903ebc4fdf7728426cc
+Descriptive research card; NOT a GATE. Main work tree src/ was NOT modified (see check at the end).
+
+## Commands (repo-relative; <REPO> = repo root, <SCRATCH> = session scratchpad outside the repo)
+#  T=$(git write-tree)            # writes a tree object only; index/refs untouched
+#  git archive $T | tar -x -C output/wf0925b/BR/tree
+#  rmdir output/wf0925b/BR/tree/libs/JUCE        # empty submodule placeholder (non-recursive)
+#  (in output/wf0925b/BR/tree/libs) cmd //c mklink /J JUCE <REPO>\libs\JUCE
+#  GIT_CEILING_DIRECTORIES=<REPO>/output/wf0925b/BR cmake -B build -DCMAKE_BUILD_TYPE=Release -A x64   (in tree/)
+#  cmake --build build --config Release --target TsukiSynthCLI   -> copied to output/wf0925b/BR/cli_base/
+#  edit tree/src/physics/BeamModel.h (diff below) ; rebuild TsukiSynthCLI -> copied to output/wf0925b/BR/cli_noX2/
+
+## main repo libs/JUCE file count at card start (find -type f / find all entries): 4378 / 4963 ; JUCE HEAD 501c07674e1a
+
+$ diff -r --strip-trailing-cr src output/wf0925b/BR/tree/src   (before the noX2 edit)
+SRC_IDENTICAL_TO_WORKTREE
+$ git diff --quiet -- src && echo 'worktree src == index src'
+worktree src == index src
+
+## the ONLY source change in the noX2 build (tree copy only; never applied to the main work tree)
+--- BeamModel.h.base
++++ src/physics/BeamModel.h
+@@ -51,7 +51,7 @@
+         float frequency, const MaterialDB::Material& material)
+     {
+         const float denominator = MaterialDB::internalFrictionRate (
+-                material.damping.eta, frequency) * 2.0f
++                material.damping.eta, frequency)
+             + material.damping.beam_plate_beta_air * frequency * frequency
+             + material.damping.beam_plate_gamma_radiation * frequency;
+         return denominator > 0.0f ? 1.0f / denominator : 5.0f;
+
+## build logs (tails; warning C/error C line counts)
+$ tail -1 cmake_configure.log ; tail -2 build_base.log ; tail -2 build_noX2.log
+configure exit=0
+  TsukiSynthCLI.vcxproj -> <REPO>\output\wf0925b\BR\tree\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+build exit=0
+  TsukiSynthCLI.vcxproj -> <REPO>\output\wf0925b\BR\tree\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+build exit=0
+warning C / error C lines: base 0, noX2 0
+
+## CLI sha256
+$ sha256sum output/wf0925b/BR/cli_base/TsukiSynthCLI.exe output/wf0925b/BR/cli_noX2/TsukiSynthCLI.exe build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+cc2b0e1afb14843577be817dfd293827ed0718c04e4085bb3d0c0bf034936ec6 *output/wf0925b/BR/cli_base/TsukiSynthCLI.exe
+760fde2dc536683b578d9159025155c9cd84c3c32f2e024997312416e6f5227a *output/wf0925b/BR/cli_noX2/TsukiSynthCLI.exe
+b84c775b04abd5a2b254bd8830c815408347de073bb1d41141e9753d89098b66 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+(base exe bytes differ from build/ b84c775b because the exe embeds configure-time provenance -- git commit is 'unknown'/dirty in the
+ isolated tree because GIT_CEILING_DIRECTORIES stops git from seeing the main repo. Audio identity is proven by the 8/8 render check, evidence 2.)

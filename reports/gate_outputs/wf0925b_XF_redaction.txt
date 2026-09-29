@@ -1,0 +1,24 @@
+# wf0925b_XF_redaction.txt
+# generated 2026-09-25T13:12:55  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/xf_redact_evidence.py
+# python 3.13.3  numpy 2.4.4  soundfile 0.13.1
+file                                   replaced  sha256 before -> after   (restore check)
+wf0925_X1_alt_loudness.txt                    2  d4a0df013cb2 -> 793c09e0d27c   OK
+wf0925_X1_alt_loudness_table.txt              2  85e510c567e8 -> 955addd6918a   OK
+wf0925_X1_art.txt                             3  d2fa7e6a91ea -> aaec02778784   OK
+wf0925_X1_claims_check.txt                    2  00e13e99ebda -> 6c8aeac7a924   OK
+wf0925_X1_demo_reel.txt                       2  e8f9fbaf4dcb -> 29bcf22be73b   OK
+wf0925_X1_loop_ready.txt                      2  2c6a34d85574 -> 59a04c96cbfa   OK
+wf0925_X1_music_tpdf.txt                      2  3286e3211416 -> ddfa2f350398   OK
+wf0925_X1_tp_crosscheck.txt                   2  7ecbfb8d203e -> 6dc0b64f5e29   OK
+wf0925_X1_verify.txt                          2  9470beb2b510 -> 55006dc2932c   OK
+wf0925_X2_catalog.txt                         1  a4376d5ee8c5 -> 5d32bf94d670   OK
+wf0925_X2_facts.txt                           1  f65bb8f12b23 -> 649a49eceb18   OK
+wf0925_X2_listening_kit.txt                   1  ecca1b6b615b -> 03efcb7465e4   OK
+wf0925_X2_packages.txt                        0  626e6f26faaa -> 626e6f26faaa   OK
+wf0925_X2_verify.txt                          1  ed76247c4764 -> 718fa718779e   OK
+wf0925_X2_web_sources.txt                     1  c7a1a05accf2 -> 04b564c67831   OK
+
+files: 15 ; total replacements: 24
+backup of the originals: output/wf0925b/XF/redact_backup
+RESULT: PASS

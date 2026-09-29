@@ -1,0 +1,38 @@
+# pytest 收集清單對照：WF0925 整合卡（288）vs 現在（staged 樹＝工作樹）
+# WF0925 的 288 條清單＝output/wf0925/INT/collect_now.txt（WF0925 整合卡當時的 --collect-only 結果，gitignored；它跟 HEAD 270 條的差異見 wf0925_integration_raw/05a_pytest_collect_diff.txt）
+$ python -m pytest tests --collect-only -q -p no:cacheprovider | grep :: | sort | wc -l
+307
+（原始輸出最後兩行：307 tests collected in 1.60s COLLECT_EXIT=0 ）
+$ sort output/wf0925/INT/collect_now.txt | wc -l
+288
+$ diff <WF0925 288 條> <現在>
+186a187,198
+> tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[float32]
+> tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[pcm16]
+> tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[pcm24]
+> tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[pcm32]
+> tests/test_stem_stream.py::test_extensible_decodes_identically_to_plain_tag[pcm32_valid24]
+> tests/test_stem_stream.py::test_extensible_float64_still_unsupported
+> tests/test_stem_stream.py::test_extensible_float_guid_is_not_decoded_as_pcm
+> tests/test_stem_stream.py::test_extensible_foreign_guid_is_refused
+> tests/test_stem_stream.py::test_extensible_short_fmt_is_refused
+> tests/test_stem_stream.py::test_extensible_small_cbsize_is_refused
+> tests/test_stem_stream.py::test_extensible_unsupported_subformat_tag_is_refused
+> tests/test_stem_stream.py::test_extensible_valid_bits_above_container_is_refused
+251a264,270
+> tests/test_stem_verify.py::test_tf_cli_flag_defaults_to_none_and_parses
+> tests/test_stem_verify.py::test_tf_partial_verify_b_report_uses_explicit_cli
+> tests/test_stem_verify.py::test_tf_partial_verify_missing_cli_is_error_not_fallback
+> tests/test_stem_verify.py::test_tf_partial_verify_resolve_cli
+> tests/test_stem_verify.py::test_tf_stem_verify_cli_reaches_renders_and_melody_verify
+> tests/test_stem_verify.py::test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary
+> tests/test_stem_verify.py::test_tf_stem_verify_missing_cli_is_error_not_fallback
+(diff EXIT=1)
+# 只有 '>'（新增）沒有 '<'（移除）＝沒有測試被刪
+新增數：19  移除數：0
+# 新增按檔：
+     12 tests/test_stem_stream.py
+      7 tests/test_stem_verify.py
+# 來源：兩個檔都是 WF0925b-TF 的 files_touched（wf0925b_TF_summary.txt G5：「307（基線 288，+19：stem_stream +12、stem_verify +7；刪 0）」）。
+#   test_stem_stream.py +12：O16(b) read_wav_float 支援 WAVE_FORMAT_EXTENSIBLE（5 條參數化「EXTENSIBLE 跟一般格式標記讀出逐樣本相同」＋7 條邊界／拒讀檢查：float GUID 不當 PCM 解、外來 GUID／fmt 太短／cbSize 太小／不支援的子格式／有效位元超過容器／64-bit float 都要丟錯）
+#   test_stem_verify.py +7：O16(d) stem_verify／partial_verify 的 --cli
