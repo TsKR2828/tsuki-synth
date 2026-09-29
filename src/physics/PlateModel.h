@@ -22,7 +22,15 @@
  * 預設，呼叫端必須明確傳入 score 的 plateFreeEdge。自由板根依材料 Poisson ratio
  * 插值，兩種邊界也都使用對應的 Bessel/modified-Bessel 徑向振型。
  *
- * 特徵：2D 板模態，金屬鑼/鐘的複雜非諧泛音結構
+ * 特徵：2D 板模態（非諧泛音結構）。
+ *
+ * 主張域（docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md §1，月月 2026-09-15 D13 裁決
+ * 選項 B）：water_gong 模擬的是完全自由邊的平板（無 boss、無鑼緣）——「不加
+ * 額外構造特徵的圓板」；它**不是**乳突鑼（泰國鑼、爪哇鑼等 boss+盤面構造）
+ * 的模型。2.0× 基頻附近沒有模態是這個域限制的直接結果，不是計算錯誤
+ * （bronze ν=0.34 自由邊比值 1 : 1.738 : 2.329 : 3.925 …，2.0× 夾在第 2、3
+ * 根之間，見 docs/GONG_PARTIAL_ANALYSIS.zh-TW.md、
+ * reports/gate_outputs/wf0914_D13_plate_ratios.txt）。
  */
 class PlateModel
 {

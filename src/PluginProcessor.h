@@ -8,9 +8,27 @@
 #include "PresetManager.h"
 #include "IRLibrary.h"
 
-class TsukiSynthProcessor : public juce::AudioProcessor
+class TsukiSynthProcessor : public juce::AudioProcessor,
+                            private juce::Timer   // WF0925-K1 (E9): engine tail cache refresh
 {
 public:
+    /** WF0925-K1 (engineering-gaps:E14): version of the plug-in STATE format
+        written by getStateInformation() as the "state_version" property.
+        Version history (see getStateInformation()/setStateInformation()):
+          1, 2 -- retroactive labels only, never written: 1 = before any IR
+                  identity was saved (before commit cbffebd); 2 = the bare
+                  "reverb_ir_path" property era (cbffebd .. 31eb7ae^).
+          3    -- current format: F-03 "reverb_ir" {kind,sha256,
+                  original_name} block (31eb7ae, WF0908-P3) + D12 legacy-key
+                  migration on load (f1b2448); first version actually WRITTEN
+                  (WF0925-K1).
+        A state WITHOUT "state_version" was saved before WF0925-K1 (format 1,
+        2 or pre-K1 3 -- indistinguishable by number) and goes through the
+        exact same load path as before this field existed, including the D12
+        reverb_ir_path migration judgement. Not to be confused with
+        PresetManager::kPresetFormatVersion (user preset FILE format). */
+    static constexpr int kStateVersion = 3;
+
     TsukiSynthProcessor();
     ~TsukiSynthProcessor() override;
 
@@ -115,6 +133,23 @@ private:
     std::atomic<float>* pMacroOutput = nullptr;
     std::atomic<float>* pMacroDamping = nullptr;
     std::atomic<float>* pFMRelease = nullptr;
+
+    // WF0925-K1 (engineering-gaps:E9): worst-case modal tail (T60, seconds)
+    // of voice 0 of each physics synth, computed by refreshEngineTailCache()
+    // only in the constructor (before any other thread can reach this
+    // object) and afterwards only on the message thread, and merely read by
+    // getTailLengthSeconds(),
+    // so the voices' non-thread-safe `mutable` tail caches are never touched
+    // from whatever thread a host happens to call getTailLengthSeconds() on.
+    std::atomic<double> cimbalomTailSeconds  { 0.0 };
+    std::atomic<double> chromaticTailSeconds { 0.0 };
+    /** Re-evaluates both engines' cached worst-case tail (the voices only
+        re-run their 88-note sweep when a decay-relevant parameter changed)
+        and stores it in the atomics above. Constructor or message thread
+        only. */
+    void refreshEngineTailCache();
+    void timerCallback() override { refreshEngineTailCache(); }
+
     juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
     MidiNoteTracker tunerNoteTracker;

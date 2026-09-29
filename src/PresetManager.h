@@ -7,6 +7,15 @@
 class PresetManager : private juce::ValueTree::Listener
 {
 public:
+    /** WF0925-K1 (engineering-gaps:E14): user preset FILE format version
+        (the root "version" attribute saveUserPreset() writes). History:
+        1 = commit 3b92e99 (no "id" attribute); 2 = commit e0eb06a onward
+        ("id" attribute; the optional extra top-level child block such as
+        "reverb_ir" was added in 31eb7ae without a bump -- older readers
+        simply ignore it). A file with no "version" attribute is read as 1.
+        Separate numbering from TsukiSynthProcessor::kStateVersion. */
+    static constexpr int kPresetFormatVersion = 2;
+
     PresetManager (juce::AudioProcessorValueTreeState& vts)
         : apvts (vts), defaultState (vts.copyState())
     {
@@ -69,6 +78,16 @@ public:
     }
 
     bool isFactory (int index) const { return index >= 0 && index < getNumFactoryPresets(); }
+
+    /** WF0925-K1 (E14): the file format version a USER preset was read with
+        at the last scan (missing attribute = 1), or -1 for factory presets /
+        out-of-range indices. Read-only diagnostic (used by HostProbe). */
+    int getUserPresetFormatVersion (int index) const
+    {
+        const juce::ScopedLock lock (presetLock);
+        const int ui = index - getNumFactoryPresets();
+        return (ui >= 0 && ui < userPresets.size()) ? userPresets[ui].formatVersion : -1;
+    }
 
     // ── Load ────────────────────────────────────────────────────
 
@@ -163,14 +182,24 @@ public:
         juce::String presetId;
         if (file.existsAsFile())
             if (auto existing = juce::XmlDocument::parse (file))
+            {
+                // WF0925-K1 (E14), conservative handling of a NEWER preset
+                // format: never overwrite such a file -- this build would
+                // rewrite it in format kPresetFormatVersion and silently drop
+                // whatever the newer format added. Save fails instead (same
+                // `false` a failed write already returns); the file on disk
+                // stays untouched. v1/v2 files overwrite exactly as before.
+                if (existing->getIntAttribute ("version", 1) > kPresetFormatVersion)
+                    return false;
                 presetId = existing->getStringAttribute ("id");
+            }
         if (presetId.isEmpty())
             presetId = juce::Uuid().toString();
 
         juce::XmlElement root ("TsukiSynthPreset");
         root.setAttribute ("name", name);
         root.setAttribute ("id", presetId);
-        root.setAttribute ("version", 2);
+        root.setAttribute ("version", kPresetFormatVersion);
         root.addChildElement (stateXml.release());
 
         // WF0908-P3 §2.5: an optional extra block (e.g. reverb_ir) rides as
@@ -321,6 +350,13 @@ public:
             // deterministic when the same preset file is copied to a machine.
             if (id.isEmpty())
                 id = "legacy:" + file.getFileNameWithoutExtension();
+            // WF0925-K1 (E14): file format version (history at
+            // kPresetFormatVersion; missing attribute = 1). v1/v2 load exactly
+            // as before. A NEWER version is still listed and loaded -- the
+            // parameters block is found by its type and parameters by their
+            // IDs, the same generic reads below -- and is protected from being
+            // overwritten by saveUserPreset() (see there).
+            const int formatVersion = xml->getIntAttribute ("version", 1);
             auto* paramsXml = xml->getChildByName (apvts.state.getType());
             if (paramsXml == nullptr)
                 continue;
@@ -341,7 +377,7 @@ public:
                 break;
             }
 
-            scanned.add ({ name, id, file, state, extraState });
+            scanned.add ({ name, id, file, state, extraState, formatVersion });
         }
 
         struct NameCmp
@@ -365,6 +401,7 @@ private:
         juce::File   file;
         juce::ValueTree state;
         juce::ValueTree extraState;   // invalid if this preset carries no extra block
+        int formatVersion = 1;        // root "version" attribute (WF0925-K1 / E14)
     };
 
     juce::AudioProcessorValueTreeState& apvts;

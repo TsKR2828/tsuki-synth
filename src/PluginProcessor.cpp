@@ -185,10 +185,19 @@ TsukiSynthProcessor::TsukiSynthProcessor()
     };
 
     recordingThread.startThread();
+
+    // WF0925-K1 (E9): publish the default-parameter tails before any host can
+    // ask, then keep them fresh from the message thread. 20 Hz = the same
+    // poll cadence PluginEditor.cpp already uses (startTimerHz (20));
+    // engineering choice, not physics, no GATE threshold depends on it. Each
+    // tick only hashes ~40 parameter atomics unless something changed.
+    refreshEngineTailCache();
+    startTimerHz (20);
 }
 
 TsukiSynthProcessor::~TsukiSynthProcessor()
 {
+    stopTimer();
     stopRecording();
     recordingThread.stopThread (1000);
 }
@@ -202,6 +211,23 @@ void TsukiSynthProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     fmPianoSynth.setCurrentPlaybackSampleRate (sampleRate);
     effectChain.prepare (sampleRate, samplesPerBlock);
     smoothedOutput.reset (sampleRate, 0.02);
+
+    // WF0925-K1 (E9): hosts typically query the tail right after activation
+    // (VST3 setActive -> here), so refresh synchronously when we are on the
+    // message thread; otherwise the timer picks it up within one tick.
+    if (juce::MessageManager::existsAndIsCurrentThread())
+        refreshEngineTailCache();
+}
+
+void TsukiSynthProcessor::refreshEngineTailCache()
+{
+    // All 16 voices of a synth share identical APVTS parameter pointers
+    // (only materialDB/noiseIdentity differ per voice), so voice 0 is
+    // representative -- same reasoning getTailLengthSeconds() documents.
+    if (auto* v = dynamic_cast<CimbalomVoice*> (cimbalomSynth.getVoice (0)))
+        cimbalomTailSeconds.store (v->getWorstCaseTailSecondsCached());
+    if (auto* v = dynamic_cast<ChromaticVoice*> (chromaticSynth.getVoice (0)))
+        chromaticTailSeconds.store (v->getWorstCaseTailSecondsCached());
 }
 
 void TsukiSynthProcessor::releaseResources()
@@ -234,18 +260,17 @@ double TsukiSynthProcessor::getTailLengthSeconds() const
     // parameter pointers (only materialDB/noiseIdentity differ per voice --
     // see the constructor's addVoice() loops), so voice 0 is representative
     // of the live parameter state.
+    // WF0925-K1 (E9): voice 0's value is computed by refreshEngineTailCache()
+    // on the message thread; this function only READS the published atomic
+    // (the VST3 SDK marks getTailSamples() "[UI-thread & Setup Done]", but
+    // that is the host's promise, not ours -- this makes a host that breaks
+    // it harmless instead of a data race + audio-thread allocation).
     const int currentEngineForTail = pEngine != nullptr ? (int) pEngine->load() : -1;
     double engineTailSeconds = 0.0;
     if (currentEngineForTail == 0 || currentEngineForTail == 3)
-    {
-        if (auto* v = dynamic_cast<CimbalomVoice*> (cimbalomSynth.getVoice (0)))
-            engineTailSeconds = v->getWorstCaseTailSecondsCached();
-    }
+        engineTailSeconds = cimbalomTailSeconds.load();
     else if (currentEngineForTail == 1)
-    {
-        if (auto* v = dynamic_cast<ChromaticVoice*> (chromaticSynth.getVoice (0)))
-            engineTailSeconds = v->getWorstCaseTailSecondsCached();
-    }
+        engineTailSeconds = chromaticTailSeconds.load();
     tailSeconds = std::max (tailSeconds, engineTailSeconds);
 
     if (effectChain.pDelayMix != nullptr
@@ -522,11 +547,15 @@ juce::File TsukiSynthProcessor::getLastRecordingFile() const
     return lastRecordingFile;
 }
 
-// == Logging (Release-safe, writes to %APPDATA%/TsukiSynth/debug.log) ==
 // == State ==
 void TsukiSynthProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
+    // WF0925-K1 (E14): always the version of the format this build actually
+    // WRITES (kStateVersion, history in PluginProcessor.h) -- never echoes a
+    // newer number carried in from a newer build's state, because what is
+    // written below is this build's format, not that one.
+    state.setProperty ("state_version", kStateVersion, nullptr);
     state.setProperty ("presetIndex", presetManager.getCurrentIndex(), nullptr);
     state.setProperty ("presetId", presetManager.getCurrentPresetId(), nullptr);
     state.setProperty ("presetDirty", presetManager.isDirty() ? 1 : 0, nullptr);
@@ -570,6 +599,27 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
     if (xml != nullptr && xml->hasTagName (apvts.state.getType()))
     {
         auto tree = juce::ValueTree::fromXml (*xml);
+
+        // WF0925-K1 (E14): state format version (history: PluginProcessor.h
+        // kStateVersion). Absent = saved before WF0925-K1 -> exactly the same
+        // load path as before this field existed (0 is used as "absent" below
+        // and is <= kStateVersion, so nothing branches differently). Present
+        // and NEWER than this build knows -> read everything this build
+        // understands by name (APVTS parameters, the reverb_ir block, preset
+        // bookkeeping) exactly as usual, but conservatively skip the D12
+        // legacy reverb_ir_path migration further down: that key belongs to
+        // pre-versioning formats, and acting on it (importing a file from a
+        // path / forcing Algorithmic mode) inside a format whose semantics
+        // this build does not know would be a guess. A non-numeric value reads
+        // as 0 (= absent) -- never a crash. The property is dropped from
+        // `tree` before replaceState(): it is envelope metadata, not live
+        // parameter state, so apvts.state stays byte-for-byte what it was
+        // before this field existed (getStateInformation() re-adds it).
+        const int stateVersion = tree.hasProperty ("state_version")
+                                     ? (int) tree.getProperty ("state_version") : 0;
+        const bool stateNewerThanKnown = stateVersion > kStateVersion;
+        tree.removeProperty ("state_version", nullptr);
+
         int presetIdx  = tree.getProperty ("presetIndex", -1);
         const juce::String presetId = tree.getProperty ("presetId", juce::String()).toString();
         int engineIdx  = tree.hasProperty ("engine_index")
@@ -617,8 +667,11 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         // restoreReverbIR()'s outcome, so a malformed-but-present reverb_ir
         // block still correctly skips migration -- card §1 item 3, "新
         // schema 已存在 → 舊鍵忽略").
+        // WF0925-K1 (E14): gated off only for a state_version NEWER than this
+        // build knows (see the version read at the top); every state this
+        // build or an older one wrote takes the unchanged D12 path.
         bool migratedLegacyIR = false;
-        if (! irChild.isValid())
+        if (! irChild.isValid() && ! stateNewerThanKnown)
         {
             const auto legacyIRPath = tree.getProperty ("reverb_ir_path", juce::String()).toString();
             if (legacyIRPath.isNotEmpty())
@@ -671,6 +724,11 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
         if (migratedLegacyIR)
             presetManager.setDirty();
         restoredProgramToIgnore.store (resolvedPreset, std::memory_order_release);
+
+        // WF0925-K1 (E9): restored parameters change the engine tail; refresh
+        // now when on the message thread, else the timer does it next tick.
+        if (juce::MessageManager::existsAndIsCurrentThread())
+            refreshEngineTailCache();
     }
 }
 

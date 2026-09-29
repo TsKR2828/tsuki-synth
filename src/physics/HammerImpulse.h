@@ -331,7 +331,10 @@ public:
     // ────────────────────────────────────────────────────────────────────────
     // B7 Phase 1 (WF0914-B7P1, docs/workcards/B7.md §4.2/§4.3): velocity ->
     // real hammer speed -> Hertz peak contact force. Pure diagnostic-chain
-    // functions feeding ScoreRenderer::dumpModes()'s Path C fields only --
+    // functions. 目前沒有呼叫點（B7 09-15 裁決撤回 Path C 欄位——原本要餵
+    // ScoreRenderer::dumpModes() 的 Path C 欄位已撤回，見
+    // reports/decision_packets/B7_phase2_and_open_items.zh-TW.md §6），
+    // 重新接回前先解裁決包 §1.1（score velocity proxy -> 真實 MIDI 換算）。
     // NOT called from tauCForNote()/tauCForStrike()/pianoHammerTauC()/
     // forceSpectrumMagnitude() above, and none of those existing functions
     // are modified by this section (README Rule 10: this card must not
@@ -339,8 +342,9 @@ public:
     // ────────────────────────────────────────────────────────────────────────
 
     /** MIDI velocity (REAL 0-127, NOT this engine's [0,1] score-velocity
-     *  proxy -- see the caller-side conversion note at the call site,
-     *  ScoreRenderer.h's dumpModes()) -> real hammer speed (m/s).
+     *  proxy -- 目前沒有呼叫點（B7 09-15 裁決撤回 Path C 欄位），重新接回前
+     *  先解裁決包 §1.1（proxy -> 真實 MIDI 換算，B7_phase2_and_open_items
+     *  .zh-TW.md）) -> real hammer speed (m/s).
      *
      *    hammerVelocityMps(midi) = 2 ^ ((midi - 52) / 25)
      *
@@ -509,9 +513,10 @@ public:
      *  collision that produced `fPeakN` -- the self-consistent choice,
      *  not a second, independently-measured value. For ANY finite
      *  positive `m`/`speedMps`/`fPeakN`, `fPeakN*tauC*(2/pi)` equals
-     *  `2*m*speedMps` to floating-point precision by construction, so a
-     *  Path C field built from it can no longer exceed this bound at the
-     *  impulse stage (see tests/physics_models_repro.cpp's
+     *  `2*m*speedMps` to floating-point precision by construction, so any
+     *  future Path C field built from it could not exceed this bound at the
+     *  impulse stage (目前沒有呼叫點（B7 09-15 裁決撤回 Path C 欄位），重新
+     *  接回前先解裁決包 §1.1; see tests/physics_models_repro.cpp's
      *  testBridgePowerFirstPrinciplesChain() domain scan for the
      *  verification across all 24 Felt-anchor points).
      *

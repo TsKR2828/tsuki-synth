@@ -150,9 +150,51 @@ namespace IRLibrary
         return f.existsAsFile() ? f : juce::File();
     }
 
+    /** WF0925-K1 (engineering-gaps:E15): writes `source` to `dest` through a
+        sibling temp file ("<dest>.tmp-<uuid>") that is first re-hashed (must
+        equal `sha`, the hash the caller just computed from `source` -- so a
+        source that changed mid-import, or a short/failed copy, never lands
+        in the library under a name it does not match) and then moved over
+        `dest` with juce::File::replaceFileIn() -- the same temp-then-replace
+        idiom PresetManager::saveUserPreset() already uses (rename on the
+        same volume; Win32 ReplaceFile/MoveFile). A crash mid-copy therefore
+        leaves at most a stray .tmp-* file, never a half-written `dest`.
+        Returns false (temp removed, `error` filled) on any failure. */
+    inline bool copyIntoLibraryAtomically (const juce::File& source, const juce::File& dest,
+                                           const juce::String& sha, juce::String& error)
+    {
+        const auto temp = dest.getSiblingFile (dest.getFileName() + ".tmp-"
+                                               + juce::Uuid().toString());
+        if (! source.copyFileTo (temp))
+        {
+            temp.deleteFile();
+            error = "Failed to copy IR into library: " + dest.getFullPathName();
+            return false;
+        }
+        if (hashFile (temp) != sha)
+        {
+            temp.deleteFile();
+            error = "IR content changed while importing (hash mismatch): "
+                  + source.getFullPathName();
+            return false;
+        }
+        if (! temp.replaceFileIn (dest))
+        {
+            temp.deleteFile();
+            error = "Failed to move IR into library: " + dest.getFullPathName();
+            return false;
+        }
+        return true;
+    }
+
     /** Copy an external IR file into the managed library, deduplicated by
         content hash (re-importing identical bytes reuses the existing
         library entry -- "同檔改了名還是同一個 IR", decision packet §6.10.3).
+        WF0925-K1 (E15): "reuses" now means "reuses an entry whose bytes
+        really hash to that name" -- an existing library file is re-hashed
+        first, and a corrupted / half-written / rewritten entry is replaced
+        from `source` (atomically, see copyIntoLibraryAtomically()) instead of
+        being kept forever, so re-picking the original file repairs it.
         Returns an empty IRRef and fills `error` on failure. */
     inline IRRef importFile (const juce::File& source, juce::String& error)
     {
@@ -170,13 +212,13 @@ namespace IRLibrary
         }
 
         auto dest = fileForSha (sha);
-        if (! dest.existsAsFile())
+        // WF0925-K1 (E15): an existing entry is kept only if its content
+        // still matches its sha-derived name (hashFile() returns "" for an
+        // unreadable or empty file, which never equals a real sha).
+        if (! dest.existsAsFile() || hashFile (dest) != sha)
         {
-            if (! source.copyFileTo (dest))
-            {
-                error = "Failed to copy IR into library: " + dest.getFullPathName();
+            if (! copyIntoLibraryAtomically (source, dest, sha, error))
                 return {};
-            }
         }
 
         IRRef ref;

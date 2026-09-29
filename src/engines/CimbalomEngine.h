@@ -93,8 +93,30 @@ public:
         }
     }
 
-    void setMaterialDB (MaterialDB* db) { materialDB = db; }
+    void setMaterialDB (MaterialDB* db)
+    {
+        materialDB = db;
+        // WF0925-K1 (engineering-gaps:E8): force MaterialDB::getOrderedKeys()'s
+        // function-local static (9 juce::String + a StringArray) to be built
+        // HERE, on the setup thread, so startNote()'s first call -- audio
+        // thread -- never runs that one-time initialisation. Pure warm-up:
+        // the returned list is identical whoever builds it first.
+        (void) MaterialDB::getOrderedKeys();
+    }
     void setNoiseIdentity (uint64_t identity) { noiseIdentity = identity; }
+
+    // WF0925-K1 (engineering-gaps:E8): juce::String form of
+    // kBridgeSoundboardMaterialKey, built once at static-initialisation time.
+    // MaterialDB::getMaterial() takes `const juce::String&`, so passing the
+    // `const char*` constant directly made startNote() -- called by
+    // juce::Synthesiser::renderNextBlock() on the AUDIO thread -- construct
+    // and destroy a temporary juce::String (heap allocation + free) on every
+    // note. Same key text, same std::map lookup, same Material* result, so no
+    // DSP number changes (bit-identity is re-proven by the card's 8/8 render
+    // GATE). ScoreRenderer.h's offline call sites are not realtime and are
+    // left as they were.
+    static inline const juce::String kBridgeSoundboardMaterialKeyString {
+        kBridgeSoundboardMaterialKey };
 
     // 參數指標（由 Processor 設定，指向 APVTS 的 raw parameter）
     std::atomic<float>* pMaterial       = nullptr;  // index
@@ -160,7 +182,8 @@ public:
         // material lookup separate from the string material above. materialDB
         // must already contain wood_spruce, so this guard should never trigger
         // in practice -- but it is written anyway (fail-closed, not skipped).
-        auto* soundboardMat = materialDB->getMaterial (kBridgeSoundboardMaterialKey);
+        // (WF0925-K1 / E8: pre-built juce::String key -- no per-note alloc.)
+        auto* soundboardMat = materialDB->getMaterial (kBridgeSoundboardMaterialKeyString);
         if (soundboardMat == nullptr) return;
 
         float strikePos = pStrikePos->load();
@@ -625,7 +648,7 @@ public:
         const auto& keys = MaterialDB::getOrderedKeys();
         int matIdx = juce::jlimit (0, (int) keys.size() - 1, (int) pMaterial->load());
         auto* mat = materialDB->getMaterial (keys[matIdx]);
-        auto* soundboardMat = materialDB->getMaterial (kBridgeSoundboardMaterialKey);
+        auto* soundboardMat = materialDB->getMaterial (kBridgeSoundboardMaterialKeyString);
         if (mat == nullptr || soundboardMat == nullptr)
             return 0.0;
 
@@ -710,13 +733,19 @@ public:
         return worst;
     }
 
-    /// Cached wrapper around worstCaseTailSeconds() -- getTailLengthSeconds()
-    /// is polled by hosts on the message thread, sometimes frequently, so
-    /// this only re-runs the 88-note sweep when the parameters that feed the
-    /// decay-time formula have actually changed (value hash compare, per
-    /// WF0907-E5 §2.1). Not thread-safe against concurrent callers -- valid
-    /// because both this and getTailLengthSeconds() are message-thread-only
-    /// by construction (see the doc comment there).
+    /// Cached wrapper around worstCaseTailSeconds() -- only re-runs the
+    /// 88-note sweep when the parameters that feed the decay-time formula
+    /// have actually changed (value hash compare, per WF0907-E5 §2.1). Not
+    /// thread-safe against concurrent callers (the cache fields are plain
+    /// `mutable`). WF0925-K1 (engineering-gaps:E9): the ONLY caller is now
+    /// TsukiSynthProcessor::refreshEngineTailCache(), which runs only in the
+    /// processor constructor (before any other thread can reach the object)
+    /// and afterwards solely on the message thread (message-thread-guarded
+    /// prepareToPlay()/setStateInformation(), and the processor's own
+    /// juce::Timer), and publishes the result through a std::atomic<double>
+    /// that getTailLengthSeconds() merely reads -- so a host that calls
+    /// getTailLengthSeconds() from some other thread can no longer race this
+    /// cache or trigger the sweep's vector allocation there.
     double getWorstCaseTailSecondsCached() const
     {
         const uint64_t h = tailParamHash();

@@ -121,7 +121,11 @@
 //                    held tongue_drum MIDI 40 note and checks the tail
 //                    is still audible (RMS > -60 dBFS relative to peak) at
 //                    10 s, tying the host-facing NUMBER to something that
-//                    actually still needs to be there.
+//                    actually still needs to be there. WF0925-K2: the
+//                    engine cross-check's data/materials.json is looked up
+//                    in the cwd first, then under $TSUKI_REPO_ROOT, then in
+//                    the executable's ancestor directories (see
+//                    findMaterialsJson()); the path used is printed.
 //   D12 legacy IR migration (WF0914-D12) three synthetic-state scenarios
 //                    (docs/workcards/WF0914_D12_state_migration.md §1/§2)
 //                    for TsukiSynthProcessor::migrateLegacyReverbIRPath(),
@@ -147,13 +151,36 @@
 //                    the legacy key is ignored entirely, proven by the
 //                    migrated state still naming the new schema's own IR
 //                    (never the legacy path's IR) and that IR never
-//                    appearing in the managed library.
+//                    appearing in the managed library. WF0925-K1 adds to
+//                    scenarios 1/2: the migrated output state no longer
+//                    carries "reverb_ir_path" (the consumed legacy key is
+//                    dropped); scenario 3's behaviour is untouched (月月's
+//                    decision). The synthetic blobs carry NO "state_version"
+//                    (they model states saved before WF0925-K1 existed).
+//   E14 state/preset format version (WF0925-K1): H5's captured state
+//                    carries state_version=3 and a restore->re-capture keeps
+//                    it; a state claiming a NEWER version is loaded without
+//                    crashing, its parameters read, the D12 migration
+//                    conservatively skipped, and re-saved as version 3; the
+//                    H7 user preset reads back as file format 2; a preset
+//                    file claiming a NEWER format is listed and loaded but
+//                    saveUserPreset() refuses to overwrite it.
+//   E16 factory presets (WF0925-K2): every src/Presets.h factory preset's
+//                    paramIDs must all resolve in the real parameter layout
+//                    (PresetManager::loadFactoryPreset() would otherwise skip
+//                    a bad one silently); each preset, selected on a fresh
+//                    real VST3 instance via setCurrentProgram(), renders one
+//                    C4 note whose output must be entirely finite. Peak/RMS
+//                    are printed only (no new threshold, R2).
 //
 // HONEST SCOPE: this is a JUCE host, not Cubase. It proves VST3-contract
 // behaviour of the shipped binary; Cubase-specific behaviour is L3
 // (tools/cubase_scan_verify.py = scan; AI-driven export = playback).
 //
 // Usage: TsukiSynthHostProbe <path-to-TsukiSynth.vst3> <out-dir>
+// (relative bundle/out-dir paths resolve against the cwd; H8's
+// data/materials.json no longer requires the cwd to be the repo root --
+// WF0925-K2, see findMaterialsJson())
 // Exit 0 = all checks pass.
 
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -544,6 +571,96 @@ juce::AudioBuffer<float> renderSustainedNote (juce::AudioPluginInstance& inst,
     return out;
 }
 
+// WF0925-K2 (E16) helper: one note rendered with the instance's CURRENT
+// parameters left exactly as loaded. Unlike renderNotes() -- which zeroes
+// "Reverb Mix" because the sentinel fixture declares an FX-free render --
+// E16 must render a factory preset as the preset defines it, reverb/delay
+// included. Note-on at sample 0, note-off at noteOffS (so the release/damper
+// path runs too, which renderSustainedNote() deliberately never reaches).
+// The note/velocity/lengths are test-design choices, not pass/fail limits.
+juce::AudioBuffer<float> renderNoteAsLoaded (juce::AudioPluginInstance& inst,
+                                             int midiNote, float velocity,
+                                             double noteOffS, double lengthS)
+{
+    const int totalSamples = (int) (lengthS * kSampleRate);
+    const int numBlocks = (totalSamples + kBlockSize - 1) / kBlockSize;
+    const int offSample = (int) std::llround (noteOffS * kSampleRate);
+    inst.setNonRealtime (true);
+    inst.prepareToPlay (kSampleRate, kBlockSize);
+    const int chans = juce::jmax (2, inst.getTotalNumOutputChannels());
+    juce::AudioBuffer<float> out (2, numBlocks * kBlockSize);
+    out.clear();
+    juce::AudioBuffer<float> block (chans, kBlockSize);
+    juce::MidiBuffer midi;
+
+    for (int b = 0; b < numBlocks; ++b)
+    {
+        const int blockStart = b * kBlockSize;
+        midi.clear();
+        if (b == 0)
+            midi.addEvent (juce::MidiMessage::noteOn (1, midiNote, velocity), 0);
+        if (offSample >= blockStart && offSample < blockStart + kBlockSize)
+            midi.addEvent (juce::MidiMessage::noteOff (1, midiNote), offSample - blockStart);
+        block.clear();
+        inst.processBlock (block, midi);
+        for (int c = 0; c < 2; ++c)
+            out.copyFrom (c, blockStart, block, juce::jmin (c, chans - 1), 0, kBlockSize);
+    }
+    inst.releaseResources();
+    return out;
+}
+
+// WF0925-K2 (09-25 live-gate finding 2): H8 used to look for
+// data/materials.json ONLY relative to the current working directory, so
+// running this probe from anywhere but the repo root produced 4 false H8
+// FAILs (the 2026-09-25 live-gate run hit exactly that). Lookup order now:
+//   1. <cwd>/data/materials.json -- first, so a run from the repo root (the
+//      documented GATE command) resolves exactly the same file as before;
+//   2. $TSUKI_REPO_ROOT/data/materials.json -- explicit override (an
+//      absolute path, or relative to the cwd);
+//   3. the nearest ancestor of this executable's own directory that contains
+//      data/materials.json (e.g. build-wf/Release/ -> the repo root).
+// The path finally used and how it was found are printed by the caller; a
+// rejected TSUKI_REPO_ROOT is printed here. If nothing is found the cwd
+// candidate is returned, so the H8 CHECK fails loudly naming that path,
+// exactly as before this change.
+struct MaterialsLookup { juce::File file; juce::String via; };
+
+MaterialsLookup findMaterialsJson()
+{
+    const juce::String rel ("data/materials.json");
+    const juce::File cwd = juce::File::getCurrentWorkingDirectory();
+    const juce::File cwdCandidate = cwd.getChildFile (rel);
+    if (cwdCandidate.existsAsFile())
+        return { cwdCandidate, "found in the current working directory" };
+
+    const juce::String envRoot =
+        juce::SystemStats::getEnvironmentVariable ("TSUKI_REPO_ROOT", {});
+    if (envRoot.isNotEmpty())
+    {
+        const juce::File envCandidate = cwd.getChildFile (envRoot).getChildFile (rel);
+        if (envCandidate.existsAsFile())
+            return { envCandidate, "found via TSUKI_REPO_ROOT" };
+        std::cout << "  H8 materials.json: TSUKI_REPO_ROOT='" << envRoot
+                  << "' has no " << rel << " -- ignored\n";
+    }
+
+    juce::File dir = juce::File::getSpecialLocation (juce::File::currentExecutableFile)
+                         .getParentDirectory();
+    while (dir.getFullPathName().isNotEmpty())
+    {
+        const juce::File candidate = dir.getChildFile (rel);
+        if (candidate.existsAsFile())
+            return { candidate, "found in an ancestor of the executable's directory" };
+        const juce::File parent = dir.getParentDirectory();
+        if (parent == dir)
+            break;   // reached the filesystem root
+        dir = parent;
+    }
+    return { cwdCandidate, "NOT FOUND in cwd / TSUKI_REPO_ROOT / the executable's ancestors;"
+                           " falling back to the cwd path" };
+}
+
 // ── H7 user preset round-trip (WF0908-E10b, design doc §10.2 option B) ────
 // A minimal, GUI-free juce::AudioProcessor used only to host a "shadow"
 // AudioProcessorValueTreeState built from src/ParameterLayout.h's
@@ -625,6 +742,25 @@ juce::MemoryBlock decodeVst3ProcessorState (const juce::MemoryBlock& outerBlock)
     return inner;
 }
 
+// WF0925-K1 (E14): must mirror src/PluginProcessor.h's
+// TsukiSynthProcessor::kStateVersion (this probe does not link
+// PluginProcessor.cpp -- see the H7 comment block -- so it cannot read the
+// constant; a version bump there must bump this too, which is the point).
+constexpr int kExpectedStateVersion = 3;
+
+// WF0925-K1 (E14): the "state_version" attribute of the TsukiSynthProcessor
+// state inside an opaque VST3 state block (decodeVst3ProcessorState() above
+// explains the wrapper shell). -1 = attribute absent, -2 = not decodable.
+int readStateVersion (const juce::MemoryBlock& outerBlock)
+{
+    const auto inner = decodeVst3ProcessorState (outerBlock);
+    if (auto xml = juce::AudioProcessor::getXmlFromBinary (inner.getData(),
+                                                           (int) inner.getSize()))
+        return xml->hasAttribute ("state_version")
+                   ? xml->getIntAttribute ("state_version") : -1;
+    return -2;
+}
+
 // Raw byte-pattern search over a MemoryBlock. Used on H7's IR checks instead
 // of building a juce::String from the block: JUCE's copyXmlToBinary (used by
 // TsukiSynthProcessor::getStateInformation()) prefixes the UTF-8 XML text
@@ -670,6 +806,12 @@ bool memoryBlockContainsAscii (const juce::MemoryBlock& block, const char* needl
 //   - `legacyPath`: always set as the "reverb_ir_path" property (the bare
 //     pre-F-03 key). Empty string = no such property (not used by any of
 //     this card's three scenarios, kept only for completeness).
+//   - `stateVersionToWrite` (WF0925-K1 / E14): 0 (default) REMOVES the
+//     "state_version" attribute the source instance now writes, so the blob
+//     models what every state saved before WF0925-K1 looks like (pre-F-03
+//     for scenarios 1/2, F-03-era for scenario 3 -- neither ever carried a
+//     version); > 0 writes that number instead (the E14 "newer than this
+//     build knows" scenario).
 // No IEditController child is written: juce_VST3PluginFormatImpl.h's
 // setStateInformation() reuses the IComponent stream for
 // setComponentStateAndResetParameters() (the step that refreshes the
@@ -680,7 +822,8 @@ bool memoryBlockContainsAscii (const juce::MemoryBlock& block, const char* needl
 juce::MemoryBlock buildLegacyMigrationStateBlob (juce::AudioPluginInstance& sourceInstance,
                                                  const juce::String& legacyPath,
                                                  bool dropIRChild,
-                                                 const IRLibrary::IRRef* injectIRRef)
+                                                 const IRLibrary::IRRef* injectIRRef,
+                                                 int stateVersionToWrite = 0)
 {
     juce::MemoryBlock outerRaw;
     sourceInstance.getStateInformation (outerRaw);
@@ -711,6 +854,11 @@ juce::MemoryBlock buildLegacyMigrationStateBlob (juce::AudioPluginInstance& sour
 
     if (legacyPath.isNotEmpty())
         innerXml->setAttribute ("reverb_ir_path", legacyPath);
+
+    if (stateVersionToWrite > 0)
+        innerXml->setAttribute ("state_version", stateVersionToWrite);
+    else
+        innerXml->removeAttribute ("state_version");
 
     juce::MemoryBlock newInnerRaw;
     juce::AudioProcessor::copyXmlToBinary (*innerXml, newInnerRaw);
@@ -840,6 +988,11 @@ int main (int argc, char** argv)
             inst->getStateInformation (state);
             CHECK (state.getSize() > 0, "H5 state: non-empty state captured ("
                    << (int) state.getSize() << " bytes)");
+            const int capturedStateVersion = readStateVersion (state);
+            CHECK (capturedStateVersion == kExpectedStateVersion,
+                   "E14 state_version: captured state carries state_version="
+                   << capturedStateVersion << " (require " << kExpectedStateVersion
+                   << " = PluginProcessor.h kStateVersion; -1 = absent)");
 
             // The byte-identity claim is FRESH-vs-FRESH: two new instances
             // restored from the same state must render identically -- the
@@ -868,6 +1021,15 @@ int main (int argc, char** argv)
                 const auto rb = renderMelody (*freshB, nullptr);
                 CHECK (buffersEqual (ra, rb),
                        "H5 state: two restores of the same state render byte-identically");
+                // WF0925-K1 (E14): re-captured AFTER the render comparison so
+                // it cannot influence the byte-identity check above.
+                juce::MemoryBlock restoredState;
+                freshA->getStateInformation (restoredState);
+                const int roundTripStateVersion = readStateVersion (restoredState);
+                CHECK (capturedStateVersion == kExpectedStateVersion
+                       && roundTripStateVersion == capturedStateVersion,
+                       "E14 state_version: survives restore -> re-capture unchanged ("
+                       << capturedStateVersion << " -> " << roundTripStateVersion << ")");
             }
         }
     }
@@ -1050,6 +1212,15 @@ int main (int argc, char** argv)
                "H7: saved user preset's reverb_ir block records the imported IR's sha256"
                " (fx_reverb_mode was saved as Impulse Response)");
 
+        // WF0925-K1 (E14): the existing v2 file format is written and read
+        // back as 2 (PresetManager::kPresetFormatVersion) -- read-only query,
+        // does not move the current index the cleanup below relies on.
+        const int h7FormatVersion = shadow.presetManager.getUserPresetFormatVersion (
+                                        shadow.presetManager.getCurrentIndex());
+        CHECK (h7FormatVersion == 2,
+               "E14 preset format: saved \"wf0908_h7\" file reads back as format version "
+               << h7FormatVersion << " (require 2 = PresetManager::kPresetFormatVersion)");
+
         // Fresh VST3 instance whose ctor-time PresetManager::scanUserPresets()
         // sees the file just saved above, finds "wf0908_h7" by name, and
         // loads it via the real TsukiSynthProcessor::setCurrentProgram() ->
@@ -1219,6 +1390,71 @@ int main (int argc, char** argv)
                "H7: cleanup -- preset file no longer on disk");
     }
 
+    // -- E14 newer user-preset file format (WF0925-K1) -------------------------
+    // A preset FILE claiming a format version newer than this build knows
+    // (PresetManager::kPresetFormatVersion = 2). Contract under test (see
+    // PresetManager.h): still listed and loaded -- parameters are read by ID,
+    // as for v1/v2 -- but saveUserPreset() refuses to overwrite it, so a
+    // newer build's file is never silently rewritten in the older format.
+    // Own ShadowProcessor, separate from H7's, so H7's index-based cleanup
+    // above is unaffected.
+    std::cout << "\n-- E14 newer user-preset file format --\n";
+    {
+        ShadowProcessor shadowF;
+        const juce::File futureFile = juce::File::getSpecialLocation (
+                                           juce::File::userApplicationDataDirectory)
+                                           .getChildFile ("TsukiSynth")
+                                           .getChildFile ("Presets")
+                                           .getChildFile ("wf0925_k1_future.tsukipreset");
+
+        // Non-default value (default 0.3) so a successful load is observable.
+        setApvtsParamPlain (shadowF.apvts, "cim_strike_pos", 0.62f);
+        auto* strikeF = shadowF.apvts.getParameter ("cim_strike_pos");
+        const float savedNorm = strikeF != nullptr ? strikeF->getValue() : -1.0f;
+
+        juce::XmlElement root ("TsukiSynthPreset");
+        root.setAttribute ("name", "wf0925_k1_future");
+        root.setAttribute ("id", "wf0925-k1-future");
+        root.setAttribute ("version", 99);
+        root.addChildElement (shadowF.apvts.copyState().createXml().release());
+        const bool wroteFuture = root.writeTo (futureFile);
+        CHECK (wroteFuture, "E14 preset format: version=99 preset file written ("
+                            << futureFile.getFullPathName() << ")");
+        const juce::String futureTextBefore = futureFile.loadFileAsString();
+
+        setApvtsParamPlain (shadowF.apvts, "cim_strike_pos", 0.3f);   // back to default
+        shadowF.presetManager.scanUserPresets();
+        int futureIndex = -1;
+        for (int i = 0; i < shadowF.presetManager.getNumPresets(); ++i)
+            if (shadowF.presetManager.getPresetName (i) == "wf0925_k1_future")
+                { futureIndex = i; break; }
+        CHECK (futureIndex >= 0
+               && shadowF.presetManager.getUserPresetFormatVersion (futureIndex) == 99,
+               "E14 preset format: newer-format file still listed after rescan, version read as "
+               << shadowF.presetManager.getUserPresetFormatVersion (futureIndex));
+
+        const bool loadedFuture = futureIndex >= 0
+                                  && shadowF.presetManager.loadPreset (futureIndex);
+        const float loadedNorm = strikeF != nullptr ? strikeF->getValue() : -2.0f;
+        // 1e-6 on the normalised value: the same bar H7's shadow-vs-loaded
+        // comparison above already uses (not a new tolerance, R2).
+        CHECK (loadedFuture && std::abs (loadedNorm - savedNorm) < 1.0e-6f,
+               "E14 preset format: newer-format preset loads and its parameters are read"
+               " (cim_strike_pos normalised saved " << savedNorm << ", loaded "
+               << loadedNorm << ")");
+
+        const bool overwrote = shadowF.presetManager.saveUserPreset ("wf0925_k1_future", true);
+        CHECK (! overwrote && futureFile.loadFileAsString() == futureTextBefore,
+               "E14 preset format: saveUserPreset(allowOverwrite=true) refuses to overwrite"
+               " the newer-format file (returned " << (overwrote ? "true" : "false")
+               << ", file bytes unchanged)");
+
+        futureFile.deleteFile();
+        shadowF.presetManager.scanUserPresets();
+        CHECK (! futureFile.existsAsFile(),
+               "E14 preset format: cleanup -- newer-format test file removed");
+    }
+
     // -- D12 legacy reverb_ir_path migration (WF0914-D12) --------------------
     // See docs/workcards/WF0914_D12_state_migration.md §1/§2 and this file's
     // buildLegacyMigrationStateBlob() comment for the full rationale.
@@ -1300,6 +1536,20 @@ int main (int argc, char** argv)
                 CHECK (IRLibrary::resolve (expectedRef).existsAsFile(),
                        "D12 scenario 1: legacy IR now present in the managed library"
                        " under its content hash (hash/dedupe/kind=user, workcard §1 item 1)");
+                // WF0925-K1 (staged-review:D12-legacykey): the consumed legacy
+                // key must not linger in what this session saves next.
+                CHECK (! memoryBlockContainsAscii (state1, "reverb_ir_path"),
+                       "D12 scenario 1: migrated output state no longer carries"
+                       " reverb_ir_path (consumed legacy key dropped, PluginProcessor.cpp"
+                       " tree.removeProperty)");
+                // WF0925-K1 (E14): the input had no state_version (pre-K1
+                // state -> unchanged D12 path); what this build writes back
+                // is tagged with its own format version.
+                const int migratedVersion1 = readStateVersion (state1raw);
+                CHECK (migratedVersion1 == kExpectedStateVersion,
+                       "E14 state_version: an unversioned (pre-K1) state still migrates"
+                       " and is re-saved as state_version=" << migratedVersion1
+                       << " (require " << kExpectedStateVersion << ")");
                 CHECK (memoryBlockContainsAscii (state1, "presetDirty=\"1\""),
                        "D12 scenario 1 (audit fix): migrated state is marked dirty --"
                        " a migration silently changes in-memory state (new reverb_ir"
@@ -1351,6 +1601,12 @@ int main (int argc, char** argv)
                        " line 1: nothing remembered as loaded) and ir_missing=1 -- the"
                        " same three-state \"missing\" signature H7 scenario 3 validates"
                        " for the new schema, now also reached from the legacy key");
+                // WF0925-K1 (staged-review:D12-legacykey): dropped on the
+                // missing-file path too (recorded via expectedIRRef instead).
+                CHECK (! memoryBlockContainsAscii (state2, "reverb_ir_path"),
+                       "D12 scenario 2: migrated output state no longer carries"
+                       " reverb_ir_path (consumed legacy key dropped even when the"
+                       " file is missing)");
                 CHECK (memoryBlockContainsAscii (state2, "presetDirty=\"1\""),
                        "D12 scenario 2 (audit fix): migrated state is marked dirty even"
                        " on the missing-file path -- fx_reverb_mode was force-changed to"
@@ -1419,6 +1675,69 @@ int main (int argc, char** argv)
             irASource.deleteFile();
             irBSource.deleteFile();
 
+            // -- E14 (WF0925-K1): state claiming a NEWER state_version --------
+            // Contract (PluginProcessor.cpp setStateInformation()): no crash,
+            // everything this build understands is read as usual, the D12
+            // legacy migration is conservatively skipped, and the next save
+            // is tagged with this build's own version (never echoes 99).
+            std::cout << "\n  -- E14: state_version newer than this build knows --\n";
+            auto* srcStrike = findParam (*sourceInst, "Strike Position");
+            if (srcStrike != nullptr)
+                srcStrike->setValue (0.55f);
+            const float srcSettled = srcStrike != nullptr ? srcStrike->getValue() : -1.0f;
+
+            const juce::File futureIRSource = outDir.getChildFile ("e14_future_state_ir.wav");
+            writeWav (makeImpulseFixture (2400, 6), futureIRSource);
+            IRLibrary::IRRef futureIRRef;
+            futureIRRef.sha256 = IRLibrary::hashFile (futureIRSource);
+            CHECK (futureIRRef.sha256.isNotEmpty()
+                   && ! IRLibrary::resolve (futureIRRef).existsAsFile(),
+                   "E14: legacy-key IR fixture exists on disk and is not yet in the managed"
+                   " library (so a skipped migration is observable)");
+
+            const auto blob4 = buildLegacyMigrationStateBlob (
+                *sourceInst, futureIRSource.getFullPathName(), true, nullptr, 99);
+            CHECK (blob4.getSize() > 0 && readStateVersion (blob4) == 99,
+                   "E14: synthetic state blob built with state_version=99 + legacy"
+                   " reverb_ir_path (read back " << readStateVersion (blob4) << ")");
+
+            juce::String err4;
+            auto inst4 = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err4);
+            CHECK (inst4 != nullptr, "E14: fresh real VST3 instance created");
+            if (inst4 != nullptr)
+            {
+                inst4->setStateInformation (blob4.getData(), (int) blob4.getSize());
+
+                auto* strike4 = findParam (*inst4, "Strike Position");
+                CHECK (strike4 != nullptr
+                       && std::abs (strike4->getValue() - srcSettled) < 1.0e-6f,
+                       "E14: newer-version state loads without crashing and its parameters"
+                       " are read (Strike Position settled " << srcSettled << ", restored "
+                       << (strike4 != nullptr ? strike4->getValue() : -1.0f)
+                       << "; same 1e-6 bar as H5)");
+
+                juce::MemoryBlock state4raw;
+                inst4->getStateInformation (state4raw);
+                const auto state4 = decodeVst3ProcessorState (state4raw);
+                const int resavedVersion = readStateVersion (state4raw);
+                CHECK (state4.getSize() > 0 && resavedVersion == kExpectedStateVersion,
+                       "E14: re-saved state is tagged with this build's own format version "
+                       << resavedVersion << " (require " << kExpectedStateVersion
+                       << ", never the loaded 99)");
+                CHECK (! memoryBlockContainsAscii (state4, "<reverb_ir ")
+                       && memoryBlockContainsAscii (state4, "ir_missing=\"0\"")
+                       && ! IRLibrary::resolve (futureIRRef).existsAsFile(),
+                       "E14: D12 legacy migration conservatively skipped for a newer-version"
+                       " state -- no reverb_ir block, ir_missing=0 (no missing-IR path"
+                       " either), IR not imported into the managed library");
+
+                inst4->releaseResources();
+            }
+
+            IRLibrary::fileForSha (futureIRRef.sha256).deleteFile();   // only if a failure imported it
+            IRLibrary::sidecarForSha (futureIRRef.sha256).deleteFile();
+            futureIRSource.deleteFile();
+
             sourceInst->releaseResources();
         }
     }
@@ -1426,8 +1745,12 @@ int main (int argc, char** argv)
     // -- H8 tail length (WF0907-E5) ------------------------------------------
     {
         MaterialDB matDB;
-        const juce::File materialsFile = juce::File::getCurrentWorkingDirectory()
-                                             .getChildFile ("data/materials.json");
+        // WF0925-K2: cwd first, then TSUKI_REPO_ROOT, then the executable's
+        // ancestors -- see findMaterialsJson(). The path used is printed.
+        const MaterialsLookup materialsLookup = findMaterialsJson();
+        const juce::File materialsFile = materialsLookup.file;
+        std::cout << "  H8 materials.json used: " << materialsFile.getFullPathName()
+                  << " (" << materialsLookup.via << ")\n";
         const bool matLoaded = matDB.loadFromFile (materialsFile);
         CHECK (matLoaded, "H8 tail: MaterialDB loads " << materialsFile.getFullPathName());
 
@@ -1505,6 +1828,101 @@ int main (int argc, char** argv)
 
             writeWav (sustainRender, outDir.getChildFile ("hostprobe_tail_tongue_drum.wav"));
             tdInst->releaseResources();
+        }
+    }
+
+    // -- E16 factory presets (WF0925-K2, engineering-gaps:E16) --------------
+    // PresetManager::loadFactoryPreset() silently SKIPS any paramID that
+    // apvts.getParameter() cannot resolve (src/PresetManager.h, the
+    // `if (auto* param = apvts.getParameter (entry.paramID))` loop), so a
+    // typo in src/Presets.h would ship a preset that quietly ignores that
+    // setting. For every factory preset this block:
+    //   (a) resolves each of its paramIDs against a ShadowProcessor APVTS --
+    //       built from the SAME createTsukiParameterLayout() the product's
+    //       TsukiSynthProcessor uses (see ShadowProcessor above) -- and
+    //       requires every one to resolve;
+    //   (b) creates a FRESH real VST3 instance, requires program i to carry
+    //       that preset's name and, after setCurrentProgram(i), to report i
+    //       as current (exact integer/string equality, no tolerance);
+    //   (c) renders C4 (MIDI 60, vel 0.7, note-off at 1.0 s, 2.0 s total)
+    //       with the preset's parameters untouched and requires every output
+    //       sample to be finite.
+    // Per the 09-25 status check's E16 correction (查證修正), NO peak ceiling
+    // and NO silence/RMS floor are asserted -- those would be new judgment
+    // thresholds (R2/R4) awaiting 月月's decision. Peak and RMS are PRINTED
+    // for each preset, descriptive only, not a GATE.
+    {
+        std::cout << "\n  -- E16 factory presets --\n";
+        int factoryCount = 0;
+        const FactoryPreset* factory = getFactoryPresetList (factoryCount);
+        std::cout << "  E16: src/Presets.h registers " << factoryCount
+                  << " factory presets\n";
+        ShadowProcessor e16Shadow;
+        // Negative control: the resolver used in (a) must be able to say
+        // "no" -- an ID that is not in the layout must NOT resolve.
+        CHECK (e16Shadow.apvts.getParameter ("wf0925_k2_no_such_param") == nullptr,
+               "E16 negative control: a paramID absent from createTsukiParameterLayout()"
+               " does not resolve");
+
+        for (int i = 0; i < factoryCount; ++i)
+        {
+            const FactoryPreset& fp = factory[i];
+            const juce::String presetLabel = "E16 factory preset " + juce::String (i)
+                                           + " '" + juce::String (fp.name) + "'";
+
+            juce::StringArray unresolved;
+            for (int k = 0; k < fp.numParams; ++k)
+                if (e16Shadow.apvts.getParameter (fp.params[k].paramID) == nullptr)
+                    unresolved.add (fp.params[k].paramID);
+            CHECK (unresolved.isEmpty(),
+                   presetLabel << ": all " << fp.numParams
+                   << " paramIDs resolve in createTsukiParameterLayout()"
+                   << (unresolved.isEmpty()
+                           ? juce::String()
+                           : " (UNRESOLVED: " + unresolved.joinIntoString (", ") + ")"));
+
+            auto pinst = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err);
+            CHECK (pinst != nullptr, presetLabel << ": fresh VST3 instance created");
+            if (pinst == nullptr)
+                continue;
+
+            const juce::String vstName = i < pinst->getNumPrograms()
+                                             ? pinst->getProgramName (i) : juce::String();
+            pinst->setCurrentProgram (i);
+            const int currentProgram = pinst->getCurrentProgram();
+            CHECK (vstName == juce::String (fp.name) && currentProgram == i,
+                   presetLabel << ": VST3 program " << i << " is named '" << vstName
+                   << "' and setCurrentProgram(" << i << ") -> getCurrentProgram()="
+                   << currentProgram);
+
+            const auto render = renderNoteAsLoaded (*pinst, 60, 0.7f, 1.0, 2.0);
+            long long nonFinite = 0;
+            double peak = 0.0, sumSq = 0.0;
+            long long finiteCount = 0;
+            for (int c = 0; c < render.getNumChannels(); ++c)
+            {
+                const float* d = render.getReadPointer (c);
+                for (int s = 0; s < render.getNumSamples(); ++s)
+                {
+                    if (! std::isfinite (d[s])) { ++nonFinite; continue; }
+                    peak = juce::jmax (peak, (double) std::abs (d[s]));
+                    sumSq += (double) d[s] * d[s];
+                    ++finiteCount;
+                }
+            }
+            const long long totalSamples = (long long) render.getNumChannels()
+                                         * render.getNumSamples();
+            CHECK (nonFinite == 0,
+                   presetLabel << ": C4 render, all " << totalSamples
+                   << " output samples finite (non-finite: " << nonFinite << ")");
+
+            const double rms = finiteCount > 0 ? std::sqrt (sumSq / (double) finiteCount) : 0.0;
+            std::cout << "    [info] " << presetLabel << ": peak "
+                      << juce::String (20.0 * std::log10 (juce::jmax (peak, 1.0e-12)), 2)
+                      << " dBFS, RMS "
+                      << juce::String (20.0 * std::log10 (juce::jmax (rms, 1.0e-12)), 2)
+                      << " dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB"
+                         " printed for digital silence)\n";
         }
     }
 

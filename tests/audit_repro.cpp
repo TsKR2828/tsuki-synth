@@ -1,3 +1,4 @@
+#include "IRLibrary.h"
 #include "dsp/AudioFIFO.h"
 #include "dsp/DiagnosticOverrides.h"
 #include "dsp/Envelope.h"
@@ -1034,6 +1035,109 @@ juce::File writeExponentialDecayIr (double sampleRate, double t60Seconds,
     return file;
 }
 
+// WF0925-K1 (engineering-gaps:E15), two parts:
+// (a) Known-answer vectors for IRLibrary's self-contained SHA-256 (until now
+//     only hand-checked once, wf0908_P3_f03.txt:41). The expected digests
+//     were re-computed independently with Python's hashlib on 2026-09-25
+//     (command + output in reports/gate_outputs/wf0925_K1_*.txt) -- not
+//     typed from memory. "" and "abc" cover the one-block padding path; the
+//     56-byte message forces the padding into a SECOND block.
+//     Source note (WF0925-K2): the "abc" and 56-byte (448-bit) digests are
+//     also FIPS 180-2 Appendix B.1 / B.2 (printed pp. 35 / 39 of
+//     https://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf,
+//     fetched 2026-09-25; both match word for word, extract in
+//     reports/gate_outputs/wf0925_K2_e15_sources.txt). The empty-message
+//     digest does NOT appear in FIPS 180-2; its only source here is Python
+//     hashlib.
+// (b) Corrupted library entry repair: import an IR, damage the managed copy
+//     (truncate to half, then a 0-byte file), re-import the SAME source,
+//     and require the entry's content hash to be correct again and no
+//     ".tmp-*" leftover. Before WF0925-K1, importFile() reused any existing
+//     file of that name without re-hashing, so the damage was permanent.
+//     Uses the real IRLibrary::getDirectory() (the same user library H7 in
+//     tests/host_probe.cpp uses); the fixture is fresh seeded noise, so its
+//     sha-named entry cannot collide with a real user IR, and it is removed
+//     at the end.
+void testIRLibrarySha256AndCorruptEntryRepair()
+{
+    CHECK (IRLibrary::detail::sha256Hex ("", 0)
+               == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+           "E15: IRLibrary SHA-256 known answer, empty message");
+    CHECK (IRLibrary::detail::sha256Hex ("abc", 3)
+               == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+           "E15: IRLibrary SHA-256 known answer, \"abc\"");
+    static const char twoBlockMsg[] =
+        "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+    CHECK (IRLibrary::detail::sha256Hex (twoBlockMsg, sizeof (twoBlockMsg) - 1)
+               == "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
+           "E15: IRLibrary SHA-256 known answer, 56-byte two-block message");
+
+    const auto source = writeExponentialDecayIr (48000.0, 0.2, 0.05, 925u);
+    const auto sourceSha = IRLibrary::hashFile (source);
+    juce::String err;
+    const auto ref = IRLibrary::importFile (source, err);
+    CHECK (sourceSha.isNotEmpty() && ref.sha256 == sourceSha,
+           "E15: fixture IR imported into the managed library under its content hash");
+    const auto libFile = IRLibrary::fileForSha (sourceSha);
+    CHECK (libFile.existsAsFile() && IRLibrary::hashFile (libFile) == sourceSha,
+           "E15: fresh library entry's bytes hash to its own name");
+
+    auto noTempLeft = [&libFile] ()
+    {
+        return libFile.getParentDirectory()
+                   .findChildFiles (juce::File::findFiles, false,
+                                    libFile.getFileName() + ".tmp-*")
+                   .isEmpty();
+    };
+
+    // Damage 1: truncated to half (a half-written copy).
+    juce::MemoryBlock bytes;
+    libFile.loadFileAsData (bytes);
+    {
+        juce::FileOutputStream out (libFile);
+        if (out.openedOk())
+        {
+            out.setPosition (0);
+            out.truncate();
+            out.write (bytes.getData(), bytes.getSize() / 2);
+        }
+    }
+    CHECK (libFile.existsAsFile() && IRLibrary::hashFile (libFile) != sourceSha,
+           "E15: precondition -- truncated library entry no longer matches its name");
+    const auto ref2 = IRLibrary::importFile (source, err);
+    CHECK (ref2.sha256 == sourceSha && IRLibrary::hashFile (libFile) == sourceSha,
+           "E15: re-importing the original file repairs a truncated library entry");
+    CHECK (noTempLeft(), "E15: no .tmp-* file left next to the repaired entry");
+
+    // Damage 2: a 0-byte file (hashFile() returns "" for it).
+    {
+        juce::FileOutputStream out (libFile);
+        if (out.openedOk())
+        {
+            out.setPosition (0);
+            out.truncate();
+        }
+    }
+    CHECK (libFile.existsAsFile() && libFile.getSize() == 0,
+           "E15: precondition -- library entry emptied to 0 bytes");
+    const auto ref3 = IRLibrary::importFile (source, err);
+    CHECK (ref3.sha256 == sourceSha && IRLibrary::hashFile (libFile) == sourceSha,
+           "E15: re-importing the original file repairs a 0-byte library entry");
+    CHECK (noTempLeft(), "E15: no .tmp-* file left after the second repair");
+
+    // Intact entry: re-import returns the same identity and leaves the entry
+    // correct. (Whether it was skipped or rewritten is not observable here --
+    // CopyFile preserves the source's mtime -- so no such claim is made.)
+    const auto ref4 = IRLibrary::importFile (source, err);
+    CHECK (ref4.sha256 == sourceSha && IRLibrary::hashFile (libFile) == sourceSha
+               && noTempLeft(),
+           "E15: re-importing onto an intact entry keeps identity and content");
+
+    libFile.deleteFile();
+    IRLibrary::sidecarForSha (sourceSha).deleteFile();
+    source.deleteFile();
+}
+
 // Wires the reverb-mode/mix pointers, prepares the chain, and -- when an IR
 // file is supplied -- loads it and prepares a SECOND time. juce_Convolution.h
 // documents that prepare() blocks until the IR from the most recent
@@ -1426,6 +1530,49 @@ bool reportReverbWetGainQuantificationExternalIr (const juce::String& irPathArg)
 
     return true;
 }
+
+// WF0925-K2 (09-25 status check, staged-review:D9c-guard): pins
+// EffectChain::kIrWetMakeupGain to the value 月月 decided on 2026-09-16
+// (D9 option A, DECIDED CONVENTION: x26.9 = +28.58 dB; see the 裁決記錄
+// section of reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md,
+// landed by docs/workcards/WF0914_D9c_ir_makeup_gain.md). Before this CHECK
+// nothing turned red if the constant was edited or deleted: K-02 below only
+// prints, HostProbe has no IR-loudness scenario, and the CLI / 8-score
+// bit-identity renders never go through EffectChain.
+//
+// Deliberately NOT asserted here: |IR - ALGO| <= 0.25 dB on the K-02
+// measurement. That 0.25 dB figure comes from the D9c workcard, not from
+// 月月's decision, so making it a pass/fail limit would be a new tolerance
+// (R2); it is left for a decision packet. K-02 / K-02-EXT stay
+// informational, unchanged.
+//
+// Access: kIrWetMakeupGain is a PRIVATE static constexpr member and this
+// card may not touch src/. C++'s explicit-instantiation access rule
+// ([temp.spec.general]/6 in the current working draft,
+// https://eel.is/c++draft/temp.spec.general: "The usual access checking
+// rules do not apply to names in a declaration of an explicit
+// instantiation ...") lets the explicit instantiation below name
+// &EffectChain::kIrWetMakeupGain; the friend function it defines hands that
+// address to the test. Only the constant is read; no product code runs.
+const float* effectChainIrWetMakeupGainAddress();
+
+template <const float* Member>
+struct EffectChainIrWetMakeupGainAccess
+{
+    friend const float* effectChainIrWetMakeupGainAddress() { return Member; }
+};
+
+template struct EffectChainIrWetMakeupGainAccess<&EffectChain::kIrWetMakeupGain>;
+
+void testIrWetMakeupGainPinnedToDecision()
+{
+    const float gain = *effectChainIrWetMakeupGainAddress();
+    std::printf ("[D9c-guard] EffectChain::kIrWetMakeupGain = %.9g\n", (double) gain);
+    CHECK (gain == 26.9f,
+           "D9c-guard: EffectChain::kIrWetMakeupGain == 26.9f (decision 2026-09-16, "
+           "D9 option A, DECIDED CONVENTION; "
+           "reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md)");
+}
 }
 
 int main()
@@ -1449,6 +1596,8 @@ int main()
     testFmRenderTailAndWall();
     testLayerSourceMasterAndTrim();
     testEffectChainOversizedBlockMatchesExternalChunking();
+    testIRLibrarySha256AndCorruptEntryRepair();
+    testIrWetMakeupGainPinnedToDecision();
 
     std::printf ("%s (%d failure%s)\n",
                  failures == 0 ? "PASS" : "FAIL",

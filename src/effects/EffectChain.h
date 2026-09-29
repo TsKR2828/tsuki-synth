@@ -272,6 +272,14 @@ private:
     // ALGO 路徑一概不動，見 processBlock() 的施加點）。**非物理常數**，
     // 是 4 樣本平均值反推的工程慣例（DECIDED CONVENTION），樣本僅涵蓋
     // 3 種空間尺度（小房間／樓梯間、音樂廳、教堂座堂），非窮舉。
+    // 對齊參考（WF0925-K1，staged-review:D9c-calib）：對齊參考＝ALGO 預設
+    // size 0.5、未指定 T60（K-02 量測時 pReverbSize/pReverbDecay 皆未設）；
+    // IR 路徑本身不看 size/T60（irMode 時不呼叫 setRoomSize/setDecayTime），
+    // 所以「IR 與 ALGO 響度一致」只在這組預設下成立。其他 size 依 Python
+    // 複製版估計差 −1.4～+4.0 dB（size 0.0 −1.36／1.0 +3.98）、其他 T60
+    // 差 −2.4～+5.3 dB（0.3 s −2.38／30 s +5.26）（估計，非量測產品 binary；
+    // 出處 reports/status_check_2026-09-25/probes/reverb_gain_replica_output.txt，
+    // 腳本 reverb_gain_replica.py 同目錄）。純說明，數值不變。
     static constexpr float kIrWetMakeupGain = 26.9f;
 
     Distortion   distortionL, distortionR;

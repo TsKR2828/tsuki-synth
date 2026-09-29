@@ -4,7 +4,7 @@
     "title": "Water Gong - Free Edge (A/B)",
     "id": "water_gong_free",
     "author": "physical-modeling",
-    "description": "Same as water_gong_clamped but with the FREE-edge plate boundary (params.plate_free_edge=true) — the physically-appropriate boundary for a hung gong. Approximate eigenvalues (Leissa nu~0.33), ratios 1 : 1.73 : 2.33 : 3.91. A/B against water_gong_clamped.score.json."
+    "description": "Same as water_gong_clamped but with the FREE-edge plate boundary (params.plate_free_edge=true): a completely free flat circular plate (no boss, no rim). Domain claim (docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md §1, D13 decision 2026-09-15): this is NOT a model of a bossed gong (Thai/Javanese boss+face construction); the absence of a mode near 2.0x f1 is a direct consequence of that domain limit, not a computation error. Free-plate ratios for this score's bronze (nu=0.34): 1 : 1.738 : 2.329 : 3.925 (reports/gate_outputs/wf0914_D13_plate_ratios.txt). A/B against water_gong_clamped.score.json."
   },
   "global": {
     "bpm": 120,

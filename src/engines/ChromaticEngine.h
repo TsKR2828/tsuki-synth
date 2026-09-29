@@ -100,7 +100,15 @@ public:
         resonator.reserveModes (20);
     }
 
-    void setMaterialDB (MaterialDB* db) { materialDB = db; }
+    void setMaterialDB (MaterialDB* db)
+    {
+        materialDB = db;
+        // WF0925-K1 (engineering-gaps:E8): build MaterialDB::getOrderedKeys()'s
+        // function-local static here (setup thread) so startNote()'s first
+        // call on the audio thread never runs that one-time initialisation --
+        // see the identical note in CimbalomVoice::setMaterialDB().
+        (void) MaterialDB::getOrderedKeys();
+    }
     void setNoiseIdentity (uint64_t identity) { noiseIdentity = identity; }
 
     // 參數指標（由 Processor 設定）
@@ -513,8 +521,11 @@ public:
 
     /// Cached wrapper around worstCaseTailSeconds() -- see the identical
     /// rationale on CimbalomVoice::getWorstCaseTailSecondsCached(). Not
-    /// thread-safe against concurrent callers -- valid because both this and
-    /// getTailLengthSeconds() are message-thread-only by construction.
+    /// thread-safe against concurrent callers; WF0925-K1 (E9): its only
+    /// caller is TsukiSynthProcessor::refreshEngineTailCache(), which runs
+    /// only in the processor constructor and afterwards solely on the
+    /// message thread, and publishes the result through a
+    /// std::atomic<double> -- getTailLengthSeconds() no longer calls this.
     double getWorstCaseTailSecondsCached() const
     {
         const uint64_t h = tailParamHash();
@@ -807,6 +818,14 @@ private:
             h = mix (h, pRatio[i] ? pRatio[i]->load() : 0.0f);
             h = mix (h, pAmp[i]   ? pAmp[i]->load()   : 0.0f);
         }
+        // WF0925-K1 (E9): worstCaseTailSeconds() also reads getSampleRate()
+        // (tuneChromaticModesToMidi()'s renderable-frequency filter, 44100
+        // fallback before prepareToPlay()), so the rate is part of the key.
+        // Needed now that the processor computes the tail once at
+        // construction (fallback rate) and again after prepareToPlay() (real
+        // rate) -- without this the second call would return the stale
+        // fallback-rate value.
+        h = mix (h, (float) getSampleRate());
         return h;
     }
 
