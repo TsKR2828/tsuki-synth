@@ -1,0 +1,38 @@
+{
+ "cli": "C:\\Users\\admin\\Desktop\\Claude\\tsuki-synth\\output\\wf0925\\N1\\cli.exe",
+ "stem_offset_db_used": -6.6678917867293634,
+ "files_scanned": 75,
+ "products_in_catalog": 50,
+ "products_found_in_corpus": 50,
+ "totals": {
+  "string_family_events": 32762,
+  "near_null": 5729,
+  "weak_n1n2": 2144,
+  "either": 5729
+ },
+ "flagged_events": 5729,
+ "flagged_in_products": 47,
+ "flagged_products": {
+  "fur_elise_complete": 47
+ },
+ "flagged_by_file": {
+  "scores/classical/fur_elise/fur_elise_complete.score.json": 47,
+  "scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m1.score.json": 721,
+  "scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m2.score.json": 32,
+  "scores/classical/vivaldi_four_seasons/autumn/vivaldi_four_seasons_autumn_m3.score.json": 404,
+  "scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m1.score.json": 714,
+  "scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m2.score.json": 267,
+  "scores/classical/vivaldi_four_seasons/spring/vivaldi_four_seasons_spring_m3.score.json": 545,
+  "scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m1.score.json": 614,
+  "scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m2.score.json": 224,
+  "scores/classical/vivaldi_four_seasons/summer/vivaldi_four_seasons_summer_m3.score.json": 1054,
+  "scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m1.score.json": 534,
+  "scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m2.score.json": 113,
+  "scores/classical/vivaldi_four_seasons/winter/vivaldi_four_seasons_winter_m3.score.json": 460
+ },
+ "flagged_by_engine_hardness": {
+  "piano/Felt": 47,
+  "string/Cotton": 5682
+ },
+ "files_with_string_family": 34
+}

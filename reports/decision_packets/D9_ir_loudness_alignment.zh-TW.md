@@ -156,3 +156,24 @@ EchoThief 3 顆 IR 的下載＋SHA256＋IR 檔案本身寬頻 RMS／長度量測
 4 樣本平均反推）標為 DECIDED CONVENTION，非物理常數；只影響 plugin IR 模式 wet 路徑，
 corpus 75 首不經此路（本包 §4 已核實），落地卡仍須重跑 8/8 位元不變證明。
 
+---
+
+## 附記（2026-09-25，WF0925-K1，staged-review:D9c-calib）：×26.9 的對齊參考設定
+
+對齊參考＝ALGO 預設 size 0.5、未指定 T60；其他 size 依 Python 複製版估計差 −1.4～+4.0 dB、其他 T60 差 −2.4～+5.3 dB（估計，非量測產品 binary）。
+
+- 依據：§3 的量測方法段已寫「ALGO 用 reverb 預設」——也就是 `pReverbSize`／`pReverbDecay` 都沒設（roomSize 0.5、沒有指定 T60），見 `tests/audit_repro.cpp` K-02 量測函式內「ALGO, reverb defaults」那段註解。IR 路徑本身不看 size／T60（`src/effects/EffectChain.h` 的 `processBlock()` 在 irMode 時不呼叫 `setRoomSize()`／`setDecayTime()`），所以 ×26.9 讓兩條路響度一致，只在這組預設下成立。本包原本沒寫清楚的是這層依賴。
+- 數字出處：`reports/status_check_2026-09-25/probes/reverb_gain_replica_output.txt`（同目錄 `reverb_gain_replica.py` 用 Python 複製 SimpleReverb 的 comb／allpass 結構，白噪穩態 wet RMS，相對 size 0.5）：size 0.00 −1.36／0.25 −0.79／0.75 +1.23／1.00 +3.98 dB；decay 0.3 s −2.38／1.0 s −0.40／3.0 s +1.76／10 s +3.89／30 s +5.26 dB。同檔另列複製版的 IR wet（×26.9）減 ALGO@0.5：−0.11／+0.13／+0.57 dB，對照 D9c 實測 −0.131／+0.108／−0.028 dB。**以上都是複製版估計，不是對產品 binary 的量測。**
+- 純說明：×26.9 數值不變、渲染不變；程式端同一段說明已補進 `src/effects/EffectChain.h` 的 `kIrWetMakeupGain` 註解。要不要做成使用者看得到的說明，仍待月月決定（未裁決）。
+
+---
+
+## 附記（2026-09-25，WF0925b-DS；WF0925 交接 E18 未竟項）：×26.9 裡約 18.06 dB 綁在 JUCE 內部常數上
+
+- **事實**：IR 模式的摺積用 `juce::dsp::Convolution`。`src/effects/EffectChain.h` 的 `loadImpulseResponse()`（:89-96）呼叫 `convolution.loadImpulseResponse (file, Stereo::yes, Trim::yes, 0)`，沒有傳第 5 個參數，所以用宣告預設值 `Normalise::yes`（`libs/JUCE/modules/juce_dsp/frequency/juce_Convolution.h:240-242`）。
+  正規化在 `libs/JUCE/modules/juce_dsp/frequency/juce_Convolution.cpp`：`makeEngine()` 在 `wantsNormalise == Convolution::Normalise::yes` 時呼叫 `normaliseImpulseResponse (resampled)`（:789-790）；係數由 `calculateNormalisationFactor()`（:623-629）算，第 628 行是 `return 0.125f / std::sqrt (sumSquaredMagnitude);`——把能量最大的那個聲道縮到平方和為 1，再乘 0.125。20·log10(0.125) = −18.06 dB。
+  所以 D9c 補回的 ×26.9 裡，約 18.06 dB 是在抵銷 JUCE 這個固定係數，不全是 ALGO 與 IR 兩種演算法本身的差（2026-09-25 盤點 E18 的查證修正；上面三個行號本卡用 grep 重新確認過）。版本：submodule `libs/JUCE` 在 `501c076`，`libs/JUCE/modules/juce_core/system/juce_StandardHeader.h:42-44` 是 JUCE 8.0.12。
+- **後果**：WF0925-K2 加的 D9c-guard 只檢查 `kIrWetMakeupGain == 26.9f`。JUCE 升版如果改了 0.125（或改了正規化方式），26.9 沒變、guard 照樣 PASS，IR 模式的響度卻會漂，現有 GATE 擋不住。要不要加響度判定或做成正式檢查清單，見 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q01（B／C 案）。
+- **升 JUCE 前要做的事**（程序提醒，不是新門檻）：升版後先重建測試 target，直接跑 `TsukiSynthAuditTest`，看 `[K-02] RMS difference (IR - ALGO)` 那行跟升版前有沒有變（WF0925 整合卡的值是 0.112 dB，`reports/gate_outputs/wf0925_integration_raw/04b_audit_repro_direct.txt`）；手上有真實 IR 時也用 `TSUKI_K02_EXTERNAL_IR` 重跑 K-02-EXT；並再看一次上面 `juce_Convolution.cpp` 三處的內容有沒有變。有變就停下來，帶數字給月月裁決，不自己改 26.9。
+- **用詞備註**（WF0925 K 稽核 note，只是用詞）：本包與程式註解寫的「+28.58 dB」是 4 樣本平均落差的原數字；把 26.9 倍嚴格換成 dB 是 20·log10(26.9) = 28.595 dB。數值本身不變。
+- 本附記只加說明：×26.9 數值不變、渲染不變。`EffectChain.h` 的 `kIrWetMakeupGain` 註解還沒補「約 18.06 dB 來自 JUCE 0.125 正規化」這句，要改 `src/` 得另開卡（本卡不動 `src/`）。

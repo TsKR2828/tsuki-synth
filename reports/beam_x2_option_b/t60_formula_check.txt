@@ -1,0 +1,4 @@
+rows=7000  materials=14  MIDI 21..108
+max |dump/formula - 1|  base vs x2-law : 4.949e-05
+max |dump/formula - 1|  noX2 vs x1-law : 4.997e-05
+max |base dump / x1-law - 1| (should be large, i.e. base really has x2): 4.998e-01
