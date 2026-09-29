@@ -2,6 +2,82 @@
 
 ---
 
+## 2026-09-25（晚） — WF0925b 收尾輪：商品修正輪、Q12、O16、文件同步、×2 前後數字（6 張卡）＋整合全綠
+
+**起因**：同一個裁決（月月 09-25「剩下 AI 能處理的都處理掉」）的收尾。WF0925 交接後還剩：商品稽核 FAIL 那一條、`WF0925_README.md` §6 的待同步清單、裁決包裡標「AI 可做／AI 可查」的幾項（Q12 建議 A、O05、O15、O16、O18）、Q17 選項 D 的「先算數字」。
+流程照舊：工兵 → 稽核親自重跑 → PASS 才 `git add`，**不 commit、不 push、不改 `src/`、不建置 plugin**。途中又碰到 session 用量上限：XF、TF 由接手工兵先核對前任的 diff 與產出再重跑 GATE；INT2 中斷時沒有產出，恢復後從第 1 步重跑。
+逐卡結果、稽核判定、commit 切法：`docs/workcards/WF0925_README.md` §7。
+
+**TF（CI／tools，稽核 PASS）**：
+- Q12 在授權下先照建議 A 做（**可推翻**）：兩支 workflow 共 14 個多行區塊逐一檢查，每行原生指令後面補 `if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }`；HostProbe 移到各自 job 最後，release 的 corpus job 改看 `cli_uploaded`；HostProbe 註解改成現況。本機照 GitHub runner 包法模擬「只讓一個指令失敗」：改前 12 種被蓋掉（整步綠燈）→ 改後 0 種（TF 30 種情境、稽核自寫 31 種）。push 之後才驗得到。
+- O16 六項：find_cli 不看 mtime、stem_verify 讀 WAVE_FORMAT_EXTENSIBLE、`render_wf_scores.py --cli` 可用相對路徑、stem_verify／partial_verify 加 `--cli`、partial_verify docstring 與 caveats 改成現況、release 網格「0 拒量」搬出 strict xfail（原條件照搬）。突變 11/11；pytest 288 → 307（+19，刪 0）。
+
+**DS（文件同步，稽核 PASS）**：EARFREE §8 換成 A14 之後的數字（677／16／212、殘差 −119.42 dBFS、音高 889/889 最大 3.0355 c；§8.6 改「已執行」，partial PASS 4577／FAIL 849／UNVERIFIED 2），§8.4 可發布措辭原句不動、只加註；ENGINE_DOMAIN_CLAIMS「K1 已同步」；WOOD Table 5–15「已取得」；ROADMAP 檔尾加 13 條 WF0925 落地狀態（原 483 行不位移，§1 十條與 §6 對 HEAD 逐字相同）；兩封信標題「已寄出」；`wf0914_INTEGRATION.txt` 勘誤 15 → 13 項；D9 裁決包 E18（0.125 正規化＝−18.06 dB、升 JUCE 前重跑 K-02、28.58 vs 28.595 dB）。稽核從 V1 原始 JSON 重算 12 項全對。
+
+**BR（Q17 拿掉 ×2 的前後數字，稽核 PASS；描述用、非 GATE）**：在 staged 樹的隔離副本只刪 `BeamModel.h:54` 的 `* 2.0f`，主工作樹沒動。鋼基頻 T60 變長 1.15～1.80 倍（C3 35.15→60.38 s、C4 16.39→26.86 s），鋁 1.11～1.73 倍，頻率不變；corpus 75 份裡用到 BeamModel 的 39 份全變、36 份逐位元相同；8 首基準變 3 首；商品 clean_batch2 50 件變 36 件（現行 CLI 逐位元重現 50/50）；`--full` 兩版都 NO CHECKED FAILURES，但這類檢查分不出哪版像真舌鼓；文獻 7 點現行 0、拿掉 ×2 1 點落在範圍內。報告沒替月月選。
+
+**XF（商品稽核 FAIL 修正輪＋O05＋O18，稽核 PASS）**：三語 README 的 loop 說法照實改（套增益前逐樣本相同；交付檔跟原版重播最大差 26,826～44,774 LSB24，不是逐位元相同）；秒數只捨入一次；真峰值寫成三支量測器範圍 −0.949～−1.048 dBTP（同一檔最多差 0.07 dB）；「0 顆」補 N1 範圍；阻尼措辭改保守；QA 接縫百分位統一取法。重打 zip：SE 一般版 `50749a0e…`、Fab 版 `082b8e69…`（只換 README，音檔沒動），專輯、試聽包沒變；`x2_verify` 134/134；原版 `clean_batch2/` 212 檔不變。
+專輯授權草稿 `LICENSE_ALBUM_v1_1.txt`（O05，第 5 條 A／B 待月月選）；DistroKid 查證 `DISTROKID_NOTES.md`（O18：說明中心 12 篇全部 HTTP 403，只有搜尋摘要，K1～K7 要月月登入確認）。X1／X2 的 15 個證據檔去掉本機路徑 24 處後 stage。
+稽核判定只在 gitignored 的 `output/wf0925b/XF_audit/`（`a3_zips` 36/36、`a5_redaction` 18/18、`x2_verify` 重跑 134/134）。
+
+**INT2（整合）**：src 與 `build\` 6 支執行檔跟 WF0925 整合卡相同 → 不重建、不跑 ctest。pytest **301 passed＋1 skip＋5 xfail＝307**（新基線）；`--full` NO CHECKED FAILURES（570 行跟 WF0925 整合卡逐行相同）；`--selftest` 13/13；`verify_score --all` 75/75；位元不變 **8/8 IDENTICAL**（`--cli` 用相對路徑）；HostProbe 215／0（cwd 在 repo 外、沒設 `TSUKI_REPO_ROOT`）。沒有任何渲染輸出改變。
+
+**HO2（交接）**：HANDOVER／TODO／DEVLOG／README、`WF0925_README.md` §7 與 §0／§3／§4／§6 的註記；裁決包各題下補「2026-09-25 WF0925b」那一行（Q08 行號 :407 → :441 更正、Q12、Q15、Q17、Q18、Q20、Q21、Q26、Q33、Q34、Q36，§7 表後補 O05／O15／O16／O17／O18），新增 **Q38**（F-03 缺檔警告措辭，WF0925 漏收）。
+另查：商品母帶渲染器 repo 外第二份 `E:\TsukiSynth_renderer_archive\` sha256 跟 repo 內那份相同（O15）；C 槽只剩約 12 GB（98%）。
+
+**git**：HEAD 仍是 `18430c4`；staged **239 檔**（WF0925 154＋WF0925b 新進 85）。沒 stage 的只剩盤點資料夾與 `docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md`（Q34）。
+
+**等月月**：審 `git diff --cached`、commit／push（Q33；push 後要看 CI，Q12 才算驗過）；回 38 題裁決包；DistroKid 登入確認與專輯授權第 5 條；下載同意（Q14、Q37）；重新部署 VST3（Q35）；暫存清理（Q36）。
+
+**本輪教訓**：
+- Windows 260 字元路徑上限會讓 CLI 寫不出 render manifest（TF、BR 各碰到一次）：`--workdir` 一律用短路徑。
+- 稽核判定要有進版控的證據檔：XF 稽核只留在 gitignored 的 `output/`，後面的卡只能引回報。
+- 證據外殼不要改寫被包的結果：`wf0925b_XF_audit_rerun.txt` 把舊腳本的 51/52 包成「RESULT: PASS」（理由寫在檔內、判讀也對），但容易被誤讀。
+
+---
+
+## 2026-09-25（下） — WF0925 輪：AI 能處理的都處理（13 張卡）＋整合全綠＋37 題裁決包
+
+**起因**：月月 09-25 裁決「先修文件，然後照 7 個 commit 切，剩下你能處理的都處理掉」。前兩件在上一段（WF0914 成果 7 個 commit `a09058c`～`18430c4`，未 push）；這一段是第三件。
+輸入是同日的現況盤點（`reports/status_check_2026-09-25/`）。流程照 WF0914：規劃者 → 工兵 → 稽核親自重跑，稽核 PASS 才 `git add`，**不 commit、不 push**。途中碰到 session 用量上限，V1、L1、G1 由接手工兵先核對前任產出再續做，整合卡恢復後從第 1 步重跑。
+規約差異與逐卡結果：`docs/workcards/WF0925_README.md`。
+
+**C++ lane（`build-wf\`）**：
+- K1：E8 揚琴每按一個音在音訊執行緒建 `juce::String` → 改 static 常數；E9 `getTailLengthSeconds()` 改讀 20 Hz Timer 在訊息執行緒算好的 atomic 值（H8 四個 tail 值逐字不變）；E14 plugin state 寫 `state_version=3`、preset 讀 version；E15 IR 庫雜湊不符時原子修復＋SHA-256 已知答案測試；D12 情境 1、2 加「輸出 state 不含舊鍵」斷言；註解同步（B7 殘留三處、PlateModel.h D13 主張域、water_gong_free 描述、EffectChain.h D9c 對齊參考）。HostProbe 89→106、AuditTest 97→109。
+- K2：HostProbe 找 `data/materials.json` 改成 cwd → `TSUKI_REPO_ROOT` → exe 往上找（不在 repo 根目錄跑也不會再出 4 個假 FAIL）；D9c-guard（`kIrWetMakeupGain == 26.9f` 精確相等）；E15 出處對 FIPS 180-2 原文；E16 27 個工廠 preset 逐一檢查（109 條）。HostProbe 215、AuditTest 110。
+- K 稽核第 1 輪抓到 K1 的 GATE 4 證據不實（`--cli` 後面空白，`find_cli` 選到 `build\` 的舊 CLI）→ K1K2fix 照實更正並重跑 → 第 2 輪 PASS，stage 34 檔。稽核另做 E8 實測（malloc 計數探針：5 種引擎情境 0 次、負對照每個 note-on 1 次）與 E16 NaN mutation。
+
+**Python／CI lane（P1）**：`release-physics.yml` 補建 SpectrumViewTest＋HostProbe、`unittest` 改 pytest、加 HostProbe 步驟；`physics.yml` Windows job 加 HostProbe；D15 pin 搬到非 xfail 測試；`render_wf_scores.py --outdir`；`find_cli` 優先挑 Release；ffmpeg 找法；新增 `tests/test_stem_stream.py` 17 個測試。
+稽核 PASS，stage 15 檔；另查到既有問題：GitHub Windows runner 的 pwsh 多行 `run:` 只看最後一個 exit code，前面的 ctest／pytest 失敗會被蓋掉（裁決包 Q12）。
+
+**研究 lane（不改 src）**：五張全 PASS，stage 75 檔。
+- N1（D16 零點地圖）：27,808 格 `--dump-modes`；16 顆 FAIL 16/16 在力脈衝凹口內；分開 PASS／FAIL 的是基頻絕對位準（FAIL ≤ −72.1、PASS ≥ −67.2 dBFS，對既有 −70 門檻零誤判）；凹口內事件數 A14 前 44、現在 47；商品只有給愛麗絲鋼琴版受影響。
+- F5（D11-F5 根因）：F5 piano −63.9→−58.5 dB 全部來自 C4 基頻 T60 4.14→2.67 s（琴橋損耗 ∝ 弦徑²×弦長）造成的窗洩漏；現行 PASS 靠探針預設弦徑 0.8 mm（改 1.0 mm 就 −59.5 FAIL）。
+- V1：partial_verify 第一次跑全曲 905 顆（PASS 4577／FAIL 849／UNVERIFIED 2，FAIL 多數是期望值慣例差 +5 c）；外掛 16 voice 搶音推算：正常彈法 50 件商品都不超過。
+- L1（D1／D4／D6）：8 份全文；文獻反對把 BeamModel `*2` 當物理項、但無法判斷總量；模型衰減不看舌片厚度；D6 取得，D4 仍拿不到。
+- G1：THIRD_PARTY_NOTICES、LICENSE 第三方段落、JUCE 8 授權審查、買家 EULA 草稿、安裝包腳本（本機沒有 Inno Setup，沒編譯過）、已知限制索引。
+
+**商品 lane（`exports/`，gitignored）**：X1 做 loop-ready 6 檔、音效響度 B 案 43 檔、音樂 TPDF 版、試聽帶 6:03.560、商品圖 7 張；X2 做 v1.1 候選文案、catalog、三語 README、授權 v1.1 草稿、Fab 版、試聽包＋22 題答題卷（`x2_verify` 86/86）。原版 `clean_batch2/` 212 檔 sha256 不變。
+**稽核 FAIL**：README 寫 loop-ready 檔「跟原版每 N 小節重播逐樣本相同」說太滿（交付檔多了整體增益和 24-bit 捨入，拿 zip 裡的原版重播來比最大差 26,826～44,774 LSB24）。X1／X2 的 15 個證據檔沒 stage；本輪沒跑修正輪。
+
+**規劃（Q1）**：彙總裁決包 `reports/decision_packets/WF0925_open_decisions.zh-TW.md`，37 題（Q01–Q37）＋其他待裁 O01–O19，每題回一個字母；附錄 A 逐條歸檔本輪 11 張卡的 108 條 open_items。
+
+**整合卡（重建 `build/`）10 條 GATE 全綠**：三主 target＋五測試 target EXIT=0、error/warning 0 行；ctest 4/4（AuditTest 110 PASS、D9c-guard PASS、K-02 +0.112 dB）；
+pytest **282 passed＋1 skip＋5 xfail＝288**（舊 270，新增 18 條全是 P1 的，刪除 0）；`--full` NO CHECKED FAILURES；`--selftest` 13/13；`verify_score --all` 75/75；
+HostProbe 215／0（repo 根目錄與 `output/wf0925/INT` 各一次）；位元不變 **8/8 IDENTICAL**——本輪沒有任何渲染輸出改變。新 `build/` CLI `b84c775b…`。
+
+**git**：HEAD 仍是 `18430c4`；staged 154 檔（C++ 34＋Python／CI 15＋研究 75＋整合 24＋交接 6）。沒 stage：X1／X2 證據 15 檔、盤點資料夾、`docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md`。建議 commit 切法見 `WF0925_README.md` §4（裁決包 Q33）。
+
+**等月月**：審 `git diff --cached`、commit／push（Q33）；回裁決包（急的是上架前 Q15、Q20–Q28 與發版前那幾題）；pluginval／validator 等下載（Q14、Q37）；重新部署 VST3、清三份舊副本（Q35）；商品 v1.1 候選（`exports/products/clean_batch2_v1_1_candidate/CHANGES_v1_1.md`）。
+
+**本輪教訓**：
+- 做 GATE 一律帶 `--cli <絕對路徑>`，並看 log 裡 manifest 的 renderer 欄位。K1 回報寫「用 build-wf」，實際 `--cli` 是空白、測到舊 CLI；K2 先注意到，稽核第 1 輪對過 renderer 雜湊後列為要修。
+- 商品文字要照「買家能自己驗證的東西」寫。X1 的數學是對的（比的是加增益之前），寫進 README 就說過頭了。
+- CI 綠燈不代表中間每一步都過：pwsh 多行 `run:` 只看最後一個 exit code（Q12 裁決前要記得）。
+- 共同規約寫錯的地方要當場更正：「HostProbe 必須以 repo 根目錄為 cwd」在 K2 之後已經不成立（K 稽核從 repo 外、整合卡從 `output/wf0925/INT` 跑，都是 215／0），規約文字卻沒跟著改。
+
+---
+
 ## 2026-09-25 — 現況盤點（9 agents）＋ staged 樹重跑 GATE 全綠 ＋ 月月裁決「先修文件、切 7 個 commit」
 
 **起因**：WF0914 的 121 個檔從 09-15 起 staged 等審，已 10 天；先盤點「做到哪、還差什麼、文件跟 repo 對不對得上」，再決定下一步。

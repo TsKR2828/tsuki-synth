@@ -35,13 +35,13 @@
 | **VST3 build** | **Passed** — fresh Release build from current source |
 | **Standalone build** | **Passed** — fresh Release build from current source |
 | **Standalone launch** | **Passed** — current Release build smoke-tested |
-| **DAW plugin host validation** | **Passed** — real Cubase LE AI Elements 12 export verified by `melody_verify` 5/5 and bit-identical project save/reload (2026-08-22, L3b); `TsukiSynthHostProbe` H1–H8 cover scan, instantiation, MIDI render determinism, automation, DAW state, variable host block size (bit-identical), user-preset round-trip and tail-length contract, plus the D12 legacy IR-state migration scenarios (89 PASS / 0 failures on the 2026-09-25 build). Deployment note (checked 2026-09-25): the copy installed on the maintainer's machine is the 2026-09-10 23:46 build, placed in a sub-folder (`Common Files\VST3\TsukiSynth_VST3_2026-09-10\TsukiSynth.vst3`); it predates the WF0914 plugin changes (D12 state migration, D9c IR make-up gain), Cubase's plug-in cache was last written 2026-08-22 and still points at the old top-level path, and older copies remain under `Program Files (x86)` and `%APPDATA%\VST3`. The L3b real-host pass above tested the build of that time, not the current source — redeploy is pending the maintainer's go-ahead |
+| **DAW plugin host validation** | **Passed** — real Cubase LE AI Elements 12 export verified by `melody_verify` 5/5 and bit-identical project save/reload (2026-08-22, L3b); `TsukiSynthHostProbe` H1–H8 cover scan, instantiation, MIDI render determinism, automation, DAW state, variable host block size (bit-identical), user-preset round-trip and tail-length contract, plus the D12 legacy IR-state migration scenarios, the plugin state/preset version checks and a per-preset check of all 27 factory presets (215 PASS / 0 failures on the 2026-09-25 WF0925 integration build, re-confirmed by the WF0925b integration run from a working directory outside the repo; 89 before WF0925). Deployment note (checked 2026-09-25): the copy installed on the maintainer's machine is the 2026-09-10 23:46 build, placed in a sub-folder (`Common Files\VST3\TsukiSynth_VST3_2026-09-10\TsukiSynth.vst3`); it predates the WF0914 plugin changes (D12 state migration, D9c IR make-up gain), Cubase's plug-in cache was last written 2026-08-22 and still points at the old top-level path, and older copies remain under `Program Files (x86)` and `%APPDATA%\VST3`. The L3b real-host pass above tested the build of that time, not the current source — redeploy is pending the maintainer's go-ahead |
 | State save/load | Done (skipNextProgramChange + reattachListener fix) |
 | Version display | Done (v0.3.0 in title bar) |
 | EN/中文 localization | Done |
 | Standalone REC recording | Done |
 
-**Version**: `v0.3.0` — the active deep-audit branch is `fix/deep-physics-audit-20260716`. B1–B6 are merged to `main` (the last of them, B5/B6, with the 2026-08-30 merge `64afb49`). The 2026-09-07~11 audit-closure batch (five commits, `5c9cdb3`…`49b8542`: managed IR library, tail-length contract, schema contract sync, layered `--dump-modes`, sample-accurate water-gong glide, A14 hammer-contact pitch law, D8 tongue-drum exciter fix, measurement self-calibration), the 2026-09-14 handover update `a38bd6a` and the CI fix `766d21d` are **pushed and merged to `main`** (`b56747d` 2026-09-14, `3f9b90a` 2026-09-15); the Physics Verification workflow is green on both `766d21d` and `3f9b90a` (Windows / Linux / macOS legs). The 2026-09-14~16 WF0914 batch (B7 Phase 0 + partial Phase 1, D9c IR make-up gain, D12 legacy IR-state migration, D13/D15 claim-domain narrowing, D14 `stem_verify` memory fix, decision packets and GATE evidence) was committed on 2026-09-25 as seven commits per the maintainer's ruling — **not pushed yet** (hashes: see `git log`). Exact verification state: `HANDOVER.md` (start here for a new session) and `TODO.md`.
+**Version**: `v0.3.0` — the active deep-audit branch is `fix/deep-physics-audit-20260716`. B1–B6 are merged to `main` (the last of them, B5/B6, with the 2026-08-30 merge `64afb49`). The 2026-09-07~11 audit-closure batch (five commits, `5c9cdb3`…`49b8542`: managed IR library, tail-length contract, schema contract sync, layered `--dump-modes`, sample-accurate water-gong glide, A14 hammer-contact pitch law, D8 tongue-drum exciter fix, measurement self-calibration), the 2026-09-14 handover update `a38bd6a` and the CI fix `766d21d` are **pushed and merged to `main`** (`b56747d` 2026-09-14, `3f9b90a` 2026-09-15); the Physics Verification workflow is green on both `766d21d` and `3f9b90a` (Windows / Linux / macOS legs). The 2026-09-14~16 WF0914 batch (B7 Phase 0 + partial Phase 1, D9c IR make-up gain, D12 legacy IR-state migration, D13/D15 claim-domain narrowing, D14 `stem_verify` memory fix, decision packets and GATE evidence) was committed on 2026-09-25 as seven commits per the maintainer's ruling (`a09058c`…`18430c4`) — **not pushed yet**. The follow-up 2026-09-25 WF0925 batch (plugin real-time/state/IR-library hardening, D9c make-up-gain guard test, HostProbe working-directory independence and CI wiring, D16/D11-F5/D1 research reports, THIRD_PARTY_NOTICES and release/legal drafts) is **staged, not committed**; its integration run is all green with the 8 reference renders bit-identical (8/8). The same-day WF0925b follow-up (CI multi-line step exit-code checks, small verification-tool fixes, documentation sync, a before/after study of removing the tongue-drum ×2 damping factor, and text fixes to the product candidates) is also **staged, not committed** — 239 staged files in total, no source (`src/`) changes; its integration run is all green (307 tests = 301 passed + 1 skipped + 5 xfailed, 8/8 bit-identical). Exact verification state: `HANDOVER.md` (start here for a new session) and `TODO.md`.
 
 ## Overview
 
@@ -105,7 +105,7 @@ Full detail and the current decision backlog are in `HANDOVER.md` and `TODO.md`.
 Because neither the developer nor the AI can rely on listening, a second verification chain checks *where in time and at what pitch* notes actually land — independent of the acoustic-model checks above:
 
 - **L1 `tools/melody_verify.py`** — compares a rendered WAV against its source score event-by-event (onset ±10ms, pitch within 5 cents), plus 8 fail-closed refusal rules (masking, overtone contamination, course self-beating, bed energy, low-frequency resolution limits, etc.) so it reports `UNVERIFIED` rather than a false pass when a case is outside its proven domain. Five adversarial sentinels (time-shift/transpose/delete-note/phantom-note must FAIL, unmodified must PASS) guard against a rubber-stamp checker. `--html` renders a piano-roll overlay so a Deaf reviewer can inspect the result visually.
-- **L2 `TsukiSynthHostProbe`** — a CMake test target that loads the built `.vst3` from disk and drives it like a real host (H1–H8 plus the D12 legacy IR-state migration scenarios: 89 checks PASS, 0 failures on the 2026-09-25 re-run; run it from the repo root, because H8 loads `data/materials.json` by relative path), the first automated proof that the plugin's live audio path (not just the offline CLI renderer) places notes correctly.
+- **L2 `TsukiSynthHostProbe`** — a CMake test target that loads the built `.vst3` from disk and drives it like a real host (H1–H8 plus the D12 legacy IR-state migration scenarios, state/preset version checks and all 27 factory presets: 215 checks PASS, 0 failures on the 2026-09-25 WF0925 integration run; H8 looks for `data/materials.json` in the working directory, then under `$TSUKI_REPO_ROOT`, then in the executable's parent folders, so it no longer has to be started from the repo root), the first automated proof that the plugin's live audio path (not just the offline CLI renderer) places notes correctly.
 - **L3 Cubase real-host verification** — `tools/cubase_scan_verify.py` parses Cubase's own scan-cache XML (5/5 PASS), and a supervised end-to-end pass (project build, MIDI import, tempo-aligned export, reverb zeroed) fed back through `melody_verify.py` scored 5/5 with onset ≤2.5ms / pitch ≤0.4 cents, and reload → re-export reproduced bit-identical audio (SHA256 match).
 
 The regression corpus this all runs against is **75 score files** (`scores/examples/` + `scores/classical/` + `scores/originals/ai_radiance/` + `scores/library/`), currently passing 75/75 with zero newly-registered exemptions per full run.
@@ -117,8 +117,8 @@ The regression corpus this all runs against is **75 score files** (`scores/examp
 ctest --test-dir build -C Release --output-on-failure
 
 # Python metrology/counterexample contracts and the complete physics matrix
-# (pytest, as in CI: 270 tests = 264 passed + 1 skipped + 5 xfailed on 2026-09-25;
-#  `unittest discover` only collects 199 of them)
+# (pytest, as in CI: 307 tests = 301 passed + 1 skipped + 5 xfailed on the 2026-09-25 WF0925b integration run;
+#  `unittest discover` misses the pytest-style files; the release workflow now uses pytest too)
 python -m pytest tests -q
 python tools\physics_verify.py --selftest
 python tools\physics_verify.py --full
@@ -147,8 +147,8 @@ python tools\specimen_verify.py path\to\new-bundle\measurement.json `
 
 | Format | Target DAWs | Status |
 |--------|-------------|--------|
-| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | **Built** (x64 binary 7.58 MiB, 7,945,216 B — 2026-09-25 build of the WF0914 tree) |
-| Standalone | No DAW required | **Built** (x64 binary 7.46 MiB, 7,817,216 B — 2026-09-25 build) |
+| VST3 | Cubase, FL Studio, Ableton, Reaper, Studio One | **Built** (x64 binary 7.58 MiB, 7,947,776 B — 2026-09-25 WF0925 integration build) |
+| Standalone | No DAW required | **Built** (x64 binary 7.46 MiB, 7,819,776 B — 2026-09-25 WF0925 integration build) |
 
 The Standalone doubles as a self-contained tool: the title-bar **Score** button opens a
 console that renders a `score.json` to WAV (spawning the bundled `TsukiSynthCLI.exe` —
@@ -253,6 +253,7 @@ tsuki-synth/
 ├── ROADMAP_PHYSICS.md            <- physics acceptance rules (sole acceptance basis)
 ├── ROADMAP.md
 ├── DEVLOG.md
+├── THIRD_PARTY_NOTICES.txt       <- third-party components and licence texts (JUCE, VST3 SDK, codecs, fonts)
 ├── CONTEXT.md                    <- historical snapshot (2026-08-06); see HANDOVER.md
 ├── TODO_HANDOFF.md               <- historical snapshot (2026-07-17); see HANDOVER.md
 ├── CMakeLists.txt
@@ -335,8 +336,8 @@ tsuki-synth/
 │   ├── sound_names.json          <- sound library index
 │   └── tags.json                 <- taxonomy (category/mood/energy/world)
 ├── tests/                        <- C++ regression tests (audit/tuner/physics_models/spectrum_view, host_probe) + pytest suite
-├── tools/                        <- verification and pipeline scripts (physics_verify, verify_score, melody_verify, stem_verify, ...)
-├── docs/                         <- design docs, source-traceability docs, workcards
+├── tools/                        <- verification and pipeline scripts (physics_verify, verify_score, melody_verify, stem_verify, ...); `tools/installer/` = Inno Setup script draft (never compiled)
+├── docs/                         <- design docs, source-traceability docs, workcards; `docs/legal/` = JUCE licence review and buyer EULA draft
 ├── reports/                      <- decision packets, Rule 10 before/after reports, GATE outputs
 └── uiux/                         <- HTML/CSS UI reference mockup
 ```
@@ -394,10 +395,10 @@ Always rebuild the five test targets (`TsukiSynthAuditTest`, `TsukiSynthTunerTes
 | Full physics GATE | `python tools/physics_verify.py --full` |
 | Score corpus (4 shards) | `python tools/verify_score.py --all --shard-index N --shard-count 4 --cli build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe` |
 | Hearing-free melody check | `python tools/melody_verify.py <score> [--wav W] [--html H]` (`--selftest` runs the adversarial sentinels) |
-| Live-plugin position check (L2) | `build/Release/TsukiSynthHostProbe.exe build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <outdir>` (run from the repo root; expect 89 PASS, 0 failures) |
+| Live-plugin position check (L2) | `build/Release/TsukiSynthHostProbe.exe build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <outdir>` (any working directory works while the exe stays in the repo's `build` folder; for a copy outside the repo set `TSUKI_REPO_ROOT`; expect 215 PASS, 0 failures) |
 | Cubase scan-cache check (L3a) | `python tools/cubase_scan_verify.py` |
 | Cross-platform check | `python tools/crossplatform_verify.py --selftest` (CI runs this on push, blocking) |
-| Python unit/contract tests | `python -m pytest tests -q` (baseline 270: 264 passed + 1 skipped + 5 xfailed) |
+| Python unit/contract tests | `python -m pytest tests -q` (baseline 307: 301 passed + 1 skipped + 5 xfailed) |
 | MIDI ↔ score transcription check | `python tools/score_vs_midi_verify.py <midi> <score> [--json J]` (`--selftest` runs the mutation sentinels; the Für Elise pair also runs in CI via pytest) |
 | Per-event dry-stem check | `python tools/stem_verify.py <score> [--limit N] [--jobs N] [--json J]` |
 | Partial-level check (informational, not a GATE) | `python tools/partial_verify.py <stem report.json> [--json J] [--html H]` |
@@ -429,8 +430,9 @@ The binaries already present in a checkout may predate the current source. Rebui
 
 Proprietary — all rights reserved (commercial rights retained). See [LICENSE](LICENSE).
 JUCE 8 is used under the Starter tier (free, revenue < USD 20k, closed-source
-distribution permitted); review the JUCE 8 EULA attribution clause before any
-public release. The VST3 SDK inside JUCE 8 is MIT.
+distribution permitted); the 2026-09-25 review (`docs/legal/JUCE8_LICENSE_REVIEW.zh-TW.md`)
+found no splash-screen or attribution requirement. The VST3 SDK inside JUCE 8 is MIT.
+Third-party components and their licence texts: [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
 
 ## Links
 
