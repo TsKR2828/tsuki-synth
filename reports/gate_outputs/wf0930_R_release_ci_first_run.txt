@@ -1,0 +1,29 @@
+release-physics.yml 史上第一次執行（wf0930-R，2026-09-30）
+========================================================
+Run: 36602858471（workflow_dispatch，月月裁決 Q14=C 授權；branch fix/deep-physics-audit-20260716，HEAD d9aab66）
+觸發：2026-09-29T17:08:46Z（UTC）；結論：completed / SUCCESS，5 job 全綠。
+（監看 agent 因 session 結束中斷，本檔由主 session 直接從 gh run view --log 抽取關鍵行補寫。）
+
+各 job：
+- build-and-host-validate：success
+- complete-score-corpus (0)(1)(2)(3)：success ×4
+
+關鍵行（gh run view 36602858471 --log 摘錄，時間為 UTC）：
+  17:24:18  100% tests passed, 0 tests failed out of 4                  ← ctest 4/4
+  17:32:11  299 passed, 3 skipped, 5 xfailed in 472.99s                 ← pytest 307（=基線；CI 環境 skip 3）
+  17:35:03  RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED ← physics_verify --full
+  17:35:34  0 failed test(s).                                           ← pluginval strictness 10
+  17:35:53  Result: 47 tests passed, 0 tests failed                     ← Steinberg validator 47/47
+  17:35:53  PLUGIN VALIDATION RESULT: PASS                              ← tools/validate_plugin.ps1
+  17:36:00  PASS (0 failures)                                           ← HostProbe（runner 上）
+  17:42:31  19/19 score(s) passed（1 既有豁免 summer_m2 rests）          ← corpus 分片 0
+  17:43:31  19/19 score(s) passed                                       ← 分片 1
+  17:43:51  19/19 score(s) passed                                       ← 分片 2
+  17:43:54  18/18 score(s) passed                                       ← 分片 3
+  合計 corpus 75/75（19+19+19+18），豁免 1 項為既有登記（summer_m2 休止 RMS，FX-bypass 證明是殘響尾）。
+
+意義：
+- 這條發行用 workflow 從 08-02 建立以來第一次真的跑，一次全綠——WF0925-P1/WF0925b-TF 修的兩個缺陷
+ （建置清單漏 SpectrumViewTest、unittest 只收 199/307、pwsh 多行 run 吞 exit code）確認有效。
+- pluginval 與 Steinberg validator 在 runner 上的結果與本機重驗（wf0930_V_pluginval_validator.txt）一致。
+- 裁決包 Q14 的 A（本機）與 B（runner 常規化）都已完成 → Q14=C 全部落地。
