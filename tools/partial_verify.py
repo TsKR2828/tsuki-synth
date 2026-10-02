@@ -43,6 +43,25 @@ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md §8.6):
     (WF0925b-TF, O16: this paragraph and the report caveat brought up to
     date; gate_ready_reason was updated by WF0925-P1.)
 
+EXPECTED-VALUE CONVENTION -- READ THIS BEFORE READING ANY FAIL
+(2026-10-02 月月裁決 Q18=A, WF1002-D; documentation only, no logic change):
+  * The expected partial frequency is taken from STRING 0 of the course
+    (--dump-modes string 0), NOT from the centre of the 3-string course.
+  * With the engine's default 5-cent detuning a piano note's 3 strings sit
+    at 0 / +5 / +10 c relative to string 0, so the 3-string (amplitude-
+    weighted) average is about +5 c higher than string 0, and the measurer
+    reads roughly that centre.
+  * Consequence: most FAILs this tool reports are this convention offset,
+    not the engine's partials being 5+ c wrong. Fur Elise full run
+    (905 events): 849 FAIL, 848 of them sharp; after subtracting the
+    3-string offset the FAIL group's median deviation is +0.03 c.
+    Switching the expected value to the 3-string average is not clean
+    either (120 cells exceed, 97 of them A2 n=1, the measurer's known
+    low-register gap). See reports/partial_verify_full_2026-09-25.zh-TW.md
+    S0 and S3.
+  中文：期望值取第 0 根弦；3 弦平均約高 +5 c；本工具報的 FAIL 多半是這個
+  慣例差，不是引擎泛音錯了 5 c 以上（見 reports/partial_verify_full_2026-09-25.zh-TW.md）。
+
 WHAT THIS TOOL DOES
   1. Reads a tools/stem_verify.py JSON report (must have been produced with
      an explicit --out-dir AND --keep-stems, so the per-event stem WAV/score
@@ -852,7 +871,14 @@ def build_arg_parser():
         description="Partial-frequency internal-consistency check "
                     "(informational; A13 decision packet 選項 B+) plus "
                     "harmonic-aware pitch-via-partials for weak-fundamental "
-                    "events (C13).")
+                    "events (C13).",
+        epilog="Expected-value convention (2026-10-02 ruling Q18=A): the "
+               "expected partial frequency is taken from string 0 of the "
+               "course; the 3-string average is about +5 c higher, so most "
+               "FAILs are this convention offset, not a 5+ c engine error "
+               "(see reports/partial_verify_full_2026-09-25.zh-TW.md). "
+               "中文：期望值取第 0 根弦；3 弦平均約高 +5 c；FAIL 多為此慣例差"
+               "（見 reports/partial_verify_full_2026-09-25.zh-TW.md）。")
     ap.add_argument("stem_report", nargs="?", default=None,
                      help="tools/stem_verify.py JSON report (run with an "
                           "explicit --out-dir and --keep-stems)")

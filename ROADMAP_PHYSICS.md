@@ -14,7 +14,7 @@
 > 過程細節見 `DEVLOG.md` 09-07～15 段與 `TODO.md` 開頭快照；逐條查證見 `reports/status_check_2026-09-25/`（2026-09-25 盤點，寫作時未入庫）。
 > **git 狀態**：本文件較早段落裡的「unstaged 待審／待 push／等 UI mockup 裁決後才 merge」等字樣是當時的狀態，保留作歷史。
 > 那些批次（08-06 響度校準、B1～B6、WF0907～0910 各卡）都已 commit、push 並 merge `main`（最近一次 merge `3f9b90a`，2026-09-15）。
-> **WF0914 成果 2026-09-25 依月月裁決分 7 個 commit 入庫（未 push；hash 見 git log）。** **WF0925 輪（2026-09-25）的落地狀態記在檔尾「2026-09-25 WF0925 輪落地補記」**（放檔尾，是為了不讓其他文件引用的本檔行號位移）。
+> **WF0914 成果 2026-09-25 依月月裁決分 7 個 commit 入庫（未 push；hash 見 git log）。** **WF0925 輪（2026-09-25）的落地狀態記在檔尾「2026-09-25 WF0925 輪落地補記」**（放檔尾，是為了不讓其他文件引用的本檔行號位移）。**WF1002 輪（2026-10-02 月月裁決落地）記在檔尾「2026-10-02 WF1002 輪」；本輪月月首次授權改 §1 R6／R7 與 §6 原文，每處改動都留「2026-10-02 月月裁決 Qxx」註記。**
 
 | 項目 | 裁決（日期） | 做了什麼 | 證據 |
 |---|---|---|---|
@@ -158,17 +158,17 @@ ctest 4/4；pytest 270（264 passed＋1 skip＋5 xfail）；`physics_verify.py -
 3. **禁止縮小 GATE 範圍。** 不得只跑部分引擎、部分音符、部分 score 就宣稱整個 GATE 通過。
 4. **禁止 hardcode 無法溯源的物理常數。** 每個新常數必須在程式碼註解或文件標明來源：文獻（書名/表號）、推導（公式）、或量測（方法）。
 5. **Milestone 不可部分標記 Done。** 任務沒全完成就標 `In progress` 並列出剩餘項目。
-6. **改動任何 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/` 之後**，宣稱完成前必跑：
+6. **改動任何 `src/`（含全部子資料夾）或 `CMakeLists.txt` 之後**，宣稱完成前必跑（**2026-10-02 月月裁決 Q02=A**：範圍由原文「~~改動任何 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/` 之後~~」四個資料夾，擴成整個 `src/`＋`CMakeLists.txt`；理由：CLI 渲染也會經過 `src/effects/`，而且賣的是外掛）：
    - `python tools/physics_verify.py --full`（全引擎）→ 無 checked failure；任何 `UNVERIFIED/N/A` 必須逐項列出
-   - 三個 build target（CLI / Standalone / VST3）exit 0
-7. **不 commit、不 push。** 檔案留 unstaged，由月月審完決定（現行工作規則）。
+   - 三個 build target（CLI / Standalone / VST3）exit 0；**外掛層另加（2026-10-02 月月裁決 Q02=A）**：改到外掛層（`src/PluginProcessor.*`、`src/PluginEditor.*`、`src/effects/`、`src/IRLibrary.h`、`src/PresetManager.h`、`src/ParameterLayout.*`、`src/Presets.h`）時，另外必跑：先重建五個測試 target（`TsukiSynthAuditTest`、`TsukiSynthTunerTest`、`TsukiSynthPhysicsModelsTest`、`TsukiSynthSpectrumViewTest`、`TsukiSynthHostProbe`）再跑 `ctest`（X4 規約），以及 HostProbe 全套——上面的 `--full` 和三個 build 驗不到外掛行為
+7. **不 commit、不 push（月月明示裁決時除外）；稽核 PASS 後由稽核 `git add`（staged）供月月審。**（**2026-10-02 月月裁決 Q03=A** 改字面；原文：「~~**不 commit、不 push。** 檔案留 unstaged，由月月審完決定（現行工作規則）。~~」——自 WF0907 起實務已是稽核 PASS 後 staged，見 `docs/workcards/WF0907_README.md`、`docs/workcards/WF0914_README.md` §2）
 8. **文件同步。** 完成任何 GATE 後更新本文件 §2 狀態欄與 `TODO.md`。
 9. **域外功能標註。** 任何驗證域外的新功能（見 §0 表），文件與 UI 必須標註，比照 FM Piano 的做法。
 10. **音色會變的改動需告知。** 任何讓既有 preset / score 渲染結果改變的物理修正（如 M2），必須產出前後對照的頻譜差異報告，讓月月知情後決定。
 
-> **待月月裁決（2026-09-25 盤點提出；以上十條原文未改）**：
-> - **R7 字面與實際流程不一致**：R7 寫「檔案留 unstaged」，但自 WF0907 起的實際流程是稽核 PASS 後由稽核執行 `git add`（staged）供月月審（`docs/workcards/WF0907_README.md`、`docs/workcards/WF0914_README.md` §2）。要不要把 R7 措辭改成「不 commit、不 push；稽核 PASS 後可 `git add`（staged）供審」，由月月決定。→ 見 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q03（2026-09-25 補記）。
-> - **R6 範圍沒涵蓋外掛層**：R6 只列 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/`；D12 改的 `src/PluginProcessor.cpp`、D9c 改的 `src/effects/EffectChain.h`，以及 09-13 入庫的 `src/IRLibrary.h`、`src/ParameterLayout.cpp` 都不在強制範圍內（這幾張卡各自有跑 GATE，但規則文字沒有強制）。要不要把 R6 擴大到 `src/effects/` 與外掛層（`PluginProcessor`、`IRLibrary`、`ParameterLayout` 等），由月月決定。→ 見裁決包 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q02。Q02 另查到：CLI 渲染路徑也會用到 `src/effects/`（`src/score/ScoreRenderer.h:11` include `../dsp/EffectsChain.h`，`src/dsp/EffectsChain.h:3-5` 再 include `../effects/SimpleReverb.h`、`StereoDelay.h`、`Compressor.h`），但 R6 字面沒列 `src/effects/`（2026-09-25 補記，R6 原文未改）。
+> **~~待月月裁決~~ 已裁（2026-09-25 盤點提出；~~以上十條原文未改~~ 2026-10-02 月月裁決 Q02=A、Q03=A，R6、R7 已改字面，見上；下面兩條保留作歷史）**：
+> - **R7 字面與實際流程不一致**：R7 寫「檔案留 unstaged」，但自 WF0907 起的實際流程是稽核 PASS 後由稽核執行 `git add`（staged）供月月審（`docs/workcards/WF0907_README.md`、`docs/workcards/WF0914_README.md` §2）。要不要把 R7 措辭改成「不 commit、不 push；稽核 PASS 後可 `git add`（staged）供審」，由月月決定。→ 見 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q03（2026-09-25 補記）。**→ 2026-10-02 月月裁決 Q03=A：已照 A 改 R7 字面（見上）。**
+> - **R6 範圍沒涵蓋外掛層**：R6 只列 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/`；D12 改的 `src/PluginProcessor.cpp`、D9c 改的 `src/effects/EffectChain.h`，以及 09-13 入庫的 `src/IRLibrary.h`、`src/ParameterLayout.cpp` 都不在強制範圍內（這幾張卡各自有跑 GATE，但規則文字沒有強制）。要不要把 R6 擴大到 `src/effects/` 與外掛層（`PluginProcessor`、`IRLibrary`、`ParameterLayout` 等），由月月決定。→ 見裁決包 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q02。Q02 另查到：CLI 渲染路徑也會用到 `src/effects/`（`src/score/ScoreRenderer.h:11` include `../dsp/EffectsChain.h`，`src/dsp/EffectsChain.h:3-5` 再 include `../effects/SimpleReverb.h`、`StereoDelay.h`、`Compressor.h`），但 R6 字面沒列 `src/effects/`（2026-09-25 補記，R6 原文未改）。**→ 2026-10-02 月月裁決 Q02=A：R6 已擴成整個 `src/`＋`CMakeLists.txt`，外掛層另規定 ctest（先重建五個測試 target）＋HostProbe（見上）。**
 
 ---
 
@@ -460,7 +460,7 @@ python tools/physics_verify.py --t60
 
 | 項目 | 現值 | 目標值（Milestone） | 依據 |
 |---|---|---|---|
-| f0 誤差（`physics_verify.py` 音訊量測） | ±5 cents（全域，無 per-engine 放寬） | ±5 cents（M7） | 2026-07-17 note-range 全過；rubber 三例因不足八週期列 N/A，不以攻擊噪聲假造 f0 |
+| f0 誤差（`physics_verify.py` 音訊量測） | ±5 cents（全域，無 per-engine 放寬） | ±5 cents（M7） | 2026-07-17 note-range 全過；rubber 三例因不足八週期列 N/A，不以攻擊噪聲假造 f0；**沿用本列的兩處（2026-10-02 月月裁決 Q04=A 註明）**：`melody_verify.py` 的 pitch ±5 cents（`PITCH_TOL_CENTS = vs.MODE_F0_TOL_CENTS`）與 `partial_verify.py` 的 partial 頻率 ±5 cents 都是沿用本列，不是另外的容差 |
 | f0 誤差（`verify_score.py` `--dump-modes` course 質心值） | ±5 cents（`check_modes()` 已改為振幅加權 course 質心；2026-07-23 GATE 完成） | ±5 cents（M7，與 `physics_verify.py` 全域容差一致） | 舊量測點是單一弦（by design `-detuningCents` 偏移），非聲學質心；改用 course 質心後 moonlight yangqin 誤差由 5.013 降至 0.019 cents。證據：`reports/gate_outputs/deepfix4_*` |
 | Partial 頻率誤差 | 2–4%（依引擎） | 維持，M7 檢討 | FFT 量測窗 ±6% 的解析限制 |
 | Partial 振幅誤差 | ±3.0 dB（M2 已達成，Phase H 材質修正後重跑 `--amps` 仍 `RESULT: ALL WITHIN TOLERANCE`，`reports/gate_outputs/phase_h_gate_amps.txt`，確認材質阻尼/E 修正不影響 t=0 振幅判定） | ±3.0 dB（M2） | M2 實測後定案 |
@@ -470,12 +470,12 @@ python tools/physics_verify.py --t60
 | 休止區 RMS | 無 | ≤ −50 dBFS（M3，含殘響衰減窗） | 待 M3 實測後檢討；2026-07-18 量測法改為逐聲道 RMS 取最大（門檻 −50 dBFS 不變；量測方法變更，非容差變更） |
 | 跨引擎等 RMS | 0.2 dB（已達） | 維持 | 2026-06 校準 |
 | 決定性 | SHA256 一致（同機） | 跨機：max abs delta ≤ −120 dBFS、delta RMS ≤ −120 dB re signal、spectral ≤ 0.01 dB、peak pitch ≤ 0.01 cents | **2026-08-22 月月登記完成**（`scores/crossplatform_tolerance.json`，裁決「照提案登記」）：依 CI run 32446987833 第一次三平台實測（最差 5 LSB@24bit／−125.8 dB／0.0019 dB／+0.0000c）留餘裕訂定，`cross-platform-compare` 自此轉**阻斷式 GATE**（超標 exit 1）。2026-08-15 工具就位記錄：`tools/crossplatform_verify.py` + CI 三平台矩陣，無登記時 exit 3 UNREGISTERED 只印不判（Rule 2） |
+| 旋律 onset 誤差（`melody_verify.py` `ONSET_TOL_S`） | ±10 ms | 維持 | **2026-10-02 月月裁決 Q04=A 補登（數值不變，只補出處）**：C3-b，2026-08-20 月月委託 AI 依推導自定（hop 量化 256/48000＝5.3 ms＋Hann 窗群延遲展幅，推導寫在 `tools/melody_verify.py` 檔頭 Tolerance provenance）；證據 `reports/gate_outputs/l1_l2_l3a_melody_gate.txt`。此前一直在用、但沒登記本表 |
+| 量測器自證（`tools/measurement_selfcal.py`，`MAX_ABS_ERROR_CENTS_LIMIT`／`SENSITIVITY_TOL_CENTS`） | ≤1.0 cent＝**strict xfail 判定值**（已知達不到；`tests/test_measurement_selfcal.py` 五條 strict xfail：:195、:216、:238、:260、:298） | 主張域已收窄：持續段 ≤1.18 cent；放鍵／阻尼段約 7.2 cent | **2026-10-02 月月裁決 Q04=A 補登（數值不變，只補出處）**：1.0 cent 是月月 2026-08-30 查核第 5 點訂的；C10（月月 09-10 選 A）把主張域收窄為「量測器已知系統誤差 ≤1.18 cent」（開發 1.1721／hold-out 1.0840），D15（月月 09-15 選 A'）再限定 ≤1.18 cent 只涵蓋持續段、放鍵／阻尼段已知誤差上界約 7.2 cent（開發 5.2304／hold-out 7.2055）；不可宣稱量測器 ≤1 cent。出處 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.5、`reports/decision_packets/C10_selfcal_domain.zh-TW.md` §7 |
+| 外掛 IR−ALGO 殘響響度差（D9c，合成 IR；`audit_repro` CHECK） | \|IR−ALGO\| ≤ 0.25 dB | 維持 | **2026-10-02 月月核准登記（裁決 Q01=B）**：出處 `docs/workcards/WF0914_D9c_ir_makeup_gain.md` §2 第 2 項（:28-30，「0 ± 0.25 dB」）；0.25 dB 取自 D9b 實測的樣本展幅 0.24 dB。現值合成 IR +0.112 dB（`reports/gate_outputs/wf0914_D9c_ir_makeup_gain.txt` §2.5；09-25 ctest 重跑相同），餘裕 0.138 dB。CHECK 由 WF1002-C1 加進 `audit_repro`（以該卡證據為準）。外掛層、屬 §0 效果鏈域外，不是物理主張；對齊參考是 ALGO 預設 room size 0.5、未指定 T60；CI 只有合成 IR（三顆真實 IR 在 gitignored 的 `external_data/`） |
 
-> **待月月裁決（2026-09-25 盤點提出；上表數值一字未改）**：有兩個實際在用的 GATE 門檻沒有登記在本表——
-> (1) `melody_verify` 的 onset ±10 ms（C3-b，2026-08-20 月月委託 AI 依推導自定，證據 `reports/gate_outputs/l1_l2_l3a_melody_gate.txt`）；
-> (2) 量測器自證 `measurement_selfcal` 的 ≤1.0 cent（月月 2026-08-30 查核第 5 點訂；C10／D15 已收窄主張域，見檔頭補記）。
-> `melody_verify`／`partial_verify` 的 pitch ±5 cent 是沿用本表「f0 誤差」列，不算新容差。
-> 要不要把 (1)(2) 補登進本表（數值不變，只補登記與出處），由月月決定。
+> **~~待月月裁決~~ 已裁（2026-09-25 盤點提出；2026-10-02 月月裁決 Q04=A＋Q01=B 補登上面最後三列，數值都不變、只補出處）**：原註記寫「有兩個實際在用的 GATE 門檻沒有登記在本表——(1) `melody_verify` 的 onset ±10 ms（C3-b，2026-08-20 月月委託 AI 依推導自定，證據 `reports/gate_outputs/l1_l2_l3a_melody_gate.txt`）；(2) 量測器自證 `measurement_selfcal` 的 ≤1.0 cent（月月 2026-08-30 查核第 5 點訂；C10／D15 已收窄主張域，見檔頭補記）。`melody_verify`／`partial_verify` 的 pitch ±5 cent 是沿用本表「f0 誤差」列，不算新容差。要不要把 (1)(2) 補登進本表（數值不變，只補登記與出處），由月月決定。」
+> 處理：(1)(2) 已補登；Q01=B 的 0.25 dB 同一步登記；兩處 ±5 cent 已在「f0 誤差（`physics_verify.py`）」列註明沿用。上表其他列數值一字未動。為了不讓 §7 以後的行號位移，這段註記從 5 行壓成 2 行（原 :474-479 的位置現在是三列新登記＋本註記）。
 
 ## 7. 狀態更新規則
 
@@ -508,3 +508,9 @@ python tools/physics_verify.py --t60
 | **D11-F5** 根因 | 研究完成（WF0925-F5），**待月月裁決 Q16** | 候選 patch 下 F5 piano −63.9 → −58.5 dB 全部來自 C4 基頻 T60 變短（4.1425 → 2.6733 s）；另發現現行引擎只把 F5 探針弦徑 0.8 mm 改成 1.0 mm 就是 −59.5 dB FAIL | `reports/d11_f5_root_cause_2026-09-25.zh-TW.md`；`reports/decision_packets/D11_string_scale_candidate.zh-TW.md` 檔尾；`wf0925_F5_*.txt` |
 
 整合卡（WF0925-INT）對 staged 樹重建 `build\` 跑全套，10 條 GATE 全綠：ctest 4/4（AuditTest 110 PASS／0 FAIL）、pytest 282 passed＋1 skipped＋5 xfailed、`physics_verify.py --full` NO CHECKED FAILURES、`--selftest` 13/13、`verify_score.py --all` 75/75（1 項既有豁免）、HostProbe 215／0、位元不變 8/8 IDENTICAL。證據 `wf0925_INTEGRATION.txt`、`wf0925_integration_raw/`。
+
+---
+
+## 2026-10-02 WF1002 輪（月月裁決落地；依 Rule 8）
+
+> 月月 2026-10-02 裁決「照 Fable 的說法做」：裁決包 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` 38 題，以 `docs/workcards/WF1002_README.md` §1 裁定表為唯一依據。**本輪是月月第一次授權改 §1 規則原文與 §6 容差表**：§1 改 R6（Q02=A）、R7（Q03=A）；§6 補登 onset ±10 ms、量測器自證 1.0 cent（Q04=A）、D9c IR−ALGO ≤0.25 dB（Q01=B，10-02 核准），f0 列註明兩處 ±5 cent 沿用（Q04=A）——每處都留「2026-10-02 月月裁決 Qxx」註記，舊文用刪除線或引述保留；§6 既有數值一字未動。主張域（Q08 B、Q09 B＋Q09c B、Q17 A、Q19 C）升格寫在 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §2～§10（C5 弦長／弦徑在 §11 註明等 Q16 研究卡，未升格）；CI Linux leg label 改 `ubuntu-24.04-gcc`（Q13=A）。C++ lane（Q01/Q01b/Q05/Q06/Q07/Q09 實測/Q10/Q17 註解/Q38 字串）與研究卡的落地狀態以各卡證據為準。文件 lane 證據 `reports/gate_outputs/wf1002_D_changes.txt`。**git 狀態：本輪改動未 commit；稽核 PASS 後才 staged（R7 新字面）。**

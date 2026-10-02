@@ -180,8 +180,13 @@ jobs:
   # Every documented GATE in reports/gate_outputs/ was produced by a
   # Windows/MSVC build.  verify_score.py's determinism check only proves the
   # renderer is reproducible ON ONE MACHINE.  These two jobs render a fixed
-  # probe set on Linux/clang and macOS/AppleClang as well, and measure how far
+  # probe set on Linux/GCC and macOS/AppleClang as well, and measure how far
   # the results are from the Windows reference.
+  # (2026-10-02 WF1002-D, ruling Q13=A: the Linux leg used to be labelled
+  # "ubuntu-24.04-clang" but sets no CC/CXX, so the runner default GNU 13.3.0
+  # compiles it -- CI runs 32446987833 / 34880536096 / 36598831072 all log
+  # "The CXX compiler identification is GNU 13.3.0".  Only the label was
+  # renamed to ubuntu-24.04-gcc; the compiler and the build are unchanged.)
   #
   # Bit identity across compilers is NOT expected: FMA contraction, libm
   # sin/exp/pow accuracy and vectorisation all legitimately differ, and
@@ -201,7 +206,7 @@ jobs:
           - os: windows-2022
             label: windows-2022-msvc
           - os: ubuntu-24.04
-            label: ubuntu-24.04-clang
+            label: ubuntu-24.04-gcc
           - os: macos-14
             label: macos-14-appleclang
     runs-on: ${{ matrix.os }}
@@ -294,7 +299,7 @@ jobs:
           set +e
           python tools/crossplatform_verify.py --compare \
             xplat/xplat-windows-2022-msvc \
-            xplat/xplat-ubuntu-24.04-clang \
+            xplat/xplat-ubuntu-24.04-gcc \
             xplat/xplat-macos-14-appleclang | tee xplat_report.txt
           status=${PIPESTATUS[0]}
           set -e

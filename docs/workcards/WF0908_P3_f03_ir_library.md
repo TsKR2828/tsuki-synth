@@ -33,7 +33,7 @@
 |---|---|
 | resolve 成功且 sha256 吻合 | 載入；UI 顯示 original_name |
 | 找不到，使用者在 GUI 指了別的檔 | 載入該檔；UI 在名稱旁標「與 preset 存的不是同一個 IR」；preset 標 dirty |
-| 找不到，且無 GUI 互動（DAW 自動載入） | **模式強制切回 algorithmic**、`effectChain.clearImpulseResponse()`、UI IR 欄顯示「未載入：<original_name>」＋一次性警告（含「音量會與 IR 模式不同」字樣）；**不可靜音、不可沿用 instance 既有 IR** |
+| 找不到，且無 GUI 互動（DAW 自動載入） | **模式強制切回 algorithmic**、`effectChain.clearImpulseResponse()`、UI IR 欄顯示「未載入：<original_name>」＋一次性警告（含「音量會與 IR 模式不同」字樣）（2026-10-02 月月裁決 Q38=A：D9c 補償後改為音色差異措辭，新字樣見 UI 規格 v1.2 §5-3〔`docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md`〕。理由：這句是 IR 比演算法殘響小約 28 dB 時寫的，09-16 D9c 補償後預設設定下兩種模式音量已對齊，剩下的差別主要是音色；出處裁決包 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q38。原字樣保留作歷史）；**不可靜音、不可沿用 instance 既有 IR** |
 
 ### 2.4 單一真相
 - 刪掉「UI 問 `reverbIRName`、音訊問 `hasImpulseResponse()`」的雙軌：processor 提供 `IRStatus getIRStatus()`（`{loaded, name, mismatch, missing}`），UI 只讀它；`loaded` 直接取自 `effectChain.hasImpulseResponse()`。
