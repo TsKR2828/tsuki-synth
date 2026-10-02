@@ -17,9 +17,13 @@
 ;   Documents\TsukiSynth\Recordings, Desktop\TsukiSynth_Renders.
 ; ============================================================================
 
-; "x64compatible" (used below) was introduced in Inno Setup 6.3.0.
-#if VER < EncodeVer(6,3,0)
-  #error Inno Setup 6.3.0 or newer is required to compile this script.
+; "x64compatible" (used below) was introduced in Inno Setup 6.3.0;
+; "SetupArchitecture" (used below) was introduced in Inno Setup 7.0.0 -- a 6.x
+; compiler rejects it as an unknown [Setup] directive, so 7.0.0 is now the minimum.
+; (WF1002b-C, 月月 2026-10-02 裁決 N7=A. Never compiled: Inno Setup 7.1.0 is only
+; downloaded, not installed, on the dev machine -- see README.md.)
+#if VER < EncodeVer(7,0,0)
+  #error Inno Setup 7.0.0 or newer is required to compile this script.
 #endif
 
 #define AppName        "TsukiSynth"
@@ -76,6 +80,14 @@ VersionInfoProductName={#AppName}
 ; 64-bit folders and Setup refuses to run on 32-bit Windows.
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
+; Build the installer (Setup.exe) itself as a 64-bit x64 program instead of Inno
+; Setup 7's default 32-bit x86 one (月月 2026-10-02 裁決 N7=A; the product is
+; Windows 64-bit only, Q30=A). Inno Setup 7.0.0 "What's New": SetupArchitecture=x64
+; also changes the DEFAULTS of ArchitecturesAllowed / ArchitecturesInstallIn64BitMode
+; to x64compatible -- the two explicit lines above already say x64compatible, so they
+; stay consistent with that default (kept explicit on purpose).
+; UNVERIFIED: not compiled, not test-installed (Inno Setup not installed here).
+SetupArchitecture=x64
 
 ; Writing to C:\Program Files\Common Files\VST3 requires administrator rights.
 PrivilegesRequired=admin

@@ -7,7 +7,8 @@
  *
  * Linked stereo detection (max of L/R) to prevent image shift.
  * Fixed attack (5ms) and release (100ms) for simplicity.
- * Auto makeup gain based on threshold and ratio.
+ * No makeup gain: the output is never louder than the input
+ * (WF1002b-C, 月月 2026-10-02 裁決 N1=B1 -- see processStereo()).
  */
 class Compressor
 {
@@ -47,10 +48,17 @@ public:
         if (envDB > thresholdDB)
             gainDB = (thresholdDB + (envDB - thresholdDB) / ratio) - envDB;
 
-        // Auto makeup gain (compensate for average reduction)
-        float makeupDB = -(thresholdDB * (1.0f - 1.0f / ratio)) * 0.5f;
-
-        float totalGain = std::pow (10.0f, (gainDB + makeupDB) / 20.0f);
+        // WF1002b-C (月月 2026-10-02 裁決 N1=B1，
+        // reports/decision_packets/WF1002_addendum_decisions.zh-TW.md N1):
+        // the former fixed "auto makeup" -(threshold * (1 - 1/ratio)) * 0.5 dB
+        // (+2.0 ~ +7.5 dB on the 27 factory presets) was added whether or not
+        // the signal was being compressed at all; it is removed. Only the
+        // gain reduction above the threshold remains (gainDB <= 0).
+        // Root cause: reports/wf1002_preset_overshoot_root_cause.zh-TW.md §0/§7.
+        // Before/after: reports/wf1002b_n1_compressor_makeup_before_after.zh-TW.md.
+        // The CLI never reaches this line (EffectsChain.h: compressorEnabled
+        // defaults to false -> ratio 1 -> early return above).
+        float totalGain = std::pow (10.0f, gainDB / 20.0f);
 
         left  *= totalGain;
         right *= totalGain;
