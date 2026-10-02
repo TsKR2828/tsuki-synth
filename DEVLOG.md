@@ -2,6 +2,18 @@
 
 ---
 
+## 2026-10-02 — WF1002 輪：「照 Fable 的說法做」＝ WF0925 裁決包 38 題落地＋追加裁決 N1～N9
+
+- **起因**：月月請 Fable 5.1 審裁決包（34 題照建議、偏離 4 題），再請 Fable 5 第三方評斷 Opus 5.5 與 Fable 5.1 的論點，最後裁「照 Fable 的說法做」：包內建議全採，但 Q05＝C＋根因卡、Q09b＝A、Q22c＝B＋聯絡例外、Q20b＝B；Q17 依 BR 數字收斂為 A。裁定表 `docs/workcards/WF1002_README.md`。
+- **六條 lane**（Agent 背景執行，流程同 WF0907/0914/0925）：C1 C++（Q01/Q01b/Q05 燈/Q06/Q07/Q09 量測/Q10/Q17/Q38）、C2 FM 修法 R10 對照（隔離副本）、D 規則與主張域文件、P 商品 v1.1 候選套裁定、R 兩張研究卡（Q05 根因、Q16 文獻＋F5 量法）、E 環境（主 session）。
+- **稽核**：C1 PASS（舊 VST3 測出 7 條 FAIL＝新檢查有牙齒）、C2 PASS、D 三輪 PASS（xfail 條數、裁決原句、CLI 也有殘響）、P PASS、R PASS、追加裁決包 PASS（撤回「BOOTH 直接用封面草稿」——違反已裁的 Q24a）。
+- **整合全綠**：ctest 4/4（AuditTest 111）、pytest 307、--full 無失敗、selftest 13/13、75/75、8/8、HostProbe 231/0、pluginval＋validator 47/47；三支執行檔不再依賴 VC++ runtime。
+- **R10**：靜態 CRT 讓 `std::tanh` 最後一位元變，2 首 overdrive 譜（akashic_transition_var01、restraint_loop_001）hash 改變，最大 2 LSB@24-bit（−132 dB）；對照建置證明是 Q07 造成。8 首基準沒有 overdrive 所以沒抓到——整合卡逐首比 75 首才抓到。月月裁 **N9＝A 接受**。
+- **研究發現**：Q05 外掛爆音不是 B6 校準，是外掛在引擎後疊 Body 層（Body 0.8 在基頻 +15 dB）、壓縮器固定補償（工廠 preset +2.0～+7.5 dB，沒在壓也加）、大空間殘響尾；FM 殭屍 voice 修法：196→14 顆、被搶 798→0、CPU −18%、CLI 8/8 不變；D11 候選不比現行像真鋼琴（高音真實 T60 長 2～9 倍）；F5 換窗（M2）量真實多餘能量準確，但形式上是放寬。
+- **事故**：P lane `rm -rf output/wf1002` 路徑多一層，刪掉 C2、R 第一輪暫存；主 repo 與 libs/JUCE 完好（junction 沒被穿透）。C2、R 全部重跑；之後隔離副本一律放 repo 外 `E:\Tsuki-project\_scratch\`，junction 用完以非遞迴方式拆除。
+- **環境（lane E）**：變現計畫移出公開 repo 到 `E:\Tsuki-project\_private\`（Q34a）；Downloads 殘留 467.9 MiB 移到回收筒（Q36a）；York handpan 碩論下載（Q37-4）；JUCE 詢問信草稿＋收入記帳表（Q31）；部署腳本（Q35，待月月管理員執行）。
+- **追加裁決包**（`reports/decision_packets/WF1002_addendum_decisions.zh-TW.md`）月月 10-02 裁：N1 B1、N2 A、N3 A、N4 甲、N5 A、N6 B、N7 A、N8 A、N9 A → WF1002b 實作。
+
 ## 2026-09-25（晚） — WF0925b 收尾輪：商品修正輪、Q12、O16、文件同步、×2 前後數字（6 張卡）＋整合全綠
 
 **起因**：同一個裁決（月月 09-25「剩下 AI 能處理的都處理掉」）的收尾。WF0925 交接後還剩：商品稽核 FAIL 那一條、`WF0925_README.md` §6 的待同步清單、裁決包裡標「AI 可做／AI 可查」的幾項（Q12 建議 A、O05、O15、O16、O18）、Q17 選項 D 的「先算數字」。

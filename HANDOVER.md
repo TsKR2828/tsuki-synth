@@ -4,6 +4,13 @@
 > origin 上是 `766d21d`（`main`=`3f9b90a`，09-15 merge，CI 三平台全綠）。
 > 本機 HEAD `18430c4`：**WF0914 成果 09-25 已依月月裁決分 7 個 commit（`a09058c`～`18430c4`），未 push**。
 > **WF0925＋WF0925b 成果 staged、未 commit**（R7；**239 檔**＝WF0925 154＋WF0925b 85；月月看 `git diff --cached`）。
+> **2026-10-02 WF1002 輪（最新，先看這段）**：repo 在 **`E:\Tsuki-project	suki-synth`**；09-30 已 push 到 `b41298c`（WF0925 8 commit＋09-30 驗證證據，CI＋release-physics 首跑全綠）。
+> 月月 10-02「照 Fable 的說法做」＝ WF0925 裁決包 38 題以 Fable 5 第三方評斷為準落地（裁定表 `docs/workcards/WF1002_README.md`）：
+> 靜態 CRT（買家免裝 VC++）、DAW program 只給工廠 27 個、CLIP 削波指示燈、D9c 響度差 ≤0.25 dB 硬 CHECK、IR 載入失敗改走缺檔三態、R6/R7 改字面、§6 補登三列、CI Linux 改名 gcc、主張域升格 8 條、商品 v1.1 候選套裁定。
+> 整合全綠：pytest 307、HostProbe **231**/0、AuditTest 111、8/8、75/75、pluginval＋validator 47/47。**R10**：靜態 CRT 讓 2 首 overdrive 譜最後一位元變（−132 dB）→ 月月裁 **N9＝A 接受**。
+> 新研究：Q05 爆音根因＝外掛疊三層增益（Body、壓縮器固定補償、殘響尾）；FM 殭屍 voice 修法前後對照（未落地）；D11 候選不比現行像真鋼琴；F5 換窗量法研究。
+> 追加裁決包 `reports/decision_packets/WF1002_addendum_decisions.zh-TW.md`：**月月 10-02 裁 N1～N8 全照建議**（N1 拿掉壓縮器固定補償、N2 落地 FM 修法、N3 F5 換窗…）→ 下一輪 WF1002b 實作。
+> 環境：變現計畫移到 `E:\Tsuki-project\_private\`（不在公開 repo）；工具在 `E:\Tsuki-project\_tools\`；部署腳本 `_tools\deploy\deploy_tsukisynth.ps1`（**月月用系統管理員身分加 -Apply 執行**）。
 > **2026-09-30 追記**：月月已把 repo 從 `C:\Users\admin\Desktop\Claude\tsuki-synth` 搬到 **`E:\Tsuki-project\tsuki-synth`**（舊文件與證據檔裡的 C 槽路徑都指這裡）；`build\`、`build-wf\` 的 CMakeCache 仍記舊路徑，下次建置前要重新 `cmake -B`。同日月月裁決 Q33＝A：WF0925＋WF0925b 依 `docs/workcards/WF0925_README.md` §7-6 切 8 個 commit 並 push branch（不 merge main）；Q14＝C、Q37 1/3/4＝Y（同意下載 pluginval／VST3 SDK／Inno Setup／VST logo）。
 > **新 session 請先讀完這一頁再動手。** WF0925 與 WF0925b 的逐卡結果、證據路徑、稽核判定在 `docs/workcards/WF0925_README.md`（WF0925b 在 §7）；
 > 等月月拍板的事集中在 `reports/decision_packets/WF0925_open_decisions.zh-TW.md`（**38 題 Q01–Q38**＋其他待裁 O01–O19，每題回一個字母；各題下「2026-09-25 WF0925b」那一行是收尾輪的處理結果）。
@@ -97,7 +104,7 @@ WF0925b 整合卡全套 GATE 全綠，現行基線：pytest **307 個測試**（
 7. **VST3 Program 參數會錯位** → **Q06**。
 8. **pluginval／Steinberg validator 最後一次是 08-06** → **Q14**（要下載，等月月同意）。
 9. **D15 的兩個 strict xfail 永遠不會 XPASS** → **WF0925-P1 已修**（pin 搬到非 xfail 測試；稽核反例：pin 改 0.001 就紅）。
-10. **CI 的 Linux leg 實際是 GCC 13.3**（`physics.yml` label 寫 `ubuntu-24.04-clang`）→ **Q13**。
+10. **CI 的 Linux leg 實際是 GCC 13.3**（舊 label `ubuntu-24.04-clang`）→ **Q13＝A，10-02 已改名 `ubuntu-24.04-gcc`**。
 
 文件面的兩條（`wf0914_D9c_ir_makeup_gain.txt:252-254` 不實陳述、B7 裁決同步漏做）09-25 已在 c7 修正（勘誤附檔尾、TODO／ROADMAP 的 B7 條目已同步）。
 WF0925 各卡點名「交接要同步」、但檔案不在交接卡權限內的，列在 `WF0925_README.md` §6；**WF0925b 已處理其中 9 條、1 條處理一半**（逐條標在 §6），剩下的（要改 `src/` 的註解、voice_pool 報告行號等）與 WF0925b 新留下的，列在同檔 §7-8。

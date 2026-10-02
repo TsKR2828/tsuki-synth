@@ -1,6 +1,8 @@
 # TsukiSynth — Current TODO
 
-> Last updated: 2026-09-25（WF0925b 收尾輪完工交接；上一版同日 WF0925 輪交接）
+> Last updated: 2026-10-02（WF1002 輪：WF0925 裁決包 38 題落地；追加裁決包 N1～N9 月月已裁，WF1002b 待實作）
+> 2026-10-02 快照：見 `docs/workcards/WF1002_README.md`（裁定表＋§3 結果）。待辦：WF1002b（N1 B1 壓縮器固定補償、N2 FM 修法落地、N3 F5 換窗、N4 C5 升格、N5 警告句入規格、N6 查 Inno Setup 授權、N7 .iss 64-bit、N8 R6 清單擴大）；月月本人：註冊 BOOTH＋PayPal、定價、授權 4 空格、跑部署腳本、寄 JUCE 信、清空回收筒。
+> ~~（前一版：2026-09-25 WF0925b 收尾輪完工交接）~~
 > Branch: `fix/deep-physics-audit-20260716`（HEAD `18430c4`：**WF0914 成果已分 7 個 commit `a09058c`～`18430c4`，未 push**；遠端仍停在 09-15：分支 `766d21d`、`main`=`3f9b90a`）
 > **WF0925＋WF0925b 成果 staged、未 commit**（R7；**239 檔**；月月看 `git diff --cached`）。
 > ~~（舊版：HEAD `766d21d`；已 push，`main`=`3f9b90a` 已 merge 同步；WF0914 輪成果全部 staged 未 commit，月月看 `git diff --cached`）~~

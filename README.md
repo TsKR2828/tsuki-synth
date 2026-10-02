@@ -241,7 +241,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 | GUI | Custom LookAndFeel (arc knobs, gradient faces, engine-colored accents) |
 | Brand Assets | IBM Plex Sans SemiBold embedded via BinaryData; SVG moon path from design mockup |
 | Material Data | JSON embedded via BinaryData (density, Young's modulus, Poisson ratio, damping) |
-| Platform | Plugin (VST3/Standalone): built and validated on Windows (MSVC) only so far. CLI renderer: built in CI on three platforms — Windows MSVC / Linux GCC 13.3 / macOS AppleClang — for the cross-platform tolerance check (the Linux leg is labelled `ubuntu-24.04-clang` in `physics.yml` but actually compiles with GCC) |
+| Platform | Plugin (VST3/Standalone): built and validated on Windows (MSVC) only so far. CLI renderer: built in CI on three platforms — Windows MSVC / Linux GCC 13.3 / macOS AppleClang — for the cross-platform tolerance check (the Linux leg was mislabelled `ubuntu-24.04-clang` until 2026-10-02; now `ubuntu-24.04-gcc`). Since WF1002 the Windows binaries link the MSVC runtime statically (no VC++ redistributable needed) |
 
 ## Directory Structure
 
