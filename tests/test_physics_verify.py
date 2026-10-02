@@ -446,6 +446,38 @@ class ResidualEnergyTests(unittest.TestCase):
         ok, detail = pv.selftest_residual_energy_negative()
         self.assertTrue(ok, detail)
 
+    # ── 2026-10-02 月月裁決 N3=A: F5 window Hann -> 4-term Blackman-Harris ──
+    def test_f5_window_is_blackman_harris_4term_like_scipy(self):
+        # The R-b study measured with scipy.signal.windows.blackmanharris;
+        # the gate's own numpy implementation must be the same window.
+        import numpy as np
+        from scipy.signal import windows
+        for n in (256, 1001, 84960):
+            np.testing.assert_allclose(pv._blackman_harris4(n),
+                                       windows.blackmanharris(n),
+                                       rtol=0, atol=1e-12)
+        self.assertEqual((0.35875, 0.48829, 0.14128, 0.01168),
+                         pv.F5_BLACKMAN_HARRIS_4)
+
+    def test_f5_judged_default_is_blackman_harris_not_hann(self):
+        # On a fast-decaying clean signal the old Hann reading is lifted by
+        # the predicted mode's own leakage; the judged default must be the
+        # Blackman-Harris reading, not Hann.
+        import numpy as np
+        sr = 48000
+        t = np.arange(2 * sr) / sr
+        f1 = 261.6255653005986
+        x = np.exp(-pv.MODAL_DECAY_LN1000 * t / 1.0) * np.sin(2 * np.pi * f1 * t)
+        default = pv.measure_residual_energy(sr, x, [f1], 1.8)
+        bh = pv.measure_residual_energy(sr, x, [f1], 1.8, window="blackmanharris4")
+        hann = pv.measure_residual_energy(sr, x, [f1], 1.8, window="hann")
+        self.assertEqual(bh, default)
+        self.assertGreater(hann - bh, 10.0)
+
+    def test_selftest_residual_energy_decaying_outband_negative(self):
+        ok, detail = pv.selftest_residual_energy_decaying_outband_negative()
+        self.assertTrue(ok, detail)
+
     # ── K-06: subprocess.run must not hang forever on a stuck CLI ──────────
     def _stub_run_raises_timeout(self, cmd_snippet, timeout_secs):
         def fake_run(cmd, **kwargs):

@@ -38,7 +38,7 @@
 | A21 | 外掛 IR 模式響度補償 `kIrWetMakeupGain` ×26.9 | 「標為 DECIDED CONVENTION，非物理常數」；只影響 plugin IR 模式 wet 路徑；對齊參考是 ALGO 預設 room size 0.5、未指定 T60 | 2026-09-16 月月（D9 選 A）；對齊參考限制 2026-09-25 盤點補記 | `reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md`「裁決記錄」（:150-157）；`ROADMAP_PHYSICS.md` D9→D9c 列（:27）；同裁決包 2026-09-25 附記（工作樹，未入庫） |
 | A22 | 絕對聲壓輸出 `absolute_pressure_per_force` | 「這是月月裁決的慣例錨定，不是實測也不是推導」（只進 `--dump-modes` 診斷輸出） | 2026-08-28 月月（B6「照建議走」＝方案 B） | `reports/decision_packets/B6_calibration_choice.md`「裁決記錄」（:142-）；`TODO.md` Verification gaps 第 3 條（:897-901）；（**2026-10-02 已升格** → `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §8，月月裁決 Q19 C8 甲） |
 | A23 | 第一原理力鏈（B7） | Phase 0 完成、Phase 1 部分完成（`dumpModes()` 欄位撤回）、Phase 2/3 BLOCKED | 2026-09-15 月月（§5 路徑 C＋(a) 乙案） | `reports/decision_packets/B7_phase2_and_open_items.zh-TW.md` §6（:164-） |
-| A24 | 弦長／弦徑模型 | 候選修正（真實鋼琴逐八度查表）patch 存檔不落地，現行模型不變；F5 根因已於 09-25 查清，A/B 待重開 | 2026-09-15 月月（D11 選 C） | `reports/decision_packets/D11_string_scale_candidate.zh-TW.md`「裁決記錄」（:59-65）；F5 根因補記與 `reports/d11_f5_root_cause_2026-09-25.zh-TW.md`（未入庫）；（C5 **未升格**：2026-10-02 裁定表 Q19「C5 等 Q16 研究卡」，見 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §11） |
+| A24 | 弦長／弦徑模型 | 候選修正（真實鋼琴逐八度查表）patch 存檔不落地，現行模型不變；F5 根因已於 09-25 查清，A/B 待重開 | 2026-09-15 月月（D11 選 C） | `reports/decision_packets/D11_string_scale_candidate.zh-TW.md`「裁決記錄」（:59-65）；F5 根因補記與 `reports/d11_f5_root_cause_2026-09-25.zh-TW.md`（未入庫）；（~~C5 **未升格**：2026-10-02 裁定表 Q19「C5 等 Q16 研究卡」，見 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §11~~ → C5 **2026-10-02 已升格**（月月裁決 N4＝甲）→ `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §12） |
 | A25 | 音板參數 | h = 9 mm／`wood_spruce` 確認維持現值 | 2026-08-27 月月（A11 選 (i)） | `TODO.md` A11（:326-332）；`reports/decision_packets/A11_soundboard_sensitivity.md` |
 | A26 | 外部校準資料 | 無可商用的校準資料集，外部資料只作私下對照參考（TU Berlin 為 CC BY-NC-SA） | 2026-09-09 月月（A8） | `TODO.md` A8（:270）、Verification gaps 第 7 條（:917-920）；`docs/EXTERNAL_DATASET_A8.zh-TW.md` |
 
@@ -78,7 +78,7 @@
 | C2 | Custom Harmonics 半域內 | A16 | `ROADMAP_PHYSICS.md` §0（:143） | — | 甲：已升格 → §3 |
 | C3 | Cimbalom/Piano 振幅含 creative 層與校準層 | A12、A13 | `TODO.md`（:833、:813-816）；`ROADMAP_PHYSICS.md` §0（:140） | 頻率／衰減不受這兩層影響（ROADMAP §0 :140 原文） | 甲：已升格 → §4 |
 | C4 | `frequency_mode: midi` 是混合系統 | A18 | `ROADMAP_PHYSICS.md` §0（:147） | — | 甲：已升格 → §5 |
-| C5 | 弦長／弦徑模型假設（每八度減半＋corpus 固定弦徑） | A24 | `reports/decision_packets/D11_string_scale_candidate.zh-TW.md` §0 | 盤點查證修正點名的例子之一；D11 選 C 後現行模型不變，A/B 等 F5 根因回來重開 | **未升格**：等 Q16 研究卡 → §11 註明 |
+| C5 | 弦長／弦徑模型假設（每八度減半＋corpus 固定弦徑） | A24 | `reports/decision_packets/D11_string_scale_candidate.zh-TW.md` §0 | 盤點查證修正點名的例子之一；D11 選 C 後現行模型不變，A/B 等 F5 根因回來重開 | ~~**未升格**：等 Q16 研究卡 → §11 註明~~ **甲：已升格（2026-10-02 月月裁決 N4＝甲，追加裁決包 `reports/decision_packets/WF1002_addendum_decisions.zh-TW.md`）→ §12**（措辭照 R-b 報告 §6 草稿） |
 | C6 | 舌鼓 BeamModel `*2` 經驗阻尼 | B1 | `src/physics/BeamModel.h:44-48` 註解 | 屬未決缺口，不是裁決；要先裁 B1（前置 D1） | 甲（Q17=A）：已升格 → §6 |
 | C7 | Chromatic（舌鼓／水鑼）槌具未標定 | A11、B2 | `TODO.md`（:430） | — | 甲：已升格 → §7 |
 | C8 | 絕對聲壓輸出是慣例錨定 | A22 | `TODO.md`（:897-901） | 只在 `--dump-modes` 診斷輸出 | 甲：已升格 → §8 |

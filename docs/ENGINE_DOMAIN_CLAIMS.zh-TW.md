@@ -148,7 +148,7 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
 > **物理驗證涵蓋 CLI 渲染；外掛即時演奏共用衰減律，激發與效果鏈未逐項驗證。**（裁定表原句，與商品文案一致）
 
 依下方背景數字展開：「激發」在這裡包含激發、振幅、macro、BodyResonance——這幾項在外掛和 CLI 是各自組裝的（見下一點）。
-另外 WF1002 研究卡 R-a 查到（`reports/wf1002_preset_overshoot_root_cause.zh-TW.md`）：Body 共鳴層（Body 0.8 在基頻 +15 dB；CLI 預設 0）與壓縮器自動補償（CLI 預設關閉；工廠 preset +2.0～+7.5 dB，超標的 7／11／15 號是 +4.5～+5.0 dB）是 CLI 渲染沒有的；大空間殘響尾巴 CLI 也有（同一個 `SimpleReverb.h`，預設開），但物理驗證一律 FX 全關。
+另外 WF1002 研究卡 R-a 查到（`reports/wf1002_preset_overshoot_root_cause.zh-TW.md`）：Body 共鳴層（Body 0.8 在基頻 +15 dB；CLI 預設 0）與壓縮器自動補償（CLI 預設關閉；工廠 preset +2.0～+7.5 dB，超標的 7／11／15 號是 +4.5～+5.0 dB——**2026-10-02 月月裁 N1＝B1，WF1002b 已拿掉這個固定補償**，27 個工廠 preset 最大聲剩 −1.85 dBFS，見 `reports/wf1002b_n1_compressor_makeup_before_after.zh-TW.md`）是 CLI 渲染沒有的；大空間殘響尾巴 CLI 也有（同一個 `SimpleReverb.h`，預設開），但物理驗證一律 FX 全關。
 
 支撐事實（裁決包 Q08「背景數字」，行號已換成 HEAD `b41298c`）：
 - 共用的是衰減律：`applyStringDecayTimes()`（`src/engines/CimbalomEngine.h` :156 起）。
@@ -186,3 +186,23 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
 
 **本批不升格**：依裁定表 Q19，「C5 等 Q16 研究卡」。Q16=D：`TODO.md` 登記「F5 PASS 依賴探針 0.8 mm」為已知脆弱點，另開研究卡（真鋼琴 T60 文獻對照候選＋F5 量法可改方向，只研究）。研究卡回來後再裁 C5。
 現況出處：`docs/KNOWN_LIMITS_INDEX.zh-TW.md` A24、§C C5；`reports/decision_packets/D11_string_scale_candidate.zh-TW.md` §0 與檔尾 F5 根因補記。
+
+---
+
+## 12. 弦長與弦徑是模型假設（鋼琴）〔C5〕——2026-10-02 升格
+
+**月月 2026-10-02 裁決 N4＝甲（升格）**：追加裁決包 `reports/decision_packets/WF1002_addendum_decisions.zh-TW.md` N4（檔尾裁決記錄：「N1～N8 全照建議」，N4 建議＝甲）。本節取代 §11 的「尚未升格」（§11 保留作歷史，不改）。
+
+主張原句照錄 WF1002 R-b 研究卡的建議措辭草稿（`reports/wf1002_d11_piano_t60_literature_and_f5_method.zh-TW.md` §6「建議措辭（草稿，供 D lane 用，月月可改）」；月月沒有改字，照草稿採用）：
+
+> 弦長與弦徑是模型假設，不是真實鋼琴的弦長表：弦長以 A4＝0.35 m、每八度減半推算，弦徑取樂譜或旋鈕的值。
+> 因此，引擎**不主張**非諧性係數 B 和各音的 T60 沿鍵盤的分布與真實鋼琴一致。
+> 已知偏差：高音 B 比量測值大 21.6～86.4 倍；與公開文獻相比，高音 T60 短 2～9 倍、最低音長約 2 倍。
+> 若 D11 候選落地，本條改寫為「逐八度查表，纏繞弦以芯線計」並更新偏差數字。
+
+數字出處（都在同一份 R-b 報告與它引用的檔，本節不新增數字）：
+- 非諧性 B 偏離量測值 G5 21.6×、G6 86.4×：`reports/decision_packets/D11_string_scale_candidate.zh-TW.md` §1（R-b 報告 §6 第 1 點引用）。
+- T60 對公開文獻（高音短 2～9 倍、最低音長約 2 倍）：R-b 報告 §2；文獻抓取紀錄 `reports/gate_outputs/wf1002_R_b_lit_fetch_log.txt`、計算 `reports/gate_outputs/wf1002_R_b_lit_compare.txt`。三篇經典文獻（Martin 1947、Hundley 等 1978、Weinreich 1977）在付費牆後，沒有用到它們的數字（R-b 報告 §3 第 6 點、§7）。
+- 現行模型不變的依據：D11 月月 2026-09-15 選 C（候選 patch 存檔不落地），`docs/KNOWN_LIMITS_INDEX.zh-TW.md` A24。
+
+相關（事實，不是本條主張的一部分）：同日 N3＝A 把 F5 殘差頻譜能量的量法改成 Blackman-Harris 窗（`ROADMAP_PHYSICS.md` §1 第 2 條 R2 說明）。改了量法之後，鋼琴 F5 不再靠探針預設弦徑 0.8 mm 才 PASS（1.0 mm 量到 −82.73 dB，門檻 −60 dB 不動；`reports/gate_outputs/wf1002b_T_f5_method.txt`）。這**不改變**上面的主張：量法修正不會讓弦長／弦徑變成真鋼琴的值，Q16 維持 D、D11 沒有重開。

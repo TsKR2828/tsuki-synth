@@ -25,6 +25,7 @@
 > (2) **Q05=C**：新增 §4.14「削波指示」（超過 0 dBFS 亮燈，**不改聲音**），§6「輸出限幅器、削波指示」列同步改寫；
 > (3) **Q06=A**：§4.8 註明 DAW 看到的 program 清單只含工廠 27 個。
 > 程式改動（警告字串、指示燈、`getNumPrograms()`）由同輪 C++ lane（WF1002-C1）做，**以那張卡的證據為準**；本次只改文件。60 個參數仍零改動。
+> **2026-10-02 再補記（WF1002b，月月裁決 N5=A）**：§5-3 加「檔案存在、但無法載入」的定案文字（字樣已對過程式），§5-7 的舊「例外」標成已改（Q10=B）；§4.14 補削波指示燈的實作現況（標題列「CLIP」、最後一次超過 0 dBFS 後亮 1.5 秒，UI 慣例、非 GATE 常數）。只改文件。
 
 ---
 
@@ -266,6 +267,14 @@
 - **給使用者的說明（手冊同步寫）**：「殘響混合量開大、或部分工廠音色，輸出可能超過 0 dBFS；指示燈亮時請把『輸出音量』調低。」
 - 不做的事：不加輸出限幅（Q05 沒選 B）、不訂峰值／靜音門檻當 GATE（Q05b=A）。這幾個音色為什麼單音就超過 0 dBFS，另開唯讀根因調查卡，結論回來前不改音色。
 - 程式由 WF1002-C1 加進 `PluginEditor`，以該卡證據為準。
+- **實作現況（2026-10-02 補記，WF1002b；照程式寫，設計端可整個重做）**：
+  - 位置與樣子：**標題列**、標題列按鈕的左邊，一個寫著「**CLIP**」的小方塊（`src/PluginEditor.cpp` 的 `resized()`，約 :1255-1256）。
+    沒亮＝暗色外框＋暗色字；亮＝整塊填成主題唯一的強調色、字改成底色（`paintClipIndicator()`，約 :979-1001）。只用現有單色系配色，沒有新顏色。
+  - 什麼時候亮：外掛最後輸出（「輸出音量」之後）任一取樣的絕對值**超過 1.0（＝0 dBFS）**；剛好等於 1.0 不算；NaN／無限大也算超過
+    （`src/dsp/OutputPeakMeter.h`，0 dBFS 是定義、不是調出來的數）。畫面每秒檢查 20 次，兩次檢查之間任何一個 block 超過都會被記到。
+  - 亮多久：**最後一次超過之後再亮 1.5 秒**，然後自己熄；一直超過就一直亮。沒有手動清除。
+    1.5 秒是 **UI 慣例**（程式註解記載 WF1002-C1 施工卡給的範圍是 1～2 秒；施工卡原文不在 repo 內，本次沒有另行核對），**不是 GATE 常數、也不是物理常數**（`src/PluginEditor.h` 的 `kClipHoldMs = 1500`，約 :208-213）。
+  - 只顯示、不改聲音：峰值記錄只讀輸出、不寫回；輸出端仍然沒有限幅器或 soft clip。
 
 ---
 
@@ -290,6 +299,15 @@
    |---|---|---|
    | 現行（`src/PluginProcessor.cpp` 的 `forceAlgorithmicMissingIR()`） | 未載入：〈原檔名〉——這個 preset 記的 IR 在這台電腦上找不到。已切回 algorithmic reverb，**音量會和 IR 模式不同。** | Not loaded: 〈原檔名〉 -- this preset's IR could not be found on this computer. Switched back to algorithmic reverb; **the volume will differ from IR mode.** |
    | ~~建議（AI 擬，未定案）~~ **已定案（10-02 Q38=A）** | 未載入：〈原檔名〉——這個 preset 記的 IR 在這台電腦上找不到。已切回演算法殘響，**殘響的音色會和原本的 IR 不同。** | Not loaded: 〈原檔名〉 -- this preset's IR could not be found on this computer. Switched back to algorithmic reverb; **the reverb will sound different from the original IR.** |
+   | **已定案（10-02 N5=A）：檔案存在、但無法載入** | 未載入：〈原檔名〉——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：〈原因〉）。已切回演算法殘響，**殘響的音色會和原本的 IR 不同。** | Not loaded: 〈原檔名〉 -- this preset's IR file could not be loaded on this computer (reason: 〈reason〉). Switched back to algorithmic reverb; **the reverb will sound different from the original IR.** |
+
+   - **2026-10-02 月月裁決 N5=A**（追加裁決包 `reports/decision_packets/WF1002_addendum_decisions.zh-TW.md` N5）：上表最後一列「檔案存在、但無法載入」定案。
+     這句原本是 WF1002-C1 落地 Q10=B 時照本規格語氣自擬的；字樣以程式為準，已逐字對過 `src/PluginProcessor.cpp` 的 `forceAlgorithmicMissingIR()`（約 :916-934）：
+     中文第二句「——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：」＋原因＋「）。」，英文「 -- this preset's IR file could not be loaded on this computer (reason: 」＋原因＋「).」；前後兩段（「未載入：〈原檔名〉」與「已切回演算法殘響…」）跟「找不到」那列共用同一份字串。
+     表裡的粗體只是本文件標示，程式字串沒有粗體。
+   - **什麼時候出現**：只在開舊專案的 IR 路徑遷移（§5-7 情況 (i) 的例外）——舊路徑的檔案還在、但載不進來：不是可讀的音檔、空檔、長度超過 30 秒、或抄進 IR 庫失敗。
+     新格式專案／音色的 IR 區塊對不到庫裡可用的檔時，仍然是「找不到」那列（程式那條路不帶原因）。
+   - **〈原因〉是程式的英文錯誤訊息，中文介面也一樣是英文**（例：`Impulse response longer than 30 s refused (31.0 s)`、`Not a readable audio file: 〈檔名〉`、`Impulse response is empty: 〈檔名〉`、`Failed to copy IR into library: 〈路徑〉`；拿不到原因時是 `unknown error`）。設計端要預留這段長度，路徑可能很長。
 
    - 為什麼要改：D9c 之後，在演算法殘響的預設設定下兩種模式音量已對齊（±0.25 dB），剩下的差別主要是音色（空間特性）；
      使用者把空間大小或 T60 調離預設時，音量仍可能差幾 dB（見 §6），但已不是這句話原本指的 28 dB。
@@ -321,9 +339,11 @@
 
    - (i)(ii) 的改過標記是程式刻意設的：遷移後，記憶體裡的狀態已經和磁碟上的舊專案檔不一樣。
      舊專案檔本身不會被改寫；使用者存檔後才變成新格式，沒存就關掉，下次打開會再遷移一次。
-   - **例外（現行設計如此，不是漏寫，但設計端要知道）**：舊路徑的檔案還在、卻讀不進來（不是可讀的音檔、長度超過 30 秒、
+   - ~~**例外（現行設計如此，不是漏寫，但設計端要知道）**：舊路徑的檔案還在、卻讀不進來（不是可讀的音檔、長度超過 30 秒、
      抄進 IR 庫失敗）時，程式照設計**不載入、不切模式、不跳警告**，舊路徑也不保留（改過標記一樣會亮）。專案存的模式若是 IR，
-     就會落到 §5-3 補記的「IR 模式，但沒有載入 IR」狀態。要不要改成也走缺檔警告，**待月月裁決**（會改 src，要跑 R6）。
+     就會落到 §5-3 補記的「IR 模式，但沒有載入 IR」狀態。要不要改成也走缺檔警告，**待月月裁決**（會改 src，要跑 R6）。~~
+     **2026-10-02 更正**：月月裁決 Q10=B，WF1002-C1 已改成走缺檔三態——保留原檔名、強制切回演算法殘響、跳一次性警告並附原因；
+     警告文字是 §5-3 表的「檔案存在、但無法載入」那列（10-02 N5=A 定案）。上面劃掉的是舊行為，保留作歷史。
 
 ---
 

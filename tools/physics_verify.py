@@ -56,6 +56,9 @@ Independent anchors (2026-07-18 harness repair):
       modal bands, reported and JUDGED in --full against
       RESIDUAL_ENERGY_LIMIT_DB = -60.0 dB re total (月月 approval 2026-07-23;
       see the constant's comment for the baseline data and margin).
+      Window: 4-term Blackman-Harris since 2026-10-02 (月月裁決 N3=A,
+      measurement-method correction, threshold unchanged; Hann before --
+      see F5_BLACKMAN_HARRIS_4).
 Exit code 0 = all probes within tolerance.
 """
 
@@ -2546,6 +2549,82 @@ def selftest_residual_energy_negative():
     return ok, detail
 
 
+def _f5_segment_power(sr, sig, noteoff, window="blackmanharris4"):
+    """Total windowed power of `sig` over F5's own segment, window and
+    analysis band (same steps as measure_residual_energy(), no band split)."""
+    i0 = int(EXCITER_NOISE_SKIP_S * sr)
+    seg = np.asarray(sig[i0:min(len(sig), int(noteoff * sr))], dtype=np.float64)
+    seg = seg * _F5_WINDOWS[window](len(seg))
+    nfft = 1 << int(math.ceil(math.log2(len(seg))))
+    spec = np.abs(np.fft.rfft(seg, nfft)) ** 2
+    kmax = min(len(spec) - 1, int(analysis_frequency_limit(sr) / (sr / nfft)))
+    return float(spec[1:kmax + 1].sum())
+
+
+def selftest_residual_energy_decaying_outband_negative():
+    """F5 (2026-10-02, 月月裁決 N3=A): counterexample of the WF1002 R-b §5.3(a)
+    kind. A piano-like clean signal whose predicted modes DECAY (f1 = C4
+    261.63 Hz, T60 2.88 s = the R-b 1.0 mm probe's fundamental, upper
+    partials shorter) must PASS; the same signal plus an out-of-band
+    DECAYING partial at 1.5*f1 (T60 2.87 s, as in R-b) injected at
+    L = -50 dB re total (L measured through F5's own segment/window/band)
+    must FAIL, and the measured figure must track L (|measured - L| <= 1.0
+    dB; R-b measured L=-50 as -50.44/-50.10 dB); a second injection at
+    L = -70 dB must also read within 1.0 dB of L (not judged against the
+    limit -- it guards against a window whose own leakage floor lifts the
+    reading, as Hann's did). Goes through the SAME
+    measure_residual_energy() -> judge_residual_energy() path as the real
+    gate. The old Hann reading of the clean signal is reported in the detail
+    for the R2 audit trail (not judged)."""
+    sr = 48000
+    dur = 2.0
+    noteoff = dur * T60_NOTEOFF_RATIO
+    f1 = 261.6255653005986          # midi_to_hz(60)
+    t = np.arange(int(sr * dur), dtype=np.float64) / sr
+    freqs, clean = [], np.zeros_like(t)
+    for n in range(1, 9):
+        fn = n * f1
+        t60 = 2.88 / (1.0 + 0.35 * (n - 1))   # higher partials decay faster
+        clean += (1.0 / n) * np.exp(-MODAL_DECAY_LN1000 * t / t60) \
+            * np.sin(2.0 * np.pi * fn * t)
+        freqs.append(fn)
+    clean_rdb = measure_residual_energy(sr, clean, freqs, noteoff)
+    clean_ok = judge_residual_energy(clean_rdb)
+    clean_hann = measure_residual_energy(sr, clean, freqs, noteoff, window="hann")
+
+    fake = np.exp(-MODAL_DECAY_LN1000 * t / 2.87) * np.sin(2.0 * np.pi * 1.5 * f1 * t)
+    p_clean = _f5_segment_power(sr, clean, noteoff)
+    p_fake = _f5_segment_power(sr, fake, noteoff)
+
+    def inject(level_db):
+        amp = math.sqrt(p_clean * 10.0 ** (level_db / 10.0) / p_fake)
+        return measure_residual_energy(sr, clean + amp * fake, freqs, noteoff)
+
+    level_db = -50.0
+    dirty_rdb = inject(level_db)
+    dirty_ok = judge_residual_energy(dirty_rdb)
+    # Second injection far below the limit (-70 dB, judged PASS either way):
+    # only checks the reading tracks L instead of sitting on the method's own
+    # leakage floor (R-b: Hann read L=-70 as -62.91 / -59.10 dB).
+    quiet_db = -70.0
+    quiet_rdb = inject(quiet_db)
+
+    if clean_rdb is None or dirty_rdb is None or quiet_rdb is None:
+        return False, "measurement returned None"
+    tracks = abs(dirty_rdb - level_db) <= 1.0
+    quiet_tracks = abs(quiet_rdb - quiet_db) <= 1.0
+    ok = clean_ok and (not dirty_ok) and tracks and quiet_tracks
+    detail = (f"clean decaying={'PASS' if clean_ok else 'FAIL'} "
+              f"({clean_rdb:+.1f} dB; old Hann {clean_hann:+.1f} dB, not judged), "
+              f"decaying 1.5*f1 partial at L={level_db:+.1f} dB "
+              f"{'rejected' if not dirty_ok else 'ACCEPTED (bug)'} "
+              f"({dirty_rdb:+.1f} dB, {'tracks L' if tracks else 'does NOT track L (bug)'}; "
+              f"limit {RESIDUAL_ENERGY_LIMIT_DB:+.1f} dB), L={quiet_db:+.1f} dB "
+              f"reads {quiet_rdb:+.1f} dB "
+              f"({'tracks L' if quiet_tracks else 'lifted by own leakage (bug)'})")
+    return ok, detail
+
+
 def run_internal_selftests():
     f0_ok, f0_cents = selftest_measure_f0_short_window()
     t60_ok, t60_measured, t60_span = selftest_measure_t60_relative_axis()
@@ -2555,6 +2634,7 @@ def run_internal_selftests():
     vel_uniform_ok, vel_uniform_detail = selftest_velocity_law_negative_uniform_scale()
     taucv_ok, taucv_detail = selftest_velocity_taucv_domain()
     residual_ok, residual_detail = selftest_residual_energy_negative()
+    resid_dec_ok, resid_dec_detail = selftest_residual_energy_decaying_outband_negative()
     return {
         "short_t60_f0": (f0_ok, f"{f0_cents:+.3f} cents" if f0_cents is not None else "none"),
         "relative_axis_t60": (t60_ok,
@@ -2567,6 +2647,8 @@ def run_internal_selftests():
         "velocity_law_violation_rejected_uniform": (vel_uniform_ok, vel_uniform_detail),
         "velocity_taucv_selfconsistency_sentinel": (taucv_ok, taucv_detail),
         "residual_energy_unmodeled_peak_rejected": (residual_ok, residual_detail),
+        "residual_energy_decaying_outband_partial_rejected": (resid_dec_ok,
+                                                              resid_dec_detail),
     }
 
 
@@ -2705,6 +2787,51 @@ RESIDUAL_BAND_HALF_WIDTH = 0.03   # ±3% per predicted mode, per task spec
 # mode right?", never "is there energy the model did NOT predict?").
 RESIDUAL_ENERGY_LIMIT_DB = -60.0
 
+# ── F5 window (2026-10-02, 月月裁決 N3＝A): measurement-method correction ────
+# R2 note (ROADMAP_PHYSICS.md §1 rule 2): 月月 2026-10-02 ruled N3=A -- this is
+# a CORRECTION of the measurement method (it removes the predicted modes' OWN
+# window leakage from the "unpredicted energy" figure), NOT a widened
+# tolerance. RESIDUAL_ENERGY_LIMIT_DB (-60.0 dB), the ±3% bands
+# (RESIDUAL_BAND_HALF_WIDTH), the analysis upper limit
+# (analysis_frequency_limit()) and the [EXCITER_NOISE_SKIP_S, note-off]
+# segment are all unchanged; only the window applied before the single FFT
+# changed, Hann -> 4-term Blackman-Harris.
+# Why: with Hann (sidelobes -31 dB, falling 18 dB/oct) a fast-decaying
+# predicted mode's spectral skirt spills past its own ±3% band and was counted
+# as "unpredicted" energy -- the shorter the T60, the more. Evidence (WF1002
+# R-b, reports/wf1002_d11_piano_t60_literature_and_f5_method.zh-TW.md §4-§5,
+# reports/gate_outputs/wf1002_R_b_f5_methods.txt): the CLEAN piano probe read
+# -63.86 dB at 0.8 mm but -59.47 dB (FAIL) at 1.0 mm with Hann, i.e. the old
+# number tracked T60, not extra energy; Blackman-Harris gave -87.43 / -82.73.
+# Injection test (a decaying out-of-band partial at 1.5*f1, T60 2.87 s, of
+# known level L): Blackman-Harris read L=-60 as -60.43/-60.08 and L=-70 as
+# -70.35/-69.87 (0.8/1.0 mm), while Hann read L=-70 as -62.91/-59.10 (lifted
+# by its own leakage). Blackman-Harris depends on nothing beyond what Hann
+# did (only the predicted frequencies, to draw the bands).
+# Coefficients: the 4-term "minimum" Blackman-Harris window (-92 dB
+# sidelobes), F. J. Harris, "On the Use of Windows for Harmonic Analysis with
+# the Discrete Fourier Transform", Proc. IEEE 66(1):51-83, 1978; identical to
+# scipy.signal.windows.blackmanharris(n) (sym=True), which is what the R-b
+# study measured with (tests/test_physics_verify.py pins the equality).
+F5_BLACKMAN_HARRIS_4 = (0.35875, 0.48829, 0.14128, 0.01168)
+
+
+def _blackman_harris4(n):
+    """Symmetric 4-term Blackman-Harris window of length n (see
+    F5_BLACKMAN_HARRIS_4 for source); == scipy.signal.windows.blackmanharris(n)."""
+    if n <= 1:
+        return np.ones(max(n, 0))
+    a0, a1, a2, a3 = F5_BLACKMAN_HARRIS_4
+    k = 2.0 * np.pi * np.arange(n, dtype=np.float64) / (n - 1)
+    return a0 - a1 * np.cos(k) + a2 * np.cos(2.0 * k) - a3 * np.cos(3.0 * k)
+
+
+# "blackmanharris4" = the judged F5 method since 2026-10-02 (N3=A).
+# "hann" = the pre-2026-10-02 method (M0), kept ONLY so the F5 report can
+# print the old number next to the judged one for the R2 audit trail; it is
+# never judged.
+_F5_WINDOWS = {"blackmanharris4": _blackman_harris4, "hann": np.hanning}
+
 
 def judge_residual_energy(rdb):
     """Pure judgment (unit-testable without a CLI): residual energy (dB re
@@ -2716,18 +2843,22 @@ def judge_residual_energy(rdb):
     return rdb <= RESIDUAL_ENERGY_LIMIT_DB
 
 
-def measure_residual_energy(sr, x, mode_freqs, noteoff_time_s):
+def measure_residual_energy(sr, x, mode_freqs, noteoff_time_s,
+                            window="blackmanharris4"):
     """Returns residual energy in dB relative to total energy (both measured
-    over the sounding period [EXCITER_NOISE_SKIP_S, note-off] with a Hann
-    window, bins up to the analysis limit), or None if the segment is
-    unusable. Residual = total minus every bin inside ±3% of ANY predicted
-    mode frequency (all strings' modes, straight from --dump-modes)."""
+    over the sounding period [EXCITER_NOISE_SKIP_S, note-off] with a 4-term
+    Blackman-Harris window since 2026-10-02 (月月裁決 N3=A; Hann before --
+    see F5_BLACKMAN_HARRIS_4), bins up to the analysis limit), or None if the
+    segment is unusable. Residual = total minus every bin inside ±3% of ANY
+    predicted mode frequency (all strings' modes, straight from --dump-modes).
+    window="hann" reproduces the pre-2026-10-02 number for side-by-side
+    printing only; the gate never judges it."""
     i0 = int(EXCITER_NOISE_SKIP_S * sr)
     i1 = min(len(x), int(noteoff_time_s * sr))
     seg = x[i0:i1]
     if len(seg) < 256:
         return None
-    seg = np.asarray(seg, dtype=np.float64) * np.hanning(len(seg))
+    seg = np.asarray(seg, dtype=np.float64) * _F5_WINDOWS[window](len(seg))
     nfft = 1 << int(math.ceil(math.log2(len(seg))))
     spec = np.abs(np.fft.rfft(seg, nfft)) ** 2
     binhz = sr / nfft
@@ -2761,7 +2892,9 @@ def report_residual_energy(cli, engines, outdir, midi=60):
     print(f"Residual spectral energy outside predicted modal bands "
           f"(MIDI {midi}, bands ±{RESIDUAL_BAND_HALF_WIDTH * 100:.0f}% per "
           f"dumped mode, first {EXCITER_NOISE_SKIP_S * 1000:.0f} ms exciter-"
-          f"noise window excluded, judgment threshold "
+          f"noise window excluded, 4-term Blackman-Harris window since "
+          f"2026-10-02 (月月裁決 N3=A, method correction; threshold "
+          f"unchanged), judgment threshold "
           f"{RESIDUAL_ENERGY_LIMIT_DB:+.1f} dB re total):")
     overall_ok = True
     for eng in scan_engines:
@@ -2782,16 +2915,22 @@ def report_residual_energy(cli, engines, outdir, midi=60):
         mode_freqs = sorted({float(m["freq"]) for voice in strings for m in voice})
         noteoff = 2.0 * T60_NOTEOFF_RATIO   # render_probe default dur=2.0
         rdb = measure_residual_energy(sr, x, mode_freqs, noteoff)
+        # Pre-2026-10-02 Hann number, printed for the N3=A R2 audit trail
+        # only -- NOT judged.
+        rdb_hann = measure_residual_energy(sr, x, mode_freqs, noteoff,
+                                           window="hann")
         eng_ok = judge_residual_energy(rdb)
         overall_ok = overall_ok and eng_ok
         if rdb is None:
             print(f"   {eng:11} residual: NOT MEASURED (unusable segment) "
                   f"-> FAIL")
         else:
+            hann_s = f"{rdb_hann:+7.1f}" if rdb_hann is not None else "  --  "
             print(f"   {eng:11} residual: {rdb:+7.1f} dB re total "
                   f"({len(mode_freqs)} predicted modes, limit "
                   f"{RESIDUAL_ENERGY_LIMIT_DB:+.1f} dB) "
-                  f"-> {'PASS' if eng_ok else 'FAIL'}")
+                  f"-> {'PASS' if eng_ok else 'FAIL'}"
+                  f"   [old Hann method, not judged: {hann_s} dB]")
     if not overall_ok:
         print(f"   -> FAIL. Do NOT widen the {RESIDUAL_ENERGY_LIMIT_DB:+.1f} dB "
               "threshold (月月 approval 2026-07-23) -- unpredicted energy "
@@ -2846,7 +2985,10 @@ def main():
                          "boundary = Felt path only), and an unmodeled -40dB "
                          "peak outside every predicted mode's band violating "
                          "the F5 residual-energy threshold "
-                         "(RESIDUAL_ENERGY_LIMIT_DB)")
+                         "(RESIDUAL_ENERGY_LIMIT_DB), plus (2026-10-02, N3=A) "
+                         "a decaying out-of-band 1.5*f1 partial at -50dB on a "
+                         "decaying piano-like signal (must FAIL and track the "
+                         "injected level; the clean signal must PASS)")
     args = ap.parse_args()
 
     if args.selftest:
