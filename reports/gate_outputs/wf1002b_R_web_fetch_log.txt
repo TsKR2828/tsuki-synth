@@ -1,0 +1,79 @@
+WF1002b-R web fetch log (R4 evidence)
+date: 2026-10-02 (UTC+8 local ~22:04-22:30)
+raw copies: output/wf1002b/R/web/ (gitignored). *.txt next to a page = tag-stripped text made locally from the raw HTML.
+
+== A. Inno Setup / NSIS / WiX (fetched with curl -sL, UA "Mozilla/5.0") ==
+HTTP  bytes   url
+200   1521    https://jrsoftware.org/files/is/license.txt
+200   34030   https://jrsoftware.org/isorder.php
+200   8145    https://jrsoftware.org/isinfo.php
+200   45639   https://jrsoftware.org/isfaq.php
+200   7265    https://jrsoftware.org/isdonate.php
+200   102622  https://jrsoftware.org/files/is6-whatsnew.htm
+200   139516  https://jrsoftware.org/files/is7-whatsnew.htm
+200   10478   https://jrsoftware.org/isdl.php
+404   315     https://jrsoftware.org/ishistory.php
+200   30699   https://nsis.sourceforge.io/License
+200   15488   https://raw.githubusercontent.com/kichik/nsis/master/COPYING
+200   3341    https://raw.githubusercontent.com/wixtoolset/wix/main/LICENSE.TXT
+200   3501    https://raw.githubusercontent.com/wixtoolset/wix/main/OSMFEULA.txt
+200   333739  https://wixtoolset.org/osmf/   (page title "Open Source Maintenance Fee | FireGiant Docs")
+
+sha256 (raw files):
+2e5346868c2a18434489824e11d65c3031620f792fefc415d05f19cd441abf5c  jrsoftware.org_files_is_license.txt
+d3c8aca61f2cac1db7040dce502a36ae6c779dd855bab655eac214aa14502432  jrsoftware.org_isorder.php
+343632bf0afc90b7b69d473de600af564700ac9a0ec19216c4abbc1d03f416fe  jrsoftware.org_isinfo.php
+c5219b81be382f7edaa6ec238c3dabae037609e266a409e50baf500d57d5743c  jrsoftware.org_isfaq.php
+c2cd1e0f9a67ef5435a5484f83e7169232ac143572d3de2ae937d97c8fa67b5e  jrsoftware.org_isdonate.php
+4e98f32f91bfaae8c2934152734fe58f4feb5dd6cc1c2b419dc51ead1a3bbbf5  jrsoftware.org_files_is6-whatsnew.htm
+049b1a3afbd87aa63031b6a07dbf23a71826592495d264a324f94d47bb33acba  is7-whatsnew.htm
+9c6238c3fd1ab0cacc476b34d618a2a568b2b445e2a1d60f142203de46e396da  jrsoftware.org_isdl.php
+7605d6ded64bb407518f81d4a3a63e6d410368884fcda0c043eb3fca686d977b  nsis.sourceforge.io_License
+6cc665347be5c84b76bf0fd6f85fbb0c33261e89b3408aa3e3e55dbe95e12d89  raw.githubusercontent.com_kichik_nsis_master_COPYING
+dfdf2048787635215a6baf3b9d461dee89a2904d246787258a44f072a98d4786  raw.githubusercontent.com_wixtoolset_wix_main_LICENSE.TXT
+57c0efd33d19532b6ec5032dea31a21620e13b6225d4c73b648009f16b9aa68f  raw.githubusercontent.com_wixtoolset_wix_main_OSMFEULA.txt
+684917a256c0dce7b98183922428648ce3a80dc9c6b801f1365b858dd5ee1ecd  wixtoolset.org_osmf_
+
+Inno Setup prices: not in the static HTML (filled by Paddle.js). Read in the in-app browser
+on https://jrsoftware.org/isorder.php via the page's own Paddle.PricePreview (price ids from the
+page's `priceIds.production`). Detected address: countryCode TW.
+  rendered labels (subtotal, local): Single NT$4,931.02 | Team NT$13,043.33 | Enterprise NT$38,016.54
+  local Single: subtotal NT$4,931.02, tax NT$246.55, total NT$5,177.57
+  currencyCode USD (subtotal / tax / total):
+    Inno Setup Single User license   $155.00 / $7.75  / $162.75
+    Inno Setup Team license          $410.00 / $20.50 / $430.50
+    Inno Setup Enterprise license    $1,195.00 / $59.75 / $1,254.75
+No purchase, no form submission, no checkout opened.
+
+== B. BOOTH ==
+booth.pixiv.help via curl: HTTP 403 (bot block) -> read in the in-app browser instead.
+Article list: GET /api/v2/help_center/ja/articles.json (paged, 100/page) -> 428 ja articles.
+Title filter /画像|サムネ|写真|容量|サイズ|ファイル|形式|アップロード/ -> 19 hits; none is an image-spec article.
+Search API /api/v2/help_center/articles/search.json?locale=ja with queries:
+  画像 商品画像 サムネイル(0) 容量 ファイルサイズ(0) ダウンロード商品 アップロード zip 形式 トリミング
+  JPEG(0) PNG(0) GIF(0) 枚数(0) 正方形(0) メイン画像 商品を登録 出品する方法 画像が表示 画像の比率
+  アスペクト(0) pixel(0) ピクセル(0) px(0) MB(0) 拡張子 ファイル形式 アップロードできるファイル
+  -> no article on product-image format/size/count/ratio/crop.
+Articles read (id | updated_at | body, verbatim):
+  230690327 | 2026-10-01T08:28:12Z | 1ファイルのアップロードできるデータ容量は1.2GBまでです。1.2GBを超える場合は、ファイルを1.2GB未満に分割してアップロードしてください。
+  230690347 | 2026-09-07T13:30:42Z | 商品登録の際にアップロードできるデータ容量は合計10GBまでです。 BOOTH Apps 容量追加をご利用いただくと、アップロードできるファイルの総容量が10GBから100GBとなります。
+  360014583774 | 2023-04-23T04:26:05Z | (容量追加: total 10GB -> 100GB)
+  230690307 | 2026-09-14T14:57:35Z | (wav uploaded via 「アルバム情報を編集」 is converted to m4a/mp3/flac; upload wav via 「ファイルの追加・管理」 to sell wav)
+  115003627093 | 2026-07-18T08:30:59Z | (replace download file: upload new, delete old; deleted files no longer downloadable by past buyers)
+  360002172073 | 2026-09-03T01:08:14Z | (doujinshi DL notes; mentions 「zipファイルの場合、スマートフォンでは漫画作品などが読みにくい」)
+  22401069795609 | 2026-09-08T07:21:00Z | (要修正 review covers 商品画像, 表紙やサンプル等の画像, text inside images ...)
+  also read, not relevant: 231284568, 360014444794, 231285688, 231282328, 900001686663, 900005216623
+Other BOOTH pages read in browser: https://booth.pm/guide (no image spec), https://booth.pm/booth_apps
+  (容量追加 550 JPY/月), https://booth.pm/guidelines (mosaic rules only; no upload spec).
+
+Observation (NOT official spec), public item JSON /ja/items/<id>.json:
+  - 344/344 image "original" URLs end in .jpg (tags 素材, VRChat, イラスト; first 20 items each).
+  - 38 originals from tag 効果音 page 2 (25 items, first 2 images each): long side max 1024
+    (1024x1024 most; also 1024x768, 1024x576, 1024x678, 1024x923, 893x986, 918x1024, 876x1024, 1000x1000).
+  - image count per item in that sample: max 15.
+  - listing thumbnail URL form c/300x300_a2_g5 -> 300x300.
+  - crop test, item 3987735 (1024x768): BOOTH 300x300 thumb vs local center-crop->300: mean abs diff 1.34;
+    vs fit+white-pad: 37.14  => center crop. files: output/wf1002b/R/web/o.jpg (sha256 6b897ed3...),
+    t.jpg (sha256 76960f71...); fetched with Referer https://booth.pm/.
+
+Local measurements: see reports/wf1002b_booth_image_specs.zh-TW.md section 3 (PIL + stat).

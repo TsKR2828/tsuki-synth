@@ -1,0 +1,40 @@
+ M DEVLOG.md
+ M README.md
+ M ROADMAP.md
+MM ROADMAP_PHYSICS.md
+MM docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+M  docs/KNOWN_LIMITS_INDEX.zh-TW.md
+M  docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md
+ M docs/workcards/WF1002_README.md
+ M reports/decision_packets/WF1002_addendum_decisions.zh-TW.md
+A  reports/gate_outputs/wf1002b_C_GATE.txt
+A  reports/gate_outputs/wf1002b_C_R_audit.txt
+A  reports/gate_outputs/wf1002b_C_changes.txt
+A  reports/gate_outputs/wf1002b_C_hostprobe_after_raw.txt
+A  reports/gate_outputs/wf1002b_C_hostprobe_before_raw.txt
+A  reports/gate_outputs/wf1002b_C_hostprobe_e16_before_after.txt
+A  reports/gate_outputs/wf1002b_C_raw_01_build.txt
+A  reports/gate_outputs/wf1002b_C_raw_02_ctest.txt
+A  reports/gate_outputs/wf1002b_C_raw_03_physics_full.txt
+A  reports/gate_outputs/wf1002b_C_raw_04_physics_selftest.txt
+A  reports/gate_outputs/wf1002b_C_raw_05_render8.txt
+A  reports/gate_outputs/wf1002b_C_raw_06_verify_score_all.txt
+A  reports/gate_outputs/wf1002b_C_raw_07_hash75_vs_wf1002_integration.txt
+A  reports/gate_outputs/wf1002b_C_raw_08_pytest.txt
+A  reports/gate_outputs/wf1002b_C_raw_09_validate_plugin.txt
+A  reports/gate_outputs/wf1002b_R_ci_run.txt
+A  reports/gate_outputs/wf1002b_R_web_fetch_log.txt
+A  reports/gate_outputs/wf1002b_T_audit.txt
+A  reports/gate_outputs/wf1002b_T_docs.txt
+A  reports/gate_outputs/wf1002b_T_f5_method.txt
+A  reports/gate_outputs/wf1002b_T_full_after_M2.txt
+A  reports/gate_outputs/wf1002b_T_full_before_M0.txt
+A  reports/wf1002b_booth_image_specs.zh-TW.md
+A  reports/wf1002b_innosetup_license.zh-TW.md
+A  reports/wf1002b_n1_compressor_makeup_before_after.zh-TW.md
+M  src/dsp/Envelope.h
+M  src/effects/Compressor.h
+M  tests/test_physics_verify.py
+M  tools/installer/TsukiSynth.iss
+M  tools/physics_verify.py
+804bf037b4d57346420fe5f5ebd49ca6a5cbd0ea

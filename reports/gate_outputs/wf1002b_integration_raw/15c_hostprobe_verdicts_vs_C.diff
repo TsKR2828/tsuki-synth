@@ -1,0 +1,18 @@
+48,49c48,49
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId e2bd1eb14dd040f887e3c72db123b121)
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="e2bd1eb14dd040f887e3c72db123b121": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+---
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId 3a748035f1004ba4852faf080f1820bc)
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="3a748035f1004ba4852faf080f1820bc": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+56,57c56,57
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId e2bd1eb14dd040f887e3c72db123b121)
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="e2bd1eb14dd040f887e3c72db123b121": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+---
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId 3a748035f1004ba4852faf080f1820bc)
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="3a748035f1004ba4852faf080f1820bc": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+62,63c62,63
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId e2bd1eb14dd040f887e3c72db123b121)
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="e2bd1eb14dd040f887e3c72db123b121": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+---
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId 3a748035f1004ba4852faf080f1820bc)
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="3a748035f1004ba4852faf080f1820bc": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range

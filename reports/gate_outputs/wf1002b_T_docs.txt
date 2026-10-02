@@ -1,0 +1,183 @@
+WF1002b-T 文件改動證據（月月 2026-10-02 裁決 N3＝A 的 R2 說明、N4＝甲、N5＝A、N8＝A）
+HEAD 804bf03；改動未 commit、未 add。§6 容差數值一字未動（見下方 diff：§6 只在「殘差頻譜能量」列的依據欄尾追加文字）。
+
+== N8：外掛專用檔名核對（ls）==
+src/HoverMagnifier.h
+src/ScoreConsole.h
+src/TsukiLookAndFeel.h
+src/UiLocale.h
+src/dsp/OutputPeakMeter.h
+src/analyzer/:
+AnalyzerPanel.h
+OscilloscopeView.h
+PitchDetector.h
+SpectrumView.h
+TunerView.h
+-- CLI 渲染路徑（src/score src/physics src/engines）有沒有 include 這幾個檔：
+（無）
+
+== N5：UI 規格字樣 vs 程式字串（grep 原文）==
+913:    // loadFailureReason 非空時把「找不到」那句換成「無法載入（原因：…）」，
+926:                             "——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因："))
+929:                       : " -- this preset's IR file could not be loaded on this computer"
+930:                         " (reason: " + loadFailureReason + ").");
+932:                         "已切回演算法殘響，殘響的音色會和原本的 IR 不同。"))
+934:                                   " the reverb will sound different from the original IR."));
+-- 規格：
+302:   | **已定案（10-02 N5=A）：檔案存在、但無法載入** | 未載入：〈原檔名〉——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：〈原因〉）。已切回演算法殘響，**殘響的音色會和原本的 IR 不同。** | Not loaded: 〈原檔名〉 -- this preset's IR file could not be loaded on this computer (reason: 〈reason〉). Switched back to algorithmic reverb; **the reverb will sound different from the original IR.** |
+-- 原因字串來源：
+761:        error = "File not found: " + file.getFullPathName();
+771:        error = "Not a readable audio file: " + file.getFileName();
+776:        error = "Impulse response is empty: " + file.getFileName();
+783:        error = "Impulse response longer than 30 s refused ("
+838:        error = "IR not found in library: " + ref.originalName;
+171:            error = "Failed to copy IR into library: " + dest.getFullPathName();
+177:            error = "IR content changed while importing (hash mismatch): "
+184:            error = "Failed to move IR into library: " + dest.getFullPathName();
+203:            error = "File not found: " + source.getFullPathName();
+210:            error = "Failed to read/hash file: " + source.getFullPathName();
+
+== §4.14 削波指示燈：程式出處 ==
+src/PluginEditor.h:213:    static constexpr juce::uint32 kClipHoldMs = 1500;
+src/PluginEditor.cpp:318:    startTimerHz (20);
+src/PluginEditor.cpp:1000:    g.drawText ("CLIP", clipBounds_, juce::Justification::centred);
+src/PluginEditor.cpp:1256:    clipBounds_ = { (kStandaloneBuild ? w - 200 : w - 72) - 8 - 44, 20, 44, 24 };
+src/dsp/OutputPeakMeter.h:70:    static bool isOverFullScale (float peak) noexcept { return peak > kFullScale; }
+
+== git diff（四份文件）==
+diff --git a/ROADMAP_PHYSICS.md b/ROADMAP_PHYSICS.md
+index 7a421e4..1127a0e 100644
+--- a/ROADMAP_PHYSICS.md
++++ b/ROADMAP_PHYSICS.md
+@@ -154,13 +154,13 @@ ctest 4/4；pytest 270（264 passed＋1 skip＋5 xfail）；`physics_verify.py -
+ 任何 AI（Opus / Codex / Claude / 其他）在本 repo 開發時必須遵守。違反任一條 = 該輪工作不予驗收。
+ 
+ 1. **驗收只認 GATE 命令輸出，不認敘述。** 回報「完成」時必須附上 GATE 命令與完整輸出（或輸出檔路徑）。沒有輸出 = 沒有完成。
+-2. **禁止調寬任何容差。** §6 容差登記表的數值只能由月月批准修改。達不到門檻 → 回報實測數字 + 原因分析，停下來等決定；不得自行放寬後宣稱通過。
++2. **禁止調寬任何容差。** §6 容差登記表的數值只能由月月批准修改。達不到門檻 → 回報實測數字 + 原因分析，停下來等決定；不得自行放寬後宣稱通過。（**R2 說明，F5 殘差頻譜能量：2026-10-02 月月裁決 N3＝A：認定為修正量法——扣掉預測模態自身的窗洩漏；門檻 −60 dB 不動；依據 R-b 注入測試。** 做法：`tools/physics_verify.py` 的 `measure_residual_energy()` 把 FFT 前的窗從 Hann 換成 4 項 Blackman-Harris（係數出處 Harris 1978，見常數 `F5_BLACKMAN_HARRIS_4` 註解）；±3% 帶、分析上限、[30 ms, 放鍵] 時段、−60.0 dB 門檻都沒改。依據：WF1002 R-b（`reports/wf1002_d11_piano_t60_literature_and_f5_method.zh-TW.md` §4–§5、`reports/gate_outputs/wf1002_R_b_f5_methods.txt`）——乾淨鋼琴探針 1.0 mm 舊量法 −59.47 dB（FAIL，數字跟著 T60 走、不是多餘能量），新量法 −82.73 dB；注入帶外衰減假泛音 L＝−70 dB，舊量法量成 −59.10 dB、新量法 −69.87 dB。**形式上「會判 FAIL 的情況」變少**，所以要月月裁；月月裁定這是修量法、不是放寬。`--selftest` 加反例「衰減訊號＋帶外衰減假泛音 L＝−50 dB 必 FAIL、L＝−70 dB 量值要對得上」，既有 3000 Hz 反例保留。前後數字見 `reports/gate_outputs/wf1002b_T_f5_method.txt`。）
+ 3. **禁止縮小 GATE 範圍。** 不得只跑部分引擎、部分音符、部分 score 就宣稱整個 GATE 通過。
+ 4. **禁止 hardcode 無法溯源的物理常數。** 每個新常數必須在程式碼註解或文件標明來源：文獻（書名/表號）、推導（公式）、或量測（方法）。
+ 5. **Milestone 不可部分標記 Done。** 任務沒全完成就標 `In progress` 並列出剩餘項目。
+ 6. **改動任何 `src/`（含全部子資料夾）或 `CMakeLists.txt` 之後**，宣稱完成前必跑（**2026-10-02 月月裁決 Q02=A**：範圍由原文「~~改動任何 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/` 之後~~」四個資料夾，擴成整個 `src/`＋`CMakeLists.txt`；理由：CLI 渲染也會經過 `src/effects/`，而且賣的是外掛）：
+    - `python tools/physics_verify.py --full`（全引擎）→ 無 checked failure；任何 `UNVERIFIED/N/A` 必須逐項列出
+-   - 三個 build target（CLI / Standalone / VST3）exit 0；**外掛層另加（2026-10-02 月月裁決 Q02=A）**：改到外掛層（`src/PluginProcessor.*`、`src/PluginEditor.*`、`src/effects/`、`src/IRLibrary.h`、`src/PresetManager.h`、`src/ParameterLayout.*`、`src/Presets.h`）時，另外必跑：先重建五個測試 target（`TsukiSynthAuditTest`、`TsukiSynthTunerTest`、`TsukiSynthPhysicsModelsTest`、`TsukiSynthSpectrumViewTest`、`TsukiSynthHostProbe`）再跑 `ctest`（X4 規約），以及 HostProbe 全套——上面的 `--full` 和三個 build 驗不到外掛行為
++   - 三個 build target（CLI / Standalone / VST3）exit 0；**外掛層另加（2026-10-02 月月裁決 Q02=A）**：改到外掛層（`src/PluginProcessor.*`、`src/PluginEditor.*`、`src/effects/`、`src/IRLibrary.h`、`src/PresetManager.h`、`src/ParameterLayout.*`、`src/Presets.h`；**2026-10-02 月月裁決 N8＝A 補列**外掛專用的 `src/HoverMagnifier.h`、`src/TsukiLookAndFeel.h`、`src/UiLocale.h`、`src/ScoreConsole.h`、`src/analyzer/`（整個資料夾）、`src/dsp/OutputPeakMeter.h`）時，另外必跑：先重建五個測試 target（`TsukiSynthAuditTest`、`TsukiSynthTunerTest`、`TsukiSynthPhysicsModelsTest`、`TsukiSynthSpectrumViewTest`、`TsukiSynthHostProbe`）再跑 `ctest`（X4 規約），以及 HostProbe 全套——上面的 `--full` 和三個 build 驗不到外掛行為
+ 7. **不 commit、不 push（月月明示裁決時除外）；稽核 PASS 後由稽核 `git add`（staged）供月月審。**（**2026-10-02 月月裁決 Q03=A** 改字面；原文：「~~**不 commit、不 push。** 檔案留 unstaged，由月月審完決定（現行工作規則）。~~」——自 WF0907 起實務已是稽核 PASS 後 staged，見 `docs/workcards/WF0907_README.md`、`docs/workcards/WF0914_README.md` §2）
+ 8. **文件同步。** 完成任何 GATE 後更新本文件 §2 狀態欄與 `TODO.md`。
+ 9. **域外功能標註。** 任何驗證域外的新功能（見 §0 表），文件與 UI 必須標註，比照 FM Piano 的做法。
+@@ -466,7 +466,7 @@ python tools/physics_verify.py --t60
+ | Partial 振幅誤差 | ±3.0 dB（M2 已達成，Phase H 材質修正後重跑 `--amps` 仍 `RESULT: ALL WITHIN TOLERANCE`，`reports/gate_outputs/phase_h_gate_amps.txt`，確認材質阻尼/E 修正不影響 t=0 振幅判定） | ±3.0 dB（M2） | M2 實測後定案 |
+ | T60 比值 | 0.80–1.25（exit-code 判定） | 0.5–2.0 判定制（M5） | 2026-07-18 月月授權同步至工具實值（收緊方向）；2026-07-17 十個標準 probe measured/model 0.99–1.00；rubber 極短瞬態另列 N/A |
+ | velocity ×2 電平 | 量測域：基頻窄帶（測得 f0 ±3%，非寬帶）；主張域二分（2026-08-27 月月裁決 (b)）——**固定 tau_c 路徑**（Cimbalom 家族 Cotton/Wood/Metal 檔位、Chromatic 引擎；FM 維持既有豁免）雙重判定數值不變：實測 vs 模型預測 ±1.0 dB，且模型預測自身 \|Δ−6.0206\| ≤ 1.0 dB（物理律上限）；**tau_c(v) 路徑**（Cimbalom/Piano 家族 × Felt 氈槌 = B4 接觸求解器 `HammerImpulse::pianoHammerTauC()`，判域函式 `probe_tauc_velocity_solved()`）6.0206 dB 固定律不再是有效主張（該律是固定接觸時間假設的推論），判定改為實測 vs 模型自身預測 ±1.0 dB（match 容差數值不變、fail-closed）＋ predicted_delta 誠實列印（含相對 6.0206 dB 偏差，資訊性、不判定）；寬帶 delta 僅資訊性列印，不影響判定 | +6.0 ± 1.0 dB 判定制（M1） | 振幅正比力的物理律（20·log10 2 = +6.0206 dB）是逐模態律（`ModalResonator::excite()`），非寬帶頻譜形狀律；2026-07-18 月月授權語意同步為雙重判定；**2026-07-22 月月授權修理：量測域對齊物理律適用範圍（寬帶→基頻窄帶），非容差變更**；round-2 寬帶量測值（piano +7.4373 dB）見 `reports/gate_outputs/deepfix2_gate_full.txt` 存證，本輪起降為資訊性；**2026-07-23 月月正式追認此量測域變更**（round-4 裁決，見 `TODO.md`「2026-07-23 round-4 裁決落地」）；**2026-08-27 月月裁決 (b)：F3 主張域重定義（tau_c(v)/Felt 路徑改為模型自洽判定；容差數值不變、非容差變更；固定 tau_c 路徑檢查一字不動）**——B4 把 Felt 槌 tau_c 換成由 F=K·δ^α 解出的 tau_c(note,v)（力度指數 −0.394～−0.500 隨音高變化）後，6.0206 dB 律的固定接觸時間前提在該路徑不再成立，模型預測偏差隨 α 嚴格單調（piano C2 +6.3／C4 +7.79／C7 +19.12 dB，渲染實測與模型預測吻合 <0.2 dB＝物理事實非 bug）；裁決包 `reports/decision_packets/B4_f3_velocity_ruling.md`，FAIL 存證 `reports/gate_outputs/b4_gate_full_FAIL.txt`＋`b4_f3_alpha_monotonicity.txt`，主張域哨兵兩輪存證 `reports/gate_outputs/b4_f3_redefine_sentinel.txt` |
+-| 殘差頻譜能量 | 判定制 −60.0 dB re total（2026-07-23 月月批准並完成實作/GATE） | −60.0 dB re total 判定制（M2/F5） | round-2/round-3 實測基線 −74.7～−83.1 dB re total，距門檻留有 ≥14.7 dB 邊際；實作與證據見 `tools/physics_verify.py`、`reports/gate_outputs/deepfix4_*` |
++| 殘差頻譜能量 | 判定制 −60.0 dB re total（2026-07-23 月月批准並完成實作/GATE） | −60.0 dB re total 判定制（M2/F5） | round-2/round-3 實測基線 −74.7～−83.1 dB re total，距門檻留有 ≥14.7 dB 邊際；實作與證據見 `tools/physics_verify.py`、`reports/gate_outputs/deepfix4_*`；**2026-10-02 月月裁決 N3＝A**：量法改 4 項 Blackman-Harris 窗（修正量法、門檻數值不動；R2 說明見 §1 第 2 條），前面的基線是當時 Hann 量法的實測 |
+ | 休止區 RMS | 無 | ≤ −50 dBFS（M3，含殘響衰減窗） | 待 M3 實測後檢討；2026-07-18 量測法改為逐聲道 RMS 取最大（門檻 −50 dBFS 不變；量測方法變更，非容差變更） |
+ | 跨引擎等 RMS | 0.2 dB（已達） | 維持 | 2026-06 校準 |
+ | 決定性 | SHA256 一致（同機） | 跨機：max abs delta ≤ −120 dBFS、delta RMS ≤ −120 dB re signal、spectral ≤ 0.01 dB、peak pitch ≤ 0.01 cents | **2026-08-22 月月登記完成**（`scores/crossplatform_tolerance.json`，裁決「照提案登記」）：依 CI run 32446987833 第一次三平台實測（最差 5 LSB@24bit／−125.8 dB／0.0019 dB／+0.0000c）留餘裕訂定，`cross-platform-compare` 自此轉**阻斷式 GATE**（超標 exit 1）。2026-08-15 工具就位記錄：`tools/crossplatform_verify.py` + CI 三平台矩陣，無登記時 exit 3 UNREGISTERED 只印不判（Rule 2） |
+diff --git a/docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md b/docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+index 42ff70b..3a12fd2 100644
+--- a/docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
++++ b/docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+@@ -186,3 +186,23 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼
+ 
+ **本批不升格**：依裁定表 Q19，「C5 等 Q16 研究卡」。Q16=D：`TODO.md` 登記「F5 PASS 依賴探針 0.8 mm」為已知脆弱點，另開研究卡（真鋼琴 T60 文獻對照候選＋F5 量法可改方向，只研究）。研究卡回來後再裁 C5。
+ 現況出處：`docs/KNOWN_LIMITS_INDEX.zh-TW.md` A24、§C C5；`reports/decision_packets/D11_string_scale_candidate.zh-TW.md` §0 與檔尾 F5 根因補記。
++
++---
++
++## 12. 弦長與弦徑是模型假設（鋼琴）〔C5〕——2026-10-02 升格
++
++**月月 2026-10-02 裁決 N4＝甲（升格）**：追加裁決包 `reports/decision_packets/WF1002_addendum_decisions.zh-TW.md` N4（檔尾裁決記錄：「N1～N8 全照建議」，N4 建議＝甲）。本節取代 §11 的「尚未升格」（§11 保留作歷史，不改）。
++
++主張原句照錄 WF1002 R-b 研究卡的建議措辭草稿（`reports/wf1002_d11_piano_t60_literature_and_f5_method.zh-TW.md` §6「建議措辭（草稿，供 D lane 用，月月可改）」；月月沒有改字，照草稿採用）：
++
++> 弦長與弦徑是模型假設，不是真實鋼琴的弦長表：弦長以 A4＝0.35 m、每八度減半推算，弦徑取樂譜或旋鈕的值。
++> 因此，引擎**不主張**非諧性係數 B 和各音的 T60 沿鍵盤的分布與真實鋼琴一致。
++> 已知偏差：高音 B 比量測值大 21.6～86.4 倍；與公開文獻相比，高音 T60 短 2～9 倍、最低音長約 2 倍。
++> 若 D11 候選落地，本條改寫為「逐八度查表，纏繞弦以芯線計」並更新偏差數字。
++
++數字出處（都在同一份 R-b 報告與它引用的檔，本節不新增數字）：
++- 非諧性 B 偏離量測值 G5 21.6×、G6 86.4×：`reports/decision_packets/D11_string_scale_candidate.zh-TW.md` §1（R-b 報告 §6 第 1 點引用）。
++- T60 對公開文獻（高音短 2～9 倍、最低音長約 2 倍）：R-b 報告 §2；文獻抓取紀錄 `reports/gate_outputs/wf1002_R_b_lit_fetch_log.txt`、計算 `reports/gate_outputs/wf1002_R_b_lit_compare.txt`。三篇經典文獻（Martin 1947、Hundley 等 1978、Weinreich 1977）在付費牆後，沒有用到它們的數字（R-b 報告 §3 第 6 點、§7）。
++- 現行模型不變的依據：D11 月月 2026-09-15 選 C（候選 patch 存檔不落地），`docs/KNOWN_LIMITS_INDEX.zh-TW.md` A24。
++
++相關（事實，不是本條主張的一部分）：同日 N3＝A 把 F5 殘差頻譜能量的量法改成 Blackman-Harris 窗（`ROADMAP_PHYSICS.md` §1 第 2 條 R2 說明）。改了量法之後，鋼琴 F5 不再靠探針預設弦徑 0.8 mm 才 PASS（1.0 mm 量到 −82.73 dB，門檻 −60 dB 不動；`reports/gate_outputs/wf1002b_T_f5_method.txt`）。這**不改變**上面的主張：量法修正不會讓弦長／弦徑變成真鋼琴的值，Q16 維持 D、D11 沒有重開。
+diff --git a/docs/KNOWN_LIMITS_INDEX.zh-TW.md b/docs/KNOWN_LIMITS_INDEX.zh-TW.md
+index 52ea28a..8cd7586 100644
+--- a/docs/KNOWN_LIMITS_INDEX.zh-TW.md
++++ b/docs/KNOWN_LIMITS_INDEX.zh-TW.md
+@@ -38,7 +38,7 @@
+ | A21 | 外掛 IR 模式響度補償 `kIrWetMakeupGain` ×26.9 | 「標為 DECIDED CONVENTION，非物理常數」；只影響 plugin IR 模式 wet 路徑；對齊參考是 ALGO 預設 room size 0.5、未指定 T60 | 2026-09-16 月月（D9 選 A）；對齊參考限制 2026-09-25 盤點補記 | `reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md`「裁決記錄」（:150-157）；`ROADMAP_PHYSICS.md` D9→D9c 列（:27）；同裁決包 2026-09-25 附記（工作樹，未入庫） |
+ | A22 | 絕對聲壓輸出 `absolute_pressure_per_force` | 「這是月月裁決的慣例錨定，不是實測也不是推導」（只進 `--dump-modes` 診斷輸出） | 2026-08-28 月月（B6「照建議走」＝方案 B） | `reports/decision_packets/B6_calibration_choice.md`「裁決記錄」（:142-）；`TODO.md` Verification gaps 第 3 條（:897-901）；（**2026-10-02 已升格** → `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §8，月月裁決 Q19 C8 甲） |
+ | A23 | 第一原理力鏈（B7） | Phase 0 完成、Phase 1 部分完成（`dumpModes()` 欄位撤回）、Phase 2/3 BLOCKED | 2026-09-15 月月（§5 路徑 C＋(a) 乙案） | `reports/decision_packets/B7_phase2_and_open_items.zh-TW.md` §6（:164-） |
+-| A24 | 弦長／弦徑模型 | 候選修正（真實鋼琴逐八度查表）patch 存檔不落地，現行模型不變；F5 根因已於 09-25 查清，A/B 待重開 | 2026-09-15 月月（D11 選 C） | `reports/decision_packets/D11_string_scale_candidate.zh-TW.md`「裁決記錄」（:59-65）；F5 根因補記與 `reports/d11_f5_root_cause_2026-09-25.zh-TW.md`（未入庫）；（C5 **未升格**：2026-10-02 裁定表 Q19「C5 等 Q16 研究卡」，見 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §11） |
++| A24 | 弦長／弦徑模型 | 候選修正（真實鋼琴逐八度查表）patch 存檔不落地，現行模型不變；F5 根因已於 09-25 查清，A/B 待重開 | 2026-09-15 月月（D11 選 C） | `reports/decision_packets/D11_string_scale_candidate.zh-TW.md`「裁決記錄」（:59-65）；F5 根因補記與 `reports/d11_f5_root_cause_2026-09-25.zh-TW.md`（未入庫）；（~~C5 **未升格**：2026-10-02 裁定表 Q19「C5 等 Q16 研究卡」，見 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §11~~ → C5 **2026-10-02 已升格**（月月裁決 N4＝甲）→ `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §12） |
+ | A25 | 音板參數 | h = 9 mm／`wood_spruce` 確認維持現值 | 2026-08-27 月月（A11 選 (i)） | `TODO.md` A11（:326-332）；`reports/decision_packets/A11_soundboard_sensitivity.md` |
+ | A26 | 外部校準資料 | 無可商用的校準資料集，外部資料只作私下對照參考（TU Berlin 為 CC BY-NC-SA） | 2026-09-09 月月（A8） | `TODO.md` A8（:270）、Verification gaps 第 7 條（:917-920）；`docs/EXTERNAL_DATASET_A8.zh-TW.md` |
+ 
+@@ -78,7 +78,7 @@
+ | C2 | Custom Harmonics 半域內 | A16 | `ROADMAP_PHYSICS.md` §0（:143） | — | 甲：已升格 → §3 |
+ | C3 | Cimbalom/Piano 振幅含 creative 層與校準層 | A12、A13 | `TODO.md`（:833、:813-816）；`ROADMAP_PHYSICS.md` §0（:140） | 頻率／衰減不受這兩層影響（ROADMAP §0 :140 原文） | 甲：已升格 → §4 |
+ | C4 | `frequency_mode: midi` 是混合系統 | A18 | `ROADMAP_PHYSICS.md` §0（:147） | — | 甲：已升格 → §5 |
+-| C5 | 弦長／弦徑模型假設（每八度減半＋corpus 固定弦徑） | A24 | `reports/decision_packets/D11_string_scale_candidate.zh-TW.md` §0 | 盤點查證修正點名的例子之一；D11 選 C 後現行模型不變，A/B 等 F5 根因回來重開 | **未升格**：等 Q16 研究卡 → §11 註明 |
++| C5 | 弦長／弦徑模型假設（每八度減半＋corpus 固定弦徑） | A24 | `reports/decision_packets/D11_string_scale_candidate.zh-TW.md` §0 | 盤點查證修正點名的例子之一；D11 選 C 後現行模型不變，A/B 等 F5 根因回來重開 | ~~**未升格**：等 Q16 研究卡 → §11 註明~~ **甲：已升格（2026-10-02 月月裁決 N4＝甲，追加裁決包 `reports/decision_packets/WF1002_addendum_decisions.zh-TW.md`）→ §12**（措辭照 R-b 報告 §6 草稿） |
+ | C6 | 舌鼓 BeamModel `*2` 經驗阻尼 | B1 | `src/physics/BeamModel.h:44-48` 註解 | 屬未決缺口，不是裁決；要先裁 B1（前置 D1） | 甲（Q17=A）：已升格 → §6 |
+ | C7 | Chromatic（舌鼓／水鑼）槌具未標定 | A11、B2 | `TODO.md`（:430） | — | 甲：已升格 → §7 |
+ | C8 | 絕對聲壓輸出是慣例錨定 | A22 | `TODO.md`（:897-901） | 只在 `--dump-modes` 診斷輸出 | 甲：已升格 → §8 |
+diff --git a/docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md b/docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md
+index 9bdcabb..a344584 100644
+--- a/docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md
++++ b/docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md
+@@ -25,6 +25,7 @@
+ > (2) **Q05=C**：新增 §4.14「削波指示」（超過 0 dBFS 亮燈，**不改聲音**），§6「輸出限幅器、削波指示」列同步改寫；
+ > (3) **Q06=A**：§4.8 註明 DAW 看到的 program 清單只含工廠 27 個。
+ > 程式改動（警告字串、指示燈、`getNumPrograms()`）由同輪 C++ lane（WF1002-C1）做，**以那張卡的證據為準**；本次只改文件。60 個參數仍零改動。
++> **2026-10-02 再補記（WF1002b，月月裁決 N5=A）**：§5-3 加「檔案存在、但無法載入」的定案文字（字樣已對過程式），§5-7 的舊「例外」標成已改（Q10=B）；§4.14 補削波指示燈的實作現況（標題列「CLIP」、最後一次超過 0 dBFS 後亮 1.5 秒，UI 慣例、非 GATE 常數）。只改文件。
+ 
+ ---
+ 
+@@ -266,6 +267,14 @@
+ - **給使用者的說明（手冊同步寫）**：「殘響混合量開大、或部分工廠音色，輸出可能超過 0 dBFS；指示燈亮時請把『輸出音量』調低。」
+ - 不做的事：不加輸出限幅（Q05 沒選 B）、不訂峰值／靜音門檻當 GATE（Q05b=A）。這幾個音色為什麼單音就超過 0 dBFS，另開唯讀根因調查卡，結論回來前不改音色。
+ - 程式由 WF1002-C1 加進 `PluginEditor`，以該卡證據為準。
++- **實作現況（2026-10-02 補記，WF1002b；照程式寫，設計端可整個重做）**：
++  - 位置與樣子：**標題列**、標題列按鈕的左邊，一個寫著「**CLIP**」的小方塊（`src/PluginEditor.cpp` 的 `resized()`，約 :1255-1256）。
++    沒亮＝暗色外框＋暗色字；亮＝整塊填成主題唯一的強調色、字改成底色（`paintClipIndicator()`，約 :979-1001）。只用現有單色系配色，沒有新顏色。
++  - 什麼時候亮：外掛最後輸出（「輸出音量」之後）任一取樣的絕對值**超過 1.0（＝0 dBFS）**；剛好等於 1.0 不算；NaN／無限大也算超過
++    （`src/dsp/OutputPeakMeter.h`，0 dBFS 是定義、不是調出來的數）。畫面每秒檢查 20 次，兩次檢查之間任何一個 block 超過都會被記到。
++  - 亮多久：**最後一次超過之後再亮 1.5 秒**，然後自己熄；一直超過就一直亮。沒有手動清除。
++    1.5 秒是 **UI 慣例**（程式註解記載 WF1002-C1 施工卡給的範圍是 1～2 秒；施工卡原文不在 repo 內，本次沒有另行核對），**不是 GATE 常數、也不是物理常數**（`src/PluginEditor.h` 的 `kClipHoldMs = 1500`，約 :208-213）。
++  - 只顯示、不改聲音：峰值記錄只讀輸出、不寫回；輸出端仍然沒有限幅器或 soft clip。
+ 
+ ---
+ 
+@@ -290,6 +299,15 @@
+    |---|---|---|
+    | 現行（`src/PluginProcessor.cpp` 的 `forceAlgorithmicMissingIR()`） | 未載入：〈原檔名〉——這個 preset 記的 IR 在這台電腦上找不到。已切回 algorithmic reverb，**音量會和 IR 模式不同。** | Not loaded: 〈原檔名〉 -- this preset's IR could not be found on this computer. Switched back to algorithmic reverb; **the volume will differ from IR mode.** |
+    | ~~建議（AI 擬，未定案）~~ **已定案（10-02 Q38=A）** | 未載入：〈原檔名〉——這個 preset 記的 IR 在這台電腦上找不到。已切回演算法殘響，**殘響的音色會和原本的 IR 不同。** | Not loaded: 〈原檔名〉 -- this preset's IR could not be found on this computer. Switched back to algorithmic reverb; **the reverb will sound different from the original IR.** |
++   | **已定案（10-02 N5=A）：檔案存在、但無法載入** | 未載入：〈原檔名〉——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：〈原因〉）。已切回演算法殘響，**殘響的音色會和原本的 IR 不同。** | Not loaded: 〈原檔名〉 -- this preset's IR file could not be loaded on this computer (reason: 〈reason〉). Switched back to algorithmic reverb; **the reverb will sound different from the original IR.** |
++
++   - **2026-10-02 月月裁決 N5=A**（追加裁決包 `reports/decision_packets/WF1002_addendum_decisions.zh-TW.md` N5）：上表最後一列「檔案存在、但無法載入」定案。
++     這句原本是 WF1002-C1 落地 Q10=B 時照本規格語氣自擬的；字樣以程式為準，已逐字對過 `src/PluginProcessor.cpp` 的 `forceAlgorithmicMissingIR()`（約 :916-934）：
++     中文第二句「——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：」＋原因＋「）。」，英文「 -- this preset's IR file could not be loaded on this computer (reason: 」＋原因＋「).」；前後兩段（「未載入：〈原檔名〉」與「已切回演算法殘響…」）跟「找不到」那列共用同一份字串。
++     表裡的粗體只是本文件標示，程式字串沒有粗體。
++   - **什麼時候出現**：只在開舊專案的 IR 路徑遷移（§5-7 情況 (i) 的例外）——舊路徑的檔案還在、但載不進來：不是可讀的音檔、空檔、長度超過 30 秒、或抄進 IR 庫失敗。
++     新格式專案／音色的 IR 區塊對不到庫裡可用的檔時，仍然是「找不到」那列（程式那條路不帶原因）。
++   - **〈原因〉是程式的英文錯誤訊息，中文介面也一樣是英文**（例：`Impulse response longer than 30 s refused (31.0 s)`、`Not a readable audio file: 〈檔名〉`、`Impulse response is empty: 〈檔名〉`、`Failed to copy IR into library: 〈路徑〉`；拿不到原因時是 `unknown error`）。設計端要預留這段長度，路徑可能很長。
+ 
+    - 為什麼要改：D9c 之後，在演算法殘響的預設設定下兩種模式音量已對齊（±0.25 dB），剩下的差別主要是音色（空間特性）；
+      使用者把空間大小或 T60 調離預設時，音量仍可能差幾 dB（見 §6），但已不是這句話原本指的 28 dB。
+@@ -321,9 +339,11 @@
+ 
+    - (i)(ii) 的改過標記是程式刻意設的：遷移後，記憶體裡的狀態已經和磁碟上的舊專案檔不一樣。
+      舊專案檔本身不會被改寫；使用者存檔後才變成新格式，沒存就關掉，下次打開會再遷移一次。
+-   - **例外（現行設計如此，不是漏寫，但設計端要知道）**：舊路徑的檔案還在、卻讀不進來（不是可讀的音檔、長度超過 30 秒、
++   - ~~**例外（現行設計如此，不是漏寫，但設計端要知道）**：舊路徑的檔案還在、卻讀不進來（不是可讀的音檔、長度超過 30 秒、
+      抄進 IR 庫失敗）時，程式照設計**不載入、不切模式、不跳警告**，舊路徑也不保留（改過標記一樣會亮）。專案存的模式若是 IR，
+-     就會落到 §5-3 補記的「IR 模式，但沒有載入 IR」狀態。要不要改成也走缺檔警告，**待月月裁決**（會改 src，要跑 R6）。
++     就會落到 §5-3 補記的「IR 模式，但沒有載入 IR」狀態。要不要改成也走缺檔警告，**待月月裁決**（會改 src，要跑 R6）。~~
++     **2026-10-02 更正**：月月裁決 Q10=B，WF1002-C1 已改成走缺檔三態——保留原檔名、強制切回演算法殘響、跳一次性警告並附原因；
++     警告文字是 §5-3 表的「檔案存在、但無法載入」那列（10-02 N5=A 定案）。上面劃掉的是舊行為，保留作歷史。
+ 
+ ---
+ 

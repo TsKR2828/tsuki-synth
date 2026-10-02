@@ -1,0 +1,137 @@
+WF1002b-C：HostProbe 改前／改後（R10 前後對照的原始證據）2026-10-02
+數字都是描述用（E16 本來就是 [info]，不是 GATE、不是門檻）。
+
+== 改前＝HEAD 804bf03 的 build\ 現成建置（WF1002 整合卡 02:0x 建，sha 與 wf1002_integration_raw/02_bin_sha256_after.txt 相同）
+c93aa5768aee011e5fd4e4b9cb1e7a0f5ab7ba6c02d7dd573d5a048bb28d5eb2 *build/Release/TsukiSynthHostProbe.exe
+17ae77f74dd0ca2e0b45b8b8cc46f6e93754e5c5ce2237febd29aeea59920bfd *build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+== 改後＝build-wf\（HEAD＋N2 patch＋N1，本卡 22:2x 重建）
+bc38361201074404f5486dfe1cf49ffd1fb7b4306ae87dd91c14e086f5ede571 *build-wf/Release/TsukiSynthHostProbe.exe
+23a7fb6320d2867f22a8919c3d530f847fd7ea33bfcf1a4e9c2baf093874b6b2 *build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+
+== 改前命令（cwd＝<SCRATCH>/wf1002b_c_hp_before，repo 外；env -u TSUKI_REPO_ROOT）
+$ <REPO>/build/Release/TsukiSynthHostProbe.exe <REPO>\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 <SCRATCH>\wf1002b_c_hp_before\out
+結果：[PASS] 231 行、[FAIL] 0 行；396:PASS (0 failures)；EXIT_CODE=0
+== 改後命令（cwd＝<SCRATCH>/wf1002b_c_hp_after，repo 外；env -u TSUKI_REPO_ROOT）
+$ <REPO>/build-wf/Release/TsukiSynthHostProbe.exe <REPO>\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 <SCRATCH>\wf1002b_c_hp_after\out
+結果：[PASS] 231 行、[FAIL] 0 行；396:PASS (0 failures)；EXIT_CODE=0
+跑前跑後 <APPDATA>\TsukiSynth\IR、\Presets 都是空的。
+
+== E16 27 列前後表與 R-a [5] 逐列比對
+$ PYTHONIOENCODING=utf-8 python output/wf1002b/C/e16_compare.py <before log> <after log> reports/gate_outputs/wf1002_R_a_analysis.txt
+presets parsed: before 27, after 27, R-a B1 27, R-a mkup 27
+| # | preset | 改前峰值 | 改後峰值 | 峰值變化 | 改前 RMS | 改後 RMS | RMS 變化 | R-a 補償量 | R-a 預測改後峰值 | 實測−預測 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | Steel Hammered Dulcimer | -7.21 | -11.71 | -4.50 | -23.19 | -27.69 | -4.50 | +4.50 | -11.71 | +0.00 |
+| 1 | Copper Warm Strings | -7.97 | -12.97 | -5.00 | -22.50 | -27.50 | -5.00 | +5.00 | -12.97 | +0.00 |
+| 2 | Glass Wind Chimes | -7.27 | -9.27 | -2.00 | -23.56 | -25.56 | -2.00 | +2.00 | -9.27 | +0.00 |
+| 3 | Muted Felt Piano | -30.41 | -33.74 | -3.33 | -44.52 | -47.85 | -3.33 | +3.33 | -33.74 | +0.00 |
+| 4 | Brass Gamelan | -10.94 | -13.34 | -2.40 | -30.21 | -32.61 | -2.40 | +2.40 | -13.34 | +0.00 |
+| 5 | Rubber Muted Pluck | -12.32 | -19.82 | -7.50 | -44.63 | -52.13 | -7.50 | +7.50 | -19.82 | +0.00 |
+| 6 | Steel Hammered Dulcimer (Body) | -2.77 | -7.27 | -4.50 | -19.03 | -23.53 | -4.50 | +4.50 | -7.27 | +0.00 |
+| 7 | Copper Warm Strings (Body) | +0.33 | -4.67 | -5.00 | -15.00 | -20.00 | -5.00 | +5.00 | -4.67 | +0.00 |
+| 8 | Crystal Tongue Drum | -19.34 | -23.84 | -4.50 | -27.86 | -32.36 | -4.50 | +4.50 | -23.84 | +0.00 |
+| 9 | Bronze Water Gong | -4.87 | -9.37 | -4.50 | -18.78 | -23.28 | -4.50 | +4.50 | -9.37 | +0.00 |
+| 10 | Wooden Kalimba | -16.33 | -20.83 | -4.50 | -34.36 | -38.86 | -4.50 | +4.50 | -20.83 | +0.00 |
+| 11 | Ethereal Steel Bells | +1.47 | -3.03 | -4.50 | -8.81 | -13.31 | -4.50 | +4.50 | -3.03 | +0.00 |
+| 12 | Glass Singing Bowl | -25.99 | -30.49 | -4.50 | -37.38 | -41.88 | -4.50 | +4.50 | -30.49 | +0.00 |
+| 13 | Rubber Tongue Pad | -39.79 | -44.29 | -4.50 | -63.86 | -68.36 | -4.50 | +4.50 | -44.28 | -0.01 |
+| 14 | Crystal Tongue Drum (Body) | -6.94 | -11.44 | -4.50 | -15.43 | -19.93 | -4.50 | +4.50 | -11.44 | +0.00 |
+| 15 | Bronze Water Gong (Body) | +2.65 | -1.85 | -4.50 | -12.06 | -16.56 | -4.50 | +4.50 | -1.85 | +0.00 |
+| 16 | Acoustic Piano | -15.33 | -19.83 | -4.50 | -26.10 | -30.60 | -4.50 | +4.50 | -19.83 | +0.00 |
+| 17 | Electric Rhodes | -18.40 | -22.90 | -4.50 | -30.07 | -34.57 | -4.50 | +4.50 | -22.90 | +0.00 |
+| 18 | Layered E.Piano | -16.71 | -21.21 | -4.50 | -28.07 | -32.57 | -4.50 | +4.50 | -21.21 | +0.00 |
+| 19 | FM Vibraphone | -11.73 | -16.23 | -4.50 | -24.03 | -28.53 | -4.50 | +4.50 | -16.23 | +0.00 |
+| 20 | DX7 Crystal Bell | -4.57 | -9.07 | -4.50 | -16.48 | -20.98 | -4.50 | +4.50 | -9.07 | +0.00 |
+| 21 | Church Organ | -8.35 | -12.85 | -4.50 | -16.49 | -20.99 | -4.50 | +4.50 | -12.85 | +0.00 |
+| 22 | Ambient Pad | -7.93 | -12.43 | -4.50 | -15.34 | -19.84 | -4.50 | +4.50 | -12.43 | +0.00 |
+| 23 | FM Bass | -19.05 | -22.38 | -3.33 | -35.45 | -38.79 | -3.34 | +3.33 | -22.38 | +0.00 |
+| 24 | FM Brass | -17.64 | -20.98 | -3.34 | -31.08 | -34.42 | -3.34 | +3.33 | -20.98 | +0.00 |
+| 25 | Grand Piano (Physical) | -7.76 | -12.43 | -4.67 | -21.08 | -25.75 | -4.67 | +4.67 | -12.43 | +0.00 |
+| 26 | Bright Upright (Physical) | -9.48 | -13.98 | -4.50 | -29.48 | -33.98 | -4.50 | +4.50 | -13.98 | +0.00 |
+
+peak change range: -7.50 .. -2.00 dB
+RMS  change range: -7.50 .. -2.00 dB
+max |measured after - R-a predicted after| = 0.01 dB (E16 prints 2 decimals)
+max |before(E16 now) - R-a before| = 0.01 dB
+loudest after: preset 15 'Bronze Water Gong (Body)' -1.85 dBFS
+presets > 0 dBFS before: [7, 11, 15], after: []
+
+== 兩份 log 正規化（拿掉 real/user/sys 計時行、把 build／build-wf、hp_before／hp_after 換成同一個字）後的 diff，排除 27 行 E16 [info]
+< [PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.505276) -- melody-position verdict follows via melody_verify.py
+> [PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.300974) -- melody-position verdict follows via melody_verify.py
+<   [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+>   [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+<   [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+>   [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+<   [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+>   [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+<   [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-217.91 dB re signal (n=216000 samples/ch)
+>   [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+<   [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-222.72 dB re signal (n=216000 samples/ch)
+>   [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+<   [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-222.72 dB re signal (n=216000 samples/ch)
+>   [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+<   [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-222.72 dB re signal (n=216000 samples/ch)
+>   [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+<   [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-222.72 dB re signal (n=216000 samples/ch)
+>   [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+52,55c52,55
+<   [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+<   [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+<   [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+<   [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-215.18 dB re signal (n=96000 samples/ch)
+>   [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-210.68 dB re signal (n=96000 samples/ch)
+>   [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-210.68 dB re signal (n=96000 samples/ch)
+>   [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-210.68 dB re signal (n=96000 samples/ch)
+>   [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-210.68 dB re signal (n=96000 samples/ch)
+72,73c72,73
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId a330a8cfd47f477a80e5fed3c50e59e8)
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="a330a8cfd47f477a80e5fed3c50e59e8": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId e2bd1eb14dd040f887e3c72db123b121)
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="e2bd1eb14dd040f887e3c72db123b121": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+82,83c82,83
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId a330a8cfd47f477a80e5fed3c50e59e8)
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="a330a8cfd47f477a80e5fed3c50e59e8": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId e2bd1eb14dd040f887e3c72db123b121)
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="e2bd1eb14dd040f887e3c72db123b121": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+90,91c90,91
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId a330a8cfd47f477a80e5fed3c50e59e8)
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="a330a8cfd47f477a80e5fed3c50e59e8": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId e2bd1eb14dd040f887e3c72db123b121)
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="e2bd1eb14dd040f887e3c72db123b121": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+247,248c247,248
+< [PASS] Q05 clip indicator: OutputPeakMeter fed E16 factory preset 15 'Bronze Water Gong (Body)''s real VST3 output reports peak 1.35731 (independent 1.35731, 2.65 dBFS) -> indicator LIT (require lit <=> peak > 0 dBFS; take() resets to 0)
+> [PASS] Q05 clip indicator: OutputPeakMeter fed E16 factory preset 15 'Bronze Water Gong (Body)''s real VST3 output reports peak 0.808498 (independent 0.808498, -1.85 dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
+<     rendered 132.43 s (12415 blocks) through the VST3 + two twins in 55.5 s wall clock
+>     rendered 132.43 s (12415 blocks) through the VST3 + two twins in 49.2 s wall clock
+<     rendered 311.13 s (29168 blocks) through the VST3 + two twins in 47.2 s wall clock
+>     rendered 311.13 s (29168 blocks) through the VST3 + two twins in 28.2 s wall clock
+（上面以外的行逐字相同；E16 [info] 27 行全部改變，見上表）
+
+== Q09 搶音量測（資訊性）改前／改後關鍵行
+-- hostprobe_before.log
+316:    twin(16 voices) vs VST3 output: max |diff| = 0 over 12712960 samples (0 samples differ; VST3 peak -3.26 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+317:    MEASURED (twin, 16-voice pool = product): steals = 0 (0 hit a still-held note); max active voices at a block end = 12
+318:    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch note-on = 21; extra held voices released by another note's note-off = 11
+319:    MEASURED (twin, 128-voice pool ~ unlimited): max active voices at a block end = 12 (block-end sampling, 512-sample granularity, can undercount a momentary peak); steals = 0; same-pitch early damping = 21; extra released by another note-off = 11
+327:    twin(16 voices) vs VST3 output: max |diff| = 0 over 29868032 samples (0 samples differ; VST3 peak -12.93 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+328:    MEASURED (twin, 16-voice pool = product): steals = 64 (4 hit a still-held note); max active voices at a block end = 16
+329:    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch note-on = 291; extra held voices released by another note's note-off = 117
+330:    MEASURED (twin, 128-voice pool ~ unlimited): max active voices at a block end = 20 (block-end sampling, 512-sample granularity, can undercount a momentary peak); steals = 0; same-pitch early damping = 291; extra released by another note-off = 120
+-- hostprobe_after.log
+316:    twin(16 voices) vs VST3 output: max |diff| = 0 over 12712960 samples (0 samples differ; VST3 peak -3.26 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+317:    MEASURED (twin, 16-voice pool = product): steals = 0 (0 hit a still-held note); max active voices at a block end = 12
+318:    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch note-on = 21; extra held voices released by another note's note-off = 11
+319:    MEASURED (twin, 128-voice pool ~ unlimited): max active voices at a block end = 12 (block-end sampling, 512-sample granularity, can undercount a momentary peak); steals = 0; same-pitch early damping = 21; extra released by another note-off = 11
+327:    twin(16 voices) vs VST3 output: max |diff| = 0 over 29868032 samples (0 samples differ; VST3 peak -12.93 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+328:    MEASURED (twin, 16-voice pool = product): steals = 64 (4 hit a still-held note); max active voices at a block end = 16
+329:    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch note-on = 291; extra held voices released by another note's note-off = 117
+330:    MEASURED (twin, 128-voice pool ~ unlimited): max active voices at a block end = 20 (block-end sampling, 512-sample granularity, can undercount a momentary peak); steals = 0; same-pitch early damping = 291; extra released by another note-off = 120
+
+== 程式碼依據：Q09 兩個案例都不是 FM 引擎（Piano(3)、Chromatic(1) 舌鼓），而 N2 改的 Envelope ADSR 只有 FMPianoEngine 用（ChromaticEngine／CimbalomEngine 只用 Envelope::ExpDecay）
+src/engines/ChromaticEngine.h:7:#include "../dsp/Envelope.h"
+src/engines/ChromaticEngine.h:846:    Envelope::ExpDecay exciterEnv;
+src/engines/CimbalomEngine.h:7:#include "../dsp/Envelope.h"
+src/engines/CimbalomEngine.h:1004:    Envelope::ExpDecay exciterEnv;
+src/engines/FMPianoEngine.h:3:#include "../dsp/Envelope.h"
+src/engines/FMPianoEngine.h:279:    Envelope ampEnv;

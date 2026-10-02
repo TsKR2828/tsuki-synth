@@ -1,0 +1,352 @@
+WF1002b-T 稽核證據（稽核親自重跑；不採信 T 自報）
+日期 2026-10-02；HEAD 804bf03；T 的改動在工作樹（稽核 PASS 後才 staged，未 commit／push）
+CLI＝build\ 現成 exe（未重建）；build\、build-wf\ 都沒動；暫存只在 output/wf1002b/audit_T/（gitignored）
+另一個 C++ 工兵的檔（src/dsp/Envelope.h、src/effects/Compressor.h、tools/installer/TsukiSynth.iss 等）不屬 T、本稽核不 add、不碰。
+
+VERDICT: PASS（9 項全過；4 個小備註見檔尾，都不擋）
+
+== sha256（稽核當下；--full／--selftest／pytest 跑的就是這些版本）==
+d7fa6813d2c3787932257044899aaca8e32c89fadcccc8bf453484980773fada *tools/physics_verify.py
+f7cc57e6e4b924a42620a803304f2e801811b871342a7706fbea069a9514fd19 *tests/test_physics_verify.py
+4b14bd344b0fd796928fca09d92a69a44e1a969ed42249670b0c31470119a8c8 *ROADMAP_PHYSICS.md
+731efbf146bc0f1b55f149e0c486b1101364c0a8a8a699f9cc06cdba789e6243 *docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+fc5dab027a8d37a1aedfdb269e97c86d86eb174dddb506b259dacb2eee8375ca *docs/KNOWN_LIMITS_INDEX.zh-TW.md
+a95444e4bb2bde70fad9a207b409359ca71c3edcd187522cbb87505a359d5975 *docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md
+6dc4fb5e3386b62e07b4a44fef7a2317de0e2af5fe3b3de6564d5fc381337b50 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+918ec141b82b36cfbdeadfc2c0535f045001e4439b59313df68236e961a02b40 *reports/gate_outputs/wf1002b_T_docs.txt
+39b837bdf91ddb773ec0583e9db2e3d2c072b9168636118512b9fe1294c34f7d *reports/gate_outputs/wf1002b_T_f5_method.txt
+9aaed70d12010f2d89c734d976cba1b3efe2fba52e9db5ca272446faa83792c3 *reports/gate_outputs/wf1002b_T_full_after_M2.txt
+dd76969f6cfbcd73a86c344881443e15033c058ef845bd6da532b837d4b2ca6c *reports/gate_outputs/wf1002b_T_full_before_M0.txt
+（tools/physics_verify.py 與 T 證據檔記錄的 d7fa6813… 相同；HEAD 版轉 CRLF 後 = 6c0ddf4d…，也與 T 記錄相同）
+
+== (1) git diff：F5 只換窗函數、係數正確、門檻與帶寬沒動 ==
+- tools/physics_verify.py 刪掉的行只有：measure_residual_energy() 的 docstring、函式簽名（加 window 參數，預設 "blackmanharris4"）、
+  `seg = ... * np.hanning(len(seg))` 換成 `_F5_WINDOWS[window](len(seg))`、F5 報表的 PASS/FAIL 那行（後面加「old Hann, not judged」附印）、--selftest help 字串。
+- 沒動（HEAD 與工作樹逐字相同）：RESIDUAL_ENERGY_LIMIT_DB = -60.0、RESIDUAL_BAND_HALF_WIDTH = 0.03、EXCITER_NOISE_SKIP_S = 0.030、
+  analysis_frequency_limit()、judge_residual_energy()（rdb <= limit）、帶內／帶外的累加邏輯、note-off 時段、探針。
+- 新增：F5_BLACKMAN_HARRIS_4、_blackman_harris4()、_F5_WINDOWS、_f5_segment_power()（只給 selftest 算注入量用）、
+  selftest_residual_energy_decaying_outband_negative()，以及報表附印舊 Hann 數字（不判定）。
+- 係數核對（output/wf1002b/audit_T/coeff_check.txt）：
+scipy 1.17.1
+F5_BLACKMAN_HARRIS_4 = (0.35875, 0.48829, 0.14128, 0.01168) sum = 1.0
+expected Harris 1978 4-term min BH = (0.35875, 0.48829, 0.14128, 0.01168): True
+2 max|pv-scipy| = 0.0
+3 max|pv-scipy| = 0.0
+256 max|pv-scipy| = 7.771561172376096e-16
+1001 max|pv-scipy| = 7.771561172376096e-16
+84960 max|pv-scipy| = 7.771561172376096e-16
+86400 max|pv-scipy| = 8.881784197001252e-16
+highest sidelobe dB = -92.01
+  → 與 Harris 1978 的 4 項 minimum Blackman-Harris（0.35875, 0.48829, 0.14128, 0.01168；係數和 1.0；最高旁瓣 −92 dB）一致；符號 a0 − a1cos + a2cos2 − a3cos3、分母 n−1（對稱窗）與 scipy 相同。
+
+== (2a) 親自重跑 python tools/physics_verify.py --full --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe ==
+603:Residual spectral energy outside predicted modal bands (MIDI 60, bands ±3% per dumped mode, first 30 ms exciter-noise window excluded, 4-term Blackman-Harris window since 2026-10-02 (月月裁決 N3=A, method correction; threshold unchanged), judgment threshold -60.0 dB re total):
+604-   cimbalom    residual:   -88.4 dB re total (120 predicted modes, limit -60.0 dB) -> PASS   [old Hann method, not judged:   -67.3 dB]
+605-   tongue_drum residual:   -96.3 dB re total (5 predicted modes, limit -60.0 dB) -> PASS   [old Hann method, not judged:   -75.9 dB]
+606-   water_gong  residual:   -84.5 dB re total (12 predicted modes, limit -60.0 dB) -> PASS   [old Hann method, not judged:   -72.7 dB]
+607-   water_gong_free residual:   -84.6 dB re total (7 predicted modes, limit -60.0 dB) -> PASS   [old Hann method, not judged:   -77.9 dB]
+608-   piano       residual:   -87.4 dB re total (120 predicted modes, limit -60.0 dB) -> PASS   [old Hann method, not judged:   -63.9 dB]
+609-
+--full summary:
+   F1 eigenvalue anchors: PASS
+   1b note-range scan   : PASS
+   1c material sensitivity: CHECKED CASES PASS; 3 UNVERIFIED/N/A
+   1d velocity judgment : PASS
+   2d amplitude judgment: PASS
+   5b measured T60       : PASS
+   F5 residual energy   : PASS (limit -60.0 dB re total; see lines above)
+   Unverified ranges      : cimbalom/rubber (T60 0.028s < 0.031s), tongue_drum/rubber (T60 0.014s < 0.031s), water_gong/rubber (T60 0.028s < 0.031s)
+
+======================================================================
+RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED
+
+real	2m42.560s
+user	0m0.000s
+sys	0m0.015s
+exit=0
+- 新數字對 R-b M2a（reports/wf1002_d11_piano_t60_literature_and_f5_method.zh-TW.md §5.2）：
+  cimbalom −88.4（R-b −88.37）、tongue_drum −96.3（−96.29）、water_gong −84.5（−84.53）、water_gong_free −84.6（−84.59）、piano −87.4（−87.43）→ 全部對得上。
+  附印的舊 Hann 數字對 R-b M0：−67.3／−75.9／−72.7／−77.9／−63.9（R-b −67.28／−75.92／−72.66／−77.85／−63.86）→ 對得上。
+- 稽核這次 --full 全文 vs T 的 wf1002b_T_full_after_M2.txt：除了 CLI 路徑寫法（相對／絕對）和計時，逐行相同。
+  vs T 的 wf1002b_T_full_before_M0.txt：只差 CLI 路徑那行和 F5 那 6 行（F1／1b／1c／1d／2d／5b 數字一字不差）。
+
+== (2b) 親自重跑 python tools/physics_verify.py --selftest ==
+short_t60_f0: PASS (-0.259 cents)
+relative_axis_t60: PASS (2.0000s span=56.4dB)
+positive_control: PASS
+50pct_shift_rejected: PASS
+missing_p3_p5_rejected: PASS
+super_nyquist_rejected: PASS
+overlap_peak_reuse_rejected: PASS
+partial_negative_suite: PASS
+amps_wrong_amplitude_rejected: PASS (honest=PASS, +6dB-p3 rejected, p3 err=+6.00 dB)
+velocity_law_violation_rejected: PASS (f0-band delta +9.00 dB rejected both ways (wideband would have read +6.03 dB, masking the violation))
+velocity_law_violation_rejected_uniform: PASS (uniform-scale f0-band delta +9.00 dB rejected both ways)
+velocity_taucv_selfconsistency_sentinel: PASS (self-consistent +19.08 dB vs predicted +19.12 dB PASS; injected fixed-tau_c mismatch +6.02 dB rejected; NaN fail-closed; domain = Felt path only (piano=True, cimbalom+felt=True, cimbalom=False, tongue_drum=False, water_gong=False, fm=False); fixed-tau_c law bound still rejects self-consistent +19.12)
+residual_energy_unmodeled_peak_rejected: PASS (clean=PASS (-105.7 dB), unmodeled-peak rejected (-40.0 dB vs limit -60.0 dB))
+residual_energy_decaying_outband_partial_rejected: PASS (clean decaying=PASS (-88.7 dB; old Hann -63.9 dB, not judged), decaying 1.5*f1 partial at L=-50.0 dB rejected (-50.0 dB, tracks L; limit -60.0 dB), L=-70.0 dB reads -69.9 dB (tracks L))
+exit=0
+→ 14/14 PASS，exit 0（原有 3000 Hz 反例 residual_energy_unmodeled_peak_rejected 保留且 PASS）。
+
+== (3) 反例有牙齒：只在 output/wf1002b/audit_T/ 的複本改，repo 沒動 ==
+mut1＝判定窗整個換回 Hann；mut2＝只把 measure_residual_energy() 預設窗改回 "hann"（T 做過的那種）；
+mut3＝係數換成 3 項 Blackman（0.42, 0.5, 0.08, 0）；mut4＝門檻放寬成 −45 dB（看 L=−50 必 FAIL 那條有沒有牙齒）。
+=== mut1_all_hann (diff vs repo)
+2833c2833
+< _F5_WINDOWS = {"blackmanharris4": _blackman_harris4, "hann": np.hanning}
+---
+> _F5_WINDOWS = {"blackmanharris4": np.hanning, "hann": np.hanning}
+--- selftest
+residual_energy_unmodeled_peak_rejected: PASS (clean=PASS (-91.4 dB), unmodeled-peak rejected (-40.0 dB vs limit -60.0 dB))
+residual_energy_decaying_outband_partial_rejected: FAIL (clean decaying=PASS (-63.9 dB; old Hann -63.9 dB, not judged), decaying 1.5*f1 partial at L=-50.0 dB rejected (-49.8 dB, tracks L; limit -60.0 dB), L=-70.0 dB reads -62.9 dB (lifted by own leakage (bug)))
+exit=1
+=== mut2_default_hann (diff vs repo)
+2847c2847
+<                             window="blackmanharris4"):
+---
+>                             window="hann"):
+--- selftest
+residual_energy_unmodeled_peak_rejected: PASS (clean=PASS (-91.4 dB), unmodeled-peak rejected (-40.0 dB vs limit -60.0 dB))
+residual_energy_decaying_outband_partial_rejected: FAIL (clean decaying=PASS (-63.9 dB; old Hann -63.9 dB, not judged), decaying 1.5*f1 partial at L=-50.0 dB rejected (-49.9 dB, tracks L; limit -60.0 dB), L=-70.0 dB reads -63.0 dB (lifted by own leakage (bug)))
+exit=1
+=== mut3_blackman3 (diff vs repo)
+2816c2816
+< F5_BLACKMAN_HARRIS_4 = (0.35875, 0.48829, 0.14128, 0.01168)
+---
+> F5_BLACKMAN_HARRIS_4 = (0.42, 0.5, 0.08, 0.0)
+--- selftest
+residual_energy_unmodeled_peak_rejected: PASS (clean=PASS (-99.5 dB), unmodeled-peak rejected (-40.0 dB vs limit -60.0 dB))
+residual_energy_decaying_outband_partial_rejected: FAIL (clean decaying=PASS (-71.1 dB; old Hann -63.9 dB, not judged), decaying 1.5*f1 partial at L=-50.0 dB rejected (-50.0 dB, tracks L; limit -60.0 dB), L=-70.0 dB reads -67.5 dB (lifted by own leakage (bug)))
+exit=1
+=== mut4_limit_m45 (threshold widened to -45, must FAIL)
+2788c2788
+< RESIDUAL_ENERGY_LIMIT_DB = -60.0
+---
+> RESIDUAL_ENERGY_LIMIT_DB = -45.0
+residual_energy_decaying_outband_partial_rejected: FAIL (clean decaying=PASS (-88.7 dB; old Hann -63.9 dB, not judged), decaying 1.5*f1 partial at L=-50.0 dB ACCEPTED (bug) (-50.0 dB, tracks L; limit -45.0 dB), L=-70.0 dB reads -69.9 dB (tracks L))
+exit=1
+→ 四個突變新反例全部 FAIL、--selftest exit 1。Hann（mut1/mut2）是被「L=−70 量值要準」那條抓到（量成 −62.9／−63.0，被自身洩漏墊高）；
+  放寬門檻（mut4）是被「L=−50 必 FAIL」那條抓到（ACCEPTED (bug)）。
+新加的 3 條 pytest 也對突變跑過（tests/test_physics_verify.py 複本改成載入突變檔，只在 output/）：
+== pytest new F5 tests vs mut2_default_hann
+        failed = {name: detail for name, (ok, detail) in results.items() if not ok}
+>       self.assertEqual({}, failed)
+FAILED test_pv_mut2_default_hann.py::PhysicsVerifyMetrologyTests::test_internal_adversarial_suite
+FAILED test_pv_mut2_default_hann.py::ResidualEnergyTests::test_f5_judged_default_is_blackman_harris_not_hann
+FAILED test_pv_mut2_default_hann.py::ResidualEnergyTests::test_selftest_residual_energy_decaying_outband_negative
+3 failed, 1 passed, 44 deselected in 3.94s
+== pytest new F5 tests vs mut3_blackman3
+        failed = {name: detail for name, (ok, detail) in results.items() if not ok}
+>       self.assertEqual({}, failed)
+FAILED test_pv_mut3_blackman3.py::PhysicsVerifyMetrologyTests::test_internal_adversarial_suite
+FAILED test_pv_mut3_blackman3.py::ResidualEnergyTests::test_f5_judged_default_is_blackman_harris_not_hann
+FAILED test_pv_mut3_blackman3.py::ResidualEnergyTests::test_f5_window_is_blackman_harris_4term_like_scipy
+FAILED test_pv_mut3_blackman3.py::ResidualEnergyTests::test_selftest_residual_energy_decaying_outband_negative
+4 failed, 44 deselected in 3.65s
+
+== (4) 親自重跑 python -m pytest tests -q（-p no:cacheprovider）==
+........................................................................ [ 92%]
+......................                                                   [100%]
+304 passed, 1 skipped, 5 xfailed in 605.36s (0:10:05)
+
+real	10m11.416s
+user	0m0.000s
+sys	0m0.046s
+exit=0
+→ 304 passed＋1 skipped＋5 xfailed，exit 0（與預期相同）。
+  註：tests/test_dump_modes_layered.py 用的是 build-wf\ 的 CLI；那時另一個 C++ 工兵可能正在建置，但這次全綠。
+
+== (5) R2 判斷：修量法（月月 N3＝A 已裁）——說明照實、沒順便放寬別的 ==
+- ROADMAP §1 第 2 條、程式常數註解、§6 依據欄三處都寫明：月月 N3＝A 認定為修正量法、門檻 −60 dB 不動、依據 R-b 注入測試；
+  也照實寫了「形式上會判 FAIL 的情況變少」。
+- 引用數字逐一對過 R-b 報告 §4–§5 與 reports/gate_outputs/wf1002_R_b_f5_methods.txt：
+  0.8 mm Hann −63.86／BH −87.43；1.0 mm Hann −59.47／BH −82.73；注入 L=−60 BH −60.43／−60.08；L=−70 BH −70.35／−69.87、Hann −62.91／−59.10；
+  selftest docstring 的 L=−50 BH −50.44／−50.10（R-b 原始輸出第 45、63 行）→ 全部相符。
+- 沒有順便放寬：physics_verify.py 的其他 GATE 一行沒改（(1)、(2a) 的逐行比對），§6 其他列沒改（見 (6)）。
+
+== (6) ROADMAP §6 數值一字未改、行號沒位移 ==
+ROADMAP lines HEAD/worktree 516 516
+changed line 157
+  pure append: （**R2 說明，F5 殘差頻譜能量：2026-10-02 月月裁決 N3＝A：認定為修正量法——扣掉預測模態自身的窗洩漏；門檻 −60 dB 不動；依據 R-b 注入測試。** 做法：`tools/ ...
+changed line 163
+   insert '' -> '.h`；**2026-10-02 月月裁決 N8＝A 補列**外掛專用的 `src/HoverMagnifier.h`、`src/TsukiLookAndFeel.h`、`src/UiLocale.h`、`src/ScoreConsole.h`、`src/analyzer/`（整個資料夾）、`src/dsp/OutputPeakMeter'
+changed line 469
+  table cells 6 6
+  cell 4 differs; new = old + append: True | appended: ；**2026-10-02 月月裁決 N3＝A**：量法改 4 項 Blackman-Harris 窗（修正量法、門檻數值不動；R2 說明見 §1 第 2 條），前面的基線是當時 Hann 量法的實測 
+11 ## 2026-09-07～16 裁決與落地補記（WF0907～WF0914 輪；2026-09-2
+39 ## 2026-08-06 excitation keytrack + loudness calib
+62 ## 2026-08-02 P1–P7 hardening update
+72 ## 2026-07-17 deep-audit update
+87 ## 2026-07-18 deep-audit round-2 update
+108 ## 2026-07-22 deep-audit round-3 update
+118 ## 0. 目標與驗收哲學
+152 ## 1. AI 開發者強制規則
+175 ## 2. Milestone 總覽
+195 ## 3. Milestone 詳述
+437 ## 4. Nice to have（不擋目標，有餘裕才做）
+450 ## 5. 明確不做 / 域外聲明
+457 ## 6. 容差登記表
+480 ## 7. 狀態更新規則
+487 ## 2026-09-25 WF0925 輪落地補記（依 Rule 8；WF0925b-DS 補寫）
+514 ## 2026-10-02 WF1002 輪（月月裁決落地；依 Rule 8）
+→ 516 行 → 516 行，沒有任何行增減；只動 3 行：157（R2 規則尾端追加）、163（R6 外掛清單插入 N8 補列）、
+  469（§6「殘差頻譜能量」列：第 1～3 欄＝項目／現行／目標一字未改，只在第 4 欄「依據」尾端追加）。§6 其他列全部未動。
+
+== (7) ENGINE_DOMAIN_CLAIMS §12 照錄 R-b §6 草稿、只在檔尾追加 ==
+ENGINE_DOMAIN_CLAIMS: worktree startswith HEAD (append-only): True | HEAD lines 188 new lines 208
+R-b §6 draft quote lines: 4 ; §12 quote lines: 4 ; identical: True
+   > 弦長與弦徑是模型假設，不是真實鋼琴的弦長表：弦長以 A4＝0.35 m、每八度減半推算，弦徑取樂譜或旋鈕的值。
+   > 因此，引擎**不主張**非諧性係數 B 和各音的 T60 沿鍵盤的分布與真實鋼琴一致。
+   > 已知偏差：高音 B 比量測值大 21.6～86.4 倍；與公開文獻相比，高音 T60 短 2～9 倍、最低音長約 2 倍。
+   > 若 D11 候選落地，本條改寫為「逐八度查表，纏繞弦以芯線計」並更新偏差數字。
+→ HEAD 全文是工作樹的前綴（純檔尾追加 20 行）；主張 4 句與 R-b §6 草稿逐字相同。
+
+== (8) UI 規格中英警告句 vs src/PluginProcessor.cpp 實際字串（逐字）==
+（照 forceAlgorithmicMissingIR() 的分支把字串常數組起來，〈原檔名〉〈原因〉當佔位；規格表的 ** 粗體只是文件標示，先去掉）
+string literals in forceAlgorithmicMissingIR() (src/PluginProcessor.cpp):
+    0 '未載入：'
+    1 'Not loaded: '
+    2 '——這個 preset 記的 IR 在這台電腦上找不到。'
+    3 " -- this preset's IR could not be found on this computer."
+    4 '——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：'
+    5 '）。'
+    6 " -- this preset's IR file could not be loaded on this computer"
+    7 ' (reason: '
+    8 ').'
+    9 '已切回演算法殘響，殘響的音色會和原本的 IR 不同。'
+    10 ' Switched back to algorithmic reverb;'
+    11 ' the reverb will sound different from the original IR.'
+
+[N5 row: file exists but cannot be loaded]
+spec zh: 未載入：〈原檔名〉——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：〈原因〉）。已切回演算法殘響，殘響的音色會和原本的 IR 不同。
+code zh: 未載入：〈原檔名〉——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：〈原因〉）。已切回演算法殘響，殘響的音色會和原本的 IR 不同。
+ZH IDENTICAL: True
+spec en: Not loaded: 〈原檔名〉 -- this preset's IR file could not be loaded on this computer (reason: 〈原因〉). Switched back to algorithmic reverb; the reverb will sound different from the original IR.
+code en: Not loaded: 〈原檔名〉 -- this preset's IR file could not be loaded on this computer (reason: 〈原因〉). Switched back to algorithmic reverb; the reverb will sound different from the original IR.
+EN IDENTICAL: True
+
+[Q38=A row: file not found] ZH IDENTICAL: True  EN IDENTICAL: True
+
+N5 packet zh fragment in assembled code string: True
+N5 packet en fragment in assembled code string: True
+另外核對 §5-3／§4.14 敘述：沒原因時傳 "unknown error"（PluginProcessor.cpp:983）、超過 30 秒原因字串 "Impulse response longer than 30 s refused (… s)"（:783-784）、
+OutputPeakMeter 判 > 1.0f 且 NaN／inf 記成超標（OutputPeakMeter.h pushBlock）、peak 在「輸出音量」之後記錄（PluginProcessor.cpp:409-425）、
+kClipHoldMs = 1500（PluginEditor.h:213）、startTimerHz(20)、標題列 "CLIP" 方塊（PluginEditor.cpp:979-1001、:1256）→ 都跟規格寫的一樣。
+
+== (9) R6 新清單檔名都存在、CLI 不 include ==
+== R6/N8 listed files exist?
+EXISTS src/HoverMagnifier.h
+EXISTS src/TsukiLookAndFeel.h
+EXISTS src/UiLocale.h
+EXISTS src/ScoreConsole.h
+EXISTS src/analyzer
+EXISTS src/dsp/OutputPeakMeter.h
+AnalyzerPanel.h
+OscilloscopeView.h
+PitchDetector.h
+SpectrumView.h
+TunerView.h
+== CMake TsukiSynthCLI sources
+juce_add_console_app(TsukiSynthCLI
+    PRODUCT_NAME "tsukisynth-cli"
+)
+
+target_sources(TsukiSynthCLI PRIVATE
+    src/cli/RenderApp.cpp
+)
+
+target_include_directories(TsukiSynthCLI PRIVATE
+    src
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
+
+target_compile_definitions(TsukiSynthCLI PRIVATE
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+)
+
+target_link_libraries(TsukiSynthCLI
+    PRIVATE
+        TsukiSynthData
+        juce::juce_core
+        juce::juce_audio_formats
+        juce::juce_audio_processors
+    PUBLIC
+        juce::juce_recommended_config_flags
+== grep includes in src/cli src/score (and recursively everything they include: src/engines src/physics src/dsp src/effects)
+(none in src/cli, src/score)
+(none in src/engines src/physics src/dsp src/effects)
+== who includes them
+src/analyzer/AnalyzerPanel.h: #include "../TsukiLookAndFeel.h"
+src/analyzer/AnalyzerPanel.h: #include "../UiLocale.h"
+src/analyzer/OscilloscopeView.h: #include "../TsukiLookAndFeel.h"
+src/analyzer/SpectrumView.h: #include "../TsukiLookAndFeel.h"
+src/analyzer/TunerView.h: #include "../TsukiLookAndFeel.h"
+src/HoverMagnifier.h: #include "TsukiLookAndFeel.h"
+src/PluginEditor.cpp: #include "ScoreConsole.h"
+src/PluginEditor.h: #include "TsukiLookAndFeel.h"
+src/PluginEditor.h: #include "UiLocale.h"
+src/PluginEditor.h: #include "HoverMagnifier.h"
+src/PluginEditor.h: #include "analyzer/AnalyzerPanel.h"
+src/PluginProcessor.h: #include "dsp/OutputPeakMeter.h"
+src/ScoreConsole.h: #include "TsukiLookAndFeel.h"
+== src/cli/RenderApp.cpp includes
+1:#include <juce_core/juce_core.h>
+2:#include <juce_audio_formats/juce_audio_formats.h>
+14:#include <juce_cryptography/juce_cryptography.h>
+15:#include <juce_cryptography/hashing/juce_SHA256.cpp>
+17:#include "../score/ScoreParser.h"
+18:#include "../score/ScoreRenderer.h"
+19:#include "../physics/MaterialDB.h"
+20:#include "../dsp/DiagnosticOverrides.h"
+21:#include "BuildProvenance.h"
+22:#include "BinaryData.h"
+24:#include <iostream>
+25:#include <algorithm>
+26:#include <cmath>
+27:#include <set>
+28:#include <vector>
+== TsukiSynthData
+118:juce_add_binary_data(TsukiSynthData SOURCES
+119-    data/materials.json
+120-    data/fonts/IBMPlexSans-SemiBold.ttf
+121-)
+122-
+123-target_sources(TsukiSynth PRIVATE
+124-    src/PluginProcessor.cpp
+125-    src/PluginEditor.cpp
+126-    src/ParameterLayout.cpp
+--
+139:        TsukiSynthData
+140-        juce::juce_audio_formats
+141-        juce::juce_audio_utils
+142-        juce::juce_dsp
+143-    PUBLIC
+144-        juce::juce_recommended_config_flags
+145-        juce::juce_recommended_lto_flags
+146-        juce::juce_recommended_warning_flags
+147-)
+--
+→ 6 個項目都存在；src/cli、src/score（以及 CLI 會連到的 src/engines、src/physics、src/dsp、src/effects）沒有任何一處 include 它們；
+  TsukiSynthCLI 的 target_sources 只有 src/cli/RenderApp.cpp。只有外掛層（PluginEditor／PluginProcessor／analyzer 互相）在用。
+
+== 備註（不擋 PASS）==
+a. T 自己的 N8 證據只 grep 了 src/score src/physics src/engines，沒 grep src/cli；稽核補 grep 了 src/cli（和 dsp、effects），結果一樣是無。
+b. ROADMAP_PHYSICS.md:508「D11-F5 根因」列仍寫「待月月裁決 Q16」——Q16 已裁 D、N3 也已裁 A，這列沒同步。不是 T 這張卡列的範圍，留給整合／文件卡。
+c. Q16＝D 要的「TODO.md 登記 F5 PASS 依賴探針 0.8 mm 為已知脆弱點」在 TODO.md 找不到；N3＝A 之後這個脆弱點已大致解除（1.0 mm BH −82.73 dB），
+   建議整合卡在 TODO.md 寫一筆「登記＋已由 N3＝A 解除」，避免兩邊對不上。
+d. 用 Hann 跑新反例時，L=−50 那條其實仍會判 FAIL（Hann 量成 −49.8／−49.9），抓到 Hann 的是「L=−70 量值要準」那條；設計上本來就是兩條分工（−50 擋放寬門檻、−70 擋窗洩漏墊高），符合裁決包「L=−50 必 FAIL、L=−70 量值要準」。
+
+== 稽核 staged 清單（git add --，只加這些）==
+tools/physics_verify.py
+tests/test_physics_verify.py
+ROADMAP_PHYSICS.md
+docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+docs/KNOWN_LIMITS_INDEX.zh-TW.md
+docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md
+reports/gate_outputs/wf1002b_T_docs.txt
+reports/gate_outputs/wf1002b_T_f5_method.txt
+reports/gate_outputs/wf1002b_T_full_after_M2.txt
+reports/gate_outputs/wf1002b_T_full_before_M0.txt
+reports/gate_outputs/wf1002b_T_audit.txt（本檔）
+（交辦說「T 的 7 個檔」，但 T 實際只改了上面 6 個工作樹檔：git diff 裡屬於 T 的就這 6 個，其餘 M 檔是 C++ 工兵的，不加。）

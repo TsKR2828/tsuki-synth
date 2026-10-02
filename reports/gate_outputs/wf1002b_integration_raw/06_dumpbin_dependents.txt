@@ -1,0 +1,174 @@
+=== build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+Microsoft (R) COFF/PE Dumper Version 14.50.35730.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+    USER32.dll
+    GDI32.dll
+    SHELL32.dll
+    ole32.dll
+    OLEAUT32.dll
+    COMDLG32.dll
+    ADVAPI32.dll
+    WININET.dll
+    WS2_32.dll
+    SHLWAPI.dll
+    WINMM.dll
+    IMM32.dll
+    COMCTL32.dll
+    dwmapi.dll
+    d2d1.dll
+    dxgi.dll
+    d3d11.dll
+    dcomp.dll
+
+  Summary
+
+       1D000 .data
+        1000 .fptable
+       35000 .pdata
+      1E9000 .rdata
+        B000 .reloc
+        1000 .rsrc
+      4FB000 .text
+        1000 _RDATA
+DUMPBIN_EXIT=0
+COUNT MSVCP|VCRUNTIME|api-ms-win-crt = 0
+=== build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+Microsoft (R) COFF/PE Dumper Version 14.50.35730.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+
+File Type: DLL
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+    USER32.dll
+    GDI32.dll
+    SHELL32.dll
+    ole32.dll
+    OLEAUT32.dll
+    COMDLG32.dll
+    ADVAPI32.dll
+    WININET.dll
+    WS2_32.dll
+    SHLWAPI.dll
+    WINMM.dll
+    d2d1.dll
+    dxgi.dll
+    d3d11.dll
+    dcomp.dll
+    IMM32.dll
+    COMCTL32.dll
+    dwmapi.dll
+
+  Summary
+
+       26000 .data
+        1000 .fptable
+       3D000 .pdata
+      218000 .rdata
+        E000 .reloc
+        1000 .rsrc
+      5B2000 .text
+        1000 _RDATA
+DUMPBIN_EXIT=0
+COUNT MSVCP|VCRUNTIME|api-ms-win-crt = 0
+=== build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+Microsoft (R) COFF/PE Dumper Version 14.50.35730.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+    USER32.dll
+    GDI32.dll
+    SHELL32.dll
+    ole32.dll
+    OLEAUT32.dll
+    COMDLG32.dll
+    ADVAPI32.dll
+    WININET.dll
+    WS2_32.dll
+    SHLWAPI.dll
+    WINMM.dll
+    IMM32.dll
+    COMCTL32.dll
+    dwmapi.dll
+    d2d1.dll
+    dxgi.dll
+    d3d11.dll
+    dcomp.dll
+
+  Summary
+
+       23000 .data
+        1000 .fptable
+       3A000 .pdata
+      20F000 .rdata
+        D000 .reloc
+        1000 .rsrc
+      574000 .text
+        1000 _RDATA
+DUMPBIN_EXIT=0
+COUNT MSVCP|VCRUNTIME|api-ms-win-crt = 0
+=== build/Release/TsukiSynthHostProbe.exe
+Microsoft (R) COFF/PE Dumper Version 14.50.35730.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file build\Release\TsukiSynthHostProbe.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Image has the following dependencies:
+
+    KERNEL32.dll
+    USER32.dll
+    GDI32.dll
+    SHELL32.dll
+    ole32.dll
+    OLEAUT32.dll
+    COMDLG32.dll
+    ADVAPI32.dll
+    WININET.dll
+    WS2_32.dll
+    VERSION.dll
+    SHLWAPI.dll
+    WINMM.dll
+    dbghelp.dll
+    IMM32.dll
+    COMCTL32.dll
+    dwmapi.dll
+    d2d1.dll
+    dxgi.dll
+    d3d11.dll
+    dcomp.dll
+
+  Summary
+
+       2C000 .data
+        1000 .fptable
+       50000 .pdata
+      21D000 .rdata
+       10000 .reloc
+        1000 .rsrc
+      635000 .text
+        1000 _RDATA
+DUMPBIN_EXIT=0
+COUNT MSVCP|VCRUNTIME|api-ms-win-crt = 0

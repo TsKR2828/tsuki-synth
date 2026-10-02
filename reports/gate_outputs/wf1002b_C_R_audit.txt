@@ -1,0 +1,164 @@
+WF1002b C 線（C++ 工兵）＋ R 線（唯讀研究）稽核紀錄（2026-10-02）
+================================================================================
+稽核者：WF1002b C/R 稽核。HEAD 804bf03。T 線已 staged 的檔案沒碰。build\ 沒動（只讀它的雜湊、把 VST3＋HostProbe 複製到暫存跑「改前」）。
+原則：不採信工兵自報，C 線全部在 build-wf 親自重建、親自重跑；R 線關鍵出處親自抓官方頁核對。
+路徑代稱：<REPO>＝E:\Tsuki-project\tsuki-synth、<SCRATCH>＝E:\Tsuki-project\_scratch、<TOOLS>＝E:\Tsuki-project\_tools。
+暫存：<REPO>/output/wf1002b/audit_C/（gitignored）、<SCRATCH>/audit_b_c_render、audit_b_c_hp_before、audit_b_c_hp_after、audit_b_c_web、audit_b_c_ci。
+
+結論：C 線 PASS、R 線 PASS。
+
+================================================================================
+C 線
+================================================================================
+C0. 程式碼審查
+--------------
+[PASS] Envelope.h 與 patch 逐字相同
+  - 把 HEAD 的 src/dsp/Envelope.h 複製到暫存、git apply reports/wf1002_fm_envelope_fix.patch → "Applied ... cleanly"
+  - 暫存結果 sha256 f08c512e205bbfd6c59d1a531332e833b6ed79a2a772a6d5bc06fd7b20c51cf9 ＝ 工作樹 src/dsp/Envelope.h（cmp 位元相同）
+  - git apply -R --check 對工作樹成功（工作樹＝HEAD＋這份 patch，沒有多餘改動）；git diff --stat：1 檔 +14 −1
+[PASS] Compressor.h 只拿掉固定補償
+  - diff 只有：刪 makeupDB 那行、totalGain 改成 pow(10, gainDB/20)、類別說明 1 行＋註解。
+  - 偵測（linked peak）、attack 5 ms／release 100 ms、gain computer 公式一字未動；
+    `if (ratio <= 1.01f) return;  // bypass if ratio ~1` 早退路徑仍在第一行。
+  - 參數範圍核對（src/ParameterLayout.cpp:167-173）：Threshold −40～0、Ratio 1～20 → 舊補償最大 40×(1−1/20)×0.5＝19 dB，報告寫「最多 19 dB」正確。
+  - Threshold 0 時舊補償＝−0.0，加上去數值不變 → 報告「Threshold 0 位元不變」成立。
+[PASS] CLI 不受影響的論證
+  - git grep compressorEnabled：只有 src/dsp/EffectsChain.h:22（預設 false）、:82（false → setRatio(1.0)），
+    另 tests/physics_models_repro.cpp:1689 設 false。src/score、src/cli、scores/schema 都沒有 compressor 字樣；
+    scores/ 沒有任何樂譜含 "compressor"。→ CLI 的 ratio 永遠 1.0，在早退那行就返回，到不了被改的那行。
+  - 實測佐證見 C4～C6（8/8、75/75 位元相同）。
+[PASS] .iss 對 Inno Setup 7 語法（本機 <TOOLS>/innosetup 只有 innosetup-7.1.0-x64.exe，沒安裝 → 照官方文件核對）
+  - 官方說明頁 https://jrsoftware.org/ishelp/topic_setup_setuparchitecture.htm：
+    「[Setup]: SetupArchitecture」「Valid values: x86, x64」「Default value: x86」→ 指令名、值 x64 正確。
+  - 官方 is7-whatsnew.htm（sha256 049b1a3a…，與 R 線紀錄同一份）與 topic_64bit.htm：設 x64 會把 ArchitecturesAllowed／
+    ArchitecturesInstallIn64BitMode 預設改成 x64compatible → .iss 原本明寫的兩行就是 x64compatible，一致。
+  - 版本守門 `#if VER < EncodeVer(7,0,0)`：topic_predefinedvars.htm 列「Ver int. Same as PREPROCVER」；topic_funcs.htm 列 EncodeVer → 用法合法。
+  - .iss 的 [Code] 全部是註解（乙案），沒有 64-bit Pascal 型別問題。
+  - 限制（工兵已誠實標 UNVERIFIED）：沒編譯、沒試裝；「6.x 編譯器會當未知指令報錯」是推論，沒拿 6.x 實測。
+[PASS] 報告誠實度：reports/wf1002b_n1_compressor_makeup_before_after.zh-TW.md §0 第 6 點與 §2 明寫
+  「已經存好的 DAW 專案、使用者自己存的 preset，只要壓縮器 Ratio 大於 1，打開後也會一樣變小聲（最多 19 dB）」；
+  另寫了 DAW 自動化 Threshold／Ratio 時不是單純乘常數、本卡沒量。
+
+C1. 建置（output/wf1002b/audit_C/build.log）
+-------------------------------------------
+$ cmake -B build-wf -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON → CONF_EXIT=0
+$ cmake --build build-wf --config Release --clean-first --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3 -- -m → MAIN_EXIT=0
+$ cmake --build build-wf --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe -- -m → TEST_EXIT=0
+  --clean-first ＝ 全部從零重編（8 個 target 的執行檔時間都是 23:17～23:27，含 Tuner／SpectrumView）。
+  編譯器 error 0、C／LNK warning 0；MSB8028 10 行（既有 tlog 殘留，整合卡已說明）。
+  新雜湊（MSVC 不是位元可重現建置，跟工兵那次不同屬正常；渲染位元見 C4～C6）：
+    CLI        3737d629910faf28346bf652a031fa9aa94beb4cb048a635f34c84d72a96bf21
+    VST3       3123514e639d1b391ab40e99ca3848fb21670c3adbbd4902410400cf3eee2286
+    Standalone f7003c81b9b792b4e6aedcdac11a0242117a2860a2dbd8f8db7c52e4f9ad20cd
+    HostProbe  f2179d44e70d6f93ba22fd077e206be226505dfc45c6e0d9329b70a2b5e7b1a3
+    AuditTest  0ad880882f48fd70123722fdda2fa397600dbbbd3d10763b0e99f914b58d63d0
+[PASS]
+
+C2. ctest＋AuditTest
+--------------------
+$ ctest --test-dir build-wf -C Release --output-on-failure → "100% tests passed, 0 tests failed out of 4"，CTEST_EXIT=0
+$ build-wf/Release/TsukiSynthAuditTest.exe → EXIT=0，[PASS] 111、[FAIL] 0
+[PASS]
+
+C3. physics_verify
+------------------
+$ python tools/physics_verify.py --full --cli E:/Tsuki-project/tsuki-synth/build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  → "RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED"，EXIT=0
+    F5：cimbalom −88.4、tongue_drum −96.3、water_gong −84.5、water_gong_free −84.6、piano −87.4 dB（limit −60）全 PASS
+    跟 reports/gate_outputs/wf1002b_T_full_after_M2.txt（build\＝HEAD 的 CLI）去掉註解行／CLI 路徑／計時後逐行相同（diff 只剩 T 檔尾的 time 輸出）
+$ python tools/physics_verify.py --selftest → 14 項全部 PASS（含 residual_energy_decaying_outband_partial_rejected），EXIT=0
+[PASS]
+
+C4. 位元不變 8/8
+---------------
+$ python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf1002b_auditC --workdir E:/Tsuki-project/_scratch/audit_b_c_render
+    --cli <build-wf CLI 絕對路徑> --outdir output/wf1002b/audit_C/render_out → RENDER_EXIT=0
+$ diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt output/wf1002b/audit_C/render_out/sha256_wf1002b_auditC.txt → 無輸出，DIFF_EXIT=0
+  8/8 IDENTICAL：49514b00 280cbdac 1233b53f be634798 f539aefa 31b539c6 74122637 b0877774（fur_elise_opening＝FM）
+[PASS]
+
+C5. verify_score --all
+----------------------
+$ python tools/verify_score.py --all --cli <build-wf CLI 絕對路徑>（23:29 → 23:54）
+  → "75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed."，EXIT=0
+  75 份 manifest 的 renderer 欄位都是 3737d629910f（＝本次重建的 CLI）。
+[PASS]
+
+C6. 75 首 WAV 雜湊逐首比 WF1002 整合卡
+-------------------------------------
+稽核自己寫的比對腳本（output/wf1002b/audit_C/hash75_audit.py；鍵＝SCORE 路徑，比 manifest 的 WAV 12 碼＋determinism 的 SHA256 16 碼，另查每首 -> PASS）：
+$ python hash75_audit.py reports/gate_outputs/wf1002_integration_raw/12_verify_score_all.txt output/wf1002b/audit_C/verify_score_all.log
+  → "ref scores 75, new scores 75; identical 75, different 0"，exit 0
+  N9 的 2 首仍是新雜湊：akashic_transition_var01 9dd3a9a4ff44、restraint_loop_001 2344a312ed00
+  腳本有牙齒：拿同一份參考比 wf0925b_integration_raw/05_verify_score_all.txt → "identical 73, different 2"（正是那 2 首，exit 非 0）
+[PASS]
+
+C7. HostProbe（外掛層）
+----------------------
+改後（要求的條件）：cwd＝<SCRATCH>/audit_b_c_hp_after/cwd（repo 外），env -u TSUKI_REPO_ROOT
+$ <REPO>/build-wf/Release/TsukiSynthHostProbe.exe <REPO>\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 <SCRATCH>\audit_b_c_hp_after\out
+  → [PASS] 231、[FAIL] 0、"PASS (0 failures)"，EXIT=0；materials.json 經「執行檔祖先資料夾」找到。跑前跑後 %APPDATA%\TsukiSynth\IR、\Presets 都是空的。
+改前（對照用）：build\ 的 VST3（17ae77f7…）＋HostProbe（c93aa576…）複製到 <SCRATCH>/audit_b_c_hp_before/bin（雜湊對過＝整合卡），repo 外 cwd
+  - 第 1 次（執行檔在 repo 外、沒設 TSUKI_REPO_ROOT）→ 227/4：4 個 H8 FAIL 全是「找不到 data/materials.json」，是稽核複製執行檔造成的，不是產品問題；log 留在暫存。
+  - 第 2 次設 TSUKI_REPO_ROOT=<REPO> → 231/0，EXIT=0。
+E16 27 列（稽核自己的腳本 output/wf1002b/audit_C/e16_audit.py，結果 e16_audit.txt）：
+  - 峰值變化 −7.50～−2.00 dB；RMS 變化 −7.50～−2.00 dB（23、24 號 RMS −3.34、峰值 −3.33／−3.34，四捨五入）
+  - 改後峰值 vs reports/gate_outputs/wf1002_R_a_analysis.txt [5] B1 預測：27 列最大差 0.01 dB（13 號 −44.29 vs −44.28；其餘 0.00）
+  - 改前峰值 vs R-a [5] 的改前值：最大差 0.01 dB（13 號、22 號）
+  - 超過 0 dBFS：改前 [7, 11, 15] → 改後 0 個；最大聲 15 號 −1.85 dBFS
+  - 與工兵 wf1002b_C_hostprobe_e16_before_after.txt／報告 §3 表逐列相同
+改前改後整份 log diff（路徑正規化後）除 E16 外只有：H3 峰值 0.505276→0.300974（−4.50 dB）、block 一致性 12 行的「相對訊號」值 +4.50 dB
+  （max|delta| 兩次都 0.000 LSB）、Q05 削波燈（15 號 1.35731 LIT → 0.808498 off，兩次都 PASS）、H7 隨機 presetId、H8 materials.json 找法、Q09 耗時。
+[PASS]
+
+C8. pluginval＋Steinberg validator
+----------------------------------
+$ pwsh -NoProfile -File tools/validate_plugin.ps1 -Plugin <REPO>\build-wf\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3
+    -Pluginval <TOOLS>\pluginval\extracted\pluginval.exe -Vst3Validator <TOOLS>\vst3sdk-build\bin\Release\validator.exe -Strictness 10
+  → pluginval strictness 10 結束碼 0（腳本遇非 0 會 throw）；"Result: 47 tests passed, 0 tests failed"；"PLUGIN VALIDATION RESULT: PASS"；VALIDATE_EXIT=0
+[PASS]
+
+C 線 findings（都不擋 PASS）
+  1. 工具鏈不是位元可重現建置：重建後執行檔雜湊與工兵自報不同，屬正常；判定以渲染位元（8/8、75/75）為準。
+  2. .iss「6.x 編譯器會拒絕 SetupArchitecture」是推論沒實測；整份 .iss 仍未編譯、未試裝（工兵已標 UNVERIFIED）。
+  3. 工作樹的 Compressor.h、TsukiSynth.iss 是 LF 換行（git 會警告 LF→CRLF），內容 diff 乾淨，git add 會正規化，無影響。
+  4. 稽核期間工作樹另出現非 C 線的未 staged 文件改動（README.md、ROADMAP.md、docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md 的壓縮器補償說明已改成「已拿掉」）；
+     不在本次稽核範圍，沒審、沒 add。報告 §6 寫的「文件還寫著 auto makeup」此刻已被別條線處理中。
+
+================================================================================
+R 線
+================================================================================
+R1. Inno Setup 授權（reports/wf1002b_innosetup_license.zh-TW.md）
+  - curl 親抓 https://jrsoftware.org/isorder.php（HTTP 200、34030 B、sha256 d3c8aca6…）與 https://jrsoftware.org/files/is/license.txt
+    （HTTP 200、1521 B、sha256 2e534686…）——兩檔 sha256 與 R 線 fetch log 完全相同。
+  - 逐字核對：「It is not strictly required.」有；兩條 USD 5000 定義（for-profit organization／individual/freelancer）逐字相同；
+    「regardless of the version being used」有；LICENSE.TXT「Permission is granted to anyone to use this software for any purpose, including commercial applications」有（原文跨行）。
+    WebFetch 同頁也回傳同樣字句，並確認靜態 HTML 裡沒有價格。
+  - 價格：靜態 HTML 沒有，稽核在瀏覽器開 isorder.php，用頁面自己的 Paddle.PricePreview（priceIds.production，currencyCode USD，地區 TW）讀：
+    Single User $155.00／稅 $7.75／$162.75；Team $410.00；Enterprise $1,195.00 → 與報告一致。
+    台幣顯示這次是 NT$4,931.29（報告 NT$4,931.02）：匯率浮動，報告已註明「以結帳畫面為準」。
+  [PASS]
+R2. BOOTH（reports/wf1002b_booth_image_specs.zh-TW.md）
+  - booth.pixiv.help 對 curl 擋（同 R 線），改用瀏覽器讀該站文章 API：
+    230690327（更新 2026-10-01T08:28:12Z）「1ファイルのアップロードできるデータ容量は1.2GBまでです。」逐字相同；
+    230690347（更新 2026-09-07T13:30:42Z，標題「ショップでアップロードできるデータ容量の制限が知りたい」）「…合計10GBまでです。」逐字相同。
+  - 「商品圖規格查不到」：稽核另用站內搜尋 商品画像（232 篇）、メイン画像、画像 サイズ、画像 容量、画像 形式、サムネイル（0 篇）看標題，沒有任何圖片規格文；
+    抽 900005216623、22401069795609、231282328 內文找 px／MB／JPEG／PNG／比率／枚，0 筆 → 說法合理。
+    報告把公開商品 JSON 的量測明標「非官方規格，僅供參考」「推論」，標示正確。
+  [PASS]
+R3. CI run 37017182460（reports/gate_outputs/wf1002b_R_ci_run.txt）
+  - gh run view：conclusion success、status completed、headSha 804bf037…、branch fix/deep-physics-audit-20260716、event push、jobs 6 個全 success。
+  - 抽 build-and-verify job log（gh api …/jobs/110870822596/logs）：[PASS] 231 行、"PASS (0 failures)"、"TsukiSynthHostProbe exit code: 0"、
+    "299 passed, 3 skipped, 5 xfailed"、"RESULT: NO CHECKED FAILURES…"、"13 pairs, 13 PASS"、ctest "100% … out of 4" → 與報告一致。
+  - 微小差異：報告寫 build-and-verify 結束 14:35:10，API 的 job completedAt 是 14:35:12（步驟結束 vs job 結束），不影響結論。
+  [PASS]
+R4. reports/gate_outputs/wf1002b_R_web_fetch_log.txt：稽核親抓的兩個 jrsoftware 檔 sha256 與它記的相同；BOOTH 兩篇的 id／更新時間／原文相同。[PASS]
+
+================================================================================
+staged（git add --，沒 commit、沒 push）
+================================================================================
+C 線：src/dsp/Envelope.h、src/effects/Compressor.h、tools/installer/TsukiSynth.iss、
+      reports/wf1002b_n1_compressor_makeup_before_after.zh-TW.md、reports/gate_outputs/wf1002b_C_*.txt（14 檔）
+R 線：reports/wf1002b_innosetup_license.zh-TW.md、reports/wf1002b_booth_image_specs.zh-TW.md、
+      reports/gate_outputs/wf1002b_R_ci_run.txt、reports/gate_outputs/wf1002b_R_web_fetch_log.txt
+稽核證據：reports/gate_outputs/wf1002b_C_R_audit.txt（本檔）

@@ -1,0 +1,106 @@
+WF1002b-R  CI watch: physics.yml run for HEAD 804bf03
+=====================================================================
+run        : 37017182460  https://github.com/TsKR2828/tsuki-synth/actions/runs/37017182460
+workflow   : Physics Verification (.github/workflows/physics.yml), event push
+branch     : fix/deep-physics-audit-20260716
+head_sha   : 804bf037b4d57346420fe5f5ebd49ca6a5cbd0ea
+created    : 2026-10-02T14:03:17Z   updated: 2026-10-02T14:35:13Z
+RESULT     : completed / success   (6/6 jobs green; no red step, nothing to diagnose)
+poll       : gh run view every ~120 s, 14:04:13Z .. 14:36:35Z (17 polls, last = "completed success")
+raw logs   : output/wf1002b/R/ci/*.log (gitignored; fetched with
+             gh api repos/TsKR2828/tsuki-synth/actions/jobs/<id>/logs)
+  sha256 aca72aba24156f171836f6cce28a25c5c0ff3b3ed36930b6de0f4a09b1b711c4 job_bav.log (build-and-verify)
+  sha256 7a1314c96f12c9c0a57a7415d65f4976afa2c18bb6bd890def17bdbbfab2e811 job_110870822368.log (ASAN)
+  sha256 6ab772410dc06e6701be7af7de2f5e7859b0a610b06d78eb70aa9cbcfc5614bb job_110870822489.log (emit windows)
+  sha256 327bb2edd34e081dedd38c89d39d9c248e95449a2802f6a61b8ae7d800d1accc job_110870822571.log (emit macos)
+  sha256 0fbea852b0479709f7af9b0dfd27b37e9807b68e93f25c8022583a9869a3810b job_110870822859.log (emit ubuntu)
+  sha256 413e418445dfcba8d139db101d3419a6fc042ebc0fc968eef4c28cc511b7a847 job_110872542997.log (compare)
+
+Jobs
+----
+job id        name                                                  result   start -> end (UTC)
+110870822596  build-and-verify                                      success  14:03:20 -> 14:35:10
+110870822368  cpp-address-sanitizer                                 success  14:03:20 -> 14:11:59
+110870822489  cross-platform-emit (windows-2022, windows-2022-msvc) success  14:03:22 -> 14:07:43
+110870822571  cross-platform-emit (macos-14, macos-14-appleclang)   success  14:03:27 -> 14:07:22
+110870822859  cross-platform-emit (ubuntu-24.04, ubuntu-24.04-gcc)  success  14:03:21 -> 14:07:04
+110872542997  cross-platform-compare                                success  14:07:45 -> 14:08:07
+
+1. Q13 first live run: Linux leg renamed ubuntu-24.04-gcc
+---------------------------------------------------------
+upload  (emit ubuntu job log):
+  "Artifact xplat-ubuntu-24.04-gcc has been successfully uploaded!"
+download (compare job log):
+  "Found 3 artifact(s)" / "Filtering artifacts by pattern 'xplat-*'"
+  - xplat-ubuntu-24.04-gcc (ID: 11230606588, Size: 9602485, digest sha256:e1c609e7...48c8)
+  "SHA256 digest of downloaded artifact is e1c609e7ee09f944ea6bbf414855af76e1a861f79db954a753d6ebf4caef48c8"
+  "Total of 3 artifact(s) downloaded"
+compare:
+  candidate : ubuntu-24.04-gcc  (Linux x86_64)
+  compiler  : MSVC 19.44.35229.0  vs  GNU 13.3.0      <- label now matches the real compiler
+  path used : xplat/xplat-ubuntu-24.04-gcc
+  "RESULT: WITHIN REGISTERED TOLERANCE"  -> ##[notice] (exit 0)
+  report artifact xplat-comparison-report uploaded (1303 bytes)
+=> upload / download / compare all PASS under the new name.
+
+xplat numbers vs previous run 36720322943 (label then "ubuntu-24.04-clang"):
+  max |delta| per probe, identical in both runs (5 probes x 2 candidates):
+  vs ubuntu gcc : water_gong_clamped -124.49 dBFS (5 LSB24); water_gong_free, physical_piano,
+                  akashic_bell, fur_elise_opening -132.45 dBFS (2 LSB24)
+  vs macOS      : water_gong_clamped -124.49 (5); water_gong_free -128.93 (3); physical_piano
+                  -124.49 (5); akashic_bell -128.93 (3); fur_elise_opening -128.93 (3)
+  every row [PASS] on max_abs_delta_dbfs (limit -120), delta_rms_re_signal_db (limit -120),
+  max_spectral_deviation_db (limit 0.01), peak_pitch_deviation_cents (limit 0.01).
+  Note: the Windows emit leg builds the CLI only; static CRT did not move any xplat number.
+
+2. Static CRT Windows build (Q07, CMakeLists.txt CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+------------------------------------------------------------------------------------------
+build-and-verify: Configure, Build CLI, Build Standalone, Build VST3, Build regression tests: all success.
+  TsukiSynthCLI.exe, Standalone TsukiSynth.exe, TsukiSynth.vst3, TsukiSynthHostProbe.exe all linked.
+  0 linker warnings (no LNK4098 / LNK2038 runtime-mismatch lines) in build-and-verify, emit-windows, ASAN logs.
+LIMIT: the CI log does not print /MT or the import table, so "no MSVCP140/VCRUNTIME140 import" is
+  NOT re-verified by CI (local evidence only, commit 2c4443e). Evidence here = build succeeds with the
+  HEAD CMakeLists and HostProbe loads the static-CRT VST3 headlessly.
+
+3. pytest
+---------
+step "Run spectral and T60 metrology self-tests": success
+  "299 passed, 3 skipped, 5 xfailed in 536.52s (0:08:56)"   -> 299+3+5 = 307 collected, 0 failed
+  physics_verify.py --selftest: all lines PASS (short_t60_f0 ... residual_energy_unmodeled_peak_rejected)
+
+4. HostProbe (expected 231/0)
+-----------------------------
+step "Run L2 HostProbe against the built VST3": success
+  231 lines "[PASS]", 0 lines "[FAIL]" in the step output
+  "PASS (0 failures)"
+  "TsukiSynthHostProbe exit code: 0"
+  Q09 voice-steal measurement printed as informational (no PASS/FAIL), 64 steal lines.
+  artifact hostprobe-log-windows uploaded (8788 bytes).
+=> 231/0 as expected (09-30 baseline was 215/0; +16 from WF1002 C1).
+
+5. ASAN
+-------
+job cpp-address-sanitizer: success
+  ASan runtime: ...\MSVC\14.44.35207\bin\Hostx64\x64\clang_rt.asan_dynamic-x86_64.dll
+  audit_repro / tuner_repro / physics_models_repro / spectrum_view_repro: Passed
+  "100% tests passed, 0 tests failed out of 4"
+  no "ERROR: AddressSanitizer" line.
+
+6. Other build-and-verify gates (all success)
+---------------------------------------------
+ctest (Release)        : "100% tests passed, 0 tests failed out of 4"
+standalone T60 gate    : "RESULT: ALL WITHIN TOLERANCE"
+--full (M1+M2+M5)      : "RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED"
+                         (3 UNVERIFIED = rubber T60 < 0.031 s on cimbalom / tongue_drum / water_gong,
+                          same class as before); F5 residual: cimbalom -67.3, tongue_drum -75.9,
+                          water_gong -72.7, water_gong_free -77.9, piano -63.9 dB (limit -60) PASS
+whole-score smoke      : 6/6 "RESULT: ALL CHECKS PASSED"
+consonance gate        : "13 pairs, 13 PASS, 0 not-PASS"
+
+Annotations
+-----------
+only 1 warning: "Node.js 20 is deprecated ... actions/checkout@v4, actions/setup-python@v5,
+actions/upload-artifact@v4, il[ammy/msvc-dev-cmd] ... forced to run on Node.js 24" -- not a failure;
+future maintenance item (bump action major versions). Not touched (read-only card).
+
+Red-light analysis: none needed (no failed step).

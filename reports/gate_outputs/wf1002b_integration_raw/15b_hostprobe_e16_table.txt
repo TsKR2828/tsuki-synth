@@ -1,0 +1,36 @@
+$ PYTHONIOENCODING=utf-8 python output/wf1002b/INT/e16_table.py output/wf1002b/INT/raw/15_hostprobe_cwd_outside_repo.txt reports/gate_outputs/wf1002b_C_hostprobe_after_raw.txt
+presets parsed: this run 27, reference (WF1002b-C after) 27
+| # | preset | peak dBFS | RMS dBFS | C-after peak | C-after RMS | same |
+|---|---|---|---|---|---|---|
+| 0 | Steel Hammered Dulcimer | -11.71 | -27.69 | -11.71 | -27.69 | SAME |
+| 1 | Copper Warm Strings | -12.97 | -27.50 | -12.97 | -27.50 | SAME |
+| 2 | Glass Wind Chimes | -9.27 | -25.56 | -9.27 | -25.56 | SAME |
+| 3 | Muted Felt Piano | -33.74 | -47.85 | -33.74 | -47.85 | SAME |
+| 4 | Brass Gamelan | -13.34 | -32.61 | -13.34 | -32.61 | SAME |
+| 5 | Rubber Muted Pluck | -19.82 | -52.13 | -19.82 | -52.13 | SAME |
+| 6 | Steel Hammered Dulcimer (Body) | -7.27 | -23.53 | -7.27 | -23.53 | SAME |
+| 7 | Copper Warm Strings (Body) | -4.67 | -20.00 | -4.67 | -20.00 | SAME |
+| 8 | Crystal Tongue Drum | -23.84 | -32.36 | -23.84 | -32.36 | SAME |
+| 9 | Bronze Water Gong | -9.37 | -23.28 | -9.37 | -23.28 | SAME |
+| 10 | Wooden Kalimba | -20.83 | -38.86 | -20.83 | -38.86 | SAME |
+| 11 | Ethereal Steel Bells | -3.03 | -13.31 | -3.03 | -13.31 | SAME |
+| 12 | Glass Singing Bowl | -30.49 | -41.88 | -30.49 | -41.88 | SAME |
+| 13 | Rubber Tongue Pad | -44.29 | -68.36 | -44.29 | -68.36 | SAME |
+| 14 | Crystal Tongue Drum (Body) | -11.44 | -19.93 | -11.44 | -19.93 | SAME |
+| 15 | Bronze Water Gong (Body) | -1.85 | -16.56 | -1.85 | -16.56 | SAME |
+| 16 | Acoustic Piano | -19.83 | -30.60 | -19.83 | -30.60 | SAME |
+| 17 | Electric Rhodes | -22.90 | -34.57 | -22.90 | -34.57 | SAME |
+| 18 | Layered E.Piano | -21.21 | -32.57 | -21.21 | -32.57 | SAME |
+| 19 | FM Vibraphone | -16.23 | -28.53 | -16.23 | -28.53 | SAME |
+| 20 | DX7 Crystal Bell | -9.07 | -20.98 | -9.07 | -20.98 | SAME |
+| 21 | Church Organ | -12.85 | -20.99 | -12.85 | -20.99 | SAME |
+| 22 | Ambient Pad | -12.43 | -19.84 | -12.43 | -19.84 | SAME |
+| 23 | FM Bass | -22.38 | -38.79 | -22.38 | -38.79 | SAME |
+| 24 | FM Brass | -20.98 | -34.42 | -20.98 | -34.42 | SAME |
+| 25 | Grand Piano (Physical) | -12.43 | -25.75 | -12.43 | -25.75 | SAME |
+| 26 | Bright Upright (Physical) | -13.98 | -33.98 | -13.98 | -33.98 | SAME |
+rows identical to WF1002b-C after: 27/27
+loudest: preset 15 'Bronze Water Gong (Body)' -1.85 dBFS
+presets > 0 dBFS: []
+presets > -1.85 dBFS: []
+EXIT_CODE=0

@@ -1,0 +1,8 @@
+ DEVLOG.md                                                   |  7 +++++++
+ README.md                                                   |  2 +-
+ ROADMAP.md                                                  |  2 +-
+ ROADMAP_PHYSICS.md                                          |  2 +-
+ docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md                          |  2 +-
+ docs/workcards/WF1002_README.md                             | 11 +++++++++++
+ reports/decision_packets/WF1002_addendum_decisions.zh-TW.md |  2 +-
+ 7 files changed, 23 insertions(+), 5 deletions(-)

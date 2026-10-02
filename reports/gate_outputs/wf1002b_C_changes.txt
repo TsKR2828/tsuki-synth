@@ -1,0 +1,150 @@
+WF1002b-C 改動與 CLI 不受影響證明（2026-10-02，HEAD 804bf03；未 git add／commit／push）
+
+== N2 $ git apply --check -v reports/wf1002_fm_envelope_fix.patch  → 通過；$ git apply -v 同檔
+Checking patch src/dsp/Envelope.h...
+Applied patch src/dsp/Envelope.h cleanly.
+== N2 套用後 src/dsp/Envelope.h 與 C2 隔離副本 <SCRATCH>/wf1002_C2/tree-fix/src/dsp/Envelope.h 比對
+f08c512e205bbfd6c59d1a531332e833b6ed79a2a772a6d5bc06fd7b20c51cf9 *src/dsp/Envelope.h
+f08c512e205bbfd6c59d1a531332e833b6ed79a2a772a6d5bc06fd7b20c51cf9 *<SCRATCH>/wf1002_C2/tree-fix/src/dsp/Envelope.h
+IDENTICAL（逐位元相同）
+
+== $ git diff -- src/dsp/Envelope.h src/effects/Compressor.h tools/installer/TsukiSynth.iss
+diff --git a/src/dsp/Envelope.h b/src/dsp/Envelope.h
+index 5cddfa0..4d26541 100644
+--- a/src/dsp/Envelope.h
++++ b/src/dsp/Envelope.h
+@@ -30,9 +30,22 @@ public:
+     {
+         if (state != State::Idle)
+         {
+-            releaseSamplesRemaining = std::max (
++            const int newReleaseSamples = std::max (
+                 1, static_cast<int> (
+                     std::lround (releaseTime * sampleRate)));
++
++            // WF1002-C2 (Q09b=A): a voice that is ALREADY releasing keeps
++            // its running ramp. JUCE's Synthesiser sends a tail-off to every
++            // voice of a note number on each same-note note-on/note-off;
++            // restarting the full release from the current level each time
++            // meant a note re-struck faster than its release never reached
++            // Idle. A SHORTER release (FMPianoVoice::stopNote's 5 ms hard
++            // cut on a voice steal / all-sound-off) still takes over.
++            if (state == State::Release
++                && newReleaseSamples >= releaseSamplesRemaining)
++                return;
++
++            releaseSamplesRemaining = newReleaseSamples;
+             releaseRate = currentLevel
+                 / static_cast<float> (releaseSamplesRemaining);
+             state = State::Release;
+diff --git a/src/effects/Compressor.h b/src/effects/Compressor.h
+index b700086..07fb366 100644
+--- a/src/effects/Compressor.h
++++ b/src/effects/Compressor.h
+@@ -7,7 +7,8 @@
+  *
+  * Linked stereo detection (max of L/R) to prevent image shift.
+  * Fixed attack (5ms) and release (100ms) for simplicity.
+- * Auto makeup gain based on threshold and ratio.
++ * No makeup gain: the output is never louder than the input
++ * (WF1002b-C, 月月 2026-10-02 裁決 N1=B1 -- see processStereo()).
+  */
+ class Compressor
+ {
+@@ -47,10 +48,17 @@ public:
+         if (envDB > thresholdDB)
+             gainDB = (thresholdDB + (envDB - thresholdDB) / ratio) - envDB;
+ 
+-        // Auto makeup gain (compensate for average reduction)
+-        float makeupDB = -(thresholdDB * (1.0f - 1.0f / ratio)) * 0.5f;
+-
+-        float totalGain = std::pow (10.0f, (gainDB + makeupDB) / 20.0f);
++        // WF1002b-C (月月 2026-10-02 裁決 N1=B1，
++        // reports/decision_packets/WF1002_addendum_decisions.zh-TW.md N1):
++        // the former fixed "auto makeup" -(threshold * (1 - 1/ratio)) * 0.5 dB
++        // (+2.0 ~ +7.5 dB on the 27 factory presets) was added whether or not
++        // the signal was being compressed at all; it is removed. Only the
++        // gain reduction above the threshold remains (gainDB <= 0).
++        // Root cause: reports/wf1002_preset_overshoot_root_cause.zh-TW.md §0/§7.
++        // Before/after: reports/wf1002b_n1_compressor_makeup_before_after.zh-TW.md.
++        // The CLI never reaches this line (EffectsChain.h: compressorEnabled
++        // defaults to false -> ratio 1 -> early return above).
++        float totalGain = std::pow (10.0f, gainDB / 20.0f);
+ 
+         left  *= totalGain;
+         right *= totalGain;
+diff --git a/tools/installer/TsukiSynth.iss b/tools/installer/TsukiSynth.iss
+index d156f92..e24a5b2 100644
+--- a/tools/installer/TsukiSynth.iss
++++ b/tools/installer/TsukiSynth.iss
+@@ -17,9 +17,13 @@
+ ;   Documents\TsukiSynth\Recordings, Desktop\TsukiSynth_Renders.
+ ; ============================================================================
+ 
+-; "x64compatible" (used below) was introduced in Inno Setup 6.3.0.
+-#if VER < EncodeVer(6,3,0)
+-  #error Inno Setup 6.3.0 or newer is required to compile this script.
++; "x64compatible" (used below) was introduced in Inno Setup 6.3.0;
++; "SetupArchitecture" (used below) was introduced in Inno Setup 7.0.0 -- a 6.x
++; compiler rejects it as an unknown [Setup] directive, so 7.0.0 is now the minimum.
++; (WF1002b-C, 月月 2026-10-02 裁決 N7=A. Never compiled: Inno Setup 7.1.0 is only
++; downloaded, not installed, on the dev machine -- see README.md.)
++#if VER < EncodeVer(7,0,0)
++  #error Inno Setup 7.0.0 or newer is required to compile this script.
+ #endif
+ 
+ #define AppName        "TsukiSynth"
+@@ -76,6 +80,14 @@ VersionInfoProductName={#AppName}
+ ; 64-bit folders and Setup refuses to run on 32-bit Windows.
+ ArchitecturesAllowed=x64compatible
+ ArchitecturesInstallIn64BitMode=x64compatible
++; Build the installer (Setup.exe) itself as a 64-bit x64 program instead of Inno
++; Setup 7's default 32-bit x86 one (月月 2026-10-02 裁決 N7=A; the product is
++; Windows 64-bit only, Q30=A). Inno Setup 7.0.0 "What's New": SetupArchitecture=x64
++; also changes the DEFAULTS of ArchitecturesAllowed / ArchitecturesInstallIn64BitMode
++; to x64compatible -- the two explicit lines above already say x64compatible, so they
++; stay consistent with that default (kept explicit on purpose).
++; UNVERIFIED: not compiled, not test-installed (Inno Setup not installed here).
++SetupArchitecture=x64
+ 
+ ; Writing to C:\Program Files\Common Files\VST3 requires administrator rights.
+ PrivilegesRequired=admin
+
+== N1 CLI 不受影響：$ git grep -n compressorEnabled -- src（工作樹）
+src/dsp/EffectsChain.h:22:    bool   compressorEnabled = false;
+src/dsp/EffectsChain.h:82:        compressor.setRatio (p.compressorEnabled ? p.compRatio : 1.0f);
+src/effects/Compressor.h:59:        // The CLI never reaches this line (EffectsChain.h: compressorEnabled
+== $ git grep -n -e compRatio -e compThreshold -e compMakeup -- src
+src/dsp/EffectsChain.h:23:    float  compThreshold     = -12.0f;
+src/dsp/EffectsChain.h:24:    float  compRatio         = 4.0f;
+src/dsp/EffectsChain.h:25:    float  compMakeup        = 0.0f;
+src/dsp/EffectsChain.h:81:        compressor.setThreshold (p.compThreshold);
+src/dsp/EffectsChain.h:82:        compressor.setRatio (p.compressorEnabled ? p.compRatio : 1.0f);
+== $ git grep -n "compressor\." -- src/dsp/EffectsChain.h src/score src/cli
+src/dsp/EffectsChain.h:49:        compressor.prepare (sampleRate);
+src/dsp/EffectsChain.h:81:        compressor.setThreshold (p.compThreshold);
+src/dsp/EffectsChain.h:82:        compressor.setRatio (p.compressorEnabled ? p.compRatio : 1.0f);
+src/dsp/EffectsChain.h:95:        compressor.processStereo (left, right);
+src/dsp/EffectsChain.h:115:        compressor.reset();
+== $ git grep -n -i "\"compressor" -- scores （語料庫有沒有樂譜要求壓縮器）
+（git grep exit 1 ；1＝0 筆）
+== src/effects/Compressor.h processStereo() 開頭（ratio<=1.01 直接 return，makeup 那行在它之後）
+31:        if (ratio <= 1.01f)
+32:            return;  // bypass if ratio ~1
+61:        float totalGain = std::pow (10.0f, gainDB / 20.0f);
+63:        left  *= totalGain;
+64:        right *= totalGain;
+說明：CLI 走 src/dsp/EffectsChain.h；compressorEnabled 預設 false → setRatio(1.0f) → processStereo() 第一行 return。
+      整個 src/ 沒有任何地方把 compressorEnabled 設成 true（上方 grep 只有宣告與那一行三元運算）。
+
+== N7 .iss 相關行（$ grep -n "Architecture\|EncodeVer" tools/installer/TsukiSynth.iss）
+21:; "SetupArchitecture" (used below) was introduced in Inno Setup 7.0.0 -- a 6.x
+25:#if VER < EncodeVer(7,0,0)
+81:ArchitecturesAllowed=x64compatible
+82:ArchitecturesInstallIn64BitMode=x64compatible
+85:; Windows 64-bit only, Q30=A). Inno Setup 7.0.0 "What's New": SetupArchitecture=x64
+86:; also changes the DEFAULTS of ArchitecturesAllowed / ArchitecturesInstallIn64BitMode
+90:SetupArchitecture=x64
+依據：Inno Setup 7.0.0 What's New（R lane 抓取的 output/wf1002b/R/web/is7-whatsnew.txt:139，官網原文）：
+ Building 32-bit installers is the default in both editions. Set new [Setup] section directive SetupArchitecture to x64 to build a 64-bit x64 installer instead of a 32-bit x86 installer. This also changes the default values of ArchitecturesAllowed and ArchitecturesInstallIn64BitMode to x64compatible , making 64-bit installers default to 64-bit install mode .
+未驗證：<TOOLS>/innosetup 只有 innosetup-7.1.0-x64.exe（未安裝），本卡沒編譯、沒試裝。
