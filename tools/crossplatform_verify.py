@@ -6,8 +6,8 @@ possible, numeric/audio tolerance otherwise)").
 The existing determinism check in `verify_score.py` renders the same score
 twice *on one machine* and requires an identical SHA256.  That proves the
 renderer has no hidden nondeterminism (uninitialised memory, time/RNG leakage,
-container iteration order), but it says nothing about whether a Linux/clang or
-macOS/AppleClang build produces the same audio as the Windows/MSVC build that
+container iteration order), but it says nothing about whether a Linux (GCC 13.3 in CI; the
+job was mislabelled "clang" until 2026-10-02) or macOS/AppleClang build produces the same audio as the Windows/MSVC build that
 every documented GATE was run on.  Different compilers legitimately differ in
 floating-point contraction (FMA), libm transcendental accuracy (`sin`, `exp`,
 `pow`) and vectorisation, so bit identity is *not* guaranteed and may not even

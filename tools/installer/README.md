@@ -25,8 +25,9 @@
 
 ## 2. 需要的工具
 
-- Inno Setup **6.3.0 以上**（腳本用到 `x64compatible`，官方更新紀錄寫這是 6.3.0 新增的；腳本開頭有版本檢查，版本太舊會直接報錯）。
-  2026-09-25 官網下載頁列的是 7.1.0（2026-08-12）與 6.7.3（2026-05-26）。本卡沒有安裝任何版本。
+- Inno Setup **7.0.0 以上**（2026-10-02 WF1002b N7 加了 `SetupArchitecture=x64`，這是 7.0 新指令，6.x 會拒絕；腳本開頭的版本檢查已改成 7.0.0）。
+  7.1.0 安裝程式已下載到 `E:\Tsuki-project\_tools\innosetup\`（SHA256 已核對，**未安裝**，要月月自己執行）。
+  授權：商業使用**不是必須購買**，官方只請年營收超過 US$5,000 的使用者購買（單人 US$155），等安裝檔真的要發行再買即可（`reports/wf1002b_innosetup_license.zh-TW.md`）。
 - 腳本檔是 UTF-8（無 BOM）；官方說明寫 6.3.0 起 UTF-8 檔不需要也不建議加 BOM。
 
 ## 3. 編譯前要準備的東西
@@ -35,9 +36,13 @@
    存成純文字 UTF-8 檔 `tools/installer/EULA.txt`。
    腳本在找不到這個檔時會**故意編譯失敗**（`#error`），避免把草稿裝進買家電腦。
 2. **整合卡建好的 Release binary**：`build\` 下的 VST3、Standalone、CLI 三個 target。缺任何一個，腳本也會編譯失敗。
-3. **VC++ runtime 裁決**（見 §4）。
+3. ~~VC++ runtime 裁決~~ → 已裁 Q07＝A（靜態 CRT），見 §4。
 
-## 4. 待月月裁決：VC++ runtime（甲／乙二選一）
+## 4. VC++ runtime：**已裁 Q07＝A 甲案（靜態 CRT），2026-10-02 落地**
+
+> 現況：`CMakeLists.txt` 已設 `CMAKE_MSVC_RUNTIME_LIBRARY`，VST3、Standalone、CLI 都不再 import MSVCP140／VCRUNTIME140（`reports/gate_outputs/wf1002_integration_raw/03_dumpbin_dependents.txt`）。
+> 安裝包**不需要**附 `vc_redist.x64.exe`，`.iss` 裡的乙案區塊保持註解即可。附帶效果：2 首 overdrive 譜最後一位元改變（−132 dB），月月裁 N9＝A 接受。
+> 以下是裁決前的比較，保留作紀錄。
 
 事實（2026-09-25 掃描 `build\` 三個 binary 的 import 表，`reports/gate_outputs/wf0925_G1_sources.txt` §4）：
 VST3、Standalone、CLI 都動態連結 `MSVCP140.dll`、`MSVCP140_2.dll`、`VCRUNTIME140.dll`、`VCRUNTIME140_1.dll`。
@@ -66,7 +71,7 @@ VST3、Standalone、CLI 都動態連結 `MSVCP140.dll`、`MSVCP140_2.dll`、`VCR
 
 ## 6. 第一次編譯與試裝的驗證清單（全部要有實際輸出紀錄）
 
-1. 用 Inno Setup 6.3.0+ 編譯 `tools/installer/TsukiSynth.iss`，編譯器 0 錯誤；記下 Inno Setup 版本與輸出檔 SHA256。
+1. 用 Inno Setup 7.0.0+ 編譯 `tools/installer/TsukiSynth.iss`，編譯器 0 錯誤；記下 Inno Setup 版本與輸出檔 SHA256。
 2. 在**乾淨的** Windows x64（沒裝過 TsukiSynth、最好也沒裝 VC++ 可轉散發套件）執行安裝包：
    - 授權頁顯示的是核准版 EULA，不按同意無法繼續；
    - 裝完檢查 `C:\Program Files\Common Files\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3` 與 `build\` 內同一檔 SHA256 相同；

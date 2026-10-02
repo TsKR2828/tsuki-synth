@@ -42,3 +42,12 @@
 - **`render_wf_scores.py`**：WF0925-P1 加了 `--outdir`（csv／sha256 改寫到指定資料夾；不帶時行為照舊）；`--workdir` 放 repo 外、`--cli` 用 Windows 絕對路徑、跟基準比對用 `diff --strip-trailing-cr`。位元不變基準仍是 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`，期望 8/8。
 - **`build\` 已由 WF0925 整合卡重建**（CLI sha256 `b84c775b…`）；上方 §0 說的「`build\` 對應 HEAD `a38bd6a`（09-10 建）」已過時。商品母帶用的舊渲染器 `9123db8f…` 備份在 `exports/renderer_archive/`（gitignored）。
 - 細節見 `docs/workcards/WF0925_README.md` §0。
+
+---
+
+## 2026-10-03 更新註記（文件卡 DOC-B；上面原文是當時的紀錄，不改）
+
+- 上方的 pytest 288／307、HostProbe 215、AuditTest 110、`--selftest` 13 等基線都已過時。新基線（`reports/gate_outputs/wf1002b_INTEGRATION.txt`）：ctest 4/4（AuditTest 111）、pytest **310**（304 passed＋1 skip＋5 xfail）、`--full` NO CHECKED FAILURES、`--selftest` **14/14**（WF1002b 換窗後多 1 項）、`verify_score --all` 75/75、位元不變 8/8、HostProbe **231**／0、pluginval＋validator 47/47。
+- git：分支已 push 到 `168688e`（2026-10-03），`main` 仍 `3f9b90a`、未 merge；R7 已於 2026-10-02 依月月裁決 Q03=A 改字面（稽核 PASS 後 staged 供審）。
+- repo 已搬到 `E:\Tsuki-project\tsuki-synth`（2026-09-30）；上方提到的 C 槽路徑是搬家前的位置。
+- 之後各輪的裁定與結果見 `docs/workcards/WF1002_README.md`（§1 裁定表、§3 WF1002、§4 WF1002b）。

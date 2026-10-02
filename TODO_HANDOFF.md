@@ -8,11 +8,11 @@
 >
 > 已知過時處（舉例，不是完整清單）：
 >
-> | 本檔原文 | 現況（2026-09-25 查證） |
+> | 本檔原文 | 現況（2026-09-25 查證；2026-10-03 更新） |
 > |---|---|
-> | release corpus 73/73 | 75/75（2026-09-25 重跑） |
+> | release corpus 73/73 | 75/75（2026-09-25 重跑；2026-10-02 WF1002b 整合卡再確認） |
 > | 「cross-platform bit identity is not」（沒提其他） | 仍不承諾位元相同；但 2026-08-22 已登記跨平台容差（C3，`scores/crossplatform_tolerance.json`），CI 每次 push 做 Windows MSVC／Linux GCC／macOS AppleClang 三平台渲染比對 |
-> | 「Current branch」 | 分支名稱沒變，但已多次 merge 進 `main`（最近一次 `3f9b90a`，2026-09-15） |
+> | 「Current branch」 | 分支名稱沒變，但已多次 merge 進 `main`（最近一次 `3f9b90a`，2026-09-15）；之後的成果 2026-09-30～10-03 已 push 到分支（`168688e`），尚未 merge `main` |
 
 > Updated 2026-07-17. Current branch: `fix/deep-physics-audit-20260716`.
 

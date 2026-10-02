@@ -1,6 +1,6 @@
-# 免耳・免人工驗證設計：旋律位置三層 GATE（提案，待月月裁決）
+# 免耳・免人工驗證設計：旋律位置三層 GATE（~~提案，待月月裁決~~ 起草時是提案；L1／L2／L3 已實作並在用，見檔尾 2026-10-03 現況）
 
-> 起草：2026-08-20。狀態：**設計提案，未實作、未 commit（R7）**。
+> 起草：2026-08-20。狀態：**設計提案，未實作、未 commit（R7）**（2026-08-20 起草當時；之後 L1 `melody_verify`、L2 HostProbe、L3 Cubase 實測都已實作入庫，見檔尾）。
 > 專案終極主張：「聾人與 AI 都可以按照邏輯輸出正確的旋律位置」。
 > 本文件把這句話變成可以用命令輸出判定（R1）、不需要任何人耳或人手的 GATE 鏈。
 
@@ -181,7 +181,7 @@ informational，不當 GATE。
 
 **L2 補充（WF0907-E10，2026-09-08）**：H6（可變 host block size）與 H7
 （user preset round-trip）詳見 §10。一句話版：H6 全綠（哨兵旋律 5 個 block
-size 位元相同，見 §10.1）；H7 因架構衝突未實作，待月月裁決（§10.2）。
+size 位元相同，見 §10.1）；H7 因架構衝突未實作，待月月裁決（§10.2）。（→ 2026-09-09 已依裁決落地選 (B)，見 §10.2）
 
 ---
 
@@ -279,7 +279,7 @@ A14 之後用同一個估計器實測是 3.0355 c，見上表）。**
    所以凹口是必要條件、不是充分條件，真正分開 PASS／FAIL 的是基頻的絕對音量
    （FAIL ≤ −72.1、PASS ≥ −67.2 dBFS，對照既有的 −70 dBFS 門檻；描述用、非 GATE）。
    這 16 顆用泛音反推基頻 16/16 在 ±5 c 內（informational，`reports/partial_verify_full_2026-09-25.zh-TW.md` §4）。
-   怎麼處理待月月裁決（`reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q15）。
+   怎麼處理~~待月月裁決~~（`reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q15）→ **2026-10-02 月月裁 Q15＝A**：母帶不動，16 顆時間點交聽人（Q28）；D16 物理缺口仍開放。
    以下是 08-30（A14 之前）那 22 顆高音的原始記錄，保留作歷史——這 22 顆 09-25 已全部 PASS
    （`reports/partial_verify_full_2026-09-25.zh-TW.md` §5）。當時的乾聲單音實測（piano 引擎、velocity 0.427/0.462）：
    - G5（宣告 784.0 Hz）：整軌峰值 −46.7 dBFS，主導頻率 1571.5 Hz（第二 partial，
@@ -513,7 +513,7 @@ Hann/2048/hop-256 STFT 在特定頻率-bin 對齊下的頻帶質心系統偏差�
 本身的產物（噪音床/inharmonicity 對誤差幅度影響很小，見上表電平分組）。
 
 **本卡未修改 `measure_pitch_cents` 的判定邏輯**（R2：不准為了過線去改估計器）；
-**1.1721 cents，待月月裁決 C10 A/B**（選項 A/B 見裁決包
+**1.1721 cents，待月月裁決 C10 A/B**（當時；2026-09-10 已裁 A，見 §9.7）（選項 A/B 見裁決包
 `reports/decision_packets/C10_selfcal_domain.zh-TW.md` §2）。
 
 ### 9.3 限制（誠實列出，不得省略）
@@ -649,7 +649,7 @@ UNVERIFIED 數字與 §9.2 之前的原始記錄逐一相同、給愛麗絲乾�
 
 **判定：量測器自證 ≤1 cent 尚未達成。** 決策包
 `reports/decision_packets/C10_selfcal_domain.zh-TW.md` §5 記錄同一結論，
-並列出仍待月月裁決的選項：§2 選項 A（收窄主張域、不改程式碼）依然可行；
+並列出當時仍待月月裁決的選項（2026-09-10 已裁 A，見 §9.7）：§2 選項 A（收窄主張域、不改程式碼）依然可行；
 選項 B 已經試過且確認在目前架構內無解；真正的選項 C（架構外的新方法）
 尚未找到。±5 cents 產品門檻、拒答規則、band 選擇、course/detune 判定邏輯
 全部未動（R2）。
@@ -893,3 +893,12 @@ link 進 `TsukiSynthHostProbe` target——但它的 `createEditor()` 回傳
   `[FAIL]`，與 WF0907-E10 對 H7 `[BLOCKED]` 的 exit-code-neutral 處理精神
   一致。
 - 完整命令與輸出見 `reports/gate_outputs/wf0908_E10b_glide_h7.txt`。
+
+---
+
+## 2026-10-03 現況（文件卡 DOC-B；只補現況，上面各節原文不動）
+
+- 三層 GATE 都已實作並在用：L1 `tools/melody_verify.py`（onset ±10 ms 已於 2026-10-02 月月裁決 Q04=A 補登進 `ROADMAP_PHYSICS.md` §6；pitch ±5 c 沿用 f0 列）、L2 `TsukiSynthHostProbe`（2026-10-02 WF1002b 整合卡 231 PASS／0 FAIL）、L3 Cubase 實測（2026-08-22，L3b）。
+- **H7 與 DAW program（2026-10-02 月月裁決 Q06=A）**：外掛報給 DAW 的 program 清單現在只含 27 個工廠音色，使用者音色不再出現在 `getProgramName()`／`setCurrentProgram()`。§10.2 描述的「掃 `getProgramName()` 找到使用者 preset 再 `setCurrentProgram()`」那條 LOAD 路徑已不存在；WF1002-C1 把 H7 的 LOAD 側改成把 preset 檔內容當成 DAW 專案 state 交給真 VST3 實例（`buildStateBlobFromPresetFile()`），外掛自己選單的路徑在新的影子 processor 上驗，並加 Q06 檢查「加了使用者 preset 前後 DAW 的 program 數都是 27」（`tests/host_probe.cpp` 檔頭 H7 說明，證據 `reports/gate_outputs/wf1002_C1_hostprobe.txt`）。
+- §10.2 末段的兩條 `KNOWN-FAIL(F-03)` IR CHECK 已由 WF0908-P3（受管理 IR 庫，2026-09-09）硬化成正式 CHECK；IR「檔案存在但載不進來」的分支 2026-10-02 起改走缺檔三態（Q10=B）。
+- §8.4 可發布措辭、§8.5 主張域、§9 量測器自證（C10 選 A、D15 選 A'）都沒有變。

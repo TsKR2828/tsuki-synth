@@ -3,7 +3,7 @@
 > 建立：2026-08-31　狀態：**診斷文件，不是施工卡**
 > 對應證據：`reports/gate_outputs/stem_verify_fur_elise_run.txt`（1535 行，
 > SHA256 `5FE00F7CD129CF3269B6D7A5A56E2E318FD6BCFCEA85581E03C1DF82BCFB91D3`）
-> 對應修復：commit `a7413e5`（本地分支 `fix/deep-physics-audit-20260716`，未 push）
+> 對應修復：commit `a7413e5`（本地分支 `fix/deep-physics-audit-20260716`，未 push——2026-08-31 當時；之後已 push 並併入 `main`）
 >
 > **這份文件的目的**：codex 兩輪稽核列出的是「缺陷清單」。清單會讓人以為
 > 問題是「還剩 N 個 bug」。實際上這些缺陷高度集中在三個結構性病根上，

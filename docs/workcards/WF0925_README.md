@@ -249,3 +249,14 @@
 2. **稽核判定要有進版控的證據檔**：XF 稽核的判定只在 gitignored 的 `output/`，整合卡與交接卡只能從回報引用。下一輪稽核請跟 TF、DS／BR 一樣寫 `wf<輪>_<卡>_audit.txt`。
 3. **證據外殼不要改寫被包的結果**：`wf0925b_XF_audit_rerun.txt` 把 51/52 包成「RESULT: PASS」，理由寫在檔內、判讀也對，但讀的人容易誤會。要改判讀時，原結果和新判讀分開寫。
 4. **中斷後接手照 WF0925 做法**：XF、TF 先核對前任的 diff 和產出再重跑 GATE，XF 接手時還補抓到 `LISTING_COPY` 有同一個舊範圍沒改。
+
+---
+
+## 2026-10-03 更新註記（文件卡 DOC-B；上面原文是當時的紀錄，不改）
+
+- 上方的 pytest 288／307、HostProbe 215、AuditTest 110、`--selftest` 13 等基線都已過時。新基線（`reports/gate_outputs/wf1002b_INTEGRATION.txt`）：ctest 4/4（AuditTest 111）、pytest **310**（304 passed＋1 skip＋5 xfail）、`--full` NO CHECKED FAILURES、`--selftest` **14/14**（WF1002b 換窗後多 1 項）、`verify_score --all` 75/75、位元不變 8/8、HostProbe **231**／0、pluginval＋validator 47/47。
+- git：分支已 push 到 `168688e`（2026-10-03），`main` 仍 `3f9b90a`、未 merge；R7 已於 2026-10-02 依月月裁決 Q03=A 改字面（稽核 PASS 後 staged 供審）。
+- repo 已搬到 `E:\Tsuki-project\tsuki-synth`（2026-09-30）；上方提到的 C 槽路徑是搬家前的位置。
+- 本輪留下的 38 題裁決包已由月月 2026-10-02 依 Fable 版裁定全部處理（每題落地狀態寫在 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` 各題下的「2026-10-02 月月裁決」那一行）；§7-6 的 8 個 commit 已於 09-30 切好並 push（`eba91ba`～`643ab8a`，連同驗證證據到 `b41298c`）。
+- `docs/MONETIZATION_PLAN_2026-09-16.zh-TW.md` 已依 Q34a 移到 repo 外的私人資料夾；盤點資料夾 `reports/status_check_2026-09-25/` 已入庫（Q34d，commit `0c4abb1`）。
+- 之後各輪的裁定與結果見 `docs/workcards/WF1002_README.md`（§1 裁定表、§3 WF1002、§4 WF1002b）。

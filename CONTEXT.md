@@ -8,14 +8,14 @@
 >
 > 已知過時處（舉例，不是完整清單）：
 >
-> | 本檔原文 | 現況（2026-09-25 查證） |
+> | 本檔原文 | 現況（2026-09-25 查證；2026-10-03 更新數字） |
 > |---|---|
-> | Working tree clean；merge 到 `main` 要等 Cubase 四步驗證 | A9 真 host 實測 2026-08-22 完成（L3b）；之後已多次 merge 進 `main`，最近一次 `3f9b90a`（2026-09-15） |
+> | Working tree clean；merge 到 `main` 要等 Cubase 四步驗證 | A9 真 host 實測 2026-08-22 完成（L3b）；之後已多次 merge 進 `main`，最近一次 `3f9b90a`（2026-09-15）；之後的成果 2026-09-30～10-03 已 push 到分支（`168688e`），尚未 merge `main` |
 > | IR「path persisted in state」 | F-03 改成 sha256 受管理 IR 庫（2026-09-09）；D12 把舊 `reverb_ir_path` state 遷移成三態 |
-> | Release corpus 73/73 | 75/75（2026-09-25 重跑） |
-> | ctest 3/3、pytest 121/121 | ctest 4/4、pytest 270（264 passed＋1 skip＋5 xfail）（2026-09-25 重跑） |
+> | Release corpus 73/73 | 75/75（2026-09-25 重跑；2026-10-02 WF1002b 整合卡再確認） |
+> | ctest 3/3、pytest 121/121 | ctest 4/4、pytest 310（304 passed＋1 skip＋5 xfail）（2026-10-02 WF1002b 整合卡；09-25 時是 270） |
 > | 「No soundboard/body coupling…nonlinear contact solver」 | 部分過時，見該行註記 |
-> | 「Real DAW automation/state round-trip…still require human/host validation」 | L2 `TsukiSynthHostProbe`（89 PASS）與 L3b Cubase 實測已做 |
+> | 「Real DAW automation/state round-trip…still require human/host validation」 | L2 `TsukiSynthHostProbe`（2026-10-02 231 PASS／0 FAIL；09-25 時 89）與 L3b Cubase 實測已做 |
 > | 「cross-OS/compiler bit identity is not promised」 | 仍不承諾位元相同；但 2026-08-22 已登記跨平台容差（C3，`scores/crossplatform_tolerance.json`），CI 每次 push 做三平台渲染比對 |
 
 > Last updated: 2026-08-06

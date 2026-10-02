@@ -32,7 +32,7 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
 改寫成「不是乳突鑼」的聲明並換成同一組比值（出處 `reports/gate_outputs/wf0914_D13_plate_ratios.txt`）。
 純註解／描述，不影響渲染：8 首代表曲位元不變 8/8 IDENTICAL（water_gong_free 在這 8 首內，
 `reports/gate_outputs/wf0925_K1_bit_identity.txt`、`wf0925_K1K2fix_bit_identity.txt`）；render manifest 的
-`root_score_sha256` 會變（預期）。改動目前 staged、未 commit，可用
+`root_score_sha256` 會變（預期）。改動~~目前 staged、未 commit~~（2026-09-30 已 commit `eba91ba` 並 push；下面的 `--cached` 指令當時適用），可用
 `git diff --cached -- src/physics/PlateModel.h scores/examples/water_gong_free.score.json` 查看。
 原備忘（2026-09-15）：「尚未帶上這段聲明——留待下一張本來就要動這兩個檔案的卡順路同步」。
 
@@ -58,7 +58,7 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
 > 「FM Piano｜❌ 域外｜已誠實標註「非物理合成」，維持此標註」
 
 出處：`ROADMAP_PHYSICS.md` §0 驗證域表（:144；該列 git 最早見於 2026-07-09 `7c150d1`，沒有單獨的裁決包）。
-`TODO.md`「Deliberately outside the physical claim」（:1021-1023）同一件事的原文：「FM Piano, Custom Harmonics' authored ratios, Body macro and the artistic effect chain may remain useful, but must stay labelled non-physical/half-domain.」
+`TODO.md`「Deliberately outside the physical claim」段同一件事的原文：「FM Piano, Custom Harmonics' authored ratios, Body macro and the artistic effect chain may remain useful, but must stay labelled non-physical/half-domain.」
 
 ---
 
@@ -68,7 +68,7 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
 
 > 「Custom Harmonics｜⚠️ 半域內｜加法合成，頻率比可驗但非物理推導」
 
-出處：`ROADMAP_PHYSICS.md` §0 驗證域表（:143；同上，2026-07-09 `7c150d1`）；`TODO.md` :1023（同 §2 引的那句）。
+出處：`ROADMAP_PHYSICS.md` §0 驗證域表（:143；同上，2026-07-09 `7c150d1`）；`TODO.md`「Deliberately outside the physical claim」段（同 §2 引的那句）。
 
 ---
 
@@ -80,10 +80,10 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
 > ——`ROADMAP_PHYSICS.md` §0 驗證域表 Cimbalom / Piano 列（:140）
 
 > 「spectralTilt heuristic 層去留——2026-07-23 裁決：降級保留，聲音不動，劃界為已文件化 creative 層（不算入物理主張）」
-> ——`TODO.md`（:921）
+> ——`TODO.md`「月月待裁決（pending decisions）」段的「spectralTilt heuristic 層去留」條目
 
 > 「noteOn 攻擊能量正規化（`ModalResonator::loudnessCompensationGain`，amount=0.78 月月審聽定案，已文件化校準層、比照 spectralTilt 劃界）」
-> ——`TODO.md`「2026-08-06（夜）跨音域響度失衡修正」（:902-904）；前後對照 `reports/loudness_keytrack_before_after.md`
+> ——`TODO.md`「2026-08-06（夜）跨音域響度失衡修正」段；前後對照 `reports/loudness_keytrack_before_after.md`
 
 裁決日期：`spectralTilt` 2026-07-23 月月；`loudnessCompensationGain` 2026-08-06 月月。
 
@@ -122,10 +122,10 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
 **月月 2026-10-02 裁決（Q19 C7 甲：升格）**。兩段原文：
 
 > 「只適用 Cimbalom/Piano；Chromatic 在 D2 補搜完成前不得套用。」
-> ——`TODO.md` B4 條目（:515；B4 槌氈接觸求解器，2026-08-27 完工）
+> ——`TODO.md` B 區 B4 條目（B4 槌氈接觸求解器，2026-08-27 完工）
 
 > 「D2 舌鼓／鑼的槌具接觸參數 … handpan/鋼舌鼓/tam-tam 自身成套接觸數據仍缺，且 Giordano 的 `α=3/2` 是採用而非量測、槌頭為硬木/Plexiglas，缺口未閉合。」
-> ——`TODO.md` D2（:833）；補搜進度 `docs/D2_CHROMATIC_CONTACT_SEARCH.zh-TW.md` §8
+> ——`TODO.md` D 區 D2 條目；補搜進度 `docs/D2_CHROMATIC_CONTACT_SEARCH.zh-TW.md` §8
 
 ---
 
@@ -134,7 +134,7 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
 **月月 2026-10-02 裁決（Q19 C8 甲：升格）**：
 
 > 「`--dump-modes` 已輸出 `absolute_pressure_per_force` 和 `acoustic_transfer[]`，但這是月月裁決的慣例錨定，不是實測也不是推導。」
-> ——`TODO.md` Verification gaps 輻射條目的「09-25 現況」（:988）
+> ——`TODO.md`「Verification gaps that must stay explicit」輻射條目的「09-25 現況」
 
 裁決記錄：`reports/decision_packets/B6_calibration_choice.md`「裁決記錄（2026-08-28 月月）」（:142-，「照建議走」＝方案 B）。
 同一條目接著寫：「拾音位置、相位、指向性仍 `UNVERIFIED`，缺口維持開放。」（:989）。這個值只出現在 `--dump-modes` 診斷輸出。
@@ -177,7 +177,7 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
    - 全 corpus 75 首有 3 首超過，都不是商品（月光全曲 FM 196 顆、月光舌鼓版 20 顆、混合版舌鼓部分 20 顆；§0 第 2 點）。
    - 假設整首踩住延音踏板（corpus 沒有踏板資料，只是上限）：商品有 4 件超過——給愛麗絲兩版各 22 顆、AI Radiance 全曲 FM 19 顆、第三樂章 FM 17 顆（§0 第 3 點、§4.2）。
    - 多聲部塞進同一個外掛：四季（外掛沒有 `damping_override`）12 個樂章有 6 個超過、最多 26 顆；一個聲部一個外掛就 0 個超過（§0 第 3 點）。
-6. **FM 同音反覆時舊 voice 不結束**（§0 第 4 點）：Q09b=A 決定要修，但依 R10 先在隔離副本做前後對照報告＋patch，**不直接落地**。patch 落地前，現行外掛仍有這個行為。
+6. **FM 同音反覆時舊 voice 不結束**（§0 第 4 點）：Q09b=A 決定要修，但依 R10 先在隔離副本做前後對照報告＋patch，**不直接落地**。patch 落地前，現行外掛仍有這個行為。（**2026-10-03 狀態**：追加裁決 N2＝A 已在 WF1002b 落地，commit `59c0b06`，外掛 FM 不再有這個行為；本點原句保留作歷史，見檔尾狀態補記。）
 7. **Q09 D 的實測（WF1002-C1 已做，`reports/gate_outputs/wf1002_C1_hostprobe.txt`）**：外掛 VST3 即時串流整首樂譜，同時用同引擎組出的「雙胞胎」合成器記錄搶音（雙胞胎與外掛輸出整首逐樣本相同）。給愛麗絲鋼琴版：搶 0 次、最多 12 顆，與估計一致；月光第一樂章舌鼓版：搶 64 次（4 次搶到還按著的音）、最多 20 顆、第一次在 17.920 s，與估計一致。唯一對不上的是「被別顆放鍵一起制音」：實測計到 11 顆、報告估 21 顆，兩邊計數定義不同，數字只供參考。所以第 5 點的估計已有兩首實測背書；其餘曲目仍是估計。
 
 ---
@@ -206,3 +206,13 @@ PlateModel.h 檔頭加了「主張域」段（自由邊平板、不是乳突鑼�
 - 現行模型不變的依據：D11 月月 2026-09-15 選 C（候選 patch 存檔不落地），`docs/KNOWN_LIMITS_INDEX.zh-TW.md` A24。
 
 相關（事實，不是本條主張的一部分）：同日 N3＝A 把 F5 殘差頻譜能量的量法改成 Blackman-Harris 窗（`ROADMAP_PHYSICS.md` §1 第 2 條 R2 說明）。改了量法之後，鋼琴 F5 不再靠探針預設弦徑 0.8 mm 才 PASS（1.0 mm 量到 −82.73 dB，門檻 −60 dB 不動；`reports/gate_outputs/wf1002b_T_f5_method.txt`）。這**不改變**上面的主張：量法修正不會讓弦長／弦徑變成真鋼琴的值，Q16 維持 D、D11 沒有重開。
+
+---
+
+## 2026-10-03 狀態補記（文件卡 DOC-B；只補狀態，上面各節的主張原句一字未改）
+
+- **§10 第 6 點**：FM 同音反覆時舊 voice 不結束——追加裁決 N2＝A 已在 WF1002b 落地（`src/dsp/Envelope.h`，commit `59c0b06`；`reports/wf1002_fm_envelope_fix_before_after.zh-TW.md`：月光全曲 FM 同時活著的 voice 196→14、16 顆 pool 被搶 798→0、CLI 8/8 不變）。§10 第 5 點「月光全曲 FM 196 顆」是修法前的推算數字。
+- **§9**：壓縮器固定補償已由 N1＝B1 拿掉（commit `59c0b06`）；§9 的主張（物理驗證涵蓋 CLI 渲染、外掛激發與效果鏈未逐項驗證）不變，parity GATE 仍是後續 L 卡。
+- **§11**：已由 §12 取代（N4＝甲）。
+- **§1**：PlateModel.h／water_gong_free 的同步改動已在 2026-09-30 commit（`eba91ba`）並 push。
+- **TODO.md 行號**：`TODO.md` 2026-10-03 改寫（1026 → 924 行），本檔原本引用的 `TODO.md` 行號已改成章節名或條目名；舊文用 `git show 168688e:TODO.md` 查。其他檔的行號仍照各節註明的 HEAD。

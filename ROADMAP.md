@@ -6,7 +6,7 @@
 > **⚠️ 2026-07-02 起，物理精確化開發的驗收唯一依據是 [`ROADMAP_PHYSICS.md`](ROADMAP_PHYSICS.md)。**
 > **AI 開發者開工前必讀該文件 §1 強制規則。本檔保留為歷史紀錄與產品向 backlog。**
 >
-> Last updated: 2026-06-17
+> Last updated: 2026-06-17（正文）。**2026-10-03 註**：下方 Phase Summary 與各段的「Pending」「(unstaged)」「DAW Validation (pending …)」都是當時狀態——DAW 實機驗證已於 2026-08-22 完成（L3b，Cubase），那些改動早已 commit／push；v0.3 物理強化（B1～B7）與 2026-09～10 的外掛修正見 `README.md`「Current Status」、`HANDOVER.md` 與 `ROADMAP_PHYSICS.md` 檔尾「2026-10-03 狀態」
 >
 > This document tracks the real project status based on actual repo state,
 > not planned/estimated phases.

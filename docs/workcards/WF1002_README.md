@@ -90,3 +90,14 @@
 仍開著：Body 層結構問題（preset 11 Body 0.5 約 +3.8 dBFS，B2 另開卡）；C2 S4 測例 +1.5 dB 未解釋；HostProbe Q05 檢查在 preset 15 改成只驗「不亮」路徑（合成對照仍涵蓋「亮」）。
 
 整合卡（`reports/gate_outputs/wf1002b_INTEGRATION.txt`）重建 `build\` 全綠：ctest 4/4（AuditTest 111）、pytest **310**（304＋1 skip＋5 xfail）、`--full` 無失敗、selftest 14/14、75/75、**75 首 hash 逐首與 WF1002 整合卡相同**、8/8、HostProbe 231/0（E16 最大 −1.85 dBFS）、pluginval＋validator 47/47。新 VST3 sha256 `fa13ac17…`；三支執行檔不依賴 VC++ runtime。
+
+---
+
+## 5. 2026-10-03 更新註記（文件卡 DOC-B；上面 §1～§4 原文不改）
+
+- **git**：WF1002 與 WF1002b 的成果已經月月明示 commit＋push（`2c4443e`、`cdfc0d6`、`0c4abb1`、`9c46633`、`804bf03`；`59c0b06`、`5919579`、`c49c727`、`168688e`）。分支 HEAD `168688e`，`main` 仍 `3f9b90a`，未 merge。
+- **§1 表後「仍開著、本輪不動」的更新**：`.iss` 64-bit 殼已由 N7 落地（仍未編譯）；Inno Setup 商業授權已由 N6 查清（不是必須買，年營收超過 US$5,000 才被官方請求購買）；Q24a 的 BOOTH 規格已查（檔案上限符合、商品圖官方規格查不到），草稿能不能用仍待月月。Q28、Q32 的 E1／E3／E6／E7、Q22 的 [TBD] 仍開著。
+- **§3 lane E 部署（Q35）**：部署腳本已於 2026-10-03 01:53 執行——標準位置 `C:\Program Files\Common Files\VST3\TsukiSynth.vst3` 的外掛本體 sha256 `fa13ac17…`（＝WF1002b 整合卡的 `build\`），三份舊副本搬到 `E:\Tsuki-project\_backups\vst3_old_20261003_015305\`（只搬、不刪）；`%APPDATA%\VST3` 那份實查已不存在。剩 Cubase 重新掃描外掛。
+- **暫存清理（Q36b）**：WF0925～WF1002b 各輪在 `output/` 下的暫存資料夾與 `E:\Tsuki-project\_scratch` 已清；`exports/renderer_archive/` 與 repo 外的渲染器備份照裁定不動。
+- **§4 之後仍開著**：外掛 Body 層結構問題（preset 11 Body 0.5 約 +3.8 dBFS）；FM 修法 C2 S4 測例 +1.5 dB 未解釋；HostProbe Q05 在 preset 15 只驗「不亮」路徑；plugin↔CLI parity GATE（Q08 後續 L 卡）；merge `main`。
+- 文件同步：README、ROADMAP、ROADMAP_PHYSICS（檔尾「2026-10-03 狀態」，§1 規則原文與 §6 數值未改）、兩份裁決包的逐題落地行、ENGINE_DOMAIN_CLAIMS／KNOWN_LIMITS_INDEX 的狀態補記（主張原句未改；`TODO.md` 行號引用改成條目名稱）。

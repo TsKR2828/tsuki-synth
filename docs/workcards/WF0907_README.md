@@ -106,3 +106,12 @@ lane 內順序：Python = E1 → C10 → C11 → C12；C++ = E5 → E8 → E9 �
 - **本機 Python 是 3.13.3**（上方 §1 寫 3.12；CI 固定 3.12.8）。WF0925 輪所有 Python GATE 都在 3.13.3 上跑。
 - **位元不變比對**：基準早已不是上方 §3 的 `sha256_before.txt`／`sha256_before_post_d8.txt`，自 A14（2026-09-10）起是 `reports/gate_outputs/b6_method/sha256_before_post_a14.txt`，期望 8/8 IDENTICAL。比對腳本 `reports/gate_outputs/wf0907_method/render_wf_scores.py` 的用法：`--workdir` 必須在 repo 外（腳本會拒絕 repo 內路徑）；`--cli` 用 Windows 絕對路徑（相對路徑會 WinError 2）；WF0925-P1 加了 `--outdir`，把 csv／sha256 寫到指定資料夾（不帶時照舊寫進 `reports/gate_outputs/wf0907_method/`）；跟基準比對用 `diff --strip-trailing-cr`（基準檔是 CRLF）。
 - 細節與其他差異見 `docs/workcards/WF0925_README.md` §0。
+
+---
+
+## 2026-10-03 更新註記（文件卡 DOC-B；上面原文是當時的紀錄，不改）
+
+- 上方的 pytest 288／307、HostProbe 215、AuditTest 110、`--selftest` 13 等基線都已過時。新基線（`reports/gate_outputs/wf1002b_INTEGRATION.txt`）：ctest 4/4（AuditTest 111）、pytest **310**（304 passed＋1 skip＋5 xfail）、`--full` NO CHECKED FAILURES、`--selftest` **14/14**（WF1002b 換窗後多 1 項）、`verify_score --all` 75/75、位元不變 8/8、HostProbe **231**／0、pluginval＋validator 47/47。
+- git：分支已 push 到 `168688e`（2026-10-03），`main` 仍 `3f9b90a`、未 merge；R7 已於 2026-10-02 依月月裁決 Q03=A 改字面（稽核 PASS 後 staged 供審）。
+- repo 已搬到 `E:\Tsuki-project\tsuki-synth`（2026-09-30）；上方提到的 C 槽路徑是搬家前的位置。
+- 之後各輪的裁定與結果見 `docs/workcards/WF1002_README.md`（§1 裁定表、§3 WF1002、§4 WF1002b）。

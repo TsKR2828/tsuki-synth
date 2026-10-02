@@ -33,6 +33,8 @@ N1 B1  N2 A  N3 A  N4 甲  N5 A  N6 B  N7 A  N8 A
 B1 之後 preset 11 把 Body 調回預設 0.5 仍會超過（約 +3.8 dBFS）——Body 這層的結構問題可以之後用 B2 另開卡，CLIP 燈已經會提醒。
 選了之後照 R10：AI 先出前後對照報告（27 個 preset 的前後峰值表，R-a 已算好大半），你看過再落地。
 
+> **2026-10-02 月月裁決：B1**（已落地，WF1002b-C）：拿掉 `src/effects/Compressor.h` 的固定自動補償。27 個工廠 preset 各降 2.00～7.50 dB（與 R-a 預測差 ≤0.01 dB），沒有任何 preset 超過 0 dBFS，最大 −1.85 dBFS（HostProbe E16）；CLI 不經過（壓縮器預設關、ratio=1 早退），75 首 hash 逐首不變。副作用：使用者自己存過、開了壓縮器的舊專案與 preset 重開也會變小聲（旋鈕極端值時最多 19 dB）。Body 層結構問題（preset 11 Body 0.5 約 +3.8 dBFS）另開卡、仍開著。commit `59c0b06`；前後對照 `reports/wf1002b_n1_compressor_makeup_before_after.zh-TW.md`、`reports/gate_outputs/wf1002b_C_hostprobe_e16_before_after.txt`。
+
 ---
 
 ## N2　FM 殭屍 voice 修法要不要落地（Q09b 的前後對照出來了）
@@ -58,6 +60,8 @@ B1 之後 preset 11 把 Body 調回預設 0.5 仍會超過（約 +3.8 dBFS）—
 
 **建議**：**A**。好處明確、CLI 不受影響、還省 CPU。
 
+> **2026-10-02 月月裁決：A**（已落地，WF1002b-C）：套 `reports/wf1002_fm_envelope_fix.patch`（只改 `src/dsp/Envelope.h` 的 `noteOff()`）；整合卡補跑 ctest、HostProbe、pluginval 全過，CLI 8/8 不變。「同音按著重打」修後大 1.5 dB 仍未解釋。commit `59c0b06`；證據 `reports/gate_outputs/wf1002b_C_GATE.txt`。
+
 ---
 
 ## N3　F5 量測法要不要改（Q16 研究卡出來了）
@@ -78,6 +82,8 @@ R-b 試了 7 種量法。換窗（M2，Blackman-Harris 等）最單純：
 
 **建議**：**A**。它量真的多餘能量量得比現行準（注入測試證明），而且不比現行量法多依賴模型輸出（兩者都只用預測頻率畫 ±3% 帶）。注意：改了量法**不等於**重開 D11——Q16 維持 D（R-b 也查到 D11 候選並沒有比現行更像真鋼琴）。
 
+> **2026-10-02 月月裁決：A**（已落地，WF1002b-T）：`tools/physics_verify.py` 的 F5 殘差量法把 Hann 換成 4 項 Blackman-Harris 窗；±3% 帶、時段、−60 dB 門檻都沒改；`--selftest` 加帶外衰減假泛音反例（13→14 項）。piano F5 −63.9→−87.4 dB、1.0 mm 探針 −59.47→−82.73 dB，「F5 依賴 0.8 mm 探針」的脆弱點解除；R2 說明寫在 `ROADMAP_PHYSICS.md` §1 第 2 條、§6 殘差列加量法註記（數值不動）。稽核：四種故意改壞的版本新反例都 FAIL。commit `5919579`；證據 `reports/gate_outputs/wf1002b_T_f5_method.txt`、`wf1002b_T_audit.txt`。
+
 ---
 
 ## N4　Q19 C5「弦長／弦徑是模型假設」要不要升格成正式主張
@@ -87,6 +93,8 @@ R-b 試了 7 種量法。換窗（M2，Blackman-Harris 等）最單純：
 - 乙＝不升格
 
 **建議**：**甲**（R-b 建議；跟已升格的 C1～C4、C7、C8 同一類，避免文案被讀成「鋼琴衰減照真琴物理」）。
+
+> **2026-10-02 月月裁決：甲**（已落地，WF1002b-T）：C5 升格寫進 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §12（措辭照 R-b 報告 §6 草稿，月月沒改字）；§11「尚未升格」保留作歷史；`docs/KNOWN_LIMITS_INDEX.zh-TW.md` C5 列同步。commit `5919579`。
 
 ---
 
@@ -103,6 +111,8 @@ R-b 試了 7 種量法。換窗（M2，Blackman-Harris 等）最單純：
 
 **建議**：**A**。
 
+> **2026-10-02 月月裁決：A**（已落地，WF1002b-T）：「檔案存在、但無法載入」的警告句定案寫進 `docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md` §5-3（字樣已對過程式）；§5-7 舊「例外」標成已改（Q10=B）。commit `5919579`。
+
 ---
 
 ## N6　Inno Setup 的商業使用授權
@@ -117,6 +127,8 @@ R-b 試了 7 種量法。換窗（M2，Blackman-Harris 等）最單純：
 
 **建議**：**B**。
 
+> **2026-10-02 月月裁決：B**（已查清，WF1002b-R）：Inno Setup 的 LICENSE.TXT 允許免費商業使用；官方另外「請求」年營收超過 US$5,000 的商業使用者購買（Single User US$155，未稅），並寫明「not strictly required」。結論：現在不用買；開賣後營收過門檻再由月月決定要不要買。報告 `reports/wf1002b_innosetup_license.zh-TW.md`；commit `c49c727`。
+
 ---
 
 ## N7　安裝程式要不要做成 64-bit 殼
@@ -127,6 +139,8 @@ R-b 試了 7 種量法。換窗（M2，Blackman-Harris 等）最單純：
 
 **建議**：**A**（一行、零風險）。
 
+> **2026-10-02 月月裁決：A**（已落地，WF1002b-C）：`tools/installer/TsukiSynth.iss` 加 `SetupArchitecture=x64`，最低 Inno Setup 版本改 7.0.0。**安裝程式仍沒編譯過、沒試裝**。commit `59c0b06`。
+
 ---
 
 ## N8　R6「外掛層要另跑 ctest＋HostProbe」的檔案清單要不要擴大
@@ -136,6 +150,8 @@ R-b 試了 7 種量法。換窗（M2，Blackman-Harris 等）最單純：
 - B＝維持
 
 **建議**：**A**（都是外掛專用，改了本來就該驗外掛）。
+
+> **2026-10-02 月月裁決：A**（已落地，WF1002b-T）：R6「外掛層另跑 ctest＋HostProbe」的清單補列 `src/HoverMagnifier.h`、`src/TsukiLookAndFeel.h`、`src/UiLocale.h`、`src/ScoreConsole.h`、`src/analyzer/`（整個資料夾）、`src/dsp/OutputPeakMeter.h`（`ROADMAP_PHYSICS.md` §1 第 6 條）。commit `5919579`。
 
 ---
 
