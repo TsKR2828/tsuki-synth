@@ -1,7 +1,7 @@
 # TsukiSynth — Current TODO
 
 > Last updated: 2026-10-02（WF1002 輪：WF0925 裁決包 38 題落地；追加裁決包 N1～N9 月月已裁，WF1002b 待實作）
-> 2026-10-02 快照：見 `docs/workcards/WF1002_README.md`（裁定表＋§3 結果）。待辦：WF1002b（N1 B1 壓縮器固定補償、N2 FM 修法落地、N3 F5 換窗、N4 C5 升格、N5 警告句入規格、N6 查 Inno Setup 授權、N7 .iss 64-bit、N8 R6 清單擴大）；月月本人：註冊 BOOTH＋PayPal、定價、授權 4 空格、跑部署腳本、寄 JUCE 信、清空回收筒。
+> 2026-10-02 快照：見 `docs/workcards/WF1002_README.md`（裁定表、§3 WF1002 結果、§4 WF1002b 結果）。**WF1002b（N1～N8）已全部落地、稽核 PASS**。已知脆弱點「F5 PASS 依賴探針 0.8 mm」（Q16＝D 要求登記）→ 已由 N3＝A 換窗解除（1.0 mm −82.73 dB PASS）。剩：Body 層 B2 卡（preset 11 Body 0.5 約 +3.8 dBFS）、C2 S4 +1.5 dB 未解釋、`.iss` 未編譯；月月本人：註冊 BOOTH＋PayPal、定價、授權 4 空格、跑部署腳本、寄 JUCE 信、清空回收筒。
 > ~~（前一版：2026-09-25 WF0925b 收尾輪完工交接）~~
 > Branch: `fix/deep-physics-audit-20260716`（HEAD `18430c4`：**WF0914 成果已分 7 個 commit `a09058c`～`18430c4`，未 push**；遠端仍停在 09-15：分支 `766d21d`、`main`=`3f9b90a`）
 > **WF0925＋WF0925b 成果 staged、未 commit**（R7；**239 檔**；月月看 `git diff --cached`）。

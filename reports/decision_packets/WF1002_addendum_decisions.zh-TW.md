@@ -188,4 +188,4 @@ R-b 試了 7 種量法。換窗（M2，Blackman-Harris 等）最單純：
 | B 退回動態 CRT | Q07 改 B（安裝包附 vc_redist） |
 | C 先不決定 | 這輪不 commit Q07 |
 
-**月月 2026-10-02 裁決：N9＝A**（同時裁定 **N1～N8 全照建議**：N1 B1、N2 A、N3 A、N4 甲、N5 A、N6 B、N7 A、N8 A）。
+**月月 2026-10-02 裁決：N9＝A**（WF1002b 已全部落地，稽核 PASS；結果見 `docs/workcards/WF1002_README.md` §4）（同時裁定 **N1～N8 全照建議**：N1 B1、N2 A、N3 A、N4 甲、N5 A、N6 B、N7 A、N8 A）。

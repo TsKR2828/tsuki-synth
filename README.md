@@ -209,7 +209,7 @@ Output is applied **after** the effect chain with per-sample `juce::SmoothedValu
 ```
 
 - **Distortion**: Overdrive / Bitcrush / Wavefold with instability control
-- **Compressor**: Peak-based, linked stereo detection, auto makeup gain
+- **Compressor**: Peak-based, linked stereo detection (the fixed auto makeup gain was removed on 2026-10-02, WF1002b N1, so the compressor no longer raises the level when it is not compressing)
 - **Delay**: Stereo with LP-filtered feedback, R channel offset for width
 - **Reverb**: two modes — algorithmic Schroeder (8 comb + 4 allpass, room-size knob or authored T60 seconds) or IR convolution (load a .wav impulse response via the panel's Load button; also accepts a `scene_reverb.py` JSON profile, which sets T60 + wet on the algorithmic engine). Since D9c (2026-09-16 decision) the IR wet signal is multiplied by a fixed `kIrWetMakeupGain = 26.9` (+28.58 dB, a decided convention, not a physical constant) so IR and algorithmic modes sit at the same wet level; projects saved before D9c will hear a louder IR-mode wet
 - **Brightness EQ**: RBJ high shelf (`fx_eq_freq`/`fx_eq_gain`, score `global.effects.eq`); documented creative layer added 2026-08-06 to compensate the perceived darkening after damping physicalization; 0 dB = hard bypass (bit-identical renders)

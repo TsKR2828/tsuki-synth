@@ -127,7 +127,7 @@ instrument-physics correctness. Branch `Codex-fix-bug`.
 **Effect Chain (`effects/EffectChain.h`):**
 - Processing order: Distortion → Compressor → Delay → Reverb
 - Distortion: Overdrive / Bitcrush / Wavefold with instability
-- Compressor: peak-based, linked stereo, auto makeup
+- Compressor: peak-based, linked stereo（固定 auto makeup 已於 2026-10-02 WF1002b N1 拿掉）
 - Delay: stereo with LP feedback, R channel offset
 - Reverb: Schroeder (8 comb + 4 allpass)
 - 11 effect parameters total

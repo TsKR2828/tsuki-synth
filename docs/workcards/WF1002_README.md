@@ -77,3 +77,16 @@
 - 事故：P lane 誤 `rm -rf output/wf1002` 刪掉 C2 與 R 第一輪暫存（主 repo、libs/JUCE 完好；C2、R 全部重跑）。之後所有隔離副本改放 repo 外 `E:\Tsuki-project\_scratch\`，junction 用完即以非遞迴方式拆除（目前 `E:\Tsuki-project` 下 0 個）。
 - 月月 10-02 再裁：追加裁決包 **N1～N8 全照建議**（N1 B1 拿掉壓縮器固定補償、N2 A 落地 FM 修法、N3 A F5 改換窗量法、N4 甲 C5 升格、N5 A、N6 B、N7 A、N8 A）→ 下一輪 WF1002b 實作。
 - lane E（主 session）：變現計畫移到 `E:\Tsuki-project\_private\`；Downloads 殘留 467.9 MiB 移到資源回收筒；York 碩論下載到 `_tools\papers\`（ICSV27 被擋）；JUCE 詢問信草稿＋收入記帳表；部署腳本 `E:\Tsuki-project\_tools\deploy\deploy_tsukisynth.ps1`（預覽過，待月月管理員執行）。
+
+## 4. WF1002b（2026-10-02，實作追加裁決 N1～N8）
+
+| 卡 | 內容 | 稽核 |
+|---|---|---|
+| T | N3：F5 窗 Hann→4 項 Blackman-Harris（±3% 帶、時段、−60 dB 不動），selftest 加帶外衰減假泛音反例（13→14 項）；piano F5 −63.9→−87.4 dB、1.0 mm 探針 −59.47→−82.73 dB（「依賴 0.8 mm」脆弱點解除）。N4：ENGINE_DOMAIN_CLAIMS §12（C5 升格）。N5：UI 規格 §5-3 加「無法載入」定案文字、§4.14 CLIP 燈實作。N8：R6 外掛層清單補 6 項 | PASS（四種故意改壞的版本新反例都會 FAIL） |
+| C | N2：套 FM 殭屍 voice patch（`Envelope.h`）。N1：拿掉壓縮器固定 makeup（`Compressor.h`）——27 個工廠 preset 各降 2.00～7.50 dB（與 R-a 預測差 ≤0.01 dB），無 preset 超過 0 dBFS，最大 −1.85 dBFS；CLI 不經過（ratio=1 早退）。N7：`.iss` 加 `SetupArchitecture=x64`、最低版本 7.0.0（未編譯） | PASS（clean rebuild 重跑全套；75 首 hash 逐首相同） |
+| R | N6：Inno Setup 商業使用「not strictly required」，官方請年營收 >US$5,000 者購買（單人 US$155）。Q24a：BOOTH 單檔 1.2 GB／全店 10 GB，音效包 78 MB、專輯 99 MB 皆符合；商品圖官方規格查不到（觀察：顯示長邊 1024 px、縮圖中央裁正方形）。CI run 37017182460（804bf03）六 job 全綠，Linux 改名 gcc 首次實戰通過 | PASS |
+
+注意（N1 副作用）：使用者自己存過、開了壓縮器的舊 DAW 專案與 preset，重開後也會變小聲（最多 19 dB，旋鈕極端值時）。
+仍開著：Body 層結構問題（preset 11 Body 0.5 約 +3.8 dBFS，B2 另開卡）；C2 S4 測例 +1.5 dB 未解釋；HostProbe Q05 檢查在 preset 15 改成只驗「不亮」路徑（合成對照仍涵蓋「亮」）。
+
+整合卡（`reports/gate_outputs/wf1002b_INTEGRATION.txt`）重建 `build\` 全綠：ctest 4/4（AuditTest 111）、pytest **310**（304＋1 skip＋5 xfail）、`--full` 無失敗、selftest 14/14、75/75、**75 首 hash 逐首與 WF1002 整合卡相同**、8/8、HostProbe 231/0（E16 最大 −1.85 dBFS）、pluginval＋validator 47/47。新 VST3 sha256 `fa13ac17…`；三支執行檔不依賴 VC++ runtime。
