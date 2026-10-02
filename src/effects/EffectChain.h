@@ -105,6 +105,12 @@ public:
         return irLoaded.load (std::memory_order_acquire);
     }
 
+    /** WF1002-C1（月月 2026-10-02 裁決 Q01b=B）：kIrWetMakeupGain 的 public
+        唯讀存取點，給 tests/audit_repro.cpp 的 D9c-guard 用（取代原本以顯式
+        實例化讀 private 成員的繞路寫法）。只回傳常數本身，不改任何狀態，
+        不參與 processBlock()，聲音不變。 */
+    static constexpr float irWetMakeupGain() noexcept { return kIrWetMakeupGain; }
+
     void processBlock (juce::AudioBuffer<float>& buffer)
     {
         // Hosts are not required to keep every callback <= the block size
@@ -280,6 +286,15 @@ private:
     // 差 −2.4～+5.3 dB（0.3 s −2.38／30 s +5.26）（估計，非量測產品 binary；
     // 出處 reports/status_check_2026-09-25/probes/reverb_gain_replica_output.txt，
     // 腳本 reverb_gain_replica.py 同目錄）。純說明，數值不變。
+    // WF1002-C1 補註（盤點 E18 查證修正；WF0925 稽核用詞 note）：
+    // (1) 26.9 倍裡約 18.06 dB 來自 JUCE Convolution 的正規化係數 0.125
+    //     （−20·log10(0.125) = 18.06 dB；libs/JUCE/modules/juce_dsp/frequency/
+    //     juce_Convolution.cpp:628，Normalise::yes 路徑）——JUCE 升版若改了
+    //     這個係數，「26.9 沒被改」的 D9c-guard 照樣綠燈，所以 audit_repro
+    //     另有 Q01 的 |IR−ALGO| ≤ 0.25 dB 響度 CHECK（月月 2026-10-02 核准）。
+    // (2) 用詞：嚴格算 20·log10(26.9) = 28.595 dB；上文「+28.58 dB」是 4 樣本
+    //     平均落差的原數字（反相補償的目標值），兩者差 0.015 dB，不是筆誤。
+    // 純註解，數值不變。
     static constexpr float kIrWetMakeupGain = 26.9f;
 
     Distortion   distortionL, distortionR;

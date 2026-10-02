@@ -158,8 +158,10 @@ TsukiSynthEditor::TsukiSynthEditor (TsukiSynthProcessor& p)
     presetCombo.onChange = [this]
     {
         int id = presetCombo.getSelectedId();
+        // WF1002-C1 (Q06=A): host programs are factory-only now, so the
+        // editor's own menu (factory + user presets) loads by preset index.
         if (id > 0 && id <= (int) presetIdToIndex.size())
-            proc.setCurrentProgram (presetIdToIndex[(size_t) (id - 1)]);
+            proc.selectPresetFromEditor (presetIdToIndex[(size_t) (id - 1)]);
         updateDirtyIndicator();
     };
     addAndMakeVisible (presetCombo);
@@ -378,6 +380,30 @@ void TsukiSynthEditor::timerCallback()
 {
     updateDirtyIndicator();
     refreshRecorderText();
+
+    // WF1002-C1 (月月 2026-10-02 Q05=C, UI spec §4.14): clip indicator. Any
+    // block whose final output peak exceeded 0 dBFS since the last tick
+    // (re)starts the hold; the light stays on kClipHoldMs after the LAST
+    // over-full-scale block. Display only -- audio is never touched.
+    {
+        const bool overNow = OutputPeakMeter::isOverFullScale (proc.takeOutputPeak());
+        const auto nowMs = juce::Time::getMillisecondCounter();
+        if (overNow)
+        {
+            clipHoldUntilMs = nowMs + kClipHoldMs;
+            clipHoldActive = true;
+        }
+        // Wrap-safe uint32 difference; clipHoldActive avoids treating the
+        // never-set initial value as a pending deadline.
+        const bool lit = clipHoldActive && (int) (clipHoldUntilMs - nowMs) > 0;
+        if (! lit)
+            clipHoldActive = false;
+        if (lit != clipLit)
+        {
+            clipLit = lit;
+            repaint (clipBounds_);
+        }
+    }
 
     double sr = proc.getSampleRate();
     if (sr > 0.0)
@@ -950,6 +976,30 @@ void TsukiSynthEditor::paintPanel (juce::Graphics& g, juce::Rectangle<int> bound
                 bounds.getWidth() - 16, kPanelTitleH, juce::Justification::centredLeft);
 }
 
+void TsukiSynthEditor::paintClipIndicator (juce::Graphics& g)
+{
+    // WF1002-C1 (Q05=C): monochrome, existing palette only -- unlit = dim
+    // outline + dim label (Clr::border / Clr::divLabel), lit = the theme's
+    // single accent (Clr::gold) filled, label in the background colour.
+    if (clipBounds_.isEmpty())
+        return;
+    const auto r = clipBounds_.toFloat().reduced (0.5f);
+    if (clipLit)
+    {
+        g.setColour (Clr::gold);
+        g.fillRoundedRectangle (r, 4.0f);
+        g.setColour (Clr::bg);
+    }
+    else
+    {
+        g.setColour (Clr::border);
+        g.drawRoundedRectangle (r, 4.0f, 1.0f);
+        g.setColour (Clr::divLabel);
+    }
+    g.setFont (juce::Font (juce::FontOptions (fontSize (9.0f))).boldened());
+    g.drawText ("CLIP", clipBounds_, juce::Justification::centred);
+}
+
 void TsukiSynthEditor::paint (juce::Graphics& g)
 {
     // -- plugin background gradient --------------------------------------
@@ -1031,6 +1081,8 @@ void TsukiSynthEditor::paint (juce::Graphics& g)
         g.setColour (juce::Colour (0xff556677));
         g.drawText ("v" JucePlugin_VersionString,
                      w - 70, subY, 60, subH, juce::Justification::centredRight);
+
+        paintClipIndicator (g);
 
         g.setColour (Clr::borderLight);
         g.drawHorizontalLine (kTitleH - 1, 0.0f, (float) w);
@@ -1200,6 +1252,8 @@ void TsukiSynthEditor::resized()
         recordButton.setBounds (w - 136, 20, 56, 24);
         scoreConsoleButton.setBounds (w - 200, 20, 56, 24);
     }
+    // WF1002-C1 (Q05=C): clip indicator, left of the title-bar buttons.
+    clipBounds_ = { (kStandaloneBuild ? w - 200 : w - 72) - 8 - 44, 20, 44, 24 };
 
     // -- preset row ------------------------------------------------------
     {

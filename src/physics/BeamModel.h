@@ -45,7 +45,14 @@ public:
      * 寬頻化前，單一 alpha 配 `*2` 等於「梁在 MIDI 72 與文獻一致」
      * （提案 §1.3 記載）；寬頻化後內部摩擦在全音域都與文獻對齊，`*2`
      * 因此變成**全音域一律 2 倍過阻尼、不再有任何錨點理由**的純經驗係數。
-     * 去留為月月裁決項（已登記 TODO.md），不在本輪自行變更。
+     *
+     * **DECIDED CONVENTION（月月 2026-10-02 裁決 Q17=A）：經驗係數，無文獻錨點**
+     * ——保留 `*2`，數值不動。文獻反對把它當成物理機制（8 份全文沒有一份
+     * 用「材料損耗乘固定倍數」），也無法判斷總量該不該留；機制分解見
+     * docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md，拿掉 `*2` 的前後數字
+     * （鋼 C4 T60 16.39→26.86 s 等）見
+     * reports/beam_x2_option_b_before_after_2026-09-25.zh-TW.md。純註解，
+     * 渲染不變（WF1002-C1）。
      */
     static float decayTimeForFrequency (
         float frequency, const MaterialDB::Material& material)

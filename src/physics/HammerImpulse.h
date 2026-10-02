@@ -419,8 +419,9 @@ public:
      *    => delta_max = [ (alpha+1)*m*v^2 / (2*K) ] ^ (1/(alpha+1))
      *    => F_peak    = K * delta_max^alpha
      *
-     *  **Known simplification** (must be repeated at every call site's
-     *  reasoning, per B7.md SS4.3): this treats the struck point as fixed
+     *  **Known simplification** (目前沒有呼叫點（B7 09-15 裁決撤回 Path C
+     *  欄位）；日後若重新接回，每個呼叫點的推理都要重述這條簡化，per B7.md
+     *  SS4.3 -- WF1002-C1 comment sync): this treats the struck point as fixed
      *  and immobile. A real string is itself moving during contact --
      *  Chaigne & Askenfelt (1994, already referenced at this file's own
      *  header for the separate half-sine-pulse-shape question) instead
@@ -470,7 +471,10 @@ public:
      *  hertzPeakForceNewtons() above -- **added 2026-09-14, WF0914-B7P1
      *  audit fix, replacing the previous ScoreRenderer.h call site's reuse
      *  of the unrelated, independently-calibrated pianoHammerTauC() for
-     *  this diagnostic chain.**
+     *  this diagnostic chain.** （歷史描述：那個 ScoreRenderer.h 呼叫點已隨
+     *  B7 09-15 裁決撤回 Path C 欄位一併移除，目前沒有呼叫點；重新接回前先解
+     *  reports/decision_packets/B7_phase2_and_open_items.zh-TW.md §1.1 --
+     *  WF1002-C1 comment sync.）
      *
      *  **Why the previous choice was wrong (audit finding, 2026-09-14)**:
      *  `F = K*delta^alpha` above has NO dissipation term, so by time-

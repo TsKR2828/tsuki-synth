@@ -1292,7 +1292,8 @@ void testEffectChainOversizedBlockMatchesExternalChunking()
 // SimpleReverb.h:155-156 multiplies wet output by an extra 0.15 that the
 // convolution path (EffectChain.h) does not. Numbers originally fed
 // reports/decision_packets/K02_reverb_wet_scale.zh-TW.md; this function
-// asserts nothing.
+// asserts nothing itself -- since WF1002-C1 (Q01=B) the value it returns is
+// CHECKed by testIrAlgoLoudnessWithinQuarterDb() (|IR - ALGO| <= 0.25 dB).
 //
 // WF0914-D9c (月月 2026-09-16 裁決 D9 選項 A;
 // reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md): EffectChain
@@ -1354,7 +1355,11 @@ DecayMeasurement measureNoiseBurstDecay (const juce::AudioBuffer<float>& buffer,
     return { referenceDb, -1.0, false };
 }
 
-void reportReverbWetGainQuantification()
+// WF1002-C1: now returns the printed "[K-02] RMS difference (IR - ALGO)" (dB)
+// so testIrAlgoLoudnessWithinQuarterDb() below can CHECK it; NaN when either
+// steady-state reference could not be measured. The measurement itself and
+// everything it prints are unchanged.
+double reportReverbWetGainQuantification()
 {
     const double sampleRate = 48000.0;
     const int burstSamples = (int) std::lround (sampleRate * 2.0);   // 2 s noise
@@ -1417,6 +1422,10 @@ void reportReverbWetGainQuantification()
                 "(20*log10(1/0.15)) = %.3f dB\n", theoreticalDb);
 
     irFile.deleteFile();
+
+    const bool referencesValid = algoDecay.referenceDb > -299.0
+                              && irDecay.referenceDb > -299.0;
+    return referencesValid ? rmsDiffDb : std::numeric_limits<double>::quiet_NaN();
 }
 
 // WF0914-D9b: external-IR variant of K-02
@@ -1540,38 +1549,53 @@ bool reportReverbWetGainQuantificationExternalIr (const juce::String& irPathArg)
 // prints, HostProbe has no IR-loudness scenario, and the CLI / 8-score
 // bit-identity renders never go through EffectChain.
 //
-// Deliberately NOT asserted here: |IR - ALGO| <= 0.25 dB on the K-02
-// measurement. That 0.25 dB figure comes from the D9c workcard, not from
-// 月月's decision, so making it a pass/fail limit would be a new tolerance
-// (R2); it is left for a decision packet. K-02 / K-02-EXT stay
-// informational, unchanged.
+// The |IR - ALGO| <= 0.25 dB loudness CHECK that was deliberately left out
+// here (0.25 dB then had no decision behind it, R2) is now
+// testIrAlgoLoudnessWithinQuarterDb() below -- 月月 approved the 0.25 dB
+// limit on 2026-10-02 (WF1002 decision table Q01=B).
 //
-// Access: kIrWetMakeupGain is a PRIVATE static constexpr member and this
-// card may not touch src/. C++'s explicit-instantiation access rule
-// ([temp.spec.general]/6 in the current working draft,
-// https://eel.is/c++draft/temp.spec.general: "The usual access checking
-// rules do not apply to names in a declaration of an explicit
-// instantiation ...") lets the explicit instantiation below name
-// &EffectChain::kIrWetMakeupGain; the friend function it defines hands that
-// address to the test. Only the constant is read; no product code runs.
-const float* effectChainIrWetMakeupGainAddress();
-
-template <const float* Member>
-struct EffectChainIrWetMakeupGainAccess
-{
-    friend const float* effectChainIrWetMakeupGainAddress() { return Member; }
-};
-
-template struct EffectChainIrWetMakeupGainAccess<&EffectChain::kIrWetMakeupGain>;
-
+// Access (WF1002-C1, 月月 2026-10-02 Q01b=B): read through
+// EffectChain::irWetMakeupGain(), the public read-only constexpr accessor
+// added to src/effects/EffectChain.h for exactly this guard. The previous
+// explicit-instantiation access-rule workaround (needed while the WF0925-K2
+// card could not touch src/) is removed. Only the constant is read; no
+// product code runs.
 void testIrWetMakeupGainPinnedToDecision()
 {
-    const float gain = *effectChainIrWetMakeupGainAddress();
+    static_assert (EffectChain::irWetMakeupGain() > 0.0f,
+                   "EffectChain::irWetMakeupGain() must be usable in a constant expression");
+    const float gain = EffectChain::irWetMakeupGain();
     std::printf ("[D9c-guard] EffectChain::kIrWetMakeupGain = %.9g\n", (double) gain);
     CHECK (gain == 26.9f,
            "D9c-guard: EffectChain::kIrWetMakeupGain == 26.9f (decision 2026-09-16, "
            "D9 option A, DECIDED CONVENTION; "
            "reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md)");
+}
+
+// WF1002-C1 (月月 2026-10-02 裁決 Q01=B, docs/workcards/WF1002_README.md §1):
+// hard CHECK on the K-02 synthetic-IR measurement: |IR - ALGO| <= 0.25 dB.
+// Source of the 0.25 dB limit: docs/workcards/WF0914_D9c_ir_makeup_gain.md
+// §2.2 ("0 ± 0.25 dB"), which in turn cites the 0.24 dB sample spread D9b
+// measured across the 4 IR samples
+// (reports/gate_outputs/wf0914_D9b_ir_injection.txt §3/§4); approved as a
+// pass/fail limit by 月月 on 2026-10-02 (registration in ROADMAP_PHYSICS.md
+// §6 is the D lane's job). Unlike the D9c-guard above, this catches a JUCE
+// upgrade that changes juce::dsp::Convolution's normalisation (the ~18.06 dB
+// of the 26.9x that comes from its 0.125 factor) while 26.9f itself stays
+// untouched. Only the synthetic IR is checked: the three real EchoThief IRs
+// live in gitignored external_data/ and are not available on CI (K-02-EXT
+// stays informational, unchanged). A NaN (unmeasurable reference) fails.
+void testIrAlgoLoudnessWithinQuarterDb()
+{
+    std::printf ("\nWF0907-E7 K-02 quantification (now also the WF1002 Q01 CHECK below):\n");
+    const double diffDb = reportReverbWetGainQuantification();
+    constexpr double kIrAlgoLimitDb = 0.25;   // 月月 2026-10-02 approved (Q01=B)
+    std::printf ("[Q01] |IR - ALGO| = %.3f dB, limit %.2f dB, margin %.3f dB\n",
+                 std::abs (diffDb), kIrAlgoLimitDb, kIrAlgoLimitDb - std::abs (diffDb));
+    CHECK (std::isfinite (diffDb) && std::abs (diffDb) <= kIrAlgoLimitDb,
+           "Q01: K-02 synthetic IR |IR - ALGO| <= 0.25 dB (月月 2026-10-02 approved; "
+           "limit from docs/workcards/WF0914_D9c_ir_makeup_gain.md §2.2, "
+           "D9b 4-sample spread 0.24 dB in reports/gate_outputs/wf0914_D9b_ir_injection.txt)");
 }
 }
 
@@ -1598,14 +1622,12 @@ int main()
     testEffectChainOversizedBlockMatchesExternalChunking();
     testIRLibrarySha256AndCorruptEntryRepair();
     testIrWetMakeupGainPinnedToDecision();
+    testIrAlgoLoudnessWithinQuarterDb();
 
     std::printf ("%s (%d failure%s)\n",
                  failures == 0 ? "PASS" : "FAIL",
                  failures,
                  failures == 1 ? "" : "s");
-
-    std::printf ("\nWF0907-E7 K-02 quantification (informational, no PASS/FAIL):\n");
-    reportReverbWetGainQuantification();
 
     // WF0914-D9b: external-IR K-02 variant. Only runs when this env var is
     // explicitly set; when unset (ctest's default invocation, GATE 2/3),

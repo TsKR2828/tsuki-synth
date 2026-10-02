@@ -5,6 +5,7 @@
 #include "effects/EffectChain.h"
 #include "dsp/AudioFIFO.h"
 #include "dsp/MidiNoteTracker.h"
+#include "dsp/OutputPeakMeter.h"
 #include "PresetManager.h"
 #include "IRLibrary.h"
 
@@ -49,11 +50,25 @@ public:
         return layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
     }
 
+    // WF1002-C1 (月月 2026-10-02 Q06=A): host programs = factory presets only
+    // (getNumPrograms() == factory count, currently 27, and does not change
+    // when user presets are added/removed). See PluginProcessor.cpp.
     int getNumPrograms() override;
     int getCurrentProgram() override;
     void setCurrentProgram (int index) override;
     const juce::String getProgramName (int index) override;
     void changeProgramName (int, const juce::String&) override {}
+
+    /** WF1002-C1 (Q06=A): the plug-in's OWN preset menu (PluginEditor's
+        combo) selects any preset -- factory or user -- by PresetManager
+        index through here, since setCurrentProgram() now only accepts the
+        factory range. Message thread. */
+    void selectPresetFromEditor (int presetIndex);
+
+    /** WF1002-C1 (Q05=C): peak |sample| of the final plug-in output (after
+        the Output macro) since the previous call, then reset -- polled by the
+        editor's clip indicator. Read-only metering; never alters audio. */
+    float takeOutputPeak() noexcept { return outputPeakMeter.takePeak(); }
 
     bool startRecording();
     void stopRecording();
@@ -153,7 +168,11 @@ private:
     juce::SmoothedValue<float> smoothedOutput { 1.0f };
     int lastEngine = -1;
     MidiNoteTracker tunerNoteTracker;
-    std::atomic<int> restoredProgramToIgnore { -1 };
+    std::atomic<int> restoredProgramToIgnore { -1 };   // PRESET index restored by setStateInformation()
+    /** Host program number for a PresetManager index: the index itself for a
+        factory preset, 0 for a user preset / Init (no host program). */
+    int programIndexForPreset (int presetIndex) const;
+    OutputPeakMeter outputPeakMeter;   // WF1002-C1 (Q05=C) clip indicator source
     double currentSampleRate = 44100.0;
 
     juce::TimeSliceThread recordingThread { "TsukiSynth Recorder" };
@@ -210,8 +229,13 @@ private:
         reverbIRMissing/expectedIRRef: the two callers populate those
         differently (a real IRRef with a sha256 vs. a migration placeholder
         that has none), and centralising just the mode-force + warning text
-        here is what the card means by "遷移邏輯集中一處". */
-    void forceAlgorithmicMissingIR (const juce::String& originalName);
+        here is what the card means by "遷移邏輯集中一處".
+        WF1002-C1 (Q10=B): `loadFailureReason` non-empty = the file exists
+        but could not be loaded (D12 migration's load-failure branch); the
+        warning then says "could not be loaded (reason: ...)" instead of
+        "could not be found". Q38=A: wording follows UI spec v1.2 §5-3. */
+    void forceAlgorithmicMissingIR (const juce::String& originalName,
+                                    const juce::String& loadFailureReason = {});
     /** WF0914-D12: migrates a pre-F-03 DAW project state's bare
         "reverb_ir_path" property (the only IR identity that existed before
         WF0908-P3 introduced the "reverb_ir" {kind,sha256,original_name}
@@ -243,7 +267,13 @@ private:
           not a claim that mode-switching should also be replayed.
         - Path does not resolve: F-03's normal missing-IR path (§2.3 row 3)
           via forceAlgorithmicMissingIR() -- workcard §1 item 2, never a
-          silent fallback to algorithmic with no UI indication. */
+          silent fallback to algorithmic with no UI indication.
+        - WF1002-C1 (月月 2026-10-02 Q10=B): path resolves but the load FAILS
+          (unreadable / empty / > 30 s / library import error): same
+          missing-IR three-state path as above (reverbIRMissing, original
+          file name kept, mode forced to Algorithmic, one-shot warning) with
+          the failure reason appended -- previously this case silently
+          dropped the path. */
     void migrateLegacyReverbIRPath (const juce::String& legacyPath);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TsukiSynthProcessor)

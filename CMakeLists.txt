@@ -68,6 +68,19 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
+# WF1002-C1 (月月 2026-10-02 裁決 Q07=A, 盤點 E4): link the MSVC C/C++ runtime
+# STATICALLY into every target (VST3, Standalone, CLI, tests) so buyers do not
+# need the VC++ Redistributable (no MSVCP140*/VCRUNTIME140* imports).
+# Debug configs use the static debug runtime. Set BEFORE add_subdirectory
+# (libs/JUCE) so the JUCE module targets get the same runtime. Needs policy
+# CMP0091 NEW (CMake >= 3.15; already NEW under cmake_minimum_required 3.22
+# above -- set explicitly so the dependency is visible). Ignored by non-MSVC
+# toolchains.
+if(POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif()
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 add_subdirectory(libs/JUCE)
 
 # --- AAX / AU support ---

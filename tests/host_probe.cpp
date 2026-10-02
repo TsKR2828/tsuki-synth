@@ -76,10 +76,16 @@
 //                    header-only PresetManager (src/PresetManager.h) to it,
 //                    so saveUserPreset() runs for real without linking
 //                    PluginProcessor.cpp / the GUI module chain. LOAD side:
-//                    setCurrentProgram() on a real VST3 instance, same
-//                    already-verified real code path every other H-check in
-//                    this file uses (TsukiSynthProcessor::setCurrentProgram()
-//                    routes it to presetManager.loadPreset()).
+//                    until WF1002, setCurrentProgram() on a real VST3
+//                    instance. WF1002-C1 (月月 2026-10-02 Q06=A): host
+//                    programs are now factory presets only, so the LOAD side
+//                    hands the preset FILE's bytes to a real VST3 instance as
+//                    a DAW project state naming its presetId
+//                    (buildStateBlobFromPresetFile()), and the plug-in's own
+//                    preset-menu path (PresetManager scan + loadPreset()) is
+//                    exercised on a fresh ShadowProcessor. Q06 checks: host
+//                    program count == 27 before and after a user preset is
+//                    added; the user preset is not a host program.
 //                    WF0908-P3 adds the managed IR library (IRLibrary.h,
 //                    also header-only/GUI-free) and its three-state load
 //                    contract (F03_IR_PRESET_RECALL.zh-TW.md §2.3/§7.2): the
@@ -193,10 +199,14 @@
 #include "ParameterLayout.h"
 #include "PresetManager.h"
 #include "IRLibrary.h"
+#include "Presets.h"
+#include "dsp/OutputPeakMeter.h"
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 namespace
 {
@@ -823,7 +833,8 @@ juce::MemoryBlock buildLegacyMigrationStateBlob (juce::AudioPluginInstance& sour
                                                  const juce::String& legacyPath,
                                                  bool dropIRChild,
                                                  const IRLibrary::IRRef* injectIRRef,
-                                                 int stateVersionToWrite = 0)
+                                                 int stateVersionToWrite = 0,
+                                                 bool saveReverbModeAsIR = false)
 {
     juce::MemoryBlock outerRaw;
     sourceInstance.getStateInformation (outerRaw);
@@ -860,6 +871,15 @@ juce::MemoryBlock buildLegacyMigrationStateBlob (juce::AudioPluginInstance& sour
     else
         innerXml->removeAttribute ("state_version");
 
+    // WF1002-C1 (Q10): `saveReverbModeAsIR` writes fx_reverb_mode = 1
+    // (Impulse Response) into the APVTS <PARAM> child, so a test can observe
+    // that a load path FORCES it back to Algorithmic (with the default 0 the
+    // "forced to Algorithmic" assertion could not tell forced from untouched).
+    if (saveReverbModeAsIR)
+        for (auto* param : innerXml->getChildWithTagNameIterator ("PARAM"))
+            if (param->getStringAttribute ("id") == "fx_reverb_mode")
+                param->setAttribute ("value", 1.0);
+
     juce::MemoryBlock newInnerRaw;
     juce::AudioProcessor::copyXmlToBinary (*innerXml, newInnerRaw);
 
@@ -870,6 +890,265 @@ juce::MemoryBlock buildLegacyMigrationStateBlob (juce::AudioPluginInstance& sour
     juce::MemoryBlock newOuterRaw;
     juce::AudioProcessor::copyXmlToBinary (outer, newOuterRaw);
     return newOuterRaw;
+}
+
+// WF1002-C1 (月月 2026-10-02 Q06=A): host programs are factory presets ONLY
+// now, so a VST3 host -- and this probe, which only holds the opaque VST3
+// ABI -- can no longer reach a USER preset through setCurrentProgram(). The
+// remaining host-reachable route that carries a user preset into a real
+// VST3 instance is a DAW project state naming it: this wraps the preset
+// FILE's own bytes (its "PARAMETERS" APVTS block + its extra "reverb_ir"
+// block, exactly as PresetManager::saveUserPreset() wrote them) into a
+// TsukiSynthProcessor state carrying the file's presetId, then into the same
+// <VST3PluginState><IComponent>BASE64 shell decodeVst3ProcessorState()
+// documents. presetIndex is deliberately a stale -1: setStateInformation()
+// must resolve the preset by presetId through the plug-in's OWN
+// PresetManager scan of the preset directory (findPresetById()), so the
+// re-emitted presetId proves the instance found the file itself.
+// No "state_version" attribute (an unversioned state takes the unchanged
+// load path -- PluginProcessor.cpp setStateInformation()).
+juce::MemoryBlock buildStateBlobFromPresetFile (const juce::File& presetFile,
+                                                juce::String& presetIdOut)
+{
+    auto presetXml = juce::XmlDocument::parse (presetFile);
+    if (presetXml == nullptr) return {};
+    auto* paramsXml = presetXml->getChildByName ("PARAMETERS");
+    if (paramsXml == nullptr) return {};
+
+    juce::XmlElement inner (*paramsXml);
+    presetIdOut = presetXml->getStringAttribute ("id");
+    inner.setAttribute ("presetIndex", -1);
+    inner.setAttribute ("presetId", presetIdOut);
+    inner.setAttribute ("presetDirty", 0);
+    for (auto* child : presetXml->getChildIterator())
+        if (child != paramsXml)
+            inner.addChildElement (new juce::XmlElement (*child));
+
+    juce::MemoryBlock innerRaw;
+    juce::AudioProcessor::copyXmlToBinary (inner, innerRaw);
+    juce::XmlElement outer ("VST3PluginState");
+    outer.createNewChildElement ("IComponent")
+         ->addTextElement (innerRaw.toBase64Encoding());
+    juce::MemoryBlock outerRaw;
+    juce::AudioProcessor::copyXmlToBinary (outer, outerRaw);
+    return outerRaw;
+}
+
+// ── Q09 (WF1002-C1, 月月 2026-10-02 Q09=D 的量測半) ─────────────────────────
+// INFORMATIONAL ONLY: prints numbers, asserts nothing (no new threshold, R2).
+//
+// What it measures: how many notes JUCE's 16-voice pool steals when the
+// plug-in streams a real corpus score's MIDI through processBlock() in
+// realtime mode (setNonRealtime(false)), compared against the ANALYTIC
+// estimates in reports/voice_pool_occupancy_2026-09-25.zh-TW.md §4.
+//
+// Why a "twin": a steal happens inside juce::Synthesiser::findFreeVoice(),
+// behind the opaque VST3 ABI -- no host can observe it. So the SAME MIDI
+// stream (same blocks, same sample offsets) is also played into an
+// in-process juce::Synthesiser built exactly like TsukiSynthProcessor's
+// constructor builds it (same voice classes from the same engine headers,
+// same 16 voices, same APVTS layout via ShadowProcessor, same per-voice
+// noise identities), instrumented by overriding the two virtual hooks JUCE
+// provides (handleMidiEvent / findFreeVoice). To tie the twin to the real
+// binary, the VST3 instance is configured with an effects chain that is an
+// exact identity (reverb/delay mix 0, compressor ratio 1 = its own bypass,
+// distortion drive 0, EQ 0 dB, Output 1.0) and the twin's dry output is
+// compared sample-by-sample with the VST3's output: max |difference| is
+// printed (0 means the twin reproduced the binary's voice allocation
+// exactly over the whole piece; non-zero is reported as-is, not judged).
+struct StealEvent
+{
+    double timeS;
+    int stolenNote;
+    int newNote;
+    bool stolenKeyHeld;
+};
+
+class StealCountingSynth : public juce::Synthesiser
+{
+public:
+    double probeSampleRate = kSampleRate;
+    juce::int64 blockStartSample = 0;
+    mutable std::vector<StealEvent> steals;
+    int heldNoteDampedBySameNoteOn = 0;   // JUCE stops a still-held same-pitch voice before starting the new one
+    int extraVoicesReleasedByNoteOff = 0; // a note-off releases EVERY held voice of that pitch (beyond the first)
+    int maxActiveVoices = 0;
+
+    void noteActiveVoiceCount()
+    {
+        int active = 0;
+        for (auto* v : voices)
+            if (v->isVoiceActive())
+                ++active;
+        maxActiveVoices = juce::jmax (maxActiveVoices, active);
+    }
+
+protected:
+    void handleMidiEvent (const juce::MidiMessage& m) override
+    {
+        currentTimeS = (double) (blockStartSample + (juce::int64) m.getTimeStamp()) / probeSampleRate;
+        if (m.isNoteOn())
+        {
+            for (auto* v : voices)
+                if (v->getCurrentlyPlayingNote() == m.getNoteNumber()
+                    && v->isPlayingChannel (m.getChannel()) && v->isKeyDown())
+                    ++heldNoteDampedBySameNoteOn;
+        }
+        else if (m.isNoteOff())
+        {
+            int held = 0;
+            for (auto* v : voices)
+                if (v->getCurrentlyPlayingNote() == m.getNoteNumber()
+                    && v->isPlayingChannel (m.getChannel()) && v->isKeyDown())
+                    ++held;
+            if (held > 1)
+                extraVoicesReleasedByNoteOff += held - 1;
+        }
+        juce::Synthesiser::handleMidiEvent (m);
+    }
+
+    juce::SynthesiserVoice* findFreeVoice (juce::SynthesiserSound* sound, int midiChannel,
+                                           int midiNoteNumber, bool stealIfNoneAvailable) const override
+    {
+        auto* v = juce::Synthesiser::findFreeVoice (sound, midiChannel, midiNoteNumber,
+                                                    stealIfNoneAvailable);
+        if (v != nullptr && v->isVoiceActive())
+            steals.push_back ({ currentTimeS, v->getCurrentlyPlayingNote(),
+                                midiNoteNumber, v->isKeyDown() });
+        return v;
+    }
+
+private:
+    double currentTimeS = 0.0;
+};
+
+// Mirrors TsukiSynthProcessor's constructor wiring (src/PluginProcessor.cpp
+// "Cimbalom engine" / "Chromatic engine" / "Macro parameters" blocks) for
+// ONE synth, against a ShadowProcessor APVTS built from the same
+// createTsukiParameterLayout(). `numVoices` = 16 reproduces the product;
+// a larger pool is used only to estimate the unconstrained demand.
+void wireTwinSynth (StealCountingSynth& synth, juce::AudioProcessorValueTreeState& vts,
+                    MaterialDB& db, bool chromatic, int numVoices)
+{
+    auto* pMM = vts.getRawParameterValue ("macro_material");
+    auto* pMT = vts.getRawParameterValue ("macro_tension");
+    auto* pMD = vts.getRawParameterValue ("macro_damping");
+    auto* pMS = vts.getRawParameterValue ("macro_strike");
+    auto* pMB = vts.getRawParameterValue ("macro_brightness");
+    auto* pMY = vts.getRawParameterValue ("macro_body");
+    auto* pMN = vts.getRawParameterValue ("macro_noise");
+    auto wireMacros = [=] (auto* voice)
+    {
+        voice->pMacroMaterial   = pMM;
+        voice->pMacroTension    = pMT;
+        voice->pMacroDamping    = pMD;
+        voice->pMacroStrike     = pMS;
+        voice->pMacroBrightness = pMB;
+        voice->pMacroBody       = pMY;
+        voice->pMacroNoise      = pMN;
+    };
+
+    if (! chromatic)
+    {
+        synth.addSound (new CimbalomSound());
+        for (int i = 0; i < numVoices; ++i)
+        {
+            auto* voice = new CimbalomVoice();
+            voice->setMaterialDB (&db);
+            voice->setNoiseIdentity ((uint64_t) i);
+            voice->pMaterial       = vts.getRawParameterValue ("cim_material");
+            voice->pStrikePos      = vts.getRawParameterValue ("cim_strike_pos");
+            voice->pDiameter       = vts.getRawParameterValue ("cim_diameter");
+            voice->pHammerHardness = vts.getRawParameterValue ("cim_hammer");
+            voice->pNumStrings     = vts.getRawParameterValue ("cim_num_strings");
+            voice->pDetuning       = vts.getRawParameterValue ("cim_detuning");
+            wireMacros (voice);
+            synth.addVoice (voice);
+        }
+    }
+    else
+    {
+        synth.addSound (new ChromaticSound());
+        for (int i = 0; i < numVoices; ++i)
+        {
+            auto* voice = new ChromaticVoice();
+            voice->setMaterialDB (&db);
+            voice->setNoiseIdentity ((uint64_t) i);
+            voice->pSubEngine  = vts.getRawParameterValue ("chr_sub_engine");
+            voice->pMaterial   = vts.getRawParameterValue ("chr_material");
+            voice->pStrikePos  = vts.getRawParameterValue ("chr_strike_pos");
+            voice->pThickness  = vts.getRawParameterValue ("chr_thickness");
+            voice->pSize       = vts.getRawParameterValue ("chr_size");
+            voice->pExciter    = vts.getRawParameterValue ("chr_exciter");
+            voice->pPitchGlide = vts.getRawParameterValue ("chr_pitch_glide");
+            for (int h = 0; h < 8; ++h)
+            {
+                voice->pRatio[h] = vts.getRawParameterValue ("chr_ratio_" + juce::String (h));
+                voice->pAmp[h]   = vts.getRawParameterValue ("chr_amp_"   + juce::String (h));
+            }
+            wireMacros (voice);
+            synth.addVoice (voice);
+        }
+    }
+    synth.setCurrentPlaybackSampleRate (kSampleRate);
+}
+
+// Scientific pitch note name ("E5", "C#4", "Bb3"; C4 = MIDI 60) or a plain
+// integer -> MIDI note; -1 if unparseable.
+int scoreNoteToMidi (const juce::var& v)
+{
+    if (v.isInt() || v.isInt64() || v.isDouble())
+        return (int) v;
+    const juce::String s = v.toString().trim();
+    if (s.isEmpty()) return -1;
+    static const int base[] = { 9, 11, 0, 2, 4, 5, 7 };   // A B C D E F G
+    const juce::juce_wchar letter = juce::CharacterFunctions::toUpperCase (s[0]);
+    if (letter < 'A' || letter > 'G') return -1;
+    int pc = base[letter - 'A'];
+    int pos = 1;
+    while (pos < s.length() && (s[pos] == '#' || s[pos] == 'b'))
+        pc += (s[pos++] == '#') ? 1 : -1;
+    const juce::String octStr = s.substring (pos);
+    if (! octStr.containsOnly ("-0123456789") || octStr.isEmpty()) return -1;
+    return (octStr.getIntValue() + 1) * 12 + pc;
+}
+
+struct ScoreMidiEvent { juce::int64 sample; bool isOn; int note; float velocity; };
+
+// Scenario A of the occupancy report (§2 M1): note-on = round(time*sr),
+// note-off = round((time + duration)*sr) -- the same convention renderNotes()
+// in this file uses; at an equal sample, note-offs before note-ons (M2).
+std::vector<ScoreMidiEvent> loadScoreMidi (const juce::File& scoreFile, juce::String& engineOut,
+                                           int& numEventsOut, int& unparsedOut)
+{
+    std::vector<ScoreMidiEvent> out;
+    numEventsOut = 0; unparsedOut = 0;
+    const auto parsed = juce::JSON::parse (scoreFile.loadFileAsString());
+    const auto* events = parsed.getProperty ("events", juce::var()).getArray();
+    if (events == nullptr) return out;
+    for (const auto& e : *events)
+    {
+        ++numEventsOut;
+        if (engineOut.isEmpty())
+            engineOut = e.getProperty ("engine", juce::var()).toString();
+        const int note = scoreNoteToMidi (e.getProperty ("note", juce::var()));
+        const double t = (double) e.getProperty ("time", -1.0);
+        const double d = (double) e.getProperty ("duration", -1.0);
+        const float vel = (float) (double) e.getProperty ("velocity", 0.0);
+        if (note < 0 || note > 127 || t < 0.0 || d <= 0.0)
+        {
+            ++unparsedOut;
+            continue;
+        }
+        out.push_back ({ (juce::int64) std::llround (t * kSampleRate), true, note, vel });
+        out.push_back ({ (juce::int64) std::llround ((t + d) * kSampleRate), false, note, 0.0f });
+    }
+    std::stable_sort (out.begin(), out.end(), [] (const ScoreMidiEvent& a, const ScoreMidiEvent& b)
+    {
+        if (a.sample != b.sample) return a.sample < b.sample;
+        return (! a.isOn) && b.isOn;   // offs first at the same sample
+    });
+    return out;
 }
 } // namespace
 
@@ -1197,6 +1476,21 @@ int main (int argc, char** argv)
         std::cout << "  [INFO] IR library directory: "
                   << IRLibrary::getDirectory().getFullPathName() << '\n';
 
+        // WF1002-C1 (月月 2026-10-02 Q06=A): host programs = factory presets
+        // only. Count read from src/Presets.h (the same list
+        // PresetManager::getNumFactoryPresets() counts), currently 27.
+        int q06FactoryCount = 0;
+        getFactoryPresetList (q06FactoryCount);
+        {
+            juce::String q06Err;
+            auto q06Before = fm.createPluginInstance (desc, kSampleRate, kBlockSize, q06Err);
+            const int before = q06Before != nullptr ? q06Before->getNumPrograms() : -1;
+            CHECK (before == q06FactoryCount && q06FactoryCount == 27,
+                   "Q06: fresh VST3 instance getNumPrograms() = " << before
+                   << " (require == factory count " << q06FactoryCount << " == 27;"
+                   " host programs are factory presets only)");
+        }
+
         // allowOverwrite=true: survive a leftover file from a previous
         // interrupted probe run without a manual cleanup step.
         const bool saved = shadow.presetManager.saveUserPreset ("wf0908_h7", true);
@@ -1221,10 +1515,75 @@ int main (int argc, char** argv)
                "E14 preset format: saved \"wf0908_h7\" file reads back as format version "
                << h7FormatVersion << " (require 2 = PresetManager::kPresetFormatVersion)");
 
-        // Fresh VST3 instance whose ctor-time PresetManager::scanUserPresets()
-        // sees the file just saved above, finds "wf0908_h7" by name, and
-        // loads it via the real TsukiSynthProcessor::setCurrentProgram() ->
-        // presetManager.loadPreset() code path.
+        // WF1002-C1 (Q06=A): adding a user preset must NOT change the host
+        // program count, and the user preset must NOT appear among the host
+        // programs (it lives only in the plug-in's own preset menu).
+        {
+            juce::String q06Err;
+            auto q06After = fm.createPluginInstance (desc, kSampleRate, kBlockSize, q06Err);
+            const int after = q06After != nullptr ? q06After->getNumPrograms() : -1;
+            bool userPresetIsAProgram = false;
+            for (int i = 0; i < after; ++i)
+                if (q06After->getProgramName (i) == "wf0908_h7")
+                    userPresetIsAProgram = true;
+            CHECK (after == q06FactoryCount && ! userPresetIsAProgram,
+                   "Q06: after saving user preset \"wf0908_h7\", a fresh VST3 instance still"
+                   " reports getNumPrograms() = " << after << " (require unchanged "
+                   << q06FactoryCount << ") and no host program is named \"wf0908_h7\" ("
+                   << (userPresetIsAProgram ? "FOUND" : "none") << ")");
+            const int cur = q06After != nullptr ? q06After->getCurrentProgram() : -1;
+            CHECK (cur >= 0 && cur < q06FactoryCount,
+                   "Q06: getCurrentProgram() = " << cur << " lies inside [0, "
+                   << q06FactoryCount << ")");
+        }
+
+        // WF1002-C1 (Q06=A): the plug-in's OWN preset menu path. PluginEditor's
+        // combo lists PresetManager::getNumUserPresets()/getPresetName() and
+        // loads through TsukiSynthProcessor::selectPresetFromEditor() ->
+        // presetManager.loadPreset(index). This probe cannot open that editor
+        // across the VST3 ABI, so it exercises the SAME header-only
+        // PresetManager on a fresh ShadowProcessor: a fresh scan must list
+        // "wf0908_h7" after the factory range, and loadPreset() must restore
+        // every product parameter and hand over the reverb_ir extra block.
+        {
+            ShadowProcessor menuShadow;   // ctor-time scanUserPresets() sees the file
+            juce::ValueTree receivedExtra;
+            menuShadow.presetManager.applyExtraStateBlock =
+                [&receivedExtra] (const juce::ValueTree& extra) { receivedExtra = extra.createCopy(); };
+            int menuIndex = -1;
+            for (int i = 0; i < menuShadow.presetManager.getNumPresets(); ++i)
+                if (menuShadow.presetManager.getPresetName (i) == "wf0908_h7") { menuIndex = i; break; }
+            const bool loadedFromMenu = menuIndex >= q06FactoryCount
+                                        && menuShadow.presetManager.loadPreset (menuIndex);
+            int menuMismatches = 0;
+            auto& a = shadow.getParameters();
+            auto& b = menuShadow.getParameters();
+            for (int i = 0; i < a.size() && i < b.size(); ++i)
+                if (std::abs (a[i]->getValue() - b[i]->getValue()) > 1.0e-6f)
+                    ++menuMismatches;
+            CHECK (loadedFromMenu && menuMismatches == 0 && a.size() == b.size()
+                   && receivedExtra.hasType ("reverb_ir")
+                   && receivedExtra.getProperty ("sha256").toString() == irRef.sha256,
+                   "Q06: user preset still in the plug-in's own preset list (PresetManager index "
+                   << menuIndex << " >= factory count " << q06FactoryCount << ") and"
+                   " PresetManager::loadPreset() restores all " << a.size()
+                   << " parameters (" << menuMismatches << " mismatches, same 1e-6 bar) plus"
+                   " its reverb_ir block");
+        }
+
+        // WF1002-C1 (Q06=A): LOAD side. Before WF1002 this found "wf0908_h7"
+        // among the VST3 programs and called setCurrentProgram() on it; host
+        // programs are factory-only now, so the user preset reaches the real
+        // VST3 instance the remaining host-reachable way -- a DAW project state
+        // that names it (buildStateBlobFromPresetFile(): the preset FILE's own
+        // PARAMETERS + reverb_ir blocks, its presetId, a stale presetIndex).
+        // The IR three-state logic exercised below is the same
+        // TsukiSynthProcessor::restoreReverbIR() either way (PresetManager's
+        // applyExtraStateBlock and setStateInformation() both call it).
+        // Additionally checked per load: the re-captured state names the user
+        // preset's own presetId -- i.e. the plug-in's own scan resolved it by
+        // id, and no host program-echo after the restore loaded a factory
+        // preset over it (restoredProgramToIgnore, PluginProcessor.cpp).
         auto loadIntoFreshInstance = [&] () -> std::unique_ptr<juce::AudioPluginInstance>
         {
             juce::String createErr;
@@ -1232,15 +1591,25 @@ int main (int argc, char** argv)
             CHECK (instL != nullptr, "H7: fresh real VST3 instance created for LOAD side");
             if (instL == nullptr)
                 return nullptr;
-            int foundIndex = -1;
-            const int numPrograms = instL->getNumPrograms();
-            for (int i = 0; i < numPrograms; ++i)
-                if (instL->getProgramName (i) == "wf0908_h7") { foundIndex = i; break; }
-            CHECK (foundIndex >= 0,
-                   "H7: \"wf0908_h7\" user preset visible to a fresh real VST3"
-                   " instance's getProgramName() (scanned " << numPrograms << " programs)");
-            if (foundIndex >= 0)
-                instL->setCurrentProgram (foundIndex);
+            juce::String presetId;
+            const auto blob = buildStateBlobFromPresetFile (presetFile, presetId);
+            CHECK (blob.getSize() > 0 && presetId.isNotEmpty(),
+                   "H7: DAW-state blob built from the saved preset file (presetId "
+                   << presetId << ")");
+            if (blob.getSize() > 0)
+                instL->setStateInformation (blob.getData(), (int) blob.getSize());
+
+            juce::MemoryBlock afterRaw;
+            instL->getStateInformation (afterRaw);
+            const auto after = decodeVst3ProcessorState (afterRaw);
+            const juce::String idAttr = "presetId=\"" + presetId + "\"";
+            const int prog = instL->getCurrentProgram();
+            CHECK (presetId.isNotEmpty() && memoryBlockContainsAscii (after, idAttr.toRawUTF8())
+                   && prog >= 0 && prog < q06FactoryCount,
+                   "H7/Q06: after restore the instance's state still names user preset"
+                   " \"wf0908_h7\" (" << idAttr << ": resolved by id through the plug-in's"
+                   " own preset scan, not overwritten by a factory program) and"
+                   " getCurrentProgram() = " << prog << " stays inside the factory range");
             return instL;
         };
 
@@ -1292,7 +1661,8 @@ int main (int argc, char** argv)
             }
             CHECK (nameMismatches == 0 && mismatches == 0
                    && loadedParams.size() >= shadowParams.size(),
-                   "H7: setCurrentProgram(\"wf0908_h7\") on a real VST3"
+                   "H7: restoring user preset \"wf0908_h7\" (its file's bytes, via"
+                   " setStateInformation -- WF1002 Q06) on a real VST3"
                    " instance restores every one of " << n
                    << " product parameters bit-identical to the shadow"
                    " APVTS that saved it (" << mismatches << " value"
@@ -1666,6 +2036,12 @@ int main (int argc, char** argv)
                        " unlike scenarios 1/2 the dirty flag is untouched by D12 code --"
                        " confirms the setDirty() call in setStateInformation() is gated"
                        " on migratedLegacyIR actually having run, not unconditional");
+                // WF1002-C1 (月月 2026-10-02 Q10=B): the ignored legacy key is
+                // now also dropped from the live state in scenario 3.
+                CHECK (! memoryBlockContainsAscii (state3, "reverb_ir_path"),
+                       "D12 scenario 3 (Q10=B): output state no longer carries the ignored"
+                       " legacy reverb_ir_path (dropped like scenarios 1/2, without marking"
+                       " dirty)");
 
                 inst3->releaseResources();
             }
@@ -1674,6 +2050,65 @@ int main (int argc, char** argv)
             IRLibrary::sidecarForSha (irRefA.sha256).deleteFile();
             irASource.deleteFile();
             irBSource.deleteFile();
+
+            // -- scenario 4 (WF1002-C1, 月月 2026-10-02 Q10=B): 檔案存在但載入
+            // 失敗（超過 30 s）-> 缺檔三態，不再靜默丟掉路徑 -----------------
+            // The saved state carries fx_reverb_mode = Impulse Response so the
+            // forced switch to Algorithmic is observable (scenario 2's blob
+            // keeps the default Algorithmic, where forced == untouched).
+            std::cout << "\n  -- D12 scenario 4: legacy path resolves but the file is > 30 s --\n";
+            const juce::File longSource = outDir.getChildFile ("d12_legacy_ir_31s.wav");
+            const int longSamples = (int) std::lround (31.0 * kSampleRate);   // 31 s > the 30 s limit
+            const bool wroteLong = writeWav (makeImpulseFixture (longSamples, 7), longSource);
+            IRLibrary::IRRef longRef;
+            longRef.sha256 = IRLibrary::hashFile (longSource);
+            CHECK (wroteLong && longSource.existsAsFile() && longRef.sha256.isNotEmpty()
+                   && ! IRLibrary::resolve (longRef).existsAsFile(),
+                   "D12 scenario 4: 31 s legacy IR fixture written and not in the managed"
+                   " library (" << longSource.getFullPathName() << ")");
+
+            const auto blob5 = buildLegacyMigrationStateBlob (
+                *sourceInst, longSource.getFullPathName(), true, nullptr, 0, true);
+            CHECK (blob5.getSize() > 0
+                   && memoryBlockContainsAscii (decodeVst3ProcessorState (blob5),
+                                                "id=\"fx_reverb_mode\" value=\"1"),
+                   "D12 scenario 4: synthetic legacy state blob built (reverb_ir_path ->"
+                   " existing 31 s file, fx_reverb_mode saved as Impulse Response)");
+
+            juce::String err5;
+            auto inst5 = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err5);
+            CHECK (inst5 != nullptr, "D12 scenario 4: fresh real VST3 instance created");
+            if (inst5 != nullptr)
+            {
+                inst5->setStateInformation (blob5.getData(), (int) blob5.getSize());
+
+                auto* modeParam = findParam (*inst5, "Reverb Mode");
+                CHECK (modeParam != nullptr && modeParam->getValue() < 0.5f,
+                       "D12 scenario 4 (Q10=B): fx_reverb_mode forced from the saved Impulse"
+                       " Response to Algorithmic -- load failure now takes the missing-IR"
+                       " three-state path instead of silently dropping the path");
+
+                juce::MemoryBlock state5raw;
+                inst5->getStateInformation (state5raw);
+                const auto state5 = decodeVst3ProcessorState (state5raw);
+                CHECK (! memoryBlockContainsAscii (state5, "<reverb_ir ")
+                       && memoryBlockContainsAscii (state5, "ir_missing=\"1\"")
+                       && ! memoryBlockContainsAscii (state5, "reverb_ir_path")
+                       && memoryBlockContainsAscii (state5, "presetDirty=\"1\""),
+                       "D12 scenario 4 (Q10=B): migrated state carries NO reverb_ir block,"
+                       " ir_missing=1 (UI shows \"not loaded: <original file name>\"), the"
+                       " consumed legacy key dropped, and presetDirty=1 -- same signature as"
+                       " scenario 2 (the warning text/reason is not observable through the"
+                       " VST3 ABI)");
+                CHECK (! IRLibrary::resolve (longRef).existsAsFile(),
+                       "D12 scenario 4: the > 30 s file was NOT imported into the managed"
+                       " library (validateAndLoadIRFile() refuses it before import)");
+
+                inst5->releaseResources();
+            }
+            IRLibrary::fileForSha (longRef.sha256).deleteFile();   // only if a failure imported it
+            IRLibrary::sidecarForSha (longRef.sha256).deleteFile();
+            longSource.deleteFile();
 
             // -- E14 (WF0925-K1): state claiming a NEWER state_version --------
             // Contract (PluginProcessor.cpp setStateInformation()): no crash,
@@ -1916,6 +2351,38 @@ int main (int argc, char** argv)
                    presetLabel << ": C4 render, all " << totalSamples
                    << " output samples finite (non-finite: " << nonFinite << ")");
 
+            // WF1002-C1 (月月 2026-10-02 Q05=C): the processor's clip-indicator
+            // atomic lives behind the opaque VST3 ABI, so this probe cannot
+            // read the plug-in's own instance of it. Instead the SAME
+            // header (src/dsp/OutputPeakMeter.h, used verbatim by
+            // TsukiSynthProcessor::processBlock()) is fed this preset's real
+            // VST3 output block by block, exactly as processBlock() feeds it,
+            // and must agree with an independent peak scan: flag set <=>
+            // peak > 1.0 (0 dBFS). Checked on preset 15 (the 09-25 E16 run's
+            // loudest single note, +2.65 dBFS); this does NOT assert that the
+            // preset clips -- only that the indicator logic tracks the truth.
+            if (i == 15)
+            {
+                auto meterInput = render;
+                OutputPeakMeter meter;
+                for (int start = 0; start < meterInput.getNumSamples(); start += kBlockSize)
+                {
+                    const int n = juce::jmin (kBlockSize, meterInput.getNumSamples() - start);
+                    juce::AudioBuffer<float> blockView (meterInput.getArrayOfWritePointers(),
+                                                        meterInput.getNumChannels(), start, n);
+                    meter.pushBlock (blockView);
+                }
+                const float meterPeak = meter.takePeak();
+                const bool flag = OutputPeakMeter::isOverFullScale (meterPeak);
+                const bool truth = peak > 1.0;
+                CHECK (meterPeak == (float) peak && flag == truth && meter.takePeak() == 0.0f,
+                       "Q05 clip indicator: OutputPeakMeter fed " << presetLabel
+                       << "'s real VST3 output reports peak " << meterPeak << " (independent "
+                       << peak << ", " << juce::String (20.0 * std::log10 (juce::jmax (peak, 1.0e-12)), 2)
+                       << " dBFS) -> indicator " << (flag ? "LIT" : "off")
+                       << " (require lit <=> peak > 0 dBFS; take() resets to 0)");
+            }
+
             const double rms = finiteCount > 0 ? std::sqrt (sumSq / (double) finiteCount) : 0.0;
             std::cout << "    [info] " << presetLabel << ": peak "
                       << juce::String (20.0 * std::log10 (juce::jmax (peak, 1.0e-12)), 2)
@@ -1923,6 +2390,252 @@ int main (int argc, char** argv)
                       << juce::String (20.0 * std::log10 (juce::jmax (rms, 1.0e-12)), 2)
                       << " dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB"
                          " printed for digital silence)\n";
+        }
+    }
+
+    // -- Q05 clip indicator: synthetic controls (WF1002-C1) -------------------
+    // Positive/negative controls for the indicator logic itself, independent
+    // of how loud any preset happens to be: 1.0 exactly (= 0 dBFS) is NOT a
+    // clip, anything above is, a negative excursion counts by magnitude, a
+    // non-finite sample lights it, and the peak is held across blocks until
+    // take() (so a 20 Hz editor poll cannot miss a short over).
+    {
+        std::cout << "\n-- Q05 clip indicator: synthetic controls --\n";
+        auto runMeter = [] (std::initializer_list<float> blockPeaks) -> float
+        {
+            OutputPeakMeter meter;
+            for (const float v : blockPeaks)
+            {
+                juce::AudioBuffer<float> b (2, 64);
+                b.clear();
+                b.setSample (1, 17, v);   // one sample on the right channel only
+                meter.pushBlock (b);
+            }
+            return meter.takePeak();
+        };
+        const float atFullScale = runMeter ({ 1.0f });
+        const float justOver    = runMeter ({ 0.5f, 1.0001f, 0.25f });
+        const float negOver     = runMeter ({ -1.5f });
+        const float nonFinite   = runMeter ({ std::numeric_limits<float>::quiet_NaN() });
+        CHECK (! OutputPeakMeter::isOverFullScale (atFullScale)
+               && OutputPeakMeter::isOverFullScale (justOver) && justOver == 1.0001f
+               && OutputPeakMeter::isOverFullScale (negOver)
+               && OutputPeakMeter::isOverFullScale (nonFinite),
+               "Q05 clip indicator controls: peak 1.0 -> off (" << atFullScale << "); a 1.0001"
+               " sample in the middle of 3 blocks -> lit, held (" << justOver << "); -1.5 -> lit ("
+               << negOver << "); NaN -> lit (" << nonFinite << ")");
+    }
+
+    // -- Q09 voice-steal measurement (WF1002-C1, INFORMATIONAL, no PASS/FAIL) --
+    // See the StealCountingSynth comment block above. Prints only.
+    {
+        std::cout << "\n-- Q09 voice-steal measurement (informational only, no PASS/FAIL;"
+                     " 月月 2026-10-02 Q09=D) --\n";
+        const MaterialsLookup q09Materials = findMaterialsJson();
+        const juce::File repoRoot = q09Materials.file.getParentDirectory().getParentDirectory();
+        MaterialDB q09DB;
+        const bool q09DbOk = q09DB.loadFromFile (q09Materials.file);
+        std::cout << "  repo root (from materials.json lookup): " << repoRoot.getFullPathName()
+                  << (q09DbOk ? "" : "  [materials.json NOT loaded -- Q09 skipped]") << "\n";
+
+        struct Q09Case
+        {
+            const char* label;
+            const char* scorePath;
+            bool chromatic;
+            int engineIndex;
+            std::vector<std::pair<const char*, float>> params;   // plain values
+            const char* paramNote;
+            const char* reportNote;
+        };
+        const Q09Case cases[] = {
+            { "fur_elise (piano)", "scores/classical/fur_elise/fur_elise_complete.score.json",
+              false, 3,
+              { { "cim_material", 0.0f }, { "cim_diameter", 1.0f } },
+              "engine=Piano(3), cim_material=Steel, cim_diameter=1.0 mm (score params: steel,"
+              " diameter_mm 1.0); every other plug-in parameter at its default (macros 0.5)",
+              "report §4.2/§4.4 (scenario A, score T60, per engine): demand 12 voices, 0 steals;"
+              " same-note early damping 21 + released-by-another-note-off 21" },
+            { "moonlight_mvt1_tongue_drum", "scores/examples/moonlight_sonata_movement1_tongue_drum.score.json",
+              true, 1,
+              { { "chr_sub_engine", 0.0f }, { "chr_material", 0.0f }, { "chr_thickness", 2.6f },
+                { "chr_size", 100.0f }, { "chr_strike_pos", 0.44f } },
+              "engine=Chromatic(1), sub=Tongue Drum, chr_material=Steel, thickness 2.6 mm,"
+              " size 100 mm, strike 0.44 = the score's majority param set (952 of 1142 events);"
+              " the other 176 (3.2 mm/30 mm wide) + 14 (aluminum 2.0 mm) events, the score's"
+              " width_mm and its wood_mallet exciter have no per-note plug-in equivalent, so"
+              " every note uses this one set (exciter = plug-in default Medium)",
+              "report §4.3(a) (scenario A, score T60 per EVENT, per engine): demand 20 voices"
+              " (max at 254.240 s, first > 16 at 17.92 s), 64 steals (34 rule 2 + 30 rule 1),"
+              " 4 of them hit a still-held note" },
+        };
+
+        for (const auto& c : cases)
+        {
+            if (! q09DbOk) break;
+            const juce::File scoreFile = repoRoot.getChildFile (c.scorePath);
+            juce::String engineName;
+            int numEvents = 0, unparsed = 0;
+            const auto events = loadScoreMidi (scoreFile, engineName, numEvents, unparsed);
+            std::cout << "\n  [Q09] " << c.label << ": " << scoreFile.getFullPathName() << "\n"
+                      << "    score engine '" << engineName << "', " << numEvents << " events, "
+                      << unparsed << " unparsed; MIDI = note-on round(time*sr), note-off"
+                         " round((time+duration)*sr), offs before ons at equal samples"
+                         " (report scenario A / M1-M2), channel 1, block " << kBlockSize
+                      << ", " << kSampleRate << " Hz, realtime processBlock\n"
+                      << "    plug-in params: " << c.paramNote << "\n"
+                      << "    FX set to an exact identity for the twin comparison: reverb mix 0,"
+                         " delay mix 0, compressor ratio 1 (bypass), drive 0, EQ 0 dB, Output 1.0\n";
+            if (events.empty())
+            {
+                std::cout << "    [info] no events loaded -- skipped\n";
+                continue;
+            }
+
+            // Shared parameter state: one ShadowProcessor APVTS drives the
+            // twins directly and is copied index-for-index (normalised) into
+            // the VST3 instance -- both use createTsukiParameterLayout(), so
+            // index 0..N-1 is the same parameter on both sides (see H7).
+            ShadowProcessor q09Shadow;
+            setApvtsParamPlain (q09Shadow.apvts, "engine", (float) c.engineIndex);
+            for (const auto& p : c.params)
+                setApvtsParamPlain (q09Shadow.apvts, p.first, p.second);
+            setApvtsParamPlain (q09Shadow.apvts, "fx_reverb_mix", 0.0f);
+            setApvtsParamPlain (q09Shadow.apvts, "fx_delay_mix", 0.0f);
+            setApvtsParamPlain (q09Shadow.apvts, "fx_comp_ratio", 1.0f);
+            setApvtsParamPlain (q09Shadow.apvts, "fx_dist_drive", 0.0f);
+            setApvtsParamPlain (q09Shadow.apvts, "fx_eq_gain", 0.0f);
+            setApvtsParamPlain (q09Shadow.apvts, "macro_output", 1.0f);
+
+            const juce::int64 lastSample = events.back().sample;
+            const int numBlocks = (int) ((lastSample + (juce::int64) (2.0 * kSampleRate))
+                                         / kBlockSize) + 1;
+
+            auto q09Inst = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err);
+            if (q09Inst == nullptr)
+            {
+                std::cout << "    [info] VST3 instance could not be created -- skipped\n";
+                continue;
+            }
+            auto& shadowParams = q09Shadow.getParameters();
+            auto& instParams = q09Inst->getParameters();
+            for (int i = 0; i < shadowParams.size() && i < instParams.size(); ++i)
+                instParams[i]->setValue (shadowParams[i]->getValue());
+            q09Inst->setNonRealtime (false);
+            // Deliver the queued parameter changes with one silent block,
+            // then re-prepare so every smoother starts AT the new values.
+            {
+                q09Inst->prepareToPlay (kSampleRate, kBlockSize);
+                juce::AudioBuffer<float> warm (juce::jmax (2, q09Inst->getTotalNumOutputChannels()),
+                                               kBlockSize);
+                warm.clear();
+                juce::MidiBuffer none;
+                q09Inst->processBlock (warm, none);
+                q09Inst->releaseResources();
+                q09Inst->prepareToPlay (kSampleRate, kBlockSize);
+            }
+
+            StealCountingSynth twin16, twinWide;
+            wireTwinSynth (twin16, q09Shadow.apvts, q09DB, c.chromatic, 16);
+            constexpr int kWidePool = 128;   // stand-in for "unlimited" (demand estimate only)
+            wireTwinSynth (twinWide, q09Shadow.apvts, q09DB, c.chromatic, kWidePool);
+
+            const int chans = juce::jmax (2, q09Inst->getTotalNumOutputChannels());
+            juce::AudioBuffer<float> vstBlock (chans, kBlockSize), twinBlock (2, kBlockSize),
+                                     wideBlock (2, kBlockSize);
+            juce::MidiBuffer midi;
+            size_t nextEvent = 0;
+            double maxAbsDiff = 0.0, vstPeak = 0.0;
+            juce::int64 diffSamples = 0;
+            const auto t0 = juce::Time::getMillisecondCounterHiRes();
+            for (int b = 0; b < numBlocks; ++b)
+            {
+                const juce::int64 blockStart = (juce::int64) b * kBlockSize;
+                midi.clear();
+                while (nextEvent < events.size() && events[nextEvent].sample < blockStart + kBlockSize)
+                {
+                    const auto& e = events[nextEvent++];
+                    const int pos = (int) (e.sample - blockStart);
+                    midi.addEvent (e.isOn ? juce::MidiMessage::noteOn (1, e.note, e.velocity)
+                                          : juce::MidiMessage::noteOff (1, e.note), pos);
+                }
+
+                // processBlock()'s MidiBuffer is in/out: the VST3 host
+                // replaces its contents with the plug-in's MIDI output, so the
+                // twins get a copy taken BEFORE the VST3 call.
+                const juce::MidiBuffer midiForTwins (midi);
+                vstBlock.clear();
+                q09Inst->processBlock (vstBlock, midi);
+
+                {
+                    juce::ScopedNoDenormals noDenormals;   // as TsukiSynthProcessor::processBlock()
+                    twin16.blockStartSample = blockStart;
+                    twinBlock.clear();
+                    twin16.renderNextBlock (twinBlock, midiForTwins, 0, kBlockSize);
+                    twin16.noteActiveVoiceCount();
+                    twinWide.blockStartSample = blockStart;
+                    wideBlock.clear();
+                    twinWide.renderNextBlock (wideBlock, midiForTwins, 0, kBlockSize);
+                    twinWide.noteActiveVoiceCount();
+                }
+
+                for (int ch = 0; ch < 2; ++ch)
+                {
+                    const float* v = vstBlock.getReadPointer (juce::jmin (ch, chans - 1));
+                    const float* t = twinBlock.getReadPointer (ch);
+                    for (int s = 0; s < kBlockSize; ++s)
+                    {
+                        const double d = std::abs ((double) v[s] - (double) t[s]);
+                        if (d > 0.0) ++diffSamples;
+                        maxAbsDiff = juce::jmax (maxAbsDiff, d);
+                        vstPeak = juce::jmax (vstPeak, (double) std::abs (v[s]));
+                    }
+                }
+            }
+            const double elapsedS = (juce::Time::getMillisecondCounterHiRes() - t0) * 0.001;
+            q09Inst->releaseResources();
+
+            const double renderedS = (double) numBlocks * kBlockSize / kSampleRate;
+            std::cout << "    rendered " << juce::String (renderedS, 2) << " s (" << numBlocks
+                      << " blocks) through the VST3 + two twins in " << juce::String (elapsedS, 1)
+                      << " s wall clock\n";
+            std::cout << "    twin(16 voices) vs VST3 output: max |diff| = " << maxAbsDiff
+                      << " over " << (2LL * numBlocks * kBlockSize) << " samples ("
+                      << diffSamples << " samples differ; VST3 peak "
+                      << juce::String (20.0 * std::log10 (juce::jmax (vstPeak, 1.0e-12)), 2)
+                      << " dBFS) -- 0 means the twin reproduced the binary's voice"
+                         " allocation exactly; descriptive only\n";
+            std::cout << "    MEASURED (twin, 16-voice pool = product): steals = "
+                      << twin16.steals.size();
+            int stolenHeld = 0;
+            for (const auto& s : twin16.steals)
+                if (s.stolenKeyHeld) ++stolenHeld;
+            std::cout << " (" << stolenHeld << " hit a still-held note); max active voices at a"
+                         " block end = " << twin16.maxActiveVoices << "\n"
+                      << "    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch"
+                         " note-on = " << twin16.heldNoteDampedBySameNoteOn
+                      << "; extra held voices released by another note's note-off = "
+                      << twin16.extraVoicesReleasedByNoteOff << "\n"
+                      << "    MEASURED (twin, " << kWidePool << "-voice pool ~ unlimited): max"
+                         " active voices at a block end = " << twinWide.maxActiveVoices
+                      << " (block-end sampling, " << kBlockSize << "-sample granularity, can"
+                         " undercount a momentary peak); steals = " << twinWide.steals.size()
+                      << "; same-pitch early damping = " << twinWide.heldNoteDampedBySameNoteOn
+                      << "; extra released by another note-off = "
+                      << twinWide.extraVoicesReleasedByNoteOff << "\n"
+                      << "    REPORT ESTIMATE (reports/voice_pool_occupancy_2026-09-25.zh-TW.md): "
+                      << c.reportNote << "\n";
+            const size_t listMax = 80;
+            for (size_t k = 0; k < twin16.steals.size() && k < listMax; ++k)
+            {
+                const auto& s = twin16.steals[k];
+                std::cout << "      steal #" << (k + 1) << " at " << juce::String (s.timeS, 3)
+                          << " s: new note " << s.newNote << " took the voice of note "
+                          << s.stolenNote << (s.stolenKeyHeld ? " (still held)" : " (released/tailing)")
+                          << "\n";
+            }
+            if (twin16.steals.size() > listMax)
+                std::cout << "      ... " << (twin16.steals.size() - listMax) << " more\n";
         }
     }
 

@@ -419,6 +419,11 @@ void TsukiSynthProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
     }
 
+    // WF1002-C1 (月月 2026-10-02 Q05=C): record the final output peak for the
+    // editor's clip indicator. Read-only (the buffer is not modified), no
+    // allocation, no lock -- see dsp/OutputPeakMeter.h.
+    outputPeakMeter.pushBlock (buffer);
+
     // Standalone recorder captures the final audible output.
     if (recordingActive.load())
     {
@@ -696,6 +701,19 @@ void TsukiSynthProcessor::setStateInformation (const void* data, int sizeInBytes
                 tree.removeProperty ("reverb_ir_path", nullptr);
             }
         }
+        else if (irChild.isValid() && ! stateNewerThanKnown)
+        {
+            // WF1002-C1（月月 2026-10-02 裁決 Q10=B）：情境 3（新 schema 的
+            // "reverb_ir" 區塊已存在）——舊鍵照 D12 卡 §1 item 3 一律忽略、不遷移，
+            // 但以前會原封不動留在 live state 裡，之後每次存檔都帶著它。現在跟
+            // 情境 1/2 一樣把它從這個 session 的記憶體 state 拿掉（理由同上方
+            // 註解：只動記憶體、不動磁碟上的 DAW 專案檔）。這不是遷移，不呼叫
+            // setDirty()——舊鍵本來就不影響任何行為，拿掉它不改變這個 instance
+            // 的聲音或 IR 狀態。比 kStateVersion 新的 state 維持不動（決策包 Q10：
+            // 那個邊角只記錄、不處理）。在 reattachListener() 之前做，跟上面的
+            // removeProperty 同理，不會觸發 PresetManager 的 dirty 監聽。
+            tree.removeProperty ("reverb_ir_path", nullptr);
+        }
 
         presetManager.reattachListener();
         const int resolvedPreset = presetId.isNotEmpty()
@@ -881,27 +899,40 @@ void TsukiSynthProcessor::restoreReverbIR (const juce::ValueTree& irBlock)
     forceAlgorithmicMissingIR (expected.originalName);
 }
 
-void TsukiSynthProcessor::forceAlgorithmicMissingIR (const juce::String& originalName)
+void TsukiSynthProcessor::forceAlgorithmicMissingIR (const juce::String& originalName,
+                                                     const juce::String& loadFailureReason)
 {
     if (auto* p = dynamic_cast<juce::AudioParameterChoice*> (
             apvts.getParameter ("fx_reverb_mode")))
         *p = 0;
 
-    setIRWarning (
-        (UiLocale::isChinese() ? juce::String (juce::CharPointer_UTF8 (
-             "\xe6\x9c\xaa\xe8\xbc\x89\xe5\x85\xa5\xef\xbc\x9a"))          // "未載入："
-                               : juce::String ("Not loaded: "))
-        + originalName
-        + (UiLocale::isChinese()
-               ? juce::String (juce::CharPointer_UTF8 (
-                     "\xe2\x80\x94\xe2\x80\x94\xe9\x80\x99\xe5\x80\x8b preset "
-                     "\xe8\xa8\x98\xe7\x9a\x84 IR \xe5\x9c\xa8\xe9\x80\x99\xe5\x8f\xb0"
-                     "\xe9\x9b\xbb\xe8\x85\xa6\xe4\xb8\x8a\xe6\x89\xbe\xe4\xb8\x8d\xe5\x88\xb0\xe3\x80\x82"
-                     "\xe5\xb7\xb2\xe5\x88\x87\xe5\x9b\x9e algorithmic reverb\xef\xbc\x8c"
-                     "\xe9\x9f\xb3\xe9\x87\x8f\xe6\x9c\x83\xe5\x92\x8c IR \xe6\xa8\xa1\xe5\xbc\x8f\xe4\xb8\x8d\xe5\x90\x8c\xe3\x80\x82"))
-               : juce::String (" -- this preset's IR could not be found on this"
-                                " computer. Switched back to algorithmic reverb;"
-                                " the volume will differ from IR mode.")));
+    // WF1002-C1（月月 2026-10-02 裁決 Q38=A）：文案改成
+    // docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md v1.2 §5-3「缺檔警告文案」的定案
+    // 文字（舊句「音量會和 IR 模式不同」在 09-16 D9c 補償後已不準）。
+    // WF1002-C1（Q10=B）：D12 遷移時「檔案存在但載入失敗」也走這裡，
+    // loadFailureReason 非空時把「找不到」那句換成「無法載入（原因：…）」，
+    // 其餘照規格文字；原因字串來自 validateAndLoadIRFile()/IRLibrary 的
+    // 英文錯誤訊息。純畫面文字，聲音不變。
+    const bool zh = UiLocale::isChinese();
+    juce::String message = zh ? juce::String (juce::CharPointer_UTF8 ("未載入："))
+                              : juce::String ("Not loaded: ");
+    message << originalName;
+    if (loadFailureReason.isEmpty())
+        message << (zh ? juce::String (juce::CharPointer_UTF8 (
+                             "——這個 preset 記的 IR 在這台電腦上找不到。"))
+                       : juce::String (" -- this preset's IR could not be found on this computer."));
+    else
+        message << (zh ? juce::String (juce::CharPointer_UTF8 (
+                             "——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因："))
+                           + loadFailureReason
+                           + juce::String (juce::CharPointer_UTF8 ("）。"))
+                       : " -- this preset's IR file could not be loaded on this computer"
+                         " (reason: " + loadFailureReason + ").");
+    message << (zh ? juce::String (juce::CharPointer_UTF8 (
+                         "已切回演算法殘響，殘響的音色會和原本的 IR 不同。"))
+                   : juce::String (" Switched back to algorithmic reverb;"
+                                   " the reverb will sound different from the original IR."));
+    setIRWarning (message);
 }
 
 void TsukiSynthProcessor::migrateLegacyReverbIRPath (const juce::String& legacyPath)
@@ -930,12 +961,26 @@ void TsukiSynthProcessor::migrateLegacyReverbIRPath (const juce::String& legacyP
         // removed pre-F-03 migration code made the same call
         // (`/*switchModeToIR*/ false`, same source line range 743-745),
         // so this also matches historic behaviour, not just avoids
-        // regressing it. A failure here (unreadable, >30 s) is not the
-        // "missing file" case the card is about -- it degrades the same way
-        // a bad GUI-picked file would: no IR loaded, no forced mode change,
-        // no fabricated identity to warn about.
+        // regressing it.
         juce::String importError;
-        loadReverbIRFile (file, importError, false);
+        if (loadReverbIRFile (file, importError, false))
+            return;
+
+        // WF1002-C1（月月 2026-10-02 裁決 Q10=B）：檔案在、但載不進來（讀不到、
+        // 空檔、超過 30 s、匯入 IR 庫失敗）以前會靜默丟掉這條路徑——下一次存檔
+        // 這個 IR 的線索就永遠消失，反而比「檔案不存在」分支更安靜。現在改走
+        // 跟下面缺檔分支相同的三態「缺檔」路徑：reverbIRMissing、保留原檔名
+        // （UI 顯示「未載入：〈原檔名〉」）、強制切回演算法、跳一次性警告，
+        // 警告附上 importError 的失敗原因。loadReverbIRFile() 失敗時不會留下
+        // 已載入的 IR（validateAndLoadIRFile() 在載入前就擋下；匯入失敗那條
+        // 會 clearImpulseResponse()），reverbIRRef 也沒被寫入，所以紅線 1
+        // 仍成立。聲音：IR 沒載入時本來就走 ALGO，聲音不變。
+        reverbIRMissing = true;
+        expectedIRRef = {};
+        expectedIRRef.originalName = file.getFileName();
+        forceAlgorithmicMissingIR (expectedIRRef.originalName,
+                                   importError.isNotEmpty() ? importError
+                                                            : juce::String ("unknown error"));
         return;
     }
 
@@ -1042,33 +1087,81 @@ bool TsukiSynthProcessor::loadReverbProfileFile (const juce::File& file,
 }
 
 // == Programs (routed through PresetManager) ==
+// WF1002-C1（月月 2026-10-02 裁決 Q06=A，盤點 E7）：host 看得到的 program
+// 只有工廠 preset（PresetManager 的 index 0..N-1，N＝src/Presets.h 的工廠數，
+// 目前 27）。理由：JUCE VST3 wrapper 在外掛建立時就固定 program 參數的
+// stepCount（juce_audio_plugin_client_VST3.cpp 的 ProgramChangeParameter），
+// 使用者 preset 又會增減、依名稱排序——以前把它們接在後面，會造成「新存的
+// DAW 叫不到」「插隊讓舊編號整體位移、自動化載到別的 preset」「換電腦編號
+// 就不同」三種錯位。使用者 preset 仍在外掛自己的 preset 選單裡（editor 走
+// selectPresetFromEditor()，不經 program 編號），DAW 專案 state 也照舊用
+// presetId 還原。工廠 preset 的 program 編號與先前完全相同（使用者 preset
+// 本來就排在工廠之後），聲音不變。
+int TsukiSynthProcessor::programIndexForPreset (int presetIndex) const
+{
+    // 使用者 preset（index >= 工廠數）與 Init（-1）沒有對應的 host program；
+    // 回報 0，跟先前 Init 狀態回報 0 的作法一致（getCurrentProgram() 必須
+    // 落在 [0, getNumPrograms())）。
+    return presetManager.isFactory (presetIndex) ? presetIndex : 0;
+}
+
 int TsukiSynthProcessor::getNumPrograms()
 {
-    return juce::jmax (1, presetManager.getNumPresets());
+    return juce::jmax (1, presetManager.getNumFactoryPresets());
 }
 
 int TsukiSynthProcessor::getCurrentProgram()
 {
-    return juce::jmax (0, presetManager.getCurrentIndex());
+    return programIndexForPreset (presetManager.getCurrentIndex());
 }
 
 void TsukiSynthProcessor::setCurrentProgram (int index)
 {
+    // restoredProgramToIgnore holds the PRESET index the last
+    // setStateInformation() resolved (factory, user, or -1). Some hosts
+    // re-assert the program they saved right after restoring state; that
+    // echo must not reload a preset over the restored (possibly dirty)
+    // parameters. Factory restores behave exactly as before (program index
+    // == preset index). WF1002-C1: a restored USER preset is reported as
+    // program 0 (programIndexForPreset), so its echo is program 0 and is
+    // ignored the same way -- otherwise it would load factory 0 over it.
     const int restoredIndex = restoredProgramToIgnore.exchange (
         -1, std::memory_order_acq_rel);
     if (restoredIndex >= 0
-        && index == restoredIndex
+        && index == programIndexForPreset (restoredIndex)
         && presetManager.getCurrentIndex() == restoredIndex)
     {
         return;
     }
 
+    if (! presetManager.isFactory (index))
+        return;   // host programs are factory presets only (Q06=A)
+
     presetManager.loadPreset (index);
+}
+
+void TsukiSynthProcessor::selectPresetFromEditor (int presetIndex)
+{
+    // Same one-shot restore-echo guard the pre-WF1002 setCurrentProgram()
+    // applied to the editor's combo (which used to call setCurrentProgram()
+    // with any preset index, factory or user), but WITHOUT the factory-only
+    // restriction: the plug-in's own preset menu still lists user presets.
+    const int restoredIndex = restoredProgramToIgnore.exchange (
+        -1, std::memory_order_acq_rel);
+    if (restoredIndex >= 0
+        && presetIndex == restoredIndex
+        && presetManager.getCurrentIndex() == restoredIndex)
+    {
+        return;
+    }
+
+    presetManager.loadPreset (presetIndex);
 }
 
 const juce::String TsukiSynthProcessor::getProgramName (int index)
 {
-    return presetManager.getPresetName (index);
+    return presetManager.isFactory (index) ? presetManager.getPresetName (index)
+                                           : juce::String();
 }
 
 // == Editor ==

@@ -205,6 +205,18 @@ private:
     // Brightness EQ (documented creative layer)
     KnobParam   fxEqFreq, fxEqGain;
 
+    // WF1002-C1 (月月 2026-10-02 Q05=C, UI spec §4.14): clip indicator in the
+    // title bar -- lights when the final plug-in output exceeded 0 dBFS,
+    // holds kClipHoldMs after the last over-full-scale block. Display only.
+    // 1.5 s hold = UI convention inside the card's "1-2 s", not a physics or
+    // GATE constant. Colours reuse the existing Clr:: palette (no new colour).
+    static constexpr juce::uint32 kClipHoldMs = 1500;
+    juce::uint32 clipHoldUntilMs = 0;
+    bool clipHoldActive = false;
+    bool clipLit = false;
+    juce::Rectangle<int> clipBounds_;
+    void paintClipIndicator (juce::Graphics&);
+
     // Analyzer
     AnalyzerPanel analyzerPanel;
 
