@@ -1,0 +1,59 @@
+WF1002-R (research lane, read-only) -- 2026-10-02, repo HEAD b41298c.
+Aliases: <repo> = local repo root; <scratch> = this session's scratch directory (outside the repo).
+All numbers below are DESCRIPTIVE ONLY, NOT a GATE, NOT new thresholds (R2).
+
+== $ python scripts/rb_lit_compare.py (exit 0) ==
+note | model 0.8mm / 1.0mm / cand | Wogram 3xT20 (fig, median +-2 st) | Cheng partial-1 T60 f/m/p (median +-2 st of 60/|rate|) | Lehtonen07 fund. T60 (6-s fit) | Lehtonen09 initial T60
+A0  |  33.01 /  24.89 /  63.35 |  13.83 |  -  /  -  /  -  | -
+C2  |  15.31 /  11.03 /  17.54 |  10.74 | 27.27 / 27.27 / 40.91 | 9.3
+C3  |   8.03 /   5.66 /   6.71 |   9.78 | 6.07 / 5.46 / 5.46 | 10.0
+C4  |   4.14 /   2.87 /   2.67 |   6.24 | 2.87 / 3.41 / 3.64 | 10.3
+A4  |   2.50 /   1.72 /   1.65 |   5.31 | 2.48 / 2.87 / 2.48 | -
+C5  |   2.11 /   1.45 /   1.49 |   6.03 | 7.80 / 13.64 / 4.96 | -
+C6  |   1.07 /   0.73 /   0.81 |   2.58 | 4.96 / 7.80 / 9.10 | 9.0
+C7  |   0.53 /   0.36 /   0.41 |   1.83 | 2.28 / 3.03 / 2.73 | -
+C8  |   0.24 /   0.16 /   0.22 |   1.26 | 2.18 / 0.94 / 1.52 | -
+
+ratio model/Wogram(3xT20 fig median): A0 cur 2.39 cand 4.58, C2 cur 1.43 cand 1.63, C3 cur 0.82 cand 0.69, C4 cur 0.66 cand 0.43, A4 cur 0.47 cand 0.31, C5 cur 0.35 cand 0.25, C6 cur 0.41 cand 0.31, C7 cur 0.29 cand 0.22, C8 cur 0.19 cand 0.17
+ratio model/Cheng-mezzo median:      C2 cur 0.56 cand 0.64, C3 cur 1.47 cand 1.23, C4 cur 1.21 cand 0.78, A4 cur 0.87 cand 0.57, C5 cur 0.15 cand 0.11, C6 cur 0.14 cand 0.10, C7 cur 0.17 cand 0.14, C8 cur 0.25 cand 0.23
+
+A0/C8 T60 ratio: Wogram fig 11.0x ; model current 138x ; candidate 288x ; current 1.0mm 156x
+Wogram text values x3 (T60 if single slope): C3 11.4, D3 10.2, C4 5.1, D4 9.9, F#4 10.5, G4 2.1, A4 6.9
+model current 0.8mm at C3/C4/A4: 8.03/4.14/2.50 ; candidate 6.71/2.67/1.65 ; ratios cand/cur C3 0.84 C4 0.64 A4 0.66
+
+== script source ==
+"""WF1002-R R-b(1): compare model fundamental T60 with literature numbers (descriptive only, NOT GATE).
+Literature inputs = files fetched into lit/ (see wf1002_R_lit_fetch_log). Figure readings are approximate."""
+import json, statistics as st, math
+model = {  # reports/d11_f5_root_cause_2026-09-25.zh-TW.md §7 (--dump-modes, piano/steel, fundamental T60 s)
+ 21:(33.01,24.89,63.35), 36:(15.31,11.03,17.54), 48:(8.03,5.66,6.71), 60:(4.14,2.87,2.67), 69:(2.50,1.72,1.65),
+ 72:(2.11,1.45,1.49), 84:(1.07,0.73,0.81), 96:(0.53,0.36,0.41), 108:(0.24,0.16,0.22)}
+name = {21:"A0",36:"C2",48:"C3",60:"C4",69:"A4",72:"C5",84:"C6",96:"C7",108:"C8"}
+wog = {int(k):v for k,v in json.load(open("lit/wogram_fig11_T20_digitized_approx.json")).items()}
+ch = json.load(open("lit/cheng2015_fig9_partial1_vector_extract.json"))
+def t60_from_rate(r): return 60.0/abs(r) if r < 0 else float("inf")
+def med_win(d, n, w=2):
+    vals=[d[k] for k in range(n-w,n+w+1) if k in d]; return st.median(vals) if vals else None, len(vals)
+print("note | model 0.8mm / 1.0mm / cand | Wogram 3xT20 (fig, median +-2 st) | Cheng partial-1 T60 f/m/p (median +-2 st of 60/|rate|) | Lehtonen07 fund. T60 (6-s fit) | Lehtonen09 initial T60")
+leh07={36:9.3,48:10.0,60:10.3,74:14.2,84:9.0}
+leh09={43:(7.3,8.4),55:(7.7,9.0)}
+rows=[]
+for n in sorted(model):
+    w,_=med_win(wog,n); wv=3*w if w else None
+    cc=[]
+    for dyn in ("f","m","p"):
+        d={int(k):t60_from_rate(v) for k,v in ch[dyn].items()}
+        m,cnt=med_win(d,n); cc.append(m)
+    l7=leh07.get(n)
+    print(f"{name[n]:3s} | {model[n][0]:6.2f} / {model[n][1]:6.2f} / {model[n][2]:6.2f} | {wv:6.2f} | " + " / ".join(("%.2f"%c if c is not None and math.isfinite(c) else ("inf" if c is not None else " - ")) for c in cc) + f" | {l7 if l7 else '-'}")
+    rows.append((n,wv,cc))
+print("\nratio model/Wogram(3xT20 fig median): " + ", ".join(f"{name[n]} cur {model[n][0]/wv:.2f} cand {model[n][2]/wv:.2f}" for n,wv,_ in rows))
+print("ratio model/Cheng-mezzo median:      " + ", ".join(f"{name[n]} cur {model[n][0]/cc[1]:.2f} cand {model[n][2]/cc[1]:.2f}" for n,_,cc in rows if cc[1] and math.isfinite(cc[1])))
+# keyboard slope A0->C8 (ratio of T60)
+w21,_=med_win(wog,21); w108,_=med_win(wog,108)
+print(f"\nA0/C8 T60 ratio: Wogram fig {w21/w108:.1f}x ; model current {model[21][0]/model[108][0]:.0f}x ; candidate {model[21][2]/model[108][2]:.0f}x ; current 1.0mm {model[21][1]/model[108][1]:.0f}x")
+# text-verified Wogram values (no figure reading): C3 3.8, C4 1.7, G4 0.7, D3 3.4, D4 3.3, A4 2.3, F#4 3.5 (T20, s)
+txt={"C3":3.8,"D3":3.4,"C4":1.7,"D4":3.3,"F#4":3.5,"G4":0.7,"A4":2.3}
+print("Wogram text values x3 (T60 if single slope): " + ", ".join(f"{k} {3*v:.1f}" for k,v in txt.items()))
+print("model current 0.8mm at C3/C4/A4: 8.03/4.14/2.50 ; candidate 6.71/2.67/1.65 ; ratios cand/cur C3 %.2f C4 %.2f A4 %.2f" % (6.71/8.03, 2.67/4.14, 1.65/2.50))
+

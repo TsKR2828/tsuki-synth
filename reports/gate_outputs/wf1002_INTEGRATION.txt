@@ -1,0 +1,195 @@
+WF1002-INT（整合卡）重建 build\＋全套 GATE 執行記錄（2026-10-02）
+================================================================
+HEAD b41298c（沒動 HEAD、沒 commit、沒 push）。
+原始輸出全部在 reports/gate_outputs/wf1002_integration_raw/（檔名前面的編號＝本檔的段落）。
+本機路徑一律換成代稱：<REPO>＝repo 根目錄、<TOOLS>＝E 槽工具資料夾、<SCRATCH>＝repo 外的暫存資料夾、
+<MSVC>＝Visual Studio 安裝資料夾、<APPDATA>＝使用者 AppData\Roaming、<OLD_REPO>＝搬家前的舊 repo 路徑（C 槽，已不存在）。
+換代稱之前的原始 log 在 output/wf1002/INT/（gitignored），換代稱用 output/wf1002/INT/sanitize.py（只換路徑，其他文字不動）。
+
+結論：status=BLOCKED（R10 觸發）。卡片列的每一條 GATE 都綠燈，但整合卡發現一個 R10 觸發：
+  Q07（靜態 CRT）讓 verify_score 語料庫 75 首裡的 2 首 WAV 位元改變（每個樣本最多差 2 個 24-bit LSB，約 −132 dB）。
+  8 首代表曲 8/8 位元不變，所以 C1 和 C1 稽核都沒看到；這 2 首正好是語料庫裡僅有的「overdrive 而且 wet>0」，
+  原因是 src/dsp/Distortion.h:73 的 std::tanh 改由連進 exe 的 libucrt 計算，不再用系統的 ucrtbase.dll（控制組證明，見第 9 段）。
+  WF0907 README R10：「任何讓既有 score 渲染結果改變的修正，停下」→ 照規約停下，本卡沒有 git add 自己的證據檔，等主 session／月月裁決。
+  本卡沒修任何東西（照卡片「紅燈不要修」）。
+
+  各 GATE 數字：
+    重建：configure EXIT 0；三主＋五測試 target EXIT 0、0 個編譯器 error/warning（只有 MSBuild MSB8028，原因是搬家前 C 槽留下的 tlog，見第 1 段）
+    dumpbin：CLI／VST3／Standalone（再加 HostProbe）的 MSVCP140*／VCRUNTIME140*／api-ms-win-crt* 匯入都是 0
+    ctest 4/4；AuditTest 直接跑 [PASS] 111、[FAIL] 0（含 Q01：|IR−ALGO| = 0.112 dB，上限 0.25 dB）
+    pytest 307＝301 passed＋1 skipped＋5 xfailed（基線 307 不變，增 0、減 0；收集清單逐條相同）
+    physics_verify --full：NO CHECKED FAILURES（3 個 rubber N/A 是既有的）；--selftest 13/13
+    verify_score --all：75/75（1 項既有豁免）
+    位元不變（8 首代表曲）：8/8 IDENTICAL
+    HostProbe（cwd 在 repo 外）：[PASS] 231、[FAIL] 0
+    pluginval strictness 10：47 tests passed／SUCCESS（Plugin programs：Num programs 27）；Steinberg validator EXIT 0；PLUGIN VALIDATION RESULT: PASS
+
+----------------------------------------------------------------------
+0. 開工狀態（raw 00_status_porcelain_start.txt、00_diff_cached_stat_start.txt、00_diff_unstaged_start.txt、00b_diff_cached_raw_start.txt）
+----------------------------------------------------------------------
+命令：git status --porcelain；git diff --cached --stat；git diff --stat；git diff --cached --raw；git stash list
+- staged：44 檔（「44 files changed, 13246 insertions(+), 129 deletions(-)」）＝C1（src/ 8 檔、tests/*.cpp 2 檔、CMakeLists.txt）＋D 文件＋P/R 證據與報告＋追加裁決包。
+- 「staged 之後又改」：0 檔（git diff --stat 空白，00_diff_unstaged_start.txt 是 0 位元組）；stash 空。
+- untracked（都不是本卡的，沒動）：docs/workcards/WF1002_README.md、C2 的 5 個證據檔＋patch＋前後對照報告、reports/status_check_2026-09-25/。
+  （porcelain 裡的 wf1002_integration_raw/ 是本卡為了存這份記錄先建的資料夾。）
+- 跑到一半（不是本卡做的）：C2 稽核把 C2 的 8 個檔 git add 了（wf1002_C2_audit.txt 等 6 個證據＋reports/wf1002_fm_envelope_fix.patch＋前後對照報告）。
+  開工時的 44 筆 staged 內容（blob 雜湊）一筆都沒變，src/ 沒有被套 patch（raw 18 與 00b 比對）。結束時 staged 共 52 檔。
+
+----------------------------------------------------------------------
+1. 重建 build\（raw 01、02、04、05、05b、06）
+----------------------------------------------------------------------
+重建前的 build\ 執行檔 sha256（raw 01，09-30 搬家後那次建置，動態 CRT）：CLI 8ecfdabd…、VST3 48f3193b…、Standalone 8c07ec0f…
+命令：cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON（cmake 4.3.2，generator Visual Studio 18 2026）→ EXIT_CODE=0
+      CMakeCache 原本就指 E 槽（CMAKE_HOME_DIRECTORY=<REPO>），不用刪快取。
+      產生的 vcxproj：TsukiSynthCLI／_VST3／_Standalone／AuditTest／HostProbe 的 Release 都是 <RuntimeLibrary>MultiThreaded</RuntimeLibrary>（靜態）。
+命令：cmake --build build --config Release --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3 → EXIT_CODE=0
+命令：cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe → EXIT_CODE=0
+      編譯器 error 0、warning C 開頭 0。另有 MSBuild 警告 MSB8028（「中繼目錄包含從其他專案共用的檔案」）10 行：
+      查過是 *.dir\Release\ 底下同時有兩份 tlog，一份記著搬家前的 C 槽專案路徑、一份是 E 槽（raw 05b 附 no-op 重建）。
+      這是 tlog 殘留，不影響輸出；no-op 重建 CLI 時 sha256 不變（6dc4fb5e… → 6dc4fb5e…）。本卡沒去清它。
+重建後 sha256（raw 02）：
+  CLI          6dc4fb5e3386b62e07b4a44fef7a2317de0e2af5fe3b3de6564d5fc381337b50
+  VST3         17ae77f74dd0ca2e0b45b8b8cc46f6e93754e5c5ce2237febd29aeea59920bfd
+  Standalone   076ec34de673521dd000e9bd10f4dc666b28873a41e9ee5a04b5b34137bbdce7
+  AuditTest    2b945f1d4979420319e211fe6a4398c9d8ec8a3466333ed07b19535130391bbb
+  TunerTest    cd47c3f8132c2e07dfca20961164ac617f802fadc09b5876024e32d26a9497f0
+  PhysicsModelsTest df0c55d11d0198604ce714cd51ceba01fe8f1c062d465db50ef21ae7ac235b10
+  SpectrumViewTest  e241cc8029d0ac23a1a553125dc1ffee7692f455ed3e59cf332f0dbc8f2e16d6
+  HostProbe    c93aa5768aee011e5fd4e4b9cb1e7a0f5ab7ba6c02d7dd573d5a048bb28d5eb2
+  （跟 C1 的 build-wf 雜湊不同是正常的：建置資料夾路徑不同，PDB 路徑等字串會進執行檔。）
+[PASS]
+
+----------------------------------------------------------------------
+2. Q07 匯入檢查（raw 03_dumpbin_dependents.txt）
+----------------------------------------------------------------------
+命令：<MSVC>/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/dumpbin.exe /DEPENDENTS <exe>（Git Bash 加 MSYS2_ARG_CONV_EXCL='*'，不然 /DEPENDENTS 會被當成路徑）
+結果：CLI、VST3、Standalone、HostProbe 四支列出的相依 DLL 都只有系統 DLL（KERNEL32、USER32、GDI32、d2d1…），
+      grep -i -E 'MSVCP|VCRUNTIME|api-ms-win-crt' 計數四支都是 0。
+[PASS]
+
+----------------------------------------------------------------------
+3. ctest（raw 07_ctest.txt、07b_audittest_direct.txt）
+----------------------------------------------------------------------
+命令：ctest --test-dir build -C Release --output-on-failure（五測試 target 剛在第 1 段重建過）
+結果：audit_repro／tuner_repro／physics_models_repro／spectrum_view_repro 都 Passed，「100% tests passed, 0 tests failed out of 4」EXIT_CODE=0
+另直接跑 build/Release/TsukiSynthAuditTest.exe 留逐條輸出：[PASS] 開頭 111 行、[FAIL] 0 行、「PASS (0 failures)」EXIT_CODE=0
+  Q01 那條：「[Q01] |IR - ALGO| = 0.112 dB, limit 0.25 dB, margin 0.138 dB」→ [PASS]
+[PASS]
+
+----------------------------------------------------------------------
+4. pytest 全套（raw 08_pytest_collect_only.txt、09_pytest.txt；對照 raw 17 C、D）
+----------------------------------------------------------------------
+命令：python -m pytest tests --collect-only -q → 「307 tests collected」
+命令：python -m pytest tests -q -rsxX（Python 3.13.3）
+結果：「301 passed, 1 skipped, 5 xfailed in 458.33s (0:07:38)」PYTEST_EXIT=0
+基線：307＝301 passed＋1 skipped＋5 xfailed，跟 WF0925b 整合卡相同，增 0、減 0。
+  收集清單跟 WF0925b 整合卡逐條 diff：307 對 307，DIFF_EXIT=0（本輪 C1 沒動 tests/*.py）。
+  SKIPPED／XFAIL 摘要 6 行跟 WF0925b 逐字相同（skip 行的檔案路徑前綴正規化後）。
+  附註：這次 skip 行印出的是舊路徑 <OLD_REPO>\tests\...。查過：tests/__pycache__ 裡的 .pyc 是搬家前在 C 槽編的，
+  co_filename 還記著舊路徑（Python 只看原始檔時間和大小，搬家沒改就沿用）；舊路徑資料夾已不存在，實際執行的是 E 槽原始碼。只影響顯示。
+[PASS]
+
+----------------------------------------------------------------------
+5. physics_verify --full 與 --selftest（raw 10、11；對照 raw 17 A、B）
+----------------------------------------------------------------------
+命令：python tools/physics_verify.py --full --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe（02:15:27 → 02:17:32）
+結果：1c CHECKED CASES PASS; 3 UNVERIFIED/N/A（cimbalom/tongue_drum/water_gong 的 rubber，既有）；F5 residual energy PASS；
+      「RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED」EXIT_CODE=0
+      跟 WF0925b 整合卡同樣正規化後逐行 diff：505 行對 505 行，DIFF_EXIT=0。
+命令：python tools/physics_verify.py --selftest
+結果：13 項全部 PASS，EXIT_CODE=0；跟 WF0925b 逐行相同（13 對 13，DIFF_EXIT=0）。
+[PASS]
+
+----------------------------------------------------------------------
+6. verify_score --all（raw 12_verify_score_all.txt；對照 raw 17 E）
+----------------------------------------------------------------------
+命令：python tools/verify_score.py --all --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe（02:17:37 → 02:40:18）
+結果：「75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.」EXIT_CODE=0
+      75 份 manifest 的 renderer 欄位都是 6dc4fb5e3386（＝本次 CLI），configured source 都是 b41298c1d992 dirty；豁免是既有那 1 項。
+判定本身 [PASS]。但跟 WF0925b 整合卡逐行比，3757 行裡有 4 行不同：2 首的 WAV 雜湊變了 → 見第 9 段（R10）。
+
+----------------------------------------------------------------------
+7. 位元不變 8/8（raw 13_render_wf_scores_bit_identity.txt）
+----------------------------------------------------------------------
+命令（cwd＝<REPO>）：python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf1002_INT
+      --workdir <SCRATCH>/int_render --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --outdir output/wf1002/INT/render_out
+結果：RENDER_EXIT=0
+  diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt output/wf1002/INT/render_out/sha256_wf1002_INT.txt
+  → 沒有輸出，DIFF_STRIP_CR_EXIT=0 → 8/8 IDENTICAL
+  逐首：49514b00 280cbdac 1233b53f be634798 f539aefa 31b539c6 74122637 b0877774
+  wf0907_method/ 跑前跑後檔案清單相同。
+[PASS]（但第 9 段：8 首以外有 2 首改變）
+
+----------------------------------------------------------------------
+8. HostProbe、pluginval＋Steinberg validator（raw 14、15、15b；對照 raw 17 F）
+----------------------------------------------------------------------
+HostProbe：cwd＝<SCRATCH>/int_hp（repo 外），env -u TSUKI_REPO_ROOT
+命令：<REPO>/build/Release/TsukiSynthHostProbe.exe <REPO>/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <SCRATCH>/int_hp/out
+結果：[PASS] 231 行、[FAIL] 0 行、「PASS (0 failures)」EXIT_CODE=0；
+      「H8 materials.json used: <REPO>\data\materials.json (found in an ancestor of the executable's directory)」
+      跟 C1 工兵的 231 行判定逐行比，只差 H7 每次隨機產生的 presetId 4 行。
+      Q09 資訊性量測（不判定）：給愛麗絲 雙胞胎 vs VST3 max|diff| = 0、搶 0、最多 12 voice；
+      月光舌鼓 max|diff| = 0、搶 64（4 次搶到按著的音）、無上限 pool 最多 20 —— 跟 C1／C1 稽核一致。
+      跑前跑後 <APPDATA>\TsukiSynth\IR、\Presets 都是空的（沒殘留）。
+[PASS]
+
+pluginval＋validator：
+命令：pwsh -NoProfile -File tools/validate_plugin.ps1 -Plugin build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3
+      -Pluginval <TOOLS>\pluginval\extracted\pluginval.exe -Vst3Validator <TOOLS>\vst3sdk-build\bin\Release\validator.exe -Strictness 10
+結果：Steinberg validator「Result: 47 tests passed, 0 tests failed」；「PLUGIN VALIDATION RESULT: PASS」VALIDATE_EXIT=0
+另跑 pluginval 同一組參數加 --output-dir <SCRATCH>/int_pluginval_log 取它自己的 log（腳本收不到 GUI 程式的輸出）：
+      PLUGINVAL_EXIT=0，log 結尾 SUCCESS，25 組測項；「pluginval / Plugin programs」：Num programs: 27 / All program names checked / Changing program / Completed（Q06）
+[PASS]
+
+----------------------------------------------------------------------
+9. R10 觸發：Q07 靜態 CRT 改了 2 首語料庫 score 的渲染位元（raw 16_r10_corpus_probe.txt）
+----------------------------------------------------------------------
+發現：把 verify_score 75 首每首的 WAV 雜湊跟 WF0925b 整合卡比，73 首相同、2 首不同：
+  scores/library/akashic/akashic_transition_var01  9ce1735b7dbe → 9dd3a9a4ff44
+  scores/library/restraint/restraint_loop_001      9a5544d19ac6 → 2344a312ed00
+  舊雜湊從 B2 起一路沒變過（b2～b6 corpus、wf0914、wf0925、wf0925b、09-25 盤點都一樣）。
+  C1 工兵的 wf1002_C1_verify_score.txt 已經是新雜湊（跟本卡 75 首逐首相同），但 C1 和 C1 稽核只比了 8 首代表曲和 physics_verify，沒比語料庫雜湊，所以沒報。
+
+控制組（找出是誰改的；只讀，建在 repo 外）：
+  git checkout-index -a 把目前 staged 的原始碼匯出到 <SCRATCH>/int_dyncrt/src/，只把 CMakeLists.txt 第 82 行改回動態 CRT
+  （"MultiThreaded$<$<CONFIG:Debug>:Debug>" → "...DLL"），JUCE 用 junction 指回 repo（用完已拆掉，JUCE 子模組 git status 乾淨）。
+  建出來的 CLI 46bd6622…，dumpbin 看得到 MSVCP140／VCRUNTIME140（＝動態）。
+  同兩首用 verify_score 各跑一次：
+    動態 CRT（同原始碼）：9ce1735b7dbe、9a5544d19ac6（＝舊雜湊）
+    靜態 CRT（build\）  ：9dd3a9a4ff44、2344a312ed00（＝新雜湊）
+  → 原始碼一樣、只差 CRT，結果就不同：改變來源是 Q07，不是 C1 的原始碼（C1 的 physics/effects 改動確實都是註解或常數存取點）。
+
+差多少：直接渲染成 WAV 逐樣本比（24-bit PCM、48 kHz、長度完全相同）
+  akashic_transition_var01：2,109,252 個樣本裡 15,482 個不同；最大差 2.384e-07（＝2 個 24-bit LSB，約 −132 dB）；差值 RMS 比訊號 RMS 低 136 dB
+  restraint_loop_001     ：818,410 個樣本裡 63,191 個不同；最大差 2.384e-07（2 LSB，約 −132 dB）；差值 RMS 低 133 dB
+  peak、normalize gain、verify_score 每一條判定都沒變（兩版都 ALL CHECKS PASSED）。
+
+為什麼只有這 2 首：語料庫裡只有這 2 首開 overdrive 而且 wet>0（drive 0.3）。
+  src/dsp/Distortion.h:73「return std::tanh (input * gain);」——float 的 tanh 由 CRT 算：
+  動態版用系統的 ucrtbase.dll，靜態版用連進 exe 的 libucrt（Windows SDK 版），兩者最後一位不一樣。
+  wavefold／bitcrush 的 score、和 overdrive wet=0 的 score 雜湊都沒變。
+  推論（沒驗證）：外掛只要開 overdrive，同樣會有 LSB 等級的差；反過來說，動態 CRT 版的結果本來就跟著買家電腦上的 ucrtbase.dll 版本走。
+
+R10 怎麼套：WF1002 README Q07 寫「必須 8/8 位元不變，CLI 渲染一變就停（R10）」；WF0907 README R10 原文是
+  「任何讓既有 score 渲染結果改變的修正，停下寫前後對照報告，不得自行落地」。8/8 過了，但既有 score 的渲染確實變了
+  → 本卡照字面判 BLOCKED，不 add。這是不是可接受的變化（例如把語料庫這 2 首的新雜湊當新基準），要月月或主 session 裁決，本卡不判斷。
+  候選做法（只列出，不建議）：(a) 接受，把 2 首登記為 Q07 的預期變化；(b) Q07 改回動態 CRT；(c) 讓 Distortion 不依賴 CRT 的 tanh（這是改程式，要另開卡＋R10 前後對照）。
+
+----------------------------------------------------------------------
+收尾
+----------------------------------------------------------------------
+- 跑 GATE 沒改到任何追蹤檔：git diff --stat 空白；開工時 44 筆 staged 的 blob 都沒變（raw 18）。
+  repo 內新增的只有本檔和 wf1002_integration_raw/（25 檔），都是 untracked。
+- 沒 git add（原因：第 9 段 R10）。主 session 決定後，要 add 的範圍就是：
+    git add -- reports/gate_outputs/wf1002_INTEGRATION.txt reports/gate_outputs/wf1002_integration_raw/
+- 目前 staged 52 檔＝開工 44＋C2 稽核中途 add 的 8 檔（不是本卡的）。
+- 暫存：output/wf1002/INT/（gitignored；原始 log、render_out、sanitize.py、比對用中間檔）、
+        <SCRATCH>/int_render（8 首 WAV）、int_hp（HostProbe 輸出）、int_pluginval_log、int_r10wav（第 9 段 4 個 WAV）、
+        int_dyncrt（動態 CRT 控制組的原始碼匯出與建置，junction 已拆）。沒刪任何不是本卡建的東西，沒碰 C2 的 _scratch 資料夾。
+- 本卡沒做：修任何程式／文件、套 C2 patch、部署 VST3、commit/push；沒新增任何常數、容差或判定門檻。
+
+給主 session／交接卡的事項：
+  1. R10 裁決（第 9 段）。
+  2. C1 證據／C1 稽核沒比語料庫 75 首的雜湊；之後動到 CRT、編譯旗標這類「不改原始碼」的變更，建議把 75 首逐首雜湊對照列進 GATE。
+  3. pytest 基線維持 307（301＋1＋5）；HostProbe 新基線 231/0（WF0925b 是 215，+16 來自 C1）；AuditTest 111 PASS。
+  4. build\ 的 *.dir 底下有搬家前的 tlog 殘留（MSB8028 警告），不影響輸出；要清可以另外做 clean rebuild。

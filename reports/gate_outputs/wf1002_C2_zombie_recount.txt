@@ -1,0 +1,31 @@
+# WF1002-C2 (R10 before/after card, Q09b=A) -- evidence, descriptive only, no thresholds.
+# <REPO> = tsuki-synth repo root (HEAD b41298c); <C2> = <SCRATCH>/wf1002_C2 = the isolated
+# copy outside the repo (git archive b41298c; libs/JUCE = junction to <REPO>/libs/JUCE).
+
+## A. WF0925-V1 fm_zombie_check.py as shipped (HEAD rule), dumps from build-base CLI
+peak demand 196 at t=661.700 s ; voices alive at that instant (recomputed): 196
+envelope level bins at the peak (DESCRIPTIVE, not a GATE): {'<=-138.5 (below 24-bit LSB 2^-23, reference line only)': 184, '(-138.5,-60]': 4, '(-60,-10]': 3, '(-10,0]': 2, 'level 0': 3}
+key_down=True: 3 ; released: 193
+voices by (note, key_down), top 10: [((32, False), 100), ((44, False), 92), ((75, False), 1), ((33, True), 1), ((61, True), 1), ((64, True), 1)]
+fm_release values in this score (s): [0.15, 0.38, 0.95]
+
+## B. same method, base rule vs C2 fix rule (c2_fm_zombie_fix_model.py; only
+##    voice_pool_occupancy.stop_tail_off differs)
+score: scores/examples/moonlight_sonata_complete.score.json ; 6378 events ; sr 48000
+[base] unlimited-pool peak demand 196 at t=661.700 s; alive at that instant 196
+[base]   envelope bins at the peak: {'(-10,0]': 2, '(-138.5,-60]': 4, '(-60,-10]': 3, '<=-138.5': 184, 'level 0': 3}
+[base]   key_down 3 / released 193 ; top (note,key_down): [((32, False), 100), ((44, False), 92), ((75, False), 1), ((33, True), 1), ((61, True), 1), ((64, True), 1)]
+[base] 16-voice pool: 787 steals (rules {'1_same_note_oldest': 416, '2_oldest_released': 371}), 2 of them hit a key-held voice
+[base]   unlimited-pool demand > 16: 93 intervals, 165.5 s in total
+[fix] unlimited-pool peak demand 14 at t=796.380 s; alive at that instant 14
+[fix]   envelope bins at the peak: {'(-10,0]': 9, 'level 0': 5}
+[fix]   key_down 9 / released 5 ; top (note,key_down): [((43, False), 1), ((46, False), 1), ((49, False), 1), ((52, False), 1), ((55, False), 1), ((73, True), 1)]
+[fix] 16-voice pool: 0 steals (rules {}), 0 of them hit a key-held voice
+[fix]   unlimited-pool demand > 16: 0 intervals, 0.0 s in total
+
+## C. measured on the real FMPianoVoice code (mirror harness, 1024-voice = unlimited pool,
+##    peak of simultaneously active voices, envelope bins at that instant)
+[base] voices 1024 blocks 81992 audio_s 874.581 | mixed_pset_blocks 0 | note_ons_handled 6378 of 6378 | peak_active 196 at_sample 31761600 t_s 661.7 | peak_key_down 3 released 193 | peak_env_bins [(-10,0]]=2 [(-138.5,-60]]=4 [(-60,-10]]=3 [<=-138.5]=184 [level 0]=3 | peak_notes 32:100 44:92 33:1 61:1 64:1 75:1 | mean_active_at_block_end 13.0658 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 47822 of_which_voice_already_in_release 41444 | render_s 20.5219 realtime_fraction 0.0234649 | 
+[fix] voices 1024 blocks 81992 audio_s 874.581 | mixed_pset_blocks 0 | note_ons_handled 6378 of 6378 | peak_active 14 at_sample 38226240 t_s 796.38 | peak_key_down 9 released 5 | peak_env_bins [(-10,0]]=9 [level 0]=5 | peak_notes 55:2 43:1 46:1 49:1 52:1 58:1 61:1 64:1 73:1 76:1 | mean_active_at_block_end 5.42504 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 9065 of_which_voice_already_in_release 2687 | render_s 10.5964 realtime_fraction 0.0121159 | 
+[base 16-voice] voices 16 blocks 81992 audio_s 874.581 | mixed_pset_blocks 0 | note_ons_handled 6378 of 6378 | peak_active 16 at_sample 215040 t_s 4.48 | peak_key_down 2 released 14 | peak_env_bins [(-10,0]]=2 [(-138.5,-60]]=1 [(-60,-10]]=9 [level 0]=4 | peak_notes 56:4 61:4 64:4 35:1 37:1 47:1 49:1 | mean_active_at_block_end 8.40299 | steals 798 victim_key_down 2 victim_in_release 798 | tail_off_hits_same_note 21214 of_which_voice_already_in_release 14836 | render_s 14.3236 realtime_fraction 0.0163777 | 
+[fix 16-voice] voices 16 blocks 81992 audio_s 874.581 | mixed_pset_blocks 0 | note_ons_handled 6378 of 6378 | peak_active 14 at_sample 38226240 t_s 796.38 | peak_key_down 9 released 5 | peak_env_bins [(-10,0]]=9 [level 0]=5 | peak_notes 55:2 43:1 46:1 49:1 52:1 58:1 61:1 64:1 73:1 76:1 | mean_active_at_block_end 5.42504 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 9065 of_which_voice_already_in_release 2687 | render_s 9.92191 realtime_fraction 0.0113448 | 

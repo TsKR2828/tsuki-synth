@@ -1,0 +1,17 @@
+# build\ 執行檔 sha256（重建前）2026-10-02 01:58:45
+8ecfdabde66bb5d8cf6b5ec9c97923d9f6814fdfd424d40db77e9c70e931ab31 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  mtime 2026-09-30_00:39:42
+48f3193b18440711ae7dad4a8b66a6b41a7f6d46c469f90835c2a33bfebbb4ab *build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+  mtime 2026-09-30_00:42:12
+8c07ec0f1e9edd14ad4c3719739e958302a4a0f46b9268018df6da7f645819a8 *build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+  mtime 2026-09-30_00:43:35
+df2e7d27af63bb9a10f36707189bf56fc222a6bce38d1290be1df152db58c59f *build/Release/TsukiSynthAuditTest.exe
+  mtime 2026-09-30_00:44:33
+fa134ee131da0e7b7fc0839dbd4c4f5c04a467d7598149be0fd7e1ec52a8c167 *build/Release/TsukiSynthTunerTest.exe
+  mtime 2026-09-30_00:45:19
+91241d0cd2ac9703f42643d58767a20637016daaf4904753eb2e85390988805a *build/Release/TsukiSynthPhysicsModelsTest.exe
+  mtime 2026-09-30_00:46:11
+f027c8b9daa88ecf2fcbc38481505be0d264eb86b3f28eb8a38df546c5f46ab8 *build/Release/TsukiSynthSpectrumViewTest.exe
+  mtime 2026-09-30_00:47:07
+919ee83c19d74ab59b8fa6acf423ff909f9aa3bed9686e6368257a2c963a9aee *build/Release/TsukiSynthHostProbe.exe
+  mtime 2026-09-30_00:48:11

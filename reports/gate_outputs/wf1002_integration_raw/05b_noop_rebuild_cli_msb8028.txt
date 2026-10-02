@@ -1,0 +1,9 @@
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthCLI_rc_lib.dir\Release\) 包含從其他專案 (TsukiSynthCLI_rc_lib.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthCLI_rc_lib.vcxproj]
+  TsukiSynthCLI_rc_lib.vcxproj -> <REPO>\build\TsukiSynthCLI_rc_lib.dir\Release\TsukiSynthCLI_rc_lib.lib
+  Generating juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData.h
+  TsukiSynthData.vcxproj -> <REPO>\build\Release\TsukiSynthData.lib
+  TsukiSynthCLI.vcxproj -> <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+EXIT_CODE=0

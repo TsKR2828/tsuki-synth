@@ -1,0 +1,178 @@
+# WF1002-C1 稽核（C++ lane）— 2026-10-02
+# 稽核依據：docs/workcards/WF1002_README.md §1 裁定表、§2 lane 邊界；HEAD b41298c。
+# 不採信工兵自報：逐檔 git diff 親審＋在 build-wf 親自重跑全套。本機路徑寫成 <REPO>/<TOOLS>/<SCRATCH>/<MSVC>
+# （<REPO>=E:/Tsuki-project/tsuki-synth，<SCRATCH>=E:/Tsuki-project/_scratch/audit_c1_work，
+#  <TOOLS>=E:/Tsuki-project/_tools，<MSVC>=D:/Visual_Studio/VC/Tools/MSVC/14.50.35717）。
+# 原始 log 全在 <SCRATCH>/（01_build.log … 12_standalone_titlebar.png），本檔只摘關鍵行。
+
+VERDICT: PASS（0 個阻擋項；4 個低風險觀察記在 §3，不擋 add）
+
+======================================================================
+## 1. 親自重跑的 GATE（全部在 build-wf，最終二進位＝稽核自己重建的）
+======================================================================
+
+### 1.1 重新 configure＋三主 target 全量重建（--clean-first）
+$ cmake -B build-wf -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON            -> CONFIGURE_EXIT=0
+$ cmake --build build-wf --config Release --clean-first --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3   -> BUILD_MAIN_EXIT=0
+$ cmake --build build-wf --config Release --target <五測試 target>                -> BUILD_TEST_EXIT=0
+$ cmake --build build-wf --config Release --clean-first --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe   -> BUILD_TEST_CLEAN_EXIT=0
+$ cmake --build build-wf --config Release --target TsukiSynth_Standalone TsukiSynth_VST3   -> BUILD_PLUGIN_EXIT=0
+error C / warning C / error LNK / warning LNK 行數：四份 log 全部 0
+程序備註（稽核自己的，非工兵問題）：VS 產生器的 --clean-first 會清整個 solution，不只指定 target。
+  第二次（測試 target）clean 清掉了 VST3/Standalone，所以補跑最後一行重建這兩支；CLI 當時正被
+  physics_verify/verify_score/render 使用，Windows 拒絕刪除（MSBuild warning「拒絕存取路徑 …TsukiSynthCLI.exe」），
+  CLI 保持第一次全量重建的版本（01:21:50，sha256 93891482…），所有 CLI GATE 都用這一支，前後一致。
+  MSVC 連結非確定性 → CLI sha256 與工兵的 c18a5a39… 不同屬正常；渲染位元不變另由 1.6 證明。
+
+### 1.2 ctest＋AuditTest
+$ ctest --test-dir build-wf -C Release --output-on-failure
+  1/4 audit_repro Passed / 2/4 tuner_repro Passed / 3/4 physics_models_repro Passed / 4/4 spectrum_view_repro Passed
+  100% tests passed, 0 tests failed out of 4                        CTEST_EXIT=0
+$ build-wf/Release/TsukiSynthAuditTest.exe                          AUDIT_EXIT=0
+  [PASS] 111 行、[FAIL] 0 行
+  [D9c-guard] EffectChain::kIrWetMakeupGain = 26.8999996  -> [PASS]
+  [K-02] RMS difference (IR - ALGO) = 0.112 dB
+  [Q01] |IR - ALGO| = 0.112 dB, limit 0.25 dB, margin 0.138 dB
+  PASS (0 failures)
+
+### 1.3 physics_verify --full（--cli 絕對路徑）
+$ python tools/physics_verify.py --full --cli <REPO>/build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED     EXIT=0
+  去掉 CLI 路徑／sha 行／空行後，與工兵的 wf1002_C1_physics_full.txt 逐行 diff：DIFF_EXIT=0（501 行對 501 行）；
+  與 WF0925b 整合卡 wf0925b_integration_raw/03_physics_verify_full.txt 比：只差該檔的註解頭一行與結尾 EXIT 行格式。
+
+### 1.4 verify_score --all（--cli 同上）
+$ python tools/verify_score.py --all --cli <REPO>/build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.   EXIT=0
+  （renderer 938914821568…＝本次重建的 CLI）
+
+### 1.5 HostProbe（cwd 在 repo 外：<SCRATCH>；未設 TSUKI_REPO_ROOT）
+$ <REPO>/build-wf/Release/TsukiSynthHostProbe.exe <REPO>/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 <REPO>/output/wf1002/audit_C1/hostprobe
+  HOSTPROBE_EXIT=0；[PASS] 231、[FAIL] 0（與工兵 231/0 相同；materials.json 由 exe 往上找到 <REPO>）
+  Q06 4 條、H7/Q06 3 條、D12 情境 3 舊鍵 1 條、情境 4 共 6 條、Q05 2 條全 PASS；
+  Q09（資訊性、不判定）：雙胞胎 vs VST3 max|diff| = 0（兩首皆 0 樣本不同）；給愛麗絲 搶 0／最多 12；月光舌鼓 搶 64（4 次搶到按著的音）／無上限 pool 20 —— 與工兵數字一致。
+$ python tools/melody_verify.py scores/tests/melody_sentinel.score.json --wav <REPO>/output/wf1002/audit_C1/hostprobe/hostprobe_render.wav
+  summary: 5 PASS / 0 FAIL / 0 UNVERIFIED     EXIT=0
+
+### 1.6 位元不變（8 首）
+$ python reports/gate_outputs/wf0907_method/render_wf_scores.py --cli <REPO>/build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --label wf1002_audit_C1 --workdir E:/Tsuki-project/_scratch/audit_c1_render --outdir output/wf1002/audit_C1/render_out
+  RENDER_EXIT=0（8 首 sha256 前 16 碼：49514b00 280cbdac 1233b53f be634798 f539aefa 31b539c6 74122637 b0877774）
+$ diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt output/wf1002/audit_C1/render_out/sha256_wf1002_audit_C1.txt
+  DIFF_EXIT=0 -> 8/8 IDENTICAL（Q07 靜態 CRT 後的新 CLI 也不變；R10 未觸發）
+
+### 1.7 pluginval＋Steinberg validator
+$ pwsh tools/validate_plugin.ps1 -Plugin <REPO>/build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3 -Pluginval <TOOLS>/pluginval/extracted/pluginval.exe -Vst3Validator <TOOLS>/vst3sdk-build/bin/Release/validator.exe -Strictness 10
+  Result: 47 tests passed, 0 tests failed / PLUGIN VALIDATION RESULT: PASS     VALIDATE_EXIT=0
+另跑 pluginval 直接帶 --output-dir 取 log（腳本吃不到 GUI 子系統 stdout）：PLUGINVAL_EXIT=0，log 結尾 SUCCESS；
+  「pluginval / Plugin programs」：Num programs: 27 / All program names checked / Changing program / Completed（Q06 要求的測項）
+
+### 1.8 Q07 匯入檢查（dumpbin /DEPENDENTS；稽核注意：Git Bash 會把 /DEPENDENTS 轉成路徑而靜默失敗，須 MSYS_NO_PATHCONV=1）
+  三支（CLI 93891482… / VST3 005c42b1… / Standalone 65a0f340…）：dumpbin 列出的 MSVCP140*/VCRUNTIME140*/api-ms-win-crt* 行數皆 0；grep -a 字串計數皆 0
+  正控制：build\ 舊 CLI（動態 CRT）dumpbin 列出 MSVCP140_2 / MSVCP140 / VCRUNTIME140_1 / VCRUNTIME140 —— 量法有效
+
+======================================================================
+## 2. 重點審查結果（逐項）
+======================================================================
+
+(1) Q06 selectPresetFromEditor()／state 還原保護：PASS
+  - 編輯器 preset 選單（PluginEditor.cpp:164）是 src 內唯一呼叫點，已改呼 selectPresetFromEditor(presetIndex)；
+    src 內已無其他 setCurrentProgram 呼叫者。
+  - 保護邏輯：restoredProgramToIgnore 仍存 setState 還原到的「preset index」；setCurrentProgram 比對
+    index == programIndexForPreset(restored)（工廠＝原值，行為與以前完全相同；使用者 preset/Init → 0），
+    所以使用者 preset 還原後 host 回送 program 0 會被忽略、不會蓋成工廠 0；selectPresetFromEditor 用原始
+    preset index 比對，與 WF1002 前 editor 走 setCurrentProgram 時的一次性保護語意相同；Init（-1）還原仍不設保護，同以前。
+  - setCurrentProgram 對非工廠 index 直接 return；getProgramName 非工廠回空字串；getNumPrograms = 工廠數。
+  - 實測：HostProbe Q06/H7 全 PASS；pluginval Plugin programs Num programs 27。
+
+(2) Q05 OutputPeakMeter：PASS
+  - 餵入點：PluginProcessor.cpp processBlock 在 Output 增益（smoothedOutput）之後、錄音之前呼叫 pushBlock(buffer)；
+    該函式在這之前沒有任何 early return，每個 block 都會餵到。
+  - RT 安全（程式審查）：pushBlock 只有逐樣本讀取迴圈＋std::atomic<float> compare_exchange_weak 取最大值，
+    noexcept、無配置、無鎖；static_assert(atomic<float>::is_always_lock_free)；takePeak 是 exchange(0)。
+  - RT 安全（實測，scratch 專案 <SCRATCH>/malloc，repo 沒動）：覆寫全域 operator new 計數，
+    正控制 new int 被計到 1 次；4000 次 pushBlock＋2000 次 takePeak 期間配置次數 0；pushBlock 前後 buffer 逐位元相同（0 樣本改變）；
+    is_always_lock_free=1；NaN block 記成 FLT_MAX → 亮燈。結果 PASS。
+  - 聲音不變：pushBlock 參數是 const AudioBuffer&，只讀；CLI 不編這個檔，8/8 位元不變（1.6）。
+  - 畫面：Standalone 實際開窗截圖（<SCRATCH>/12_standalone_titlebar.png，副本在 output/wf1002/audit_C1/）：
+    「CLIP」在標題列 Score/REC/中文 按鈕左邊，未亮時是暗框暗字，與副標題、版本號無重疊；單色、沿用既有 Clr 色票。
+
+(3) Q10／Q38：PASS
+  - 遷移三態：檔案在且載入成功 → 照舊匯入；檔案在但載入失敗（讀不到/空檔/>30 s/匯入失敗）→ 新走缺檔三態
+    （reverbIRMissing=true、expectedIRRef 只帶原檔名、強制切 ALGO、一次性警告附原因）；檔案不在 → 原缺檔路徑不變。
+    loadReverbIRFile 失敗時 validateAndLoadIRFile 先擋或 clearImpulseResponse，reverbIRRef 未被寫入，紅線 1 成立。
+    migratedLegacyIR=true 讓 setDirty 照舊在 restoreDirty 之後補上（HostProbe 情境 4 驗 presetDirty=1）。
+  - 情境 3（已有 reverb_ir 區塊）也從記憶體 state 拿掉舊 reverb_ir_path、不標 dirty；比 kStateVersion 新的 state 不動（照決策包）。
+  - Q38 文案：中英兩段與 docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md §5-3「已定案（10-02 Q38=A）」那列逐字相同。
+  - 工兵自擬句（只在「檔案在但載不進來」分支出現）：「——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：…）。」
+    ／" -- this preset's IR file could not be loaded on this computer (reason: …)."，接規格定案的後半句。
+    語意正確、與「找不到」區分清楚，合理。（觀察 c：原因字串是英文。）
+
+(4) Q01 CHECK 有牙齒、0.25 dB 出處：PASS
+  - 出處核對：docs/workcards/WF0914_D9c_ir_makeup_gain.md:30「0 ± 0.25 dB … 0.24 dB 是 D9b 實測的樣本展幅」；
+    reports/gate_outputs/wf0914_D9b_ir_injection.txt:271「僅 0.24 dB 展幅」；ROADMAP §6 已由 D lane 登記（:475）。
+    CHECK 訊息與註解引用的路徑都存在且內容相符。
+  - 反例（工兵 wf1002_C1_q01_counterexample.txt）數學自洽：wet×1.05 → 0.112+20·log10(1.05)=0.112+0.424=0.536 dB ✔；
+    26.9→29.0 → 0.112+20·log10(29/26.9)=0.112+0.653=0.765 dB ✔；變體 B 正是「26.9 不變但 JUCE 正規化改了」的情況，
+    D9c-guard 仍 PASS、Q01 FAIL —— 新 CHECK 補到舊 guard 擋不到的洞。NaN（量不到參考）也判 FAIL。
+  - Q01b：EffectChain::irWetMakeupGain() 為 public static constexpr，只回常數；顯式實例化繞路已刪；static_assert 確認可常數求值。
+
+(5) Q07 Debug 組態：PASS（比「cmake 生成不報錯」更進一步）
+  - 重新 configure 後 vcxproj 的 RuntimeLibrary：CLI／SharedCode／VST3／Standalone／TunerTest／HostProbe 六個專案
+    Debug=MultiThreadedDebug，Release/RelWithDebInfo/MinSizeRel=MultiThreaded。
+  - 實際 Debug 建置＋執行：cmake --build build-wf --config Debug --target TsukiSynthTunerTest → DEBUG_BUILD_EXIT=0；
+    執行 PASS (0 failures)；dumpbin 無任何 MSVCP/VCRUNTIME/ucrtbase(d) 匯入（靜態 debug CRT 生效）。
+
+(6) 新 HostProbe 檢查有牙齒：PASS
+  - 反例：用「新 HostProbe（build-wf）」去測「WF1002 前的 VST3」（build\ 09-30 整合建置的複本，sha256 48f3193b…；
+    eba91ba 之後 src/、tests/*.cpp、CMakeLists 沒有任何 C++ 變更）：
+    $ <REPO>/build-wf/Release/TsukiSynthHostProbe.exe <SCRATCH>/old_vst3/TsukiSynth.vst3 <SCRATCH>/hp_old_out
+    HOSTPROBE_OLD_EXIT=1；PASS 224、FAIL 7：
+      [FAIL] Q06: … getNumPrograms() = 28 (require unchanged 27) and no host program is named "wf0908_h7" (FOUND)
+      [FAIL] H7/Q06 ×3: … getCurrentProgram() = 27 stays inside the factory range
+      [FAIL] D12 scenario 3 (Q10=B): output state no longer carries the ignored legacy reverb_ir_path
+      [FAIL] D12 scenario 4 (Q10=B): fx_reverb_mode forced … to Algorithmic
+      [FAIL] D12 scenario 4 (Q10=B): migrated state carries NO reverb_ir block, ir_missing=1 …
+    → Q06、Q10 的新檢查在舊行為下確實會紅。Q05 的兩條檢查的是 OutputPeakMeter.h 本身（VST3 ABI 讀不到外掛內部 atomic），
+      合成對照含正負控制（1.0 不亮、1.0001 亮且跨 block 保持、−1.5 亮、NaN 亮）；processBlock 有沒有餵由 (2) 程式審查＋配置實測補足。
+    Q09 段只印數字不判定（Q09=D 指定資訊性，無新門檻）。
+
+(7) R2/R4：PASS
+  - 新判定門檻只有 Q01 的 0.25 dB（月月 10-02 核准，出處已溯源，ROADMAP §6 已登記）。
+  - OutputPeakMeter::kFullScale=1.0f：0 dBFS 定義，註解寫明「不是調出來的容差」。
+  - kClipHoldMs=1500（PluginEditor.h）：註解標「UI convention … not a physics or GATE constant」，只影響燈的保持時間。（觀察 b）
+  - HostProbe Q06 的 27：裁定表 Q06 原文「只回工廠 27 個」；且同時要求等於 Presets.h 實際計數。
+  - Q09 的 kWidePool=128：只用來估「無上限需求」的資訊性數字，不是門檻。
+  - BeamModel.h ×2 / HammerImpulse.h / EffectChain.h 只改註解，數值與程式碼未動（diff 核對）。
+
+(8) 檔案範圍：PASS
+  - C1 動到：CMakeLists.txt、src/PluginEditor.cpp/.h、src/PluginProcessor.cpp/.h、src/effects/EffectChain.h、
+    src/physics/BeamModel.h、src/physics/HammerImpulse.h、src/dsp/OutputPeakMeter.h（新）、tests/audit_repro.cpp、tests/host_probe.cpp，
+    全在 README §2 C1 範圍（src/、tests/*.cpp、CMakeLists.txt）內；src/、tests/、CMakeLists.txt 沒有其他未列檔案的變更。
+  - 工作樹裡其他 M 檔（.github/workflows/physics.yml、ROADMAP_PHYSICS.md、docs/…、scores/crossplatform_tolerance.json、
+    tools/partial_verify.py）屬 D lane，本稽核不 add。
+
+======================================================================
+## 3. 低風險觀察（不擋 PASS，交月月／後續卡）
+======================================================================
+a. Q06 一次性保護的邊角：專案 state 還原成「使用者 preset」後，若 host 從沒回送 program 變更，保護會一直待命；
+   使用者之後第一次「從 DAW 的 program 清單選工廠 0 號」會被吞掉一次（再選一次就會載入）。從外掛自己的選單選不受影響。
+   以前（使用者 preset 也有 program 編號）沒有這個邊角；但若不保護，host 回送 0 會把還原的使用者 preset 蓋成工廠 0，代價更大。
+   要不要改成「保護只在 setState 後短時間內／第一個 processBlock 前有效」，可另開卡。
+b. PluginEditor.h 註解說 1.5 s 在「the card's "1-2 s"」內，但 repo 內找不到寫 1–2 s 的卡（裁決包 Q05、UI 規格 §4.14 都沒寫，
+   §4.14 寫「亮多久由設計端決定」）。已標 UI 慣例、非 GATE 常數，符合要求；只是出處那半句不可追溯。
+c. Q10 載入失敗警告的「原因」是 IRLibrary／validateAndLoadIRFile 的英文訊息，中文介面下會出現中英混排。
+d. H7 載入端從「setCurrentProgram 走 PresetManager::loadPreset」改成「把 preset 檔當 DAW state 還原」；
+   真實 VST3 內的 loadPreset→applyExtraStateBlock 路徑現在只在 ShadowProcessor（同一份 header）驗。這是 Q06 後 VST3 ABI 下
+   唯一可行的做法，工兵在註解寫明；HostProbe 每次多跑約 70 s 的 Q09 串流量測（CI 時間會增加）。
+
+======================================================================
+## 4. 稽核 git add 清單（不 commit、不 push）
+======================================================================
+CMakeLists.txt src/PluginEditor.cpp src/PluginEditor.h src/PluginProcessor.cpp src/PluginProcessor.h
+src/effects/EffectChain.h src/physics/BeamModel.h src/physics/HammerImpulse.h src/dsp/OutputPeakMeter.h
+tests/audit_repro.cpp tests/host_probe.cpp
+reports/gate_outputs/wf1002_C1_summary.txt wf1002_C1_build_ctest.txt wf1002_C1_physics_full.txt wf1002_C1_verify_score.txt
+wf1002_C1_hostprobe.txt wf1002_C1_bit_identity.txt wf1002_C1_validate_plugin.txt wf1002_C1_q07_static_crt.txt
+wf1002_C1_q01_counterexample.txt wf1002_C1_audit.txt（本檔）
+暫存（gitignored）：<REPO>/output/wf1002/audit_C1/{render_out,hostprobe,12_standalone_titlebar.png}；<SCRATCH>/ 全部原始 log、
+  malloc 計數 scratch 專案、old_vst3 複本、hp_old_out；E:/Tsuki-project/_scratch/audit_c1_render（渲染 workdir）。

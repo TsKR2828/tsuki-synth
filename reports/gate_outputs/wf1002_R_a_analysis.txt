@@ -1,0 +1,425 @@
+WF1002-R (research lane, read-only) -- 2026-10-02, repo HEAD b41298c.
+Aliases: <repo> = local repo root; <scratch> = this session's scratch directory (outside the repo).
+All numbers below are DESCRIPTIVE ONLY, NOT a GATE, NOT new thresholds (R2).
+
+== $ python scripts/ra_analysis.py  (cwd <repo>/output/wf1002/R, exit 0) ==
+[0] warm-up check: max |sample| during the 8 silent warm-up blocks over all 168 cases = 0.0
+    baseline (t4, no overrides) vs HostProbe E16 rerun: max |dpeak| = 0.005 dB, max |dRMS| = 0.005 dB (E16 prints 2 decimals)
+
+[1] STAGE TABLE (peak dBFS at each tap; deltas in dB)
+    t0=engine sum w/o body layer, t1=engine sum incl. body (=post-distortion, drive 0), t2=post-compressor, t3=post-delay, t4=plugin output (Output=1.0, EQ 0 dB bypass). Preset FX values are copied from src/Presets.h (defaults where unset).
+ p name                             body rvMix rvSz      t0      t1      t2      t3      t4 |  dBody  dComp  mkup   dDly   dRev |  t4-t0   pk_ms
+ 0 Steel Hammered Dulcimer          0.00  0.20 0.62  -15.20  -10.43   -5.93   -5.93   -7.21 |   4.77   4.50  4.50   0.00  -1.28 |   7.99    64.6
+ 1 Copper Warm Strings              0.00  0.35 0.78  -16.79  -16.79  -11.79  -11.79   -7.97 |   0.00   5.00  5.00   0.00   3.82 |   8.82   231.2
+ 2 Glass Wind Chimes                0.00  0.50 0.88  -11.78  -11.78   -9.78  -11.19   -7.27 |   0.00   2.00  2.00  -1.41   3.92 |   4.51    83.7
+ 3 Muted Felt Piano                 0.00  0.15 0.55  -33.34  -33.34  -30.01  -30.01  -30.41 |   0.00   3.33  3.33   0.00  -0.40 |   2.94    64.3
+ 4 Brass Gamelan                    0.00  0.40 0.75  -11.45  -11.45   -9.04   -9.04  -10.94 |   0.00   2.40  2.40   0.00  -1.89 |   0.51    98.9
+ 5 Rubber Muted Pluck               0.00  0.10 0.30  -18.90  -18.90  -11.40  -11.40  -12.32 |   0.00   7.50  7.50   0.00  -0.92 |   6.58     0.4
+ 6 Steel Hammered Dulcimer (Body)   0.75  0.20 0.62  -19.21   -5.25   -0.83   -0.83   -2.77 |  13.97   4.41  4.50   0.00  -1.94 |  16.44     8.7
+ 7 Copper Warm Strings (Body)       0.80  0.35 0.78  -16.79   -1.67    1.21    1.21    0.33 |  15.12   2.88  5.00   0.00  -0.88 |  17.12   231.5
+ 8 Crystal Tongue Drum              0.00  0.30 0.60  -28.05  -28.05  -23.55  -23.55  -19.34 |   0.00   4.50  4.50   0.00   4.21 |   8.71   432.3
+ 9 Bronze Water Gong                0.00  0.45 0.85  -16.37  -16.37  -11.87  -11.87   -4.87 |   0.00   4.50  4.50   0.00   7.00 |  11.50   542.2
+10 Wooden Kalimba                   0.00  0.20 0.40  -18.89  -18.89  -14.39  -14.39  -16.33 |   0.00   4.50  4.50   0.00  -1.94 |   2.56     0.9
+11 Ethereal Steel Bells             0.00  0.55 0.90  -10.13  -10.13   -5.63   -7.57    1.47 |   0.00   4.50  4.50  -1.94   9.04 |  11.60   914.9
+12 Glass Singing Bowl               0.00  0.60 0.92  -39.96  -39.96  -35.46  -37.18  -25.99 |   0.00   4.50  4.50  -1.72  11.19 |  13.97   855.5
+13 Rubber Tongue Pad                0.00  0.35 0.65  -38.38  -38.38  -33.88  -36.04  -39.78 |   0.00   4.50  4.50  -2.16  -3.74 |  -1.40     0.8
+14 Crystal Tongue Drum (Body)       0.70  0.30 0.60  -28.05  -15.79  -11.29  -11.29   -6.94 |  12.27   4.50  4.50   0.00   4.34 |  21.11   434.5
+15 Bronze Water Gong (Body)         0.85  0.45 0.85  -16.37  -11.40   -6.90   -6.90    2.65 |   4.97   4.50  4.50   0.00   9.55 |  19.02   548.3
+16 Acoustic Piano                    fm   0.18 0.48     -    -22.03  -17.53  -17.53  -15.33 |    -     4.50  4.50   0.00   2.20 |   6.70   206.9
+17 Electric Rhodes                   fm   0.15 0.40     -    -21.73  -17.23  -18.64  -18.40 |    -     4.50  4.50  -1.41   0.24 |   3.32   164.8
+18 Layered E.Piano                   fm   0.22 0.55     -    -21.76  -17.26  -18.37  -16.71 |    -     4.50  4.50  -1.11   1.66 |   5.05   229.8
+19 FM Vibraphone                     fm   0.25 0.55     -    -22.81  -18.31  -18.31  -11.73 |    -     4.50  4.50   0.00   6.59 |  11.09   348.2
+20 DX7 Crystal Bell                  fm   0.50 0.85     -    -23.06  -18.56  -18.56   -4.57 |    -     4.50  4.50   0.00  13.99 |  18.49   514.7
+21 Church Organ                      fm   0.40 0.90     -    -23.09  -18.59  -18.59   -8.35 |    -     4.50  4.50   0.00  10.24 |  14.74   569.9
+22 Ambient Pad                       fm   0.55 0.88     -    -23.09  -18.59  -20.09   -7.92 |    -     4.50  4.50  -1.50  12.16 |  15.17  1455.7
+23 FM Bass                           fm   0.05 0.20     -    -21.94  -18.60  -18.60  -19.05 |    -     3.33  3.33   0.00  -0.45 |   2.89     9.3
+24 FM Brass                          fm   0.15 0.40     -    -23.09  -19.76  -19.76  -17.64 |    -     3.33  3.33   0.00   2.11 |   5.45   114.8
+25 Grand Piano (Physical)           0.45  0.18 0.50  -19.87  -11.49   -6.82   -6.82   -7.76 |   8.38   4.67  4.67   0.00  -0.94 |  12.10    68.3
+26 Bright Upright (Physical)        0.35  0.14 0.42  -13.32  -12.67   -8.17   -8.17   -9.48 |   0.65   4.50  4.50   0.00  -1.31 |   3.84    11.2
+
+sorted by output peak: 15:+2.65, 11:+1.47, 7:+0.33, 6:-2.77, 20:-4.57, 9:-4.87, 14:-6.94, 0:-7.21, 2:-7.27, 25:-7.76, 22:-7.92, 1:-7.97, 21:-8.35, 26:-9.48, 4:-10.94, 19:-11.73, 5:-12.32, 16:-15.33, 10:-16.33, 18:-16.71, 24:-17.64, 17:-18.40, 23:-19.05, 8:-19.34, 12:-25.99, 3:-30.41, 13:-39.78
+
+[2] REVERB wet/dry split at the output-peak sample (SimpleReverb is linear in its input: out = (1-mix)*in + wet, so wet = t4 - (1-mix)*t3 exactly)
+p07: output peak +0.33 dBFS at 231.5 ms ch0: out=-1.0382 = dry -0.0024 + wet -1.0359 (wet share 99.8%); wet-only peak +0.31 dBFS; reverb-input (t3) peak +1.21 dBFS; RMS(wet)/RMS(t3) = +5.82 dB
+p11: output peak +1.47 dBFS at 914.9 ms ch1: out=-1.1846 = dry +0.0247 + wet -1.2094 (wet share 102.1%); wet-only peak +1.66 dBFS; reverb-input (t3) peak -7.57 dBFS; RMS(wet)/RMS(t3) = +10.75 dB
+p15: output peak +2.65 dBFS at 548.3 ms ch0: out=+1.3573 = dry +0.0895 + wet +1.2678 (wet share 93.4%); wet-only peak +2.20 dBFS; reverb-input (t3) peak -6.90 dBFS; RMS(wet)/RMS(t3) = +9.27 dB
+p09: output peak -4.87 dBFS at 542.2 ms ch0: out=-0.5710 = dry -0.0374 + wet -0.5336 (wet share 93.4%); wet-only peak -5.24 dBFS; reverb-input (t3) peak -11.87 dBFS; RMS(wet)/RMS(t3) = +9.43 dB
+p20: output peak -4.57 dBFS at 514.7 ms ch0: out=+0.5910 = dry +0.0273 + wet +0.5636 (wet share 95.4%); wet-only peak -4.98 dBFS; reverb-input (t3) peak -18.56 dBFS; RMS(wet)/RMS(t3) = +7.91 dB
+p06: output peak -2.77 dBFS at 8.7 ms ch0: out=+0.7267 = dry +0.7267 + wet -0.0000 (wet share 0.0%); wet-only peak -5.33 dBFS; reverb-input (t3) peak -0.83 dBFS; RMS(wet)/RMS(t3) = -1.22 dB
+
+[3] BODY LAYER steady-state |dry+wet| (BodyResonance::totalResponse formula; bpLow tuned to f1, bpMid to f2 by configureCreativeBodyLayer; f2=2*f1 used for the string case)
+  amount 0.20: at f1 +6.53 dB, at f2 -1.10 dB, at 4*f1 -0.75 dB
+  amount 0.35: at f1 +9.58 dB, at f2 +0.19 dB, at 4*f1 -1.33 dB
+  amount 0.45: at f1 +11.15 dB, at f2 +1.56 dB, at 4*f1 -1.74 dB
+  amount 0.50: at f1 +11.85 dB, at f2 +2.28 dB, at 4*f1 -1.94 dB
+  amount 0.60: at f1 +13.10 dB, at f2 +3.67 dB, at 4*f1 -2.35 dB
+  amount 0.70: at f1 +14.19 dB, at f2 +4.96 dB, at 4*f1 -2.77 dB
+  amount 0.75: at f1 +14.69 dB, at f2 +5.56 dB, at 4*f1 -2.98 dB
+  amount 0.80: at f1 +15.16 dB, at f2 +6.13 dB, at 4*f1 -3.19 dB
+  amount 0.85: at f1 +15.61 dB, at f2 +6.68 dB, at 4*f1 -3.40 dB
+  amount 1.00: at f1 +16.83 dB, at f2 +8.16 dB, at 4*f1 -4.03 dB
+  measured engine-sum peak deltas t1-t0: p06(0.75) +13.97, p07(0.80) +15.12, p14(0.70) +12.27, p15(0.85) +4.97, p25(0.45) +8.38, p26(0.35) +0.65
+  p07 body sweep (engine-sum t1 / output t4): b0.0: -16.79/-7.97, b0.2: -10.49/-2.83, b0.4: -6.50/-1.26, b0.6: -3.76/-0.30, b0.8: -1.67/+0.33, b1.0: +0.01/+0.76
+  p15 body sweep (engine-sum t1 / output t4): b0.0: -16.37/-4.87, b0.2: -16.48/-4.17, b0.4: -14.77/-2.05, b0.6: -13.06/+0.23, b0.85: -11.40/+2.65, b1.0: -10.56/+3.85
+  p11 at body 0.5 (layout default): t1 -4.34, t4 +8.30
+  confounds: p15 body0 chr_size 10/40/100 -> t0 -15.04/-16.37/-18.12 ; p07 body0 detune 9.5(eff 3.8c)/15(eff 6c) -> -16.79/-16.79 ; p07 body0.8 detune 9.5(eff 12.9c)/4.4118(eff 6c) -> -1.67/-1.66
+  p07 string count at body 0: N=1 -23.78, N=3 -19.01, N=5 -16.79  (20log10(sqrt(5)) = +6.99, sqrt(3) = +4.77)
+
+[4] reverb sweeps (other settings as preset): p15_rev_mix0.15: -5.01 @ 548 ms; p15_rev_mix0.30: -0.36 @ 548 ms; p15_rev_size0.50: -2.71 @ 191 ms; p15_rev_size0.00: -4.98 @ 191 ms; p11_rev_mix0.15: -5.99 @ 283 ms; p11_rev_mix0.30: -2.79 @ 421 ms; p11_rev_size0.50: -1.98 @ 233 ms; p11_rev_size0.00: -4.71 @ 233 ms; p07_rev_mix0.15: -0.20 @ 3 ms; p07_rev_size0.50: -1.33 @ 100 ms
+    compressor bypass only: p07_nocomp_only: +1.08; p11_nocomp_only: -3.03; p15_nocomp_only: -1.85
+    Output macro linearity: p15 Output 0.5 -> -3.367 (expected -3.367); p07 Output 0.9 -> -0.589 (expected -0.589)
+    fresh instance (no program call): -7.207 dBFS (preset 0: -7.207)
+
+[5] OPTION ARITHMETIC (exact where stated)
+  A1 per-preset Output (post-FX linear gain, exact): Output needed for peak <= 0 dBFS / <= -1 dBFS (descriptive targets, not thresholds):
+     p07 Copper Warm Strings (Body): peak +0.33 -> Output 0.963 / 0.858
+     p11 Ethereal Steel Bells: peak +1.47 -> Output 0.844 / 0.752
+     p15 Bronze Water Gong (Body): peak +2.65 -> Output 0.737 / 0.657
+  B1 remove compressor auto-makeup (exact: makeup is a constant factor after the gain computer; delay/reverb/Output are linear):
+     0:-7.21->-11.71, 1:-7.97->-12.97, 2:-7.27->-9.27, 3:-30.41->-33.74, 4:-10.94->-13.34, 5:-12.32->-19.82, 6:-2.77->-7.27, 7:+0.33->-4.67, 8:-19.34->-23.84, 9:-4.87->-9.37, 10:-16.33->-20.83, 11:+1.47->-3.03, 12:-25.99->-30.49, 13:-39.78->-44.28, 14:-6.94->-11.44, 15:+2.65->-1.85, 16:-15.33->-19.83, 17:-18.40->-22.90, 18:-16.71->-21.21, 19:-11.73->-16.23, 20:-4.57->-9.07, 21:-8.35->-12.85, 22:-7.92->-12.43, 23:-19.05->-22.38, 24:-17.64->-20.98, 25:-7.76->-12.43, 26:-9.48->-13.98
+  B4 global Output default needed so that every factory preset <= 0 dBFS: 0.737 (-2.65 dB)
+
+== script source ==
+"""WF1002-R R-a analysis (descriptive only, NOT GATE): stage table from r_probe tap renders, wet/dry split,
+BodyResonance steady-state gain (RBJ biquad = src/dsp/BiquadFilter.h formulas, BodyResonance.h mixing), compressor
+auto-makeup formula (src/effects/Compressor.h), and exact effect of option-level gains (Output / makeup removal).
+Run from output/wf1002/R:  python scripts/ra_analysis.py"""
+import numpy as np, re, math
+from scipy.io import wavfile
+SR = 48000
+
+
+def rd(name, d="wav_taps"):
+    sr, x = wavfile.read(f"{d}/{name}.wav"); assert sr == SR; return x.astype(np.float64)
+
+
+def pk(x): return 20 * math.log10(np.max(np.abs(x)))
+
+
+rows = {}
+for fn in ["logs/r_probe_taps.txt", "logs/r_probe_extra.txt"]:
+    for line in open(fn, encoding="utf-8"):
+        f = line.rstrip("\n").split("\t")
+        d = dict(x.split("=", 1) for x in f[1:6])
+        rows[f[0]] = (float(d["peak_dBFS"]), float(d["peak_t_ms"]), float(d["RMS_dBFS"]), float(f[6].split("=")[1]))
+names = {}; e16 = {}
+for line in open("logs/e16_rerun_peaks.txt", encoding="utf-8"):
+    m = re.search(r"preset (\d+) '(.*)': peak (-?[\d.]+) dBFS, RMS (-?[\d.]+)", line)
+    names[int(m.group(1))] = m.group(2); e16[int(m.group(1))] = (float(m.group(3)), float(m.group(4)))
+
+print("[0] warm-up check: max |sample| during the 8 silent warm-up blocks over all", len(rows), "cases =", max(v[3] for v in rows.values()))
+print("    baseline (t4, no overrides) vs HostProbe E16 rerun: max |dpeak| = %.3f dB, max |dRMS| = %.3f dB (E16 prints 2 decimals)" % (
+    max(abs(rows[f"p{p:02d}_t4_full"][0] - e16[p][0]) for p in range(27)),
+    max(abs(rows[f"p{p:02d}_t4_full"][2] - e16[p][1]) for p in range(27))))
+
+comp = {0: (-12, 4), 1: (-15, 3), 2: (-8, 2), 3: (-10, 3), 4: (-6, 5), 5: (-18, 6), 6: (-12, 4), 7: (-15, 3), 23: (-8, 6), 24: (-10, 3), 25: (-14, 3)}
+mix = {0: .20, 1: .35, 2: .50, 3: .15, 4: .40, 5: .10, 6: .20, 7: .35, 8: .30, 9: .45, 10: .20, 11: .55, 12: .60, 13: .35, 14: .30, 15: .45,
+       16: .18, 17: .15, 18: .22, 19: .25, 20: .50, 21: .40, 22: .55, 23: .05, 24: .15, 25: .18, 26: .14}
+size = {0: .62, 1: .78, 2: .88, 3: .55, 4: .75, 5: .30, 6: .62, 7: .78, 8: .60, 9: .85, 10: .40, 11: .90, 12: .92, 13: .65, 14: .60, 15: .85,
+        16: .48, 17: .40, 18: .55, 19: .55, 20: .85, 21: .90, 22: .88, 23: .20, 24: .40, 25: .50, 26: .42}
+body = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: .75, 7: .80, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: .70, 15: .85, 25: .45, 26: .35}
+
+print("\n[1] STAGE TABLE (peak dBFS at each tap; deltas in dB)")
+print("    t0=engine sum w/o body layer, t1=engine sum incl. body (=post-distortion, drive 0), t2=post-compressor, t3=post-delay,"
+      " t4=plugin output (Output=1.0, EQ 0 dB bypass). Preset FX values are copied from src/Presets.h (defaults where unset).")
+print(f"{'p':>2} {'name':32s} {'body':>4} {'rvMix':>5} {'rvSz':>4} {'t0':>7} {'t1':>7} {'t2':>7} {'t3':>7} {'t4':>7} | "
+      f"{'dBody':>6} {'dComp':>6} {'mkup':>5} {'dDly':>6} {'dRev':>6} | {'t4-t0':>6} {'pk_ms':>7}")
+out = []
+for p in range(27):
+    g = lambda t: rows.get(f"p{p:02d}_{t}")
+    t0 = g("t0_nobody"); t1 = g("t1_nocomp")[0]; t2 = g("t2_nodly")[0]; t3 = g("t3_norev")[0]; t4 = g("t4_full")[0]; pkt = g("t4_full")[1]
+    thr, ra = comp.get(p, (-12, 4)); mk = -(thr * (1 - 1 / ra)) * 0.5
+    base0 = t0[0] if t0 else t1
+    out.append((p, t4, mk))
+    bs = ('%4.2f' % body[p]) if p in body else ' fm '
+    print(f"{p:2d} {names[p][:32]:32s} {bs:>4} {mix[p]:5.2f} {size[p]:4.2f} {('%7.2f' % t0[0]) if t0 else '    -  '} {t1:7.2f} {t2:7.2f} {t3:7.2f} {t4:7.2f} | "
+          f"{('%6.2f' % (t1 - t0[0])) if t0 else '   -  '} {t2 - t1:6.2f} {mk:5.2f} {t3 - t2:6.2f} {t4 - t3:6.2f} | {t4 - base0:6.2f} {pkt:7.1f}")
+print("\nsorted by output peak:", ", ".join(f"{p}:{v:+.2f}" for p, v, _ in sorted(out, key=lambda z: -z[1])))
+
+print("\n[2] REVERB wet/dry split at the output-peak sample (SimpleReverb is linear in its input: out = (1-mix)*in + wet, so wet = t4 - (1-mix)*t3 exactly)")
+for p in (7, 11, 15, 9, 20, 6):
+    t4 = rd(f"p{p:02d}_t4_full"); t3 = rd(f"p{p:02d}_t3_norev")
+    m = mix[p]; wet = t4 - (1 - m) * t3
+    i, c = np.unravel_index(np.argmax(np.abs(t4)), t4.shape)
+    print(f"p{p:02d}: output peak {pk(t4):+.2f} dBFS at {1000 * i / SR:.1f} ms ch{c}: out={t4[i, c]:+.4f} = dry {(1 - m) * t3[i, c]:+.4f} + wet {wet[i, c]:+.4f}"
+          f" (wet share {abs(wet[i, c]) / abs(t4[i, c]) * 100:.1f}%); wet-only peak {pk(wet):+.2f} dBFS; reverb-input (t3) peak {pk(t3):+.2f} dBFS;"
+          f" RMS(wet)/RMS(t3) = {20 * math.log10(np.sqrt(np.mean(wet ** 2)) / np.sqrt(np.mean(t3 ** 2))):+.2f} dB")
+
+
+def rbj(kind, f0, Q, f):
+    w0 = 2 * math.pi * f0 / SR; al = math.sin(w0) / (2 * Q); cw = math.cos(w0)
+    b = [al, 0, -al] if kind == "bp" else [(1 - cw) / 2, 1 - cw, (1 - cw) / 2]
+    a = [1 + al, -2 * cw, 1 - al]; z = np.exp(-1j * 2 * math.pi * f / SR)
+    return (b[0] + b[1] * z + b[2] * z * z) / (a[0] + a[1] * z + a[2] * z * z)
+
+
+def bodyg(amount, f1, f2, f):
+    return abs(1 + amount * 4 * (1.4 * rbj("bp", f1, 1.8, f) + 0.8 * rbj("bp", f2, 1.4, f)) * rbj("lp", 500, 0.707, f))
+
+
+f1 = 261.6256
+print("\n[3] BODY LAYER steady-state |dry+wet| (BodyResonance::totalResponse formula; bpLow tuned to f1, bpMid to f2 by configureCreativeBodyLayer; f2=2*f1 used for the string case)")
+for a in (0.2, 0.35, 0.45, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 1.0):
+    print(f"  amount {a:.2f}: at f1 {20 * math.log10(bodyg(a, f1, 2 * f1, f1)):+.2f} dB, at f2 {20 * math.log10(bodyg(a, f1, 2 * f1, 2 * f1)):+.2f} dB,"
+          f" at 4*f1 {20 * math.log10(bodyg(a, f1, 2 * f1, 4 * f1)):+.2f} dB")
+print("  measured engine-sum peak deltas t1-t0: p06(0.75) %+.2f, p07(0.80) %+.2f, p14(0.70) %+.2f, p15(0.85) %+.2f, p25(0.45) %+.2f, p26(0.35) %+.2f" % tuple(
+    rows[f"p{p:02d}_t1_nocomp"][0] - rows[f"p{p:02d}_t0_nobody"][0] for p in (6, 7, 14, 15, 25, 26)))
+
+
+def sweep(p, preset_b):
+    s = []
+    for b in ('0.0', '0.2', '0.4', '0.6', preset_b, '1.0'):
+        if b == '0.0': t1 = rows[f'p{p:02d}_t0_nobody'][0]; t4 = rows[f'p{p:02d}_full_b0.0'][0]
+        elif b == preset_b: t1 = rows[f'p{p:02d}_t1_nocomp'][0]; t4 = rows[f'p{p:02d}_t4_full'][0]
+        else: t1 = rows[f'p{p:02d}_t1_b{b}'][0]; t4 = rows[f'p{p:02d}_full_b{b}'][0]
+        s.append(f"b{b}: {t1:+.2f}/{t4:+.2f}")
+    return ", ".join(s)
+
+
+print("  p07 body sweep (engine-sum t1 / output t4): " + sweep(7, '0.8'))
+print("  p15 body sweep (engine-sum t1 / output t4): " + sweep(15, '0.85'))
+print("  p11 at body 0.5 (layout default): t1 %+.2f, t4 %+.2f" % (rows['p11_t1_b0.5'][0], rows['p11_full_b0.5'][0]))
+print("  confounds: p15 body0 chr_size 10/40/100 -> t0 %+.2f/%+.2f/%+.2f ; p07 body0 detune 9.5(eff 3.8c)/15(eff 6c) -> %+.2f/%+.2f ;"
+      " p07 body0.8 detune 9.5(eff 12.9c)/4.4118(eff 6c) -> %+.2f/%+.2f" % (
+          rows['p15_t0_size10'][0], rows['p15_t0_nobody'][0], rows['p15_t0_size100'][0], rows['p07_t0_nobody'][0], rows['p07_t0_det15'][0],
+          rows['p07_t1_nocomp'][0], rows['p07_t1_b0.8_det4.4118'][0]))
+print("  p07 string count at body 0: N=1 %+.2f, N=3 %+.2f, N=5 %+.2f  (20log10(sqrt(5)) = %+.2f, sqrt(3) = %+.2f)" % (
+    rows['p07_t0_n1'][0], rows['p07_t0_n3'][0], rows['p07_t0_nobody'][0], 20 * math.log10(math.sqrt(5)), 20 * math.log10(math.sqrt(3))))
+
+print("\n[4] reverb sweeps (other settings as preset): " + "; ".join(f"{k}: {rows[k][0]:+.2f} @ {rows[k][1]:.0f} ms" for k in rows if "_rev_" in k))
+print("    compressor bypass only: " + "; ".join(f"{k}: {rows[k][0]:+.2f}" for k in ("p07_nocomp_only", "p11_nocomp_only", "p15_nocomp_only")))
+print("    Output macro linearity: p15 Output 0.5 -> %+.3f (expected %+.3f); p07 Output 0.9 -> %+.3f (expected %+.3f)" % (
+    rows['p15_out0.5'][0], rows['p15_t4_full'][0] + 20 * math.log10(0.5), rows['p07_out0.9'][0], rows['p07_t4_full'][0] + 20 * math.log10(0.9)))
+print("    fresh instance (no program call): %+.3f dBFS (preset 0: %+.3f)" % (rows['fresh_t4'][0], rows['p00_t4_full'][0]))
+
+print("\n[5] OPTION ARITHMETIC (exact where stated)")
+print("  A1 per-preset Output (post-FX linear gain, exact): Output needed for peak <= 0 dBFS / <= -1 dBFS (descriptive targets, not thresholds):")
+for p in (7, 11, 15):
+    t4 = rows[f'p{p:02d}_t4_full'][0]
+    print(f"     p{p:02d} {names[p]}: peak {t4:+.2f} -> Output {10 ** (-t4 / 20):.3f} / {10 ** ((-1 - t4) / 20):.3f}")
+print("  B1 remove compressor auto-makeup (exact: makeup is a constant factor after the gain computer; delay/reverb/Output are linear):")
+print("     " + ", ".join(f"{p}:{t4:+.2f}->{t4 - mk:+.2f}" for p, t4, mk in out))
+worst = max(v for _, v, _ in out)
+print("  B4 global Output default needed so that every factory preset <= 0 dBFS: %.3f (%.2f dB)" % (10 ** (-worst / 20), -worst))
+
+== harness source (scripts/r_probe.cpp) ==
+// WF1002-R (R-a, Q05 root cause) -- read-only research harness.
+// NOT part of the repo build. Loads a COPY of build\'s TsukiSynth.vst3 through
+// juce::VST3PluginFormat (same path HostProbe E16 uses), loads factory program
+// i via setCurrentProgram(i) (exactly like E16; i = -1 -> fresh instance, no
+// program call), optionally overrides some parameters (raw/plain values,
+// converted with the SAME createTsukiParameterLayout() the product uses --
+// shadow APVTS, index-matched and name-checked like HostProbe H7), renders C4
+// vel 0.7, note-off 1.0 s after note-on, keeps 188 blocks (= E16's 96256
+// samples/ch) from note-on, writes a float WAV and prints peak/RMS.
+//
+// Warm-up: parameter overrides set on a hosted VST3 reach the processor only at
+// the next process() call, while EffectChain/Output smoothers are initialised
+// in prepareToPlay(). To avoid a 20 ms smoothing ramp contaminating the onset,
+// every case (including the no-override baseline) first renders kWarmBlocks
+// silent blocks, then sends note-on at the start of the next block. The
+// baseline is checked against E16's numbers (warm-up must not change them).
+//
+// Usage: r_probe <TsukiSynth.vst3> <out-dir> <cases.txt>
+// cases.txt lines: <name> <program> [paramID=plainValue ...]   ('#' comments)
+
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_audio_formats/juce_audio_formats.h>
+#include <juce_events/juce_events.h>
+#include "ParameterLayout.h"
+#include <cmath>
+#include <iostream>
+#include <memory>
+
+namespace
+{
+constexpr double kSampleRate = 48000.0;
+constexpr int    kBlockSize  = 512;
+constexpr int    kWarmBlocks = 8;
+constexpr int    kKeepBlocks = 188;   // 188 * 512 = 96256 = HostProbe E16's per-channel length
+
+class ShadowProcessor : public juce::AudioProcessor
+{
+public:
+    ShadowProcessor()
+        : juce::AudioProcessor (BusesProperties()
+                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+          apvts (*this, nullptr, "PARAMETERS", createTsukiParameterLayout())
+    {}
+    const juce::String getName() const override { return "Shadow"; }
+    void prepareToPlay (double, int) override {}
+    void releaseResources() override {}
+    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override {}
+    double getTailLengthSeconds() const override { return 0.0; }
+    bool acceptsMidi() const override { return true; }
+    bool producesMidi() const override { return false; }
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+    bool hasEditor() const override { return false; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram (int) override {}
+    const juce::String getProgramName (int) override { return {}; }
+    void changeProgramName (int, const juce::String&) override {}
+    void getStateInformation (juce::MemoryBlock&) override {}
+    void setStateInformation (const void*, int) override {}
+    juce::AudioProcessorValueTreeState apvts;
+};
+
+bool writeWav (const juce::AudioBuffer<float>& buf, const juce::File& f)
+{
+    f.deleteFile();
+    juce::WavAudioFormat wav;
+    std::unique_ptr<juce::FileOutputStream> os (f.createOutputStream());
+    if (os == nullptr) return false;
+    std::unique_ptr<juce::AudioFormatWriter> w (wav.createWriterFor (
+        os.get(), kSampleRate, (unsigned) buf.getNumChannels(), 32, {}, 0));
+    if (w == nullptr) return false;
+    os.release();
+    return w->writeFromAudioSampleBuffer (buf, 0, buf.getNumSamples());
+}
+} // namespace
+
+int main (int argc, char** argv)
+{
+    if (argc < 4) { std::cout << "usage: r_probe <vst3> <out-dir> <cases.txt>\n"; return 2; }
+    juce::ScopedJuceInitialiser_GUI juceInit;
+    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+
+    const auto cwd = juce::File::getCurrentWorkingDirectory();
+    const juce::File bundle = cwd.getChildFile (juce::String (argv[1]));
+    const juce::File outDir = cwd.getChildFile (juce::String (argv[2]));
+    const juce::File casesFile = cwd.getChildFile (juce::String (argv[3]));
+    outDir.createDirectory();
+
+    juce::VST3PluginFormat vst3;
+    juce::OwnedArray<juce::PluginDescription> found;
+    vst3.findAllTypesForFile (found, bundle.getFullPathName());
+    if (found.isEmpty()) { std::cout << "no VST3 found\n"; return 1; }
+    juce::AudioPluginFormatManager fm;
+    fm.addFormat (new juce::VST3PluginFormat());
+
+    ShadowProcessor shadow;
+    auto& shadowParams = shadow.getParameters();
+
+    juce::StringArray lines;
+    casesFile.readLines (lines);
+    int failures = 0;
+    for (auto line : lines)
+    {
+        line = line.trim();
+        if (line.isEmpty() || line.startsWith ("#")) continue;
+        juce::StringArray tok;
+        tok.addTokens (line, " \t", "");
+        tok.removeEmptyStrings();
+        if (tok.size() < 2) continue;
+        const juce::String name = tok[0];
+        const int program = tok[1].getIntValue();
+
+        juce::String err;
+        auto inst = fm.createPluginInstance (*found[0], kSampleRate, kBlockSize, err);
+        if (inst == nullptr) { std::cout << name << " INSTANCE FAIL " << err << "\n"; ++failures; continue; }
+        if (program >= 0) inst->setCurrentProgram (program);   // -1 = fresh instance
+        auto& loaded = inst->getParameters();
+
+        for (int i = 0; i < shadowParams.size(); ++i)
+            if (i >= loaded.size() || shadowParams[i]->getName (64) != loaded[i]->getName (64))
+            { std::cout << name << " PARAM ORDER MISMATCH at " << i << "\n"; return 1; }
+
+        juce::String applied;
+        for (int k = 2; k < tok.size(); ++k)
+        {
+            const auto id = tok[k].upToFirstOccurrenceOf ("=", false, false);
+            const float plain = tok[k].fromFirstOccurrenceOf ("=", false, false).getFloatValue();
+            int idx = -1;
+            for (int i = 0; i < shadowParams.size(); ++i)
+                if (auto* wp = dynamic_cast<juce::RangedAudioParameter*> (shadowParams[i]))
+                    if (wp->getParameterID() == id) { idx = i; break; }
+            if (idx < 0) { std::cout << name << " UNKNOWN PARAM " << id << "\n"; ++failures; continue; }
+            auto* sp = dynamic_cast<juce::RangedAudioParameter*> (shadowParams[idx]);
+            const float norm = sp->convertTo0to1 (plain);
+            loaded[idx]->setValue (norm);
+            applied << id << "=" << juce::String (plain, 4) << "(n" << juce::String (norm, 6) << ") ";
+        }
+
+        const int offRel = (int) std::llround (1.0 * kSampleRate);
+        const int numBlocks = kWarmBlocks + kKeepBlocks;
+        inst->setNonRealtime (true);
+        inst->prepareToPlay (kSampleRate, kBlockSize);
+        const int chans = juce::jmax (2, inst->getTotalNumOutputChannels());
+        juce::AudioBuffer<float> out (2, kKeepBlocks * kBlockSize);
+        out.clear();
+        juce::AudioBuffer<float> block (chans, kBlockSize);
+        juce::MidiBuffer midi;
+        double warmPeak = 0.0;
+        for (int b = 0; b < numBlocks; ++b)
+        {
+            midi.clear();
+            const int rel = (b - kWarmBlocks) * kBlockSize;
+            if (b == kWarmBlocks)
+                midi.addEvent (juce::MidiMessage::noteOn (1, 60, 0.7f), 0);
+            if (b >= kWarmBlocks && offRel >= rel && offRel < rel + kBlockSize)
+                midi.addEvent (juce::MidiMessage::noteOff (1, 60), offRel - rel);
+            block.clear();
+            inst->processBlock (block, midi);
+            if (b < kWarmBlocks)
+                warmPeak = juce::jmax (warmPeak, (double) block.getMagnitude (0, kBlockSize));
+            else
+                for (int c = 0; c < 2; ++c)
+                    out.copyFrom (c, rel, block, juce::jmin (c, chans - 1), 0, kBlockSize);
+        }
+        inst->releaseResources();
+
+        double peak = 0.0, sumSq = 0.0; int peakIdx = 0, peakCh = 0;
+        for (int c = 0; c < 2; ++c)
+        {
+            const float* d = out.getReadPointer (c);
+            for (int s = 0; s < out.getNumSamples(); ++s)
+            {
+                const double a = std::abs ((double) d[s]);
+                if (a > peak) { peak = a; peakIdx = s; peakCh = c; }
+                sumSq += (double) d[s] * d[s];
+            }
+        }
+        const double rms = std::sqrt (sumSq / (2.0 * out.getNumSamples()));
+        writeWav (out, outDir.getChildFile (name + ".wav"));
+        std::cout << name << "\tprog=" << program
+                  << "\tpeak_dBFS=" << juce::String (20.0 * std::log10 (juce::jmax (peak, 1e-12)), 3)
+                  << "\tpeak_t_ms=" << juce::String (1000.0 * peakIdx / kSampleRate, 2)
+                  << "\tpeak_ch=" << peakCh
+                  << "\tRMS_dBFS=" << juce::String (20.0 * std::log10 (juce::jmax (rms, 1e-12)), 3)
+                  << "\twarmup_peak=" << juce::String (warmPeak, 9)
+                  << "\toverrides=" << (applied.isEmpty() ? juce::String ("none") : applied)
+                  << "\n";
+    }
+    return failures == 0 ? 0 : 1;
+}
+
+
+== B6 check (appended): $ git grep -n "RadiationModel::" HEAD -- src
+src/dsp/DiagnosticOverrides.h:50:    // RadiationModel::pressurePerForce()).
+src/engines/CimbalomEngine.h:585:        // RadiationModel::kPascalsPerUnitPhysicsAmplitude for what this
+src/score/ScoreRenderer.h:261:            // RadiationModel::modalEnergyFirstPrinciples()/
+src/score/ScoreRenderer.h:291:                    radiationFc = RadiationModel::criticalFrequency (sbDyn.D, sbDyn.rhoS);
+src/score/ScoreRenderer.h:292:                    radiationFga = RadiationModel::acousticCutoffFrequency();
+src/score/ScoreRenderer.h:450:                // see RadiationModel::radiationEfficiency(). Omitted entirely
+src/score/ScoreRenderer.h:461:                    const float sigma = RadiationModel::radiationEfficiency (
+src/score/ScoreRenderer.h:529:                        RadiationModel::pressurePerForce (physicsOnlyAmplitudes[i]);
+src/score/ScoreRenderer.h:537:                        << juce::String (RadiationModel::kMeasurementRadiusM, 2)
+src/score/ScoreRenderer.h:539:                        << juce::String (RadiationModel::kMeasurementAzimuthDeg, 1)
+src/score/ScoreRenderer.h:541:                        << juce::String (RadiationModel::kMeasurementElevationDeg, 1)
+== $ git grep -n capturePhysicsOnlyModes HEAD -- src
+src/dsp/DiagnosticOverrides.h:64:    inline bool capturePhysicsOnlyModes = false;
+src/engines/CimbalomEngine.h:437:        // capturePhysicsOnlyModes, see that flag's doc comment): snapshot
+src/engines/CimbalomEngine.h:443:        if (DiagnosticOverrides::capturePhysicsOnlyModes)
+src/engines/CimbalomEngine.h:588:        if (DiagnosticOverrides::capturePhysicsOnlyModes)
+src/engines/CimbalomEngine.h:830:    /// capturePhysicsOnlyModes): the physics-only (pre-spectralTilt,
+src/engines/CimbalomEngine.h:834:    /// Empty unless DiagnosticOverrides::capturePhysicsOnlyModes was set
+src/engines/CimbalomEngine.h:990:    // capturePhysicsOnlyModes, see that flag's doc comment) -- both stay
+src/physics/RadiationModel.h:18: * 訊號分接點，見 `DiagnosticOverrides::capturePhysicsOnlyModes`）換算成
+src/physics/RadiationModel.h:254:     *  (see `DiagnosticOverrides::capturePhysicsOnlyModes` and
+src/score/ScoreRenderer.h:154:        // DiagnosticOverrides::capturePhysicsOnlyModes doc): this diagnostic
+src/score/ScoreRenderer.h:177:        } physicsOnlyModesGuard (DiagnosticOverrides::capturePhysicsOnlyModes);
+src/score/ScoreRenderer.h:327:                // B6 Phase 3: capturePhysicsOnlyModes was set true at the
+== $ git grep -n compressorEnabled HEAD -- src
+src/dsp/EffectsChain.h:22:    bool   compressorEnabled = false;
+src/dsp/EffectsChain.h:82:        compressor.setRatio (p.compressorEnabled ? p.compRatio : 1.0f);

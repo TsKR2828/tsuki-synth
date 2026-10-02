@@ -1,0 +1,40 @@
+# WF1002-C2 (R10 before/after card, Q09b=A) -- evidence, descriptive only, no thresholds.
+# <REPO> = tsuki-synth repo root (HEAD b41298c); <C2> = <SCRATCH>/wf1002_C2 = the isolated
+# copy outside the repo (git archive b41298c; libs/JUCE = junction to <REPO>/libs/JUCE).
+
+## incident (2026-10-02 ~00:28)
+First attempt lived in <REPO>/output/wf1002/C2/{tree,build-base,...}. Another lane ran
+`rm -rf output/wf1002` around 00:28 (coordinator message); the copy, base build, events,
+dumps and the first base CLI 8/8 run were deleted. <REPO>/libs/JUCE was NOT touched
+(4378 files before and after, `git -C libs/JUCE status` clean). Per coordinator: the
+leftover copies in output/wf1002/C2 were cleared (junctions removed first with
+`cmd /c rmdir` on the junction only, `dir /AL /S` then showed no reparse points), and
+EVERYTHING below was redone from scratch in <C2> (outside the repo). No result from the
+first attempt is used in this card.
+
+## setup
+for T in tree tree-fix: git archive b41298c | tar -x -C <C2>/$T ; rmdir $T/libs/JUCE (empty
+submodule dir) ; cmd /c mklink /J <C2>/$T/libs/JUCE <REPO>/libs/JUCE ;
+add tests/c2_fm_harness.cpp + CMake target TsukiSynthC2FMHarness (copy-only; the product
+targets TsukiSynth_VST3 / TsukiSynthCLI are untouched).
+tree-fix only: apply reports/wf1002_fm_envelope_fix.patch (src/dsp/Envelope.h).
+
+`diff -rq tree tree-fix` (JUCE junction excluded):
+Files '<C2>\tree/src/dsp/Envelope.h' and '<C2>\tree-fix/src/dsp/Envelope.h' differ
+`git apply --check reports/wf1002_fm_envelope_fix.patch` on <REPO> (check only, not applied): rc=0 
+sha256 tree/src/dsp/Envelope.h     b8633eafd703cec433208aab6188364333f8728947819ad148dc039ed2eec5b3
+sha256 <REPO>/src/dsp/Envelope.h   b8633eafd703cec433208aab6188364333f8728947819ad148dc039ed2eec5b3
+sha256 tree-fix/src/dsp/Envelope.h f08c512e205bbfd6c59d1a531332e833b6ed79a2a772a6d5bc06fd7b20c51cf9
+
+## builds (cmake -G "Visual Studio 18 2026", Release; targets TsukiSynth_VST3 TsukiSynthCLI TsukiSynthC2FMHarness)
+build-base: exit=0 ; errors lines: 0
+  sha256 15acd76fc7209fad27a5c1a8461e20ffa0a23b872dc6f1b692fd9d08e0c97cd5  build-base/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  sha256 3ece9ae5150391cb7456a55f682d2fd82ddf5a474392362bfc33b27463d307f6  build-base/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+  sha256 6bb5c27a018defcf2dc8fa5312b3e556bb1f82084f413b4a4b0f264a21101600  build-base/Release/TsukiSynthC2FMHarness.exe
+build-fix: exit=0 ; errors lines: 0
+  sha256 65215d6af9bd10009a7f75e95736ed80accaa5674a2fd6938b14e127c85bcf96  build-fix/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  sha256 924794f0a6ce0371d1fafe621f6f0d156c60066b185c787f08c9499b9f5576e2  build-fix/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+  sha256 f986a1e9cfb6c2e94844c1cec3cfa0cff50a4a31453a76d1e49cdf1d77c9a5b0  build-fix/Release/TsukiSynthC2FMHarness.exe
+
+## JUCE safety
+<REPO>/libs/JUCE file count now: 4378 (before this card: 4378)

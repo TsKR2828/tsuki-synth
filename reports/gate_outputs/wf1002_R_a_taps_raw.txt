@@ -1,0 +1,359 @@
+WF1002-R (research lane, read-only) -- 2026-10-02, repo HEAD b41298c.
+Aliases: <repo> = local repo root; <scratch> = this session's scratch directory (outside the repo).
+All numbers below are DESCRIPTIVE ONLY, NOT a GATE, NOT new thresholds (R2).
+
+== cases (scripts/cases_taps.txt) ==
+# WF1002-R R-a taps: t4 = E16 as loaded; t3 = reverb mix 0 (= post-delay tap);
+# t2 = + delay mix 0 (= post-compressor tap); t1 = + comp ratio 1 (Compressor.h bypass -> engine-sum tap);
+# t0 = + macro_body 0 (body-resonance layer off; physics engines only)
+p00_t4_full 0
+p00_t3_norev 0 fx_reverb_mix=0
+p00_t2_nodly 0 fx_reverb_mix=0 fx_delay_mix=0
+p00_t1_nocomp 0 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p00_t0_nobody 0 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p01_t4_full 1
+p01_t3_norev 1 fx_reverb_mix=0
+p01_t2_nodly 1 fx_reverb_mix=0 fx_delay_mix=0
+p01_t1_nocomp 1 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p01_t0_nobody 1 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p02_t4_full 2
+p02_t3_norev 2 fx_reverb_mix=0
+p02_t2_nodly 2 fx_reverb_mix=0 fx_delay_mix=0
+p02_t1_nocomp 2 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p02_t0_nobody 2 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p03_t4_full 3
+p03_t3_norev 3 fx_reverb_mix=0
+p03_t2_nodly 3 fx_reverb_mix=0 fx_delay_mix=0
+p03_t1_nocomp 3 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p03_t0_nobody 3 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p04_t4_full 4
+p04_t3_norev 4 fx_reverb_mix=0
+p04_t2_nodly 4 fx_reverb_mix=0 fx_delay_mix=0
+p04_t1_nocomp 4 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p04_t0_nobody 4 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p05_t4_full 5
+p05_t3_norev 5 fx_reverb_mix=0
+p05_t2_nodly 5 fx_reverb_mix=0 fx_delay_mix=0
+p05_t1_nocomp 5 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p05_t0_nobody 5 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p06_t4_full 6
+p06_t3_norev 6 fx_reverb_mix=0
+p06_t2_nodly 6 fx_reverb_mix=0 fx_delay_mix=0
+p06_t1_nocomp 6 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p06_t0_nobody 6 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p07_t4_full 7
+p07_t3_norev 7 fx_reverb_mix=0
+p07_t2_nodly 7 fx_reverb_mix=0 fx_delay_mix=0
+p07_t1_nocomp 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p07_t0_nobody 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p08_t4_full 8
+p08_t3_norev 8 fx_reverb_mix=0
+p08_t2_nodly 8 fx_reverb_mix=0 fx_delay_mix=0
+p08_t1_nocomp 8 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p08_t0_nobody 8 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p09_t4_full 9
+p09_t3_norev 9 fx_reverb_mix=0
+p09_t2_nodly 9 fx_reverb_mix=0 fx_delay_mix=0
+p09_t1_nocomp 9 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p09_t0_nobody 9 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p10_t4_full 10
+p10_t3_norev 10 fx_reverb_mix=0
+p10_t2_nodly 10 fx_reverb_mix=0 fx_delay_mix=0
+p10_t1_nocomp 10 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p10_t0_nobody 10 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p11_t4_full 11
+p11_t3_norev 11 fx_reverb_mix=0
+p11_t2_nodly 11 fx_reverb_mix=0 fx_delay_mix=0
+p11_t1_nocomp 11 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p11_t0_nobody 11 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p12_t4_full 12
+p12_t3_norev 12 fx_reverb_mix=0
+p12_t2_nodly 12 fx_reverb_mix=0 fx_delay_mix=0
+p12_t1_nocomp 12 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p12_t0_nobody 12 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p13_t4_full 13
+p13_t3_norev 13 fx_reverb_mix=0
+p13_t2_nodly 13 fx_reverb_mix=0 fx_delay_mix=0
+p13_t1_nocomp 13 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p13_t0_nobody 13 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p14_t4_full 14
+p14_t3_norev 14 fx_reverb_mix=0
+p14_t2_nodly 14 fx_reverb_mix=0 fx_delay_mix=0
+p14_t1_nocomp 14 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p14_t0_nobody 14 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p15_t4_full 15
+p15_t3_norev 15 fx_reverb_mix=0
+p15_t2_nodly 15 fx_reverb_mix=0 fx_delay_mix=0
+p15_t1_nocomp 15 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p15_t0_nobody 15 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p16_t4_full 16
+p16_t3_norev 16 fx_reverb_mix=0
+p16_t2_nodly 16 fx_reverb_mix=0 fx_delay_mix=0
+p16_t1_nocomp 16 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p17_t4_full 17
+p17_t3_norev 17 fx_reverb_mix=0
+p17_t2_nodly 17 fx_reverb_mix=0 fx_delay_mix=0
+p17_t1_nocomp 17 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p18_t4_full 18
+p18_t3_norev 18 fx_reverb_mix=0
+p18_t2_nodly 18 fx_reverb_mix=0 fx_delay_mix=0
+p18_t1_nocomp 18 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p19_t4_full 19
+p19_t3_norev 19 fx_reverb_mix=0
+p19_t2_nodly 19 fx_reverb_mix=0 fx_delay_mix=0
+p19_t1_nocomp 19 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p20_t4_full 20
+p20_t3_norev 20 fx_reverb_mix=0
+p20_t2_nodly 20 fx_reverb_mix=0 fx_delay_mix=0
+p20_t1_nocomp 20 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p21_t4_full 21
+p21_t3_norev 21 fx_reverb_mix=0
+p21_t2_nodly 21 fx_reverb_mix=0 fx_delay_mix=0
+p21_t1_nocomp 21 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p22_t4_full 22
+p22_t3_norev 22 fx_reverb_mix=0
+p22_t2_nodly 22 fx_reverb_mix=0 fx_delay_mix=0
+p22_t1_nocomp 22 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p23_t4_full 23
+p23_t3_norev 23 fx_reverb_mix=0
+p23_t2_nodly 23 fx_reverb_mix=0 fx_delay_mix=0
+p23_t1_nocomp 23 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p24_t4_full 24
+p24_t3_norev 24 fx_reverb_mix=0
+p24_t2_nodly 24 fx_reverb_mix=0 fx_delay_mix=0
+p24_t1_nocomp 24 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p25_t4_full 25
+p25_t3_norev 25 fx_reverb_mix=0
+p25_t2_nodly 25 fx_reverb_mix=0 fx_delay_mix=0
+p25_t1_nocomp 25 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p25_t0_nobody 25 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+p26_t4_full 26
+p26_t3_norev 26 fx_reverb_mix=0
+p26_t2_nodly 26 fx_reverb_mix=0 fx_delay_mix=0
+p26_t1_nocomp 26 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1
+p26_t0_nobody 26 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0
+
+== $ ./bin/r_probe.exe bin/TsukiSynth.vst3 wav_taps scripts/cases_taps.txt  (exit 0) ==
+p00_t4_full	prog=0	peak_dBFS=-7.207	peak_t_ms=64.56	peak_ch=0	RMS_dBFS=-23.185	warmup_peak=0.000000000	overrides=none
+p00_t3_norev	prog=0	peak_dBFS=-5.929	peak_t_ms=11.21	peak_ch=0	RMS_dBFS=-23.320	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p00_t2_nodly	prog=0	peak_dBFS=-5.929	peak_t_ms=11.21	peak_ch=0	RMS_dBFS=-23.320	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p00_t1_nocomp	prog=0	peak_dBFS=-10.429	peak_t_ms=11.21	peak_ch=0	RMS_dBFS=-27.820	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p00_t0_nobody	prog=0	peak_dBFS=-15.201	peak_t_ms=22.62	peak_ch=0	RMS_dBFS=-34.709	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p01_t4_full	prog=1	peak_dBFS=-7.970	peak_t_ms=231.15	peak_ch=0	RMS_dBFS=-22.496	warmup_peak=0.000000000	overrides=none
+p01_t3_norev	prog=1	peak_dBFS=-11.793	peak_t_ms=0.85	peak_ch=0	RMS_dBFS=-28.769	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p01_t2_nodly	prog=1	peak_dBFS=-11.793	peak_t_ms=0.85	peak_ch=0	RMS_dBFS=-28.769	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p01_t1_nocomp	prog=1	peak_dBFS=-16.793	peak_t_ms=0.85	peak_ch=0	RMS_dBFS=-33.769	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p01_t0_nobody	prog=1	peak_dBFS=-16.793	peak_t_ms=0.85	peak_ch=0	RMS_dBFS=-33.769	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p02_t4_full	prog=2	peak_dBFS=-7.272	peak_t_ms=83.73	peak_ch=1	RMS_dBFS=-23.559	warmup_peak=0.000000000	overrides=none
+p02_t3_norev	prog=2	peak_dBFS=-11.192	peak_t_ms=7.42	peak_ch=0	RMS_dBFS=-33.912	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p02_t2_nodly	prog=2	peak_dBFS=-9.780	peak_t_ms=7.42	peak_ch=0	RMS_dBFS=-32.644	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p02_t1_nocomp	prog=2	peak_dBFS=-11.780	peak_t_ms=7.42	peak_ch=0	RMS_dBFS=-34.644	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p02_t0_nobody	prog=2	peak_dBFS=-11.780	peak_t_ms=7.42	peak_ch=0	RMS_dBFS=-34.644	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p03_t4_full	prog=3	peak_dBFS=-30.406	peak_t_ms=64.27	peak_ch=0	RMS_dBFS=-44.519	warmup_peak=0.000000000	overrides=none
+p03_t3_norev	prog=3	peak_dBFS=-30.010	peak_t_ms=0.96	peak_ch=0	RMS_dBFS=-44.202	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p03_t2_nodly	prog=3	peak_dBFS=-30.010	peak_t_ms=0.96	peak_ch=0	RMS_dBFS=-44.202	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p03_t1_nocomp	prog=3	peak_dBFS=-33.343	peak_t_ms=0.96	peak_ch=0	RMS_dBFS=-47.535	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p03_t0_nobody	prog=3	peak_dBFS=-33.343	peak_t_ms=0.96	peak_ch=0	RMS_dBFS=-47.535	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p04_t4_full	prog=4	peak_dBFS=-10.939	peak_t_ms=98.88	peak_ch=1	RMS_dBFS=-30.215	warmup_peak=0.000000000	overrides=none
+p04_t3_norev	prog=4	peak_dBFS=-9.045	peak_t_ms=3.60	peak_ch=0	RMS_dBFS=-37.420	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p04_t2_nodly	prog=4	peak_dBFS=-9.045	peak_t_ms=3.60	peak_ch=0	RMS_dBFS=-37.420	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p04_t1_nocomp	prog=4	peak_dBFS=-11.445	peak_t_ms=3.60	peak_ch=0	RMS_dBFS=-39.820	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p04_t0_nobody	prog=4	peak_dBFS=-11.445	peak_t_ms=3.60	peak_ch=0	RMS_dBFS=-39.820	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p05_t4_full	prog=5	peak_dBFS=-12.316	peak_t_ms=0.38	peak_ch=0	RMS_dBFS=-44.633	warmup_peak=0.000000000	overrides=none
+p05_t3_norev	prog=5	peak_dBFS=-11.401	peak_t_ms=0.38	peak_ch=0	RMS_dBFS=-44.243	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p05_t2_nodly	prog=5	peak_dBFS=-11.401	peak_t_ms=0.38	peak_ch=0	RMS_dBFS=-44.243	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p05_t1_nocomp	prog=5	peak_dBFS=-18.901	peak_t_ms=0.38	peak_ch=0	RMS_dBFS=-51.743	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p05_t0_nobody	prog=5	peak_dBFS=-18.901	peak_t_ms=0.38	peak_ch=0	RMS_dBFS=-51.743	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p06_t4_full	prog=6	peak_dBFS=-2.773	peak_t_ms=8.73	peak_ch=0	RMS_dBFS=-19.030	warmup_peak=0.000000000	overrides=none
+p06_t3_norev	prog=6	peak_dBFS=-0.835	peak_t_ms=8.73	peak_ch=0	RMS_dBFS=-19.647	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p06_t2_nodly	prog=6	peak_dBFS=-0.835	peak_t_ms=8.73	peak_ch=0	RMS_dBFS=-19.647	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p06_t1_nocomp	prog=6	peak_dBFS=-5.245	peak_t_ms=8.79	peak_ch=0	RMS_dBFS=-22.107	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p06_t0_nobody	prog=6	peak_dBFS=-19.212	peak_t_ms=6.98	peak_ch=0	RMS_dBFS=-33.666	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p07_t4_full	prog=7	peak_dBFS=0.326	peak_t_ms=231.46	peak_ch=0	RMS_dBFS=-15.000	warmup_peak=0.000000000	overrides=none
+p07_t3_norev	prog=7	peak_dBFS=1.210	peak_t_ms=3.12	peak_ch=0	RMS_dBFS=-21.032	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p07_t2_nodly	prog=7	peak_dBFS=1.210	peak_t_ms=3.12	peak_ch=0	RMS_dBFS=-21.032	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p07_t1_nocomp	prog=7	peak_dBFS=-1.673	peak_t_ms=8.85	peak_ch=0	RMS_dBFS=-20.336	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p07_t0_nobody	prog=7	peak_dBFS=-16.793	peak_t_ms=0.85	peak_ch=0	RMS_dBFS=-33.769	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p08_t4_full	prog=8	peak_dBFS=-19.341	peak_t_ms=432.27	peak_ch=0	RMS_dBFS=-27.863	warmup_peak=0.000000000	overrides=none
+p08_t3_norev	prog=8	peak_dBFS=-23.554	peak_t_ms=2.88	peak_ch=0	RMS_dBFS=-30.177	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p08_t2_nodly	prog=8	peak_dBFS=-23.554	peak_t_ms=2.88	peak_ch=0	RMS_dBFS=-30.177	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p08_t1_nocomp	prog=8	peak_dBFS=-28.054	peak_t_ms=2.88	peak_ch=0	RMS_dBFS=-34.677	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p08_t0_nobody	prog=8	peak_dBFS=-28.054	peak_t_ms=2.88	peak_ch=0	RMS_dBFS=-34.677	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p09_t4_full	prog=9	peak_dBFS=-4.867	peak_t_ms=542.19	peak_ch=0	RMS_dBFS=-18.779	warmup_peak=0.000000000	overrides=none
+p09_t3_norev	prog=9	peak_dBFS=-11.868	peak_t_ms=31.38	peak_ch=0	RMS_dBFS=-28.457	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p09_t2_nodly	prog=9	peak_dBFS=-11.868	peak_t_ms=31.38	peak_ch=0	RMS_dBFS=-28.457	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p09_t1_nocomp	prog=9	peak_dBFS=-16.368	peak_t_ms=31.38	peak_ch=0	RMS_dBFS=-32.957	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p09_t0_nobody	prog=9	peak_dBFS=-16.368	peak_t_ms=31.38	peak_ch=0	RMS_dBFS=-32.957	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p10_t4_full	prog=10	peak_dBFS=-16.329	peak_t_ms=0.90	peak_ch=0	RMS_dBFS=-34.363	warmup_peak=0.000000000	overrides=none
+p10_t3_norev	prog=10	peak_dBFS=-14.391	peak_t_ms=0.90	peak_ch=0	RMS_dBFS=-34.035	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p10_t2_nodly	prog=10	peak_dBFS=-14.391	peak_t_ms=0.90	peak_ch=0	RMS_dBFS=-34.035	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p10_t1_nocomp	prog=10	peak_dBFS=-18.891	peak_t_ms=0.90	peak_ch=0	RMS_dBFS=-38.535	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p10_t0_nobody	prog=10	peak_dBFS=-18.891	peak_t_ms=0.90	peak_ch=0	RMS_dBFS=-38.535	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p11_t4_full	prog=11	peak_dBFS=1.472	peak_t_ms=914.88	peak_ch=1	RMS_dBFS=-8.808	warmup_peak=0.000000000	overrides=none
+p11_t3_norev	prog=11	peak_dBFS=-7.566	peak_t_ms=30.08	peak_ch=0	RMS_dBFS=-19.617	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p11_t2_nodly	prog=11	peak_dBFS=-5.628	peak_t_ms=30.08	peak_ch=0	RMS_dBFS=-18.331	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p11_t1_nocomp	prog=11	peak_dBFS=-10.128	peak_t_ms=30.08	peak_ch=0	RMS_dBFS=-22.831	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p11_t0_nobody	prog=11	peak_dBFS=-10.128	peak_t_ms=30.08	peak_ch=0	RMS_dBFS=-22.831	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p12_t4_full	prog=12	peak_dBFS=-25.993	peak_t_ms=855.52	peak_ch=0	RMS_dBFS=-37.376	warmup_peak=0.000000000	overrides=none
+p12_t3_norev	prog=12	peak_dBFS=-37.184	peak_t_ms=20.17	peak_ch=0	RMS_dBFS=-51.856	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p12_t2_nodly	prog=12	peak_dBFS=-35.460	peak_t_ms=20.17	peak_ch=0	RMS_dBFS=-50.377	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p12_t1_nocomp	prog=12	peak_dBFS=-39.960	peak_t_ms=20.17	peak_ch=0	RMS_dBFS=-54.877	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p12_t0_nobody	prog=12	peak_dBFS=-39.960	peak_t_ms=20.17	peak_ch=0	RMS_dBFS=-54.877	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p13_t4_full	prog=13	peak_dBFS=-39.785	peak_t_ms=0.77	peak_ch=0	RMS_dBFS=-63.863	warmup_peak=0.000000000	overrides=none
+p13_t3_norev	prog=13	peak_dBFS=-36.044	peak_t_ms=0.77	peak_ch=0	RMS_dBFS=-68.363	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p13_t2_nodly	prog=13	peak_dBFS=-33.885	peak_t_ms=0.77	peak_ch=0	RMS_dBFS=-66.597	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p13_t1_nocomp	prog=13	peak_dBFS=-38.385	peak_t_ms=0.77	peak_ch=0	RMS_dBFS=-71.097	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p13_t0_nobody	prog=13	peak_dBFS=-38.385	peak_t_ms=0.77	peak_ch=0	RMS_dBFS=-71.097	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p14_t4_full	prog=14	peak_dBFS=-6.943	peak_t_ms=434.54	peak_ch=0	RMS_dBFS=-15.431	warmup_peak=0.000000000	overrides=none
+p14_t3_norev	prog=14	peak_dBFS=-11.285	peak_t_ms=16.60	peak_ch=0	RMS_dBFS=-17.742	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p14_t2_nodly	prog=14	peak_dBFS=-11.285	peak_t_ms=16.60	peak_ch=0	RMS_dBFS=-17.742	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p14_t1_nocomp	prog=14	peak_dBFS=-15.785	peak_t_ms=16.60	peak_ch=0	RMS_dBFS=-22.242	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p14_t0_nobody	prog=14	peak_dBFS=-28.054	peak_t_ms=2.88	peak_ch=0	RMS_dBFS=-34.677	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p15_t4_full	prog=15	peak_dBFS=2.654	peak_t_ms=548.29	peak_ch=0	RMS_dBFS=-12.061	warmup_peak=0.000000000	overrides=none
+p15_t3_norev	prog=15	peak_dBFS=-6.898	peak_t_ms=6.60	peak_ch=0	RMS_dBFS=-21.624	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p15_t2_nodly	prog=15	peak_dBFS=-6.898	peak_t_ms=6.60	peak_ch=0	RMS_dBFS=-21.624	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p15_t1_nocomp	prog=15	peak_dBFS=-11.398	peak_t_ms=6.60	peak_ch=0	RMS_dBFS=-26.124	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p15_t0_nobody	prog=15	peak_dBFS=-16.368	peak_t_ms=31.38	peak_ch=0	RMS_dBFS=-32.957	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p16_t4_full	prog=16	peak_dBFS=-15.331	peak_t_ms=206.92	peak_ch=0	RMS_dBFS=-26.096	warmup_peak=0.000000000	overrides=none
+p16_t3_norev	prog=16	peak_dBFS=-17.528	peak_t_ms=7.10	peak_ch=0	RMS_dBFS=-25.910	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p16_t2_nodly	prog=16	peak_dBFS=-17.528	peak_t_ms=7.10	peak_ch=0	RMS_dBFS=-25.910	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p16_t1_nocomp	prog=16	peak_dBFS=-22.028	peak_t_ms=7.10	peak_ch=0	RMS_dBFS=-30.410	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p17_t4_full	prog=17	peak_dBFS=-18.403	peak_t_ms=164.85	peak_ch=0	RMS_dBFS=-30.066	warmup_peak=0.000000000	overrides=none
+p17_t3_norev	prog=17	peak_dBFS=-18.639	peak_t_ms=23.29	peak_ch=0	RMS_dBFS=-29.358	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p17_t2_nodly	prog=17	peak_dBFS=-17.227	peak_t_ms=23.29	peak_ch=0	RMS_dBFS=-27.520	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p17_t1_nocomp	prog=17	peak_dBFS=-21.727	peak_t_ms=23.29	peak_ch=0	RMS_dBFS=-32.020	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p18_t4_full	prog=18	peak_dBFS=-16.710	peak_t_ms=229.83	peak_ch=0	RMS_dBFS=-28.066	warmup_peak=0.000000000	overrides=none
+p18_t3_norev	prog=18	peak_dBFS=-18.373	peak_t_ms=23.29	peak_ch=0	RMS_dBFS=-28.754	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p18_t2_nodly	prog=18	peak_dBFS=-17.263	peak_t_ms=23.29	peak_ch=0	RMS_dBFS=-27.302	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p18_t1_nocomp	prog=18	peak_dBFS=-21.763	peak_t_ms=23.29	peak_ch=0	RMS_dBFS=-31.802	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p19_t4_full	prog=19	peak_dBFS=-11.728	peak_t_ms=348.25	peak_ch=0	RMS_dBFS=-24.029	warmup_peak=0.000000000	overrides=none
+p19_t3_norev	prog=19	peak_dBFS=-18.314	peak_t_ms=9.04	peak_ch=0	RMS_dBFS=-25.772	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p19_t2_nodly	prog=19	peak_dBFS=-18.314	peak_t_ms=9.04	peak_ch=0	RMS_dBFS=-25.772	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p19_t1_nocomp	prog=19	peak_dBFS=-22.814	peak_t_ms=9.04	peak_ch=0	RMS_dBFS=-30.272	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p20_t4_full	prog=20	peak_dBFS=-4.569	peak_t_ms=514.71	peak_ch=0	RMS_dBFS=-16.477	warmup_peak=0.000000000	overrides=none
+p20_t3_norev	prog=20	peak_dBFS=-18.561	peak_t_ms=4.48	peak_ch=0	RMS_dBFS=-24.678	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p20_t2_nodly	prog=20	peak_dBFS=-18.561	peak_t_ms=4.48	peak_ch=0	RMS_dBFS=-24.678	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p20_t1_nocomp	prog=20	peak_dBFS=-23.061	peak_t_ms=4.48	peak_ch=0	RMS_dBFS=-29.178	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p21_t4_full	prog=21	peak_dBFS=-8.353	peak_t_ms=569.92	peak_ch=0	RMS_dBFS=-16.486	warmup_peak=0.000000000	overrides=none
+p21_t3_norev	prog=21	peak_dBFS=-18.588	peak_t_ms=240.40	peak_ch=0	RMS_dBFS=-25.332	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p21_t2_nodly	prog=21	peak_dBFS=-18.588	peak_t_ms=240.40	peak_ch=0	RMS_dBFS=-25.332	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p21_t1_nocomp	prog=21	peak_dBFS=-23.088	peak_t_ms=240.40	peak_ch=0	RMS_dBFS=-29.832	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p22_t4_full	prog=22	peak_dBFS=-7.925	peak_t_ms=1455.71	peak_ch=1	RMS_dBFS=-15.335	warmup_peak=0.000000000	overrides=none
+p22_t3_norev	prog=22	peak_dBFS=-20.089	peak_t_ms=799.73	peak_ch=0	RMS_dBFS=-25.628	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p22_t2_nodly	prog=22	peak_dBFS=-18.591	peak_t_ms=799.81	peak_ch=0	RMS_dBFS=-24.513	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p22_t1_nocomp	prog=22	peak_dBFS=-23.091	peak_t_ms=799.81	peak_ch=0	RMS_dBFS=-29.013	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p23_t4_full	prog=23	peak_dBFS=-19.049	peak_t_ms=9.29	peak_ch=0	RMS_dBFS=-35.454	warmup_peak=0.000000000	overrides=none
+p23_t3_norev	prog=23	peak_dBFS=-18.603	peak_t_ms=9.29	peak_ch=0	RMS_dBFS=-35.214	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p23_t2_nodly	prog=23	peak_dBFS=-18.603	peak_t_ms=9.29	peak_ch=0	RMS_dBFS=-35.214	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p23_t1_nocomp	prog=23	peak_dBFS=-21.937	peak_t_ms=9.29	peak_ch=0	RMS_dBFS=-38.547	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p24_t4_full	prog=24	peak_dBFS=-17.643	peak_t_ms=114.85	peak_ch=1	RMS_dBFS=-31.084	warmup_peak=0.000000000	overrides=none
+p24_t3_norev	prog=24	peak_dBFS=-19.758	peak_t_ms=35.27	peak_ch=0	RMS_dBFS=-31.066	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p24_t2_nodly	prog=24	peak_dBFS=-19.758	peak_t_ms=35.27	peak_ch=0	RMS_dBFS=-31.066	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p24_t1_nocomp	prog=24	peak_dBFS=-23.091	peak_t_ms=35.27	peak_ch=0	RMS_dBFS=-34.399	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p25_t4_full	prog=25	peak_dBFS=-7.765	peak_t_ms=68.29	peak_ch=0	RMS_dBFS=-21.085	warmup_peak=0.000000000	overrides=none
+p25_t3_norev	prog=25	peak_dBFS=-6.820	peak_t_ms=12.54	peak_ch=0	RMS_dBFS=-20.818	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p25_t2_nodly	prog=25	peak_dBFS=-6.820	peak_t_ms=12.54	peak_ch=0	RMS_dBFS=-20.818	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p25_t1_nocomp	prog=25	peak_dBFS=-11.487	peak_t_ms=12.54	peak_ch=0	RMS_dBFS=-25.436	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p25_t0_nobody	prog=25	peak_dBFS=-19.868	peak_t_ms=41.52	peak_ch=0	RMS_dBFS=-34.744	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+p26_t4_full	prog=26	peak_dBFS=-9.481	peak_t_ms=11.21	peak_ch=0	RMS_dBFS=-29.479	warmup_peak=0.000000000	overrides=none
+p26_t3_norev	prog=26	peak_dBFS=-8.171	peak_t_ms=11.21	peak_ch=0	RMS_dBFS=-29.673	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) 
+p26_t2_nodly	prog=26	peak_dBFS=-8.171	peak_t_ms=11.21	peak_ch=0	RMS_dBFS=-29.673	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) 
+p26_t1_nocomp	prog=26	peak_dBFS=-12.671	peak_t_ms=11.21	peak_ch=0	RMS_dBFS=-34.173	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) 
+p26_t0_nobody	prog=26	peak_dBFS=-13.320	peak_t_ms=18.79	peak_ch=0	RMS_dBFS=-34.810	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) 
+
+== cases (scripts/cases_extra.txt) ==
+# body sweep, full chain and engine-sum tap (rev0, dly0, comp bypass)
+p07_full_b0.0 7 macro_body=0
+p07_full_b0.2 7 macro_body=0.2
+p07_full_b0.4 7 macro_body=0.4
+p07_full_b0.6 7 macro_body=0.6
+p07_full_b1.0 7 macro_body=1.0
+p07_t1_b0.2 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0.2
+p07_t1_b0.4 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0.4
+p07_t1_b0.6 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0.6
+p07_t1_b1.0 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=1.0
+p15_full_b0.0 15 macro_body=0
+p15_full_b0.2 15 macro_body=0.2
+p15_full_b0.4 15 macro_body=0.4
+p15_full_b0.6 15 macro_body=0.6
+p15_full_b1.0 15 macro_body=1.0
+p15_t1_b0.2 15 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0.2
+p15_t1_b0.4 15 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0.4
+p15_t1_b0.6 15 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0.6
+p15_t1_b1.0 15 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=1.0
+p11_full_b0.5 11 macro_body=0.5
+p11_t1_b0.5 11 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0.5
+# chromatic: macro_body also scales geometry size by (0.5+body) before MIDI retune -> geometry check at body 0
+p15_t0_size100 15 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0 chr_size=100
+p15_t0_size10 15 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0 chr_size=10
+# cimbalom: macro_body also scales detune by (0.4+1.2*body) -> compare at equal effective detune 6 cents
+p07_t0_det15 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0 cim_detuning=15
+p07_t1_b0.8_det4.4118 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 cim_detuning=4.4118
+# string count (coherent onset vs 1/sqrt(N) normalisation)
+p07_t0_n1 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0 cim_num_strings=1
+p07_t0_n3 7 fx_reverb_mix=0 fx_delay_mix=0 fx_comp_ratio=1 macro_body=0 cim_num_strings=3
+# reverb sweeps (other preset settings unchanged)
+p15_rev_mix0.15 15 fx_reverb_mix=0.15
+p15_rev_mix0.30 15 fx_reverb_mix=0.30
+p15_rev_size0.50 15 fx_reverb_size=0.50
+p15_rev_size0.00 15 fx_reverb_size=0.0
+p11_rev_mix0.15 11 fx_reverb_mix=0.15
+p11_rev_mix0.30 11 fx_reverb_mix=0.30
+p11_rev_size0.50 11 fx_reverb_size=0.50
+p11_rev_size0.00 11 fx_reverb_size=0.0
+p07_rev_mix0.15 7 fx_reverb_mix=0.15
+p07_rev_size0.50 7 fx_reverb_size=0.50
+# compressor bypass only (delay+reverb kept)
+p07_nocomp_only 7 fx_comp_ratio=1
+p11_nocomp_only 11 fx_comp_ratio=1
+p15_nocomp_only 15 fx_comp_ratio=1
+# Output macro is a linear post-FX gain: check
+p15_out0.5 15 macro_output=0.5
+p07_out0.9 7 macro_output=0.9
+# fresh instance (no program call)
+fresh_t4 -1
+
+== $ ./bin/r_probe.exe bin/TsukiSynth.vst3 wav_extra scripts/cases_extra.txt  (exit 0) ==
+p07_full_b0.0	prog=7	peak_dBFS=-7.970	peak_t_ms=231.15	peak_ch=0	RMS_dBFS=-22.496	warmup_peak=0.000000000	overrides=macro_body=0.0000(n0.000000) 
+p07_full_b0.2	prog=7	peak_dBFS=-2.826	peak_t_ms=231.31	peak_ch=0	RMS_dBFS=-17.210	warmup_peak=0.000000000	overrides=macro_body=0.2000(n0.200000) 
+p07_full_b0.4	prog=7	peak_dBFS=-1.263	peak_t_ms=231.42	peak_ch=0	RMS_dBFS=-15.863	warmup_peak=0.000000000	overrides=macro_body=0.4000(n0.400000) 
+p07_full_b0.6	prog=7	peak_dBFS=-0.300	peak_t_ms=231.44	peak_ch=0	RMS_dBFS=-15.316	warmup_peak=0.000000000	overrides=macro_body=0.6000(n0.600000) 
+p07_full_b1.0	prog=7	peak_dBFS=0.764	peak_t_ms=231.46	peak_ch=0	RMS_dBFS=-14.771	warmup_peak=0.000000000	overrides=macro_body=1.0000(n1.000000) 
+p07_t1_b0.2	prog=7	peak_dBFS=-10.486	peak_t_ms=8.75	peak_ch=0	RMS_dBFS=-27.705	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.2000(n0.200000) 
+p07_t1_b0.4	prog=7	peak_dBFS=-6.504	peak_t_ms=8.81	peak_ch=0	RMS_dBFS=-24.272	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.4000(n0.400000) 
+p07_t1_b0.6	prog=7	peak_dBFS=-3.760	peak_t_ms=8.85	peak_ch=0	RMS_dBFS=-21.999	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.6000(n0.600000) 
+p07_t1_b1.0	prog=7	peak_dBFS=0.008	peak_t_ms=8.88	peak_ch=0	RMS_dBFS=-19.041	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=1.0000(n1.000000) 
+p15_full_b0.0	prog=15	peak_dBFS=-4.867	peak_t_ms=542.19	peak_ch=0	RMS_dBFS=-18.779	warmup_peak=0.000000000	overrides=macro_body=0.0000(n0.000000) 
+p15_full_b0.2	prog=15	peak_dBFS=-4.168	peak_t_ms=536.85	peak_ch=0	RMS_dBFS=-18.899	warmup_peak=0.000000000	overrides=macro_body=0.2000(n0.200000) 
+p15_full_b0.4	prog=15	peak_dBFS=-2.051	peak_t_ms=531.46	peak_ch=0	RMS_dBFS=-16.711	warmup_peak=0.000000000	overrides=macro_body=0.4000(n0.400000) 
+p15_full_b0.6	prog=15	peak_dBFS=0.232	peak_t_ms=532.79	peak_ch=0	RMS_dBFS=-14.407	warmup_peak=0.000000000	overrides=macro_body=0.6000(n0.600000) 
+p15_full_b1.0	prog=15	peak_dBFS=3.848	peak_t_ms=548.29	peak_ch=0	RMS_dBFS=-10.908	warmup_peak=0.000000000	overrides=macro_body=1.0000(n1.000000) 
+p15_t1_b0.2	prog=15	peak_dBFS=-16.482	peak_t_ms=5.19	peak_ch=0	RMS_dBFS=-33.104	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.2000(n0.200000) 
+p15_t1_b0.4	prog=15	peak_dBFS=-14.767	peak_t_ms=6.60	peak_ch=0	RMS_dBFS=-30.850	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.4000(n0.400000) 
+p15_t1_b0.6	prog=15	peak_dBFS=-13.063	peak_t_ms=6.60	peak_ch=0	RMS_dBFS=-28.499	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.6000(n0.600000) 
+p15_t1_b1.0	prog=15	peak_dBFS=-10.565	peak_t_ms=6.60	peak_ch=0	RMS_dBFS=-24.960	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=1.0000(n1.000000) 
+p11_full_b0.5	prog=11	peak_dBFS=8.299	peak_t_ms=900.02	peak_ch=1	RMS_dBFS=-0.750	warmup_peak=0.000000000	overrides=macro_body=0.5000(n0.500000) 
+p11_t1_b0.5	prog=11	peak_dBFS=-4.345	peak_t_ms=24.15	peak_ch=0	RMS_dBFS=-12.579	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.5000(n0.500000) 
+p15_t0_size100	prog=15	peak_dBFS=-18.118	peak_t_ms=31.38	peak_ch=0	RMS_dBFS=-34.708	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) chr_size=100.0000(n1.000000) 
+p15_t0_size10	prog=15	peak_dBFS=-15.043	peak_t_ms=31.38	peak_ch=0	RMS_dBFS=-31.632	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) chr_size=10.0000(n0.000000) 
+p07_t0_det15	prog=7	peak_dBFS=-16.792	peak_t_ms=0.85	peak_ch=0	RMS_dBFS=-34.142	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) cim_detuning=15.0000(n1.000000) 
+p07_t1_b0.8_det4.4118	prog=7	peak_dBFS=-1.659	peak_t_ms=8.85	peak_ch=0	RMS_dBFS=-19.082	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) cim_detuning=4.4118(n0.294120) 
+p07_t0_n1	prog=7	peak_dBFS=-23.783	peak_t_ms=0.85	peak_ch=0	RMS_dBFS=-40.426	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) cim_num_strings=1.0000(n0.000000) 
+p07_t0_n3	prog=7	peak_dBFS=-19.011	peak_t_ms=0.85	peak_ch=0	RMS_dBFS=-36.083	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.0000(n0.000000) fx_delay_mix=0.0000(n0.000000) fx_comp_ratio=1.0000(n0.000000) macro_body=0.0000(n0.000000) cim_num_strings=3.0000(n0.500000) 
+p15_rev_mix0.15	prog=15	peak_dBFS=-5.011	peak_t_ms=548.27	peak_ch=0	RMS_dBFS=-19.044	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.1500(n0.150000) 
+p15_rev_mix0.30	prog=15	peak_dBFS=-0.360	peak_t_ms=548.27	peak_ch=0	RMS_dBFS=-15.099	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.3000(n0.300000) 
+p15_rev_size0.50	prog=15	peak_dBFS=-2.708	peak_t_ms=190.85	peak_ch=1	RMS_dBFS=-16.629	warmup_peak=0.000000000	overrides=fx_reverb_size=0.5000(n0.500000) 
+p15_rev_size0.00	prog=15	peak_dBFS=-4.981	peak_t_ms=190.81	peak_ch=1	RMS_dBFS=-19.378	warmup_peak=0.000000000	overrides=fx_reverb_size=0.0000(n0.000000) 
+p11_rev_mix0.15	prog=11	peak_dBFS=-5.993	peak_t_ms=283.21	peak_ch=0	RMS_dBFS=-17.622	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.1500(n0.150000) 
+p11_rev_mix0.30	prog=11	peak_dBFS=-2.794	peak_t_ms=420.88	peak_ch=0	RMS_dBFS=-13.608	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.3000(n0.300000) 
+p11_rev_size0.50	prog=11	peak_dBFS=-1.978	peak_t_ms=233.48	peak_ch=0	RMS_dBFS=-14.211	warmup_peak=0.000000000	overrides=fx_reverb_size=0.5000(n0.500000) 
+p11_rev_size0.00	prog=11	peak_dBFS=-4.705	peak_t_ms=233.48	peak_ch=0	RMS_dBFS=-18.556	warmup_peak=0.000000000	overrides=fx_reverb_size=0.0000(n0.000000) 
+p07_rev_mix0.15	prog=7	peak_dBFS=-0.202	peak_t_ms=3.12	peak_ch=0	RMS_dBFS=-19.907	warmup_peak=0.000000000	overrides=fx_reverb_mix=0.1500(n0.150000) 
+p07_rev_size0.50	prog=7	peak_dBFS=-1.327	peak_t_ms=99.67	peak_ch=1	RMS_dBFS=-18.490	warmup_peak=0.000000000	overrides=fx_reverb_size=0.5000(n0.500000) 
+p07_nocomp_only	prog=7	peak_dBFS=1.078	peak_t_ms=231.42	peak_ch=0	RMS_dBFS=-14.292	warmup_peak=0.000000000	overrides=fx_comp_ratio=1.0000(n0.000000) 
+p11_nocomp_only	prog=11	peak_dBFS=-3.028	peak_t_ms=914.88	peak_ch=1	RMS_dBFS=-13.308	warmup_peak=0.000000000	overrides=fx_comp_ratio=1.0000(n0.000000) 
+p15_nocomp_only	prog=15	peak_dBFS=-1.846	peak_t_ms=548.29	peak_ch=0	RMS_dBFS=-16.561	warmup_peak=0.000000000	overrides=fx_comp_ratio=1.0000(n0.000000) 
+p15_out0.5	prog=15	peak_dBFS=-3.367	peak_t_ms=548.29	peak_ch=0	RMS_dBFS=-18.082	warmup_peak=0.000000000	overrides=macro_output=0.5000(n0.500000) 
+p07_out0.9	prog=7	peak_dBFS=-0.589	peak_t_ms=231.46	peak_ch=0	RMS_dBFS=-15.915	warmup_peak=0.000000000	overrides=macro_output=0.9000(n0.900000) 
+fresh_t4	prog=-1	peak_dBFS=-7.207	peak_t_ms=64.56	peak_ch=0	RMS_dBFS=-23.185	warmup_peak=0.000000000	overrides=none
+

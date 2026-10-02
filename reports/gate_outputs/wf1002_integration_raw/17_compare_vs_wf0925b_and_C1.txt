@@ -1,0 +1,53 @@
+# WF1002-INT 對照（vs WF0925b 整合卡 INT2 raw；同一套正規化：去掉 CLI/命令/時間/EXIT/空行；verify_score 另遮 renderer 與 configured source 欄位）
+
+## A. physics_verify --full：505 行 vs 505 行
+DIFF_EXIT=0
+
+## B. physics_verify --selftest：13 行 vs 13 行
+DIFF_EXIT=0
+
+## C. pytest SKIPPED/XFAIL 摘要行（skip 行的檔案路徑前綴正規化成 X/；本次 skip 行印出舊路徑 <OLD_REPO>，原因見 INTEGRATION.txt GATE 4）：6 行 vs 6 行
+DIFF_EXIT=0
+
+## D. pytest --collect-only 清單：307 條 vs 307 條
+DIFF_EXIT=0
+
+## E. verify_score --all：3757 行 vs 3757 行（**有差異，見 raw 16 R10 調查**）
+2567c2567
+<   [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 9ce1735b7dbe..., 1 score dependency file(s), tree db4800934dce..., renderer <R>...; version=0.3.0, configured source=<S>, MSVC 19.50.35730.0, Windows AMD64, Release; peak=1.64799, gain=0.576458, samples >= 0 dBFS=2767.
+---
+>   [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 9dd3a9a4ff44..., 1 score dependency file(s), tree db4800934dce..., renderer <R>...; version=0.3.0, configured source=<S>, MSVC 19.50.35730.0, Windows AMD64, Release; peak=1.64799, gain=0.576458, samples >= 0 dBFS=2767.
+2572c2572
+<   [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 9ce1735b7dbe6cca...).
+---
+>   [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 9dd3a9a4ff445e0a...).
+3552c3552
+<   [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 9a5544d19ac6..., 1 score dependency file(s), tree a024d392c3cd..., renderer <R>...; version=0.3.0, configured source=<S>, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.457774, gain=2.07526, samples >= 0 dBFS=0.
+---
+>   [OK    ] render.pre_normalize_manifest: Render manifest v4 verified: WAV 2344a312ed00..., 1 score dependency file(s), tree a024d392c3cd..., renderer <R>...; version=0.3.0, configured source=<S>, MSVC 19.50.35730.0, Windows AMD64, Release; peak=0.457774, gain=2.07526, samples >= 0 dBFS=0.
+3557c3557
+<   [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 9a5544d19ac664ea...).
+---
+>   [OK    ] determinism.sha256_match: Two independent renders produced identical audio (SHA256 2344a312ed004870...).
+DIFF_EXIT=1
+
+## F. HostProbe [PASS]/[FAIL] 行 vs WF1002-C1 工兵 wf1002_C1_hostprobe.txt（路徑正規化成 <P>）：231 行 vs 231 行
+48,49c48,49
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId e9ea82c8f80542ba96fc882205fb0177)
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="e9ea82c8f80542ba96fc882205fb0177": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+---
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId c72ee136a36642099a28aa159b6ea491)
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="c72ee136a36642099a28aa159b6ea491": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+56,57c56,57
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId e9ea82c8f80542ba96fc882205fb0177)
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="e9ea82c8f80542ba96fc882205fb0177": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+---
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId c72ee136a36642099a28aa159b6ea491)
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="c72ee136a36642099a28aa159b6ea491": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+62,63c62,63
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId e9ea82c8f80542ba96fc882205fb0177)
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="e9ea82c8f80542ba96fc882205fb0177": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+---
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId c72ee136a36642099a28aa159b6ea491)
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="c72ee136a36642099a28aa159b6ea491": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+DIFF_EXIT=1（差異只有 H7 每次隨機產生的 presetId）

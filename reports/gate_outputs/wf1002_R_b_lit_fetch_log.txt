@@ -1,0 +1,145 @@
+WF1002-R (research lane, read-only) -- 2026-10-02, repo HEAD b41298c.
+Aliases: <repo> = local repo root; <scratch> = this session's scratch directory (outside the repo).
+All numbers below are DESCRIPTIVE ONLY, NOT a GATE, NOT new thresholds (R2).
+
+== R-b(1) literature fetch log ==
+Fetched by this lane's research subagent on 2026-10-02 (WebFetch/curl); files saved in <repo>/output/wf1002/R/lit/ (gitignored)
+and mirrored to <scratch>/lit/. The parent lane re-read the saved full texts and re-checked every verbatim quote used in the
+report (see section 'quote re-check' below). Figure readings are approximate and labelled as such.
+
+URL log (all attempts 2026-10-02, by the WF1002-R research subagent; result as reported by it; saved files hashed below)
+
+FULL TEXT fetched and USED (numbers quoted in the report come only from these):
+  https://www.speech.kth.se/music/5_lectures/wogram/decay.html                  -> lit/kth5_wogram_decay.html  (Wogram, "The strings and the soundboard", page "Decay of the piano tone")
+  https://www.speech.kth.se/music/5_lectures/wogram/images/93_11.jpg            -> lit/kth5_wogram_fig11_93_11.jpg (Fig. 11, 300-px JPEG; figure readings approximate)
+  https://www.speech.kth.se/music/5_lectures/weinreic/motion.html               -> lit/kth5_weinreic_motion.html (Weinreich, "The coupled motion of piano strings", page "Vertical and horizontal motion")
+  https://www.speech.kth.se/music/5_lectures/weinreic/images/74_01.gif          -> lit/kth5_weinreic_fig1_74_01.gif
+  http://webspace.eecs.qmul.ac.uk/s.e.dixon/pub/2015/ChengDixonMauch-ICASSP2015-Decay.pdf -> lit/cheng2015_icassp_decay.pdf (+ .txt, + figure-vector extract cheng2015_fig9_partial1_vector_extract.json)
+  http://home.mit.bme.hu/~bank/thesis/pianomod.pdf                              -> lit/bank2000_msc_thesis_pianomod.pdf (+ .txt)
+  aaltodoc.aalto.fi REST bitstream 45796fb4... (Lehtonen et al., JASA 122(3) 2007, reprint in Lehtonen 2010 dissertation, Publication I) -> lit/lehtonen2010_diss_pub1_jasa2007_sustain_pedal.pdf (+ .txt)
+  aaltodoc.aalto.fi REST bitstream b4811040... (Lehtonen, Askenfelt, Valimaki, JASA-EL 126(2) 2009, Publication II) -> lit/lehtonen2010_diss_pub2_jasael2009_part_pedaling.pdf (+ .txt, + _lehtonen09_fig3.png, lehtonen2009_fig3_initial_free_vibration_vector_extract.json)
+  aaltodoc.aalto.fi REST bitstream aa9a7eee... (Lehtonen, Rauhala, Valimaki, WASPAA 2005, Publication V) -> lit/lehtonen2010_diss_pub5_waspaa2005_loss_filter.pdf (+ .txt)
+  https://web.archive.org/web/20090605083051/http://www.acoustics.org:80/press/146th/Wogram.htm -> lit/wogram_mori2003_asa146_laylang_archive.html (qualitative only)
+
+FULL TEXT fetched, no usable per-note decay numbers (saved, hashed, not used for numbers):
+  KTH 5 lectures: contents, wogram index/modal/ribbing/simulation, weinreic intro/strings/mistuned, Fig.10, Fig.2
+  Cheng et al. ISMIR 2016; Bank, Zambon, Fontana IEEE TASLP 2010; Aramaki et al. DAFx 1999 (lab rig);
+  Chaigne & Askenfelt 1994 Part I (third-party course copy, web.phys.ntnu.no); Chabassier, Chaigne, Joly M2AN 2014 (numdam.org);
+  Lehtonen 2005 MSc thesis; Lehtonen 2010 dissertation overview; Rauhala 2007 dissertation overview.
+
+NOT fetched (numbers NOT used):
+  Martin 1947, JASA 19:535, doi 10.1121/1.1916516 -- paywall / closed
+  Hundley, Benioff, Martin 1978, JASA 64:1303, doi 10.1121/1.382116 -- paywall / closed
+  Weinreich 1977, JASA 62:1474, doi 10.1121/1.381677 -- paywall
+  Martin meeting abstracts JASA 19:722 and JASA 32:1493 (pubs.aip.org) -- HTTP 403
+  HAL hal-00768234 (Chabassier et al. JASA 2013 report), hal-00088244, hal-01894219 (Bank & Chabassier 2019) -- bot-check page ("Anubis"), not bypassed
+  IOA PDFs (Wogram "Objective measurements"; Baxandall/Brown/Gough) -- 404; acoustics.org/press/146th/Wogram.htm -- 404 (archive copy used)
+  Southampton eprints 476996, 497574, 499445 -- 401
+  IOP doi 10.1088/1742-6596/2909/1/012036; qmro.qmul.ac.uk (Cheng PhD thesis); aaltodoc HTML pages; oa.mg -- bot/JS walls or 503
+  kevinhunt.com.au pages, CCRMA (J.O. Smith) page -- checked, nothing numeric
+
+Conversions used in the report (stated with every number): T60 = 3 x T20 (only if the level falls along ONE straight dB line;
+real piano tones have a two-stage decay, so the true 60-dB time is longer); T60 = 60 / |rate in dB/s|; T60 = ln(1000) x tau = 6.908 x tau.
+
+== sha256 of saved files ==
+7b02ecf243694ee6bca175a801fa4ac9859776a938af3ed52c05907de3f49d2d *lit/_lehtonen05_pub5_p4.png
+950db6ce880952950002fccf4ec223e0e9b898bf301ce037079c5f5bebaea8f4 *lit/_lehtonen05_pub5_p5.png
+b8bcde198eee165a30d817ccff0dc20fabffac833dc12e19a67558775dae5172 *lit/_lehtonen09_fig3.png
+1fec60d4ac52a5c6abbe9ff3817e0840d20e75d19b3cf7996f5f262a4d0019ef *lit/_lehtonen09_p5.png
+3a662d3a1c894e48a40a7cf35d448b65d9bbfdd8f6d23f1163ba7982915e3022 *lit/aramaki1999_dafx_coupled_strings.pdf
+fcd7075fc8d191efe55954feae452f452ac3fedef646db6a4d51ec5e58161a72 *lit/aramaki1999_dafx_coupled_strings.txt
+0fbd2776e07bdfcd4d6bb501a7461c1eae0627181a9de0c5cae5efb7526d8e65 *lit/bank2000_msc_thesis_pianomod.pdf
+a30d2901a8bc09aafc5fb531f3be9553a263ae2aecd749d9d21b5e989d6c22c2 *lit/bank2000_msc_thesis_pianomod.txt
+d94eeafb4f19e0c3962e6b676935ef7315011dc3fd4c7380b541e287333f3187 *lit/bank_zambon_fontana2010_taslp_modal_piano.pdf
+48df46c6da1dce705af5ad03e3830e048527325b1e8b6add1b62b89c9ad6a84f *lit/bank_zambon_fontana2010_taslp_modal_piano.txt
+718aeddc094f2892fa6a61fe7f832fc9b72d0dd55c2974ef6e5a63b8d1f3ac18 *lit/chabassier_chaigne_joly2014_m2an_part1.pdf
+b4dabf77654cfede311913272751c711665fe3a972fb5b517c55fd79abce9248 *lit/chabassier_chaigne_joly2014_m2an_part1.txt
+d3103f12d7512099da239c35f40e756d761b904d990aa46cc1c898d8a5279eb5 *lit/chaigne_askenfelt1994_partI_ntnu_copy.pdf
+9792df19dfb2b6dd1b403f69d49831ac293dee39e7a27caf86e839a25922fe7c *lit/chaigne_askenfelt1994_partI_ntnu_copy.txt
+df4dd6dfb1061f3c9a4e609987cd058a1684247a0357cb3f3cc38d8b9d0e9f5d *lit/cheng2015_fig9_partial1_vector_extract.json
+fc7d2a282c7316b9031231443efdb00221cec3da550d6cab99739d3adc4d86c6 *lit/cheng2015_icassp_decay.pdf
+247c614b72021e262b82727a6ca61e7acdea12c4717d9f68f5bbc64e08dc62b8 *lit/cheng2015_icassp_decay.txt
+c51b9dbc55a2d0ed6692522b9dce00b2b08e2ec82332fe3971f154a896ec42a9 *lit/cheng2016_ismir_attackdecay.pdf
+b1ad96ffcba63be431f5ddd517e566f07600f19cfb965a16e7cd9db1555f1b6d *lit/cheng2016_ismir_attackdecay.txt
+e34aca8e9a9ce33fa866b55d52aad7f5874fe920498c8c01524d652d06906747 *lit/kth5_contents.html
+7d4c6364d706d6d9ba1bbad522794aaa33cd168d277c33db39c04bcd62908ec9 *lit/kth5_weinreic_fig1_74_01.gif
+b15ef646265b3933b426215b35f8743aa545f424b987265d7aa7f394e593975d *lit/kth5_weinreic_fig2_75_02.gif
+cb6460cea801e2d04f13e481ab250a865c53220d8cf25b061f076a38988a8669 *lit/kth5_weinreic_mistuned.html
+8d64049bd25e83e003ccdc4f29f695e259ae15c705eb97d637669cefb8eca28b *lit/kth5_weinreic_motion.html
+66d6613bb34269c9bbc74cfea737adb82277a35c1c50c33921c8fc22bcb2a0a8 *lit/kth5_weinreic_strings.html
+05ef49ef04085669985dc86a3c16c6afecee67dd34d74c62c894ede0d10c6c07 *lit/kth5_weinreic_weinreic.html
+989cc9611088bcaf8eee40895ffef6fbf4f7a99884bc2f0a4c9741914ff595cd *lit/kth5_wogram_decay.html
+8c1e298c3d378ee37b38a6d1f221c8aeb01079c16d51b0c71f15062d0653d8e6 *lit/kth5_wogram_fig10_93_10.jpg
+c4669849de67c9c0c58b1d0a481eec344a37d3d01758de33718b87bb5853db7c *lit/kth5_wogram_fig11_93_11.jpg
+d39f9ce7db22cf19d2e7c7cfe36990360d7398166b9cd761dc7f38a470ffe8f8 *lit/kth5_wogram_index.html
+563a432c038f08d7b4d7452f83384468031ecbf537983aff14fbb345710bb10e *lit/kth5_wogram_modal.html
+135e6e888bfaace8f0fe54311b655236c30342ec9d3caec66b5b8a883e23df29 *lit/kth5_wogram_ribbing.html
+78fed2570559da6eb055cd994eee6a9f2c37579102673dfea63c7e72a3e79159 *lit/kth5_wogram_simulation.html
+a6dfdb5ef677248567ef8935a2e14ce21e0f60fcea9067a0766c4e1aecef2ffc *lit/lehtonen2005_msc_pianon_aanen_analyysi.pdf
+9dd07dff0941b8ae530dc3b397521e36d0191772ce7a127759141d02b09a9f9c *lit/lehtonen2005_msc_pianon_aanen_analyysi.txt
+a8689747fd8d561e61e553d70ebbce8451a4ff929251c8751ede5c91e32add20 *lit/lehtonen2009_fig3_initial_free_vibration_vector_extract.json
+f388f0cd306a27b178952c15a8e0090e5f34be221d8d3efc3b5c2ca53b42d271 *lit/lehtonen2010_diss_overview.pdf
+e7b7b9c10eb71e0c0a96d79ca01f45342364b32db58120b4b8187e49b1c7ba6a *lit/lehtonen2010_diss_overview.txt
+4598bb282fe5861d34aad6b4e359d86a281a44c40b0cb16bfe07777c5987e110 *lit/lehtonen2010_diss_pub1_jasa2007_sustain_pedal.pdf
+fbf88b7075f819773fdc07665a95933038ff1e2952d3060829538bf1d90cadbc *lit/lehtonen2010_diss_pub1_jasa2007_sustain_pedal.txt
+0513f925d30ed3fa028d3212052845eceb555632a463c556ba057ca40a530d95 *lit/lehtonen2010_diss_pub2_jasael2009_part_pedaling.pdf
+89a7966e720932f50620c301e5f32e75ddcc84d4f7a8b1655083ced7ce095744 *lit/lehtonen2010_diss_pub2_jasael2009_part_pedaling.txt
+6be3608aafebd1fb2c7d039c7f9e3d5011c8109723edc37ae6d9938d109c3dc6 *lit/lehtonen2010_diss_pub5_waspaa2005_loss_filter.pdf
+9d7d7e8ce2dcf53ffb4b3ffb5f659fd560332e910b7e35d37dfff9db9582655c *lit/lehtonen2010_diss_pub5_waspaa2005_loss_filter.txt
+1d186215cd9b3bfcbe4796740231142918c79bd170e927b6a20a97440e5cdf24 *lit/rauhala2007_diss_overview.pdf
+b21fb91f0d09c0e694c51af2bbfc79bc6300db37af995f2dd30cca5d4be76042 *lit/rauhala2007_diss_overview.txt
+4c6ecb648a507135ee24b487c5145357846f15c98d699505a2015e96e758d18d *lit/wogram_fig11_T20_digitized_approx.json
+f877ccc185da618bcca192cd6353982d5997e1832503a3a955adedcc2c66a41b *lit/wogram_mori2003_asa146_laylang_archive.html
+
+== quote re-check by the parent lane (python regex over the saved texts) ==
+[Wogram, KTH 5 lectures, 'Decay of the piano tone' (decay.html)] PDF page -: ...-called prompt sound, is of major importance in judging the tone quality. Therefore it seems reasonable to measure the decay time at the beginning of the note, from the maximum level to -20 dB (T20). This decay should depend mainly on the soundboard, more specifically on the impedance matching between the string and the soundboard motion in the vertical di...
+
+[Wogram, KTH 5 lectures, 'Decay of the piano tone' (decay.html)] PDF page -: ...ge difference in decay time (5:1) suggests an aggravating difference in sustain between these two adjacent notes. Fig. 11. Decay times (T20) for the notes of a small upright piano, corresponding to a 20 dB drop from maximum sound level Another example of the consequences of the irregular decay times of this particular piano is the differences between the two chords C3 - C4 - G4 (3.8, 1.7, 0.7...
+
+[Wogram, KTH 5 lectures, 'Decay of the piano tone' (decay.html)] PDF page -: ...op from maximum sound level Another example of the consequences of the irregular decay times of this particular piano is the differences between the two chords C3 - C4 - G4 (3.8, 1.7, 0.7 s) and D3 - D4 - A4 (3.4, 3.3, 2.3 s). These relations between the decay times mean that the first chord will consist mainly of the lowest note (C3) shortly after the attack, since the two higher n...
+
+[Wogram, KTH 5 lectures, 'Decay of the piano tone' (decay.html)] PDF page -: ...rder to judge the perceptual consequences of the irregular curve we may compare two neighbouring notes, F#4 and G4. From the graph, we obtain the corresponding T20-values as 3.5 and 0.7 s, respectively. This large difference in decay time (5:1) suggests an aggravating difference in sustain between these two adjacent notes. Fig. 11. Decay times (...
+
+[Weinreich, KTH 5 lectures, 'Vertical and horizontal motion' (motion.html)] PDF page -: .... Instead, it is clear that the curve breaks into two portions of quite different decay rates. The initial portion, called "prompt sound," drops (in this case) at a rate of about 8 dB/sec; the final one, called "aftersound," at less than one-quarter that rate. As we shall see, the prompt sound is simply related to the theoretical decay rate dete...
+
+[Weinreich, KTH 5 lectures, 'Vertical and horizontal motion' (motion.html)] PDF page -: ... quite different decay rates. The initial portion, called "prompt sound," drops (in this case) at a rate of about 8 dB/sec; the final one, called "aftersound," at less than one-quarter that rate. As we shall see, the prompt sound is simply related to the theoretical decay rate determined by the string's coupling to the soundboard; whereas the aftersoun...
+
+[Weinreich, KTH 5 lectures, 'Vertical and horizontal motion' (motion.html)] PDF page -: ...he piano its perceived sustaining power, represents the "miracle." Fig 1. Typical decay of a piano tone as illustrated by the sound pressure level versus time (Eb3 = 311 Hz). The decay process is divided into two parts; an initial attack part with a fast decay ("prompt sound") followed by a sustained part with slow decay ("afterso...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 3: ... Recording setup and equipment The recordings were carried out at the Finnvox record- ing studio in Helsinki, Finland, in February 2006. The instru- ment was a Yamaha concert grand piano serial number 3070800 with 88 keys, and it was tuned just before the recording session. The signals that were used in the analysis were recorded on two chann...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 3: ...ith the sustain pedal, and ﬁnally the features of ﬁve of them were selected to be shown in the present study. The dynam- ics of the tones were determined to be mezzo forte in all cases. It is assumed that the soundboard and the sympatheti- cally resonating string register behave linearly, and thus the model that is calibrated based on signal ...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 4: ...ecay process because of the two-stage decay and beating.1 In order to obtain an approximation of the decay times of the tones, a straight line was ﬁtted to the ﬁrst six seconds of signal log envelopes in a least squares sense.37,38 After this, estimates for T60-times, that is, the time it takes for a partial to decay 60 dB, were computed based on the slope o...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 5: ...T60/N s T60/P s Level/N dB Level/P dB C2 20.3 18.1 −7.5 −7.0 C3 12.5 14.8 −7.3 −7.3 C4 9.5 15.3 −6.8 −6.6 D5 14.7 18.3 −5.0 −4.5 C6 12.0 12.0 −4.3 −3.7 TABLE III. The T60-times of the fundamental frequencies with the initial levels for ﬁve example tones without N and with P the sustain pedal. Tone T60/N s T60/P s Level/N dB Level/P dB C2 9.3 14.8 −14.1 ...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 5: ...mental frequencies with the initial levels for ﬁve example tones without N and with P the sustain pedal. Tone T60/N s T60/P s Level/N dB Level/P dB C2 9.3 14.8 −14.1 −13.7 C3 10.0 14.3 −10.3 −9.9 C4 10.3 17.0 −13.8 −14.2 D5 14.2 16.0 −5.2 −4.5 C6 9.0 8.3 −4.4 −3.8 FIG. 3. Envelopes of the partials a 1, b 2, c 3,...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 5: ...the initial levels for ﬁve example tones without N and with P the sustain pedal. Tone T60/N s T60/P s Level/N dB Level/P dB C2 9.3 14.8 −14.1 −13.7 C3 10.0 14.3 −10.3 −9.9 C4 10.3 17.0 −13.8 −14.2 D5 14.2 16.0 −5.2 −4.5 C6 9.0 8.3 −4.4 −3.8 FIG. 3. Envelopes of the partials a 1, b 2, c 3, and d 4 of the tone C4...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 5: ...ve example tones without N and with P the sustain pedal. Tone T60/N s T60/P s Level/N dB Level/P dB C2 9.3 14.8 −14.1 −13.7 C3 10.0 14.3 −10.3 −9.9 C4 10.3 17.0 −13.8 −14.2 D5 14.2 16.0 −5.2 −4.5 C6 9.0 8.3 −4.4 −3.8 FIG. 3. Envelopes of the partials a 1, b 2, c 3, and d 4 of the tone C4. The solid and dashed l...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 5: ...N and with P the sustain pedal. Tone T60/N s T60/P s Level/N dB Level/P dB C2 9.3 14.8 −14.1 −13.7 C3 10.0 14.3 −10.3 −9.9 C4 10.3 17.0 −13.8 −14.2 D5 14.2 16.0 −5.2 −4.5 C6 9.0 8.3 −4.4 −3.8 FIG. 3. Envelopes of the partials a 1, b 2, c 3, and d 4 of the tone C4. The solid and dashed lines represent the tones ...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 5: ...stain pedal. Tone T60/N s T60/P s Level/N dB Level/P dB C2 9.3 14.8 −14.1 −13.7 C3 10.0 14.3 −10.3 −9.9 C4 10.3 17.0 −13.8 −14.2 D5 14.2 16.0 −5.2 −4.5 C6 9.0 8.3 −4.4 −3.8 FIG. 3. Envelopes of the partials a 1, b 2, c 3, and d 4 of the tone C4. The solid and dashed lines represent the tones without and with the ...
+
+[Lehtonen, Penttinen, Rauhala, Valimaki, JASA 122(3) 2007 (dissertation reprint, Publication I)] PDF page 5: ... is played with the sustain pedal the level of the residual signal during the time interval 1–5 s is approximately 10 dB higher than in the reference case. The TABLE II. The overall T60-times and the initial levels of the tones without N and with P the sustain pedal. Tone T60/N s T60/P s Level/N dB Level/P dB C2 20.3 18.1 −7.5 −7.0 C3 12...
+
+[Lehtonen, Askenfelt, Valimaki, JASA-EL 126(2) 2009 (dissertation reprint, Publication II)] PDF page 3: ...available for listening at the companion web page of this article.8 2. Recordings and measurement setup Six mezzo forte tones (C1, A1, G2, G3, D4, and A4) of a Steinway & Sons grand piano (model C, 224 cm) in concert condition were recorded in a rehearsal studio. The tones were selected so that all four damper shapes used in the instrument were represented: C1 wa...
+
+[Lehtonen, Askenfelt, Valimaki, JASA-EL 126(2) 2009 (dissertation reprint, Publication II)] PDF page 4: ...oup affects the decay process for different positions of the damper (corresponding to sustain- pedal depth in normal playing). Following the standard notation, decay time is deﬁned here as the time that it takes for a tone to decay 60 dB. When part-pedaling is used, the decay process can be divided into three time intervals. This is illustrated for tone G3 in Fig. 2, where panel (a) shows the l...
+
+[Lehtonen, Askenfelt, Valimaki, JASA-EL 126(2) 2009 (dissertation reprint, Publication II)] PDF page 5: ...itude of the vibration is large. Nonlinear effects are known to transfer energy 0 5 10 (a) Damper height Decay time (s) 0 5 10 Damper height Decay time (s) (b) Fig. 3. Decay rates of the three time intervals of the decay see text as a function of the damper height adjustment for two piano tones a G2 f0=98.12 Hz and b G3 f0=196.4 Hz: initial free vibration...
+
+[Cheng, Dixon, Mauch, ICASSP 2015] PDF page 2: ... note D♭2 (69.3Hz). 3.2. Tracking the Decay of Partials We ﬁrst represent the spectrogram on a dB scale, then ﬁt the partial decay using three models. We use a 2s sound clip beginning at 0.2s after the onset for each note to discard the transient part. The length is restricted to the duration of the note if it is shorter than 2s. The sampling rate is fs = 44100Hz. ...
+
+[Cheng, Dixon, Mauch, ICASSP 2015] PDF page 3: ... switching from vertical to horizontal, while the reason for the double decay in (c) is a small frequency difference between the strings. For double decay, the slope of the line which covers the larger part of the time duration is recorded as the decay rate. For the situa- tion of fast decay with noise, the ﬁrst decay rate (non-noisy part) is recorded. 3.2.3. Non-linear curve ﬁtting D...
+
+[Cheng, Dixon, Mauch, ICASSP 2015] PDF page 1: ...gdom ABSTRACT We investigate piano acoustics and compare the theoretical temporal decay of individual partials to recordings of real-world piano notes from the RWC Music Database. We ﬁrst describe the theory behind double decay and beats, known phenomena caused by the interaction between strings and soundboard. Then we ﬁt...
+
+[Bank, MSc thesis 2000] PDF page 121: ...-zero implem en tati on. =====PDFPAGE 121===== A.. MEASUREMENT OF THE PIANO  A. Measuremen t of the piano Measuremen t c haracteristics  The grand piano: August Förster Mo d. 0. SN .  Place: BUTE Sc hönherz Zoltán dormitory , Budap est, Hungary  Date: July ,  Measuremen t equipmen t description typ e sensitivit...
+
+[Lehtonen, Rauhala, Valimaki, WASPAA 2005 (Publication V)] PDF page 4: ...The first one describes how to do an exact fit and the second example is for the filter order 5. In both cases the filter is designed for the key index 3 (f0 = 30.8677 Hz) with 50 lowest-order partials. 3.1. Perfect Match of 50 Partials In the loss filter design, the case of an exact fit to the data has been considered partic...
+
+

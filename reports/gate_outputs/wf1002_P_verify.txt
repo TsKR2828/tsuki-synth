@@ -1,0 +1,276 @@
+# wf1002_P_verify.txt
+# generated 2026-10-02T00:31:25  cwd=<REPO>
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_verify.py --complete include --music tpdf --evidence wf1002_P_verify.txt --packages-evidence wf1002_P_packages.txt --tmp output/wf1002/P/verify_tmp
+
+== V1 originals untouched
+files now: 212 ; lines in _before: 212
+[PASS] V1 clean_batch2/ sha256 set == _ORIGINALS_SHA256_before.txt
+
+== V2 X1 candidate manifest still holds
+  changed: ./QA_REPORT.md (declared XF text edit)
+[PASS] V2 X1 manifest entries unchanged (85 files, 57 WAV) except declared XF text edits ['./QA_REPORT.md']  -- changed ['./QA_REPORT.md']; undeclared []
+
+== V3 zip contents
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: testzip ok
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: member set == expected (51)  -- missing [] extra []
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: 49 WAV members byte-identical to source files  -- mismatch []
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: README.txt == zip_readme/README_SE_PACK_v1_1.txt
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: LICENSE.txt == LICENSE_SE_PACK_v1_1.txt
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: testzip ok
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: member set == expected (50)  -- missing [] extra []
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: 49 WAV members byte-identical to source files  -- mismatch []
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: README.txt == zip_readme/README_SE_PACK_v1_1_FAB.txt
+[PASS] V3 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: no LICENSE file in Fab variant
+[PASS] V3 album zip: testzip ok
+[PASS] V3 album zip: member set == expected (15; complete=include)  -- missing [] extra []
+[PASS] V3 album zip: 14 audio members byte-identical to their sources (WAV: music_tpdf/; MP3: v1.0 preview/)  -- mismatch []
+[PASS] V3 album zip: 7 TPDF WAV sources == music_tpdf_report.json out_sha256 (X1)  -- []
+[PASS] V3 album zip: README.txt == zip_readme/README_ALBUM_v1_1.txt
+
+== V4 rebuild determinism
+TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip 77.9 MB  sha256 0b46e09320efa05e514ba7f2d6e77143808cb67d218d3033c9eb3d2870ee5888  members 51  (README copy: rebuild_readme/README_SE_PACK_v1_1.txt)
+TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip 77.9 MB  sha256 e73ad49182d1c7a90be0913f506e39109754c26b0f5c870ca46d88080348474d  members 50  (README copy: rebuild_readme/README_SE_PACK_v1_1_FAB.txt)
+TsukiSynth_Album_Vol1_v1.1_candidate.zip 99.0 MB  sha256 28c79ebde7568883d81a61fd97201581ce0230f4453d8902fb1f1d7c5a98bbf7  members 15  (README copy: rebuild_readme/README_ALBUM_v1_1.txt)
+manifest: ../../output/wf1002/P/verify_tmp/rebuild/PACKAGES_MANIFEST_v1_1.txt
+[PASS] V4 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: rebuilt sha256 identical  -- 0b46e09320efa05e vs 0b46e09320efa05e
+[PASS] V4 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: rebuilt sha256 identical  -- e73ad49182d1c7a9 vs e73ad49182d1c7a9
+[PASS] V4 TsukiSynth_Album_Vol1_v1.1_candidate.zip: rebuilt sha256 identical  -- 28c79ebde7568883 vs 28c79ebde7568883
+[PASS] V4 --release is refused while LICENSE is still a draft  -- REFUSED: --release while LICENSE_SE_PACK_v1_1.txt still contains the DRAFT box or [TBD] items.
+
+== V5 text checks
+[PASS] V5 buyer text 'zip_readme/README_SE_PACK_v1_1.txt' has none of the flagged v1.0 phrases  -- hits []
+[PASS] V5 buyer text 'zip_readme/README_SE_PACK_v1_1_FAB.txt' has none of the flagged v1.0 phrases  -- hits []
+[PASS] V5 buyer text 'zip_readme/README_ALBUM_v1_1.txt' has none of the flagged v1.0 phrases  -- hits []
+[PASS] V5 buyer text 'LICENSE_SE_PACK_v1_1.txt' has none of the flagged v1.0 phrases  -- hits []
+[PASS] V5 buyer text 'catalog_v1_1 descriptions' has none of the flagged v1.0 phrases  -- hits []
+[PASS] V5 LICENSE v1.1 contains 'authorized'
+[PASS] V5 LICENSE v1.1 contains 'train or fine-tune'
+[PASS] V5 LICENSE v1.1 contains 'Content ID'
+[PASS] V5 LICENSE v1.1 contains 'source-code repository'
+[PASS] V5 LICENSE v1.1 contains 'TERMINATION'
+[PASS] V5 LICENSE v1.1 contains 'GOVERNING LAW'
+[PASS] V5 LICENSE v1.1 contains 'LANGUAGE VERSIONS'
+[PASS] V5 LICENSE v1.1 contains '授權通路'
+[PASS] V5 LICENSE v1.1 contains '訓練或微調'
+[PASS] V5 LICENSE v1.1 contains '準據法'
+[PASS] V5 LICENSE v1.1 contains '語言版本'
+[PASS] V5 LICENSE v1.1 contains '正規の販売経路'
+[PASS] V5 LICENSE v1.1 contains '学習・ファインチューニング'
+[PASS] V5 LICENSE v1.1 contains '準拠法'
+[PASS] V5 LICENSE v1.1 contains '言語版'
+[PASS] V5 LICENSE v1.1 contains 'NOT LEGAL ADVICE'
+[PASS] V5 LICENSE v1.1 contains '非法律意見'
+[PASS] V5 LICENSE v1.1 contains '[TBD'
+[PASS] V5 LISTING_COPY v1.1 contains '密度・ヤング率は工学ハンドブックの範囲内にある標準的な値、減衰パラメータは推定値'
+[PASS] V5 LISTING_COPY v1.1 contains 'the damping parameters are estimates'
+[PASS] V5 LISTING_COPY v1.1 contains 'density and Young's modulus are standard values within engineering-handbook ranges'
+[PASS] V5 LISTING_COPY v1.1 contains '密度、楊氏模量為工程手冊範圍內的標準值；阻尼參數為估計值'
+[PASS] V5 LISTING_COPY v1.1 contains 'AI・機械学習モデルの学習（学習用データセットへの収録を含む）'
+[PASS] V5 LISTING_COPY v1.1 contains 'training or fine-tuning AI/ML models'
+[PASS] V5 LISTING_COPY v1.1 contains 'VST is a registered trademark of Steinberg Media Technologies GmbH.'
+[PASS] V5 LISTING_COPY v1.1 contains 'VST®'
+[PASS] V5 LISTING_COPY v1.1 contains 'loop-ready'
+[PASS] V5 LISTING_COPY v1.1 contains 'bamboo, oak & birch'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase 'AI 学習利用は禁止'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase 'no AI-training use'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase '(in most)'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase 'spruce'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase 'water-gong glides'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase '(VST3, Windows)'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase 'Young's modulus, damping)'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase '継ぎ目を確認してから'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase '工学ハンドブックの値'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase 'engineering-handbook values'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase '取自工程手冊'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase '減衰は一部推定値'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase 'damping is partly estimated'
+[PASS] V5 LISTING_COPY v1.1 no longer contains v1.0 phrase '阻尼部分為估計值'
+[PASS] V5 PRODUCT_SHEET v1.1 contains '前提不成立'
+[PASS] V5 PRODUCT_SHEET v1.1 contains '16 顆弱基頻'
+[PASS] V5 PRODUCT_SHEET v1.1 contains 'AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成'
+[PASS] V5 PRODUCT_SHEET v1.1 contains 'Storm of Equations'
+[PASS] V5 PRODUCT_SHEET v1.1 contains 'loop-ready'
+[PASS] V5 PRODUCT_SHEET v1.1 contains '政策'
+[PASS] V5 PRODUCT_SHEET v1.1 contains '0 個'
+[PASS] V5 PRODUCT_SHEET v1.1 contains 'N1 只檢查弦類引擎（piano／cimbalom／string）的事件'
+[PASS] V5 zip_readme/README_SE_PACK_v1_1.txt states the loop fact without over-claiming: contains 'BEFORE the final level change'
+[PASS] V5 zip_readme/README_SE_PACK_v1_1.txt states the loop fact without over-claiming: contains 'not bit-identical'
+[PASS] V5 zip_readme/README_SE_PACK_v1_1.txt states the loop fact without over-claiming: contains 'ビット単位では一致しません'
+[PASS] V5 zip_readme/README_SE_PACK_v1_1.txt states the loop fact without over-claiming: contains '不是逐位元相同'
+[PASS] V5 zip_readme/README_SE_PACK_v1_1_FAB.txt states the loop fact without over-claiming: contains 'BEFORE the final level change'
+[PASS] V5 zip_readme/README_SE_PACK_v1_1_FAB.txt states the loop fact without over-claiming: contains 'not bit-identical'
+[PASS] V5 zip_readme/README_SE_PACK_v1_1_FAB.txt states the loop fact without over-claiming: contains 'ビット単位では一致しません'
+[PASS] V5 zip_readme/README_SE_PACK_v1_1_FAB.txt states the loop fact without over-claiming: contains '不是逐位元相同'
+[PASS] V5 AI clause scope consistent (license 'train or fine-tune' / README 'train or fine-tune' / listing 'training or fine-tuning')
+[PASS] V5 FAB note mentions Standard License, NoAI, CC-BY and the no-LICENSE zip
+
+== V6 answer-sheet times
+  (listening_kit.json not in output/wf0925/X2 -> recomputed read-only; copy written to --tmp)
+[PASS] V6 all 24 loop repeat points in the sheet == computed from file lengths  -- missing []
+[PASS] V6 all 16 weak-fundamental note times in the sheet == score event times  -- missing []
+[PASS] V6 LISTENING_CHECKLIST.md has the same 16 note times
+[PASS] V6 sheet has 22 questions (A1-3, B01-12, C1, D1-6)  -- 22 found
+
+== V7 verification-chain claim
+[PASS] V7 all 43 sfx scores are [PASS] in K1 verify_score --all (75/75)  -- missing []
+
+== V8 upstream evidence files
+[PASS] V8 wf0925_X2_web_sources.txt ends with RESULT: PASS
+[PASS] V8 wf0925_X2_catalog.txt ends with RESULT: PASS
+[PASS] V8 wf0925_X2_listening_kit.txt ends with RESULT: PASS
+[PASS] V8 wf0925_X2_packages.txt body == packages/PACKAGES_MANIFEST_v1_1.txt
+[PASS] V8 packages evidence lists the current sha256 of all 3 product zips
+[PASS] V8 facts: 0 master samples at/above full scale over 50 masters
+[PASS] V8 facts: Fur Elise master/distribution lag 0 samples
+[PASS] V8 facts: 16 weak notes, all note/velocity match
+
+== V9 README durations == WAV header frames / sample rate, rounded once
+[PASS] V9 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: 49 file-list durations == header frames/sr rounded once (exact, half-up)  -- bad []
+[PASS] V9 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: same durations also == Python round(frames/sr) (the audit's method)  -- differ []; exact .5 ties []
+[PASS] V9 TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip: loop table 18 rows (3 languages x 6) seconds == header frames, rounded once  -- rows 18 bad []
+[PASS] V9 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: 49 file-list durations == header frames/sr rounded once (exact, half-up)  -- bad []
+[PASS] V9 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: same durations also == Python round(frames/sr) (the audit's method)  -- differ []; exact .5 ties []
+[PASS] V9 TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip: loop table 18 rows (3 languages x 6) seconds == header frames, rounded once  -- rows 18 bad []
+
+== V10 README numbers == XF measurement files
+[PASS] V10 wf0925b_XF_tp_meters.txt ends with RESULT: PASS
+[PASS] V10 wf0925b_XF_loop_facts.txt ends with RESULT: PASS
+[PASS] V10 README: SE true-peak range == union of three meters -0.949..-1.048 dBTP, spread 0.07 dB (EN/JA/ZH)
+[PASS] V10 README: loop-ready true-peak range == union of three meters -0.996..-1.002 dBTP (EN/JA/ZH)
+[PASS] V10 README: loop gain -0.55..-0.77 dB and original-file offset 0.03..0.05 dB == xf_loop_facts.json (EN/JA/ZH)
+[PASS] V10 README_FAB: SE true-peak range == union of three meters -0.949..-1.048 dBTP, spread 0.07 dB (EN/JA/ZH)
+[PASS] V10 README_FAB: loop-ready true-peak range == union of three meters -0.996..-1.002 dBTP (EN/JA/ZH)
+[PASS] V10 README_FAB: loop gain -0.55..-0.77 dB and original-file offset 0.03..0.05 dB == xf_loop_facts.json (EN/JA/ZH)
+[PASS] V10 LISTING_COPY Policy A (JA/EN): true-peak range == union of three meters −0.949..−1.048 dBTP, spread 0.07 dB; old literal gone
+[PASS] V10 LISTING_COPY: Policy B sentence (JA/EN) removed after Q20=A; no 【政策 B】/【Policy B】 marker left
+[PASS] V10 xf_loop_facts: 6/6 pre-gain tail-wrap == re-trigger steady state (0), delivered == wrap x gain rewritten (identical ints), fitted offset == predicted (2 dp)
+
+== V11 same wording fixed in PRODUCT_SHEET / LISTENING_CHECKLIST / QA_REPORT
+[PASS] V11 PRODUCT_SHEET §3.1: no 'max diff 0' loop sentence without the gain caveat
+[PASS] V11 LISTENING_CHECKLIST B row: pre-gain wording
+[PASS] V11 QA_REPORT §3 seam table: percentile and p50/p90/p99/max == xf_loop_facts.json (one method: per-step max over channels)  -- []
+[PASS] V11 QA_REPORT has the meter note (XF) and the seam method note, numbers marked 描述用
+
+== V12 album license draft and DistroKid notes
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains 'DRAFT'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains 'NOT LEGAL ADVICE'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains '草稿'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains '非法律意見'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains '待月月審'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains '下書き'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains '法的助言ではありません'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains '[TBD'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains 'DistroKid'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt contains 'Content ID'
+[PASS] V12 LICENSE_ALBUM_v1_1.txt is not inside any zip in packages/ (waiting for 月月)  -- []
+[PASS] V12 DISTROKID_NOTES.md exists, cites support.distrokid.com article URLs, records the 403 and lists decisions for 月月
+[PASS] V12 wf0925b_XF_web_sources.txt ends with RESULT: PASS
+
+== V13 WF1002 decisions (2026-10-02) visible in the text; replaced option text gone
+[PASS] V13 Q21 LICENSE_SE: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+[PASS] V13 Q21 LICENSE_SE: no pending-confirmation marker on the AI wording
+[PASS] V13 Q21 LICENSE_ALBUM: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+[PASS] V13 Q21 LICENSE_ALBUM: no pending-confirmation marker on the AI wording
+[PASS] V13 Q21 LISTING_COPY: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+[PASS] V13 Q21 LISTING_COPY: no pending-confirmation marker on the AI wording
+[PASS] V13 Q21 PRODUCT_SHEET: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+[PASS] V13 Q21 PRODUCT_SHEET: no pending-confirmation marker on the AI wording
+[PASS] V13 Q21 README_SE: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+[PASS] V13 Q21 README_SE: no pending-confirmation marker on the AI wording
+[PASS] V13 Q21 README_SE_FAB: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+[PASS] V13 Q21 README_SE_FAB: no pending-confirmation marker on the AI wording
+[PASS] V13 Q21 README_ALBUM: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+[PASS] V13 Q21 README_ALBUM: no pending-confirmation marker on the AI wording
+[PASS] V13 Q21 LICENSE_SE §11 EN/JA keep the existing translations
+[PASS] V13 Q22b LICENSE_SE §4 option A text kept, option marker gone (3 languages)
+[PASS] V13 Q22c LICENSE_SE §6 = option B (3 languages)
+[PASS] V13 Q22c LICENSE_SE §6 contact exception (3 languages)
+[PASS] V13 Q22c option A text gone from LICENSE_SE
+[PASS] V13 Q22d English prevails (3 languages), no [TBD: English]
+[PASS] V13 Q22 remaining [TBD] only in sections 1 (channels), 8 (after termination), 9 (law/courts), 12 (contact)  -- {1: 3, 8: 3, 9: 3, 12: 3}
+[PASS] V13 Q22 LICENSE_SE still a draft (DRAFT box kept, so --release is refused)
+[PASS] V13 Q22 LISTING_COPY license summary: no Content ID registration + contact for extended license (JA/EN)
+[PASS] V13 Q22c-aligned LICENSE_ALBUM §6: buyers may not register anything that contains the Recordings + contact exception (3 languages)
+[PASS] V13 Q23 FAB_PLATFORM_NOTE marked on hold
+[PASS] V13 Q23 packages manifest: Fab zip built for reference only, ON HOLD, not in the release list
+[PASS] V13 Q25 album README lists the complete suite == (--complete include)
+[PASS] V13 Q27 album README TPDF note + 'MP3 not re-encoded' (3 languages) == (--music tpdf)
+[PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains '**商品名** TsukiSynth'
+[PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'VST® 3 plug-in & Standalone (Windows 64-bit)'
+[PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'VST is a registered trademark of Steinberg Media Technologies GmbH.'
+[PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains '物理驗證涵蓋 CLI 渲染；外掛即時演奏共用衰減律，激發與效果鏈未逐項驗證'
+[PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'Windows 64-bit only'
+[PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'VST_Compatible_Logo_Steinberg_with_TM'
+[PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'USAGE_NOTES.zh-TW.md'
+[PASS] V13 Q29 buyer-facing synth text: first 'VST' is 'VST®'; no 'VSTi'; old name options gone
+[PASS] V13 CHANGES_v1_1.md contains '10-02 月月裁決已套用'
+[PASS] V13 CHANGES_v1_1.md contains '等平台規格'
+[PASS] V13 CHANGES_v1_1.md contains '試聽帶'
+[PASS] V13 CHANGES_v1_1.md contains 'E2 甲'
+[PASS] V13 CHANGES_v1_1.md contains 'E4 乙'
+[PASS] V13 CHANGES_v1_1.md contains 'E5 照平台'
+[PASS] V13 CHANGES_v1_1.md contains 'E8 英'
+[PASS] V13 CHANGES_v1_1.md contains 'E9 無'
+[PASS] V13 CHANGES_v1_1.md contains 'E1／E3／E6／E7'
+[PASS] V13 CHANGES_v1_1.md contains 'Q28'
+
+_X2_MANIFEST_SHA256.txt: 56 files
+  03b71b0e0536a027f2045e45efe275ec050f20f82cd6d74bf0bf943296aa88e6  CHANGES_v1_1.md
+  5669089b06b8b0b0de04a721bda2b75cd26fcdee253112bc1017bebf7e66e076  DISTROKID_NOTES.md
+  85b813b63cbe354d0c8b88e06c1be8cfe2d9c3b903f3883bfaae3f3f75ea8d54  FAB_PLATFORM_NOTE.txt
+  7f1983f7cb74755177754523d2ce625b60b3b11cbac8364d2f8aa9376f0f6a44  LICENSE_ALBUM_v1_1.txt
+  66c91df3ef22902e45d99990159f7d9f8154a8aeaef544278bf5de1da02b9729  LICENSE_SE_PACK_v1_1.txt
+  b91174cb9d246de9b21a55d05d0448dd65ff694ad95a19591707409959eabd15  LISTENING_CHECKLIST.md
+  7d8f57b3631b02de0c4b4fea68b1dd5fa108f7a6b10faca9a700bf7c92fa2679  LISTING_COPY_v1_1.md
+  a5ae4b1e9ec3d76ca95da2b928df79936f00c3a382043f75d0cfc7feb7f54ff6  PRODUCT_SHEET_v1_1.md
+  149bab69ef45ddf377876a88cd1d00ca39aded8a0089e21c7ef400c882b519c7  QA_REPORT.md
+  e1b4f3bf99997574a5fecf4975c93a2f34c93a0ba4719a97d673306d6b3a22bf  catalog_v1_1.csv
+  5993bbef1c72ecaba6dee29bc81a3ec92d427808560678e268cadb11bcfa7326  catalog_v1_1.json
+  75286894c29233c0cfdb7ee0acbf217f56f3abec1a30ff804a74b5d106b8ac19  catalog_v1_1_FIELDS.md
+  44314a0ea8ae4357cdc575b17889cff3925cdfbef1ef884eeca8097b878cadd4  listening_kit/A1_Rabbit_Stomp.wav
+  9486fe6e29e9ffcacf6835b684263dbdcfec1d1a862ee9c9b198549d6e040b95  listening_kit/A2_Clockwork_Spring_Release.wav
+  48d2a30eccf6da9184b32466b9296d8e87a4bf2ff8b9826fc509d9c458a541a0  listening_kit/A3_Restraint_Shackle_Slam.wav
+  8e68984428345c859bffc88f6c61d4b2c38b66385b68ccf3f5b6cefc06c57153  listening_kit/B01_Akashic_Meditation_Loop__ORIGINAL_x3.wav
+  bfb46410b9490201f7713e678ca5f5369f7f894e2a8d5d6efdaf3a069db3d751  listening_kit/B02_Akashic_Meditation_Loop__LOOPREADY_x3.wav
+  9912c053eeaf46a6c86a541d70eb588f8410f2b128c71b2e674d1a04454142c9  listening_kit/B03_Rabbit_Bounce_Loop__ORIGINAL_x3.wav
+  4ca2acb1bc2119699a904922f1fcbf6b7a62d787c221804a6e6f4123c2bd5ef7  listening_kit/B04_Rabbit_Bounce_Loop__LOOPREADY_x3.wav
+  b5b535192caddecc679c592df847e8bd993aa512ef4476dec6efe23e232c5066  listening_kit/B05_Restraint_Industrial_Pulse__ORIGINAL_x3.wav
+  3d599e88eeaa5756c4cd87669adc602e21c4832021b82831fa9f4abf1d55a857  listening_kit/B06_Restraint_Industrial_Pulse__LOOPREADY_x3.wav
+  d244e601ec4c7daa600cb4827d1ccc28189c208c609df745757b066d3e0385ae  listening_kit/B07_Forest_Rain_Pattern__ORIGINAL_x3.wav
+  a66663f0e22e4d69a4eee458ce7b680738f82daebb1db50599dcb3328bb973a9  listening_kit/B08_Forest_Rain_Pattern__LOOPREADY_x3.wav
+  5a4fb81908636bdc027a24238f79b2dfaaeda66270adc60c003388e852e75135  listening_kit/B09_Ocean_Wave_Cycle__ORIGINAL_x3.wav
+  795a762c53b448b043ce02a990d5dd1524cb35dc69d9574ba777eb8bf114e618  listening_kit/B10_Ocean_Wave_Cycle__LOOPREADY_x3.wav
+  e2f9eb01c2e2c95089dcfd27507626255e1590dc215da622d4173f063409fe46  listening_kit/B11_Clockwork_Tick_Loop__ORIGINAL_x3.wav
+  606dca1d5b6af3911aff1eba7fa773098bc3316ee1ecc4f35d6cde8a2ed4473a  listening_kit/B12_Clockwork_Tick_Loop__LOOPREADY_x3.wav
+  26e7183317a2f83082f7e71284067cb1981b899fddf6606debebde9e349508e2  listening_kit/C1_Akashic_Gate_Open_Dark.wav
+  e875958da29549a8c155086d7d2127f86fa41176502ca52df8c3da97dbcb6804  listening_kit/D_Fur_Elise_piano_44k16.wav
+  95d4832104f61054359079583aca9f1b8d80f23581467df01e862607ff491117  listening_kit/LISTENING_SHEET_EN.txt
+  95d4832104f61054359079583aca9f1b8d80f23581467df01e862607ff491117  listening_kit_sheet_EN.txt
+  9a32f6c7413ae8bd250920fc288090472e521807051287c20d9618d90f8e14d0  packages/PACKAGES_MANIFEST_v1_1.txt
+  28c79ebde7568883d81a61fd97201581ce0230f4453d8902fb1f1d7c5a98bbf7  packages/TsukiSynth_Album_Vol1_v1.1_candidate.zip
+  0b46e09320efa05e514ba7f2d6e77143808cb67d218d3033c9eb3d2870ee5888  packages/TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip
+  e73ad49182d1c7a90be0913f506e39109754c26b0f5c870ca46d88080348474d  packages/TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip
+  38ac5b45237d1d4b0416c6638fa635eaa12286ee07d951ab5b92abb8ae8e4fc2  packages/TsukiSynth_listening_kit_v1_1.zip
+  d89b0759551aa18c580b8934dd353369536685d227c7a1807dda304f5a4a2493  scripts/wf1002_catalog_album.py
+  738c7c9dd58ea2c825965830c552778a09c9dc8a52084523cea443f2dd998c01  scripts/x2_build_packages.py
+  2671c5acefe14bfbb4daeebb31de2c11c21d14439470bd09b8369d301492caba  scripts/x2_catalog.py
+  b4d3b9fb0422bf59ac1ea8bacf57e866b71fd687fe90b8daebbc58ed9eebac19  scripts/x2_common.py
+  65fac415f3228c028544ad714748e525e4d1ee7773ad9ffdb645cb31209cc714  scripts/x2_descriptions_3lang.json
+  41552b2227945e22d7c95c639efb0cc1cf50c1b4683eeccc61fb7d29afae8c5c  scripts/x2_facts.py
+  5d549da243da52b32719cb54fcac42b06bd0edfb1676e511197146a258e786af  scripts/x2_listening_kit.py
+  3d07e00db9e9c3f09909f9cb82e2f7e998612ce33b1653bec4a96ed02db423d5  scripts/x2_verify.py
+  d1cbe19c2f8031ce7ecef82e8c7a40e5dd28190bb98d88e4d6594bc27d19743f  scripts/x2_web_sources.py
+  798c8e5bfa28b3e80878f37da94cb7ef2873743dd4197b14e40b2f87c6f75198  scripts/xf_common.py
+  4b54d2b98ac5fcac24d207d8a537503778464d2de61098b1f33659d549e8aabf  scripts/xf_loop_facts.py
+  24e414fd62ef386a22d41b87cff6bb1ecb17389c998053ddde5ed8f0d90987b2  scripts/xf_recheck.py
+  a2755673d6930768129e84990eb472975a4ecf2be7278fd200f2a1018f4960f2  scripts/xf_redact_evidence.py
+  ffb936629740c0e0a96affd06d063bda5f39ae5b4d9018e74dff262cd5e3a5a3  scripts/xf_tp_meters.py
+  c0a9746e6375dfe67345959f6f957f5fdeb1631ea312b2b534a3b59c4e965002  scripts/xf_web_sources.py
+  c5141bb2d8d0d272e48fb28efc72bb8e4f97cf1f99f19d7689778c777c4d2803  xf_loop_facts.json
+  831a355469b39cd83fe752dfc49a63c07fe2c148e05b19741f36ac73a42f728e  xf_tp_meters.json
+  92c350ee100d0d547c06e8f3061753180b659b5c589cab37144682b741279003  zip_readme/README_ALBUM_v1_1.txt
+  1b57bc11ff874120290e879fd045e3f9dc8aa26a0587107bc89ff6a302b36976  zip_readme/README_SE_PACK_v1_1.txt
+  983ad14566b050dc1dc5287ad5d52fe82bbd26f8c555aa8fe825f87fe8f25b60  zip_readme/README_SE_PACK_v1_1_FAB.txt
+
+GATE X2 verify: 179/179
+RESULT: PASS

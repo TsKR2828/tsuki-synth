@@ -1,0 +1,83 @@
+# WF1002-C1 Q01 反例（scratch 複本，repo 沒動）
+# 目的：證明新加的 Q01 CHECK（|IR−ALGO| ≤ 0.25 dB）在響度真的漂掉時會 FAIL。
+# 作法：<SCRATCH>/c1/q01_counter/ 是獨立 CMake 專案：src/ 是 repo src/ 的複本（只改 EffectChain.h），
+#       tests/audit_repro.cpp 與 repo 版逐字相同，JUCE 直接用 <REPO>/libs/JUCE。建置在 <SCRATCH>/c1/q01_counter/build。
+
+## scratch CMakeLists.txt
+# WF1002-C1 Q01 counter-example scratch project (NOT part of the repo).
+# Builds tests/audit_repro.cpp against a scratch COPY of src/ whose
+# EffectChain.h is modified per variant; JUCE comes from the repo's libs/JUCE.
+cmake_minimum_required(VERSION 3.22)
+project(Q01Counter VERSION 0.0.1)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+add_subdirectory(<REPO>/libs/JUCE ${CMAKE_BINARY_DIR}/JUCE)
+add_executable(AuditCounter tests/audit_repro.cpp)
+target_include_directories(AuditCounter PRIVATE src)
+target_compile_definitions(AuditCounter PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+target_link_libraries(AuditCounter PRIVATE juce::juce_audio_formats juce::juce_audio_processors juce::juce_dsp
+                      PUBLIC juce::juce_recommended_config_flags)
+
+$ diff --strip-trailing-cr <REPO>/tests/audit_repro.cpp <SCRATCH>/c1/q01_counter/tests/audit_repro.cpp
+(identical)
+
+## 變體 B：常數 26.9 不動，只把 IR wet 路徑多乘 1.05（+0.42 dB）——模擬「JUCE 升版改了 Convolution 正規化、26.9 沒被改」
+$ diff --strip-trailing-cr <REPO>/src/effects/EffectChain.h <variant B EffectChain.h>
+239c239
+<                 chL[i] = dryL[i] * (1.0f - m) + (chL[i] * kIrWetMakeupGain) * m;
+---
+>                 chL[i] = dryL[i] * (1.0f - m) + (chL[i] * kIrWetMakeupGain * 1.05f) * m;
+241c241
+<                     chR[i] = dryR[i] * (1.0f - m) + (chR[i] * kIrWetMakeupGain) * m;
+---
+>                     chR[i] = dryR[i] * (1.0f - m) + (chR[i] * kIrWetMakeupGain * 1.05f) * m;
+(以上 diff 是變體 B 建置當時的實際輸出，建置後 scratch 檔已改成變體 A)
+$ cmake --build build --config Release --target AuditCounter  -> EXIT=0
+$ build/Release/AuditCounter.exe
+[D9c-guard] EffectChain::kIrWetMakeupGain = 26.8999996
+[PASS] D9c-guard: EffectChain::kIrWetMakeupGain == 26.9f (decision 2026-09-16, D9 option A, DECIDED CONVENTION; reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md)
+[K-02] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+[K-02] IR   wet output (matched-T60 IR = 1.173 s): steady-state RMS = 2.393 dBFS, measured T60 = 1.173333 s
+[K-02] RMS difference (IR - ALGO) = 0.536 dB
+[K-02] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+[Q01] |IR - ALGO| = 0.536 dB, limit 0.25 dB, margin -0.286 dB
+[FAIL] Q01: K-02 synthetic IR |IR - ALGO| <= 0.25 dB (月月 2026-10-02 approved; limit from docs/workcards/WF0914_D9c_ir_makeup_gain.md §2.2, D9b 4-sample spread 0.24 dB in reports/gate_outputs/wf0914_D9b_ir_injection.txt)
+FAIL (1 failure)
+EXIT=1
+=> D9c-guard 照樣 PASS（26.9 沒變），Q01 CHECK FAIL（0.536 dB > 0.25 dB）：這正是 Q01 要擋的情況。
+
+## 變體 A：把增益常數本身改掉 26.9f -> 29.0f
+$ diff --strip-trailing-cr <REPO>/src/effects/EffectChain.h <SCRATCH>/c1/q01_counter/src/effects/EffectChain.h
+298c298
+<     static constexpr float kIrWetMakeupGain = 26.9f;
+---
+>     static constexpr float kIrWetMakeupGain = 29.0f;
+$ cmake --build build --config Release --target AuditCounter  -> EXIT=0
+$ build/Release/AuditCounter.exe
+[D9c-guard] EffectChain::kIrWetMakeupGain = 29
+[FAIL] D9c-guard: EffectChain::kIrWetMakeupGain == 26.9f (decision 2026-09-16, D9 option A, DECIDED CONVENTION; reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md)
+[K-02] ALGO wet output: steady-state RMS = 1.857 dBFS, measured T60 = 1.173333 s
+[K-02] IR   wet output (matched-T60 IR = 1.173 s): steady-state RMS = 2.622 dBFS, measured T60 = 1.173333 s
+[K-02] RMS difference (IR - ALGO) = 0.765 dB
+[K-02] Theoretical difference if ALGO's 0.15 factor were absent (20*log10(1/0.15)) = 16.478 dB
+[Q01] |IR - ALGO| = 0.765 dB, limit 0.25 dB, margin -0.515 dB
+[FAIL] Q01: K-02 synthetic IR |IR - ALGO| <= 0.25 dB (月月 2026-10-02 approved; limit from docs/workcards/WF0914_D9c_ir_makeup_gain.md §2.2, D9b 4-sample spread 0.24 dB in reports/gate_outputs/wf0914_D9b_ir_injection.txt)
+FAIL (2 failures)
+EXIT=1
+=> D9c-guard 與 Q01 兩條都 FAIL（0.765 dB > 0.25 dB）。
+
+## repo 版（對照）：build-wf/Release/TsukiSynthAuditTest.exe
+[D9c-guard] EffectChain::kIrWetMakeupGain = 26.8999996
+[PASS] D9c-guard: EffectChain::kIrWetMakeupGain == 26.9f (decision 2026-09-16, D9 option A, DECIDED CONVENTION; reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md)
+[K-02] RMS difference (IR - ALGO) = 0.112 dB
+[Q01] |IR - ALGO| = 0.112 dB, limit 0.25 dB, margin 0.138 dB
+PASS (0 failures)
+EXIT=0
+
+$ git -C <REPO> diff --stat -- src/effects/EffectChain.h   (repo 版只多了存取點與註解，增益/施加點未改)
+ src/effects/EffectChain.h | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+(repo diff 不含增益數值或施加點的變更)

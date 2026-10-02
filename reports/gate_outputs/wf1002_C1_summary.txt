@@ -1,0 +1,67 @@
+# WF1002-C1（C++ lane）總結 — 2026-10-02
+# 依據：docs/workcards/WF1002_README.md §1 裁定表。HEAD b41298c。建置目錄 build-wf。
+# 本卡沒有 git add / commit / push（R7）。本機路徑寫成 <REPO>/<TOOLS>/<SCRATCH>/<MSVC>。
+
+status: DONE（9 項全部落地；Q07 位元不變 8/8 成立，未觸發 R10）
+
+## 逐項
+1. Q01b=B  src/effects/EffectChain.h 加 public `static constexpr float irWetMakeupGain() noexcept`；
+           tests/audit_repro.cpp 的 D9c-guard 改用它（另加 static_assert 確認可用於常數式），顯式實例化繞路刪除。
+2. Q01=B   audit_repro 新增 testIrAlgoLoudnessWithinQuarterDb()：K-02 合成 IR |IR−ALGO| ≤ 0.25 dB 硬 CHECK
+           （訊息引用 WF0914_D9c 施工卡 §2.2 與 D9b 展幅 0.24 dB）。現況 0.112 dB，餘裕 0.138 dB → PASS。
+           reportReverbWetGainQuantification() 改回傳量測值（輸出內容不變），K-02 從「PASS 行之後的資訊段」移到測試清單內。
+           反例（scratch，repo 沒動）：只改 wet 路徑 ×1.05 → 0.536 dB，Q01 FAIL、D9c-guard 仍 PASS；
+           常數 26.9→29.0 → 0.765 dB，兩條都 FAIL。證據 wf1002_C1_q01_counterexample.txt。
+3. Q06=A   getNumPrograms() = 工廠數（27）；getProgramName() 只回工廠名；setCurrentProgram() 只接受工廠範圍；
+           getCurrentProgram() 對使用者 preset／Init 回 0（必須落在 [0,27)）。
+           restoredProgramToIgnore 仍存「setState 還原到的 preset index」：工廠 preset 行為與以前完全相同；
+           還原到使用者 preset 時，host 回送的 program 0 也會被忽略（不會蓋成工廠 0）。
+           外掛自己的 preset 選單改呼叫新的 selectPresetFromEditor(presetIndex)（同樣的一次性還原回聲保護，但不限工廠）。
+           HostProbe：getNumPrograms()==27（存使用者 preset 前後都是）、使用者 preset 不在 program 名單、getCurrentProgram 在範圍內、
+           PresetManager 自己的清單仍列出並能載入使用者 preset＋其 reverb_ir 區塊；H7 載入端改成「把 preset 檔內容當 DAW state 還原」，
+           並驗證還原後 state 的 presetId 仍是該使用者 preset。pluginval「Plugin programs」：Num programs: 27，SUCCESS。
+4. Q10=B   D12 migrateLegacyReverbIRPath()：「檔案存在但載入失敗」改走缺檔三態（reverbIRMissing、保留原檔名、強制切回演算法、
+           一次性警告附失敗原因）；情境 3（已有 reverb_ir 區塊）也從記憶體 state 拿掉舊 reverb_ir_path（不標 dirty；比 kStateVersion 新的
+           state 照決策包不處理）。HostProbe 新增情境 4（31 s 檔，存檔時 mode=IR，驗證被強制切回 ALGO、無 reverb_ir、ir_missing=1、
+           舊鍵已清、dirty=1、沒匯入 IR 庫）＋情境 3 斷言舊鍵已清。
+5. Q38=A   forceAlgorithmicMissingIR() 中英文字改成 UI 規格 v1.2 §5-3 定案文字（已切回演算法殘響，殘響的音色會和原本的 IR 不同。／
+           Switched back to algorithmic reverb; the reverb will sound different from the original IR.）。
+6. Q17=A   BeamModel.h ×2 註解標 DECIDED CONVENTION（月月 2026-10-02 Q17=A，經驗係數，無文獻錨點，指向 D1 文件與 BR 報告）；
+           HammerImpulse.h 兩處泛指 call site 的過時描述改成「目前沒有呼叫點（B7 09-15 撤回 Path C）」；
+           EffectChain.h 補「約 18.06 dB 來自 JUCE Convolution 0.125 正規化（juce_Convolution.cpp:628）；20·log10(26.9)=28.595 dB」。純註解。
+7. Q05=C   新增 src/dsp/OutputPeakMeter.h（只讀輸出 buffer；無配置、無鎖，lock-free atomic fetch-max；NaN/inf 記為超標）；
+           processBlock 在 Output 增益之後 pushBlock；editor 20 Hz timer takePeak，> 0 dBFS（>1.0f）亮標題列「CLIP」，最後一次超標後保持 1.5 s。
+           顏色只用既有 Clr::gold／Clr::bg／Clr::border／Clr::divLabel。聲音不變：pushBlock 只讀不寫（程式審查）；CLI 不編這個檔，8/8 位元不變。
+           HostProbe 讀不到外掛內部的 atomic（VST3 ABI 不透明）→ 改把同一個 header 餵 preset 15 的真實 VST3 輸出，
+           要求「亮燈 ⇔ 峰值 > 0 dBFS」（preset 15 峰值 1.35731 = +2.65 dBFS → LIT），另加合成對照（1.0 不亮、1.0001 亮且跨 block 保持、−1.5 亮、NaN 亮）。
+8. Q09=D   HostProbe 新增資訊性 Q09 段（不判定）：VST3 以 realtime processBlock 串流兩份 score 的 MIDI，同時用同一組引擎 header 組出的
+           「雙胞胎」juce::Synthesiser（16 voice，覆寫 findFreeVoice/handleMidiEvent 記錄搶音）。FX 設成精確恆等後，雙胞胎與 VST3 輸出
+           max|diff| = 0（兩首都逐樣本相同），所以雙胞胎的搶音紀錄就是外掛實際發生的。
+           結果：給愛麗絲鋼琴版 搶 0 次、最多 12 顆、同音提前制音 21 顆（報告估 12／0／21，一致）；
+                 月光第一樂章舌鼓版 搶 64 次（4 次搶到還按著的音）、無上限 pool 最多 20 顆、第一次搶在 17.920 s
+                 （報告估 64 次、4 次按著、20 顆、17.92 s，一致）。「被別顆放鍵一起制音」本卡計 11（報告 21），計數定義不同，見 open_items。
+9. Q07=A   CMakeLists.txt 在 add_subdirectory(libs/JUCE) 前設 CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+           （CMP0091 在 cmake_minimum_required 3.22 下已是 NEW，另顯式 set）。三支執行檔 dumpbin /DEPENDENTS 不再有
+           MSVCP140*／VCRUNTIME140*（也不再有 api-ms-win-crt-*），grep -a 計數 0。CLI sha256 d2820a99… → c18a5a39…，渲染 8/8 位元不變。
+
+## GATE（全部在 build-wf；最終狀態＝含 Q07）
+| GATE | 命令 | 關鍵輸出 | 證據 |
+|---|---|---|---|
+| 三主＋五測試 target 建置 | cmake --build build-wf --config Release --target …（兩條） | EXIT=0，error/warning 0 行 | wf1002_C1_build_ctest.txt |
+| ctest | ctest --test-dir build-wf -C Release --output-on-failure | 4/4 passed；AuditTest [PASS] 111／[FAIL] 0，[Q01] 0.112 dB | wf1002_C1_build_ctest.txt |
+| physics_verify --full | python tools/physics_verify.py --full --cli <build-wf CLI> | NO CHECKED FAILURES；與 WF0925b 整合卡逐行相同（只差 time 的空行） | wf1002_C1_physics_full.txt |
+| verify_score --all | python tools/verify_score.py --all --cli <build-wf CLI> | 75/75（1 項既有豁免），renderer c18a5a39355f | wf1002_C1_verify_score.txt |
+| HostProbe（cwd 在 repo 外） | TsukiSynthHostProbe.exe <VST3> <REPO>/output/wf1002/C1/hostprobe | PASS 231／FAIL 0（基線 215：−3＋19） | wf1002_C1_hostprobe.txt |
+| 位元不變 | render_wf_scores.py --cli <build-wf CLI> --label wf1002_C1 … ; diff --strip-trailing-cr 對 sha256_before_post_a14.txt | DIFF_EXIT=0 → 8/8 IDENTICAL（Q07 前後各一次） | wf1002_C1_bit_identity.txt |
+| pluginval＋Steinberg validator | pwsh tools/validate_plugin.ps1 … -Strictness 10 | pluginval exit 0 / SUCCESS（Plugin programs: Num programs 27）；validator 47 passed 0 failed；PLUGIN VALIDATION RESULT: PASS | wf1002_C1_validate_plugin.txt |
+| Q07 匯入檢查 | dumpbin /DEPENDENTS ＋ grep -a | 三支 0 個 MSVCP140*/VCRUNTIME140* | wf1002_C1_q07_static_crt.txt |
+
+## files_touched
+src/effects/EffectChain.h, src/physics/BeamModel.h, src/physics/HammerImpulse.h,
+src/PluginProcessor.cpp, src/PluginProcessor.h, src/PluginEditor.cpp, src/PluginEditor.h,
+src/dsp/OutputPeakMeter.h（新檔）, tests/audit_repro.cpp, tests/host_probe.cpp, CMakeLists.txt,
+reports/gate_outputs/wf1002_C1_*.txt（9 檔，含本檔）
+
+## 暫存（gitignored，非證據）
+<REPO>/output/wf1002/C1/{render_out, render_out_preQ07, hostprobe}；<SCRATCH>/c1/（原始 log、q01_counter scratch 專案）、<SCRATCH>/c1_render、c1_render_pre。
+協調者通知 00:28 有 lane 誤刪 output/wf1002：本卡引用的暫存都是之後最終那次執行重新產生的，收尾時三個子資料夾都還在。

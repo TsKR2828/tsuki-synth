@@ -1,0 +1,173 @@
+# WF1002-C1 Q07：靜態 CRT（CMAKE_MSVC_RUNTIME_LIBRARY），三支執行檔不再 import MSVCP140*/VCRUNTIME140*
+$ git diff -- CMakeLists.txt
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c7cec38..82cd304 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -68,6 +68,19 @@ if(MSVC)
+     add_compile_options(/utf-8)
+ endif()
+ 
++# WF1002-C1 (月月 2026-10-02 裁決 Q07=A, 盤點 E4): link the MSVC C/C++ runtime
++# STATICALLY into every target (VST3, Standalone, CLI, tests) so buyers do not
++# need the VC++ Redistributable (no MSVCP140*/VCRUNTIME140* imports).
++# Debug configs use the static debug runtime. Set BEFORE add_subdirectory
++# (libs/JUCE) so the JUCE module targets get the same runtime. Needs policy
++# CMP0091 NEW (CMake >= 3.15; already NEW under cmake_minimum_required 3.22
++# above -- set explicitly so the dependency is visible). Ignored by non-MSVC
++# toolchains.
++if(POLICY CMP0091)
++    cmake_policy(SET CMP0091 NEW)
++endif()
++set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
++
+ add_subdirectory(libs/JUCE)
+ 
+ # --- AAX / AU support ---
+
+## policy：cmake_minimum_required(VERSION 3.22) 已讓 CMP0091 為 NEW（3.15 引入）；另外顯式 cmake_policy(SET CMP0091 NEW)
+$ grep RuntimeLibrary build-wf/TsukiSynthCLI.vcxproj | sort | uniq -c
+      3       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      1       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+$ grep -h RuntimeLibrary build-wf/TsukiSynth_VST3.vcxproj build-wf/TsukiSynth_Standalone.vcxproj build-wf/TsukiSynth.vcxproj | sort | uniq -c
+      9       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      3       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+
+## 之前（Q07 前，build-wf 動態 CRT）：grep -a 匯入字串
+$ for f in <三支>; do grep -aoiE "(MSVCP140[_0-9]*|VCRUNTIME140[_0-9]*)\.dll" "$f" | sort -u; done
+（Q07 前 build-wf 三支的 sha256 與 grep -a 結果）
+d2820a995ee40cd006aa3c11c081ec26f290c653069d23f5f4ac5165c456c3ee *build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+74042db3743ed957e23d1539a38ebea40b3be5bcb138490def791f3a918644e8 *build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+ef063832095927231d25d3466c8f900805a160c66ea618fd9110a1a4f9361dc0 *build-wf/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+三支都出現：MSVCP140.dll / MSVCP140_2.dll / VCRUNTIME140.dll / VCRUNTIME140_1.dll（Q07 前 CLI 的 dumpbin /DEPENDENTS 同樣列出這 4 個＋api-ms-win-crt-*）。註：這段 Q07 前 build-wf 的 grep/dumpbin 輸出當時只印在終端、沒存原始檔，這裡是轉述；可重跑的「之前」證據用下一節 build\ 的 dumpbin（HEAD 版、Q07 之前的 CMakeLists 的動態 CRT 建置）。
+
+## 之前（參照：build\ = 09-30 整合建置，本卡未動，同為動態 CRT）：dumpbin /DEPENDENTS 只列 CRT 相關行
+$ <MSVC>/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/dumpbin.exe /DEPENDENTS build/...
+== build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe (build\ = WF0925b/09-30 integration build, dynamic CRT, untouched by this card)
+Sep 30 00:39
+    MSVCP140_2.dll
+    MSVCP140.dll
+    VCRUNTIME140_1.dll
+    VCRUNTIME140.dll
+    api-ms-win-crt-math-l1-1-0.dll
+    api-ms-win-crt-heap-l1-1-0.dll
+    api-ms-win-crt-convert-l1-1-0.dll
+    api-ms-win-crt-stdio-l1-1-0.dll
+    api-ms-win-crt-runtime-l1-1-0.dll
+    api-ms-win-crt-time-l1-1-0.dll
+    api-ms-win-crt-string-l1-1-0.dll
+    api-ms-win-crt-locale-l1-1-0.dll
+    api-ms-win-crt-utility-l1-1-0.dll
+    api-ms-win-crt-environment-l1-1-0.dll
+== build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3 (build\ = WF0925b/09-30 integration build, dynamic CRT, untouched by this card)
+Sep 30 00:42
+    MSVCP140.dll
+    MSVCP140_2.dll
+    VCRUNTIME140_1.dll
+    VCRUNTIME140.dll
+    api-ms-win-crt-stdio-l1-1-0.dll
+    api-ms-win-crt-heap-l1-1-0.dll
+    api-ms-win-crt-string-l1-1-0.dll
+    api-ms-win-crt-convert-l1-1-0.dll
+    api-ms-win-crt-runtime-l1-1-0.dll
+    api-ms-win-crt-math-l1-1-0.dll
+    api-ms-win-crt-time-l1-1-0.dll
+    api-ms-win-crt-locale-l1-1-0.dll
+    api-ms-win-crt-environment-l1-1-0.dll
+    api-ms-win-crt-utility-l1-1-0.dll
+== build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe (build\ = WF0925b/09-30 integration build, dynamic CRT, untouched by this card)
+Sep 30 00:43
+    MSVCP140.dll
+    MSVCP140_2.dll
+    VCRUNTIME140_1.dll
+    VCRUNTIME140.dll
+    api-ms-win-crt-heap-l1-1-0.dll
+    api-ms-win-crt-math-l1-1-0.dll
+    api-ms-win-crt-runtime-l1-1-0.dll
+    api-ms-win-crt-time-l1-1-0.dll
+    api-ms-win-crt-string-l1-1-0.dll
+    api-ms-win-crt-stdio-l1-1-0.dll
+    api-ms-win-crt-convert-l1-1-0.dll
+    api-ms-win-crt-locale-l1-1-0.dll
+    api-ms-win-crt-environment-l1-1-0.dll
+    api-ms-win-crt-utility-l1-1-0.dll
+
+## 之後（build-wf 最終，靜態 CRT）：dumpbin /DEPENDENTS 全列＋grep -a 計數
+== build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+c18a5a39355fc43b30f6ea546f8a149d3016636cc87bf0d714b569627c73b35e *build-wf/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  Image has the following dependencies:
+    KERNEL32.dll
+    USER32.dll
+    GDI32.dll
+    SHELL32.dll
+    ole32.dll
+    OLEAUT32.dll
+    COMDLG32.dll
+    ADVAPI32.dll
+    WININET.dll
+    WS2_32.dll
+    SHLWAPI.dll
+    WINMM.dll
+    IMM32.dll
+    COMCTL32.dll
+    dwmapi.dll
+    d2d1.dll
+    dxgi.dll
+    d3d11.dll
+    dcomp.dll
+  Summary
+-- grep -a MSVCP140/VCRUNTIME140 (count):
+0
+== build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+9e4301ee01ce77abac71027268834cf7aef4d355fe199d698abffad12ff7987b *build-wf/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+  Image has the following dependencies:
+    KERNEL32.dll
+    USER32.dll
+    GDI32.dll
+    SHELL32.dll
+    ole32.dll
+    OLEAUT32.dll
+    COMDLG32.dll
+    ADVAPI32.dll
+    WININET.dll
+    WS2_32.dll
+    SHLWAPI.dll
+    WINMM.dll
+    d2d1.dll
+    dxgi.dll
+    d3d11.dll
+    dcomp.dll
+    IMM32.dll
+    COMCTL32.dll
+    dwmapi.dll
+  Summary
+-- grep -a MSVCP140/VCRUNTIME140 (count):
+0
+== build-wf/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+e80e1d44875877297b1d6a1bf22116d3bac10deb65ccae27335d28faa6970a84 *build-wf/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+  Image has the following dependencies:
+    KERNEL32.dll
+    USER32.dll
+    GDI32.dll
+    SHELL32.dll
+    ole32.dll
+    OLEAUT32.dll
+    COMDLG32.dll
+    ADVAPI32.dll
+    WININET.dll
+    WS2_32.dll
+    SHLWAPI.dll
+    WINMM.dll
+    IMM32.dll
+    COMCTL32.dll
+    dwmapi.dll
+    d2d1.dll
+    dxgi.dll
+    d3d11.dll
+    dcomp.dll
+  Summary
+-- grep -a MSVCP140/VCRUNTIME140 (count):
+0
+
+=> 三支都不再 import MSVCP140*.dll / VCRUNTIME140*.dll，也不再 import api-ms-win-crt-*（UCRT 一起靜態連結）；grep -a 計數 0。
+=> R10：位元不變 8/8 IDENTICAL（見 wf1002_C1_bit_identity.txt (b)）——CLI 二進位變了（sha256 d2820a99… -> c18a5a39…），但渲染輸出逐位元相同，所以 Q07 不 BLOCKED。

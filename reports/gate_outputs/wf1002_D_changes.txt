@@ -1,0 +1,346 @@
+=== WF1002-D 文件 lane 改動證據（2026-10-02） ===
+卡號：WF1002-D（規則與主張域文件）
+依據：docs/workcards/WF1002_README.md §1 裁定表（唯一依據）；reports/decision_packets/WF0925_open_decisions.zh-TW.md Q01–Q04、Q05、Q06、Q08、Q09、Q13、Q17、Q18、Q19、Q38
+基準：HEAD b41298c
+路徑代稱：<REPO> = repo 根目錄（E 槽 Tsuki-project 下的 tsuki-synth）；<SCRATCH> = 本卡 session 的暫存資料夾（不進 repo）
+git：本卡沒有 git add / commit / push。8 個檔案都是 unstaged 修改＋本證據檔（新檔）。
+同一工作樹裡 src/、tests/ 的修改是同輪 C1 lane 的，不是本卡改的；本卡沒碰。
+
+----------------------------------------------------------------------
+一、逐檔逐處：改前 → 改後（依據）
+----------------------------------------------------------------------
+
+[1] ROADMAP_PHYSICS.md（月月 10-02 授權改 §1 與 §6；每處都留「2026-10-02 月月裁決 Qxx」註記）
+  行號不位移的作法：§1 每處改動都在原本那一行內完成；§6 新增 3 列、同時把下面 5 行的待裁註記壓成 2 行，
+  所以 :480（§7）以後、以及 :140-:148、:441、:468、:472 等被其他文件引用的行號都沒動（見三-V2）。
+  檔尾新增「2026-10-02 WF1002 輪」一段（+6 行，在檔尾，不影響任何行號）。
+
+  (a) :161 R6 範圍（Q02=A）
+      改前：6. **改動任何 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/` 之後**，宣稱完成前必跑：
+      改後：6. **改動任何 `src/`（含全部子資料夾）或 `CMakeLists.txt` 之後**，宣稱完成前必跑（2026-10-02 月月裁決 Q02=A：
+            原文「~~…四個資料夾…~~」刪除線保留，擴成整個 src/＋CMakeLists.txt；理由寫 CLI 也經過 src/effects/、賣的是外掛）
+  (b) :163 R6 第二點（Q02=A；外掛層另規定）
+      改前：   - 三個 build target（CLI / Standalone / VST3）exit 0
+      改後：同一行後面加「外掛層另加（2026-10-02 月月裁決 Q02=A）」：改到 PluginProcessor.*、PluginEditor.*、src/effects/、
+            IRLibrary.h、PresetManager.h、ParameterLayout.*、Presets.h 時，先重建五個測試 target（AuditTest、TunerTest、
+            PhysicsModelsTest、SpectrumViewTest、HostProbe）再跑 ctest（X4），以及 HostProbe 全套
+  (c) :164 R7（Q03=A）
+      改前：7. **不 commit、不 push。** 檔案留 unstaged，由月月審完決定（現行工作規則）。
+      改後：7. **不 commit、不 push（月月明示裁決時除外）；稽核 PASS 後由稽核 `git add`（staged）供月月審。**
+            （2026-10-02 月月裁決 Q03=A 改字面；原文用刪除線保留在括號內）
+  (d) :169-171 §1 待裁註記（Q02、Q03）
+      改前：> **待月月裁決（2026-09-25 盤點提出；以上十條原文未改）**：＋ R7、R6 兩條
+      改後：標題改「~~待月月裁決~~ 已裁（…2026-10-02 月月裁決 Q02=A、Q03=A…；下面兩條保留作歷史）」；兩條各在行尾加「→ 已照 A 改」
+  (e) :463 §6 f0 誤差列（Q04=A：兩處 ±5 c 沿用）
+      改前：依據欄結尾「…不以攻擊噪聲假造 f0 |」
+      改後：同一格後面加「；沿用本列的兩處（2026-10-02 月月裁決 Q04=A 註明）：melody_verify.py 的 pitch ±5 cents
+            （PITCH_TOL_CENTS = vs.MODE_F0_TOL_CENTS）與 partial_verify.py 的 partial 頻率 ±5 cents 都是沿用本列，不是另外的容差」
+            數值欄位（±5 cents）一字未動。
+  (f) :473-475 §6 新增三列（Q04=A＋Q01=B；數值都不是新訂的，只補登記與出處）
+      - 旋律 onset 誤差 ±10 ms：C3-b，08-20 月月委託推導（推導寫在 tools/melody_verify.py 檔頭 ONSET_TOL_S）；
+        證據 reports/gate_outputs/l1_l2_l3a_melody_gate.txt
+      - 量測器自證 ≤1.0 cent＝strict xfail 判定值：08-30 月月查核第 5 點；C10（09-10 A）收窄為 ≤1.18 c，
+        D15（09-15 A'）限定持續段、放鍵段約 7.2 c；工具常數 MAX_ABS_ERROR_CENTS_LIMIT／SENSITIVITY_TOL_CENTS = 1.0
+      - 外掛 IR−ALGO 響度差 |IR−ALGO| ≤ 0.25 dB：10-02 月月核准（Q01=B）；出處 docs/workcards/WF0914_D9c_ir_makeup_gain.md
+        §2 第 2 項（:28-30，「0 ± 0.25 dB」；裁定表稱「§2.2」），取 D9b 展幅 0.24 dB；現值 +0.112 dB
+  (g) :476-479 §6 待裁註記
+      改前：5 行「待月月裁決（2026-09-25 盤點提出；上表數值一字未改）…由月月決定。」
+      改後：2 行「~~待月月裁決~~ 已裁（…2026-10-02 月月裁決 Q04=A＋Q01=B 補登…）」；原註記全文在引號內引述保留
+  (h) :17 檔頭狀態指引：行尾加一句指到檔尾「2026-10-02 WF1002 輪」，並註明本輪首次授權改 §1／§6
+  (i) 檔尾 :511-517 新增「## 2026-10-02 WF1002 輪（月月裁決落地；依 Rule 8）」狀態段（照裁定表）
+
+[2] .github/workflows/physics.yml（只 Q13=A）
+  :183 註解 Linux/clang → Linux/GCC
+  :185-189 新增 5 行註解（接在原 :184 後）：說明 label 改名原因與 CI log 證據（不是程式邏輯）
+  :209（原 :204） label: ubuntu-24.04-clang → label: ubuntu-24.04-gcc
+  :302（原 :297） compare 參數 xplat/xplat-ubuntu-24.04-clang → xplat/xplat-ubuntu-24.04-gcc
+  上傳 artifact 名（xplat-${{ matrix.label }}）、上傳路徑（xplat/${{ matrix.label }}）、--emit／--label 參數都由 matrix.label 帶出，
+  不用另外改；download 用 pattern xplat-*，會落在 xplat/xplat-ubuntu-24.04-gcc，跟 compare 參數一致（三-V4 自動核對）。
+  檔內剩下唯一一處 "ubuntu-24.04-clang" 在新加的說明註解裡（引述舊名）。
+  .github/workflows/release-physics.yml：grep 沒有 clang／xplat／matrix.label → 依指示不動。
+  GitHub branch protection：gh api …/branches/main/protection 回「Branch not protected」，沒有綁死舊 job 名稱的必要檢查。
+
+[3] scores/crossplatform_tolerance.json（只 _basis 文字；數值欄位一字未動）
+  改前：「…windows-2022/MSVC 基準 vs ubuntu-24.04/clang + macos-14/appleclang…月月 2026-08-22 裁決「照提案登記」。」
+  改後：ubuntu-24.04/clang → ubuntu-24.04/GCC 13.3；句尾加【2026-10-02 月月裁決 Q13=A 更正編譯器名稱…】一段，
+        說明 run 32446987833（本登記的數據來源）與 run 34880536096 的 ubuntu leg log 都寫「The CXX compiler identification is GNU 13.3.0」。
+  依據：CI log（下面四-1，本卡用 gh run view --log 重抓）。數值比對見三-V3。
+
+[4] tools/partial_verify.py（只改 --help 與模組 docstring 文字；Q18=A）
+  docstring：在「WHAT THIS TOOL DOES」前新增「EXPECTED-VALUE CONVENTION」段（英文＋一行中文）：
+    期望值取第 0 根弦；3 弦平均約高 +5 c；FAIL 多為此慣例差；數字（849 FAIL／848 偏高／扣掉後中位數 +0.03 c；
+    改用 3 弦平均也有 120 格超出、97 個是 A2 n=1）照 reports/partial_verify_full_2026-09-25.zh-TW.md §0、§3 原數。
+  argparse：ArgumentParser 加 epilog（同一段說明，中英）。
+  程式邏輯沒動：AST 比對（去掉模組 docstring 與 epilog 參數後）與 HEAD 完全相同（四-3）。
+
+[5] docs/workcards/WF0908_P3_f03_ir_library.md（只加註；Q38=A）
+  :36 §2.3 表第 3 列「（含「音量會與 IR 模式不同」字樣）」後面加：
+  （2026-10-02 月月裁決 Q38=A：D9c 補償後改為音色差異措辭，新字樣見 UI 規格 v1.2 §5-3〔…〕。理由：…28 dB…；
+   出處裁決包 Q38。原字樣保留作歷史）——原字樣沒刪。
+
+[6] docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md
+  檔頭：v1.2 區塊後加「2026-10-02 補記（WF1002-D，仍為 v1.2）」四點（Q38、Q05、Q06；程式改動以 C1 證據為準）
+  §4.8 後：新增「DAW 的 program 清單（2026-10-02 月月裁決 Q06=A）」註記：DAW 只看到工廠 27 個
+  新增 §4.14「削波指示（2026-10-02 新增；月月裁決 Q05=C）」：輸出超過 0 dBFS 亮燈、只顯示不改聲音；
+    附 K2 實測（preset 7/11/15 峰值 +0.33／+1.47／+2.65 dBFS，出處 wf0925_K2_hostprobe.txt :280/:300/:320，描述用）、
+    手冊說明句、不做的事（不加限幅、Q05b=A 不訂門檻、根因另開唯讀卡）
+  §5-3：「缺檔警告文案（v1.2：需改寫；程式裡的字串還沒改）」→「~~…~~ → 已定案（10-02 Q38=A），程式字串由 WF1002-C1 改」；
+        表格列「建議（AI 擬，未定案）」→「~~建議（AI 擬，未定案）~~ 已定案（10-02 Q38=A）」；
+        加「2026-10-02 結案」一點，原「為什麼還沒改」改標（09-25）保留作歷史
+  §6「輸出限幅器、削波指示」列：原「待月月裁決…屬新功能」加刪除線，改寫「10-02 Q05=C：不加限幅；加削波指示燈，見 §4.14」
+
+[7] docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md（只在檔尾追加；§1 與檔頭一字未動，KNOWN_LIMITS A1 引的 :10-37 不位移）
+  新增「2026-10-02 升格批次（WF1002-D）」說明段＋§2～§11：
+    §2 FM Piano 域外〔C1〕：原句 ROADMAP §0 :144；TODO :1021-1023
+    §3 Custom Harmonics 半域內〔C2〕：ROADMAP §0 :143
+    §4 Cimbalom/Piano 振幅含 creative 層與校準層〔C3〕：ROADMAP §0 :140；TODO :921（07-23）、:902-904（08-06）
+    §5 frequency_mode: midi 混合系統〔C4〕：ROADMAP §0 :147
+    §6 BeamModel ×2＝DECIDED CONVENTION，經驗係數，無文獻錨點〔C6／Q17=A〕：BeamModel.h:44-48（引 :46-47）；D1 §0 第 2 點
+    §7 Chromatic 槌具未標定〔C7〕：TODO :515（B4）、:833（D2）
+    §8 絕對聲壓慣例錨定〔C8〕：TODO :988-989；B6 裁決包「裁決記錄（2026-08-28）」:142-
+    §9 Q08=C 收窄句（照卡上原句）＋支撐事實（applyStringDecayTimes 在 CimbalomEngine.h :156 起；HostProbe 只驗音高/onset/tail；ROADMAP §0 :145、§4 :441）
+    §10 C9／Q09 B＋Q09c B：voice_pool 報告 §6 選項 B 原句；16 顆、JUCE 搶音順序、同音提前制音（給愛麗絲 21 顆）、CLI 每事件一顆、
+        數字（商品 A/B 最多 12、corpus 3 首、踩踏板 4 件商品、四季 6/12）全部註明是估計；FM 舊 voice：Q09b=A 要修但 patch 未落地
+    §11 C5 未升格，等 Q16 研究卡
+  每條附裁決日期（10-02）、原裁決日期與出處行號（HEAD b41298c）。措辭照原出處，沒有新增主張。
+
+[8] docs/KNOWN_LIMITS_INDEX.zh-TW.md
+  A11、A12、A13、A15、A16、A18、A22 出處欄尾：加「2026-10-02 已升格 → ENGINE_DOMAIN_CLAIMS §n，月月裁決 Q19 Cx 甲」
+  A24：加「C5 未升格，等 Q16 研究卡，見 §11」
+  B1：加「`*2` 部分 Q17=A 已升格 §6；beta_air／gamma_radiation 仍開放」
+  B2：加「已升格 §7；D2 缺口仍開放」
+  B4：加「Q09=D（含 B）＋Q09c=B 已寫進 §10；Q09b=A patch 未落地；串流實測由 C1 做」
+  B5：加「Q08=C 先做 B，已寫進 §9；parity GATE 仍開放」
+  §C 標題「待月月逐條裁決」→「~~待月月逐條裁決~~ 已裁（2026-10-02）」；加一段裁決摘要；表格加「裁決結果（2026-10-02）」欄，C1～C9 各指到節號
+  （§C 多 2 行；本檔沒有被其他文件引用行號的已知用法）
+
+----------------------------------------------------------------------
+二、沒做的（依指示）
+----------------------------------------------------------------------
+- 沒有 git add / commit / push。
+- tools/ 裡跟 label 字串有關的文字：tools/crossplatform_verify.py:9-10 docstring 寫「Linux/clang」——只是說明文字，
+  程式不依賴 label 字串（label 由 --label 參數寫進 platform.json，比對時只拿來印）。依指示不改，列進 open_items。
+- release-physics.yml 沒有 clang label，不動。
+
+----------------------------------------------------------------------
+三、驗證（命令輸出原文）
+----------------------------------------------------------------------
+$ python <SCRATCH>/verify_d.py   （V1 §6 既有列不變、V2 行號錨點、V3 json 數值、V4 YAML＋label 一致性）
+== V1 ROADMAP §6: existing rows 461-472 unchanged (row 463 = old text + appended note only)
+  line 457 SAME
+  line 458 SAME
+  line 459 SAME
+  line 460 SAME
+  line 461 SAME
+  line 462 SAME
+  line 463 OLD-PREFIX+NOTE
+  line 464 SAME
+  line 465 SAME
+  line 466 SAME
+  line 467 SAME
+  line 468 SAME
+  line 469 SAME
+  line 470 SAME
+  line 471 SAME
+  line 472 SAME
+  -> §6 existing values untouched: True
+== V2 ROADMAP line anchors cited by other docs (must not move)
+  :140 startswith '| Cimbalom / Piano（StringModel）' -> True
+  :143 startswith '| Custom Harmonics' -> True
+  :144 startswith '| FM Piano' -> True
+  :145 startswith '| 效果鏈' -> True
+  :147 startswith '| `frequency_mode: midi`' -> True
+  :148 startswith '| `frequency_mode: geometry`' -> True
+  :441 startswith '1. **Plugin ↔ CLI 一致性驗證**' -> True
+  :450 startswith '## 5. 明確不做' -> True
+  :468 startswith '| velocity ×2 電平' -> True
+  :472 startswith '| 決定性' -> True
+  :480 startswith '## 7. 狀態更新規則' -> True
+  :27 startswith '| **D9 → D9c**' -> True
+  :161 startswith '6. **改動任何' -> True
+  :164 startswith '7. **不 commit' -> True
+  :171 startswith '> - **R6 範圍沒涵蓋外掛層**' -> True
+  -> all anchors in place: True | line count HEAD 511 -> now 517 (+6 = tail WF1002 section only)
+== V3 scores/crossplatform_tolerance.json numeric fields
+  key order same: True
+  _approved_by                     HEAD='月月' now='月月' SAME
+  _approved_date                   HEAD='2026-08-22' now='2026-08-22' SAME
+  max_abs_delta_dbfs               HEAD=-120.0 now=-120.0 SAME
+  delta_rms_re_signal_db           HEAD=-120.0 now=-120.0 SAME
+  max_spectral_deviation_db        HEAD=0.01 now=0.01 SAME
+  max_peak_pitch_deviation_cents   HEAD=0.01 now=0.01 SAME
+  -> every non-_basis field identical: True
+  _basis contains "GCC 13.3": True | still says "ubuntu-24.04/clang" outside the quoted correction: 0
+== V4 YAML parse + cross-platform label/artifact/compare consistency
+  .github/workflows/physics.yml: YAML OK, jobs=['build-and-verify', 'cross-platform-emit', 'cross-platform-compare', 'cpp-address-sanitizer']
+  .github/workflows/release-physics.yml: YAML OK, jobs=['build-and-host-validate', 'complete-score-corpus']
+  matrix labels: ['windows-2022-msvc', 'ubuntu-24.04-gcc', 'macos-14-appleclang']
+  emit: python tools/crossplatform_verify.py --emit "xplat/${{ matrix.label }}" --label "${{ matrix.label }}"
+  upload name/path: xplat-${{ matrix.label }} / xplat/${{ matrix.label }}
+  download: {'path': 'xplat', 'pattern': 'xplat-*'}
+  compare dirs: ['xplat-windows-2022-msvc', 'xplat-ubuntu-24.04-gcc', 'xplat-macos-14-appleclang']
+  -> compare dirs == ["xplat-"+label for label in matrix]: True
+  "ubuntu-24.04-clang" left in physics.yml: 1 (only inside the explanatory comment): ['# "ubuntu-24.04-clang" but sets no CC/CXX, so the runner default GNU 13.3.0']
+  release-physics.yml mentions clang/label/xplat: False -> not touched
+
+== V5 python tools/crossplatform_verify.py --selftest（確認 tolerance 檔仍可讀、工具沒壞）
+------------------------------------------------------------
+RESULT: ALL SELF-TESTS PASSED
+exit=0
+
+----------------------------------------------------------------------
+四、其他命令輸出
+----------------------------------------------------------------------
+== 四-1 CI log：ubuntu leg 的編譯器（gh run view <id> --log | grep 'compiler identification' | grep ubuntu）
+== gh run view 32446987833 --log | grep 'compiler identification' (ubuntu leg)
+cross-platform-emit (ubuntu-24.04, ubuntu-24.04-clang)	Configure CMake (CLI only)	2026-08-21T04:27:40.2025532Z -- The C compiler identification is GNU 13.3.0
+cross-platform-emit (ubuntu-24.04, ubuntu-24.04-clang)	Configure CMake (CLI only)	2026-08-21T04:27:40.4654270Z -- The CXX compiler identification is GNU 13.3.0
+== gh run view 34880536096 --log | grep 'compiler identification' (ubuntu leg)
+cross-platform-emit (ubuntu-24.04, ubuntu-24.04-clang)	UNKNOWN STEP	2026-09-14T18:24:34.8266071Z -- The C compiler identification is GNU 13.3.0
+cross-platform-emit (ubuntu-24.04, ubuntu-24.04-clang)	UNKNOWN STEP	2026-09-14T18:24:35.0252528Z -- The CXX compiler identification is GNU 13.3.0
+== gh run view 36598831072 --log | grep 'compiler identification' (ubuntu leg)
+cross-platform-emit (ubuntu-24.04, ubuntu-24.04-clang)	UNKNOWN STEP	2026-09-29T16:36:08.8835927Z -- The C compiler identification is GNU 13.3.0
+cross-platform-emit (ubuntu-24.04, ubuntu-24.04-clang)	UNKNOWN STEP	2026-09-29T16:36:09.0176470Z -- The CXX compiler identification is GNU 13.3.0
+
+== 四-2 python tools/partial_verify.py --help（尾段）
+
+Expected-value convention (2026-10-02 ruling Q18=A): the expected partial
+frequency is taken from string 0 of the course; the 3-string average is about
++5 c higher, so most FAILs are this convention offset, not a 5+ c engine error
+(see reports/partial_verify_full_2026-09-25.zh-TW.md). 中文：期望值取第 0 根弦；3 弦平均約高
++5 c；FAIL 多為此慣例差（見 reports/partial_verify_full_2026-09-25.zh-TW.md）。
+exit=0
+（不設 PYTHONIOENCODING、預設 cp950 主控台）exit=0
+
+== 四-3 python -m pytest tests -q -k partial
+...................                                                      [100%]
+19 passed, 288 deselected in 91.16s (0:01:31)
+
+== 四-3b partial_verify.py AST 比對（去掉模組 docstring 與 ArgumentParser 的 epilog 後，與 HEAD 相同＝只改文字）
+AST identical except docstring/epilog: True
+
+== 四-4 git diff --stat（本卡 8 檔；src/、tests/ 另有 C1 lane 的修改，不是本卡）
+ .github/workflows/physics.yml              |  11 ++-
+ ROADMAP_PHYSICS.md                         |  32 ++++---
+ docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md         | 148 +++++++++++++++++++++++++++++
+ docs/KNOWN_LIMITS_INDEX.zh-TW.md           |  50 +++++-----
+ docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md      |  34 ++++++-
+ docs/workcards/WF0908_P3_f03_ir_library.md |   2 +-
+ scores/crossplatform_tolerance.json        |   2 +-
+ tools/partial_verify.py                    |  28 +++++-
+ 8 files changed, 260 insertions(+), 47 deletions(-)
+staged（git diff --cached --name-only）：[]
+
+== 四-5 ROADMAP_PHYSICS.md 全部改動處（git diff -U0）
+diff --git a/ROADMAP_PHYSICS.md b/ROADMAP_PHYSICS.md
+index 70623e8..8db8772 100644
+--- a/ROADMAP_PHYSICS.md
++++ b/ROADMAP_PHYSICS.md
+@@ -17 +17 @@
+-> **WF0914 成果 2026-09-25 依月月裁決分 7 個 commit 入庫（未 push；hash 見 git log）。** **WF0925 輪（2026-09-25）的落地狀態記在檔尾「2026-09-25 WF0925 輪落地補記」**（放檔尾，是為了不讓其他文件引用的本檔行號位移）。
++> **WF0914 成果 2026-09-25 依月月裁決分 7 個 commit 入庫（未 push；hash 見 git log）。** **WF0925 輪（2026-09-25）的落地狀態記在檔尾「2026-09-25 WF0925 輪落地補記」**（放檔尾，是為了不讓其他文件引用的本檔行號位移）。**WF1002 輪（2026-10-02 月月裁決落地）記在檔尾「2026-10-02 WF1002 輪」；本輪月月首次授權改 §1 R6／R7 與 §6 原文，每處改動都留「2026-10-02 月月裁決 Qxx」註記。**
+@@ -161 +161 @@ ctest 4/4；pytest 270（264 passed＋1 skip＋5 xfail）；`physics_verify.py -
+-6. **改動任何 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/` 之後**，宣稱完成前必跑：
++6. **改動任何 `src/`（含全部子資料夾）或 `CMakeLists.txt` 之後**，宣稱完成前必跑（**2026-10-02 月月裁決 Q02=A**：範圍由原文「~~改動任何 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/` 之後~~」四個資料夾，擴成整個 `src/`＋`CMakeLists.txt`；理由：CLI 渲染也會經過 `src/effects/`，而且賣的是外掛）：
+@@ -163,2 +163,2 @@ ctest 4/4；pytest 270（264 passed＋1 skip＋5 xfail）；`physics_verify.py -
+-   - 三個 build target（CLI / Standalone / VST3）exit 0
+-7. **不 commit、不 push。** 檔案留 unstaged，由月月審完決定（現行工作規則）。
++   - 三個 build target（CLI / Standalone / VST3）exit 0；**外掛層另加（2026-10-02 月月裁決 Q02=A）**：改到外掛層（`src/PluginProcessor.*`、`src/PluginEditor.*`、`src/effects/`、`src/IRLibrary.h`、`src/PresetManager.h`、`src/ParameterLayout.*`、`src/Presets.h`）時，另外必跑：先重建五個測試 target（`TsukiSynthAuditTest`、`TsukiSynthTunerTest`、`TsukiSynthPhysicsModelsTest`、`TsukiSynthSpectrumViewTest`、`TsukiSynthHostProbe`）再跑 `ctest`（X4 規約），以及 HostProbe 全套——上面的 `--full` 和三個 build 驗不到外掛行為
++7. **不 commit、不 push（月月明示裁決時除外）；稽核 PASS 後由稽核 `git add`（staged）供月月審。**（**2026-10-02 月月裁決 Q03=A** 改字面；原文：「~~**不 commit、不 push。** 檔案留 unstaged，由月月審完決定（現行工作規則）。~~」——自 WF0907 起實務已是稽核 PASS 後 staged，見 `docs/workcards/WF0907_README.md`、`docs/workcards/WF0914_README.md` §2）
+@@ -169,3 +169,3 @@ ctest 4/4；pytest 270（264 passed＋1 skip＋5 xfail）；`physics_verify.py -
+-> **待月月裁決（2026-09-25 盤點提出；以上十條原文未改）**：
+-> - **R7 字面與實際流程不一致**：R7 寫「檔案留 unstaged」，但自 WF0907 起的實際流程是稽核 PASS 後由稽核執行 `git add`（staged）供月月審（`docs/workcards/WF0907_README.md`、`docs/workcards/WF0914_README.md` §2）。要不要把 R7 措辭改成「不 commit、不 push；稽核 PASS 後可 `git add`（staged）供審」，由月月決定。→ 見 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q03（2026-09-25 補記）。
+-> - **R6 範圍沒涵蓋外掛層**：R6 只列 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/`；D12 改的 `src/PluginProcessor.cpp`、D9c 改的 `src/effects/EffectChain.h`，以及 09-13 入庫的 `src/IRLibrary.h`、`src/ParameterLayout.cpp` 都不在強制範圍內（這幾張卡各自有跑 GATE，但規則文字沒有強制）。要不要把 R6 擴大到 `src/effects/` 與外掛層（`PluginProcessor`、`IRLibrary`、`ParameterLayout` 等），由月月決定。→ 見裁決包 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q02。Q02 另查到：CLI 渲染路徑也會用到 `src/effects/`（`src/score/ScoreRenderer.h:11` include `../dsp/EffectsChain.h`，`src/dsp/EffectsChain.h:3-5` 再 include `../effects/SimpleReverb.h`、`StereoDelay.h`、`Compressor.h`），但 R6 字面沒列 `src/effects/`（2026-09-25 補記，R6 原文未改）。
++> **~~待月月裁決~~ 已裁（2026-09-25 盤點提出；~~以上十條原文未改~~ 2026-10-02 月月裁決 Q02=A、Q03=A，R6、R7 已改字面，見上；下面兩條保留作歷史）**：
++> - **R7 字面與實際流程不一致**：R7 寫「檔案留 unstaged」，但自 WF0907 起的實際流程是稽核 PASS 後由稽核執行 `git add`（staged）供月月審（`docs/workcards/WF0907_README.md`、`docs/workcards/WF0914_README.md` §2）。要不要把 R7 措辭改成「不 commit、不 push；稽核 PASS 後可 `git add`（staged）供審」，由月月決定。→ 見 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q03（2026-09-25 補記）。**→ 2026-10-02 月月裁決 Q03=A：已照 A 改 R7 字面（見上）。**
++> - **R6 範圍沒涵蓋外掛層**：R6 只列 `src/physics/`、`src/engines/`、`src/dsp/`、`src/score/`；D12 改的 `src/PluginProcessor.cpp`、D9c 改的 `src/effects/EffectChain.h`，以及 09-13 入庫的 `src/IRLibrary.h`、`src/ParameterLayout.cpp` 都不在強制範圍內（這幾張卡各自有跑 GATE，但規則文字沒有強制）。要不要把 R6 擴大到 `src/effects/` 與外掛層（`PluginProcessor`、`IRLibrary`、`ParameterLayout` 等），由月月決定。→ 見裁決包 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q02。Q02 另查到：CLI 渲染路徑也會用到 `src/effects/`（`src/score/ScoreRenderer.h:11` include `../dsp/EffectsChain.h`，`src/dsp/EffectsChain.h:3-5` 再 include `../effects/SimpleReverb.h`、`StereoDelay.h`、`Compressor.h`），但 R6 字面沒列 `src/effects/`（2026-09-25 補記，R6 原文未改）。**→ 2026-10-02 月月裁決 Q02=A：R6 已擴成整個 `src/`＋`CMakeLists.txt`，外掛層另規定 ctest（先重建五個測試 target）＋HostProbe（見上）。**
+@@ -463 +463 @@ python tools/physics_verify.py --t60
+-| f0 誤差（`physics_verify.py` 音訊量測） | ±5 cents（全域，無 per-engine 放寬） | ±5 cents（M7） | 2026-07-17 note-range 全過；rubber 三例因不足八週期列 N/A，不以攻擊噪聲假造 f0 |
++| f0 誤差（`physics_verify.py` 音訊量測） | ±5 cents（全域，無 per-engine 放寬） | ±5 cents（M7） | 2026-07-17 note-range 全過；rubber 三例因不足八週期列 N/A，不以攻擊噪聲假造 f0；**沿用本列的兩處（2026-10-02 月月裁決 Q04=A 註明）**：`melody_verify.py` 的 pitch ±5 cents（`PITCH_TOL_CENTS = vs.MODE_F0_TOL_CENTS`）與 `partial_verify.py` 的 partial 頻率 ±5 cents 都是沿用本列，不是另外的容差 |
+@@ -472,0 +473,3 @@ python tools/physics_verify.py --t60
++| 旋律 onset 誤差（`melody_verify.py` `ONSET_TOL_S`） | ±10 ms | 維持 | **2026-10-02 月月裁決 Q04=A 補登（數值不變，只補出處）**：C3-b，2026-08-20 月月委託 AI 依推導自定（hop 量化 256/48000＝5.3 ms＋Hann 窗群延遲展幅，推導寫在 `tools/melody_verify.py` 檔頭 Tolerance provenance）；證據 `reports/gate_outputs/l1_l2_l3a_melody_gate.txt`。此前一直在用、但沒登記本表 |
++| 量測器自證（`tools/measurement_selfcal.py`，`MAX_ABS_ERROR_CENTS_LIMIT`／`SENSITIVITY_TOL_CENTS`） | ≤1.0 cent＝**strict xfail 判定值**（已知達不到；`tests/test_measurement_selfcal.py` 三條 strict xfail） | 主張域已收窄：持續段 ≤1.18 cent；放鍵／阻尼段約 7.2 cent | **2026-10-02 月月裁決 Q04=A 補登（數值不變，只補出處）**：1.0 cent 是月月 2026-08-30 查核第 5 點訂的；C10（月月 09-10 選 A）把主張域收窄為「量測器已知系統誤差 ≤1.18 cent」（開發 1.1721／hold-out 1.0840），D15（月月 09-15 選 A'）再限定 ≤1.18 cent 只涵蓋持續段、放鍵／阻尼段已知誤差上界約 7.2 cent（開發 5.2304／hold-out 7.2055）；不可宣稱量測器 ≤1 cent。出處 `docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md` §8.5、`reports/decision_packets/C10_selfcal_domain.zh-TW.md` §7 |
++| 外掛 IR−ALGO 殘響響度差（D9c，合成 IR；`audit_repro` CHECK） | \|IR−ALGO\| ≤ 0.25 dB | 維持 | **2026-10-02 月月核准登記（裁決 Q01=B）**：出處 `docs/workcards/WF0914_D9c_ir_makeup_gain.md` §2 第 2 項（:28-30，「0 ± 0.25 dB」）；0.25 dB 取自 D9b 實測的樣本展幅 0.24 dB。現值合成 IR +0.112 dB（`reports/gate_outputs/wf0914_D9c_ir_makeup_gain.txt` §2.5；09-25 ctest 重跑相同），餘裕 0.138 dB。CHECK 由 WF1002-C1 加進 `audit_repro`（以該卡證據為準）。外掛層、屬 §0 效果鏈域外，不是物理主張；對齊參考是 ALGO 預設 room size 0.5、未指定 T60；CI 只有合成 IR（三顆真實 IR 在 gitignored 的 `external_data/`） |
+@@ -474,5 +477,2 @@ python tools/physics_verify.py --t60
+-> **待月月裁決（2026-09-25 盤點提出；上表數值一字未改）**：有兩個實際在用的 GATE 門檻沒有登記在本表——
+-> (1) `melody_verify` 的 onset ±10 ms（C3-b，2026-08-20 月月委託 AI 依推導自定，證據 `reports/gate_outputs/l1_l2_l3a_melody_gate.txt`）；
+-> (2) 量測器自證 `measurement_selfcal` 的 ≤1.0 cent（月月 2026-08-30 查核第 5 點訂；C10／D15 已收窄主張域，見檔頭補記）。
+-> `melody_verify`／`partial_verify` 的 pitch ±5 cent 是沿用本表「f0 誤差」列，不算新容差。
+-> 要不要把 (1)(2) 補登進本表（數值不變，只補登記與出處），由月月決定。
++> **~~待月月裁決~~ 已裁（2026-09-25 盤點提出；2026-10-02 月月裁決 Q04=A＋Q01=B 補登上面最後三列，數值都不變、只補出處）**：原註記寫「有兩個實際在用的 GATE 門檻沒有登記在本表——(1) `melody_verify` 的 onset ±10 ms（C3-b，2026-08-20 月月委託 AI 依推導自定，證據 `reports/gate_outputs/l1_l2_l3a_melody_gate.txt`）；(2) 量測器自證 `measurement_selfcal` 的 ≤1.0 cent（月月 2026-08-30 查核第 5 點訂；C10／D15 已收窄主張域，見檔頭補記）。`melody_verify`／`partial_verify` 的 pitch ±5 cent 是沿用本表「f0 誤差」列，不算新容差。要不要把 (1)(2) 補登進本表（數值不變，只補登記與出處），由月月決定。」
++> 處理：(1)(2) 已補登；Q01=B 的 0.25 dB 同一步登記；兩處 ±5 cent 已在「f0 誤差（`physics_verify.py`）」列註明沿用。上表其他列數值一字未動。為了不讓 §7 以後的行號位移，這段註記從 5 行壓成 2 行（原 :474-479 的位置現在是三列新登記＋本註記）。
+@@ -510,0 +511,6 @@ python tools/physics_verify.py --t60
++
++---
++
++## 2026-10-02 WF1002 輪（月月裁決落地；依 Rule 8）
++
++> 月月 2026-10-02 裁決「照 Fable 的說法做」：裁決包 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` 38 題，以 `docs/workcards/WF1002_README.md` §1 裁定表為唯一依據。**本輪是月月第一次授權改 §1 規則原文與 §6 容差表**：§1 改 R6（Q02=A）、R7（Q03=A）；§6 補登 onset ±10 ms、量測器自證 1.0 cent（Q04=A）、D9c IR−ALGO ≤0.25 dB（Q01=B，10-02 核准），f0 列註明兩處 ±5 cent 沿用（Q04=A）——每處都留「2026-10-02 月月裁決 Qxx」註記，舊文用刪除線或引述保留；§6 既有數值一字未動。主張域（Q08 B、Q09 B＋Q09c B、Q17 A、Q19 C）升格寫在 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §2～§10（C5 弦長／弦徑在 §11 註明等 Q16 研究卡，未升格）；CI Linux leg label 改 `ubuntu-24.04-gcc`（Q13=A）。C++ lane（Q01/Q01b/Q05/Q06/Q07/Q09 實測/Q10/Q17 註解/Q38 字串）與研究卡的落地狀態以各卡證據為準。文件 lane 證據 `reports/gate_outputs/wf1002_D_changes.txt`。**git 狀態：本輪改動未 commit；稽核 PASS 後才 staged（R7 新字面）。**
+
+== 四-6 physics.yml 改動處（git diff -U0）
+diff --git a/.github/workflows/physics.yml b/.github/workflows/physics.yml
+index a5920bf..3ff443e 100644
+--- a/.github/workflows/physics.yml
++++ b/.github/workflows/physics.yml
+@@ -183 +183 @@ jobs:
+-  # probe set on Linux/clang and macOS/AppleClang as well, and measure how far
++  # probe set on Linux/GCC and macOS/AppleClang as well, and measure how far
+@@ -184,0 +185,5 @@ jobs:
++  # (2026-10-02 WF1002-D, ruling Q13=A: the Linux leg used to be labelled
++  # "ubuntu-24.04-clang" but sets no CC/CXX, so the runner default GNU 13.3.0
++  # compiles it -- CI runs 32446987833 / 34880536096 / 36598831072 all log
++  # "The CXX compiler identification is GNU 13.3.0".  Only the label was
++  # renamed to ubuntu-24.04-gcc; the compiler and the build are unchanged.)
+@@ -204 +209 @@ jobs:
+-            label: ubuntu-24.04-clang
++            label: ubuntu-24.04-gcc
+@@ -297 +302 @@ jobs:
+-            xplat/xplat-ubuntu-24.04-clang \
++            xplat/xplat-ubuntu-24.04-gcc \
+
+== 四-7 crossplatform_tolerance.json 改動處（git diff -U0）
+diff --git a/scores/crossplatform_tolerance.json b/scores/crossplatform_tolerance.json
+index acf2cda..f6290c3 100644
+--- a/scores/crossplatform_tolerance.json
++++ b/scores/crossplatform_tolerance.json
+@@ -4 +4 @@
+-  "_basis": "CI run 32446987833（第一次三平台全綠：windows-2022/MSVC 基準 vs ubuntu-24.04/clang + macos-14/appleclang，macos leg 為 X2 BesselPortable 首戰）。實測全 probe 最差值：max |delta| 5 LSB @24-bit（-124.49 dBFS）、delta RMS -125.81 dB re signal、spectral deviation 0.0019 dB、peak pitch +0.0000 cents。門檻取實測值留餘裕（約 1.6x 振幅／6 dB／5x／絕對 0.01c）防 runner 硬體世代差，非放寬既有容差——本列此前無任何登記值（exit 3 UNREGISTERED）。提案 reports/gate_outputs/x3_crossplatform_first_numbers.txt，月月 2026-08-22 裁決「照提案登記」。",
++  "_basis": "CI run 32446987833（第一次三平台全綠：windows-2022/MSVC 基準 vs ubuntu-24.04/GCC 13.3 + macos-14/appleclang，macos leg 為 X2 BesselPortable 首戰）。實測全 probe 最差值：max |delta| 5 LSB @24-bit（-124.49 dBFS）、delta RMS -125.81 dB re signal、spectral deviation 0.0019 dB、peak pitch +0.0000 cents。門檻取實測值留餘裕（約 1.6x 振幅／6 dB／5x／絕對 0.01c）防 runner 硬體世代差，非放寬既有容差——本列此前無任何登記值（exit 3 UNREGISTERED）。提案 reports/gate_outputs/x3_crossplatform_first_numbers.txt，月月 2026-08-22 裁決「照提案登記」。【2026-10-02 月月裁決 Q13=A 更正編譯器名稱（只改本段文字，數值欄位一字未動）：原文寫「ubuntu-24.04/clang」，但該 leg 沒有設定 CC/CXX，實際由 runner 預設的 GCC 編譯——run 32446987833（本登記的數據來源）與 run 34880536096 的 ubuntu leg log 都寫「The CXX compiler identification is GNU 13.3.0」。所以本列登記時用的就是 GCC 13.3 的資料。CI label 同步改為 ubuntu-24.04-gcc（.github/workflows/physics.yml）。證據 reports/gate_outputs/wf1002_D_changes.txt。】",
+
+== 四-8 repo 內其他還寫 Linux＝clang 的地方（git grep；不在本卡可改範圍）
+.github/workflows/physics.yml:186:  # "ubuntu-24.04-clang" but sets no CC/CXX, so the runner default GNU 13.3.0
+HANDOVER.md:100:10. **CI 的 Linux leg 實際是 GCC 13.3**（`physics.yml` label 寫 `ubuntu-24.04-clang`）→ **Q13**。
+README.md:244:| Platform | Plugin (VST3/Standalone): built and validated on Windows (MSVC) only so far. CLI renderer: built in CI on three platforms — Windows MSVC / Linux GCC 13.3 / macOS AppleClan
+reports/decision_packets/WF0925_open_decisions.zh-TW.md:403:**白話問題**：CI 裡 Linux 那條寫著 `ubuntu-24.04-clang`，但實際編譯器是 GCC 13.3。
+reports/decision_packets/WF0925_open_decisions.zh-TW.md:407:- `physics.yml:175-176` 的 label 是 `ubuntu-24.04-clang`，但沒有設定 CC/CXX。
+reports/decision_packets/WF0925_open_decisions.zh-TW.md:409:- `scores/crossplatform_tolerance.json:4` 的 `_basis` 寫「ubuntu-24.04/clang」。上傳的檔名也帶 clang（`physics.yml:264`）。
+reports/gate_outputs/wf0925_P1_gate1_workflow_yaml.txt:191:check([m["label"] for m in xp] == ["windows-2022-msvc", "ubuntu-24.04-clang", "macos-14-appleclang"],
+reports/gate_outputs/wf0930_T_ci_run.txt:62:  ubuntu-24.04-clang:   'Wrote xplat/ubuntu-24.04-clang/platform.json (5 score(s), 0 failure(s))'  artifact 9,602,486 B
+reports/gate_outputs/x3_crossplatform_first_numbers.txt:3:比對基準：windows-2022/MSVC；比對對象：ubuntu-24.04/clang + macos-14/appleclang
+scores/crossplatform_tolerance.json:4:  "_basis": "CI run 32446987833（第一次三平台全綠：windows-2022/MSVC 基準 vs ubuntu-24.04/GCC 13.3 + macos-14/appleclang，macos leg 為 X2 BesselPort
+tools/crossplatform_verify.py:9:container iteration order), but it says nothing about whether a Linux/clang or
+
+----------------------------------------------------------------------
+五、open_items（本卡範圍外、或要別的 lane／月月處理）
+----------------------------------------------------------------------
+1. tools/crossplatform_verify.py:9-10 docstring 寫「Linux/clang」。只是說明文字，程式不依賴 label 字串
+   （label 由 --label 寫進 platform.json，compare 只拿來印）。依指示沒改；要改屬 tools 文字小修。
+2. README.md:244、HANDOVER.md:100 還寫「physics.yml 的 label 是 ubuntu-24.04-clang」，Q13 落地後已過時，要同步（不在本卡檔案邊界）。
+3. reports/gate_outputs/wf0925_P1_gate1_workflow_yaml.txt:191 是歷史稽核腳本，斷言舊 label；重跑會失敗。屬歷史證據，不改。
+4. Q13 只做了靜態驗證（YAML 解析＋label／artifact／compare 路徑自動核對）。真正確認要 push 後看 CI：
+   job 顯示名會變成「cross-platform-emit (ubuntu-24.04, ubuntu-24.04-gcc)」、artifact 變 xplat-ubuntu-24.04-gcc。
+   main 沒有 branch protection，不會有「必要檢查名稱對不上」的問題。
+5. 本卡文件裡有幾處寫「由 WF1002-C1 做，以該卡證據為準」：audit_repro 的 0.25 dB CHECK（ROADMAP §6 新列）、
+   BeamModel.h ×2 註解改標（主張域 §6）、削波指示燈（UI §4.14）、getNumPrograms 只回 27（UI §4.8）、缺檔警告字串（UI §5-3）、
+   HostProbe 串流搶音資訊性量測（主張域 §10 第 7 點）。C1 若有任何一項沒落地，這幾處文字要回頭改。
+6. Q08 的另一半：LISTING_COPY／變現文案收窄屬 P lane；parity GATE 登記成 TODO 後續 L 卡屬 HO（TODO.md 不在本卡邊界）。
+   Rule 8 要求同步的 TODO.md（Q13 完成、Q16 脆弱點、Q02/Q03 規則已改等）也留給 HO／INT。
+7. 裁決包 Q04 引的 ROADMAP「:474-479」：那段待裁註記現在在 :477-478（:473-475 是三列新登記）。§7 以後與其他被引用的行號都沒動。
+   裁決包本身不在本卡邊界，沒改。
+8. R6 外掛層另加規定照裁定表列的檔（PluginProcessor/Editor、effects、IRLibrary、PresetManager、ParameterLayout、Presets）。
+   其他只在外掛／Standalone 用的檔（HoverMagnifier.h、TsukiLookAndFeel.h、UiLocale.h、ScoreConsole.h、src/analyzer/）
+   在 R6 基本範圍（整個 src/）內，但不在「另跑 ctest＋HostProbe」那句的清單裡；要不要納入由月月決定。
+9. ENGINE_DOMAIN_CLAIMS 檔頭（:1-6）沒加 10-02 更新行，是為了不讓 KNOWN_LIMITS A1 引的 §1「:10-37」位移；
+   10-02 批次的說明放在 §1 之後的新段落。主張域引用的 BeamModel.h／CimbalomEngine.h 行號是 HEAD b41298c，C1 改檔後可能位移。
+10. UI 規格這次仍標 v1.2（加「2026-10-02 補記」）；送設計端前要不要改版號成 v1.3，屬裁決包 O02（月月）。
+11. git 對 ENGINE_DOMAIN_CLAIMS、KNOWN_LIMITS_INDEX 印「LF will be replaced by CRLF」警告：這兩檔工作樹本來就是 LF，本卡沿用原換行，沒有改換行格式。

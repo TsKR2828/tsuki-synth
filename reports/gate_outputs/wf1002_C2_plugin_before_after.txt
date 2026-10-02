@@ -1,0 +1,509 @@
+# WF1002-C2 (R10 before/after card, Q09b=A) -- evidence, descriptive only, no thresholds.
+# <REPO> = tsuki-synth repo root (HEAD b41298c); <C2> = <SCRATCH>/wf1002_C2 = the isolated
+# copy outside the repo (git archive b41298c; libs/JUCE = junction to <REPO>/libs/JUCE).
+
+## per-case numbers (c2_analyze.py output)
+# WF1002-C2 per-case results (descriptive only; no thresholds)
+# pair = both built VST3 bundles, Engine=FM Piano, Reverb Mix 0, other params default
+# mirror = FM Synthesiser built from each tree's own headers (dry, no FX)
+
+## moonlight_complete_A  ({"notes": 6378, "psets": 3, "len_samples": 41979890, "len_s": 874.581, "pedal": false, "score": "scores/examples/moonlight_sonata_complete.score.json"})
+pair.audio_s = 874.581
+pair.rms_dbfs_base = -19.126
+pair.rms_dbfs_fix = -19.118
+pair.peak_dbfs_base = -0.324
+pair.peak_dbfs_fix = -0.292
+pair.diff_energy_re_base_db = -24.125
+pair.diff_maxabs = 0.389119
+pair.diff_maxabs_dbfs = -8.198
+pair.blocks_differing = 58171
+pair.blocks_total = 81992
+pair.first_diff_t_s = 1.120
+pair.tail_from_s = 871.637
+pair.tail_energy_db_base = 19.848
+pair.tail_energy_db_fix = 19.848
+pair.harness: blocks 81992 block_size 512 sr 48000 audio_s 874.581 | mixed_pset_blocks 0 | process_s base 23.7421 fix 22.7405 | realtime_fraction base 0.0271469 fix 0.0260015
+mirror_base_16: voices 16 blocks 81992 audio_s 874.581 | mixed_pset_blocks 0 | note_ons_handled 6378 of 6378 | peak_active 16 at_sample 215040 t_s 4.48 | peak_key_down 2 released 14 | peak_env_bins [(-10,0]]=2 [(-138.5,-60]]=1 [(-60,-10]]=9 [level 0]=4 | peak_notes 56:4 61:4 64:4 35:1 37:1 47:1 49:1 | mean_active_at_block_end 8.40299 | steals 798 victim_key_down 2 victim_in_release 798 | tail_off_hits_same_note 21214 of_which_voice_already_in_release 14836 | render_s 14.3236 realtime_fraction 0.0163777
+mirror_base_16.seconds_with_>=16_active_at_block_end = 89.92
+mirror_fix_16: voices 16 blocks 81992 audio_s 874.581 | mixed_pset_blocks 0 | note_ons_handled 6378 of 6378 | peak_active 14 at_sample 38226240 t_s 796.38 | peak_key_down 9 released 5 | peak_env_bins [(-10,0]]=9 [level 0]=5 | peak_notes 55:2 43:1 46:1 49:1 52:1 58:1 61:1 64:1 73:1 76:1 | mean_active_at_block_end 5.42504 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 9065 of_which_voice_already_in_release 2687 | render_s 9.92191 realtime_fraction 0.0113448
+mirror_fix_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_base_1024: voices 1024 blocks 81992 audio_s 874.581 | mixed_pset_blocks 0 | note_ons_handled 6378 of 6378 | peak_active 196 at_sample 31761600 t_s 661.7 | peak_key_down 3 released 193 | peak_env_bins [(-10,0]]=2 [(-138.5,-60]]=4 [(-60,-10]]=3 [<=-138.5]=184 [level 0]=3 | peak_notes 32:100 44:92 33:1 61:1 64:1 75:1 | mean_active_at_block_end 13.0658 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 47822 of_which_voice_already_in_release 41444 | render_s 20.5219 realtime_fraction 0.0234649
+mirror_base_1024.seconds_with_>=16_active_at_block_end = 180.90
+mirror_fix_1024: voices 1024 blocks 81992 audio_s 874.581 | mixed_pset_blocks 0 | note_ons_handled 6378 of 6378 | peak_active 14 at_sample 38226240 t_s 796.38 | peak_key_down 9 released 5 | peak_env_bins [(-10,0]]=9 [level 0]=5 | peak_notes 55:2 43:1 46:1 49:1 52:1 58:1 61:1 64:1 73:1 76:1 | mean_active_at_block_end 5.42504 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 9065 of_which_voice_already_in_release 2687 | render_s 10.5964 realtime_fraction 0.0121159
+mirror_fix_1024.seconds_with_>=16_active_at_block_end = 0.00
+
+## ai_radiance_complete_fm_A  ({"notes": 48, "psets": 14, "len_samples": 5833478, "len_s": 121.531, "pedal": false, "score": "scores/originals/ai_radiance/ai_radiance_complete.score.json"})
+pair.audio_s = 121.536
+pair.rms_dbfs_base = -33.988
+pair.rms_dbfs_fix = -33.999
+pair.peak_dbfs_base = -13.417
+pair.peak_dbfs_fix = -13.419
+pair.diff_energy_re_base_db = -39.180
+pair.diff_maxabs = 0.003312
+pair.diff_maxabs_dbfs = -49.597
+pair.blocks_differing = 1282
+pair.blocks_total = 11394
+pair.first_diff_t_s = 70.816
+pair.tail_from_s = 115.733
+pair.tail_energy_db_base = 19.089
+pair.tail_energy_db_fix = 19.089
+pair.harness: blocks 11394 block_size 512 sr 48000 audio_s 121.536 | mixed_pset_blocks 0 | process_s base 2.19139 fix 2.20114 | realtime_fraction base 0.0180308 fix 0.018111
+mirror_base_16: voices 16 blocks 11394 audio_s 121.536 | mixed_pset_blocks 0 | note_ons_handled 48 of 48 | peak_active 8 at_sample 3129227 t_s 65.1922 | peak_key_down 4 released 4 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=4 [level 0]=1 | peak_notes 53:1 55:1 57:1 58:1 60:1 62:1 64:1 65:1 | mean_active_at_block_end 2.104 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 56 of_which_voice_already_in_release 8 | render_s 0.827907 realtime_fraction 0.00681203
+mirror_base_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_fix_16: voices 16 blocks 11394 audio_s 121.536 | mixed_pset_blocks 0 | note_ons_handled 48 of 48 | peak_active 8 at_sample 3129227 t_s 65.1922 | peak_key_down 4 released 4 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=4 [level 0]=1 | peak_notes 53:1 55:1 57:1 58:1 60:1 62:1 64:1 65:1 | mean_active_at_block_end 2.09373 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 56 of_which_voice_already_in_release 8 | render_s 0.815511 realtime_fraction 0.00671003
+mirror_fix_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_base_1024: voices 1024 blocks 11394 audio_s 121.536 | mixed_pset_blocks 0 | note_ons_handled 48 of 48 | peak_active 8 at_sample 3129227 t_s 65.1922 | peak_key_down 4 released 4 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=4 [level 0]=1 | peak_notes 53:1 55:1 57:1 58:1 60:1 62:1 64:1 65:1 | mean_active_at_block_end 2.104 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 56 of_which_voice_already_in_release 8 | render_s 0.872265 realtime_fraction 0.00717701
+mirror_base_1024.seconds_with_>=16_active_at_block_end = 0.00
+mirror_fix_1024: voices 1024 blocks 11394 audio_s 121.536 | mixed_pset_blocks 0 | note_ons_handled 48 of 48 | peak_active 8 at_sample 3129227 t_s 65.1922 | peak_key_down 4 released 4 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=4 [level 0]=1 | peak_notes 53:1 55:1 57:1 58:1 60:1 62:1 64:1 65:1 | mean_active_at_block_end 2.09373 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 56 of_which_voice_already_in_release 8 | render_s 0.863792 realtime_fraction 0.0071073
+mirror_fix_1024.seconds_with_>=16_active_at_block_end = 0.00
+
+## ai_radiance_complete_fm_C  ({"notes": 48, "psets": 14, "len_samples": 5833478, "len_s": 121.531, "pedal": true, "score": "scores/originals/ai_radiance/ai_radiance_complete.score.json"})
+pair.audio_s = 121.536
+pair.rms_dbfs_base = -30.401
+pair.rms_dbfs_fix = -30.401
+pair.peak_dbfs_base = -12.367
+pair.peak_dbfs_fix = -12.367
+pair.diff_energy_re_base_db = -inf
+pair.diff_maxabs = 0.000000
+pair.diff_maxabs_dbfs = -inf
+pair.blocks_differing = 0
+pair.blocks_total = 11394
+pair.first_diff_t_s = -
+pair.tail_from_s = 115.733
+pair.tail_energy_db_base = 24.414
+pair.tail_energy_db_fix = 24.414
+pair.harness: blocks 11394 block_size 512 sr 48000 audio_s 121.536 | mixed_pset_blocks 0 | process_s base 4.3329 fix 4.33526 | realtime_fraction base 0.0356512 fix 0.0356706
+mirror_base_16: voices 16 blocks 11394 audio_s 121.536 | mixed_pset_blocks 0 | note_ons_handled 48 of 48 | peak_active 16 at_sample 3804227 t_s 79.2547 | peak_key_down 4 released 12 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=12 [level 0]=1 | peak_notes 50:2 53:2 60:2 43:1 46:1 48:1 55:1 57:1 58:1 62:1 | mean_active_at_block_end 6.91469 | steals 7 victim_key_down 0 victim_in_release 6 | tail_off_hits_same_note 31 of_which_voice_already_in_release 0 | render_s 2.98163 realtime_fraction 0.0245329
+mirror_base_16.seconds_with_>=16_active_at_block_end = 20.83
+mirror_fix_16: voices 16 blocks 11394 audio_s 121.536 | mixed_pset_blocks 0 | note_ons_handled 48 of 48 | peak_active 16 at_sample 3804227 t_s 79.2547 | peak_key_down 4 released 12 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=12 [level 0]=1 | peak_notes 50:2 53:2 60:2 43:1 46:1 48:1 55:1 57:1 58:1 62:1 | mean_active_at_block_end 6.91469 | steals 7 victim_key_down 0 victim_in_release 6 | tail_off_hits_same_note 31 of_which_voice_already_in_release 0 | render_s 3.00767 realtime_fraction 0.0247472
+mirror_fix_16.seconds_with_>=16_active_at_block_end = 20.83
+mirror_base_1024: voices 1024 blocks 11394 audio_s 121.536 | mixed_pset_blocks 0 | note_ons_handled 48 of 48 | peak_active 19 at_sample 5296028 t_s 110.334 | peak_key_down 3 released 16 | peak_env_bins [(-10,0]]=7 [(-60,-10]]=9 [level 0]=3 | peak_notes 48:2 55:2 43:1 46:1 49:1 50:1 51:1 52:1 53:1 56:1 | mean_active_at_block_end 7.08329 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 31 of_which_voice_already_in_release 0 | render_s 3.10402 realtime_fraction 0.0255399
+mirror_base_1024.seconds_with_>=16_active_at_block_end = 20.84
+mirror_fix_1024: voices 1024 blocks 11394 audio_s 121.536 | mixed_pset_blocks 0 | note_ons_handled 48 of 48 | peak_active 19 at_sample 5296028 t_s 110.334 | peak_key_down 3 released 16 | peak_env_bins [(-10,0]]=7 [(-60,-10]]=9 [level 0]=3 | peak_notes 48:2 55:2 43:1 46:1 49:1 50:1 51:1 52:1 53:1 56:1 | mean_active_at_block_end 7.08329 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 31 of_which_voice_already_in_release 0 | render_s 3.13337 realtime_fraction 0.0257814
+mirror_fix_1024.seconds_with_>=16_active_at_block_end = 20.84
+
+## ai_radiance_m3_fm_C  ({"notes": 32, "psets": 6, "len_samples": 1248094, "len_s": 26.002, "pedal": true, "score": "scores/originals/ai_radiance/ai_radiance_m3.score.json"})
+pair.audio_s = 26.005
+pair.rms_dbfs_base = -28.063
+pair.rms_dbfs_fix = -28.063
+pair.peak_dbfs_base = -12.367
+pair.peak_dbfs_fix = -12.367
+pair.diff_energy_re_base_db = -inf
+pair.diff_maxabs = 0.000000
+pair.diff_maxabs_dbfs = -inf
+pair.blocks_differing = 0
+pair.blocks_total = 2438
+pair.first_diff_t_s = -
+pair.tail_from_s = 22.507
+pair.tail_energy_db_base = 17.986
+pair.tail_energy_db_fix = 17.986
+pair.harness: blocks 2438 block_size 512 sr 48000 audio_s 26.0053 | mixed_pset_blocks 0 | process_s base 1.53867 fix 1.53877 | realtime_fraction base 0.0591674 fix 0.0591712
+mirror_base_16: voices 16 blocks 2438 audio_s 26.0053 | mixed_pset_blocks 0 | note_ons_handled 32 of 32 | peak_active 16 at_sample 812592 t_s 16.929 | peak_key_down 4 released 12 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=12 [level 0]=1 | peak_notes 50:2 53:2 60:2 43:1 46:1 48:1 55:1 57:1 58:1 62:1 | mean_active_at_block_end 10.4295 | steals 1 victim_key_down 0 victim_in_release 1 | tail_off_hits_same_note 19 of_which_voice_already_in_release 0 | render_s 1.24824 realtime_fraction 0.0479994
+mirror_base_16.seconds_with_>=16_active_at_block_end = 2.92
+mirror_fix_16: voices 16 blocks 2438 audio_s 26.0053 | mixed_pset_blocks 0 | note_ons_handled 32 of 32 | peak_active 16 at_sample 812592 t_s 16.929 | peak_key_down 4 released 12 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=12 [level 0]=1 | peak_notes 50:2 53:2 60:2 43:1 46:1 48:1 55:1 57:1 58:1 62:1 | mean_active_at_block_end 10.4295 | steals 1 victim_key_down 0 victim_in_release 1 | tail_off_hits_same_note 19 of_which_voice_already_in_release 0 | render_s 1.25865 realtime_fraction 0.0483995
+mirror_fix_16.seconds_with_>=16_active_at_block_end = 2.92
+mirror_base_1024: voices 1024 blocks 2438 audio_s 26.0053 | mixed_pset_blocks 0 | note_ons_handled 32 of 32 | peak_active 17 at_sample 947592 t_s 19.7415 | peak_key_down 4 released 13 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=13 [level 0]=1 | peak_notes 48:2 55:2 60:2 64:2 43:1 46:1 50:1 53:1 57:1 58:1 | mean_active_at_block_end 10.4873 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 19 of_which_voice_already_in_release 0 | render_s 1.26721 realtime_fraction 0.0487288
+mirror_base_1024.seconds_with_>=16_active_at_block_end = 2.93
+mirror_fix_1024: voices 1024 blocks 2438 audio_s 26.0053 | mixed_pset_blocks 0 | note_ons_handled 32 of 32 | peak_active 17 at_sample 947592 t_s 19.7415 | peak_key_down 4 released 13 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=13 [level 0]=1 | peak_notes 48:2 55:2 60:2 64:2 43:1 46:1 50:1 53:1 57:1 58:1 | mean_active_at_block_end 10.4873 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 19 of_which_voice_already_in_release 0 | render_s 1.26706 realtime_fraction 0.0487231
+mirror_fix_1024.seconds_with_>=16_active_at_block_end = 2.93
+
+## fur_elise_opening_A  ({"notes": 12, "psets": 1, "len_samples": 271202, "len_s": 5.65, "pedal": false, "score": "scores/examples/fur_elise_opening.score.json"})
+pair.audio_s = 5.653
+pair.rms_dbfs_base = -24.105
+pair.rms_dbfs_fix = -24.132
+pair.peak_dbfs_base = -10.499
+pair.peak_dbfs_fix = -10.408
+pair.diff_energy_re_base_db = -19.298
+pair.diff_maxabs = 0.065414
+pair.diff_maxabs_dbfs = -23.687
+pair.blocks_differing = 217
+pair.blocks_total = 530
+pair.first_diff_t_s = 0.491
+pair.tail_from_s = 3.157
+pair.tail_energy_db_base = 14.617
+pair.tail_energy_db_fix = 13.295
+pair.harness: blocks 530 block_size 512 sr 48000 audio_s 5.65333 | mixed_pset_blocks 0 | process_s base 0.089864 fix 0.0846453 | realtime_fraction base 0.0158958 fix 0.0149726
+mirror_base_16: voices 16 blocks 530 audio_s 5.65333 | mixed_pset_blocks 0 | note_ons_handled 12 of 12 | peak_active 6 at_sample 60000 t_s 1.25 | peak_key_down 1 released 5 | peak_env_bins [(-10,0]]=2 [(-60,-10]]=3 [level 0]=1 | peak_notes 76:3 75:2 71:1 | mean_active_at_block_end 2.13208 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 22 of_which_voice_already_in_release 10 | render_s 0.0265223 realtime_fraction 0.00469144
+mirror_base_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_fix_16: voices 16 blocks 530 audio_s 5.65333 | mixed_pset_blocks 0 | note_ons_handled 12 of 12 | peak_active 4 at_sample 96000 t_s 2 | peak_key_down 2 released 2 | peak_env_bins [(-10,0]]=2 [level 0]=2 | peak_notes 57:1 69:1 72:1 74:1 | mean_active_at_block_end 1.67925 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 16 of_which_voice_already_in_release 4 | render_s 0.0208741 realtime_fraction 0.00369235
+mirror_fix_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_base_1024: voices 1024 blocks 530 audio_s 5.65333 | mixed_pset_blocks 0 | note_ons_handled 12 of 12 | peak_active 6 at_sample 60000 t_s 1.25 | peak_key_down 1 released 5 | peak_env_bins [(-10,0]]=2 [(-60,-10]]=3 [level 0]=1 | peak_notes 76:3 75:2 71:1 | mean_active_at_block_end 2.13208 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 22 of_which_voice_already_in_release 10 | render_s 0.0291118 realtime_fraction 0.00514949
+mirror_base_1024.seconds_with_>=16_active_at_block_end = 0.00
+mirror_fix_1024: voices 1024 blocks 530 audio_s 5.65333 | mixed_pset_blocks 0 | note_ons_handled 12 of 12 | peak_active 4 at_sample 96000 t_s 2 | peak_key_down 2 released 2 | peak_env_bins [(-10,0]]=2 [level 0]=2 | peak_notes 57:1 69:1 72:1 74:1 | mean_active_at_block_end 1.67925 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 16 of_which_voice_already_in_release 4 | render_s 0.02335 realtime_fraction 0.00413031
+mirror_fix_1024.seconds_with_>=16_active_at_block_end = 0.00
+
+## S1_same_note_0p13  ({"notes": 153, "psets": 1, "len_samples": 1057922, "len_s": 22.04, "pedal": false, "score": "synthetic"})
+pair.audio_s = 22.048
+pair.rms_dbfs_base = -21.702
+pair.rms_dbfs_fix = -21.901
+pair.peak_dbfs_base = -13.958
+pair.peak_dbfs_fix = -14.077
+pair.diff_energy_re_base_db = -26.718
+pair.diff_maxabs = 0.035782
+pair.diff_maxabs_dbfs = -28.927
+pair.blocks_differing = 1855
+pair.blocks_total = 2067
+pair.first_diff_t_s = 0.256
+pair.tail_from_s = 19.893
+pair.tail_energy_db_base = 11.884
+pair.tail_energy_db_fix = 11.233
+pair.harness: blocks 2067 block_size 512 sr 48000 audio_s 22.048 | mixed_pset_blocks 0 | process_s base 0.851133 fix 0.345787 | realtime_fraction base 0.0386036 fix 0.0156833
+mirror_base_16: voices 16 blocks 2067 audio_s 22.048 | mixed_pset_blocks 0 | note_ons_handled 153 of 153 | peak_active 16 at_sample 93600 t_s 1.95 | peak_key_down 1 released 15 | peak_env_bins [(-10,0]]=1 [(-138.5,-60]]=4 [(-60,-10]]=3 [<=-138.5]=7 [level 0]=1 | peak_notes 44:16 | mean_active_at_block_end 13.8331 | steals 137 victim_key_down 0 victim_in_release 137 | tail_off_hits_same_note 4640 of_which_voice_already_in_release 4487 | render_s 0.644974 realtime_fraction 0.0292532
+mirror_base_16.seconds_with_>=16_active_at_block_end = 18.09
+mirror_fix_16: voices 16 blocks 2067 audio_s 22.048 | mixed_pset_blocks 0 | note_ons_handled 153 of 153 | peak_active 3 at_sample 12480 t_s 0.26 | peak_key_down 1 released 2 | peak_env_bins [(-10,0]]=1 [(-60,-10]]=1 [level 0]=1 | peak_notes 44:3 | mean_active_at_block_end 1.93807 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 608 of_which_voice_already_in_release 455 | render_s 0.0953476 realtime_fraction 0.00432455
+mirror_fix_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_base_1024: voices 1024 blocks 2067 audio_s 22.048 | mixed_pset_blocks 0 | note_ons_handled 153 of 153 | peak_active 153 at_sample 948480 t_s 19.76 | peak_key_down 1 released 152 | peak_env_bins [(-10,0]]=1 [(-138.5,-60]]=4 [(-60,-10]]=3 [<=-138.5]=144 [level 0]=1 | peak_notes 44:153 | mean_active_at_block_end 70.4833 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 23409 of_which_voice_already_in_release 23256 | render_s 2.20363 realtime_fraction 0.0999471
+mirror_base_1024.seconds_with_>=16_active_at_block_end = 18.09
+mirror_fix_1024: voices 1024 blocks 2067 audio_s 22.048 | mixed_pset_blocks 0 | note_ons_handled 153 of 153 | peak_active 3 at_sample 12480 t_s 0.26 | peak_key_down 1 released 2 | peak_env_bins [(-10,0]]=1 [(-60,-10]]=1 [level 0]=1 | peak_notes 44:3 | mean_active_at_block_end 1.93807 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 608 of_which_voice_already_in_release 455 | render_s 0.119316 realtime_fraction 0.00541166
+mirror_fix_1024.seconds_with_>=16_active_at_block_end = 0.00
+
+## S2_alt_44_32_0p13  ({"notes": 153, "psets": 1, "len_samples": 1057922, "len_s": 22.04, "pedal": false, "score": "synthetic"})
+pair.audio_s = 22.048
+pair.rms_dbfs_base = -21.555
+pair.rms_dbfs_fix = -21.659
+pair.peak_dbfs_base = -14.110
+pair.peak_dbfs_fix = -14.219
+pair.diff_energy_re_base_db = -27.215
+pair.diff_maxabs = 0.038554
+pair.diff_maxabs_dbfs = -28.279
+pair.blocks_differing = 1855
+pair.blocks_total = 2067
+pair.first_diff_t_s = 0.256
+pair.tail_from_s = 19.893
+pair.tail_energy_db_base = 11.277
+pair.tail_energy_db_fix = 11.190
+pair.harness: blocks 2067 block_size 512 sr 48000 audio_s 22.048 | mixed_pset_blocks 0 | process_s base 0.848432 fix 0.345882 | realtime_fraction base 0.0384811 fix 0.0156877
+mirror_base_16: voices 16 blocks 2067 audio_s 22.048 | mixed_pset_blocks 0 | note_ons_handled 153 of 153 | peak_active 16 at_sample 93600 t_s 1.95 | peak_key_down 1 released 15 | peak_env_bins [(-10,0]]=1 [(-138.5,-60]]=4 [(-60,-10]]=3 [<=-138.5]=7 [level 0]=1 | peak_notes 32:8 44:8 | mean_active_at_block_end 13.7866 | steals 137 victim_key_down 0 victim_in_release 137 | tail_off_hits_same_note 2320 of_which_voice_already_in_release 2167 | render_s 0.626528 realtime_fraction 0.0284166
+mirror_base_16.seconds_with_>=16_active_at_block_end = 17.96
+mirror_fix_16: voices 16 blocks 2067 audio_s 22.048 | mixed_pset_blocks 0 | note_ons_handled 153 of 153 | peak_active 3 at_sample 12480 t_s 0.26 | peak_key_down 1 released 2 | peak_env_bins [(-10,0]]=1 [(-60,-10]]=1 [level 0]=1 | peak_notes 44:2 32:1 | mean_active_at_block_end 1.93807 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 304 of_which_voice_already_in_release 151 | render_s 0.0947914 realtime_fraction 0.00429932
+mirror_fix_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_base_1024: voices 1024 blocks 2067 audio_s 22.048 | mixed_pset_blocks 0 | note_ons_handled 153 of 153 | peak_active 153 at_sample 948480 t_s 19.76 | peak_key_down 1 released 152 | peak_env_bins [(-10,0]]=1 [(-138.5,-60]]=4 [(-60,-10]]=3 [<=-138.5]=144 [level 0]=1 | peak_notes 44:77 32:76 | mean_active_at_block_end 70.0421 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 11705 of_which_voice_already_in_release 11552 | render_s 2.3371 realtime_fraction 0.106001
+mirror_base_1024.seconds_with_>=16_active_at_block_end = 18.09
+mirror_fix_1024: voices 1024 blocks 2067 audio_s 22.048 | mixed_pset_blocks 0 | note_ons_handled 153 of 153 | peak_active 3 at_sample 12480 t_s 0.26 | peak_key_down 1 released 2 | peak_env_bins [(-10,0]]=1 [(-60,-10]]=1 [level 0]=1 | peak_notes 44:2 32:1 | mean_active_at_block_end 1.93807 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 304 of_which_voice_already_in_release 151 | render_s 0.108782 realtime_fraction 0.00493385
+mirror_fix_1024.seconds_with_>=16_active_at_block_end = 0.00
+
+## S3_control_gap_0p40  ({"notes": 50, "psets": 1, "len_samples": 1050242, "len_s": 21.88, "pedal": false, "score": "synthetic"})
+pair.audio_s = 21.888
+pair.rms_dbfs_base = -27.883
+pair.rms_dbfs_fix = -27.883
+pair.peak_dbfs_base = -18.970
+pair.peak_dbfs_fix = -18.970
+pair.diff_energy_re_base_db = -inf
+pair.diff_maxabs = 0.000000
+pair.diff_maxabs_dbfs = -inf
+pair.blocks_differing = 0
+pair.blocks_total = 2052
+pair.first_diff_t_s = -
+pair.tail_from_s = 19.733
+pair.tail_energy_db_base = 11.134
+pair.tail_energy_db_fix = 11.134
+pair.harness: blocks 2052 block_size 512 sr 48000 audio_s 21.888 | mixed_pset_blocks 0 | process_s base 0.279414 fix 0.28009 | realtime_fraction base 0.0127656 fix 0.0127965
+mirror_base_16: voices 16 blocks 2052 audio_s 21.888 | mixed_pset_blocks 0 | note_ons_handled 50 of 50 | peak_active 1 at_sample 0 t_s 0 | peak_key_down 1 released 0 | peak_env_bins [level 0]=1 | peak_notes 44:1 | mean_active_at_block_end 0.633528 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 50 of_which_voice_already_in_release 0 | render_s 0.031031 realtime_fraction 0.00141772
+mirror_base_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_fix_16: voices 16 blocks 2052 audio_s 21.888 | mixed_pset_blocks 0 | note_ons_handled 50 of 50 | peak_active 1 at_sample 0 t_s 0 | peak_key_down 1 released 0 | peak_env_bins [level 0]=1 | peak_notes 44:1 | mean_active_at_block_end 0.633528 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 50 of_which_voice_already_in_release 0 | render_s 0.031103 realtime_fraction 0.00142101
+mirror_fix_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_base_1024: voices 1024 blocks 2052 audio_s 21.888 | mixed_pset_blocks 0 | note_ons_handled 50 of 50 | peak_active 1 at_sample 0 t_s 0 | peak_key_down 1 released 0 | peak_env_bins [level 0]=1 | peak_notes 44:1 | mean_active_at_block_end 0.633528 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 50 of_which_voice_already_in_release 0 | render_s 0.0418122 realtime_fraction 0.00191028
+mirror_base_1024.seconds_with_>=16_active_at_block_end = 0.00
+mirror_fix_1024: voices 1024 blocks 2052 audio_s 21.888 | mixed_pset_blocks 0 | note_ons_handled 50 of 50 | peak_active 1 at_sample 0 t_s 0 | peak_key_down 1 released 0 | peak_env_bins [level 0]=1 | peak_notes 44:1 | mean_active_at_block_end 0.633528 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 50 of_which_voice_already_in_release 0 | render_s 0.0418902 realtime_fraction 0.00191384
+mirror_fix_1024.seconds_with_>=16_active_at_block_end = 0.00
+
+## S4_overlap_held_rel1500  ({"notes": 40, "psets": 1, "len_samples": 1152002, "len_s": 24.0, "pedal": false, "score": "synthetic"})
+pair.audio_s = 24.011
+pair.rms_dbfs_base = -22.480
+pair.rms_dbfs_fix = -21.002
+pair.peak_dbfs_base = -11.987
+pair.peak_dbfs_fix = -11.888
+pair.diff_energy_re_base_db = -12.614
+pair.diff_maxabs = 0.074334
+pair.diff_maxabs_dbfs = -22.576
+pair.blocks_differing = 1970
+pair.blocks_total = 2251
+pair.first_diff_t_s = 0.992
+pair.tail_from_s = 20.501
+pair.tail_energy_db_base = 20.643
+pair.tail_energy_db_fix = 19.931
+pair.harness: blocks 2251 block_size 512 sr 48000 audio_s 24.0107 | mixed_pset_blocks 0 | process_s base 0.686103 fix 0.435826 | realtime_fraction base 0.0285749 fix 0.0181513
+mirror_base_16: voices 16 blocks 2251 audio_s 24.0107 | mixed_pset_blocks 0 | note_ons_handled 40 of 40 | peak_active 16 at_sample 360000 t_s 7.5 | peak_key_down 1 released 15 | peak_env_bins [(-10,0]]=3 [(-60,-10]]=12 [level 0]=1 | peak_notes 60:16 | mean_active_at_block_end 12.1608 | steals 24 victim_key_down 0 victim_in_release 24 | tail_off_hits_same_note 1039 of_which_voice_already_in_release 999 | render_s 0.430599 realtime_fraction 0.0179337
+mirror_base_16.seconds_with_>=16_active_at_block_end = 14.50
+mirror_fix_16: voices 16 blocks 2251 audio_s 24.0107 | mixed_pset_blocks 0 | note_ons_handled 40 of 40 | peak_active 4 at_sample 72000 t_s 1.5 | peak_key_down 1 released 3 | peak_env_bins [(-10,0]]=2 [(-60,-10]]=1 [level 0]=1 | peak_notes 60:4 | mean_active_at_block_end 3.32963 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 232 of_which_voice_already_in_release 192 | render_s 0.169562 realtime_fraction 0.00706194
+mirror_fix_16.seconds_with_>=16_active_at_block_end = 0.00
+mirror_base_1024: voices 1024 blocks 2251 audio_s 24.0107 | mixed_pset_blocks 0 | note_ons_handled 40 of 40 | peak_active 40 at_sample 936000 t_s 19.5 | peak_key_down 1 released 39 | peak_env_bins [(-10,0]]=3 [(-138.5,-60]]=22 [(-60,-10]]=14 [level 0]=1 | peak_notes 60:40 | mean_active_at_block_end 20.4065 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 1639 of_which_voice_already_in_release 1599 | render_s 0.689382 realtime_fraction 0.0287115
+mirror_base_1024.seconds_with_>=16_active_at_block_end = 14.50
+mirror_fix_1024: voices 1024 blocks 2251 audio_s 24.0107 | mixed_pset_blocks 0 | note_ons_handled 40 of 40 | peak_active 4 at_sample 72000 t_s 1.5 | peak_key_down 1 released 3 | peak_env_bins [(-10,0]]=2 [(-60,-10]]=1 [level 0]=1 | peak_notes 60:4 | mean_active_at_block_end 3.32963 | steals 0 victim_key_down 0 victim_in_release 0 | tail_off_hits_same_note 232 of_which_voice_already_in_release 192 | render_s 0.17911 realtime_fraction 0.00745958
+mirror_fix_1024.seconds_with_>=16_active_at_block_end = 0.00
+
+## dry mirror (no FX) RMS / peak in dBFS, whole render
+S1_same_note_0p13 : base_16 rms -26.202 pk -18.458 | fix_16 rms -26.401 pk -18.577 | base_1024 rms -26.202 pk -18.454 | fix_1024 rms -26.401 pk -18.577
+S2_alt_44_32_0p13 : base_16 rms -26.055 pk -18.610 | fix_16 rms -26.159 pk -18.719 | base_1024 rms -26.055 pk -18.606 | fix_1024 rms -26.159 pk -18.719
+S3_control_gap_0p40 : base_16 rms -32.383 pk -23.470 | fix_16 rms -32.383 pk -23.470 | base_1024 rms -32.383 pk -23.470 | fix_1024 rms -32.383 pk -23.470
+S4_overlap_held_rel1500 : base_16 rms -26.980 pk -16.487 | fix_16 rms -25.502 pk -16.388 | base_1024 rms -26.974 pk -16.487 | fix_1024 rms -25.502 pk -16.388
+ai_radiance_complete_fm_A : base_16 rms -38.488 pk -17.917 | fix_16 rms -38.499 pk -17.919 | base_1024 rms -38.488 pk -17.917 | fix_1024 rms -38.499 pk -17.919
+ai_radiance_complete_fm_C : base_16 rms -34.901 pk -16.867 | fix_16 rms -34.901 pk -16.867 | base_1024 rms -34.857 pk -16.867 | fix_1024 rms -34.857 pk -16.867
+ai_radiance_m3_fm_C : base_16 rms -32.563 pk -16.867 | fix_16 rms -32.563 pk -16.867 | base_1024 rms -32.569 pk -16.867 | fix_1024 rms -32.569 pk -16.867
+fur_elise_opening_A : base_16 rms -28.605 pk -14.999 | fix_16 rms -28.632 pk -14.908 | base_1024 rms -28.605 pk -14.999 | fix_1024 rms -28.632 pk -14.908
+moonlight_complete_A : base_16 rms -23.625 pk -4.824 | fix_16 rms -23.617 pk -4.792 | base_1024 rms -23.609 pk -4.815 | fix_1024 rms -23.617 pk -4.792
+
+## stolen-voice envelope level at the steal (16-voice mirror), counts in bins
+## (> -10 dB, -10..-40, -40..-138.5, <= -138.5 i.e. below the 24-bit LSB reference line)
+S1_same_note_0p13            base steals  137  bins [0, 0, 0, 137]
+S1_same_note_0p13            fix  steals    0  bins [0, 0, 0, 0]
+S2_alt_44_32_0p13            base steals  137  bins [0, 0, 0, 137]
+S2_alt_44_32_0p13            fix  steals    0  bins [0, 0, 0, 0]
+S3_control_gap_0p40          base steals    0  bins [0, 0, 0, 0]
+S3_control_gap_0p40          fix  steals    0  bins [0, 0, 0, 0]
+S4_overlap_held_rel1500      base steals   24  bins [0, 0, 24, 0]
+S4_overlap_held_rel1500      fix  steals    0  bins [0, 0, 0, 0]
+ai_radiance_complete_fm_A    base steals    0  bins [0, 0, 0, 0]
+ai_radiance_complete_fm_A    fix  steals    0  bins [0, 0, 0, 0]
+ai_radiance_complete_fm_C    base steals    7  bins [2, 5, 0, 0]
+ai_radiance_complete_fm_C    fix  steals    7  bins [2, 5, 0, 0]
+ai_radiance_m3_fm_C          base steals    1  bins [0, 1, 0, 0]
+ai_radiance_m3_fm_C          fix  steals    1  bins [0, 1, 0, 0]
+fur_elise_opening_A          base steals    0  bins [0, 0, 0, 0]
+fur_elise_opening_A          fix  steals    0  bins [0, 0, 0, 0]
+moonlight_complete_A         base steals  798  bins [94, 37, 182, 485]
+moonlight_complete_A         fix  steals    0  bins [0, 0, 0, 0]
+
+## moonlight_complete_A: where does the base-vs-fix difference sit?
+share of total |base-fix| energy inside the ~0.2 s after a base steal (any victim): 0.635 (8838 of 81992 blocks)
+share inside the ~0.2 s after a base steal whose victim was still > -40 dB: 0.591 (2166 of 81992 blocks)
+10 blocks with the largest max|base-fix| (and the base steal in that block, if any):
+  t= 508.032 s  max|diff| 0.3891 (-8.2 dBFS)  base steal: incoming 79 steals same-note 79 still at -1.4 dB (released)
+  t= 507.520 s  max|diff| 0.3847 (-8.3 dBFS)  base steal: incoming 79 steals same-note 79 still at -1.4 dB (released)
+  t= 711.360 s  max|diff| 0.3631 (-8.8 dBFS)  base steal: incoming 75 steals same-note 75 still at -1.4 dB (released)
+  t= 655.979 s  max|diff| 0.3426 (-9.3 dBFS)  base steal: incoming 73 steals same-note 73 still at -1.4 dB (released)
+  t= 511.680 s  max|diff| 0.3358 (-9.5 dBFS)  base steal: incoming 82 steals same-note 82 still at -1.4 dB (released)
+  t= 707.200 s  max|diff| 0.3306 (-9.6 dBFS)  base steal: incoming 72 steals same-note 72 still at -1.4 dB (released)
+  t= 711.872 s  max|diff| 0.3246 (-9.8 dBFS)  base steal: incoming 75 steals same-note 75 still at -1.4 dB (released)
+  t= 812.491 s  max|diff| 0.2961 (-10.6 dBFS)  base steal: incoming 73 steals same-note 73 still at -0.3 dB (released)
+  t= 509.600 s  max|diff| 0.2946 (-10.6 dBFS)  base steal: incoming 80 steals same-note 80 still at -1.4 dB (released)
+  t= 510.112 s  max|diff| 0.2914 (-10.7 dBFS)  base steal: incoming 80 steals same-note 80 still at -1.4 dB (released)
+blocks whose max|diff| exceeds: -20 dBFS: 246, -40 dBFS: 21149, -60 dBFS: 46743, -80 dBFS: 50667, -100 dBFS: 51962, -120 dBFS: 52081 (of 81992)
+
+## CPU: moonlight_complete_A through both VST3s, 874.6 s of audio, wall-clock processBlock sum
+## (single process, lock-step; runs 1-3 in order base->fix, 'swapped' runs load fix first)
+moon_1           base 23.543 s (2.692% of real time)  fix 19.360 s (2.214%)
+moon_2           base 23.465 s (2.683% of real time)  fix 19.280 s (2.205%)
+moon_3           base 23.564 s (2.694% of real time)  fix 19.341 s (2.211%)
+moon_swapped_1   base 23.721 s (2.712% of real time)  fix 19.498 s (2.229%)
+moon_swapped_2   base 23.513 s (2.688% of real time)  fix 19.291 s (2.206%)
+moon_swapped_3   base 23.616 s (2.700% of real time)  fix 19.410 s (2.219%)
+repeat runs' per-block csv identical across the 3 repeats: True
+
+### harness log (parameter automation as read back from the plug-in): S1_same_note_0p13
+instance 0: <C2>\build-base\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+instance 1: <C2>\build-fix\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 5.600000 -> '5.5999999'
+  set Tone Decay = 0.620000 -> '0.6200000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 150.000000 -> '150.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 5.600000 -> '5.5999999'
+  set Tone Decay = 0.620000 -> '0.6200000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 150.000000 -> '150.0000000'
+
+### harness log (parameter automation as read back from the plug-in): S2_alt_44_32_0p13
+instance 0: <C2>\build-base\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+instance 1: <C2>\build-fix\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 5.600000 -> '5.5999999'
+  set Tone Decay = 0.620000 -> '0.6200000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 150.000000 -> '150.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 5.600000 -> '5.5999999'
+  set Tone Decay = 0.620000 -> '0.6200000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 150.000000 -> '150.0000000'
+
+### harness log (parameter automation as read back from the plug-in): S3_control_gap_0p40
+instance 0: <C2>\build-base\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+instance 1: <C2>\build-fix\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 5.600000 -> '5.5999999'
+  set Tone Decay = 0.620000 -> '0.6200000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 150.000000 -> '150.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 5.600000 -> '5.5999999'
+  set Tone Decay = 0.620000 -> '0.6200000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 150.000000 -> '150.0000000'
+
+### harness log (parameter automation as read back from the plug-in): S4_overlap_held_rel1500
+instance 0: <C2>\build-base\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+instance 1: <C2>\build-fix\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 4.500000 -> '4.5000000'
+  set Tone Decay = 0.600000 -> '0.6000000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 1500.000000 -> '1499.9997559'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 4.500000 -> '4.5000000'
+  set Tone Decay = 0.600000 -> '0.6000000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 1500.000000 -> '1499.9997559'
+
+### harness log (parameter automation as read back from the plug-in): ai_radiance_complete_fm_A
+instance 0: <C2>\build-base\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+instance 1: <C2>\build-fix\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+  set Sound Type = Bell -> 'Bell'
+  set FM Ratio = 8.000000 -> '8.0000000'
+  set Mod Index = 7.700000 -> '7.6999998'
+  set Tone Decay = 0.780000 -> '0.7800000'
+  set Feedback = 0.160000 -> '0.1600000'
+  set FM Attack (ms) = 3.000000 -> '3.0000000'
+  set FM Release (ms) = 900.000000 -> '899.9998779'
+  set Sound Type = Bell -> 'Bell'
+  set FM Ratio = 8.000000 -> '8.0000000'
+  set Mod Index = 7.700000 -> '7.6999998'
+  set Tone Decay = 0.780000 -> '0.7800000'
+  set Feedback = 0.160000 -> '0.1600000'
+  set FM Attack (ms) = 3.000000 -> '3.0000000'
+  set FM Release (ms) = 900.000000 -> '899.9998779'
+  set Sound Type = Bell -> 'Bell'
+  set FM Ratio = 8.000000 -> '8.0000000'
+  set Mod Index = 8.300000 -> '8.3000002'
+  set Tone Decay = 0.780000 -> '0.7800000'
+  ... (206 more lines)
+
+### harness log (parameter automation as read back from the plug-in): ai_radiance_complete_fm_C
+instance 0: <C2>\build-base\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+instance 1: <C2>\build-fix\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+  set Sound Type = Bell -> 'Bell'
+  set FM Ratio = 8.000000 -> '8.0000000'
+  set Mod Index = 7.700000 -> '7.6999998'
+  set Tone Decay = 0.780000 -> '0.7800000'
+  set Feedback = 0.160000 -> '0.1600000'
+  set FM Attack (ms) = 3.000000 -> '3.0000000'
+  set FM Release (ms) = 900.000000 -> '899.9998779'
+  set Sound Type = Bell -> 'Bell'
+  set FM Ratio = 8.000000 -> '8.0000000'
+  set Mod Index = 7.700000 -> '7.6999998'
+  set Tone Decay = 0.780000 -> '0.7800000'
+  set Feedback = 0.160000 -> '0.1600000'
+  set FM Attack (ms) = 3.000000 -> '3.0000000'
+  set FM Release (ms) = 900.000000 -> '899.9998779'
+  set Sound Type = Bell -> 'Bell'
+  set FM Ratio = 8.000000 -> '8.0000000'
+  set Mod Index = 8.300000 -> '8.3000002'
+  set Tone Decay = 0.780000 -> '0.7800000'
+  ... (206 more lines)
+
+### harness log (parameter automation as read back from the plug-in): ai_radiance_m3_fm_C
+instance 0: <C2>\build-base\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+instance 1: <C2>\build-fix\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+  set Sound Type = E.Piano -> 'E.Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 2.500000 -> '2.5000000'
+  set Tone Decay = 0.320000 -> '0.3200000'
+  set Feedback = 0.025000 -> '0.0250000'
+  set FM Attack (ms) = 18.000000 -> '18.0000000'
+  set FM Release (ms) = 1500.000000 -> '1499.9997559'
+  set Sound Type = E.Piano -> 'E.Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 2.500000 -> '2.5000000'
+  set Tone Decay = 0.320000 -> '0.3200000'
+  set Feedback = 0.025000 -> '0.0250000'
+  set FM Attack (ms) = 18.000000 -> '18.0000000'
+  set FM Release (ms) = 1500.000000 -> '1499.9997559'
+  set Sound Type = E.Piano -> 'E.Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 2.950000 -> '2.9500000'
+  set Tone Decay = 0.360000 -> '0.3600000'
+  ... (94 more lines)
+
+### harness log (parameter automation as read back from the plug-in): fur_elise_opening_A
+instance 0: <C2>\build-base\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+instance 1: <C2>\build-fix\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 4.500000 -> '4.5000000'
+  set Tone Decay = 0.600000 -> '0.6000000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 500.000000 -> '500.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 4.500000 -> '4.5000000'
+  set Tone Decay = 0.600000 -> '0.6000000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 500.000000 -> '500.0000000'
+
+### harness log (parameter automation as read back from the plug-in): moonlight_complete_A
+instance 0: <C2>\build-base\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+instance 1: <C2>\build-fix\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 (TsukiSynth 0.3.0)
+  set Engine = FM Piano -> 'FM Piano'
+  set Reverb Mix = 0 -> '0.0000000'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 3.900000 -> '3.9000001'
+  set Tone Decay = 0.300000 -> '0.3000000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 950.000000 -> '950.0001831'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 3.900000 -> '3.9000001'
+  set Tone Decay = 0.300000 -> '0.3000000'
+  set Feedback = 0.020000 -> '0.0200000'
+  set FM Attack (ms) = 5.000000 -> '5.0000000'
+  set FM Release (ms) = 950.000000 -> '950.0001831'
+  set Sound Type = Piano -> 'Piano'
+  set FM Ratio = 1.000000 -> '1.0000000'
+  set Mod Index = 4.400000 -> '4.4000001'
+  set Tone Decay = 0.420000 -> '0.4200000'
+  ... (24 more lines)

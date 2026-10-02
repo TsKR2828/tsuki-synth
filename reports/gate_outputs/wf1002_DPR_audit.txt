@@ -1,0 +1,213 @@
+# wf1002_DPR_audit.txt — WF1002 D／P／R 三卡稽核（2026-10-02 01:30）
+# 依據：docs/workcards/WF1002_README.md §1 裁定表（唯一依據）。HEAD b41298c。
+# 路徑代稱：<REPO> = repo 根目錄。稽核暫存只放 <REPO>/output/wf1002/audit_DPR/（gitignored）；沒有刪任何資料夾；沒碰 output/wf1002/C2/ 與 repo 外的 _scratch/wf1002_C2/。
+# 稽核沒有 commit／push。
+
+======================================================================
+總結
+======================================================================
+D 卡（文件）：FAIL —— 兩處文字要修（D-1、D-2），其他全部核對通過。修完重審即可，不必重做。
+P 卡（商品）：PASS
+R 卡（研究）：PASS
+staged（稽核 git add）：P 3 檔、R 9 檔、本檔。D 的 8 檔＋wf1002_D_changes.txt 不 add（FAIL）。
+
+======================================================================
+D 卡
+======================================================================
+[D 通過的項目]
+- git diff --stat 8 檔與 D 證據四-4 一致；ROADMAP 的 git diff -U0 與證據四-5 逐字相同（只差抽取時的檔頭行）。
+- R7 新字面＝裁定表 Q03 原句「不 commit、不 push（月月明示裁決時除外）；稽核 PASS 後由稽核 `git add`（staged）供月月審」：相同。
+- R6：擴成整個 src/＋CMakeLists.txt；外掛層另規定先重建五個測試 target 再 ctest＋HostProbe：符合 Q02=A。
+- §6 新三列的數值與出處（自己開檔核對）：
+  * 0.25 dB：docs/workcards/WF0914_D9c_ir_makeup_gain.md :28-31「0 ± 0.25 dB」「0.24 dB 是 D9b 實測的樣本展幅」；現值 +0.112 dB＝wf0914_D9c_ir_makeup_gain.txt :118；C1 ctest 輸出「[Q01] |IR - ALGO| = 0.112 dB, limit 0.25 dB, margin 0.138 dB」。
+  * onset ±10 ms：tools/melody_verify.py :98 ONSET_TOL_S = 0.010，:56 起 Tolerance provenance；l1_l2_l3a_melody_gate.txt 存在。
+  * selfcal 1.0 c：tools/measurement_selfcal.py :229 MAX_ABS_ERROR_CENTS_LIMIT = 1.0、:231 SENSITIVITY_TOL_CENTS = 1.0；1.1721／1.0840／5.2304／7.2055 在 C10 包與 EARFREE 設計文件都查到；「08-30 查核第 5 點」在 EARFREE :274、:458。
+  * 兩處 ±5 c 沿用：melody_verify.py :104 PITCH_TOL_CENTS = vs.MODE_F0_TOL_CENTS；verify_score.py :138 MODE_F0_TOL_CENTS = 5.0。
+  * §6 既有列：除 f0 列（Q04 指定註明，數值欄 ±5 cents 未動）外一字未改（diff 只有 :463 一處既有列改動）。
+- physics.yml（自己 grep＋模擬）：全 workflow 只剩一處 "ubuntu-24.04-clang"，在說明註解內；兩檔 YAML 都能解析；
+  matrix labels = windows-2022-msvc / ubuntu-24.04-gcc / macos-14-appleclang；
+  模擬：upload 名 xplat-<label>、download pattern xplat-* 到 path xplat → 目錄 xplat/xplat-<label>；compare 參數三個目錄全部存在、且剛好涵蓋全部：True。
+  tools/crossplatform_verify.py 的 label 只寫進 platform.json 並列印，程式不依賴字串。
+- crossplatform_tolerance.json（python json 比對 HEAD）：鍵順序相同；除 _basis 外全部相同；有變的鍵只有 ['_basis']；
+  數值 max_abs_delta_dbfs −120.0、delta_rms_re_signal_db −120.0、max_spectral_deviation_db 0.01、max_peak_pitch_deviation_cents 0.01。
+- partial_verify.py：AST（去掉模組 docstring 與 ArgumentParser 的 epilog）與 HEAD 相同：True；HEAD 的 ArgumentParser 只有 description，現在多 epilog。
+  python -m pytest tests -q -k partial → 19 passed, 288 deselected, exit 0。--help exit 0。
+  docstring 的數字（849 FAIL、848 偏高、扣掉後中位數 +0.03 c、120 格、97 個 A2 n=1）對 reports/partial_verify_full_2026-09-25.zh-TW.md :16-21、:68、:91-97 相同。
+- ENGINE_DOMAIN_CLAIMS：diff 只有一個 hunk「@@ -37,0 +38,148 @@」＝HEAD 37 行之後追加，§1 與檔頭沒動。
+  22 段「」引文逐一對 HEAD 原檔指定行號比對（去空白、粗體、反引號後子字串比對）：22/22 在所標行號內找到
+  （ROADMAP :140/:143/:144/:145/:147/:441；TODO :515、:833、:902-904、:921、:988、:989、:1021-1023；BeamModel.h :44-48；D1 文件 §0 三句；voice_pool 報告三句；CimbalomEngine.h applyStringDecayTimes 在 :150-160；B6 包「裁決記錄（2026-08-28」在 :140-146）。
+  C1～C9 的升格／不升格照 Q19＝C；C5 未升格（§11）。
+- 「由 C1 做」文字對 C1 實際結果：audit_repro 0.25 dB CHECK（[Q01] 0.112 PASS）、BeamModel.h DECIDED CONVENTION 註解（:49）、
+  削波指示燈（PluginEditor.cpp drawText "CLIP"）、getNumPrograms()=27、缺檔警告中英字串（與 UI §5-3 定案列逐字相同）、HostProbe Q09 串流量測——六項都已落地，文字對得上。
+- WF0908 施工卡：只在原格加註，原字樣保留。UI 規格 K2 數字 +0.33／+1.47／+2.65 對 wf0925_K2_hostprobe.txt :280/:300/:320 相同。
+
+[D-1 必修] ROADMAP_PHYSICS.md §6 新列「量測器自證」現值欄寫「`tests/test_measurement_selfcal.py` 三條 strict xfail」——事實不符。
+  該檔有 5 個 @pytest.mark.xfail(strict=True)（:195、:216、:238、:260、:298），5 個都拿 MAX_ABS_ERROR_CENTS_LIMIT（1.0）判定；
+  TODO.md :729 也寫「5 個 strict xfail」，pytest 基線「5 xfail」也是這 5 個。這是 §6 容差登記表裡的錯字，要改成 5。
+[D-2 必修] docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md §9 粗體句放在「月月 2026-10-02 裁決 Q08=C …」之下當成裁決原句，
+  但寫成「…激發、振幅、macro、BodyResonance 與效果鏈未逐項驗證」；裁定表 Q08 的句子是「…激發與效果鏈未逐項驗證」
+  （裁決包 Q08 選項 B 是「激發與效果鏈沒有逐項驗證」）。P 卡 LISTING_COPY 用的是裁定表原句，兩份文件不一致。
+  加上去的三項有裁決包 Q08 背景數字支撐、方向是更保守，不是新主張；但不能掛在「裁決原句」的位置。
+  修法二選一：粗體句改回裁定表原句、把三項移到下面「支撐事實」；或保留擴寫但註明「依裁決包 Q08 背景數字擴寫」。
+[D note]
+- D-n1 Q10：C1 新增的警告句「——這個 preset 記的 IR 檔案在這台電腦上無法載入（原因：…）。」／" -- this preset's IR file could not be loaded on this computer (reason: …)."
+  （src/PluginProcessor.cpp :913-930）在 UI 規格 §5-3 與 F-03 施工卡都沒有收錄（grep「無法載入」0 筆）。UI 規格要補這一列。
+- D-n2 UI §4.14 寫「亮多久、要不要手動清除、放在哪裡，由設計端決定」；C1 目前實作是標題列「CLIP」、最後一次超標後亮 1.5 s。規格沒記錄現行實作，建議補一句。
+- D-n3 ENGINE_DOMAIN_CLAIMS §10 第 5、7 點仍寫「估計、數字回來前仍只是估計」；C1 已實測（給愛麗絲 搶 0／最多 12／同音提前制音 21；月光舌鼓 搶 64／4 次按著／20 顆／17.920 s，與估計一致），
+  但「被別顆放鍵一起制音」C1 計 11、報告 21（計數定義不同）。§10 第 3 點「給愛麗絲有 21 顆這樣的音」只對得上前半；HO 要同步改寫。
+- D-n4 KNOWN_LIMITS A11/A12/A13/A22 與 §C 表引用的 TODO 行號（:430、:833、:813-816、:897-901）在 HEAD 已不是那幾段（例：HEAD TODO :430 是「(iii) 改用其他厚度/材質重跑」）。
+  這是改動前就有的舊錯，D 的新文件用的是正確行號；這次沒修。
+
+======================================================================
+P 卡
+======================================================================
+- 原版 clean_batch2/：sha256sum -c _ORIGINALS_SHA256_before.txt → 212 OK、0 not OK；檔案清單與清單檔完全相同（212＝212）。
+- 自己重跑：python exports/products/clean_batch2_v1_1_candidate/scripts/x2_verify.py --complete include --music tpdf
+  --evidence ../../output/wf1002/audit_DPR/x2_verify_rerun.txt --packages-evidence wf1002_P_packages.txt --tmp output/wf1002/audit_DPR/x2_tmp
+  → exit 0；「GATE X2 verify: 179/179」「RESULT: PASS」；[FAIL] 0 行；V4 三個 zip 重建 sha 相同；V4 --release 被拒。
+  （這支腳本收尾會重寫 _X2_MANIFEST_SHA256.txt：重跑前後 sha256 相同。）
+- --release 自己再試一次（輸出到 audit_DPR/rel_out）：「REFUSED: --release while LICENSE_SE_PACK_v1_1.txt still contains the DRAFT box or [TBD] items.」，沒有產出任何檔。
+- zip 對 PACKAGES_MANIFEST（自己寫腳本逐成員重算）：
+  SE 51/51、SE_FAB 50/50、Album 15/15；三個 zip 的 sha256 與位元組數、成員集合、每個成員 sha256 與大小全相符；每個成員也對回來源檔 sha256 相符。
+  專輯 15 成員＝7 首 WAV（全部 music_tpdf/*_tpdf.wav，含 Für Elise 兩版＋AI Radiance 全曲＋四樂章）＋7 首 MP3＋README。
+  7 首 WAV sha256＝music_tpdf_report.json 的 out_sha256（7/7）。
+- 裁定逐條抽查（自己讀檔）：
+  Q21 採用句：LICENSE_SE §11 中文、LICENSE_ALBUM 中文、README_SE 中文 :125、README_ALBUM 中文、LISTING_COPY 專輯段、PRODUCT_SHEET :25 都是原句；EN/JA 保留既有譯文；沒有【待月月確認】掛在這句上。
+  Q22b=A：§4 三語都是「公開 repo 可放、限實際用到的專案、獨立資料夾＋聲明檔」。
+  Q22c=B＋聯絡例外：§6 三語「本音效或任何含有本音效的作品都不可登記」＋「如需 Content ID 或其他延伸授權，請個案聯絡授權人（第 12 條）」；選項 A 文字已刪。
+  Q22d=A：§10 三語英文為準。[TBD] 只剩 §1 通路、§8 終止後作品、§9 準據法、§12 聯絡。DRAFT 方框保留。
+  Q23=B：FAB_PLATFORM_NOTE 標「暫緩上架」；manifest 第 2 行 Fab zip ON HOLD、不在發行清單。
+  Q24a=C／Q24b=A：PRODUCT_SHEET :136、:154-155 寫等平台規格、試聽帶完整版 6:03.560 列入發行清單。
+  Q25=A：專輯含全曲版。Q26=A：SE zip 有原版 6 個 loop＋loop_ready 6 個。Q27=A：專輯 WAV＝TPDF 版，README 三語有 TPDF 與「MP3 沒重出」說明；
+  README 的數字（4 首調小 0.001～0.032 dB、TP −1.00～−1.83、LUFS −13.98～−14.35）對 catalog 輸出相符。
+  Q29=B／Q30=A／Q08：LISTING_COPY §D 商品名只寫 TsukiSynth；另起一行「VST® 3 plug-in & Standalone (Windows 64-bit)」；聲明句；logo 只引路徑；
+  買家文字第一個 VST 是 VST®；主張收窄句＝裁定表原句；Windows 64-bit only。
+- 事故（wf1002_P_apply.txt §7）：
+  find libs/JUCE -type f | wc -l → 4378；git -C libs/JUCE status 乾淨（ls-files 4377＋子模組 .git 檔）；libs/JUCE 沒有 2026-10-01 之後修改過的檔（0 個），不是事後補回。
+  記錄內容誠實：自認執行 rm -rf output/wf1002、C2 副本大部分被刪、不可從回收筒救回。
+[P note]
+- P-n1 事故記錄寫「R 在 rm 之前有沒有檔案不知道」；R 的 wf1002_R_a_setup.txt 證實 R 第一輪整個 output/wf1002/R 被刪，裡面還有一個指向 <REPO>/libs/JUCE 的 junction。
+  這次 rm 只拆掉連結、沒穿過去（JUCE 完好），但風險比記錄寫的大。之後任何 lane 不要在 output/ 下建 junction（R 第二輪已改放 repo 外）。
+- P-n2 LICENSE_ALBUM §6 的「買家不得登記含本錄音的任何作品＋聯絡例外」是 P 把 Q22c（音效包題）延伸到專輯；有在 apply §1 與檔頭揭露、專輯授權整份仍是待月月審草稿。月月審專輯授權時要知道這一條是延伸的。
+- P-n3 x2_build_packages.py 的 --release 擋門只檢查 LICENSE_SE_PACK_v1_1.txt；專輯授權沒放進 zip，所以目前不影響，但專輯 README/授權的 [TBD] 不在擋門範圍。
+
+======================================================================
+R 卡
+======================================================================
+R-a（preset 7／11／15 超過 0 dBFS 根因）
+- 自己用 build\ HostProbe 與 VST3 的複本（sha256 919ee83c…／48f3193b…，與 R 證據相同）在 audit_DPR 重跑：
+  215 PASS、0 FAIL、「PASS (0 failures)」；E16 27 行峰值／RMS 與 R 的重跑及 09-25 K2 數字相同；7／11／15 = +0.33／+1.47／+2.65 dBFS。
+- 自己讀 HEAD src/Presets.h 參數＋公式重算（output/wf1002/audit_DPR/body_recalc.py）：
+  * 7 號：Body 0.80、comp −15/3、delay mix 0、reverb 0.35/0.78。壓縮補償公式（Compressor.h :51）＝5.000 dB；
+    Body 公式 |1＋a·4·(1.4·BP(f1,Q1.8)＋0.8·BP(f2,Q1.4))·LP(500,0.707)| 在 f1（C4，f2＝2f1，48 kHz，RBJ 0 dB 峰值帶通）＝+15.16 dB（R：公式 +15.16、實測 +15.12）。
+    逐級相加 −16.79＋15.12＋2.88＋0−0.88 = +0.33 ✓。
+  * 11 號：comp 沒寫 → 預設 −12/4（ParameterLayout.cpp :169-173）→ 補償 4.500 dB ✓；delay mix 0.20 → dry 0.8 → −1.938 dB ✓；
+    逐級 −10.13＋4.50−1.94＋9.04 = +1.47 ✓。
+  * 15 號：Body 0.85、comp 預設 → +4.50 ✓；逐級 −16.37＋4.97＋4.50＋9.55 = +2.65 ✓。
+  * §4 Body 表 10 個 amount 的 f1／f2 增益，自己重算全部相同（例 0.5：+11.85／+2.28；1.0：+16.83／+8.16）。
+  * §7 算術：Output 0.963／0.844／0.737（≤0 dBFS）、0.858／0.752／0.657（≤−1）；B1 拿掉補償後 −4.67／−3.03／−1.85：全部重算相符。
+  * 引擎常數 0.069（CimbalomEngine.h :878）、0.151／0.180（ChromaticEngine.h :695-698）與 HEAD 相符；compressorEnabled 只在 EffectsChain.h :22、:82。
+- 「RadiationModel 只在 CLI dumpModes 被呼叫」：git grep -n "RadiationModel" HEAD -- src tests
+  → src 內實際呼叫只在 ScoreRenderer.h :291、:292、:461、:529、:537-541，全部在 dumpModes()（:135 起、:576 結束，下一個函式 render() 在 :578）；
+  其他 src 命中都是註解或 RadiationModel.h 本身；dumpModes() 只被 src/cli/RenderApp.cpp :587（CLI）呼叫；capturePhysicsOnlyModes 只在 dumpModes 的 RAII 裡設。
+  tests/physics_models_repro.cpp 也直接呼叫 RadiationModel（單元測試，不在外掛發聲路徑）。結論成立。
+- R2／不替月月選：全文標「描述用、不是 GATE、不是新門檻」；§7 八案並列、每案寫會改哪些聲音與 CLI 8/8 影響，沒有選。
+R-b（D11／Q16 文獻與 F5 量法）
+- 親自 WebFetch 三條引文，逐字相符：
+  * L1 Wogram decay.html：「…the two chords C3 - C4 - G4 (3.8, 1.7, 0.7 s) and D3 - D4 - A4 (3.4, 3.3, 2.3 s).」「…T20-values as 3.5 and 0.7 s…」「…from the maximum level to -20 dB (T20).」Fig. 11 圖說含 "small upright piano"。
+  * L2 Weinreich motion.html：「…drops (in this case) at a rate of about 8 dB/sec」「…at less than one-quarter that rate.」圖說「(Eb3 = 311 Hz)」。
+  * L5 Cheng/Dixon/Mauch ICASSP 2015 PDF（sha256 fc7d2a28…＝R 存檔同一份）：PDF p.2「We use a 2s sound clip beginning at 0.2s after the onset…」；
+    p.3「For double decay, the slope of the line which covers the larger part of the time duration is recorded as the decay rate.」；資料來源 RWC Musical Instrument Sound Database。
+- 換算抽查：Wogram ×3：C3 3.8→11.4、C4 1.7→5.1、A4 2.3→6.9 ✓；斜率 33.0÷0.24＝138、63.4÷0.22＝288 ✓；候選 C4～C7 比 0.8 mm 短 22.6～35.5% ✓。
+- F5 現況：0.8 mm −63.86、1.0 mm −59.47（wf1002_R_b_f5_methods.txt :11、:22）；09-25 根因報告 0.8 mm −63.86（:21、:90）、1.0 mm −59.5（:30、:104）——引用正確。
+  tools/physics_verify.py :2719-2749 確為 measure_residual_energy()（Hann、±3% 帶），:2671-2677 是 F5 目的註解。
+- R2：沒有提任何新門檻數字（§5.4 第 3 點明寫「本卡不提數字」）；§5.4 誠實寫出「會判 FAIL 的集合變小，形式上就是放寬」與「修量法」兩種看法衝突、交月月裁。
+- 不替月月選：F5 改法只列選項與代價，沒選。
+[R note]
+- R-n1 R-b §6 對 C5 給了「建議甲」（報告自稱照卡片要求）。這是建議不是決定，跟裁決包體例一致；但 WF1002_README 的 Q16 寫「只研究」，月月看時要知道這一段是建議。
+- R-n2 R-a §6 的 git grep 程式碼塊最後一行「src/score/ScoreRenderer.h:537-541: (kMeasurementRadiusM / AzimuthDeg / ElevationDeg, JSON 欄位)」是摘要，不是原始輸出；
+  而且這個 grep 只搜 src，沒提 tests/ 也有呼叫（不影響結論）。
+- R-n3 R 第一輪曾在 output/wf1002/R 下建 JUCE junction（已在 setup.txt 誠實記錄、第二輪改到 repo 外）。
+
+======================================================================
+稽核暫存（gitignored，非證據）
+======================================================================
+<REPO>/output/wf1002/audit_DPR/：quotes_D.py、zipcheck.py、body_recalc.py、x2_verify_rerun.txt、x2_tmp/、rel_out/（空）、rel_rd/、
+hostprobe_rerun.txt、hp_out/、bin/（build\ 複本）、originals_check.txt、pytest_partial.txt、cheng2015.pdf、Presets_HEAD.h。
+
+======================================================================
+D 卡重審（2026-10-02，主 session 修 D-1、D-2 之後）
+======================================================================
+判定：D 卡仍 FAIL —— D-1、D-2 本身已修好，但這次新加的展開段有一句事實錯誤（D-3）。D 的 9 個檔仍不 add。
+
+[已核對通過]
+- 範圍：git diff --stat 8 檔（ENGINE_DOMAIN_CLAIMS 148→151 行插入，其餘 7 檔數字與初審相同）。
+  ENGINE_DOMAIN_CLAIMS 仍只有一個 hunk「@@ -37,0 +38,151 @@」＝只在檔尾追加，§1 沒動。
+  ROADMAP：初審 diff 與現在 diff 逐行比，只差 :474 那一列（＋index 行）；§6 :456-472 除 :463（f0 列，Q04 註記）外與 HEAD 相同；§7 仍在 :480；
+  換行仍是 LF（git ls-files --eol：i/lf w/lf，跟 HEAD 一樣）；行數 HEAD 510 → 516（＝檔尾 +6）。
+- D-1：:474 改為「五條 strict xfail：:195、:216、:238、:260、:298」——這 5 個行號正是 tests/test_measurement_selfcal.py 的 5 個 @pytest.mark.xfail(strict=True)。✓
+- D-2：§9 粗體句＝裁定表 Q08 原句「物理驗證涵蓋 CLI 渲染；外掛即時演奏共用衰減律，激發與效果鏈未逐項驗證。」並標「裁定表原句，與商品文案一致」；
+  與 LISTING_COPY_v1_1.md 的收窄句相同。振幅／macro／BodyResonance 移到下一段並寫明「依下方背景數字展開」。✓
+- §10 第 7 點：對 wf1002_C1_hostprobe.txt :315-345——給愛麗絲 搶 0、最多 12；月光舌鼓 搶 64（4 次按著）、無上限 pool 最多 20、第一次 17.920 s；
+  雙胞胎 vs VST3 max|diff| = 0；「被別顆放鍵一起制音」實測 11、報告 21。數字全部相符。✓
+
+[D-3 必修] §9 新加段第二句：「外掛在引擎之後還疊了 Body 共鳴層（…）、壓縮器固定自動補償（+4.5～+5.0 dB）、大空間殘響尾巴堆疊，這些都是 CLI 沒有的音量來源」。
+  - 殘響這項不對：CLI 也有同一個殘響。src/dsp/EffectsChain.h :3 include ../effects/SimpleReverb.h，:11 reverbEnabled = true（預設開，:12 size 0.5、:15 wet 0.25）；
+    R-a 報告 §7 B3 自己也寫「改共用的 SimpleReverb.h，CLI 82 份有 reverb 的樂譜會變」。CLI 物理驗證是 FX 全關，但不能說 CLI「沒有」殘響。
+  - 壓縮補償的「+4.5～+5.0 dB」只是 7／11／15 三個 preset 的值；R-a §3 寫 27 個工廠 preset 是 +2.0～+7.5 dB。放在一般敘述裡要註明是哪三個，或改成全範圍。
+  - Body 與壓縮器這兩項「CLI 沒有」是對的（CLI Body 預設 0、只有診斷旗標 --body-amount；CLI compressorEnabled=false 且全 src 沒有打開）。
+  建議改法：「…Body 共鳴層（CLI 預設 0）與壓縮器自動補償（CLI 預設關閉；工廠 preset +2.0～+7.5 dB，超標的 7／11／15 是 +4.5～+5.0 dB）是 CLI 渲染沒有的；
+  大空間殘響尾巴 CLI 也有（同一個 SimpleReverb，預設開），但物理驗證一律 FX 全關」。只改這一句，其他不用動。
+
+staged 不變（P 3 檔、R 9 檔、本檔重新 add）。
+
+======================================================================
+D 卡第三次審（D-3 修正後）＋追加裁決包 N1～N8 事實核對（2026-10-02）
+======================================================================
+判定：D 卡 PASS（9 檔 staged）。追加裁決包 reports/decision_packets/WF1002_addendum_decisions.zh-TW.md：有 2 條必修＋3 條小錯，本次不 add。
+
+[D-3 核對]
+- §9 第二段現為：Body 共鳴層（Body 0.8 在基頻 +15 dB；CLI 預設 0）與壓縮器自動補償（CLI 預設關閉；工廠 preset +2.0～+7.5 dB，7／11／15 號 +4.5～+5.0 dB）是 CLI 渲染沒有的；
+  大空間殘響尾巴 CLI 也有（同一個 SimpleReverb.h，預設開），但物理驗證一律 FX 全關。
+  對 R-a §3（+2.0～+7.5）、§2（7 號 makeup +5.0、11／15 號 +4.5）、EffectsChain.h :3/:11/:22 相符。✓
+- 全卡結構重跑：ENGINE_DOMAIN_CLAIMS 仍只有「@@ -37,0 +38,151 @@」（只在檔尾追加、§1 沒動）；ROADMAP diff 與第二次審逐字相同（只 :474 與 §6 新三列等原改動）；
+  json 除 _basis 外與 HEAD 相同：True；partial_verify AST 相同：True；physics.yml YAML 可解析、labels 正確；ENGINE_DOMAIN_CLAIMS 22 段引文仍 22/22 對得上 HEAD。
+- 說明：wf1002_D_changes.txt 是 D 卡初版的證據，內容停在修正前（例：四-5 diff 裡仍是「三條」）；三輪修正的核對以本檔為準。
+
+[追加裁決包 N1～N8 核對]
+對得上的：
+- N1：Body 0.8 +15 dB、預設 0.5 +12 dB（公式 +11.85）；補償 27 個全有、+2.0～+7.5、7／11／15 為 +4.5～+5.0；殘響尾巴 RMS 比輸入 +5.8～+10.8（包內寫 6～11）；
+  B1 精確變小 2.0～7.5 dB、最大聲剩 −1.85；B4 0.737＝−2.65 dB；「B1 後 11 號 Body 0.5 約 +3.8」＝R-a +8.30−4.50；B6 不是原因。全部對 R-a 與本稽核重算相符。
+- N2：196→14、798→0、89.9 s→0、CPU 2.683～2.712% → 2.205～2.229%、CLI 8/8、94 次 −10 dB 內、S4 +1.5 dB 未證實、patch 只改 src/dsp/Envelope.h noteOff()；
+  「只有 FM＋同音反覆／按著重打／放踏板會變」對 C2 報告 :17-25、:185-191（Cimbalom／Piano／Chromatic 只用 Envelope::ExpDecay）相符。
+- N3：1.0 mm −59.47 FAIL；注入 −60→−60.43、−70→−70.35（M2a，0.8 mm）；M0 1.0 mm 把 −70 量成 −59.10；R2 兩種看法並陳。相符。
+- N4：高音 T60 短 2～9 倍、D11 選哪邊都成立：對 R-b §2、§6 相符。
+- N6：Inno Setup 7.1.0 已下載未安裝、官方頁 'Using Inno Setup commercially? Please purchase a license.'：對 wf0930_T_downloads.txt :13-19、:57 相符。
+- N7：.iss 沒設 SetupArchitecture → 預設建 32-bit 安裝程式：對 wf0930_T_downloads.txt :35-37 相符（tools/installer/TsukiSynth.iss 只有 ArchitecturesAllowed／InstallIn64BitMode=x64compatible）。
+- N8：列的 6 項（HoverMagnifier、TsukiLookAndFeel、UiLocale、ScoreConsole、src/analyzer/、src/dsp/OutputPeakMeter.h）CLI（src/cli/RenderApp.cpp）都沒用到。相符。
+- 價格建議 ¥900／¥500 對 LISTING_COPY_v1_1.md :16、:122 相符。
+
+[追加包 必修 A-1] 「不用字母」表 Q24a 那列寫「BOOTH 可以直接用 X1 的草稿；其他平台等規格」，附錄上架清單第 5 步也叫月月上傳 Charta 色系草稿。
+  (1) 月月 10-02 已裁 Q24a=C「等平台規格」，PRODUCT_SHEET_v1_1.md :136、:154 也寫「草稿先不用」；(2) 裁決包 Q24a 背景明寫「各平台的圖片規格沒查證」，
+  本輪也沒有任何證據查過 BOOTH 的圖片規格。這句等於沒查證就推翻已裁的題。要嘛刪掉、改回「等平台規格」，要嘛先查 BOOTH 規格附出處，再寫成一題讓月月重裁。
+[追加包 必修 A-2] N3 建議理由寫 M2「不依賴任何模型輸出」。不對：M2 跟現行 M0 一樣要用 --dump-modes 的預測頻率畫 ±3% 帶（R-b §5.1 表「依賴什麼：同 M0」，§5.4 原話是「不多依賴任何模型輸出」）。
+  應改成「不比現行多依賴模型輸出」。這是建議的主要理由之一，所以列必修。
+[追加包 小錯]
+- A-3 N3「底噪降到 −83～−100 dB」：R-b §5.2 鋼琴 0.8／1.0 mm 的 M2 是 −82.39～−99.65，下限應寫 −82。
+- A-4 N5 英文句少了尾巴：程式實際是 " -- this preset's IR file could not be loaded on this computer (reason: …)."（src/PluginProcessor.cpp :929-930），包內沒寫 (reason: …)。
+- A-5 附錄授權預設寫「也是業界常見寫法」，沒有出處；準據法／法院的預設也沒標「非法律意見」。建議刪掉「業界常見」或附出處，並加一句非法律意見。
+
+staged：D 9 檔＋本檔重新 add；P 3 檔、R 9 檔不變。追加裁決包不 add（等 A-1、A-2 修好再審）。
+
+======================================================================
+追加裁決包重審（A-1～A-5 修正後，2026-10-02）
+======================================================================
+判定：reports/decision_packets/WF1002_addendum_decisions.zh-TW.md PASS（staged）。
+- A-1：:151 Q24a 列改為「你已裁 C（等平台規格）…AI 可以先查 BOOTH 規格附出處，再請你決定草稿能不能用」；上架清單第 5 步改為先查 BOOTH 規格（附出處）、符合再請月月點頭，
+  第 6 步只寫「商品圖」。全檔 grep「直接」只剩 N6「A 直接買」（無關）。與 Q24a=C、PRODUCT_SHEET「草稿先不用」一致。✓
+- A-2：:79 改為「不比現行量法多依賴模型輸出（兩者都只用預測頻率畫 ±3% 帶）」，對 R-b §5.1／§5.4 相符。✓
+- A-3：:68「約 −82～−100 dB」，對 R-b §5.2（−82.39～−99.65）相符。✓
+- A-4：:97 英文補上「(reason: …)」，對 src/PluginProcessor.cpp :929-930 相符。✓
+- A-5：:168 標「AI 的看法，沒有查證業界慣例」，「業界常見」已刪；:169 標「AI 建議，非法律意見」。✓
+- N1～N8 已核對的數字仍在原處（+2.0～+7.5、−1.85、+3.8、196、798、89.9、2.68～2.71、−59.47、−60.4、−59.1、2～9 倍、SetupArchitecture、OutputPeakMeter 均可 grep 到）。
+staged：追加裁決包＋本檔重新 add；其餘 21 檔不變。

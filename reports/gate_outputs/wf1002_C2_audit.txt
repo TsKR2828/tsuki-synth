@@ -1,0 +1,71 @@
+# WF1002-C2 audit (R10 before/after card, Q09b=A; NOT landed) -- 2026-10-02
+# Auditor: independent sub-agent. Descriptive evidence only; no thresholds invented.
+# <REPO> = E:/Tsuki-project/tsuki-synth ; <C2> = E:/Tsuki-project/_scratch/wf1002_C2
+# Auditor temp: <REPO>/output/wf1002/audit_C2/{base,fix} , E:/Tsuki-project/_scratch/audit_c2_render_{base,fix} , E:/Tsuki-project/_scratch/audit_c2_{base,fix}.log
+# Did not touch <REPO>/build\ ; did not delete anything under <C2>.
+
+VERDICT: PASS (with 3 non-blocking notes, see end)
+
+## (1) patch
+file: reports/wf1002_fm_envelope_fix.patch (identical to <C2>/wf1002_fm_envelope_fix.patch, `diff` empty)
+touches only: src/dsp/Envelope.h, hunk @@ -30,9 +30,22 @@ inside Envelope::noteOff(); -1 / +14 lines (7 comment lines) = net +13 (matches report §2)
+logic: compute newReleaseSamples as before; if state == Release && newReleaseSamples >= releaseSamplesRemaining -> return
+       (running ramp kept); otherwise releaseSamplesRemaining = new, releaseRate = currentLevel / new, state = Release.
+       First release (Attack/Decay/Sustain -> Release) path unchanged; shorter release (FMPianoVoice::stopNote
+       allowTailOff=false -> setRelease(0.005f); noteOff()) still takes over -> 5 ms hard cut preserved. Matches report §2.
+scope: only FMPianoEngine.h uses the ADSR Envelope (ampEnv, stopNote L133-146, standalone noteOff L165);
+       Chromatic/Cimbalom use Envelope::ExpDecay only (grep src). Matches report §4.
+`git apply --check -v reports/wf1002_fm_envelope_fix.patch` on <REPO> (check only, NOT applied):
+  Checking patch src/dsp/Envelope.h...   rc=0
+sha256 <REPO>/src/dsp/Envelope.h       b8633eafd703cec433208aab6188364333f8728947819ad148dc039ed2eec5b3 (== <C2>/tree)
+sha256 <C2>/tree-fix/src/dsp/Envelope.h f08c512e205bbfd6c59d1a531332e833b6ed79a2a772a6d5bc06fd7b20c51cf9
+`diff -rq --exclude=JUCE <C2>/tree <C2>/tree-fix` -> only src/dsp/Envelope.h differs (rc=1, one line)
+<C2>/tree*/libs: no junction left (dir /AL shows none) -- consistent with "junction removed by main session"
+
+## (2) CLI bit identity, re-run by auditor with the card's own executables
+exe sha256 (unchanged since the card):
+  15acd76fc7209fad27a5c1a8461e20ffa0a23b872dc6f1b692fd9d08e0c97cd5  <C2>/build-base/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+  65215d6af9bd10009a7f75e95736ed80accaa5674a2fd6938b14e127c85bcf96  <C2>/build-fix/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+command (from <REPO>, per x in base fix, both exit=0):
+  python reports/gate_outputs/wf0907_method/render_wf_scores.py --label audit_c2_<x> \
+    --workdir E:/Tsuki-project/_scratch/audit_c2_render_<x> --cli <C2>/build-<x>/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe \
+    --outdir output/wf1002/audit_C2/<x>
+vs reports/gate_outputs/b6_method/sha256_before_post_a14.txt (joined on path, hash equal):
+  base: 8 / 8 identical
+  fix : 8 / 8 identical
+  base sha list == fix sha list (diff empty)
+  49514b007e3e01fc...  moonlight_sonata_i_yangqin.wav          280cbdac3c117c14...  moonlight_sonata_i_yangqin_tongue_mix.wav
+  1233b53f1e8660bc...  physical_piano.wav                      be634798c4a0bf71...  restraint_metal_click_001.wav
+  f539aefa91919cbf...  moonlight_sonata_i_tongue_drum.wav      31b539c6ac08d942...  water_gong_free.wav
+  74122637a0c71278...  Original_AI_Radiance_Movement1.wav      b0877774da9e5fc5...  fur_elise_opening.wav
+
+## (3) key numbers vs raw outputs in <C2>/runs
+196 -> 14 : <C2>/runs/mirror_base_1024/moonlight_complete_A_summary.txt "peak_active 196 at_sample 31761600 t_s 661.7",
+            bins [<=-138.5]=184 ; mirror_fix_1024 "peak_active 14 at_sample 38226240 t_s 796.38", no <=-138.5 bin.
+            Also zombie_recount §A (V1 fm_zombie_check as shipped) 196 / 184 / released 193; §B model 196 -> 14. Consistent.
+798 -> 0  : mirror_base_16 "steals 798 victim_key_down 2 victim_in_release 798"; steals.csv has 798 rows;
+            mirror_fix_16 "steals 0". Victim-level bins [94,37,182,485] sum 798; report's "94 次 > -10 dB" matches.
+            (victim_key_down 2 with all 798 in Release is consistent: a held key re-struck gets a tail-off while key still down.)
+CPU       : <C2>/runs/timing/*_summary.txt process_s (swapped runs have instance 0 = fix, confirmed in moon_swapped_1_log.txt):
+            moon_1 23.5432/19.3597  moon_2 23.4648/19.2803  moon_3 23.5639/19.3406
+            swapped_1 23.7212/19.4976  swapped_2 23.5126/19.2911  swapped_3 23.6164/19.4097   (base/fix, s, of 874.581 s)
+            -> base 2.683..2.712 %, fix 2.205..2.229 %  == plugin_before_after.txt CPU block and report §3.3(c) table.
+method (method_sources full text read): vst3pair loads both built VST3 bundles via VST3PluginFormat, same MIDI lock-step,
+  512/48k, Engine=FM Piano, Reverb Mix=0, per-pset block-start automation with read-back logged; timing = steady_clock
+  around each processBlock. mirror = juce::Synthesiser of FMPianoVoice from the same tree's headers, setNoiseIdentity(i),
+  one renderNextBlock per block (same as PluginProcessor), steals counted in a findFreeVoice override (active voice
+  returned = steal), envelope read via test-only `#define private public` (harness only, disclosed in report §5.4).
+  CPU evidence parser swaps a/b for "swapped" runs correctly. Logic sound for descriptive use.
+
+## (4) report honesty
+- Does not decide landing: header "要不要落地，由月月看完這份報告再決定"; §5 "只列出來，不替月月決定"; open_items 1.
+- S4 +1.5 dB unexplained: §0.6, §5 risk 2, open_items 2 (hypothesis marked 沒有證實); dry mirror also +1.48 dB.
+- Incident + full redo: §1 (rm -rf output/wf1002 ~00:28, nothing from first attempt used, JUCE 4378 files intact); open_items 6.
+- Not run on fix: ctest / HostProbe / pluginval disclosed (§5, open_items 3).
+
+## non-blocking notes (wording only; numbers in tables are correct)
+N1 report §0 item 5 says 修前 "2.69～2.71%"; raw min is 2.683 % (moon_2). §3.3(c) table correctly says 2.683～2.712%.
+N2 plugin_before_after.txt line 25 (the per-case vst3pair run of moonlight) shows process_s base 23.7421 fix 22.7405
+   (2.71 % -> 2.60 %, ~4 %), unlike the 6 dedicated timing runs (~18 %). Report quotes only the 6 interleaved runs and
+   does not mention this outlier; base matches, only the fix number of that one run is high (likely machine load). Not explained.
+N3 harness source header comment still says it lives in output/wf1002/C2/tree* (pre-incident location); cosmetic.

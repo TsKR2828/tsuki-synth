@@ -1,0 +1,297 @@
+WF1002-R (research lane, read-only) -- 2026-10-02, repo HEAD b41298c.
+Aliases: <repo> = local repo root; <scratch> = this session's scratch directory (outside the repo).
+All numbers below are DESCRIPTIVE ONLY, NOT a GATE, NOT new thresholds (R2).
+
+== $ python scripts/rb_f5_methods.py bin/TsukiSynthCLI.exe f5_methods (exit 0) ==
+F5 method study (descriptive only, NOT GATE). CLI = <repo>/output/wf1002/R/bin/TsukiSynthCLI.exe (copy of build\)
+segment [30 ms, 1.80 s], bands +/-3%, existing limit (unchanged) -60.0 dB
+
+[1] clean renders (the 5 F5 engines at the --full probe; piano also swept over probe diameter_mm)
+piano          _default  T60(str0,mode0)= 4.144s strings=3 modes=120 g=0.05864 corr(render,theory)=0.9999997  [M1 residual share inside predicted bands: M1a 100.0%, M1b 100.0%]
+    M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -53.67  M1b_minus_LSfit= -59.02  M8_excess_over_theory_leak= -98.04
+    dump JSON precision sample: "freq": 260.871, "amp": 0.44861, "decay": 4.1443e+00, "body_
+piano          _d70      T60(str0,mode0)= 5.050s strings=3 modes=120 g=0.05864 corr(render,theory)=0.9999991  [M1 residual share inside predicted bands: M1a 100.0%, M1b 100.0%]
+    M0_current_hann= -65.82  M2a_blackmanharris= -89.42  M2b_kaiser20=-100.87  M2c_dpss_nw4= -89.17  M3_dedecay_f1= -76.41  M1a_minus_theory= -50.08  M1b_minus_LSfit= -56.35  M8_excess_over_theory_leak=-100.35
+piano          _d80      T60(str0,mode0)= 4.144s strings=3 modes=120 g=0.05864 corr(render,theory)=0.9999997  [M1 residual share inside predicted bands: M1a 100.0%, M1b 100.0%]
+    M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -53.67  M1b_minus_LSfit= -59.02  M8_excess_over_theory_leak= -98.04
+piano          _d90      T60(str0,mode0)= 3.433s strings=3 modes=120 g=0.05864 corr(render,theory)=0.9999998  [M1 residual share inside predicted bands: M1a 100.0%, M1b 100.0%]
+    M0_current_hann= -61.72  M2a_blackmanharris= -85.20  M2b_kaiser20= -98.42  M2c_dpss_nw4= -84.90  M3_dedecay_f1= -76.40  M1a_minus_theory= -54.79  M1b_minus_LSfit= -61.07  M8_excess_over_theory_leak= -96.27
+piano          _d95      T60(str0,mode0)= 3.137s strings=3 modes=120 g=0.05864 corr(render,theory)=0.9999999  [M1 residual share inside predicted bands: M1a 100.0%, M1b 100.0%]
+    M0_current_hann= -60.61  M2a_blackmanharris= -83.97  M2b_kaiser20= -96.47  M2c_dpss_nw4= -83.65  M3_dedecay_f1= -76.39  M1a_minus_theory= -55.65  M1b_minus_LSfit= -61.11  M8_excess_over_theory_leak= -95.02
+piano          _d100     T60(str0,mode0)= 2.875s strings=3 modes=120 g=0.05865 corr(render,theory)=0.9999999  [M1 residual share inside predicted bands: M1a 100.0%, M1b 100.0%]
+    M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.37  M1a_minus_theory= -54.93  M1b_minus_LSfit= -60.01  M8_excess_over_theory_leak= -95.33
+piano          _d110     T60(str0,mode0)= 2.434s strings=3 modes=120 g=0.05865 corr(render,theory)=0.9999998  [M1 residual share inside predicted bands: M1a 100.0%, M1b 100.0%]
+    M0_current_hann= -57.13  M2a_blackmanharris= -80.08  M2b_kaiser20= -92.81  M2c_dpss_nw4= -79.70  M3_dedecay_f1= -76.16  M1a_minus_theory= -52.87  M1b_minus_LSfit= -57.88  M8_excess_over_theory_leak= -95.62
+piano          _d120     T60(str0,mode0)= 2.083s strings=3 modes=120 g=0.05864 corr(render,theory)=0.9999999  [M1 residual share inside predicted bands: M1a 100.0%, M1b 99.9%]
+    M0_current_hann= -54.75  M2a_blackmanharris= -77.26  M2b_kaiser20= -89.69  M2c_dpss_nw4= -76.82  M3_dedecay_f1= -73.02  M1a_minus_theory= -56.68  M1b_minus_LSfit= -64.14  M8_excess_over_theory_leak= -89.86
+cimbalom       _default  T60(str0,mode0)= 4.144s strings=3 modes=120 g=0.05865 corr(render,theory)=0.9999996  [M1 residual share inside predicted bands: M1a 100.0%, M1b 100.0%]
+    M0_current_hann= -67.28  M2a_blackmanharris= -88.37  M2b_kaiser20= -99.96  M2c_dpss_nw4= -89.25  M3_dedecay_f1= -78.63  M1a_minus_theory= -53.64  M1b_minus_LSfit= -58.07  M8_excess_over_theory_leak=-100.86
+tongue_drum    _default  T60(str0,mode0)=30.135s strings=1 modes=5 g=0.16664 corr(render,theory)=0.9999997  [M1 residual share inside predicted bands: M1a 100.0%, M1b 99.9%]
+    M0_current_hann= -75.92  M2a_blackmanharris= -96.29  M2b_kaiser20= -99.07  M2c_dpss_nw4= -96.44  M3_dedecay_f1= -76.20  M1a_minus_theory= -61.36  M1b_minus_LSfit= -65.02  M8_excess_over_theory_leak= -96.06
+water_gong     _default  T60(str0,mode0)= 7.486s strings=1 modes=12 g=0.12831 corr(render,theory)=0.9999996  [M1 residual share inside predicted bands: M1a 99.8%, M1b 99.6%]
+    M0_current_hann= -72.66  M2a_blackmanharris= -84.53  M2b_kaiser20= -83.80  M2c_dpss_nw4= -84.48  M3_dedecay_f1= -75.98  M1a_minus_theory= -58.33  M1b_minus_LSfit= -62.17  M8_excess_over_theory_leak= -86.32
+water_gong_free_default  T60(str0,mode0)= 7.486s strings=1 modes=7 g=0.12836 corr(render,theory)=0.9999997  [M1 residual share inside predicted bands: M1a 99.7%, M1b 99.5%]
+    M0_current_hann= -77.85  M2a_blackmanharris= -84.59  M2b_kaiser20= -84.28  M2c_dpss_nw4= -84.63  M3_dedecay_f1= -80.71  M1a_minus_theory= -60.27  M1b_minus_LSfit= -63.21  M8_excess_over_theory_leak= -86.25
+
+[2] counterexample injections on piano probes (0.8 mm = currently PASS, 1.0 mm = currently FAIL).
+    L = power of the injected component alone (F5 Hann window, F5 segment) re total Hann power of the clean probe.
+piano_d80 + stationary_3000Hz            L=-40.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -39.82  M1b_minus_LSfit= -39.95  M8_excess_over_theory_leak= -98.04
+piano_d80 + stationary_3000Hz            L=-50.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -48.45  M1b_minus_LSfit= -49.49  M8_excess_over_theory_leak= -98.04
+piano_d80 + stationary_3000Hz            L=-55.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -51.27  M1b_minus_LSfit= -53.55  M8_excess_over_theory_leak= -98.04
+piano_d80 + stationary_3000Hz            L=-60.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -52.76  M1b_minus_LSfit= -56.47  M8_excess_over_theory_leak= -98.04
+piano_d80 + stationary_3000Hz            L=-65.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -53.36  M1b_minus_LSfit= -58.04  M8_excess_over_theory_leak= -98.04
+piano_d80 + stationary_3000Hz            L=-70.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -53.57  M1b_minus_LSfit= -58.68  M8_excess_over_theory_leak= -98.04
+piano_d80 + decaying_1.5f1_outband       L=-40.0 dB : M0_current_hann= -39.98  M2a_blackmanharris= -40.44  M2b_kaiser20= -39.92  M2c_dpss_nw4= -40.43  M3_dedecay_f1= -42.59  M1a_minus_theory= -39.82  M1b_minus_LSfit= -39.95  M8_excess_over_theory_leak= -40.00
+piano_d80 + decaying_1.5f1_outband       L=-50.0 dB : M0_current_hann= -49.83  M2a_blackmanharris= -50.44  M2b_kaiser20= -49.92  M2c_dpss_nw4= -50.43  M3_dedecay_f1= -52.57  M1a_minus_theory= -48.45  M1b_minus_LSfit= -49.50  M8_excess_over_theory_leak= -50.00
+piano_d80 + decaying_1.5f1_outband       L=-55.0 dB : M0_current_hann= -54.47  M2a_blackmanharris= -55.44  M2b_kaiser20= -54.92  M2c_dpss_nw4= -55.43  M3_dedecay_f1= -57.54  M1a_minus_theory= -51.27  M1b_minus_LSfit= -53.57  M8_excess_over_theory_leak= -55.00
+piano_d80 + decaying_1.5f1_outband       L=-60.0 dB : M0_current_hann= -58.50  M2a_blackmanharris= -60.43  M2b_kaiser20= -59.92  M2c_dpss_nw4= -60.42  M3_dedecay_f1= -62.41  M1a_minus_theory= -52.76  M1b_minus_LSfit= -56.50  M8_excess_over_theory_leak= -60.00
+piano_d80 + decaying_1.5f1_outband       L=-65.0 dB : M0_current_hann= -61.38  M2a_blackmanharris= -65.41  M2b_kaiser20= -64.91  M2c_dpss_nw4= -65.40  M3_dedecay_f1= -67.06  M1a_minus_theory= -53.36  M1b_minus_LSfit= -58.06  M8_excess_over_theory_leak= -65.00
+piano_d80 + decaying_1.5f1_outband       L=-70.0 dB : M0_current_hann= -62.91  M2a_blackmanharris= -70.35  M2b_kaiser20= -69.91  M2c_dpss_nw4= -70.34  M3_dedecay_f1= -71.08  M1a_minus_theory= -53.57  M1b_minus_LSfit= -58.70  M8_excess_over_theory_leak= -69.99
+piano_d80 + stationary_inband_1.015f1    L=-40.0 dB : M0_current_hann= -63.84  M2a_blackmanharris= -87.42  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.15  M3_dedecay_f1= -76.33  M1a_minus_theory= -39.82  M1b_minus_LSfit= -39.90  M8_excess_over_theory_leak= -86.16
+piano_d80 + stationary_inband_1.015f1    L=-50.0 dB : M0_current_hann= -63.85  M2a_blackmanharris= -87.42  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.15  M3_dedecay_f1= -76.39  M1a_minus_theory= -48.45  M1b_minus_LSfit= -49.42  M8_excess_over_theory_leak= -90.60
+piano_d80 + stationary_inband_1.015f1    L=-55.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.40  M1a_minus_theory= -51.27  M1b_minus_LSfit= -53.47  M8_excess_over_theory_leak= -92.53
+piano_d80 + stationary_inband_1.015f1    L=-60.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.40  M1a_minus_theory= -52.76  M1b_minus_LSfit= -56.39  M8_excess_over_theory_leak= -94.17
+piano_d80 + stationary_inband_1.015f1    L=-65.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -53.36  M1b_minus_LSfit= -57.98  M8_excess_over_theory_leak= -95.47
+piano_d80 + stationary_inband_1.015f1    L=-70.0 dB : M0_current_hann= -63.86  M2a_blackmanharris= -87.43  M2b_kaiser20= -99.65  M2c_dpss_nw4= -87.16  M3_dedecay_f1= -76.41  M1a_minus_theory= -53.57  M1b_minus_LSfit= -58.65  M8_excess_over_theory_leak= -96.41
+piano_d100 + stationary_3000Hz            L=-40.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.37  M1a_minus_theory= -39.86  M1b_minus_LSfit= -39.96  M8_excess_over_theory_leak= -95.33
+piano_d100 + stationary_3000Hz            L=-50.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.37  M1a_minus_theory= -48.79  M1b_minus_LSfit= -49.59  M8_excess_over_theory_leak= -95.33
+piano_d100 + stationary_3000Hz            L=-55.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.37  M1a_minus_theory= -51.96  M1b_minus_LSfit= -53.81  M8_excess_over_theory_leak= -95.33
+piano_d100 + stationary_3000Hz            L=-60.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.37  M1a_minus_theory= -53.75  M1b_minus_LSfit= -56.99  M8_excess_over_theory_leak= -95.33
+piano_d100 + stationary_3000Hz            L=-65.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.37  M1a_minus_theory= -54.52  M1b_minus_LSfit= -58.81  M8_excess_over_theory_leak= -95.33
+piano_d100 + stationary_3000Hz            L=-70.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.37  M1a_minus_theory= -54.80  M1b_minus_LSfit= -59.59  M8_excess_over_theory_leak= -95.33
+piano_d100 + decaying_1.5f1_outband       L=-40.0 dB : M0_current_hann= -39.95  M2a_blackmanharris= -40.10  M2b_kaiser20= -39.42  M2c_dpss_nw4= -40.09  M3_dedecay_f1= -41.65  M1a_minus_theory= -39.86  M1b_minus_LSfit= -39.96  M8_excess_over_theory_leak= -40.00
+piano_d100 + decaying_1.5f1_outband       L=-50.0 dB : M0_current_hann= -49.54  M2a_blackmanharris= -50.10  M2b_kaiser20= -49.42  M2c_dpss_nw4= -50.08  M3_dedecay_f1= -51.63  M1a_minus_theory= -48.79  M1b_minus_LSfit= -49.60  M8_excess_over_theory_leak= -50.00
+piano_d100 + decaying_1.5f1_outband       L=-55.0 dB : M0_current_hann= -53.67  M2a_blackmanharris= -55.10  M2b_kaiser20= -54.42  M2c_dpss_nw4= -55.08  M3_dedecay_f1= -56.60  M1a_minus_theory= -51.96  M1b_minus_LSfit= -53.83  M8_excess_over_theory_leak= -55.00
+piano_d100 + decaying_1.5f1_outband       L=-60.0 dB : M0_current_hann= -56.72  M2a_blackmanharris= -60.08  M2b_kaiser20= -59.42  M2c_dpss_nw4= -60.06  M3_dedecay_f1= -61.51  M1a_minus_theory= -53.75  M1b_minus_LSfit= -57.02  M8_excess_over_theory_leak= -60.00
+piano_d100 + decaying_1.5f1_outband       L=-65.0 dB : M0_current_hann= -58.40  M2a_blackmanharris= -65.03  M2b_kaiser20= -64.42  M2c_dpss_nw4= -65.01  M3_dedecay_f1= -66.21  M1a_minus_theory= -54.52  M1b_minus_LSfit= -58.83  M8_excess_over_theory_leak= -65.00
+piano_d100 + decaying_1.5f1_outband       L=-70.0 dB : M0_current_hann= -59.10  M2a_blackmanharris= -69.87  M2b_kaiser20= -69.41  M2c_dpss_nw4= -69.84  M3_dedecay_f1= -70.39  M1a_minus_theory= -54.80  M1b_minus_LSfit= -59.61  M8_excess_over_theory_leak= -69.99
+piano_d100 + stationary_inband_1.015f1    L=-40.0 dB : M0_current_hann= -59.46  M2a_blackmanharris= -82.72  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.17  M1a_minus_theory= -39.86  M1b_minus_LSfit= -39.90  M8_excess_over_theory_leak= -83.89
+piano_d100 + stationary_inband_1.015f1    L=-50.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.72  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.33  M1a_minus_theory= -48.79  M1b_minus_LSfit= -49.50  M8_excess_over_theory_leak= -88.27
+piano_d100 + stationary_inband_1.015f1    L=-55.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.35  M1a_minus_theory= -51.96  M1b_minus_LSfit= -53.71  M8_excess_over_theory_leak= -90.15
+piano_d100 + stationary_inband_1.015f1    L=-60.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.36  M1a_minus_theory= -53.76  M1b_minus_LSfit= -56.89  M8_excess_over_theory_leak= -91.73
+piano_d100 + stationary_inband_1.015f1    L=-65.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.37  M1a_minus_theory= -54.52  M1b_minus_LSfit= -58.73  M8_excess_over_theory_leak= -92.96
+piano_d100 + stationary_inband_1.015f1    L=-70.0 dB : M0_current_hann= -59.47  M2a_blackmanharris= -82.73  M2b_kaiser20= -95.52  M2c_dpss_nw4= -82.39  M3_dedecay_f1= -76.37  M1a_minus_theory= -54.80  M1b_minus_LSfit= -59.54  M8_excess_over_theory_leak= -93.84
+
+== $ python scripts/rb_m1_precision_check.py (exit 0) ==
+trial 0: theory(freq) - theory(freq + U(+-0.0005 Hz)) residual = -57.60 dB re total (Hann, F5 segment)
+trial 1: theory(freq) - theory(freq + U(+-0.0005 Hz)) residual = -57.94 dB re total (Hann, F5 segment)
+trial 2: theory(freq) - theory(freq + U(+-0.0005 Hz)) residual = -55.11 dB re total (Hann, F5 segment)
+
+== script sources ==
+"""WF1002-R R-b(2): F5 measurement-method study (READ-ONLY research; nothing in tools/ is changed).
+
+Imports tools/physics_verify.py as a library and calls its OWN probe builder, --dump-modes reader,
+theory synthesiser and measure_residual_energy() (= M0, the current F5).  Candidate methods are
+implemented HERE only, for description.  All numbers are descriptive, NOT GATE, NOT new thresholds.
+
+Usage (from output/wf1002/R): python scripts/rb_f5_methods.py bin/TsukiSynthCLI.exe f5_methods
+"""
+import sys, math, json, subprocess
+from pathlib import Path
+import numpy as np
+from scipy.signal import windows
+
+REPO = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(REPO / "tools"))
+import physics_verify as pv  # noqa: E402
+
+CLI = Path(sys.argv[1]).resolve()
+OUT = Path(sys.argv[2]).resolve(); OUT.mkdir(parents=True, exist_ok=True)
+SR = 48000
+NOTEOFF = 2.0 * pv.T60_NOTEOFF_RATIO           # = what report_residual_energy() uses
+HW = pv.RESIDUAL_BAND_HALF_WIDTH
+I0 = int(pv.EXCITER_NOISE_SKIP_S * SR)
+
+
+def band_mask(freqs, mode_freqs, limit):
+    m = np.zeros(len(freqs), dtype=bool)
+    for f in mode_freqs:
+        if 0.0 < f <= limit * (1.0 + HW):
+            m |= (freqs >= f * (1.0 - HW)) & (freqs <= f * (1.0 + HW))
+    return m
+
+
+def spec_power(seg, win):
+    seg = seg * win
+    nfft = 1 << int(math.ceil(math.log2(len(seg))))
+    p = np.abs(np.fft.rfft(seg, nfft)) ** 2
+    binhz = SR / nfft
+    limit = pv.analysis_frequency_limit(SR)
+    kmax = min(len(p) - 1, int(limit / binhz))
+    return p[1:kmax + 1], np.arange(1, kmax + 1) * binhz, limit
+
+
+def seg_of(x):
+    i1 = min(len(x), int(NOTEOFF * SR)); return np.asarray(x[I0:i1], float)
+
+
+def resid_db_window(x, mode_freqs, winname):
+    seg = seg_of(x); n = len(seg)
+    win = {"blackmanharris": windows.blackmanharris(n),
+           "kaiser20": windows.kaiser(n, 20.0),
+           "dpss4": windows.dpss(n, 4.0)}[winname]
+    p, f, lim = spec_power(seg, win)
+    m = band_mask(f, mode_freqs, lim)
+    return 10 * math.log10(max(p[~m].sum(), 1e-300) / p.sum())
+
+
+def resid_db_dedecay(x, mode_freqs, t60_ref):
+    """M3: undo the predicted decay of the reference mode (string 0, mode 0) before Hann+FFT."""
+    seg = seg_of(x)
+    t = (np.arange(len(seg)) + I0) / SR
+    seg = seg * np.exp(pv.MODAL_DECAY_LN1000 * t / t60_ref)
+    p, f, lim = spec_power(seg, np.hanning(len(seg)))
+    m = band_mask(f, mode_freqs, lim)
+    return 10 * math.log10(max(p[~m].sum(), 1e-300) / p.sum())
+
+
+def td_residual(x, model, mode_freqs):
+    """M1: energy of (x - model) re energy of x, F5's Hann window / band limit, NO band exclusion.
+    Also returns the share of that residual that lies inside the predicted +/-3% bands."""
+    seg = seg_of(x); mod = seg_of(model)
+    win = np.hanning(len(seg))
+    p_tot, f, lim = spec_power(seg, win)
+    p_res, _, _ = spec_power(seg - mod, win)
+    m = band_mask(f, mode_freqs, lim)
+    return 10 * math.log10(max(p_res.sum(), 1e-300) / p_tot.sum()), p_res[m].sum() / max(p_res.sum(), 1e-300)
+
+
+def ls_fit_model(x, strings):
+    """M1b: least-squares complex amplitude (sin+cos) per predicted mode, using ONLY the predicted
+    frequency and T60 from --dump-modes (amplitudes/phases fitted on the segment)."""
+    i1 = min(len(x), int(NOTEOFF * SR))
+    t = np.arange(len(x)) / SR
+    cols = []
+    lim = pv.analysis_frequency_limit(SR)
+    for voice in strings:
+        for m in voice:
+            if not (0 < m["freq"] <= lim):
+                continue
+            env = np.exp(-pv.MODAL_DECAY_LN1000 * t / max(m["decay"], 1e-9))
+            cols.append(env * np.sin(2 * np.pi * m["freq"] * t))
+            cols.append(env * np.cos(2 * np.pi * m["freq"] * t))
+    A = np.stack(cols, axis=1)
+    coef, *_ = np.linalg.lstsq(A[I0:i1], x[I0:i1], rcond=None)
+    return A @ coef
+
+
+def excess_db(x, theory_scaled, mode_freqs):
+    """M8: out-of-band power of x MINUS out-of-band power of the scaled theory synthesis
+    (the model's own leakage), re total power of x (Hann, same bands)."""
+    seg = seg_of(x); th = seg_of(theory_scaled)
+    win = np.hanning(len(seg))
+    p, f, lim = spec_power(seg, win); pt, _, _ = spec_power(th, win)
+    m = band_mask(f, mode_freqs, lim)
+    ex = p[~m].sum() - pt[~m].sum()
+    return (10 * math.log10(ex / p.sum()) if ex > 0 else float("-inf"))
+
+
+def probe(eng, override, tag):
+    wav, sf = pv.render_probe(CLI, eng, 60, OUT, params_override=override, tag=tag)
+    sr, x = pv.read_wav_mono(wav)
+    assert sr == SR
+    ev = pv.dump_modes_event(CLI, sf)
+    strings = ev.get("strings") or [ev["partials"]]
+    mode_freqs = sorted({float(m["freq"]) for v in strings for m in v})
+    theory = pv.synth_theory_signal(strings, SR, len(x) / SR)[:len(x)]
+    i1 = int(NOTEOFF * SR)
+    g = float(np.dot(x[I0:i1], theory[I0:i1]) / np.dot(theory[I0:i1], theory[I0:i1]))
+    raw = subprocess.run([str(CLI), "--dump-modes", str(sf)], capture_output=True, text=True).stdout
+    return x, strings, mode_freqs, theory, g, wav, raw
+
+
+def all_methods(x, strings, mode_freqs, theory, g):
+    t60_ref = strings[0][0]["decay"]
+    r = {}
+    r["M0_current_hann"] = pv.measure_residual_energy(SR, x, mode_freqs, NOTEOFF)
+    r["M2a_blackmanharris"] = resid_db_window(x, mode_freqs, "blackmanharris")
+    r["M2b_kaiser20"] = resid_db_window(x, mode_freqs, "kaiser20")
+    r["M2c_dpss_nw4"] = resid_db_window(x, mode_freqs, "dpss4")
+    r["M3_dedecay_f1"] = resid_db_dedecay(x, mode_freqs, t60_ref)
+    r["M1a_minus_theory"], inb_a = td_residual(x, g * theory, mode_freqs)
+    r["M1b_minus_LSfit"], inb_b = td_residual(x, ls_fit_model(x, strings), mode_freqs)
+    r["M8_excess_over_theory_leak"] = excess_db(x, g * theory, mode_freqs)
+    return r, (inb_a, inb_b)
+
+
+def fmt(r):
+    return "  ".join(f"{k}={v:+7.2f}" if np.isfinite(v) else f"{k}=  -inf " for k, v in r.items())
+
+
+log = []
+def P(s=""):
+    print(s, flush=True); log.append(s)
+
+P("F5 method study (descriptive only, NOT GATE). CLI = <repo>/output/wf1002/R/bin/TsukiSynthCLI.exe (copy of build\\)")
+P(f"segment [{pv.EXCITER_NOISE_SKIP_S*1000:.0f} ms, {NOTEOFF:.2f} s], bands +/-{HW*100:.0f}%, existing limit (unchanged) {pv.RESIDUAL_ENERGY_LIMIT_DB} dB")
+cases = [("piano", None, "_default")]
+cases += [("piano", {"diameter_mm": d}, f"_d{int(round(d*100))}") for d in (0.7, 0.8, 0.9, 0.95, 1.0, 1.1, 1.2)]
+cases += [(e, None, "_default") for e in ("cimbalom", "tongue_drum", "water_gong", "water_gong_free")]
+store = {}
+P("\n[1] clean renders (the 5 F5 engines at the --full probe; piano also swept over probe diameter_mm)")
+for eng, ov, tag in cases:
+    x, strings, mf, th, g, wav, raw = probe(eng, ov, tag)
+    t60 = strings[0][0]["decay"]
+    r, inb = all_methods(x, strings, mf, th, g)
+    store[(eng, tag)] = (x, strings, mf, th, g)
+    seg = slice(I0, int(NOTEOFF * SR))
+    corr = float(np.corrcoef(x[seg], th[seg])[0, 1])
+    P(f"{eng:15s}{tag:9s} T60(str0,mode0)={t60:6.3f}s strings={len(strings)} modes={len(mf)} g={g:.5f} corr(render,theory)={corr:.7f}"
+      f"  [M1 residual share inside predicted bands: M1a {inb[0]*100:.1f}%, M1b {inb[1]*100:.1f}%]")
+    P("    " + fmt(r))
+    if tag in ("_default",) and eng == "piano":
+        i = raw.find('"freq"'); P("    dump JSON precision sample: " + raw[i:i + 60].replace("\n", " "))
+
+P("\n[2] counterexample injections on piano probes (0.8 mm = currently PASS, 1.0 mm = currently FAIL).")
+P("    L = power of the injected component alone (F5 Hann window, F5 segment) re total Hann power of the clean probe.")
+
+
+def inj_signal(n, kind, f1):
+    t = np.arange(n) / SR
+    if kind == "stationary_3000Hz":
+        return np.sin(2 * np.pi * 3000.0 * t)
+    if kind == "decaying_1.5f1_outband":
+        return np.exp(-pv.MODAL_DECAY_LN1000 * t / 2.87) * np.sin(2 * np.pi * 1.5 * f1 * t)
+    if kind == "stationary_inband_1.015f1":
+        return np.sin(2 * np.pi * 1.015 * f1 * t)
+    raise ValueError(kind)
+
+
+def hann_power(sig):
+    seg = seg_of(sig); p, _, _ = spec_power(seg, np.hanning(len(seg))); return p.sum()
+
+
+for tag in ("_d80", "_d100"):
+    x, strings, mf, th, g = store[("piano", tag)]
+    f1 = strings[0][0]["freq"]
+    ptot = hann_power(x)
+    for kind in ("stationary_3000Hz", "decaying_1.5f1_outband", "stationary_inband_1.015f1"):
+        u = inj_signal(len(x), kind, f1)
+        pu = hann_power(u)
+        for L in (-40.0, -50.0, -55.0, -60.0, -65.0, -70.0):
+            amp = math.sqrt(ptot * 10 ** (L / 10.0) / pu)
+            r, _ = all_methods(x + amp * u, strings, mf, th, g)
+            P(f"piano{tag} + {kind:28s} L={L:+5.1f} dB : " + fmt(r))
+
+(OUT / "rb_f5_methods_log.txt").write_text("\n".join(log) + "\n", encoding="utf-8")
+
+"""Sanity check for the M1 floor: how big is the time-domain residual caused ONLY by --dump-modes printing
+freq with 3 decimals (rounding error up to +-0.0005 Hz)? Theory vs theory-with-freq-jitter, F5 segment/Hann."""
+import sys, math, json, subprocess
+from pathlib import Path
+import numpy as np
+REPO = Path(__file__).resolve().parents[4]; sys.path.insert(0, str(REPO / "tools"))
+import physics_verify as pv
+CLI = Path("bin/TsukiSynthCLI.exe").resolve(); OUT = Path("f5_methods").resolve()
+sf = OUT / "probe_piano_60_85_20_d80.score.json"
+ev = pv.dump_modes_event(CLI, sf); strings = ev["strings"]
+SR = 48000; n = int(2.2 * SR); I0 = int(0.03 * SR); I1 = int(1.8 * SR)
+base = pv.synth_theory_signal(strings, SR, n / SR)
+rng = np.random.default_rng(1)
+w = np.hanning(I1 - I0)
+for trial in range(3):
+    jit = [[dict(m, freq=m["freq"] + rng.uniform(-0.0005, 0.0005)) for m in v] for v in strings]
+    other = pv.synth_theory_signal(jit, SR, n / SR)
+    r = 10 * math.log10(np.sum(((base - other)[I0:I1] * w) ** 2) / np.sum((base[I0:I1] * w) ** 2))
+    print(f"trial {trial}: theory(freq) - theory(freq + U(+-0.0005 Hz)) residual = {r:+.2f} dB re total (Hann, F5 segment)")
+

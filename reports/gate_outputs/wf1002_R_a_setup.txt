@@ -1,0 +1,39 @@
+WF1002-R (research lane, read-only) -- 2026-10-02, repo HEAD b41298c.
+Aliases: <repo> = local repo root; <scratch> = this session's scratch directory (outside the repo).
+All numbers below are DESCRIPTIVE ONLY, NOT a GATE, NOT new thresholds (R2).
+
+== R-a setup: binaries (copies of build\, 09-30 INT build) ==
+48f3193b18440711ae7dad4a8b66a6b41a7f6d46c469f90835c2a33bfebbb4ab *build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+48f3193b18440711ae7dad4a8b66a6b41a7f6d46c469f90835c2a33bfebbb4ab *output/wf1002/R/bin/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+919ee83c19d74ab59b8fa6acf423ff909f9aa3bed9686e6368257a2c963a9aee *build/Release/TsukiSynthHostProbe.exe
+919ee83c19d74ab59b8fa6acf423ff909f9aa3bed9686e6368257a2c963a9aee *output/wf1002/R/bin/TsukiSynthHostProbe.exe
+8ecfdabde66bb5d8cf6b5ec9c97923d9f6814fdfd424d40db77e9c70e931ab31 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+8ecfdabde66bb5d8cf6b5ec9c97923d9f6814fdfd424d40db77e9c70e931ab31 *output/wf1002/R/bin/TsukiSynthCLI.exe
+
+== research harness r_probe (NOT in repo) ==
+source: <repo>/output/wf1002/R/scripts/r_probe.cpp (gitignored), CMake: scripts/r_probe_CMakeLists.txt
+isolated tree: `git archive HEAD src data | tar -x -C <scratch>/r_build/tree` (HEAD b41298c; other lanes' unstaged src/ edits NOT included);
+JUCE via junction <scratch>/r_build/tree/libs/JUCE -> <repo>/libs/JUCE (created with `cmd /c mklink /J`, removed with `cmd /c rmdir` -- link only).
+configure: cmake -S <scratch>/r_build/harness -B build -G "Visual Studio 18 2026" -A x64 ; build: cmake --build build --config Release --target r_probe --parallel (exit 0)
+r_probe.exe / r_probe.cpp sha256:
+4691012a3099aeeedabb254a22b485fd72b6b523129c2389acc21192ba2d4218 *bin/r_probe.exe
+1f4a8e1669b54f2fb0767d0862e795e7ea1da9e576542339825487efc40bcc43 *scripts/r_probe.cpp
+
+
+Incident: around 00:24-00:28 the whole directory <repo>/output/wf1002/R (first attempt, incl. its junction) was deleted by an unknown
+process (not this lane; the literature subagent reports it deleted no directory). JUCE was checked intact afterwards (4378 files,
+`git -C libs/JUCE status --short` empty). Everything was re-done; the isolated tree + junction were moved to <scratch> so that a
+recursive delete of output/ can never reach libs/JUCE through a junction. All numbers in the reports come from the re-run.
+
+Method (r_probe): fresh VST3 instance -> setCurrentProgram(i) (same as HostProbe E16) -> optional overrides (plain values converted
+with the product's own createTsukiParameterLayout() via a shadow APVTS, index-matched + name-checked) -> prepareToPlay(48 kHz, 512)
+-> 8 silent warm-up blocks (so overrides reach the processor and every smoother settles) -> note-on C4 vel 0.7, note-off +1.0 s,
+keep 188 blocks (= E16's 96256 samples/ch). Taps by cumulative ablation from the END of the chain (EffectChain.h:199-205 order
+Distortion -> Compressor -> Delay -> Reverb, then Output in PluginProcessor.cpp:409-420): reverb mix 0 gives the exact post-delay
+signal (SimpleReverb.h:154-156 dry=1-mix), delay mix 0 the exact post-compressor signal (StereoDelay.h:73-75), comp ratio 1 the
+exact engine sum (Compressor.h:30-31 bypass), macro_body 0 the engine sum without the BodyResonance layer.
+
+== junction cleanup (after all renders) ==
+$ cmd /c rmdir <scratch>\r_build\tree\libs\JUCE      -> removed (link only)
+$ find <repo>/libs/JUCE -type f | wc -l              -> 4378 (same as before the card)
+$ git -C <repo>/libs/JUCE status --short | wc -l     -> 0

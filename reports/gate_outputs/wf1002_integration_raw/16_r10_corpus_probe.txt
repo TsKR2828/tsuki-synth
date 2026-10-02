@@ -1,0 +1,59 @@
+# WF1002-INT R10 調查：verify_score --all 75 首裡 2 首的 WAV 雜湊跟 WF0925b 整合卡不同——是誰改的？
+# 日期 2026-10-02 02:48:10；只讀調查，沒改任何 repo 檔；控制組建置在 <SCRATCH>/int_dyncrt（repo 外）
+
+## 1. 逐首 WAV 雜湊（每首第一個 render.pre_normalize_manifest 的 WAV 欄位，前 12 碼）
+$ 從 verify_score log 抽「SCORE 路徑 + WAV 雜湊」：WF0925b INT2（raw 05_verify_score_all.txt） / 本卡（raw 12） / WF1002-C1 工兵（wf1002_C1_verify_score.txt）
+行數：prev 75、now 75、C1 75
+$ diff WF0925b 本卡
+39c39
+< scores\library\akashic\akashic_transition_var01.score.json 9ce1735b7dbe
+---
+> scores\library\akashic\akashic_transition_var01.score.json 9dd3a9a4ff44
+71c71
+< scores\library\restraint\restraint_loop_001.score.json 9a5544d19ac6
+---
+> scores\library\restraint\restraint_loop_001.score.json 2344a312ed00
+DIFF_EXIT=1  → 75 首中 73 首相同、2 首不同
+$ diff C1工兵 本卡
+DIFF_EXIT=0  → C1 工兵的 build-wf（靜態 CRT）就已經是新雜湊；C1 的證據與 C1 稽核沒有拿 75 首雜湊跟前一輪比，所以沒抓到
+
+## 2. 歷史：舊雜湊 9ce1735b7dbe／9a5544d19ac6 從 B2 起一路出現在 b2/b3/b4/b5/b6 corpus、wf0914、wf0925 K1/K2/INT、wf0925b INT2、09-25 盤點，從未變過；新雜湊 9dd3a9a4ff44／2344a312ed00 只出現在 wf1002_C1_verify_score.txt 與本卡
+
+## 3. 控制組：同一份 staged 原始碼（git checkout-index -a 匯出 index），只把 CMakeLists.txt 第 82 行改回動態 CRT
+$ git checkout-index -a --prefix=<SCRATCH>/int_dyncrt/src/   （libs/JUCE 是子模組，用 junction 指回 <REPO>/libs/JUCE，只讀）
+$ diff <(git show :CMakeLists.txt) <SCRATCH>/int_dyncrt/src/CMakeLists.txt
+82c82
+< set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+---
+> set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+$ cmake -S src -B b -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=OFF；cmake --build b --config Release --target TsukiSynthCLI  → EXIT_CODE=0 / EXIT_CODE=0
+控制組 CLI sha256 46bd662219951690780f51e8365f5c9bdbc792bb68995c89f1958a8f02599246；dumpbin /DEPENDENTS 有 MSVCP140／MSVCP140_2／VCRUNTIME140／VCRUNTIME140_1／api-ms-win-crt-*（＝動態 CRT）
+本卡 build\ CLI sha256 6dc4fb5e3386b62e07b4a44fef7a2317de0e2af5fe3b3de6564d5fc381337b50（靜態 CRT）
+
+## 4. 兩支 CLI 跑同兩首（python tools/verify_score.py <score> --cli <CLI>）
+  akashic_transition_var01  dyn: WAV 9ce1735b7dbe  renderer 46bd66221995  verify: RESULT: ALL CHECKS PASSED
+  akashic_transition_var01  static: WAV 9dd3a9a4ff44  renderer 6dc4fb5e3386  verify: RESULT: ALL CHECKS PASSED
+  restraint_loop_001  dyn: WAV 9a5544d19ac6  renderer 46bd66221995  verify: RESULT: ALL CHECKS PASSED
+  restraint_loop_001  static: WAV 2344a312ed00  renderer 6dc4fb5e3386  verify: RESULT: ALL CHECKS PASSED
+→ 原始碼完全相同，只差 CRT 連結方式：動態 = 舊雜湊、靜態 = 新雜湊。改變來源 = Q07 靜態 CRT，不是 C1 的原始碼改動。
+
+## 5. 直接渲染成 WAV 比樣本（CLI <score> --output <SCRATCH>/int_r10wav/{dyn,static}_<name>）
+9ce1735b7dbe6cca4cbe013ee0b9a197a3eb394668215be8db39d0498cea21d1 *<SCRATCH>/int_r10wav/dyn_akashic_transition_var01/Magic_Dark_OneShot_C4.wav
+9a5544d19ac664ea9b119bf01e1d89cd99bb40634a91e4e4a1f01b678ff3cdb6 *<SCRATCH>/int_r10wav/dyn_restraint_loop_001/Mechanical_Pulse_Loop_C2.wav
+9dd3a9a4ff445e0a826fe5bcd686f47d9cbb6be8bcaa3a2962aaee8121874324 *<SCRATCH>/int_r10wav/static_akashic_transition_var01/Magic_Dark_OneShot_C4.wav
+2344a312ed0048709a55a6eeb9461a2026180348397916ead2305737e19a8a5b *<SCRATCH>/int_r10wav/static_restraint_loop_001/Mechanical_Pulse_Loop_C2.wav
+akashic_transition_var01 subtype PCM_24 sr 48000 48000 shape (1054626, 2) (1054626, 2)
+  samples differing: 15482 of 2109252; max|diff|=2.384e-07 (-132.0 dB re peak); first diff sample idx=1448 (0.0302s), last=702686
+  RMS diff=1.023e-08 (-136.4 dB re signal RMS)
+restraint_loop_001 subtype PCM_24 sr 48000 48000 shape (409205, 2) (409205, 2)
+  samples differing: 63191 of 818410; max|diff|=2.384e-07 (-132.0 dB re peak); first diff sample idx=8 (0.0002s), last=355215
+  RMS diff=3.321e-08 (-132.7 dB re signal RMS)
+（24-bit PCM 的 1 LSB = 1.19e-7；最大差 2.384e-7 = 2 LSB，約 −132 dB；長度、取樣率完全相同）
+
+## 6. 為什麼只有這 2 首：語料庫裡「overdrive 而且 wet>0」的 score 正好就這 2 首
+  akashic_transition_var01：distortion overdrive drive 0.3 instability 0.15 wet 0.25
+  restraint_loop_001     ：distortion overdrive drive 0.3 instability 0.08 wet 0.4
+  其他有 distortion 的語料庫 score 不是 wet=0，就是 wavefold／bitcrush（clockwork_notify_var01、restraint_notify_var01、ai_radiance_m2/m4），雜湊都沒變
+  src/dsp/Distortion.h:73  return std::tanh (input * gain);   ← float tanh 由 CRT 提供：動態＝系統的 ucrtbase.dll，靜態＝連進 exe 的 libucrt（SDK 版），兩者最後一位不同
+  （scores/tests/test_distortion*.score.json 也開 overdrive，但不在 verify_score --all 範圍內）
+  推論（未驗證）：外掛（VST3／Standalone）只要開 overdrive，輸出同樣會有 LSB 等級的差異；而動態 CRT 版本的結果原本就跟著「買家電腦上的 ucrtbase.dll 版本」走。

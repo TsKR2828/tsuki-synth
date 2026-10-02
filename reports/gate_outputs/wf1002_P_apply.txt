@@ -1,0 +1,184 @@
+# wf1002_P_apply.txt  generated 2026-10-02T00:32:21
+# WF1002-P (product lane): 月月 2026-10-02 decisions applied inside exports/products/clean_batch2_v1_1_candidate/ (gitignored).
+# Local paths: <REPO> = repo root, <TOOLS> = tools folder outside the repo, <SCRATCH> = agent scratch folder.
+# Nothing was git-added, committed or pushed by this lane.
+
+== 0. originals clean_batch2/ (read-only) vs _ORIGINALS_SHA256_before.txt (sha256sum -c)
+  start 2026-10-02T00:12 : 212 OK / 0 not OK / 212 files present
+  end   2026-10-02T00:29 : 212 OK / 0 not OK / 212 files present
+  x2_verify V1 (end, wf1002_P_verify.txt): PASS
+
+== 1. per-decision changes (details: CHANGES_v1_1.md section 'WF1002')
+  Q21=A   adopted sentence 「AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成」 (EN/JA keep existing translation); all 【待月月確認】/[TBD wording] markers on it removed:
+          LICENSE_SE §11 (zh = adopted sentence), LICENSE_ALBUM §2, LISTING_COPY A/B/C, PRODUCT_SHEET §1/§5-2, README SE/SE_FAB/ALBUM (zh line via x2_build_packages.py)
+  Q22=A   draft structure adopted. Q22b=A: §4 option A kept, option markers removed (3 langs).
+  Q22c=B  §6 = 'may not register the Sounds, or any work that contains them' + contact exception, 3 langs; option A text deleted.
+          EN: If you need Content ID registration or any other extended license, please contact the licensor (section 12) to discuss your case.
+          ZH: 如需 Content ID 或其他延伸授權，請個案聯絡授權人（第 12 條）。  JA: Content ID への登録その他の拡張ライセンスが必要な場合は、個別に許諾者へご連絡ください（第12条）。
+  Q22d=A  §10 English prevails (3 langs).
+  Q22 TBD kept [TBD]: §1 channels, §8 works released before termination, §9 governing law/courts, §12 contact (V13: [TBD] only in sections 1/8/9/12).
+  Q22 sync LISTING_COPY license summary (JA/EN) adds the no-Content-ID sentence + contact.
+  Q22c->album LICENSE_ALBUM §6 buyer bullet 'consists mainly of them' -> 'any work that contains them' + same contact sentence (3 langs). Other album [TBD] (BGM A/B, our own Content ID, language) untouched.
+  Q23=B   FAB_PLATFORM_NOTE banner '暫緩上架（10-02 Q23=B）'; Fab zip rebuilt (README changed by Q21) but NOT in release list; manifest header line 'ON HOLD (Q23=B), NOT in the release list'.
+  Q24a=C  PRODUCT_SHEET §4/§5-12 + CHANGES: product images '等平台規格' (art/ drafts not used).
+  Q24b=A  demo reel full version (6:03.560) in the release list (CHANGES WF1002 table).
+  Q25=A   --complete include: album 7 tracks / 15 members.
+  Q26=A   --loops both (unchanged default); loop 【待月月確認】 removed from LISTING_COPY.
+  Q27=A   --music tpdf: album WAV = music_tpdf/ (sha == music_tpdf_report.json out_sha256 7/7); album README + TPDF/MP3 note (3 langs); catalog + 8 album_v1_1_* columns.
+  Q20=A / Q20b=B  --sfx current (default); README TP wording (XF three-meter range) unchanged; LISTING_COPY Policy B sentence deleted, 【政策 A】 marker removed.
+  Q29=B / Q30=A / Q08=B  LISTING_COPY §D rewritten: name 'TsukiSynth'; own line 'VST® 3 plug-in & Standalone (Windows 64-bit)'; attribution sentence;
+          logo placement + files by path only (<TOOLS>/vst_logo/, nothing copied); claim narrowed to 「物理驗證涵蓋 CLI 渲染；外掛即時演奏共用衰減律，激發與效果鏈未逐項驗證」; Windows 64-bit only.
+  Q32     recorded in CHANGES only: E2 甲, E4 乙, E5 照平台, E8 英, E9 無; E1/E3/E6/E7 待月月. docs/legal/EULA_BUYER_DRAFT.md NOT modified (git status clean, see section 6).
+
+== 2. changed files: sha256 before (backup _pre_WF1002_backup_20261002/) -> after
+  CHANGES_v1_1.md                                                    62b1f9fbe248f50ca5a7433071f9feaea0dc8fd04eaef2ea7559b235448eb276  ->  03b71b0e0536a027f2045e45efe275ec050f20f82cd6d74bf0bf943296aa88e6
+  FAB_PLATFORM_NOTE.txt                                              de953dc7b18062a2bfda7dfc64cfca515b91420d09555660aa121f1b7be4baa7  ->  85b813b63cbe354d0c8b88e06c1be8cfe2d9c3b903f3883bfaae3f3f75ea8d54
+  LICENSE_ALBUM_v1_1.txt                                             31639f3f9ac2925fa7ca7aa658153b000a929bb673104c1eae5e4f24f2543a26  ->  7f1983f7cb74755177754523d2ce625b60b3b11cbac8364d2f8aa9376f0f6a44
+  LICENSE_SE_PACK_v1_1.txt                                           b97cc10d7231e217496ea773a069abb3761464a41ba85744596208b8c4c8e391  ->  66c91df3ef22902e45d99990159f7d9f8154a8aeaef544278bf5de1da02b9729
+  LISTING_COPY_v1_1.md                                               a3a762f7e142dcd7ae18175983446679000077289175463b3063acd54c5b4db6  ->  7d8f57b3631b02de0c4b4fea68b1dd5fa108f7a6b10faca9a700bf7c92fa2679
+  PRODUCT_SHEET_v1_1.md                                              10ff9acd345b381e922f6cda3161ac8e2033769dc5a5fcf0b1cf8c5c2e63d91c  ->  a5ae4b1e9ec3d76ca95da2b928df79936f00c3a382043f75d0cfc7feb7f54ff6
+  _X2_MANIFEST_SHA256.txt                                            9470da416673b76f88f4ce4035ca072f8f6474c3b757cf79c0b14d447115acfa  ->  ca23ed476029732407c316839ad3419b7afb4187866a0e3f8cb15e695ec2f7c4
+  catalog_v1_1.csv                                                   940b2e1f7c817d9f9b5dc15c8bb59be7158769b8a03687d461c3c659323f5b46  ->  e1b4f3bf99997574a5fecf4975c93a2f34c93a0ba4719a97d673306d6b3a22bf
+  catalog_v1_1.json                                                  c35a31b3c3255e42962fd05343badb385e35badb5646643d868706a2e94f794d  ->  5993bbef1c72ecaba6dee29bc81a3ec92d427808560678e268cadb11bcfa7326
+  catalog_v1_1_FIELDS.md                                             d1089513acce0e0a070129b2bb9c61aa19bf4ffbfa5ffc684b833ce0cbdfb7c7  ->  75286894c29233c0cfdb7ee0acbf217f56f3abec1a30ff804a74b5d106b8ac19
+  packages/PACKAGES_MANIFEST_v1_1.txt                                f50236055018075323798d2ae8e5b37cc300a5e8a9bd8fb046619c87371891c3  ->  9a32f6c7413ae8bd250920fc288090472e521807051287c20d9618d90f8e14d0
+  packages/TsukiSynth_Album_Vol1_v1.1_candidate.zip                  049339ed19f12a58a9355060647f5744e9ceab3ff4dc3c6c9a7fe287bf0391dc  ->  28c79ebde7568883d81a61fd97201581ce0230f4453d8902fb1f1d7c5a98bbf7
+  packages/TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip           50749a0ea6598115392fb463ff82b88f7ce0df62561ca58da01530b657fa1a0e  ->  0b46e09320efa05e514ba7f2d6e77143808cb67d218d3033c9eb3d2870ee5888
+  packages/TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip       082b8e6919e7a47c3448c43264466b1284bfe79bd5fd8d6e5605e312deab3453  ->  e73ad49182d1c7a90be0913f506e39109754c26b0f5c870ca46d88080348474d
+  scripts/x2_build_packages.py                                       2be300b3b43f69e8b10888584e5945a7cd004f4c9baf7dc76a00326bfe79c6d9  ->  738c7c9dd58ea2c825965830c552778a09c9dc8a52084523cea443f2dd998c01
+  scripts/x2_verify.py                                               498545e98d4d47f928ff653ff9e0d85a0417b1e4f7bb86d7abf99edf3e0f4cd0  ->  3d07e00db9e9c3f09909f9cb82e2f7e998612ce33b1653bec4a96ed02db423d5
+  zip_readme/README_ALBUM_v1_1.txt                                   46050fc5ae662e1d3d069092c4b51327b822ff65e9ffcba29dc00b879690e374  ->  92c350ee100d0d547c06e8f3061753180b659b5c589cab37144682b741279003
+  zip_readme/README_SE_PACK_v1_1.txt                                 f76cd6d1d1dd738713657be4d6346b15051341e93db68fd9eef5dfdafa3788d9  ->  1b57bc11ff874120290e879fd045e3f9dc8aa26a0587107bc89ff6a302b36976
+  zip_readme/README_SE_PACK_v1_1_FAB.txt                             1d2aa82304c7c93adca3428997bdf2efe7fed793dae822e1ccc9464499cc4240  ->  983ad14566b050dc1dc5287ad5d52fe82bbd26f8c555aa8fe825f87fe8f25b60
+  scripts/wf1002_catalog_album.py                                    (new)  ->  d89b0759551aa18c580b8934dd353369536685d227c7a1807dda304f5a4a2493
+
+== 3. new zips (packages/)
+  TsukiSynth_Album_Vol1_v1.1_candidate.zip                   28c79ebde7568883d81a61fd97201581ce0230f4453d8902fb1f1d7c5a98bbf7    98965280 B  RELEASE LIST
+  TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip            0b46e09320efa05e514ba7f2d6e77143808cb67d218d3033c9eb3d2870ee5888    77927636 B  RELEASE LIST
+  TsukiSynth_Worldview_SE_Pack_v1.1_candidate_FAB.zip        e73ad49182d1c7a90be0913f506e39109754c26b0f5c870ca46d88080348474d    77921109 B  NOT in release list (Fab on hold, Q23=B)
+  TsukiSynth_listening_kit_v1_1.zip                          38ac5b45237d1d4b0416c6638fa635eaa12286ee07d951ab5b92abb8ae8e4fc2   116687581 B  internal (listener kit), unchanged
+  demo/TsukiSynth_Worldview_SE_Pack_Vol1_demo_reel.mp3       01b8b10b2911be5f88eba523b89df557ad9747e30f9c82aa9cd928020ca5d5fd    14545005 B  RELEASE LIST (Q24b=A, unchanged file)
+  demo/TsukiSynth_Worldview_SE_Pack_Vol1_demo_reel.wav       90ffd898e763e9dd62e6e50504f5eef7044ed32e09f620ef8ebd3e05a6a7b3df   104705204 B  RELEASE LIST (Q24b=A, unchanged file)
+  demo/TsukiSynth_Worldview_SE_Pack_Vol1_demo_reel_timecodes.txt cf24b34285870a7643c06a4e780d6d3691408d109cfc2760a9658cc8c3c888d2        2462 B  RELEASE LIST (Q24b=A, unchanged file)
+  demo/TsukiSynth_Worldview_SE_Pack_Vol1_demo_reel_timecodes.csv 45ee2458522f72b4ed50079713e1a591d5ed2c610d99954cd9711d601332c3fb        4728 B  RELEASE LIST (Q24b=A, unchanged file)
+  previous (09-25 XF): SE 50749a0e..., SE_FAB 082b8e69..., album 049339ed... (backup copies in _pre_WF1002_backup_20261002/packages/)
+  build command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_build_packages.py --complete include --loops both --music tpdf --sfx current --evidence reports/gate_outputs/wf1002_P_packages.txt
+
+== 4. x2_verify.py (final run)
+  command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_verify.py --complete include --music tpdf --evidence wf1002_P_verify.txt --packages-evidence wf1002_P_packages.txt --tmp output/wf1002/P/verify_tmp
+  GATE X2 verify: 179/179 ; RESULT: PASS
+  FAIL lines: 0
+  V13 (10-02 decisions) lines:
+    [PASS] V13 Q21 LICENSE_SE: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+    [PASS] V13 Q21 LICENSE_SE: no pending-confirmation marker on the AI wording
+    [PASS] V13 Q21 LICENSE_ALBUM: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+    [PASS] V13 Q21 LICENSE_ALBUM: no pending-confirmation marker on the AI wording
+    [PASS] V13 Q21 LISTING_COPY: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+    [PASS] V13 Q21 LISTING_COPY: no pending-confirmation marker on the AI wording
+    [PASS] V13 Q21 PRODUCT_SHEET: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+    [PASS] V13 Q21 PRODUCT_SHEET: no pending-confirmation marker on the AI wording
+    [PASS] V13 Q21 README_SE: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+    [PASS] V13 Q21 README_SE: no pending-confirmation marker on the AI wording
+    [PASS] V13 Q21 README_SE_FAB: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+    [PASS] V13 Q21 README_SE_FAB: no pending-confirmation marker on the AI wording
+    [PASS] V13 Q21 README_ALBUM: adopted sentence present ('AI 輔助編寫譜面，由 TsukiSynth 物理引擎演奏；未使用 AI 音訊生成')
+    [PASS] V13 Q21 README_ALBUM: no pending-confirmation marker on the AI wording
+    [PASS] V13 Q21 LICENSE_SE §11 EN/JA keep the existing translations
+    [PASS] V13 Q22b LICENSE_SE §4 option A text kept, option marker gone (3 languages)
+    [PASS] V13 Q22c LICENSE_SE §6 = option B (3 languages)
+    [PASS] V13 Q22c LICENSE_SE §6 contact exception (3 languages)
+    [PASS] V13 Q22c option A text gone from LICENSE_SE
+    [PASS] V13 Q22d English prevails (3 languages), no [TBD: English]
+    [PASS] V13 Q22 remaining [TBD] only in sections 1 (channels), 8 (after termination), 9 (law/courts), 12 (contact)  -- {1: 3, 8: 3, 9: 3, 12: 3}
+    [PASS] V13 Q22 LICENSE_SE still a draft (DRAFT box kept, so --release is refused)
+    [PASS] V13 Q22 LISTING_COPY license summary: no Content ID registration + contact for extended license (JA/EN)
+    [PASS] V13 Q22c-aligned LICENSE_ALBUM §6: buyers may not register anything that contains the Recordings + contact exception (3 languages)
+    [PASS] V13 Q23 FAB_PLATFORM_NOTE marked on hold
+    [PASS] V13 Q23 packages manifest: Fab zip built for reference only, ON HOLD, not in the release list
+    [PASS] V13 Q25 album README lists the complete suite == (--complete include)
+    [PASS] V13 Q27 album README TPDF note + 'MP3 not re-encoded' (3 languages) == (--music tpdf)
+    [PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains '**商品名** TsukiSynth'
+    [PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'VST® 3 plug-in & Standalone (Windows 64-bit)'
+    [PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'VST is a registered trademark of Steinberg Media Technologies GmbH.'
+    [PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains '物理驗證涵蓋 CLI 渲染；外掛即時演奏共用衰減律，激發與效果鏈未逐項驗證'
+    [PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'Windows 64-bit only'
+    [PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'VST_Compatible_Logo_Steinberg_with_TM'
+    [PASS] V13 Q29/Q30/Q08 LISTING_COPY synth section contains 'USAGE_NOTES.zh-TW.md'
+    [PASS] V13 Q29 buyer-facing synth text: first 'VST' is 'VST®'; no 'VSTi'; old name options gone
+    [PASS] V13 CHANGES_v1_1.md contains '10-02 月月裁決已套用'
+    [PASS] V13 CHANGES_v1_1.md contains '等平台規格'
+    [PASS] V13 CHANGES_v1_1.md contains '試聽帶'
+    [PASS] V13 CHANGES_v1_1.md contains 'E2 甲'
+    [PASS] V13 CHANGES_v1_1.md contains 'E4 乙'
+    [PASS] V13 CHANGES_v1_1.md contains 'E5 照平台'
+    [PASS] V13 CHANGES_v1_1.md contains 'E8 英'
+    [PASS] V13 CHANGES_v1_1.md contains 'E9 無'
+    [PASS] V13 CHANGES_v1_1.md contains 'E1／E3／E6／E7'
+    [PASS] V13 CHANGES_v1_1.md contains 'Q28'
+  earlier runs in this session: run 1 177/179 (V5 zh material sentence dropped from LISTING_COPY §D; V13 LICENSE_ALBUM zh sentence wrapped over two lines) -> both fixed -> run 2 179/179 -> run 3 179/179 -> run 4 (final, after the CHANGES sha-table fix and incident note) see above
+
+== 5. catalog (scripts/wf1002_catalog_album.py) output
+  written catalog_v1_1.json (50 rows) and catalog_v1_1.csv (45 columns)
+    fur_elise_complete             music_tpdf\fur_elise_complete_44k16_tpdf.wav         trim -0.003048 dB  TP -1.0001  LUFS -13.98  sha 8d093215ca9a4f5b
+    fur_elise_complete_cimbalom    music_tpdf\fur_elise_complete_cimbalom_44k16_tpdf.wav trim -0.031861 dB  TP -1.0000  LUFS -14.13  sha f5daf39d9c062423
+    ai_radiance_complete           music_tpdf\Original_AI_Radiance_Complete_44k16_tpdf.wav trim -0.008243 dB  TP -1.0001  LUFS -14.35  sha e8cbeb0143be4728
+    ai_radiance_m1                 music_tpdf\Original_AI_Radiance_Movement1_44k16_tpdf.wav trim +0.000000 dB  TP -1.8252  LUFS -14.0  sha 5eb2bb7169158f23
+    ai_radiance_m2                 music_tpdf\Original_AI_Radiance_Movement2_44k16_tpdf.wav trim +0.000000 dB  TP -1.2944  LUFS -14.0  sha 30fca76c8fdd1496
+    ai_radiance_m3                 music_tpdf\Original_AI_Radiance_Movement3_44k16_tpdf.wav trim -0.000983 dB  TP -1.0001  LUFS -14.02  sha 270d5a6157e22d25
+    ai_radiance_m4                 music_tpdf\Original_AI_Radiance_Movement4_44k16_tpdf.wav trim +0.000000 dB  TP -1.1498  LUFS -14.0  sha a338909f91f3cad2
+  [PASS] writer reproduces the current catalog_v1_1.csv byte-for-byte (before adding columns)
+  [PASS] writer reproduces the current catalog_v1_1.json byte-for-byte (before adding columns)
+  [PASS] 7 music rows, all album_v1_1_included (Q25=A: complete suite included)
+  [PASS] album_v1_1_wav_sha256 == music_tpdf_report.json out_sha256 (7/7)
+  [PASS] 43 sfx rows: album columns empty
+  [PASS] every pre-existing field byte-identical in value, same row order
+  [PASS] re-read json == written rows
+  [PASS] csv 50 rows, columns include the 8 new ones
+  RESULT: PASS
+  re-run --check-only after writing: RESULT PASS (idempotent)
+
+== 6. repo state
+  git status --short docs/legal/ : (clean)
+  staged files (git diff --cached --name-only): 0 (this lane staged nothing)
+
+== 7. INCIDENT (temp cleanup) -- must be read by the main session
+  At about 2026-10-02T00:28 this lane ran `rm -rf output/wf1002` intending to delete only its own x2_verify scratch
+  (output/wf1002/P/verify_tmp). output/wf1002/ also held lane C2's isolated copy (output/wf1002/C2/...). Most of C2's files
+  were deleted (not recoverable from the recycle bin: deleted from Git Bash). rm reported 'Device or resource busy' on 13 files of
+  output/wf1002/C2/build-fix (a C2 build was running). Files present under output/wf1002 when this evidence was written
+  (mtime; anything at/after 00:28 was written AFTER the rm, i.e. re-created by C2 or created by lane R, whose folder
+  output/wf1002/R/ only appears with mtimes from 00:29 on -- whether R had files there BEFORE the rm is unknown):
+    00:29:43  <REPO>/output/wf1002/C2/build_fix.log
+    00:28:22  <REPO>/output/wf1002/C2/fm_zombie_check_original_out.txt
+    00:28:18  <REPO>/output/wf1002/C2/model_out.txt
+    00:27:33  <REPO>/output/wf1002/C2/build-fix/Release/TsukiSynthData.lib
+    00:28:04  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_artefacts/Release/TsukiSynth_SharedCode.lib
+    00:28:16  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_artefacts/Release/VST3/TsukiSynth.exp
+    00:29:43  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+    00:27:16  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_rc_lib.dir/Release/TsukiSynth_resources.res
+    00:28:08  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/juce_audio_plugin_client_AAX.obj
+    00:28:08  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/juce_audio_plugin_client_AAX_utils.obj
+    00:28:08  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/juce_audio_plugin_client_ARA.obj
+    00:28:08  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/juce_audio_plugin_client_LV2.obj
+    00:28:08  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/juce_audio_plugin_client_Standalone.obj
+    00:28:08  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/juce_audio_plugin_client_Unity.obj
+    00:28:08  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/juce_audio_plugin_client_VST2.obj
+    00:28:14  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/juce_audio_plugin_client_VST3.obj
+    00:29:43  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/TsukiSynth.vst3.recipe
+    00:29:43  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/TsukiSynth_VST3.tlog/link.command.1.tlog
+    00:29:43  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/TsukiSynth_VST3.tlog/link.read.1.tlog
+    00:29:43  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/TsukiSynth_VST3.tlog/link.secondary.1.tlog
+    00:29:43  <REPO>/output/wf1002/C2/build-fix/TsukiSynth_VST3.dir/Release/TsukiSynth_VST3.tlog/link.write.1.tlog
+    00:29:39  <REPO>/output/wf1002/R/bin/TsukiSynthCLI.exe
+    00:29:39  <REPO>/output/wf1002/R/bin/TsukiSynthHostProbe.exe
+    00:29:39  <REPO>/output/wf1002/R/bin/TsukiSynth.vst3/Contents/Resources/moduleinfo.json
+    00:29:39  <REPO>/output/wf1002/R/bin/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+    00:29:39  <REPO>/output/wf1002/R/logs/binary_copies_sha256.txt
+    00:32:21  <REPO>/output/wf1002/R/logs/harness_build.txt
+    00:32:12  <REPO>/output/wf1002/R/logs/harness_configure.txt
+    00:30:06  <REPO>/output/wf1002/R/scripts/r_probe.cpp
+    00:30:18  <REPO>/output/wf1002/R/scripts/r_probe_CMakeLists.txt
+  Nothing outside output/wf1002/ was deleted. output/ is gitignored, so no tracked file was affected.
+  output/wf0925/X2 (empty folder re-created by importing x2_common.py) was left in place.
+
+RESULT: PASS (product lane checks) -- with the incident in section 7 to be handled by the main session

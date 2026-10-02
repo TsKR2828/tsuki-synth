@@ -1,0 +1,14 @@
+Test project <REPO>/build
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.77 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.64 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.34 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.15 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   2.91 sec
+EXIT_CODE=0
