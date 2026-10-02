@@ -1,0 +1,26 @@
+--- a/src/dsp/Envelope.h
++++ b/src/dsp/Envelope.h
+@@ -30,9 +30,22 @@
+     {
+         if (state != State::Idle)
+         {
+-            releaseSamplesRemaining = std::max (
++            const int newReleaseSamples = std::max (
+                 1, static_cast<int> (
+                     std::lround (releaseTime * sampleRate)));
++
++            // WF1002-C2 (Q09b=A): a voice that is ALREADY releasing keeps
++            // its running ramp. JUCE's Synthesiser sends a tail-off to every
++            // voice of a note number on each same-note note-on/note-off;
++            // restarting the full release from the current level each time
++            // meant a note re-struck faster than its release never reached
++            // Idle. A SHORTER release (FMPianoVoice::stopNote's 5 ms hard
++            // cut on a voice steal / all-sound-off) still takes over.
++            if (state == State::Release
++                && newReleaseSamples >= releaseSamplesRemaining)
++                return;
++
++            releaseSamplesRemaining = newReleaseSamples;
+             releaseRate = currentLevel
+                 / static_cast<float> (releaseSamplesRemaining);
+             state = State::Release;

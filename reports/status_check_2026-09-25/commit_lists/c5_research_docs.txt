@@ -1,0 +1,14 @@
+docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+docs/GONG_PARTIAL_ANALYSIS.zh-TW.md
+docs/HAMMER_CONTACT_SOURCES.md
+docs/HAMMER_VELOCITY_SOURCES.md
+docs/RADIATION_POWER_SOURCES.md
+docs/STRING_SCALE_SOURCES.md
+reports/b7_dual_path_comparison.md
+reports/d11_string_scale_before_after.md
+reports/d11_string_scale_candidate.patch
+reports/decision_packets/B7_phase2_and_open_items.zh-TW.md
+reports/decision_packets/D11_string_scale_candidate.zh-TW.md
+reports/decision_packets/D13_gong_2x_partial.zh-TW.md
+reports/decision_packets/D9_ir_loudness_alignment.zh-TW.md

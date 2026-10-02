@@ -1,0 +1,60 @@
+WF0914 staged 121 檔 commit 切法建議（staged-review，2026-09-25）
+所有清單已驗證：7 份合計 121 行、無重複、無遺漏、無 CR（grep -c $'\r' = 0）。
+順序 = 依賴順序（c1-c3 各自可獨立編譯；c4 純 Python；c5-c7 純文件）。
+工作樹 = index（git diff 無 unstaged），所以 `git commit -- <paths>`（--only 模式取工作樹內容）與 index 內容一致。
+
+執行方式（每個 commit；Git Bash；先 tr -d '\r' 再用）：
+  L=<清單路徑>; tr -d '\r' < "$L" > /tmp/l.txt && git commit --pathspec-from-file=/tmp/l.txt -F <訊息檔>
+  每次 commit 後：git diff --cached --name-only | wc -l 應遞減對應檔數（121→117→114→112→109→95→4→0）。
+
+---------------------------------------------------------------------------
+c1_engine_b7p1.txt（4 檔）
+引擎：B7 Phase 1 力鏈純函式入庫（dumpModes 欄位撤回版，月月 09-15 裁決路徑 C＋(a) 乙案）
+
+- HammerImpulse.h：hammerVelocityMps()（Goebl 2003 式 3.2 反函數＋域外 clamp）、hertzPeakForceNewtons()（能量守恆 Hertz 峰值力）、hertzImpulseConsistentTauCSeconds()（π·m·v/F_peak，稽核修復：衝量=2mv）
+- RadiationModel.h：modalEnergyFirstPrinciples()、bridgePowerFirstPrinciples()（止於 W_bridge，S 維持 UNVERIFIED）
+- ScoreRenderer.h：只加註解記錄 Path C 欄位撤回原因（score velocity 非 MIDI/127），無程式碼改動
+- physics_models_repro：五條測試＋2mv 域掃描守恆＋舊 tauC regression guard
+- 產品渲染 8/8 位元不變（純函式未接入任何渲染路徑）
+
+---------------------------------------------------------------------------
+c2_plugin_d12.txt（3 檔）
+plugin：D12 舊 reverb_ir_path state 遷移（F-03 三態，檔案在→匯入受管理庫、不在→缺檔警告、新 schema 在→舊鍵忽略）
+
+- PluginProcessor：setStateInformation() 無 reverb_ir 區塊時遷移舊鍵、消耗後移除、遷移後 setDirty；抽出 forceAlgorithmicMissingIR()
+- host_probe：D12 三情境（合成 pre-F-03 state blob 走真 VST3 ABI）
+
+---------------------------------------------------------------------------
+c3_plugin_d9c.txt（2 檔）
+plugin：D9c IR wet 固定補償增益 kIrWetMakeupGain=26.9f（+28.58 dB，月月 09-16 裁決 D9 選項 A）
+
+- EffectChain：只乘在 IR 摺積 wet 上（dry、ALGO 路徑不動）；CLI/score 渲染不經 EffectChain，8/8 位元不變
+- audit_repro：K-02 外部 IR 變體（TSUKI_K02_EXTERNAL_IR，未設時預設行為不變）；四組補償後落差 −0.131～+0.112 dB
+
+---------------------------------------------------------------------------
+c4_tools_d14_d15.txt（3 檔）
+驗證工具：D14 stem_verify 記憶體串流化、D15 量測器自證加放鍵段語料
+
+- stem_verify：StemArrayStream＋read_wav_header()，峰值記憶體不再隨事件數線性成長，輸出逐位元不變
+- measurement_selfcal：release 段（damp 0.002/0.05/0.08，引擎實際值）、release 反假綠哨兵；sustain 段數字不變（1.1721/1.0840 c），release 段 5.2304/7.2055 c（D15 裁決 A' 已知上界）
+- test_measurement_selfcal：sustain 篩選、兩個 release xfail、一個 release 哨兵
+
+---------------------------------------------------------------------------
+c5_research_docs.txt（14 檔）
+研究文件與裁決包：B7 Phase 0 溯源、D9/D11/D13 裁決包、主張域收窄（D13 水鑼、D15 放鍵段）
+
+- docs：HAMMER_VELOCITY_SOURCES（新）、STRING_SCALE_SOURCES（新）、GONG_PARTIAL_ANALYSIS（新）、ENGINE_DOMAIN_CLAIMS（新）、HAMMER_CONTACT_SOURCES／RADIATION_POWER_SOURCES 補段、EARFREE_MELODY_GATE_DESIGN §8.5
+- reports：B7/D9/D11/D13 裁決包、b7_dual_path_comparison、d11 前後對照＋候選 patch（未套用，D11 選 C 存檔）
+
+---------------------------------------------------------------------------
+c6_workcards_gate.txt（91 檔：15 施工卡＋76 GATE 證據）
+施工卡與 GATE 證據：WF0914 輪 15 張卡（B7P0/P1/P3、D9/D9b/D9c、D10–D15、整合）與 GATE 輸出、位元不變 csv/sha256
+
+---------------------------------------------------------------------------
+c7_handover.txt（4 檔）
+交接文件 09-15～16：HANDOVER／TODO／DEVLOG 記 WF0914 輪與五項裁決落地、ROADMAP B7 條目
+
+（建議在 commit 前先修 HANDOVER §9/§10 與 ROADMAP B7 列的過時文字，見審查 items D-doc-1/2/3）
+
+每則訊息結尾依慣例加：
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

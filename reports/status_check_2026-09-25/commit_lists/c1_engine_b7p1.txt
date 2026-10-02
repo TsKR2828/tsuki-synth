@@ -1,0 +1,4 @@
+src/physics/HammerImpulse.h
+src/physics/RadiationModel.h
+src/score/ScoreRenderer.h
+tests/physics_models_repro.cpp

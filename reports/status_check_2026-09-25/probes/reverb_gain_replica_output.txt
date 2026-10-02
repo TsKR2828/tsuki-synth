@@ -1,0 +1,25 @@
+ALGO wet steady-state RMS relative to size=0.5 default (replica, white noise):
+  fx_reverb_size=0.00 :  -1.36 dB
+  fx_reverb_size=0.25 :  -0.79 dB
+  fx_reverb_size=0.50 :  +0.00 dB
+  fx_reverb_size=0.75 :  +1.23 dB
+  fx_reverb_size=1.00 :  +3.98 dB
+  fx_reverb_decay=  0.3 s :  -2.38 dB
+  fx_reverb_decay=  1.0 s :  -0.40 dB
+  fx_reverb_decay=  3.0 s :  +1.76 dB
+  fx_reverb_decay= 10.0 s :  +3.89 dB
+  fx_reverb_decay= 30.0 s :  +5.26 dB
+
+IR wet (x26.9) minus ALGO@0.5, white-noise steady-state (replica validation vs D9c -0.131/+0.108/-0.028 dB):
+  Stairwells    -0.11 dB   (IR length 2.28 s)
+  Venues        +0.13 dB   (IR length 1.43 s)
+  Sanctuaries   +0.57 dB   (IR length 2.94 s)
+
+Worst-case gain comparison (single-channel wet impulse response):
+  path                        max|H| dB  rms|H| dB L1 (peak bd)
+  ALGO size=0.0                  +20.91      +8.83        147.3
+  ALGO size=0.5                  +24.48     +10.16        238.7
+  ALGO size=1.0                  +37.80     +14.33       1139.7
+  IR Stairwells x26.9            +33.19     +10.53        483.4
+  IR Venues x26.9                +28.67     +10.45        179.9
+  IR Sanctuaries x26.9           +30.08     +10.53        487.4

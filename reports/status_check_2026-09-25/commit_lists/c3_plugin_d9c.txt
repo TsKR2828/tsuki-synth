@@ -1,0 +1,2 @@
+src/effects/EffectChain.h
+tests/audit_repro.cpp
