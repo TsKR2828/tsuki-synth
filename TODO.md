@@ -5,6 +5,27 @@
 > 本檔後半「待辦總表（原始條目）」照舊保留，仍有效的條目沒刪。
 > **行號注意**：`docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md`、`docs/KNOWN_LIMITS_INDEX.zh-TW.md` 引用本檔的行號是當時 HEAD 的行號，本檔改寫後已位移，請以條目名稱為準。
 
+## 2026-10-03 下午 WF1003 快照（staged、沒 commit、沒 push）
+
+WF1003 整合卡全套 GATE 1～9 全綠（`reports/gate_outputs/wf1003_INTEGRATION.txt`）；第 10 步（ISCC 重編安裝檔）BLOCKED：Inno Setup 沒安裝。
+新基線：ctest 4/4（AuditTest 111）、pytest **312**（306＋1 skip＋5 xfail；+2＝S 卡）、`--full` NO CHECKED FAILURES、`--selftest` 14/14、
+`verify_score --all` 75/75（75 首雜湊逐首與 WF1002b 相同，`tools/hash75_compare.py`）、8/8 IDENTICAL、HostProbe **241/0**（+10＝S 卡 Q05 亮燈路徑）、pluginval＋validator 47/47、靜態 CRT 匯入 0。
+各卡：B2 **稽核 FAIL 已還原**（增益無上限）／V Q09 維持 16／S 小修 PASS／H 雜湊工具 PASS／C2S4 已解釋 PASS／R release CI 重跑全綠（run 37094711041，`bee2889`）／I **BLOCKED**。
+
+- [x] HostProbe Q05 真實「亮」路徑（WF1003-S：preset 15＋EQ Shelf 100 Hz／+24 dB → +21.99 dBFS 亮燈；沒用 preset 11＋Body，因為會跟 B2 連動）。
+- [x] `melody_verify.verify()` 加 `cli`（WF1003-S）；`stem_verify` 的 `_melody_verify_uses_cli` 拿掉。
+- [x] sustain 網格 0 拒量搬出 strict xfail（WF1003-S；5 條 strict xfail 原封不動）。
+- [x] `crossplatform_verify.py` docstring（WF1003-S，只改措辭）。
+- [x] KNOWN_LIMITS_INDEX／ENGINE_DOMAIN_CLAIMS 的 TODO 行號改條目名（WF1003-S）。`reports/voice_pool_occupancy_2026-09-25.zh-TW.md` §1 行號釘在 `18430c4`，已抽查正確，**不改**（不是「已改」）。
+- [ ] CHANGES_v1_1.md 那條：§2.2 措辭已改（WF1003-S），但 `x2_build_packages` 的 0.1 dB 問題、`xa_zip_text` 重寫**沒做**，條目不能整條勾掉。
+- [x] C2 S4 +1.5 dB 調查（WF1003-C2S4）：重打間隔造成的相位巧合，不用改程式；WF1002-C2 報告的「S4 +1.5 dB」應改寫成「隨重打間隔在 −3～+1.5 dB 間變動」（報告文字還沒改）。
+- [x] 重跑 `release-physics.yml`（WF1003-R）。
+- [x] Q09 voice pool 量 16 vs 32（WF1003-V）：維持 16。
+- [ ] **要月月裁**：Q09 按引擎分大小（Chromatic 32、Piano／FM 16；FM 沒量）；16 顆 Piano 低音滿載 p99 10.5 ms 貼著預算，要不要列已知限制。
+- [ ] **B2 重做**：加 g 上限（`reports/gate_outputs/wf1003_B2_audit.txt` §7；舊 patch 在 `E:\Tsuki-project\_scratch\wf1003\failed_B2\`），還需要月月裁新慣例常數。
+- [ ] **`.iss` 編譯**：月月本人執行 `E:\Tsuki-project\_tools\innosetup\innosetup-7.1.0-x64.exe` 點「僅為我安裝」後，AI 再編（EULA.txt 還不存在，要用替身）。
+- [ ] 審 WF1003 staged 內容後決定 commit／push；部署位置的 VST3 仍是 WF1002b 版（`fa13ac17…`，本輪行為等價），要不要重新部署。
+
 ## 2026-10-03 快照
 
 月月 10-02 裁「照 Fable 的說法做」：WF0925 裁決包 38 題（Q01～Q38）由 WF1002 輪全部落地，追加裁決 N1～N9（全照建議，N9＝A）由 WF1002b 輪落地，各 lane 稽核 PASS。
@@ -40,7 +61,7 @@ CI：`physics.yml` 在 `168688e` 全綠（run 37036197563）；`release-physics.
 - [ ] **專輯**：`LICENSE_ALBUM_v1_1.txt` 第 5 條影片／直播 BGM 選 A（允許）或 B（只個人聆聽）；自己開不開 Content ID；AI Radiance 作曲署名；MP3 試聽檔要不要從 TPDF 版重出。
 - [ ] 要不要把 branch merge 進 `main`（目前比 `main` 多 26 個 commit）。
 - [ ] **Body 層**（N1 的 B2 選項）：N1 之後 preset 11 把 Body 調回預設 0.5 仍約 +3.8 dBFS；B2＝Body 響度正規化，需要新的慣例常數（R4），要月月裁才能開卡。
-- [ ] **Q09 voice pool**：現裁 D（主張域寫明＋HostProbe 資訊性量測，月光舌鼓版被搶 64 次）；要不要加大 pool 沒裁。
+- [ ] **Q09 voice pool**（**WF1003-V 量完：維持 16；按引擎分大小待裁**，見檔頭 WF1003 快照）：現裁 D（主張域寫明＋HostProbe 資訊性量測，月光舌鼓版被搶 64 次）；要不要加大 pool 沒裁。
 - [ ] **Q08 parity GATE 的容差**（Q08＝C：文案已收窄；GATE 是後續 L 卡，容差要走 ROADMAP §6 登記）。
 - [ ] O02 UI 功能規格送誰、功能算不算凍結（規格 v1.2，10-02 補記）。
 - [ ] O03 四季／月光換源重轉譜要不要排程（擋專輯 Vol.2 與月光母帶重出）；四季 string＋bow 5,682 顆凹口要不要登記新 D 項。
@@ -59,12 +80,12 @@ CI：`physics.yml` 在 `168688e` 全綠（run 37036197563）；`release-physics.
 
 ### AI 可做的後續卡（月月點頭就開；不必新裁決）
 
-- [ ] **C2 S4 +1.5 dB 調查**（唯讀）：FM 修法後「同音按著重打」合成測例大 1.5 dB，推測是同音 voice 相位抵消變少，沒證實（`reports/wf1002_fm_envelope_fix_before_after.zh-TW.md`）。
-- [ ] **`.iss` 編譯驗證**：`tools/installer/TsukiSynth.iss` 已加 `SetupArchitecture=x64`（N7），沒編譯過；要先安裝 `E:\Tsuki-project\_tools\innosetup\innosetup-7.1.0-x64.exe`（sha 已核、還沒裝，裝不裝由月月決定）。安裝包內附的 LICENSE.TXT 跟官網那份是否逐字相同也沒核對。
-- [ ] **重跑 `release-physics.yml`**：WF1002 的靜態 CRT、壓縮器、FM、F5 改動之後還沒在 GitHub 上跑過 pluginval／validator／corpus 75 首（09-30 那次是 Q14＝C 授權觸發）。
+- [x] **C2 S4 +1.5 dB 調查**（唯讀；**WF1003-C2S4 已解釋：重打間隔的相位巧合，不改程式**）：FM 修法後「同音按著重打」合成測例大 1.5 dB，推測是同音 voice 相位抵消變少，沒證實（`reports/wf1002_fm_envelope_fix_before_after.zh-TW.md`）。
+- [ ] **`.iss` 編譯驗證**（**WF1003-I BLOCKED：安裝模式對話框要人點，ISCC 沒裝**）：`tools/installer/TsukiSynth.iss` 已加 `SetupArchitecture=x64`（N7），沒編譯過；要先安裝 `E:\Tsuki-project\_tools\innosetup\innosetup-7.1.0-x64.exe`（sha 已核、還沒裝，裝不裝由月月決定）。安裝包內附的 LICENSE.TXT 跟官網那份是否逐字相同也沒核對。
+- [x] **重跑 `release-physics.yml`**（**WF1003-R：run 37094711041 在 `bee2889` 全綠**）：WF1002 的靜態 CRT、壓縮器、FM、F5 改動之後還沒在 GitHub 上跑過 pluginval／validator／corpus 75 首（09-30 那次是 Q14＝C 授權觸發）。
 - [ ] **Cubase 重掃後核對**：月月重掃後跑 `tools/cubase_scan_verify.py`，確認 TsukiSynth 只出現一份。
-- [ ] **HostProbe Q05「亮燈」真實輸出路徑**：N1 之後 preset 15 只剩 −1.85 dBFS，真實 VST3 輸出這條只驗得到「不亮」（合成對照仍涵蓋「亮」）；可補一個會超過 0 dBFS 的真實設定（例如 preset 11＋Body 0.5）。
-- [ ] tools 小修：`tools/melody_verify.py` 的 `verify()` 加 `cli=None`（現在 stem_verify 的 `--cli` 靠暫時替換私有函式）；sustain 網格「0 拒量」搬出 strict xfail；`tools/crossplatform_verify.py:9-10` docstring 還寫 Linux/clang。
+- [x] **HostProbe Q05「亮燈」真實輸出路徑**（**WF1003-S：改用 preset 15＋EQ Shelf 100 Hz／+24 dB，+10 項**）：N1 之後 preset 15 只剩 −1.85 dBFS，真實 VST3 輸出這條只驗得到「不亮」（合成對照仍涵蓋「亮」）；可補一個會超過 0 dBFS 的真實設定（例如 preset 11＋Body 0.5）。
+- [x] tools 小修（**WF1003-S 三項都做了**）：`tools/melody_verify.py` 的 `verify()` 加 `cli=None`（現在 stem_verify 的 `--cli` 靠暫時替換私有函式）；sustain 網格「0 拒量」搬出 strict xfail；`tools/crossplatform_verify.py:9-10` docstring 還寫 Linux/clang。
 - [ ] 文件小修：`docs/KNOWN_LIMITS_INDEX.zh-TW.md` 與 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` 引用本檔的行號改成引條目名稱；`reports/voice_pool_occupancy_2026-09-25.zh-TW.md` §1 行號；EARFREE `:371` 補「caveats 已由 WF0925b-TF 更新」；`reports/partial_verify_full_2026-09-25.zh-TW.md:181` 同一句（歷史報告，要不要加註再定）。
 - [ ] 商品 lane 小修：`CHANGES_v1_1.md` §2.2 三列還是 XF 之前的阻尼措辭（內部檔）；`x2_build_packages.py` 的 loop 增益差用只記到 0.1 dB 的 catalog `gain_db` 算（現有資料剛好沒誤差）；舊稽核腳本 `xa_zip_text.py` 已隨 `output/wf0925` 進回收筒，下一輪稽核要重寫成讀 README。
 - [ ] 75 首逐首雜湊比對腳本（`hash75.py`）放在 `output/wf1002b/INT/`，已隨暫存清掉；下一張整合卡要重寫（參考表 `reports/gate_outputs/wf1002b_integration_raw/12_hash75_vs_wf1002_integration.txt`）。

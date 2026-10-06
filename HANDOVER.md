@@ -1,12 +1,31 @@
 # TsukiSynth 交接文件
 
-> 交接視窗：**2026-10-03（WF1002＋WF1002b 完工、已 push）**　repo：`E:\Tsuki-project\tsuki-synth`　分支：`fix/deep-physics-audit-20260716`
+> 交接視窗：**2026-10-03（WF1002＋WF1002b 完工、已 push；WF1003 整合卡全綠、staged 未 commit）**　repo：`E:\Tsuki-project\tsuki-synth`　分支：`fix/deep-physics-audit-20260716`
 > **新 session 先讀 §0、§1 再動手。** 最新裁定表與各卡結果在 `docs/workcards/WF1002_README.md`（§1 裁定表、§3 WF1002、§4 WF1002b）；
 > 待辦勾選清單在 `TODO.md` 開頭；各輪細節與歷史決策在 `DEVLOG.md`（本檔不再保留舊輪的大段數字）。
 
 ---
 
 ## 0. 現況
+
+### WF1003（2026-10-03 下午；**staged、沒 commit、沒 push**，等月月審）
+
+月月 10-03 裁「都重跑，開 Dynamic Workflow；裁決兩項照建議規劃」。本輪 8 張卡（Sonnet 工兵＋Opus 稽核親自重跑），整合卡全套 GATE 1～9 全綠，
+證據 `reports/gate_outputs/wf1003_INTEGRATION.txt`＋`wf1003_integration_raw/`。
+
+| 卡 | 結果 | 白話 |
+|---|---|---|
+| B2 Body 層響度正規化 | **稽核 FAIL，已還原** | 增益沒有上限，Custom Harmonics 設定下輸出反而大 +22.7 dB（峰值 +14.80 dBFS）。修法小，patch 在 `E:\Tsuki-project\_scratch\wf1003\failed_B2\`；要重做（`wf1003_B2_audit.txt` §7）。 |
+| V Q09 voice pool 16 vs 32 | PASS → **維持 16** | 32 顆能消除月光舌鼓版的 64 次搶音，但 32 顆 Piano 同時發聲時約三成區塊來不及（p99 20.5 ms／預算 10.67 ms）。按引擎分大小是另一個要裁的選項（`reports/decision_packets/WF1003_decisions.zh-TW.md`）。 |
+| S 小修批次 | PASS | `melody_verify.verify()` 加 `cli`、sustain 0 拒量搬出 xfail、HostProbe 補 Q05「真的亮燈」路徑（+10 項）、docstring／文件行號改條目名。 |
+| H 75 首雜湊比對工具 | PASS | `tools/hash75_compare.py`（整合卡標準步驟從此有固定工具）。 |
+| C2S4 FM 同音重打 +1.5 dB | PASS（唯讀） | 相位抵消機制成立；+1.5 dB 是重打間隔的巧合（掃間隔 −3～+1.5 dB、平均 +0.03 dB），不用改程式。報告 `reports/wf1003_c2s4_same_note_level.zh-TW.md`。 |
+| R release CI 重跑 | PASS | `release-physics.yml` run 37094711041 在 `bee2889` 5 job 全綠（靜態 CRT／壓縮器／FM 改動後第一次）。 |
+| I Inno Setup＋`.iss` 編譯 | **BLOCKED** | 安裝精靈會跳「選擇安裝模式」要人點；ISCC 不在機器上，整合卡第 10 步（重編安裝檔）也因此 BLOCKED。 |
+
+渲染：75 首 WAV 逐首、8 首位元基準都跟 WF1002b 相同（V 卡是外掛層、不經 CLI）。
+
+### WF1002／WF1002b（10-02～03，已 push 到 `168688e`）
 
 月月 10-02 裁「照 Fable 的說法做」：WF0925 彙總裁決包 38 題（Q01～Q38）以 Fable 5 第三方評斷為準，WF1002 輪全部落地；
 同輪冒出的追加裁決 N1～N9，月月 10-02 全照建議（N9＝A 接受靜態 CRT 的位元變化），WF1002b 輪落地。各 lane 稽核 PASS，整合卡全綠。
@@ -41,13 +60,23 @@ IR 載入失敗改走缺檔三態、F5 量法換 Blackman-Harris 窗（「F5 PAS
 
 ### 1-2 git 狀態（2026-10-03 核對）
 
-- 本機 HEAD＝`origin/fix/deep-physics-audit-20260716`＝`168688e`，工作樹乾淨、stash 空。
+- **WF1003（10-03 下午）**：HEAD＝`origin/...`＝`bee2889`（10-03 上午兩個文件 commit `cde44c6`、`bee2889` 已 push）；WF1003 全部改動與證據已由整合卡 **`git add`（staged）**，沒 commit、沒 push，等月月審。
+  staged 清單見 `reports/gate_outputs/wf1003_integration_raw/19_git_status_after_add.txt`。
+- （10-03 上午的狀態，保留作歷史）本機 HEAD＝`origin/fix/deep-physics-audit-20260716`＝`168688e`，工作樹乾淨、stash 空。
 - `main`＝`origin/main`＝`3f9b90a`（09-15 merge），**branch 比 main 多 26 個 commit，沒 merge**。
 - 26 個 commit 的分段：WF0914 成果 7 個（09-25，`a09058c`～`18430c4`）、WF0925＋WF0925b 8 個（09-30，`eba91ba`～`643ab8a`）、
   09-30 證據 3 個（`b05b24e`、`d9aab66`、`b41298c`）、WF1002 5 個（10-02，`2c4443e`～`804bf03`）、WF1002b 4 個（10-03，`59c0b06`～`168688e`）。逐條看 `git log --oneline 3f9b90a..HEAD`。
 - R7 現行字面（10-02 Q03＝A）：不 commit、不 push（月月明示裁決時除外）；稽核 PASS 後由稽核 `git add` 供月月審。
 
-### 1-3 基線（WF1002b 整合卡，`reports/gate_outputs/wf1002b_INTEGRATION.txt`）
+### 1-3 基線
+
+**WF1003 整合卡新基線（`reports/gate_outputs/wf1003_INTEGRATION.txt`，2026-10-03）**——跟下面 WF1002b 表只差這幾格：
+pytest **312＝306＋1 skip＋5 xfail**（+2＝S 卡兩條 stem_verify 單元測試）；HostProbe **241 PASS／0 FAIL**（+10＝S 卡「Q05 real lit path」）；
+AuditTest 仍 111；75 首雜湊逐首與 WF1002b 相同（`tools/hash75_compare.py`，下次參考表用 `wf1003_integration_raw/12_hash75_vs_wf1002b_integration.txt`）；8/8 IDENTICAL；pluginval SUCCESS＋validator 47/47；靜態 CRT 匯入 0。
+`build\` 的 sha256 改為：CLI `d308fed2…`、VST3 `f6147296…`、Standalone `05e41a85…`（全量重建；CLI 原始碼沒改，雜湊變是重編本身造成，WAV 不變）。manifest renderer 欄現行 `d308fed24af8`。
+**release CI**：`release-physics.yml` run 37094711041（`bee2889`）全綠（R 卡）。安裝檔編譯仍 BLOCKED（ISCC 沒裝）。
+
+WF1002b 整合卡的基線（`reports/gate_outputs/wf1002b_INTEGRATION.txt`）：
 
 | GATE | 現況 |
 |---|---|
@@ -74,6 +103,10 @@ IR 載入失敗改走缺檔三態、F5 量法換 Blackman-Harris 窗（「F5 PAS
   Cubase 外掛快取 `vst3plugins.xml` 還停在 08-22 → 要月月開 Cubase 重掃，之後 AI 可跑 `tools/cubase_scan_verify.py` 核對只出現一份。
 
 ### 1-5 仍開著、AI 可以接著做的後續卡（要不要開由月月決定）
+
+> **WF1003 更新**：B2 做了但稽核 FAIL、已還原（要加 g 上限後重做）；C2 S4 已解釋（不用改程式）；Q09 量完維持 16（按引擎分大小待裁）；
+> release CI 已重跑全綠；小項（`melody_verify` 加 `cli`、sustain 搬出 xfail、`crossplatform_verify` docstring、HostProbe Q05 亮燈路徑）已做；
+> `.iss` 編譯仍卡在 Inno Setup 要月月本人裝（安裝模式對話框點「僅為我安裝」）。下面原文保留作 10-03 上午的狀態。
 
 - **Body 層 B2 卡**：N1 之後 preset 11 把 Body 調回預設 0.5 仍約 +3.8 dBFS（Body 濾波器對準基頻，0.8 時 +15 dB）。B2＝響度正規化，需新的慣例常數（要月月裁）。
 - **Q08 parity GATE**（外掛↔CLI 一致性）：現在只做了文案收窄；GATE 是後續 L 卡，容差要走 §6 登記。
