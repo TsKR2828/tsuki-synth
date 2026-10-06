@@ -1,0 +1,79 @@
+WF1003 卡 R 稽核（Opus 稽核層）- release-physics.yml 重跑
+==========================================================
+稽核日期：2026-10-03　repo HEAD＝bee2889c440959bf539e215089e4b8ccbb5ce20a（分支 fix/deep-physics-audit-20260716）
+判定：PASS
+
+一、我親自重跑／重查了什麼（不採信工兵的 log 轉述）
+--------------------------------------------------
+1. `gh run view 37094711041 --json ...` 直接向 GitHub API 查 run 中繼資料與全部 job/step 結論。
+2. `gh run view 37094711041 --log` 與 `gh run view 36602858471 --log` 各自重新下載完整 log 到
+   E:\Tsuki-project\_scratch\wf1003\R_audit\（log_*.txt），從我自己下載的 log grep 數字。
+3. `git ls-remote origin fix/deep-physics-audit-20260716` 核對遠端 head。
+4. `gh run list --workflow release-physics.yml` 核對今天只觸發一次、沒有重複觸發。
+5. `git diff --stat d9aab66 bee2889 -- .github/` 核對 release-physics.yml 兩次 run 之間沒有被改過。
+6. 兩次 run 的 step 名稱清單、HostProbe 檢查前綴計數逐項 diff（覆蓋有沒有縮水）。
+7. `git status` / `git diff --stat` 核對本卡實際改動。
+
+二、run 本體（GitHub API 直查）
+------------------------------
+run 37094711041：workflow「Release Physics Gates」(id 343059240)，event workflow_dispatch，attempt 1
+headSha  = bee2889c440959bf539e215089e4b8ccbb5ce20a  ＝ 本機 HEAD ＝ origin 遠端 head（ls-remote 相同）
+createdAt= 2026-10-03T03:53:51Z（台北 11:53，今天）　status completed　conclusion success
+jobs（5 個，全部 success、step 全部 success）：
+  build-and-host-validate      16/16 step success  03:53:55Z→04:23:13Z
+  complete-score-corpus (0)     9/9  step success  04:23:15Z→04:29:45Z
+  complete-score-corpus (1)     9/9  step success  04:23:17Z→04:30:11Z
+  complete-score-corpus (2)     9/9  step success  04:23:15Z→04:28:02Z
+  complete-score-corpus (3)     9/9  step success  04:23:16Z→04:31:22Z
+release-physics.yml 的 run 清單只有 37094711041（今天）與 36602858471（09-30）兩筆 → 只觸發一次，無重跑。
+
+三、從我自己下載的 log 抽出的數字（新 run 37094711041 vs 舊 run 36602858471）
+------------------------------------------------------------------------
+                         新 bee2889                         舊 d9aab66
+ctest                    100%，0 failed / 4                  同
+pytest                   302 passed, 3 skipped, 5 xfailed   299 passed, 3 skipped, 5 xfailed
+                         （deselected 0）                    （deselected 0）
+physics_verify           NO CHECKED FAILURES；'-> PASS' 128 行、'-> FAIL' 0   同（128／0）
+F5 tongue_drum residual  -96.3 dB re total（限 -60.0 dB）PASS；舊 Hann 法 -75.9 dB 列出但不判定
+                                                            -75.9 dB（舊 Hann 窗）PASS
+pluginval                PLUGIN VALIDATION RESULT: PASS；Programlist "Factory Presets" (27 programs)   同
+Steinberg validator      Result: 47 tests passed, 0 tests failed   同
+HostProbe                [PASS] 231 行、[FAIL] 0 行；PASS (0 failures)；exit code 0
+                                                            [PASS] 215、[FAIL] 0、exit 0
+Q05（最大聲 preset）     preset 15 'Bronze Water Gong (Body)' peak 0.808498（獨立量 0.808498）= -1.85 dBFS → 指示燈不亮
+                         合成對照：1.0001 樣本→亮、NaN→亮（仍涵蓋「亮」路徑）
+Corpus verify_score      19/19＋19/19＋19/19＋18/18 = 75/75，0 failed；1 項豁免（shard 0，FX 長殘響，既有）   同
+log 中 ##[error]         0
+
+工兵存的 wf1003_R_release_ci_fulllog.txt 的 sha256 = a82434b8…7e99b8a，
+與我獨立下載的 log_37094711041.txt 完全相同 → 工兵證據檔沒有被改過。工兵摘要的每個數字都與我獨立抽出的一致。
+
+四、覆蓋有沒有縮水（對照 09-30 run 36602858471）
+------------------------------------------------
+- job 清單：兩次都是 build-and-host-validate ＋ complete-score-corpus (0..3)，共 5 job，相同。
+- step 名稱清單（25 種，含 pluginval＋Steinberg 雙主機驗證、C++/Python 物理 GATE、L2 HostProbe、corpus 分片）：逐行 diff 完全相同。
+- release-physics.yml：d9aab66..bee2889 之間 .github/ 只改了 physics.yml，release-physics.yml 沒動。
+- HostProbe 檢查前綴計數：舊 run 有的前綴新 run 全部都有、數量全部 ≥ 舊值；新增 D12 24→31、Q05 2、Q06 4、H7/Q06 3（對應 WF1002/1002b 新增檢查）。總 PASS 215→231。
+- pytest passed 299→302（skip、xfail 數不變，無 deselect）。
+- physics_verify 判定行 128→128；corpus 75→75。
+→ 覆蓋沒有縮水（R3 守住），只有增加。
+
+五、本卡實際改了哪些檔
+----------------------
+工兵宣稱 changed_files：reports/gate_outputs/wf1003_R_release_ci.txt、wf1003_R_release_ci_fulllog.txt（皆 untracked 新檔）。
+git status 核對：兩檔都在，屬本卡。工作樹上其他改動
+  （src/dsp/BodyResonance.h、src/engines/ChromaticEngine.h、src/engines/CimbalomEngine.h、tests/physics_models_repro.cpp、
+   docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md、wf1003_B2_*／C2S4_*／H_*／I_* 證據、tools/hash75_compare.py、reports/wf1003_c2s4_*.md、
+   reports/decision_packets/WF1003_decisions.zh-TW.md）
+  依檔名與卡別屬 B2／C2S4／H／I 等其他卡，本卡是純 CI 觸發卡，沒有理由改 src/；判定與工兵宣稱一致。
+stash 空、HEAD 仍是 bee2889（本卡沒 commit／push／add，R7 守住）。暫存在 repo 外 _scratch\wf1003\R\，沒在 output/ 建 junction。
+
+六、判定與範圍提醒
+------------------
+PASS 理由：run conclusion 與全部 5 job（含每個 step）經 API 直查皆 success；headSha＝bee2889＝本機 HEAD＝遠端；
+今天（2026-10-03）觸發且只觸發一次；所有 release 級 GATE 數字從我自己下載的 log 重新抽出，與工兵回報一致；
+對照 09-30 run 覆蓋完全沒縮水；本卡只新增兩個證據檔。
+
+範圍提醒（不影響本卡判定，給整合卡）：這次 CI 驗的是「已 push 的 bee2889」，
+不包含 WF1003 其他卡尚未 commit 的工作樹改動（例如 B2 改的 src/dsp/BodyResonance.h 等）。
+那些改動的全套驗證要由整合卡負責；若之後 push，release-physics.yml 需要在新 HEAD 上再跑一次才算涵蓋。

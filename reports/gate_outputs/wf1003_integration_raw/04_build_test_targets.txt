@@ -1,0 +1,28 @@
+START 2026-10-03 14:46:10
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthAuditTest.dir\Release\) 包含從其他專案 (TsukiSynthAuditTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthAuditTest.vcxproj]
+  TsukiSynthAuditTest.vcxproj -> <REPO>\build\Release\TsukiSynthAuditTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthTunerTest.dir\Release\) 包含從其他專案 (TsukiSynthTunerTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthTunerTest.vcxproj]
+  TsukiSynthTunerTest.vcxproj -> <REPO>\build\Release\TsukiSynthTunerTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthPhysicsModelsTest.dir\Release\) 包含從其他專案 (TsukiSynthPhysicsModelsTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthPhysicsModelsTest.vcxproj]
+  TsukiSynthPhysicsModelsTest.vcxproj -> <REPO>\build\Release\TsukiSynthPhysicsModelsTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthSpectrumViewTest.dir\Release\) 包含從其他專案 (TsukiSynthSpectrumViewTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthSpectrumViewTest.vcxproj]
+  TsukiSynthSpectrumViewTest.vcxproj -> <REPO>\build\Release\TsukiSynthSpectrumViewTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthHostProbe.dir\Release\) 包含從其他專案 (TsukiSynthHostProbe.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthHostProbe.vcxproj]
+  TsukiSynthHostProbe.vcxproj -> <REPO>\build\Release\TsukiSynthHostProbe.exe
+EXIT_CODE=0
+END 2026-10-03 14:46:13

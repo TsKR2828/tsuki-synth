@@ -1,0 +1,15 @@
+# WF1003-C2S4 raw measurement (read-only investigation, descriptive numbers only, no thresholds)
+# repo HEAD bee2889 (FM fix landed in 59c0b06; old Envelope.h = 804bf037b4d57346420fe5f5ebd49ca6a5cbd0ea:src/dsp/Envelope.h; FMPianoEngine.h / NoiseGen.h byte-identical in both)
+# harness = mirror of WF1002-C2 c2_fm_harness "mirror" mode (dry Synthesiser, 512-sample blocks, 48 kHz, one pset), see wf1003_C2S4_raw_method_sources.txt
+# <C2S4> = E:/Tsuki-project/_scratch/wf1003/C2S4 (outside the repo)
+# reproduction of WF1002-C2 S4 numbers + structural control
+
+S4 events: 40 notes, on=i*24000, off=on+48000, midi 60, vel 0.7, release 1500 ms, len 1152002 samples (24.000 s)
+S4 voices=16 | old rms -26.980 peak -16.487 steals 24 maxActive 16 tailOffHits 1039 inRelease 999
+S4 voices=16 | new rms -25.502 peak -16.388 steals 0 maxActive 4 tailOffHits 232 inRelease 192
+S4 voices=16 | new - old = +1.478 dB (rms), +0.098 dB (peak)
+S4 voices=1024 | old rms -26.974 peak -16.487 steals 0 maxActive 40 tailOffHits 1639 inRelease 1599
+S4 voices=1024 | new rms -25.502 peak -16.388 steals 0 maxActive 4 tailOffHits 232 inRelease 192
+S4 voices=1024 | new - old = +1.473 dB (rms), +0.098 dB (peak)
+reference (wf1002_C2_plugin_before_after.txt line 239): base_16 rms -26.980 pk -16.487 | fix_16 rms -25.502 pk -16.388 | base_1024 rms -26.974 pk -16.487 | fix_1024 rms -25.502 pk -16.388
+control S3-like (same note every 0.40 s, 0.13 s long, release 150 ms): old rms -33.407041 new rms -33.407041 tailOffInRelease old 0 new 0

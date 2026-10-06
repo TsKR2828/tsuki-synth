@@ -1,0 +1,27 @@
+0	-11.71	-27.69	Steel Hammered Dulcimer
+1	-12.97	-27.50	Copper Warm Strings
+2	-9.27	-25.56	Glass Wind Chimes
+3	-33.74	-47.85	Muted Felt Piano
+4	-13.34	-32.61	Brass Gamelan
+5	-19.82	-52.13	Rubber Muted Pluck
+6	-7.27	-23.53	Steel Hammered Dulcimer (Body)
+7	-4.67	-20.00	Copper Warm Strings (Body)
+8	-23.84	-32.36	Crystal Tongue Drum
+9	-9.37	-23.28	Bronze Water Gong
+10	-20.83	-38.86	Wooden Kalimba
+11	-3.03	-13.31	Ethereal Steel Bells
+12	-30.49	-41.88	Glass Singing Bowl
+13	-44.29	-68.36	Rubber Tongue Pad
+14	-11.44	-19.93	Crystal Tongue Drum (Body)
+15	-1.85	-16.56	Bronze Water Gong (Body)
+16	-19.83	-30.60	Acoustic Piano
+17	-22.90	-34.57	Electric Rhodes
+18	-21.21	-32.57	Layered E.Piano
+19	-16.23	-28.53	FM Vibraphone
+20	-9.07	-20.98	DX7 Crystal Bell
+21	-12.85	-20.99	Church Organ
+22	-12.43	-19.84	Ambient Pad
+23	-22.38	-38.79	FM Bass
+24	-20.98	-34.42	FM Brass
+25	-12.43	-25.75	Grand Piano (Physical)
+26	-13.98	-33.98	Bright Upright (Physical)

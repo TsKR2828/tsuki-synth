@@ -1,0 +1,109 @@
+START 2026-10-03 14:46:25
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  1>Checking Build System
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthCLI_rc_lib.dir\Release\) 包含從其他專案 (TsukiSynthCLI_rc_lib.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthCLI_rc_lib.vcxproj]
+  Generating TsukiSynthCLI_artefacts/JuceLibraryCode/TsukiSynthCLI_resources.rc
+  Building Custom Rule <REPO>/CMakeLists.txt
+  TsukiSynthCLI_rc_lib.vcxproj -> <REPO>\build\TsukiSynthCLI_rc_lib.dir\Release\TsukiSynthCLI_rc_lib.lib
+  Generating juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_TsukiSynthData/JuceLibraryCode/BinaryData.h
+  Building Custom Rule <REPO>/CMakeLists.txt
+  BinaryData1.cpp
+  BinaryData2.cpp
+  正在產生程式碼...
+  TsukiSynthData.vcxproj -> <REPO>\build\Release\TsukiSynthData.lib
+  Building Custom Rule <REPO>/CMakeLists.txt
+  RenderApp.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_audio_formats.cpp
+  juce_audio_basics.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_graphics_Sheenbidi.c
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynthCLI.vcxproj -> <REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynth_rc_lib.dir\Release\) 包含從其他專案 (TsukiSynth_rc_lib.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynth_rc_lib.vcxproj]
+  Generating TsukiSynth_artefacts/JuceLibraryCode/TsukiSynth_resources.rc
+  Building Custom Rule <REPO>/CMakeLists.txt
+  TsukiSynth_rc_lib.vcxproj -> <REPO>\build\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> <REPO>\build\Release\TsukiSynthData.lib
+  Building Custom Rule <REPO>/CMakeLists.txt
+  PluginProcessor.cpp
+  PluginEditor.cpp
+  ParameterLayout.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_audio_basics.cpp
+  juce_audio_formats.cpp
+  juce_audio_utils.cpp
+  juce_audio_devices.cpp
+  juce_dsp.cpp
+  juce_graphics_Sheenbidi.c
+  TsukiSynth.vcxproj -> <REPO>\build\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynth_Standalone.dir\Release\) 包含從其他專案 (TsukiSynth_Standalone.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynth_Standalone.vcxproj]
+  Building Custom Rule <REPO>/CMakeLists.txt
+  juce_audio_plugin_client_AAX.cpp
+  juce_audio_plugin_client_AAX_utils.cpp
+  juce_audio_plugin_client_ARA.cpp
+  juce_audio_plugin_client_LV2.cpp
+  juce_audio_plugin_client_Standalone.cpp
+  juce_audio_plugin_client_Unity.cpp
+  juce_audio_plugin_client_VST2.cpp
+  juce_audio_plugin_client_VST3.cpp
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynth_Standalone.vcxproj -> <REPO>\build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynth_rc_lib.dir\Release\) 包含從其他專案 (TsukiSynth_rc_lib.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynth_rc_lib.vcxproj]
+  TsukiSynth_rc_lib.vcxproj -> <REPO>\build\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> <REPO>\build\Release\TsukiSynthData.lib
+  TsukiSynth.vcxproj -> <REPO>\build\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynth_vst3_helper.dir\Release\) 包含從其他專案 (TsukiSynth_vst3_helper.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynth_vst3_helper.vcxproj]
+  Building Custom Rule <REPO>/CMakeLists.txt
+  juce_VST3ManifestHelper.cpp
+  TsukiSynth_vst3_helper.vcxproj -> <REPO>\build\Release\TsukiSynth_vst3_helper.exe
+  Building Custom Rule <REPO>/CMakeLists.txt
+  juce_audio_plugin_client_AAX.cpp
+  juce_audio_plugin_client_AAX_utils.cpp
+  juce_audio_plugin_client_ARA.cpp
+  juce_audio_plugin_client_LV2.cpp
+  juce_audio_plugin_client_Standalone.cpp
+  juce_audio_plugin_client_Unity.cpp
+  juce_audio_plugin_client_VST2.cpp
+  juce_audio_plugin_client_VST3.cpp
+     正在建立程式庫 <REPO>/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.lib 和物件 <REPO>/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.exp
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynth_VST3.vcxproj -> <REPO>\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  removing moduleinfo.json
+  creating <REPO>/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+EXIT_CODE=0
+END 2026-10-03 14:49:34

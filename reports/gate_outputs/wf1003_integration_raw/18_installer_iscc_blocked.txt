@@ -1,0 +1,18 @@
+WF1003-INT step 10: ISCC compile of tools/installer/TsukiSynth.iss with final binaries
+checked 2026-10-03 15:30:26
+ls: /c/Program Files/Inno Setup*
+ls: cannot access '/c/Program Files/Inno Setup*': No such file or directory
+ls: /c/Program Files (x86)/Inno Setup*
+ls: cannot access '/c/Program Files (x86)/Inno Setup*': No such file or directory
+ls: <USERPROFILE>\AppData\Local/Programs/Inno Setup*
+ls: cannot access '<USERPROFILE>\AppData\Local/Programs/Inno Setup*': No such file or directory
+where ISCC:
+��T: �䤣�촣�ѼҦ����ɮסC
+registry Inno Setup 7_is1:
+���~: �t�Χ䤣����w���n�����X�έȡC
+���~: �t�Χ䤣����w���n�����X�έȡC
+���~: �t�Χ䤣����w���n�����X�έȡC
+installer package present (not installed): innosetup-7.1.0-x64.exe
+tools/installer/EULA.txt exists? no
+RESULT: BLOCKED -- ISCC.exe not on this machine (same as WF1003-I card / I audit). Nothing compiled, nothing run. <SCRATCH>/INT/installer/ not created.
+NOTE: the garbled lines above are cp950 (Big5) console messages from where.exe ('INFO: could not find files for the given pattern') and reg.exe ('ERROR: the system was unable to find the specified registry key or value'); exit status of each was non-zero = not found.

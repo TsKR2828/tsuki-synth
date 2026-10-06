@@ -1,0 +1,42 @@
+WF1003 V card -- Q09 voice pool 16 vs 32: METHOD (how to re-run every number)
+Date: 2026-10-03. Machine: AMD Ryzen 5 3500X 6C/6T (3.6 GHz max), Windows 10 Home 10.0.19045, MSVC 19.50 Release (/MT static CRT, LTO as the repo build).
+This is the dev machine, NOT the user's DAW machine: absolute ms differ elsewhere; the ratios (pool 32 vs pool 16, and vs the 10.667 ms budget) are what transfers.
+
+0. What is measured
+   - Block budget = kBlockSize / kSampleRate = 512 / 48000 Hz = 10.6667 ms (the HostProbe's own block size and rate).
+   - "Steals" = juce::Synthesiser::findFreeVoice() returning a still-active voice (same twin method as WF1002-C1).
+   - Twin = in-process juce::Synthesiser wired exactly like TsukiSynthProcessor's constructor (tests/host_probe.cpp wireTwinSynth).
+     Twin(16) output vs the VST3 built with pool 16: max|diff| = 0 on every case (identity line "Q09V identity").
+     Twin(32) output vs the VST3 built with pool 32: max|diff| = 0 on every case. So twin == binary for both pool sizes.
+   - Twin timing ("twin(synth only)") = wall time of renderNextBlock() per block (QueryPerformanceCounter via
+     juce::Time::getHighResolutionTicks), synth only, fresh synth per repeat, 5 repeats per pool per case.
+   - VST3 timing ("VST3 processBlock") = wall time of the real binary's processBlock() per block, full effect chain.
+   - Cases: fur_elise piano (demand 12 voices), moonlight_mvt1_tongue_drum (Chromatic; demand 20; the known worst case:
+     64 steals at pool 16), stress32_chromatic and stress32_piano (SYNTHETIC: 32 distinct notes MIDI 36..67 started within
+     the first block, held 3 s = the most a 32-voice pool can ever ask of one engine).
+
+1. Build (repo, pool 16 = product default; HostProbe)
+   cd E:\Tsuki-project\tsuki-synth
+   cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe TsukiSynth_VST3
+2. Build (scratch, pool 32 -- the ONLY difference is the compile definition; repo files stay at 16)
+   cmake -S . -B E:/Tsuki-project/_scratch/wf1003/V/b32 -G "Visual Studio 18 2026" -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=OFF "-DCMAKE_CXX_FLAGS=/DWIN32 /D_WINDOWS /EHsc /DTSUKI_VOICE_POOL_SIZE=32"
+   cmake --build E:/Tsuki-project/_scratch/wf1003/V/b32 --config Release --target TsukiSynth_VST3
+   (git-bash: prefix MSYS2_ARG_CONV_EXCL="*" and use E:/ style paths, or git-bash mangles /D flags and /e/ paths)
+3. Run (cwd outside the repo; the HostProbe binary is the same, only the .vst3 differs)
+   set TSUKI_Q09V=1
+   build\Release\TsukiSynthHostProbe.exe <pool16 .vst3> <outdir>      (~6 min)
+   build\Release\TsukiSynthHostProbe.exe <pool32 .vst3> <outdir>      (~6 min)
+   Without TSUKI_Q09V the HostProbe behaves as before this card (231 PASS / 0 FAIL, ~73 s, Q09 block unchanged).
+   Primary evidence: 3 runs per pool, alternating 16/32 (wf1003_V_raw_pool16_run{1,2,3}.txt, wf1003_V_raw_pool32_run{1,2,3}.txt,
+   started 13:01:55). Confirmation with the FINAL (env-gated) binary: wf1003_V_raw_final_q09v_pool{16,32}.txt (13:37).
+4. Summarise: python wf1003_V_summarize.py <dir containing out_pool{16,32}_run{N}.txt>
+   -> wf1003_V_summary_3runs.txt (primary), wf1003_V_summary_final.txt (final-binary confirmation).
+5. R6 plug-in layer (X4 order): rebuild the five test targets (+VST3) -> ctest 4/4 (wf1003_V_ctest.txt)
+   -> HostProbe full run with env unset: [PASS] 231 / [FAIL] 0 (wf1003_V_raw_final_default_hostprobe.txt).
+
+Code touched (wf1003_V_code_diff.patch):
+   src/PluginProcessor.cpp  literal 16 (x3 loops) -> kVoicePoolSize = TSUKI_VOICE_POOL_SIZE (default 16). Value unchanged.
+   tests/host_probe.cpp     twin32, per-block timing, stress cases, all behind TSUKI_Q09V=1; informational only, no CHECK added.
+CLI: src/cli/RenderApp.cpp is the only source of TsukiSynthCLI (CMakeLists.txt:150-170); PluginProcessor.cpp is compiled only into
+   target TsukiSynth (CMakeLists.txt:124). The CLI uses no juce::Synthesiser pool; 75 WAV bits cannot change from this card.
+Not covered: DAW-side load with the other tracks; pool-size effect on memory (not measured); machines other than the one above.

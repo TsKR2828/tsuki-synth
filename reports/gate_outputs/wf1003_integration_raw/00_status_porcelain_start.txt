@@ -1,0 +1,63 @@
+ M docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+ M docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+ M docs/KNOWN_LIMITS_INDEX.zh-TW.md
+ M src/PluginProcessor.cpp
+ M tests/host_probe.cpp
+ M tests/test_measurement_selfcal.py
+ M tests/test_stem_verify.py
+ M tools/crossplatform_verify.py
+ M tools/melody_verify.py
+ M tools/stem_verify.py
+?? reports/decision_packets/WF1003_decisions.zh-TW.md
+?? reports/gate_outputs/wf1003_B2_audit.txt
+?? reports/gate_outputs/wf1003_C2S4_audit.txt
+?? reports/gate_outputs/wf1003_C2S4_raw_decomposition.txt
+?? reports/gate_outputs/wf1003_C2S4_raw_jitter_control.txt
+?? reports/gate_outputs/wf1003_C2S4_raw_mechanism_model.txt
+?? reports/gate_outputs/wf1003_C2S4_raw_method_sources.txt
+?? reports/gate_outputs/wf1003_C2S4_raw_repro.txt
+?? reports/gate_outputs/wf1003_C2S4_raw_sweep_interval.txt
+?? reports/gate_outputs/wf1003_C2S4_raw_sweep_pitch.txt
+?? reports/gate_outputs/wf1003_H_audit.txt
+?? reports/gate_outputs/wf1003_H_hash75_selftest.txt
+?? reports/gate_outputs/wf1003_I_audit.txt
+?? reports/gate_outputs/wf1003_I_installer.txt
+?? reports/gate_outputs/wf1003_R_audit.txt
+?? reports/gate_outputs/wf1003_R_release_ci.txt
+?? reports/gate_outputs/wf1003_R_release_ci_fulllog.txt
+?? reports/gate_outputs/wf1003_S_audit.txt
+?? reports/gate_outputs/wf1003_S_audit_raw_hostprobe.txt
+?? reports/gate_outputs/wf1003_S_audit_raw_pytest_ctest.txt
+?? reports/gate_outputs/wf1003_S_code_diff.patch
+?? reports/gate_outputs/wf1003_S_fixes.txt
+?? reports/gate_outputs/wf1003_S_raw_ctest.txt
+?? reports/gate_outputs/wf1003_S_raw_hostprobe.txt
+?? reports/gate_outputs/wf1003_S_raw_pytest_full.txt
+?? reports/gate_outputs/wf1003_V_audit.txt
+?? reports/gate_outputs/wf1003_V_audit_parse.py
+?? reports/gate_outputs/wf1003_V_audit_raw_ctest_times_hashes.txt
+?? reports/gate_outputs/wf1003_V_audit_raw_default_hostprobe.txt
+?? reports/gate_outputs/wf1003_V_audit_raw_parsed.txt
+?? reports/gate_outputs/wf1003_V_audit_raw_q09v_pool16.txt
+?? reports/gate_outputs/wf1003_V_audit_raw_q09v_pool32.txt
+?? reports/gate_outputs/wf1003_V_code_diff.patch
+?? reports/gate_outputs/wf1003_V_criteria_preregistered.txt
+?? reports/gate_outputs/wf1003_V_ctest.txt
+?? reports/gate_outputs/wf1003_V_hashes_3runs.txt
+?? reports/gate_outputs/wf1003_V_hashes_final.txt
+?? reports/gate_outputs/wf1003_V_method.txt
+?? reports/gate_outputs/wf1003_V_raw_final_default_hostprobe.txt
+?? reports/gate_outputs/wf1003_V_raw_final_q09v_pool16.txt
+?? reports/gate_outputs/wf1003_V_raw_final_q09v_pool32.txt
+?? reports/gate_outputs/wf1003_V_raw_pool16_run1.txt
+?? reports/gate_outputs/wf1003_V_raw_pool16_run2.txt
+?? reports/gate_outputs/wf1003_V_raw_pool16_run3.txt
+?? reports/gate_outputs/wf1003_V_raw_pool32_run1.txt
+?? reports/gate_outputs/wf1003_V_raw_pool32_run2.txt
+?? reports/gate_outputs/wf1003_V_raw_pool32_run3.txt
+?? reports/gate_outputs/wf1003_V_summarize.py
+?? reports/gate_outputs/wf1003_V_summary_3runs.txt
+?? reports/gate_outputs/wf1003_V_summary_final.txt
+?? reports/wf1003_c2s4_same_note_level.zh-TW.md
+?? reports/wf1003_v_voice_pool.zh-TW.md
+?? tools/hash75_compare.py

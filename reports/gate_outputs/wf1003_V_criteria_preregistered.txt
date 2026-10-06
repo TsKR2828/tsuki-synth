@@ -1,0 +1,48 @@
+WF1003 V card -- Q09 voice pool 16 -> 32: PRE-REGISTERED DECISION CRITERIA
+Written BEFORE any 16-vs-32 measurement was run (R1/R2: no after-the-fact fitting).
+Written at: see file mtime / the "date" line recorded in wf1003_V_run_log.txt
+
+Decision rule (month-month ruling 2026-10-03 "照 Fable 的建議": evidence-threshold adoption):
+  ADOPT pool 32 only if ALL of C1..C4 hold; otherwise KEEP 16 and write the failed item down.
+
+Worst-case material: moonlight_mvt1_tongue_drum (Chromatic engine, tongue drum), the same
+case HostProbe Q09 already measures (earlier measurement: demand 20 voices, 64 steals at pool 16,
+4 of them hit a still-held note).
+
+C1  steal reduction ("steals clearly drop"):
+      steals(pool 32) <= 0.5 * steals(pool 16)  on the moonlight tongue-drum score,
+      measured by the same twin method HostProbe Q09 already uses (twin = in-process
+      juce::Synthesiser built exactly like TsukiSynthProcessor's constructor; twin output is
+      sample-identical to the VST3 output when the pool sizes match).
+      ("halved" is this card's decision rule, not a physical constant; it is not a GATE tolerance
+       and is NOT entered into ROADMAP section 6. It is not borderline against the expected
+       demand of 20 voices: pool 32 covers it entirely.)
+
+C2  no real-time violation (definition, not a tuned number):
+      a block violates real time if its processing time >= its real-time budget
+      = kBlockSize / kSampleRate = 512 / 48000 Hz = 10.667 ms.
+      Required: ZERO violating blocks at pool 32 in every repeat, for
+        (a) the moonlight replay (twin, 5 repeats),
+        (b) the fur_elise replay (twin, 5 repeats),
+        (c) the stress case: 32 distinct notes held at once (pool 32 is fully occupied; this is the
+            most load a 32-voice pool can ever ask of one engine), for each of the Chromatic and
+            Piano(Cimbalom) engines (twin, 5 repeats),
+        (d) the real VST3 binary built with pool 32 (full effect chain included),
+            moonlight replay (3 HostProbe runs).
+
+C3  headroom ("processing-time margin still sufficient"):
+      worst block at pool 32 (max over all repeats of (a)-(d)) <= 0.5 * budget = 5.333 ms.
+      (0.5 = "at least 2x headroom" -- a conservative engineering margin chosen by this card, same
+       status as the 0.5 in C1: decision rule, not a GATE tolerance, not in section 6. The
+       machine's own measured numbers are printed so the reader can see how far from 0.5 it is.)
+
+C4  no collateral change where the pool was already enough:
+      fur_elise (demand 12 voices <= 16): twin(pool 16) output vs twin(pool 32) output must be
+      sample-identical (max |diff| = 0) -- a bigger pool must not change a piece that never
+      overflowed 16.
+      Also: CLI rendering must not share the pool constant (checked by reading
+      CMakeLists.txt / src/cli/RenderApp.cpp: the CLI target does not compile PluginProcessor.cpp).
+      If the CLI WOULD be affected -> STOP, status BLOCKED (75 WAV hashes would change).
+
+Reporting: every raw number goes to reports/gate_outputs/wf1003_V_*; the report
+reports/wf1003_v_voice_pool.zh-TW.md carries the 16-vs-32 table.

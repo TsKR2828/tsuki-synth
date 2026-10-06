@@ -1,0 +1,206 @@
+# WF1003-INT git add 之後（2026-10-03 15:33:29）。命令：git add -- src tests tools docs reports HANDOVER.md TODO.md；之後再 add 本檔
+# HEAD bee2889c440959bf539e215089e4b8ccbb5ce20a；沒 commit、沒 push
+
+$ git status --porcelain
+M  HANDOVER.md
+M  TODO.md
+M  docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+M  docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+M  docs/KNOWN_LIMITS_INDEX.zh-TW.md
+A  reports/decision_packets/WF1003_decisions.zh-TW.md
+A  reports/gate_outputs/wf1003_B2_audit.txt
+A  reports/gate_outputs/wf1003_C2S4_audit.txt
+A  reports/gate_outputs/wf1003_C2S4_raw_decomposition.txt
+A  reports/gate_outputs/wf1003_C2S4_raw_jitter_control.txt
+A  reports/gate_outputs/wf1003_C2S4_raw_mechanism_model.txt
+A  reports/gate_outputs/wf1003_C2S4_raw_method_sources.txt
+A  reports/gate_outputs/wf1003_C2S4_raw_repro.txt
+A  reports/gate_outputs/wf1003_C2S4_raw_sweep_interval.txt
+A  reports/gate_outputs/wf1003_C2S4_raw_sweep_pitch.txt
+A  reports/gate_outputs/wf1003_H_audit.txt
+A  reports/gate_outputs/wf1003_H_hash75_selftest.txt
+A  reports/gate_outputs/wf1003_INTEGRATION.txt
+A  reports/gate_outputs/wf1003_I_audit.txt
+A  reports/gate_outputs/wf1003_I_installer.txt
+A  reports/gate_outputs/wf1003_R_audit.txt
+A  reports/gate_outputs/wf1003_R_release_ci.txt
+A  reports/gate_outputs/wf1003_R_release_ci_fulllog.txt
+A  reports/gate_outputs/wf1003_S_audit.txt
+A  reports/gate_outputs/wf1003_S_audit_raw_hostprobe.txt
+A  reports/gate_outputs/wf1003_S_audit_raw_pytest_ctest.txt
+A  reports/gate_outputs/wf1003_S_code_diff.patch
+A  reports/gate_outputs/wf1003_S_fixes.txt
+A  reports/gate_outputs/wf1003_S_raw_ctest.txt
+A  reports/gate_outputs/wf1003_S_raw_hostprobe.txt
+A  reports/gate_outputs/wf1003_S_raw_pytest_full.txt
+A  reports/gate_outputs/wf1003_V_audit.txt
+A  reports/gate_outputs/wf1003_V_audit_parse.py
+A  reports/gate_outputs/wf1003_V_audit_raw_ctest_times_hashes.txt
+A  reports/gate_outputs/wf1003_V_audit_raw_default_hostprobe.txt
+A  reports/gate_outputs/wf1003_V_audit_raw_parsed.txt
+A  reports/gate_outputs/wf1003_V_audit_raw_q09v_pool16.txt
+A  reports/gate_outputs/wf1003_V_audit_raw_q09v_pool32.txt
+A  reports/gate_outputs/wf1003_V_code_diff.patch
+A  reports/gate_outputs/wf1003_V_criteria_preregistered.txt
+A  reports/gate_outputs/wf1003_V_ctest.txt
+A  reports/gate_outputs/wf1003_V_hashes_3runs.txt
+A  reports/gate_outputs/wf1003_V_hashes_final.txt
+A  reports/gate_outputs/wf1003_V_method.txt
+A  reports/gate_outputs/wf1003_V_raw_final_default_hostprobe.txt
+A  reports/gate_outputs/wf1003_V_raw_final_q09v_pool16.txt
+A  reports/gate_outputs/wf1003_V_raw_final_q09v_pool32.txt
+A  reports/gate_outputs/wf1003_V_raw_pool16_run1.txt
+A  reports/gate_outputs/wf1003_V_raw_pool16_run2.txt
+A  reports/gate_outputs/wf1003_V_raw_pool16_run3.txt
+A  reports/gate_outputs/wf1003_V_raw_pool32_run1.txt
+A  reports/gate_outputs/wf1003_V_raw_pool32_run2.txt
+A  reports/gate_outputs/wf1003_V_raw_pool32_run3.txt
+A  reports/gate_outputs/wf1003_V_summarize.py
+A  reports/gate_outputs/wf1003_V_summary_3runs.txt
+A  reports/gate_outputs/wf1003_V_summary_final.txt
+A  reports/gate_outputs/wf1003_integration_raw/00_diff_cached_stat_start.txt
+A  reports/gate_outputs/wf1003_integration_raw/00_diff_unstaged_stat_start.txt
+A  reports/gate_outputs/wf1003_integration_raw/00_head.txt
+A  reports/gate_outputs/wf1003_integration_raw/00_status_porcelain_start.txt
+A  reports/gate_outputs/wf1003_integration_raw/00c_stash_list.txt
+A  reports/gate_outputs/wf1003_integration_raw/01_bin_sha256_before.txt
+A  reports/gate_outputs/wf1003_integration_raw/02_cmake_configure.txt
+A  reports/gate_outputs/wf1003_integration_raw/03_build_main_targets.txt
+A  reports/gate_outputs/wf1003_integration_raw/03b_build_main_targets_clean_first.txt
+A  reports/gate_outputs/wf1003_integration_raw/04_build_test_targets.txt
+A  reports/gate_outputs/wf1003_integration_raw/04b_build_test_targets_after_clean.txt
+A  reports/gate_outputs/wf1003_integration_raw/05_bin_sha256_after.txt
+A  reports/gate_outputs/wf1003_integration_raw/06_dumpbin_dependents.txt
+A  reports/gate_outputs/wf1003_integration_raw/07_ctest.txt
+A  reports/gate_outputs/wf1003_integration_raw/07b_audittest_direct.txt
+A  reports/gate_outputs/wf1003_integration_raw/08_physics_verify_full.txt
+A  reports/gate_outputs/wf1003_integration_raw/09_physics_verify_selftest.txt
+A  reports/gate_outputs/wf1003_integration_raw/10_verify_score_all.txt
+A  reports/gate_outputs/wf1003_integration_raw/11_pytest_collect_only.txt
+A  reports/gate_outputs/wf1003_integration_raw/12_hash75_vs_wf1002b_integration.txt
+A  reports/gate_outputs/wf1003_integration_raw/13_render_wf_scores_bit_identity.txt
+A  reports/gate_outputs/wf1003_integration_raw/13b_bit_identity_diff.txt
+A  reports/gate_outputs/wf1003_integration_raw/14_pytest.txt
+A  reports/gate_outputs/wf1003_integration_raw/15_hostprobe_cwd_outside_repo.txt
+A  reports/gate_outputs/wf1003_integration_raw/15_hostprobe_env.txt
+A  reports/gate_outputs/wf1003_integration_raw/15b_e16_table.txt
+A  reports/gate_outputs/wf1003_integration_raw/15c_hostprobe_verdicts_vs_wf1002b.diff
+A  reports/gate_outputs/wf1003_integration_raw/16_validate_plugin.txt
+A  reports/gate_outputs/wf1003_integration_raw/16a_pluginval_stdout.txt
+A  reports/gate_outputs/wf1003_integration_raw/16b_pluginval_own_log.txt
+A  reports/gate_outputs/wf1003_integration_raw/18_installer_iscc_blocked.txt
+A  reports/wf1003_c2s4_same_note_level.zh-TW.md
+A  reports/wf1003_v_voice_pool.zh-TW.md
+M  src/PluginProcessor.cpp
+M  tests/host_probe.cpp
+M  tests/test_measurement_selfcal.py
+M  tests/test_stem_verify.py
+M  tools/crossplatform_verify.py
+A  tools/hash75_compare.py
+M  tools/melody_verify.py
+M  tools/stem_verify.py
+?? reports/gate_outputs/wf1003_integration_raw/19_git_status_after_add.txt
+
+$ git diff --cached --stat
+ HANDOVER.md                                        |    39 +-
+ TODO.md                                            |    33 +-
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md           |     2 +-
+ docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md                 |     1 +
+ docs/KNOWN_LIMITS_INDEX.zh-TW.md                   |     4 +-
+ reports/decision_packets/WF1003_decisions.zh-TW.md |    47 +
+ reports/gate_outputs/wf1003_B2_audit.txt           |   141 +
+ reports/gate_outputs/wf1003_C2S4_audit.txt         |   111 +
+ .../gate_outputs/wf1003_C2S4_raw_decomposition.txt |    39 +
+ .../wf1003_C2S4_raw_jitter_control.txt             |    49 +
+ .../wf1003_C2S4_raw_mechanism_model.txt            |    41 +
+ .../wf1003_C2S4_raw_method_sources.txt             |   677 ++
+ reports/gate_outputs/wf1003_C2S4_raw_repro.txt     |    15 +
+ .../wf1003_C2S4_raw_sweep_interval.txt             |    59 +
+ .../gate_outputs/wf1003_C2S4_raw_sweep_pitch.txt   |    34 +
+ reports/gate_outputs/wf1003_H_audit.txt            |    51 +
+ reports/gate_outputs/wf1003_H_hash75_selftest.txt  |   177 +
+ reports/gate_outputs/wf1003_INTEGRATION.txt        |   186 +
+ reports/gate_outputs/wf1003_I_audit.txt            |    51 +
+ reports/gate_outputs/wf1003_I_installer.txt        |    40 +
+ reports/gate_outputs/wf1003_R_audit.txt            |    79 +
+ reports/gate_outputs/wf1003_R_release_ci.txt       |    31 +
+ .../gate_outputs/wf1003_R_release_ci_fulllog.txt   | 10528 +++++++++++++++++++
+ reports/gate_outputs/wf1003_S_audit.txt            |   138 +
+ .../gate_outputs/wf1003_S_audit_raw_hostprobe.txt  |   409 +
+ .../wf1003_S_audit_raw_pytest_ctest.txt            |    25 +
+ reports/gate_outputs/wf1003_S_code_diff.patch      |   344 +
+ reports/gate_outputs/wf1003_S_fixes.txt            |   142 +
+ reports/gate_outputs/wf1003_S_raw_ctest.txt        |    13 +
+ reports/gate_outputs/wf1003_S_raw_hostprobe.txt    |   408 +
+ reports/gate_outputs/wf1003_S_raw_pytest_full.txt  |     7 +
+ reports/gate_outputs/wf1003_V_audit.txt            |   115 +
+ reports/gate_outputs/wf1003_V_audit_parse.py       |    33 +
+ .../wf1003_V_audit_raw_ctest_times_hashes.txt      |    25 +
+ .../wf1003_V_audit_raw_default_hostprobe.txt       |   396 +
+ reports/gate_outputs/wf1003_V_audit_raw_parsed.txt |    76 +
+ .../wf1003_V_audit_raw_q09v_pool16.txt             |   519 +
+ .../wf1003_V_audit_raw_q09v_pool32.txt             |   519 +
+ reports/gate_outputs/wf1003_V_code_diff.patch      |   299 +
+ .../wf1003_V_criteria_preregistered.txt            |    48 +
+ reports/gate_outputs/wf1003_V_ctest.txt            |    13 +
+ reports/gate_outputs/wf1003_V_hashes_3runs.txt     |     2 +
+ reports/gate_outputs/wf1003_V_hashes_final.txt     |     3 +
+ reports/gate_outputs/wf1003_V_method.txt           |    42 +
+ .../wf1003_V_raw_final_default_hostprobe.txt       |   396 +
+ .../wf1003_V_raw_final_q09v_pool16.txt             |   519 +
+ .../wf1003_V_raw_final_q09v_pool32.txt             |   519 +
+ reports/gate_outputs/wf1003_V_raw_pool16_run1.txt  |   518 +
+ reports/gate_outputs/wf1003_V_raw_pool16_run2.txt  |   518 +
+ reports/gate_outputs/wf1003_V_raw_pool16_run3.txt  |   518 +
+ reports/gate_outputs/wf1003_V_raw_pool32_run1.txt  |   518 +
+ reports/gate_outputs/wf1003_V_raw_pool32_run2.txt  |   518 +
+ reports/gate_outputs/wf1003_V_raw_pool32_run3.txt  |   518 +
+ reports/gate_outputs/wf1003_V_summarize.py         |    58 +
+ reports/gate_outputs/wf1003_V_summary_3runs.txt    |    45 +
+ reports/gate_outputs/wf1003_V_summary_final.txt    |    45 +
+ .../00_diff_cached_stat_start.txt                  |     0
+ .../00_diff_unstaged_stat_start.txt                |    14 +
+ .../wf1003_integration_raw/00_head.txt             |     1 +
+ .../00_status_porcelain_start.txt                  |    63 +
+ .../wf1003_integration_raw/00c_stash_list.txt      |     0
+ .../01_bin_sha256_before.txt                       |     9 +
+ .../wf1003_integration_raw/02_cmake_configure.txt  |    12 +
+ .../03_build_main_targets.txt                      |    37 +
+ .../03b_build_main_targets_clean_first.txt         |   109 +
+ .../04_build_test_targets.txt                      |    28 +
+ .../04b_build_test_targets_after_clean.txt         |   120 +
+ .../wf1003_integration_raw/05_bin_sha256_after.txt |    19 +
+ .../06_dumpbin_dependents.txt                      |   174 +
+ .../wf1003_integration_raw/07_ctest.txt            |    14 +
+ .../07b_audittest_direct.txt                       |   122 +
+ .../08_physics_verify_full.txt                     |   625 ++
+ .../09_physics_verify_selftest.txt                 |    17 +
+ .../wf1003_integration_raw/10_verify_score_all.txt |  3840 +++++++
+ .../11_pytest_collect_only.txt                     |     5 +
+ .../12_hash75_vs_wf1002b_integration.txt           |    86 +
+ .../13_render_wf_scores_bit_identity.txt           |    22 +
+ .../13b_bit_identity_diff.txt                      |    22 +
+ .../wf1003_integration_raw/14_pytest.txt           |    17 +
+ .../15_hostprobe_cwd_outside_repo.txt              |   411 +
+ .../wf1003_integration_raw/15_hostprobe_env.txt    |     4 +
+ .../wf1003_integration_raw/15b_e16_table.txt       |    27 +
+ .../15c_hostprobe_verdicts_vs_wf1002b.diff         |    69 +
+ .../wf1003_integration_raw/16_validate_plugin.txt  |  2495 +++++
+ .../16a_pluginval_stdout.txt                       |   154 +
+ .../16b_pluginval_own_log.txt                      |   150 +
+ .../18_installer_iscc_blocked.txt                  |    18 +
+ reports/wf1003_c2s4_same_note_level.zh-TW.md       |   185 +
+ reports/wf1003_v_voice_pool.zh-TW.md               |   105 +
+ src/PluginProcessor.cpp                            |    18 +-
+ tests/host_probe.cpp                               |   261 +-
+ tests/test_measurement_selfcal.py                  |    35 +
+ tests/test_stem_verify.py                          |    53 +-
+ tools/crossplatform_verify.py                      |    13 +-
+ tools/hash75_compare.py                            |   270 +
+ tools/melody_verify.py                             |     9 +-
+ tools/stem_verify.py                               |    47 +-
+ 97 files changed, 30315 insertions(+), 66 deletions(-)
+
+$ git diff --stat  (unstaged; should be empty except this file before its own add)
+
+$ git stash list

@@ -1,0 +1,25 @@
+Test project E:/Tsuki-project/tsuki-synth/build
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.08 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.53 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.08 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.03 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   1.72 sec
+CTEST_EXIT=0
+
+default start 2026-10-03 13:53:16
+default EXIT=0 secs=72
+q09v16 start 2026-10-03 13:54:28
+q09v16 EXIT=0 secs=318
+q09v32 start 2026-10-03 13:59:47
+q09v32 EXIT=0 secs=324
+
+e8791f1101cf8b40218860e1f2fa773c4ccc53d21ee6e788de86b454ad941963 */e/Tsuki-project/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+dadde02d2877cc073a0e8ee688562acba58c1dbe5f162aedbea8576916067ea9 */e/Tsuki-project/_scratch/wf1003/V/b32/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+c413096ddaf7d184b19c6f761f756b7380d185567243c5f359a7d9c41d97ccd9 */e/Tsuki-project/tsuki-synth/build/Release/TsukiSynthHostProbe.exe

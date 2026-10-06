@@ -1,0 +1,19 @@
+d308fed24af8042c448b259d1aa4a009843c51e106e5603b7f397fb2bcc6e944 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+f6147296be878b56b52ae8c170e9068abb2c83b30649f054fcbd765f36f0eb6b *build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+709526f55057e53be431ba288aa4e89671c4ea77fd7320b60afdff631535d994 *build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/Resources/moduleinfo.json
+05e41a85a1cc7d04a9025763ac26762738f9a185ac603ca6f246a7b49dc80610 *build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+fbcee087a353db83962f4002225e4ffb1ace0140818eab31027a32aaf22d8da3 *build/Release/TsukiSynthAuditTest.exe
+6090f244fe9228d22616ac08759ddfa18fd11992fa69ab23143a27582e66ba14 *build/Release/TsukiSynthHostProbe.exe
+f8a339fa00d905b41d41efe59d5ccc04422558394c0eeff37d4140f3d2d4178e *build/Release/TsukiSynthPhysicsModelsTest.exe
+0df4ae665dcb94870f39d1764957d306b14710631de9abd78be05ea9e48f858c *build/Release/TsukiSynthSpectrumViewTest.exe
+fc10415e22ea39a4dd26b510e1ea6bb2745ed101cb5aea2b05e777f2504d664f *build/Release/TsukiSynthTunerTest.exe
+75b91fe17796705b91f58791394d2038acc8173004e57cee8c71960dc71a7e82 *build/Release/TsukiSynth_vst3_helper.exe
+-rwxr-xr-x 1 <USER> <GROUP> 8433664 2026-10-03 14:50:26.391069900 +0800 build/Release/TsukiSynthAuditTest.exe
+-rwxr-xr-x 1 <USER> <GROUP> 9285632 2026-10-03 14:53:47.059569900 +0800 build/Release/TsukiSynthHostProbe.exe
+-rwxr-xr-x 1 <USER> <GROUP> 8174592 2026-10-03 14:52:00.226569800 +0800 build/Release/TsukiSynthPhysicsModelsTest.exe
+-rwxr-xr-x 1 <USER> <GROUP> 7928320 2026-10-03 14:52:48.430069800 +0800 build/Release/TsukiSynthSpectrumViewTest.exe
+-rwxr-xr-x 1 <USER> <GROUP> 7871488 2026-10-03 14:51:11.528572300 +0800 build/Release/TsukiSynthTunerTest.exe
+-rwxr-xr-x 1 <USER> <GROUP>  619008 2026-10-03 14:48:39.808569200 +0800 build/Release/TsukiSynth_vst3_helper.exe
+-rwxr-xr-x 1 <USER> <GROUP> 7588864 2026-10-03 14:47:24.004569800 +0800 build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+-rwxr-xr-x 1 <USER> <GROUP> 8301056 2026-10-03 14:48:35.553069900 +0800 build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+-rwxr-xr-x 1 <USER> <GROUP> 8607744 2026-10-03 14:49:34.313069700 +0800 build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3

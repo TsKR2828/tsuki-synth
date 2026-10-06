@@ -1,0 +1,31 @@
+WF1003 R card - release-physics.yml re-run
+==========================================
+Workflow : Release Physics Gates (release-physics.yml), workflow_dispatch
+Run      : 37094711041  https://github.com/TsKR2828/tsuki-synth/actions/runs/37094711041
+Ref/SHA  : fix/deep-physics-audit-20260716 @ bee2889c440959bf539e215089e4b8ccbb5ce20a (= origin head, verified via git ls-remote before trigger)
+Created  : 2026-10-03T03:53:51Z   Finished: ~04:31:22Z
+Conclusion: success (all 5 jobs)
+Previous release run for comparison: 36602858471 (HEAD d9aab66, 09-30), success.
+
+Jobs
+----
+build-and-host-validate   success  03:53:55Z -> 04:23:13Z
+complete-score-corpus (0) success  04:23:15Z -> 04:29:45Z
+complete-score-corpus (1) success  04:23:17Z -> 04:30:11Z
+complete-score-corpus (2) success  04:23:15Z -> 04:28:02Z
+complete-score-corpus (3) success  04:23:16Z -> 04:31:22Z
+
+Key numbers (grepped from the run log; full log saved as wf1003_R_release_ci_fulllog.txt, run.json metadata in _scratch/wf1003/R)
+------------------------------------------------------------------------------------------
+Build (static-CRT release targets): CLI, VST3, Standalone, 4 test targets + HostProbe built, MSBuild success.
+ctest                : 100% tests passed, 0 tests failed out of 4 (audit_repro, tuner_repro, physics_models_repro, spectrum_view_repro)
+pytest               : 302 passed, 3 skipped, 5 xfailed in 460.23s
+physics_verify       : "RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED"; F5 tongue_drum residual -96.3 dB re total (limit -60.0 dB), old Hann -75.9 dB not judged
+pluginval            : v1.0.4, strictness 10, "PLUGIN VALIDATION RESULT: PASS"; Programlist "Factory Presets" (27 programs)
+Steinberg validator  : pinned VST3 SDK 58f8da7; own selftest all [Succeeded]; "Result: 47 tests passed, 0 tests failed"
+HostProbe (L2, VST3) : 231 [PASS], 0 [FAIL]; "PASS (0 failures)"; exit code 0; E16: 27 factory presets registered;
+                       Q05 clip indicator on preset 15 'Bronze Water Gong (Body)' peak 0.808498 = -1.85 dBFS (loudest; next preset 11 at -3.03 dBFS)
+Corpus (verify_score): shards 19 + 19 + 19 + 18 = 75/75 scores passed, 0 failed;
+                       shard 0 reports 1 check covered by a registered exemption (FX artistic intent, long reverb tail -- the one existing exemption, same as repo baseline "75/75 (1 exemption)")
+
+Verdict: all release-level GATEs green on bee2889. No job failed; nothing re-triggered. No repo file modified (evidence files only).

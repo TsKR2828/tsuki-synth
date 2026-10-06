@@ -1,0 +1,142 @@
+WF1003-S 小修批次 證據彙總 -- 2026-10-03
+基底 HEAD bee2889，分支 fix/deep-physics-audit-20260716。沒有 git add / commit / push（R7）。
+重要前提（開工時實查）：任務文字說「B2 已改過 src（Body 正規化）」，但 B2 稽核判 FAIL、已還原
+（reports/gate_outputs/wf1003_B2_audit.txt §8）；開工時 src/ 只有 V 卡的 src/PluginProcessor.cpp（voice pool 常數）有改動，
+src/dsp/BodyResonance.h 等沒有 Body 正規化。所以第 7 項是在「沒有 Body 正規化」的現況上做的，而且特意挑了
+跟 Body 無關的旋鈕組合（見 §7），B2 日後重做也不會讓這項檢查失效。
+
+總結果
+  外掛層 ctest 4/4；AuditTest 直接跑 PASS (0 failures)（含 Q01 |IR-ALGO| 0.112 dB <= 0.25 dB）
+  HostProbe 241 PASS / 0 FAIL（基線 231；新增 10 條全在 Q05 真實亮燈路徑）
+  全套 pytest 306 passed + 1 skipped + 5 xfailed = 312（基線 310；新增 2 條 stem_verify 單元測試；xfail 仍是 5，沒動）
+  項目 1～7：1、2、3、4、5（部分）、6、7 做了；第 5 項 partial_verify:181 照指示跳過；第 5 項 voice_pool §1 沒有 TODO.md 行號可改（見 §5）
+
+重建（X4）：cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+  TsukiSynthSpectrumViewTest TsukiSynthHostProbe TsukiSynth_VST3 TsukiSynthCLI TsukiSynth_Standalone -> EXIT 0（0 個 error 行）
+  （第一次 HostProbe 編譯有我自己打錯的字串跳行，已改；最後一次全目標重建 EXIT 0）
+  build\ 現在的 sha256：HostProbe 5dc898f3…、VST3 e8791f11…、CLI 5d0f9b13…（含 V 卡 pool 常數註解與本卡 HostProbe 改動；
+  不是 HANDOVER §1-3 記的 fa13ac17…，因為 src 有 V 卡改動）
+
+------------------------------------------------------------------
+§1 melody_verify.verify() 加 cli=None；stem_verify 改用正式參數
+------------------------------------------------------------------
+tools/melody_verify.py：verify(score_path, wav_path=None, keep_json=None, quiet=False, cli=None)；cli 為 None 時照舊 vs.find_cli()
+  （預設行為不變），給了就用它做 baseline render 與全部 --dump-modes。
+tools/stem_verify.py：
+  - 刪掉 _melody_verify_uses_cli()（暫時替換 mv.vs.find_cli 的 hack）與 run() 裡的 with 包裝；順手刪掉不再用的 import contextlib。
+  - run() 現在只算 explicit_cli（None 或絕對路徑），直接交給 _run()。
+  - judge_stem(stem_score_path, wav_path, cli=None) 轉給 mv.verify(..., cli=cli)；_run() 的逐 stem 判定與 baseline 都傳 cli=explicit_cli。
+    沒給 --cli 時 explicit_cli=None，等於舊行為。
+tests/test_stem_verify.py（是對 hack 的測試改成對正式參數的測試，不是縮 GATE）：
+  - test_tf_stem_verify_cli_reaches_renders_and_melody_verify：原本斷言「run 期間 mv.vs.find_cli() 被換成 explicit」，
+    現改斷言「渲染拿到 explicit 路徑、且 mv.vs.find_cli 沒被動過」。
+  - 新增 test_wf1003s_judge_stem_forwards_cli_to_melody_verify、test_wf1003s_melody_verify_explicit_cli_never_consults_find_cli。
+  - e2e test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary 加上「mv.vs.find_cli 也設成一呼叫就 AssertionError」：
+    真渲染 5 stem＋1 reference＋baseline，全部 CLI 呼叫都必須用 explicit 路徑，任何 fallback 都會炸。
+  - test_c11 那組的 fake_judge_stem 簽名補 cli=None。
+驗證（本項單跑）：python -m pytest tests/test_stem_verify.py tests/test_partial_verify.py -q -x -> 68 passed in 32.17s
+  （含 e2e 真渲染）。全套見最上面。
+
+------------------------------------------------------------------
+§2 sustain 網格「0 拒量」搬出 strict xfail
+------------------------------------------------------------------
+設計意圖（讀了 tests/test_measurement_selfcal.py 檔頭註解）：strict xfail 裡的 assert，失敗只算「預期失敗」，
+  所以放在 xfail 裡的條件（這裡是「零拒量」）新出現拒量時看不見——WF0925b-TF 對 release 段已經做過同樣的搬遷
+  （(i) 與 (m) 的 release 零拒量）。sustain 段的零拒量當時還只在 xfail (d)(e) 裡。
+做法（跟 release 段先例一致：搬到一般測試、xfail 裡保留原斷言，xfail 內容與 strict 一個字沒動）：
+  - (i) test_measure_pitch_cents_matches_legacy_after_revert：加 production rows（new_rows）的 sustain 1170 格全部有量值、0 拒量。
+  - (m) test_holdout_grid_pins_match_record：加 legacy rows 的 sustain 1040 格 0 拒量。
+  - 檔頭 docstring 補一段 WF1003-S。
+  不是新門檻（R2）；沒縮範圍（R3）。實測：dev sustain 1170/1170 全量值、hold-out sustain 1040/1040 全量值，0 拒量。
+驗證：python -m pytest tests/test_measurement_selfcal.py -q -> 8 passed, 5 xfailed in 399.03s（xfail 仍是 5，strict）。
+
+------------------------------------------------------------------
+§3 tools/crossplatform_verify.py docstring
+------------------------------------------------------------------
+開工時第 9-10 行已經是 bee2889 改過的現況（「Linux (GCC 13.3 in CI; the job was mislabelled "clang" until 2026-10-02)」），
+沒有殘留的 Linux/clang 字面。只把那段重排成明確的「Linux/GCC（13.3；CI leg 2026-10-02 前誤標 clang，現為 ubuntu-24.04-gcc）」
+並斷行整齊。純 docstring，py ast.parse OK。全 repo grep「linux/clang」：tools/、src/、.github/ 沒有其他殘留；
+殘留只在歷史報告（status_check_2026-09-25、WF0925 裁決包）——那些是當日記錄，不改。
+
+------------------------------------------------------------------
+§4 docs TODO.md 行號 -> 條目名
+------------------------------------------------------------------
+docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md：grep 過，bee2889 已改乾淨，沒有 TODO.md 行號殘留（只剩註明「其他檔的行號」的說明句），不動。
+docs/KNOWN_LIMITS_INDEX.zh-TW.md 補完兩處（bee2889 漏的）：
+  B1 列：`TODO.md` ... 09-25 等月月裁決（:138） -> 「BeamModel `*2` 阻尼加權去留」條目（現已結，見「✓ 已結：WF0925 裁決包 38 題」Q17 列；舊文 git show 168688e:TODO.md）
+  B8 列：D 區 D7（:750） -> D 區 D7 條目「D7 揚琴／舌鼓／鑼的實體試體量測」
+  對照舊檔：git show 18430c4:TODO.md 的第 138 行就是「BeamModel `*2` 阻尼加權去留」、第 750 行就是「D7 揚琴／舌鼓／鑼的實體試體量測」。
+  其餘列的 (:NNN) 是 ROADMAP_PHYSICS.md／裁決包／其他檔的行號，不是 TODO.md，保留。
+  repo 其他地方還有 TODO.md 行號引用，但都在歷史記錄：reports/status_check_2026-09-25/APPENDIX_findings.zh-TW.md（當日審查，行號就是當日 TODO.md）、
+  reports/decision_packets/A4_brightness_eq.md:64（`TODO.md:268`）。沒動，列在回報裡。
+
+------------------------------------------------------------------
+§5 其他文件
+------------------------------------------------------------------
+(a) reports/voice_pool_occupancy_2026-09-25.zh-TW.md §1：整節沒有任何 TODO.md 引用（grep「TODO」0 筆）。§1 的行號全是程式碼行號
+    （src/PluginProcessor.cpp、JUCE 等），檔頭已明標「行號一律是 HEAD 18430c4」。把程式碼行號改成「條目名」沒有意義，
+    且會破壞「逐條附出處」。所以這一項沒有可改的 TODO.md 行號，沒動檔案；回報裡列為「無可改項」。
+(b) docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md :371：補「2026-10-03 補記：caveats 已由 WF0925b-TF（31851d5）更新，現行 caveats[0] 寫的是
+    C10 於 2026-09-10 裁 A、D15 於 2026-09-15 裁 A'，升 GATE 另待月月裁決」。核對：tools/partial_verify.py:723-729 現行字串確為此；
+    git log -S"C10 self-cal was ruled A" 指到 31851d5。
+(c) reports/partial_verify_full_2026-09-25.zh-TW.md:181：照指示跳過不動（skipped）。
+
+------------------------------------------------------------------
+§6 CHANGES_v1_1.md §2.2（exports/，gitignored）
+------------------------------------------------------------------
+exports/products/clean_batch2_v1_1_candidate/CHANGES_v1_1.md §2.2 三列（A 本文、B「100% original…」、D 賣點 1）的 v1.1 欄，
+阻尼措辭同步成 XF 之後、LISTING_COPY_v1_1.md／PRODUCT_SHEET_v1_1.md 現行的版本：
+  A：「工学ハンドブックの範囲内にある標準的な値、減衰パラメータは推定値です」
+  B：「standard values within engineering-handbook ranges; the damping parameters are estimates」
+  D：「密度、楊氏模量為工程手冊範圍內的標準值；阻尼參數為估計值」
+  每列都註明「現行措辭；WF1003-S 同步，XF 之前寫……」。核對來源：LISTING_COPY_v1_1.md 第 29、100、158、172 行。
+改前備份：E:\Tsuki-project\_scratch\wf1003\S\CHANGES_v1_1.md.bak。
+同資料夾 _X2_MANIFEST_SHA256.txt 第 1 行（CHANGES_v1_1.md 的 sha256）更新為新值 332e3348…；sha256sum -c 全檔 OK（0 個 FAILED）。
+（照 DOC-C 的先例：只改這個內部文字檔；zip、音檔、LICENSE、LISTING_COPY 一個都沒動。）
+
+------------------------------------------------------------------
+§7 HostProbe Q05 真實「亮燈」路徑
+------------------------------------------------------------------
+結論：找得到，而且跟 Body 正規化無關，所以做了。
+tests/host_probe.cpp：在「Q05 synthetic controls」之後、「Q09」之前新增一個區塊（不動 E16 與合成對照的任何既有 CHECK）：
+  用真實 VST3 instance（preset 15）、經 host 參數設定使用者旋鈕，渲染 C4 2 s，輸出餵進同一個 src/dsp/OutputPeakMeter.h
+  （跟 processBlock 同一份標頭），要求「亮 <=> 獨立掃出的峰值 > 1.0」，且 take() 後歸零。三個案例：
+    (1) 控制組，旋鈕照載入：峰值 0.808498（-1.85 dBFS）-> 不亮（跟 E16 同值）
+    (2) EQ Shelf Gain +24 dB（範圍最大）、頻率維持載入值 2000 Hz：峰值 0.840243（-1.51 dBFS）-> 不亮
+        （我第一個猜的設定，沒有亮；留著當第二個「不亮」案例，這樣亮燈能歸因到 shelf 頻率，而不是增益旋鈕本身；失敗那次也記在程式註解裡）
+    (3) EQ Shelf Freq 100 Hz（範圍最小）＋Gain +24 dB（範圍最大）：峰值 12.5743（+21.99 dBFS）-> 亮
+  硬 CHECK：每個案例的 meter==獨立峰值且 flag==truth；控制組必須不亮；案例 (3) 必須亮。共新增 10 條 CHECK（instance×3、參數曝光×2、meter 一致×3、控制不亮、真實亮燈）。
+  為什麼用 EQ 不用 Body：B2 若重做（min(g,1)），Body/壓縮器路徑可能不再超過 0 dBFS；EQ shelf 100 Hz/+24 dB 是使用者可直接拉的旋鈕，
+  在任何 Body 慣例下都會讓輸出遠超 0 dBFS，所以這條檢查不會被 B2 的決定連動。沒有新增任何容差或物理常數（R2、R4）；沒縮任何 GATE（R3）。
+  不是 preset 內建設定而是「極端旋鈕組合」，正是任務舉例的方向；這不證明任何預設 preset 會削波（27 個 preset 最大峰值仍是 -1.85 dBFS，E16 照舊）。
+R10 備註：本項只改測試（tests/host_probe.cpp），沒有任何渲染輸出改變；src/ 本卡零改動。
+驗證：HostProbe（cwd 在 repo 外 E:\Tsuki-project\_scratch\wf1003\S\hp，TSUKI_REPO_ROOT 有設，outdir 用短路徑）：241 PASS / 0 FAIL，EXIT 0。
+  E16 27 個 preset 最大峰值仍 -1.85 dBFS（15 號），次大 -3.03；Q09 資訊性輸出照舊（64 steal，不判定）。
+  原始 log：reports/gate_outputs/wf1003_S_raw_hostprobe.txt。
+
+------------------------------------------------------------------
+§8 changed_files（本卡改的檔；工作樹其他檔是別卡的）
+------------------------------------------------------------------
+  tools/melody_verify.py
+  tools/stem_verify.py
+  tools/crossplatform_verify.py
+  tests/test_stem_verify.py
+  tests/test_measurement_selfcal.py
+  tests/host_probe.cpp                       （只加 Q05 真實亮燈區塊；檔內其餘 diff 是 V 卡的）
+  docs/KNOWN_LIMITS_INDEX.zh-TW.md
+  docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+  exports/products/clean_batch2_v1_1_candidate/CHANGES_v1_1.md            （gitignored）
+  exports/products/clean_batch2_v1_1_candidate/_X2_MANIFEST_SHA256.txt    （gitignored）
+  reports/gate_outputs/wf1003_S_fixes.txt、wf1003_S_raw_hostprobe.txt、wf1003_S_raw_ctest.txt、wf1003_S_raw_pytest_full.txt、wf1003_S_code_diff.patch
+  （docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md 工作樹上的改動是 V 卡的，本卡沒碰）
+src/ 本卡零改動。
+
+------------------------------------------------------------------
+§9 留給整合卡／規劃者的事
+------------------------------------------------------------------
+  - 整合卡全套（physics_verify --full、verify_score --all 75 首雜湊、位元不變 8/8、pluginval）本卡沒跑（施工卡規定只跑外掛層 ctest＋HostProbe）。
+  - TODO.md「tools 小修」那條（含 melody_verify cli、sustain 0 拒量、crossplatform docstring）可以勾掉；HANDOVER §1-5 最後一條「小項」同步。
+    本卡沒改 TODO.md／HANDOVER.md（避免跟其他卡同檔衝突），由整合卡統一同步。
+  - HANDOVER §1-5 提到「HostProbe Q05 在 preset 15 只剩『不亮』路徑」現在有真實亮燈路徑（旋鈕組合），文件可更新。
+  - pytest 基線 310 -> 312（+2）；HostProbe 基線 231 -> 241（+10）。
+  - 若 B2 重做，不影響本卡的 HostProbe 新區塊（見 §7）。

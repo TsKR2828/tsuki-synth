@@ -1,0 +1,344 @@
+diff --git a/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md b/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+index d9e071f..8bf095b 100644
+--- a/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
++++ b/docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md
+@@ -369,7 +369,7 @@ A13 §4 選項 C 查遍文獻找不到可溯源的振幅容差，本工具不自
+ `gate_ready_reason` 改成：升 GATE 要月月另行裁決；A13 選項 B+ 原本以 C10 選 A 為升級前提，但 D15 A'
+ （2026-09-15）之後，放鍵/阻尼段的量測器已知誤差上界約 7.2 c，大於 ±5 c，這個前提照原文已不成立。
+ `gate_ready` 仍是 false。09-25 V1 那份報告的 `caveats[0]` 還寫「C10 self-cal still pending 月月裁決」，是舊字串
+-（出自 WF0925 staged 版 `tools/partial_verify.py`；更新這個字串屬裁決包 O16，不在本文件範圍）。要不要升 GATE、期望值慣例怎麼定，見
++（出自 WF0925 staged 版 `tools/partial_verify.py`；更新這個字串屬裁決包 O16，不在本文件範圍；**2026-10-03 補記：`caveats` 已由 WF0925b-TF（`31851d5`）更新，現行 `caveats[0]` 寫的是 C10 於 2026-09-10 裁 A、D15 於 2026-09-15 裁 A'，升 GATE 另待月月裁決**）。要不要升 GATE、期望值慣例怎麼定，見
+ `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q18。）
+ 
+ **拒答（reuse，不新增邏輯）**：partial 帶碰撞（本事件自己的 partial 之間
+diff --git a/docs/KNOWN_LIMITS_INDEX.zh-TW.md b/docs/KNOWN_LIMITS_INDEX.zh-TW.md
+index f5bf2ee..1cc1b21 100644
+--- a/docs/KNOWN_LIMITS_INDEX.zh-TW.md
++++ b/docs/KNOWN_LIMITS_INDEX.zh-TW.md
+@@ -46,14 +46,14 @@
+ 
+ | # | 範圍 | 缺口（短標籤） | 登記日期 | 出處 |
+ |---|---|---|---|---|
+-| B1 | Beam/Plate 阻尼 | `beam_plate_beta_air`／`beam_plate_gamma_radiation` 未溯源（D1）；BeamModel 的 `*2` 在寬頻化後成為「全音域一律 2 倍過阻尼、不再有任何錨點理由的純經驗係數」，去留待裁（前置 D1） | 缺口原始登記早於 08-15；`*2` 09-25 正式登記 | `TODO.md`「Verification gaps that must stay explicit」第 1 條、09-25 等月月裁決（:138）；`src/physics/BeamModel.h:44-48`；D1 補搜 `docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md`（2026-09-25，未入庫）；（`*2` 部分：**2026-10-02 月月裁決 Q17=A** 保留並改標「DECIDED CONVENTION，經驗係數，無文獻錨點」，已升格 → `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §6〔Q19 C6 甲〕；`beam_plate_beta_air`／`beam_plate_gamma_radiation` 未溯源仍開放） |
++| B1 | Beam/Plate 阻尼 | `beam_plate_beta_air`／`beam_plate_gamma_radiation` 未溯源（D1）；BeamModel 的 `*2` 在寬頻化後成為「全音域一律 2 倍過阻尼、不再有任何錨點理由的純經驗係數」，去留待裁（前置 D1） | 缺口原始登記早於 08-15；`*2` 09-25 正式登記 | `TODO.md`「Verification gaps that must stay explicit」第 1 條、「BeamModel `*2` 阻尼加權去留」條目（現已結，見「✓ 已結：WF0925 裁決包 38 題」Q17 列；舊文見 `git show 168688e:TODO.md`）；`src/physics/BeamModel.h:44-48`；D1 補搜 `docs/D1_BEAM_PLATE_DAMPING_SEARCH.zh-TW.md`（2026-09-25，未入庫）；（`*2` 部分：**2026-10-02 月月裁決 Q17=A** 保留並改標「DECIDED CONVENTION，經驗係數，無文獻錨點」，已升格 → `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §6〔Q19 C6 甲〕；`beam_plate_beta_air`／`beam_plate_gamma_radiation` 未溯源仍開放） |
+ | B2 | Chromatic 槌具 | 舌鼓／鑼的槌具接觸參數未標定（D2） | D2 補搜 2026-08-28 起（草稿） | `TODO.md` D 區 D2 條目；`docs/D2_CHROMATIC_CONTACT_SEARCH.zh-TW.md`；`docs/HAMMER_CONTACT_SOURCES.md` §6（:176-198）；（「Chromatic 槌具未標定」**2026-10-02 已升格** → `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §7〔Q19 C7 甲〕；D2 缺口本身仍開放） |
+ | B3 | Piano 力脈衝深零點 | A14 B-1（力譜滾降形狀）等付費牆文獻（D10）；D16 給愛麗絲 16 顆弱基頻 | A14 2026-09-08；D16 2026-09-25 | `reports/decision_packets/A14_weak_fundamental_ruling.zh-TW.md`「裁決記錄」（:931-942）；`TODO.md`「★ 仍開著」的 D16 條目；`reports/weak_fundamental_null_map_2026-09-25.zh-TW.md` §0／§6（未入庫） |
+ | B4 | 外掛 vs CLI 的 voice 行為 | 外掛每引擎 16 顆 voice（會搶音、同音重疊提前制音、FM 同音反覆時舊 voice 不結束），CLI 每事件一顆 | 疑慮 2026-08-30；量測 2026-09-25 | `reports/decision_packets/POLYPHONIC_VERIFICATION_OPTIONS.zh-TW.md` §6（:130-136）；`reports/voice_pool_occupancy_2026-09-25.zh-TW.md` §0／§6（未入庫）；（**2026-10-02 月月裁決 Q09=D（含 B）＋Q09c=B**：已寫進 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §10〔Q19 C9 甲〕；FM 舊 voice 不結束 Q09b=A 要修，patch 先在隔離副本做 R10 前後對照、~~未落地~~ **→ 追加裁決 N2＝A 已於 WF1002b 落地（commit `59c0b06`）**；外掛串流實測由 WF1002-C1 做） |
+ | B5 | 外掛路徑的物理驗證 | 物理 GATE 驗的是 CLI 路徑；plugin↔CLI 一致性未驗 | ROADMAP §4 早期；09-25 列入裁決 | `ROADMAP_PHYSICS.md` §4 第 1 條（:441）；`TODO.md`「✓ 已結：WF0925 裁決包 38 題」Q08 列（原「09-25 等月月裁決」一節已於 10-03 改寫，原文見 `git show 168688e:TODO.md`）；（**2026-10-02 月月裁決 Q08=C**：先做 B 收窄，已寫進 `docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md` §9；parity GATE 排後續 L 卡，仍開放） |
+ | B6 | 鋼琴耦合物理 | 有限音板共振、共鳴、制音器／踏板都還沒做（B1 只補了無限板導納損耗） | — | `TODO.md`「Verification gaps that must stay explicit」第 4 條；`reports/damping_broadband_findings.md` §4.1（:108-） |
+ | B7 | 木材異向 | 異向 schema 已入庫但沒有程式讀它 | 2026-08-28 | `TODO.md`「Verification gaps that must stay explicit」第 6 條 |
+-| B8 | 外部量測驗證 | 實體試體量測（D7）沒做；可信外部錨仍須試體量測 | — | `TODO.md`「Verification gaps that must stay explicit」第 7 條、D 區 D7（:750）；`docs/SPECIMEN_VALIDATION_PROTOCOL.zh-TW.md` |
++| B8 | 外部量測驗證 | 實體試體量測（D7）沒做；可信外部錨仍須試體量測 | — | `TODO.md`「Verification gaps that must stay explicit」第 7 條、D 區 D7 條目「D7 揚琴／舌鼓／鑼的實體試體量測」；`docs/SPECIMEN_VALIDATION_PROTOCOL.zh-TW.md` |
+ | B9 | 輻射預測 | 拾音位置、相位、指向性仍 `UNVERIFIED` | — | `TODO.md`「Verification gaps that must stay explicit」第 3 條 |
+ | B10 | 短瞬態 | `cimbalom/rubber`、`tongue_drum/rubber`、`water_gong/rubber` 在 `--full` 報 `UNVERIFIED/N/A` | — | `TODO.md`「Honest N/A cases」段 |
+ | B11 | 調音器 | 複音／缺基頻模式沒做（只有在能可靠拒答時才做） | — | `TODO.md`「Verification gaps that must stay explicit」最後一條 |
+diff --git a/tests/test_measurement_selfcal.py b/tests/test_measurement_selfcal.py
+index 7a66702..af3ab89 100644
+--- a/tests/test_measurement_selfcal.py
++++ b/tests/test_measurement_selfcal.py
+@@ -91,6 +91,12 @@ development grid) and (m) (legacy rows, hold-out grid). Relocated, not new:
+ 0 refusals is what both grids measure today (2026-09-25: dev 1170/1170 and
+ hold-out 1040/1040 release cells measured, 0 refused).
+ 
++WF1003-S: the SUSTAIN segment's "zero refusals" condition, until then
++asserted only inside the strict xfails (d) and (e), is likewise now also
++asserted in the plain tests (i) (production rows, development grid) and (m)
++(legacy rows, hold-out grid). Relocated, not new; (d)/(e) keep their own copy.
++Measured 2026-10-03: sustain 1170/1170 and 1040/1040 cells measured, 0 refused.
++
+   NOT here any more: the three C10C candidate tests (they imported
+   melody_verify.measure_pitch_cents_nls, which option A kept out of the
+   tree). See the comment block at the bottom of this file for what they
+@@ -407,6 +413,23 @@ def test_measure_pitch_cents_matches_legacy_after_revert():
+         % (len(mismatches), len(new_rows), mismatches[:3]))
+     legacy_sustain = [r for r in legacy_rows if r["segment"] == "sustain"]
+     assert len(legacy_sustain) == 1170
++    # WF1003-S (TODO: sustain grid zero-refusal condition out of the strict
++    # xfail): the SUSTAIN segment's "zero refusals" condition was, until now,
++    # asserted only inside the strict xfail (d), where a new refusal would just
++    # count as the expected failure and stay invisible -- the same gap
++    # WF0925b-TF closed for the RELEASE segment right below. Same condition,
++    # relocated -- not a new threshold (R2); xfail (d) keeps its own copy.
++    # Checked on the PRODUCTION rows (new_rows; the mismatch check above ties
++    # their fail_reason to the legacy rows cell by cell).
++    new_sustain = [r for r in new_rows if r["segment"] == "sustain"]
++    assert len(new_sustain) == 1170
++    sustain_refused = [r for r in new_sustain
++                       if r["fail_reason"] is not None or r["error_cents"] is None]
++    assert not sustain_refused, (
++        "the production estimator refused %d/%d SUSTAIN-segment development-"
++        "grid cells (on record: 0) -- the pinned 1.1721 c is no longer a max "
++        "over all 1170 points: %r"
++        % (len(sustain_refused), len(new_sustain), sustain_refused[:5]))
+     legacy_max = max(abs(r["error_cents"]) for r in legacy_sustain
+                      if r["error_cents"] is not None)
+     assert abs(legacy_max - LEGACY_DEV_GRID_MAX_ABS_CENTS) < 5e-4, (
+@@ -463,6 +486,18 @@ def test_holdout_grid_pins_match_record(monkeypatch):
+ 
+     legacy_sustain = [r for r in legacy_rows if r["segment"] == "sustain"]
+     assert len(legacy_sustain) == 1040
++    # WF1003-S: the SUSTAIN segment's zero-refusal condition, relocated out of
++    # the strict xfail (e) (where a new refusal would only count as the
++    # expected failure) -- same condition, not a new threshold (R2); (e) keeps
++    # its own copy. Legacy rows, for the reason given for the release check
++    # below.
++    sustain_refused = [r for r in legacy_sustain
++                       if r["fail_reason"] is not None or r["error_cents"] is None]
++    assert not sustain_refused, (
++        "the legacy centroid refused %d/%d SUSTAIN-segment hold-out-grid "
++        "cells (on record: 0) -- the pinned 1.0840 c is no longer a max over "
++        "all 1040 points: %r"
++        % (len(sustain_refused), len(legacy_sustain), sustain_refused[:5]))
+     sustain_max = max(abs(r["error_cents"]) for r in legacy_sustain
+                       if r["error_cents"] is not None)
+     assert abs(sustain_max - LEGACY_HOLDOUT_GRID_MAX_ABS_CENTS) < 5e-4, (
+diff --git a/tests/test_stem_verify.py b/tests/test_stem_verify.py
+index 56cd285..e0c9ac3 100644
+--- a/tests/test_stem_verify.py
++++ b/tests/test_stem_verify.py
+@@ -877,7 +877,7 @@ def test_c11_e2e_unverified_event_populates_refusal_histogram(tmp_path, monkeypa
+     reason = ("f0 120.0 Hz < 167 Hz: band too narrow for +/-10 ms onset "
+                "refinement (Re)")
+ 
+-    def fake_judge_stem(score_path_i, wav_path_i):
++    def fake_judge_stem(score_path_i, wav_path_i, cli=None):
+         return {"verdict": "UNVERIFIED", "reason": reason,
+                 "rules": sv.extract_rule_ids(reason)}
+ 
+@@ -1196,8 +1196,8 @@ def test_c12_own_temp_cleanup_marks_deleted_flag_not_path_suffix(tmp_path, monke
+ #   * a relative --cli is made absolute;
+ #   * ONE binary serves the whole run -- stem_verify's own renders AND the
+ #     --dump-modes / baseline-render calls melody_verify.verify() makes
+-#     through its own private verify_score instance -- and the override is
+-#     removed again afterwards, also when the run raises.
++#     (WF1003-S: handed over as verify(..., cli=<path>); melody_verify's own
++#     private find_cli lookup is never replaced, and is never consulted).
+ # (partial_verify's tests live here because tests/test_partial_verify.py is
+ # outside this card's file list; they only exercise the CLI plumbing.)
+ # ============================================================================
+@@ -1258,7 +1258,8 @@ def test_tf_stem_verify_cli_reaches_renders_and_melody_verify(tmp_path, monkeypa
+ 
+     def capture_and_stop(cli, jobs, tasks):
+         seen["render_cli"] = cli
+-        seen["melody_verify_cli"] = sv.mv.vs.find_cli()
++        # WF1003-S: no temporary override of melody_verify's private lookup
++        seen["mv_lookup_untouched"] = sv.mv.vs.find_cli is original_mv_lookup
+         raise _StopRun()
+ 
+     monkeypatch.setattr(sv, "render_many", capture_and_stop)
+@@ -1270,11 +1271,47 @@ def test_tf_stem_verify_cli_reaches_renders_and_melody_verify(tmp_path, monkeypa
+                cli="fake_cli.exe")  # relative to the cwd set above
+     expected = Path(os.path.abspath(str(fake_cli)))
+     assert seen["render_cli"] == expected
+-    assert seen["melody_verify_cli"] == expected
+-    # restored even though the run raised
++    assert seen["mv_lookup_untouched"] is True
+     assert sv.mv.vs.find_cli is original_mv_lookup
+ 
+ 
++def test_wf1003s_judge_stem_forwards_cli_to_melody_verify(monkeypatch):
++    seen = {}
++
++    def spy(*a, **kw):
++        seen.update(kw)
++        return {"events": [{"verdict": "PASS", "reason": "ok"}]}
++
++    monkeypatch.setattr(sv.mv, "verify", spy)
++    sv.judge_stem("unused_score.json", "unused.wav", cli="X.exe")
++    assert seen["cli"] == "X.exe" and seen["wav_path"] == "unused.wav"
++    seen.clear()
++    sv.judge_stem("unused_score.json", "unused.wav")  # default: cli=None
++    assert seen["cli"] is None
++
++
++def test_wf1003s_melody_verify_explicit_cli_never_consults_find_cli(tmp_path, monkeypatch):
++    """melody_verify.verify(..., cli=<path>): the dump-modes/render calls get
++    exactly that path and the module's own find_cli lookup is not used."""
++    mvmod = sv.mv
++    monkeypatch.setattr(mvmod.vs, "find_cli", _no_find_cli)
++    seen = {}
++
++    class _Stop(Exception):
++        pass
++
++    def fake_render(cli, score, outdir, *a, **kw):
++        seen["render"] = cli
++        raise _Stop()
++
++    monkeypatch.setattr(mvmod.vs, "render_score", fake_render)
++    score = tmp_path / "s.score.json"
++    score.write_text(json.dumps({"events": [], "global": {}}), encoding="utf-8")
++    with pytest.raises(_Stop):
++        mvmod.verify(str(score), quiet=True, cli="EXPLICIT.exe")
++    assert seen["render"] == "EXPLICIT.exe"
++
++
+ def test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary(tmp_path, monkeypatch):
+     """Real renders: a copy of the built CLI placed OUTSIDE build/ is passed
+     as --cli; every render_score / dump_modes call of the run (stem_verify's
+@@ -1298,13 +1335,15 @@ def test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary(tmp_path, mo
+         return wrapped
+ 
+     monkeypatch.setattr(sv.vs, "find_cli", _no_find_cli)
++    # WF1003-S: melody_verify's own lookup must not be needed any more either
++    monkeypatch.setattr(sv.mv.vs, "find_cli", _no_find_cli)
+     monkeypatch.setattr(sv.vs, "render_score",
+                         recorder("stem_verify.render", sv.vs.render_score))
+     monkeypatch.setattr(sv.mv.vs, "render_score",
+                         recorder("melody_verify.render", sv.mv.vs.render_score))
+     monkeypatch.setattr(sv.mv.vs, "dump_modes",
+                         recorder("melody_verify.dump_modes", sv.mv.vs.dump_modes))
+-    original_mv_lookup = sv.mv.vs.find_cli
++    original_mv_lookup = sv.mv.vs.find_cli  # == _no_find_cli (patched above)
+ 
+     score_path = tmp_path / "sentinel.score.json"
+     score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")
+diff --git a/tools/crossplatform_verify.py b/tools/crossplatform_verify.py
+index 4966e72..94d2b25 100644
+--- a/tools/crossplatform_verify.py
++++ b/tools/crossplatform_verify.py
+@@ -6,12 +6,13 @@ possible, numeric/audio tolerance otherwise)").
+ The existing determinism check in `verify_score.py` renders the same score
+ twice *on one machine* and requires an identical SHA256.  That proves the
+ renderer has no hidden nondeterminism (uninitialised memory, time/RNG leakage,
+-container iteration order), but it says nothing about whether a Linux (GCC 13.3 in CI; the
+-job was mislabelled "clang" until 2026-10-02) or macOS/AppleClang build produces the same audio as the Windows/MSVC build that
+-every documented GATE was run on.  Different compilers legitimately differ in
+-floating-point contraction (FMA), libm transcendental accuracy (`sin`, `exp`,
+-`pow`) and vectorisation, so bit identity is *not* guaranteed and may not even
+-be desirable to force.
++container iteration order), but it says nothing about whether a Linux/GCC
++(13.3 in CI; the CI leg was labelled "clang" by mistake until 2026-10-02, now
++`ubuntu-24.04-gcc`) or macOS/AppleClang build produces the same audio as the
++Windows/MSVC build that every documented GATE was run on.  Different
++compilers legitimately differ in floating-point contraction (FMA), libm
++transcendental accuracy (`sin`, `exp`, `pow`) and vectorisation, so bit
++identity is *not* guaranteed and may not even be desirable to force.
+ 
+ This tool therefore separates two questions that must not be conflated:
+ 
+diff --git a/tools/melody_verify.py b/tools/melody_verify.py
+index 13b7294..43a0427 100644
+--- a/tools/melody_verify.py
++++ b/tools/melody_verify.py
+@@ -531,12 +531,17 @@ def expected_f0s_layered(dumped_events):
+     return f0s, partials, refusals, decays
+ 
+ 
+-def verify(score_path, wav_path=None, keep_json=None, quiet=False):
++def verify(score_path, wav_path=None, keep_json=None, quiet=False, cli=None):
++    """cli=None (default, unchanged behaviour): TsukiSynthCLI is found by
++    verify_score.find_cli(). cli=<path> (WF1003-S): that binary is used for
++    the baseline render and every --dump-modes call, so a caller that runs
++    an explicit --cli (stem_verify) needs no lookup override."""
+     score_path = Path(score_path)
+     score = json.loads(score_path.read_text(encoding="utf-8"))
+     is_layered = "layers" in score
+     events = score.get("events", [])
+-    cli = vs.find_cli()
++    if cli is None:
++        cli = vs.find_cli()
+ 
+     tmpdir = None
+     if wav_path is None:
+diff --git a/tools/stem_verify.py b/tools/stem_verify.py
+index 5e90088..1890322 100644
+--- a/tools/stem_verify.py
++++ b/tools/stem_verify.py
+@@ -97,7 +97,6 @@ existing CLI/melody_verify.py -- it does not touch src/.
+ 
+ import argparse
+ import concurrent.futures
+-import contextlib
+ import copy
+ import datetime
+ import json
+@@ -641,15 +640,16 @@ def extract_rule_ids(reason):
+     return seen
+ 
+ 
+-def judge_stem(stem_score_path, wav_path):
++def judge_stem(stem_score_path, wav_path, cli=None):
+     """Runs melody_verify.verify() on a single-event stem against its own
+-    (already-rendered) WAV. Returns the ONE event result dict it produces,
++    (already-rendered) WAV. `cli` (WF1003-S) is handed to melody_verify's own
++    `cli` parameter for its --dump-modes calls (None = its default lookup). Returns the ONE event result dict it produces,
+     i.e. {"verdict": ..., "reason": ..., ...} -- unmodified from
+     melody_verify's own judgment, plus a `rules` key (WF0907-C11): passed
+     through as-is if melody_verify's own event dict already had one (it
+     currently never does), otherwise derived via extract_rule_ids() above --
+     never re-implementing or relaxing melody_verify's own judgment (R6)."""
+-    report = mv.verify(stem_score_path, wav_path=wav_path, quiet=True)
++    report = mv.verify(stem_score_path, wav_path=wav_path, quiet=True, cli=cli)
+     events = report.get("events", [])
+     if len(events) != 1:
+         reason = ("melody_verify returned %d results for a single-event "
+@@ -869,44 +869,21 @@ def check_superposition_completeness(used, missing_from_sum, stem_list_len,
+ # orchestration
+ # ============================================================================
+ 
+-@contextlib.contextmanager
+-def _melody_verify_uses_cli(cli_path):
+-    """WF0925b-TF (O16): makes melody_verify.verify() -- which this tool calls
+-    to judge every stem and for the whole-score baseline, and which looks
+-    the CLI up by itself through its OWN private verify_score instance
+-    (mv.vs.find_cli(), used for --dump-modes and for the baseline render) --
+-    use the same explicit --cli binary as this tool's own stem/reference
+-    renders, so one run never mixes two binaries. Only this tool's private
+-    `mv` module object is touched (loaded by _load_module(), not registered
+-    in sys.modules), and the original lookup is restored on exit."""
+-    target = mv.vs
+-    saved = target.find_cli
+-    target.find_cli = lambda: cli_path
+-    try:
+-        yield
+-    finally:
+-        target.find_cli = saved
+-
+-
+ def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
+         quiet=False, force_clean=False, analysis_dry=True, cli=None):
+     """cli=None (default, unchanged behaviour): TsukiSynthCLI is found by
+     verify_score.find_cli() (Release-first under <repo>/build/). cli=<path>
+     (the --cli flag, WF0925b-TF / O16): that binary is used for every render
+     AND every --dump-modes call of the run, including the ones
+-    melody_verify.verify() makes (see _melody_verify_uses_cli()); a path
++    melody_verify.verify() makes (passed to it as verify(..., cli=...), WF1003-S;
++    the former temporary replacement of melody_verify's private lookup is gone); a path
+     that is not an existing file is an error (exit 1), never a fallback to
+     find_cli(). A relative path is taken relative to the current working
+     directory and made absolute before use."""
+-    if cli is None:
+-        return _run(score_path, out_dir=out_dir, jobs=jobs, limit=limit,
+-                    keep_stems=keep_stems, quiet=quiet, force_clean=force_clean,
+-                    analysis_dry=analysis_dry, explicit_cli=None)
+-    explicit_cli = Path(os.path.abspath(str(cli)))
+-    with _melody_verify_uses_cli(explicit_cli):
+-        return _run(score_path, out_dir=out_dir, jobs=jobs, limit=limit,
+-                    keep_stems=keep_stems, quiet=quiet, force_clean=force_clean,
+-                    analysis_dry=analysis_dry, explicit_cli=explicit_cli)
++    explicit_cli = None if cli is None else Path(os.path.abspath(str(cli)))
++    return _run(score_path, out_dir=out_dir, jobs=jobs, limit=limit,
++                keep_stems=keep_stems, quiet=quiet, force_clean=force_clean,
++                analysis_dry=analysis_dry, explicit_cli=explicit_cli)
+ 
+ 
+ def _run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
+@@ -1131,7 +1108,7 @@ def _run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
+         score_path_i = rendered[stem_key]["score_path"]
+         wav_path_i = rendered[stem_key]["wav_path"]
+         try:
+-            r = judge_stem(score_path_i, wav_path_i)
++            r = judge_stem(score_path_i, wav_path_i, cli=explicit_cli)
+             entry["verdict"] = r.get("verdict", "UNVERIFIED")
+             if r.get("reason") is not None:
+                 entry["reason"] = r["reason"]
+@@ -1247,7 +1224,7 @@ def _run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
+     #    which file/hash both of them ran on -- no separate flag needed.
+     baseline = None
+     try:
+-        baseline = mv.verify(analysis_score_path, quiet=True)
++        baseline = mv.verify(analysis_score_path, quiet=True, cli=explicit_cli)
+     except SystemExit as e:
+         baseline = {"refused": True, "exit_code": e.code}
+     except Exception as e:  # noqa: BLE001

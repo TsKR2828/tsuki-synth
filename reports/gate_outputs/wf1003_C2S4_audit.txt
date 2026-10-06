@@ -1,0 +1,111 @@
+WF1003-C2S4 audit (Opus audit layer) -- 2026-10-03
+=====================================================
+Card: C2S4, read-only investigation of why S4 (same note re-struck while held) is +1.5 dB louder after the FM envelope fix.
+Repo: E:\Tsuki-project\tsuki-synth, branch fix/deep-physics-audit-20260716, HEAD bee2889c440959bf539e215089e4b8ccbb5ce20a
+Auditor scratch: E:\Tsuki-project\_scratch\wf1003\C2S4_audit\ (outside repo; no junction)
+
+VERDICT: PASS (with 3 minor wording notes, none affecting any number or conclusion)
+
+-----------------------------------------------------------------
+1. Working-tree check (git status / diff)
+-----------------------------------------------------------------
+- git diff --quiet HEAD -- src tests CMakeLists.txt  -> clean (exit 0). src/ and tests/ untouched.
+- git diff --cached -> empty (nothing staged). HEAD still bee2889. No commit/push by this card.
+- Untracked files belonging to this card (8), exactly matching the worker's changed_files:
+    reports/wf1003_c2s4_same_note_level.zh-TW.md
+    reports/gate_outputs/wf1003_C2S4_raw_repro.txt
+    reports/gate_outputs/wf1003_C2S4_raw_decomposition.txt
+    reports/gate_outputs/wf1003_C2S4_raw_sweep_interval.txt
+    reports/gate_outputs/wf1003_C2S4_raw_sweep_pitch.txt
+    reports/gate_outputs/wf1003_C2S4_raw_jitter_control.txt
+    reports/gate_outputs/wf1003_C2S4_raw_mechanism_model.txt
+    reports/gate_outputs/wf1003_C2S4_raw_method_sources.txt
+- Other untracked files (wf1003_H_audit.txt, wf1003_H_hash75_selftest.txt, tools/hash75_compare.py) belong to card H, not this card; not touched.
+- No junction created under output/ by this card (output/ is ignored as before).
+
+-----------------------------------------------------------------
+2. Provenance checks
+-----------------------------------------------------------------
+- 59c0b06^ = 804bf037b4d57346420fe5f5ebd49ca6a5cbd0ea (worker's "old" commit is correct).
+- git diff 804bf03 bee2889 -- src/: only Envelope.h (+ Compressor.h, not used by the dry mirror). Envelope.h diff = the WF1002-C2 "keep running release ramp" guard only.
+- Worker scratch headers vs git show (sha256 prefix):
+    Envelope.h  old dab6a51c.. = git 804bf03 ; new 9ed69018.. = git bee2889
+    NoiseGen.h / FMPianoEngine.h identical in both and equal to git.
+- Worker exe / harness.cpp / driver / model sha256 match those listed in wf1003_C2S4_raw_method_sources.txt.
+- Reference line wf1002_C2_plugin_before_after.txt (S4_overlap_held_rel1500): base_16 -26.980/-16.487, fix_16 -25.502/-16.388, base_1024 -26.974, fix_1024 -25.502 -- matches the worker's quoted reference.
+- Harness code reviewed: per-note "tag" recording sums to total (checked below); event ordering offs-before-ons at equal sample; voice steals counted via findFreeVoice. No defect found.
+
+-----------------------------------------------------------------
+3. What the auditor re-ran (not trusting the worker's binaries or analysis code)
+-----------------------------------------------------------------
+- Took Envelope.h / NoiseGen.h / FMPianoEngine.h myself via `git show 804bf03:` and `git show bee2889:` into C2S4_audit/{old,new}/src,
+  copied harness.cpp + CMakeLists.txt, fresh cmake configure + Release build into C2S4_audit/proj/b (exit 0).
+  (Exe hashes differ from the worker's because build paths differ; behaviour compared by output below.)
+- Wrote an independent analysis script C2S4_audit/audit_check.py (does not import the worker's c2s4_driver.py):
+  own event writer, own decomposition math, own FFT band split, plus pure-arithmetic recomputation of the
+  summary lines of the worker's raw CSVs. Output: C2S4_audit/audit_out.txt.
+
+Auditor results (audit-built exes):
+  S4 16 voices   old rms -26.980 pk -16.487 steals 24 | new -25.502 pk -16.388 steals 0 | +1.478   == worker
+  S4 1024 voices old -26.974 | new -25.502 | +1.473                                              == worker
+  max|sum(tags)-total|  old 1.304e-08  new 1.828e-08                                             == worker
+  Line A whole file: total -26.974 / -25.502 (+1.473); sum of singles -25.021 / -25.602 (-0.581);
+                     interference -1.954 / +0.100 (+2.054)                                       == worker
+  Line A 8-18 s:     total -26.361 / -24.748 (+1.613); singles -24.216 / -24.808 (-0.592);
+                     interference -2.145 / +0.060 (+2.205)                                       == worker
+  Harmonic 1: interference old -2.45 new +0.25, total new-old +1.98 dB                           == worker
+  Harmonic 2: interference -1.06 / -1.06, total -0.00 dB                                         == worker
+  frac(f0*T) analytic: midi60 T24000 0.8128; T24036 0.0090; T24184 0.8157; midi57 T24000 0.0000 == worker
+  Line B spot points: d=36 -18.722 / -21.687 (-2.965); d=184 -26.878 / -25.386 (+1.492)          == worker
+  Pitch sweep spot: midi 57 -18.734 / -21.783 (-3.049)                                           == worker
+  Line C spot seeds: seed 2 -0.935; seed 29 +0.109 (the single "new louder" seed)                == worker
+  Summary recomputed from raw CSVs:
+    sweep interval n47 mean +0.030 min -2.965 max +1.511 new-louder 25/47                        == raw summary line
+    sweep pitch    n25 mean -0.429 min -3.063 max +1.522 new-louder 9/25                         == raw summary line
+    jitter         n40 mean -0.653 min -1.239 max +0.109 new-louder 1/40                         == raw summary line
+    model          n9  max|measured-model| 0.034 dB                                              == raw summary line
+
+-----------------------------------------------------------------
+4. Report vs raw files (number-by-number)
+-----------------------------------------------------------------
+All numbers in reports/wf1003_c2s4_same_note_level.zh-TW.md sections 0-3 checked against the raw files:
+repro table, voice counts (mean 26.50 / 17-36 vs 4 / 3-4), audible length (median 12.25 s / max 22 s vs 2.00 s),
+tailOffInRelease 1599 vs 192, decomposition tables (both windows), harmonic table, interval table rows,
+old/new level ranges (-18.7..-29.9 / -21.7..-30.4; spans 11.2 / 8.7 dB), peak range -2.64..+0.11 mean -0.35,
+pitch sweep groups (MIDI 55/57/66/67/69 about -3.0; 56/60/62/64 about +1.5), collapse residual max 0.16,
+jitter range -1.24..+0.11, model table rows. All consistent. No number mismatch found.
+
+-----------------------------------------------------------------
+5. Reasoning / strength of conclusion
+-----------------------------------------------------------------
+- Line A is a direct, exact decomposition (tags sum to the output within 2e-8). It alone shows the +1.47 dB
+  is interference (-1.95 -> +0.10 dB) outweighing a -0.58 dB single-voice energy loss. Strong.
+- Line B shows the new-minus-old difference is periodic in the re-strike interval with the fundamental period
+  and changes sign; Line C shows that scrambling the phase removes the "new louder" outcome (mean -0.65, close
+  to Line A's -0.58 single-energy term; difference 0.07 dB vs SE about 0.05). Both are proper falsifiable tests
+  with predictions written before the numbers.
+- Line D is honestly scoped in the report as covering only the -65 dB tail samples (mechanism check, not main energy).
+  Its constants (attack 5 ms, decay 3.5 s, sustain 0, release 1.5 s, gain 0.1*vel) all come from
+  FMPianoEngine.h / the pset, so "no fitted constant" holds.
+- "Confirmed" is stated for the mechanism within the stated scope (dry mirror, FM defaults, single-pitch S4 pattern);
+  the "systematic loudness increase" reading is explicitly rejected; limits (no VST3 re-run, S3-like control uses
+  default params, no multi-pitch music) are listed in section 4. Conclusion strength matches evidence.
+- No thresholds, no new constants, no code change (R2/R3/R4 not engaged). R10 not triggered: no product render output changed.
+
+Minor notes (wording only; do NOT change any number or conclusion; can be fixed by the integration/doc pass):
+  N1. Report sec.2 line A: "第 5～34 顆全部同一個值" -- the raw file prints per-note values only for notes 10..30
+      plus the 5..34 mean (+0.592). Notes 5-9 and 31-34 are not individually shown, so "all identical" is
+      slightly beyond the raw evidence. Suggest "第 10～30 顆逐顆都是 +0.59，5～34 平均 +0.592".
+  N2. Report sec.4 item 5: "body index 時間常數約 1.8 s" -- in FMPianoEngine.h bodyTimeSec (=1.82 s at these
+      settings) is the -60 dB time (exp(-6.9078/(T*sr))), not the time constant (about 0.26 s). The derived
+      e^-22 after 6 s is correct; only the label is wrong.
+  N3. Report sec.2 line C: "吻合" for -0.653 vs -0.581 is fair (within about 1.4 SE) but could read "接近".
+
+-----------------------------------------------------------------
+6. Judgement
+-----------------------------------------------------------------
+PASS. Every evidence line's numbers match the raw files; the key numbers (S4 repro, full decomposition,
+harmonic split, two sweep points, one pitch point, two jitter seeds) were independently re-produced with
+auditor-built binaries from auditor-extracted git headers and auditor-written analysis code, all identical to
+3 decimals. src/ and tests/ have zero changes; the card's files match its claimed changed_files exactly.
+No restore performed (not FAIL).

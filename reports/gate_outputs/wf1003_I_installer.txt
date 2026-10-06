@@ -1,0 +1,40 @@
+WF1003 I card -- Inno Setup install + .iss compile smoke test
+Date: 2026-10-03   Status: BLOCKED at step 2 (install). Steps 3-6 NOT done.
+
+[Step 1 DONE] Snapshot of .iss [Files] inputs -> E:\Tsuki-project\_scratch\wf1003\I\inputs\  (hashes in ..\inputs_sha256.txt)
+  aa955545d249e2c521f1d6b38b5a1b9e1c8b76c0f74ee811f25c5814bf32a985  THIRD_PARTY_NOTICES.txt
+  6a325842d89a1d4e3bb09099b7c13c4338bd2c64ca36d629e96c229013a9526d  TsukiSynth.exe (Standalone)
+  709526f55057e53be431ba288aa4e89671c4ea77fd7320b60afdff631535d994  TsukiSynth.vst3/Contents/Resources/moduleinfo.json
+  fa13ac17661ff50351b8b4c0920715d7a81d3497bd983197b885874969620b03  TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+  f99b4a8096f93cdab8eb7c36118efb3ca5c8235e44ecacb58ad31d9528872692  TsukiSynthCLI.exe   (= renderer f99b4a8096f9)
+
+[Step 2 BLOCKED] innosetup-7.1.0-x64.exe
+  sha256 0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f (matches GitHub API digest in reports/gate_outputs/wf0930_T_downloads.txt)
+  Authenticode: Valid, signer CN=Pyrsys B.V. (Sectigo Public Code Signing CA R36)
+  Tried (all 4 runs, each left to hang 20 s .. 300 s, then killed; no log, nothing installed, no ISCC.exe anywhere):
+    /VERYSILENT /SUPPRESSMSGBOXES /NORESTART                     -> hangs
+    ... /CURRENTUSER  /LOG=...                                   -> hangs
+    ... /ALLUSERS     /LOG=...                                   -> hangs
+  Cause (screenshot of the screen while the process was alive): the installer shows the dialog
+  "選擇安裝程式安裝模式" (choose all-users [UAC] vs. only-me) EVEN with /VERYSILENT and with
+  /ALLUSERS or /CURRENTUSER. The command-line switches are not honored for this dialog in this
+  installer. It needs one human click ("僅為我安裝" = per-user, no UAC; or "為所有使用者安裝" = UAC).
+  computer-use access to click it was requested and DENIED (user_denied); not worked around.
+  Elevated/UAC prompts cannot be driven by the tooling in any case.
+  No files installed, no registry changes made (all installer processes killed before any install step).
+
+[Needed to unblock -- one human action]
+  Run E:\Tsuki-project\_tools\innosetup\innosetup-7.1.0-x64.exe, click the install-mode button, finish the wizard
+  (or grant computer-use access so the card can click "僅為我安裝"). Then re-run steps 3-6.
+
+[Finding for step 3: EULA.txt is missing -> the .iss as committed will #error]
+  tools/installer/EULA.txt is intentionally NOT in the repo (README.md §3, .iss line 'EULA.txt not found ... #error').
+  So a smoke compile of the unmodified .iss cannot pass by design. Plan for the retry: compile a SCRATCH COPY of the .iss
+  (RepoRoot -> absolute repo path, EulaFile -> a scratch stand-in made from docs/legal/EULA_BUYER_DRAFT.md), /O to
+  E:\Tsuki-project\_scratch\wf1003\I\out\ ; the stand-in output is a compile smoke test only and must not ship.
+  repo tools/installer/TsukiSynth.iss unchanged (git status shows no modification).
+
+[Steps 4-6] not reached: no compile, no installer artifact sha256, license text comparison not done
+  (existing prior research: reports/wf1002b_innosetup_license.zh-TW.md; not re-verified here).
+
+changed_files: none in repo besides this evidence file.

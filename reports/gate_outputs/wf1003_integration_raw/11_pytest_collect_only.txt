@@ -1,0 +1,5 @@
+START 2026-10-03 15:21:00
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v4_with_complete_dependency_tree_passes
+
+312 tests collected in 2.01s
+EXIT_CODE=0

@@ -1,0 +1,14 @@
+warning: in the working copy of 'docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/KNOWN_LIMITS_INDEX.zh-TW.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tools/crossplatform_verify.py', LF will be replaced by CRLF the next time Git touches it
+ docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md |   2 +-
+ docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md       |   1 +
+ docs/KNOWN_LIMITS_INDEX.zh-TW.md         |   4 +-
+ src/PluginProcessor.cpp                  |  18 ++-
+ tests/host_probe.cpp                     | 261 ++++++++++++++++++++++++++++++-
+ tests/test_measurement_selfcal.py        |  35 +++++
+ tests/test_stem_verify.py                |  53 ++++++-
+ tools/crossplatform_verify.py            |  13 +-
+ tools/melody_verify.py                   |   9 +-
+ tools/stem_verify.py                     |  47 ++----
+ 10 files changed, 386 insertions(+), 57 deletions(-)

@@ -1,0 +1,12 @@
+START 2026-10-03 14:45:17
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.19045.
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Configuring done (1.8s)
+-- Generating done (0.8s)
+-- Build files have been written to: <REPO>/build
+EXIT_CODE=0
+END 2026-10-03 14:45:20

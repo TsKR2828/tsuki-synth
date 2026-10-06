@@ -1,0 +1,51 @@
+WF1003 I card -- Opus audit (installer: Inno Setup install + .iss compile smoke test)
+Date: 2026-10-03   Auditor: Opus audit layer
+VERDICT: BLOCKED (worker's BLOCKED report CONFIRMED; no false claims and no rule violations found -> not FAIL, nothing restored)
+
+== 1. What the audit was asked to re-run, and why it could not ==
+Asked: re-run ISCC with the same arguments into E:\Tsuki-project\_scratch\wf1003\audit_I\, check exit 0 and output sha256.
+Result: NOT POSSIBLE. ISCC.exe does not exist on this machine. Checked on my own:
+  - C:\Program Files\Inno Setup*            -> absent
+  - C:\Program Files (x86)\Inno Setup*      -> absent
+  - %LOCALAPPDATA%\Programs\Inno Setup*     -> absent
+  - `where ISCC`                            -> not found
+  - Uninstall registry key "Inno Setup 7_is1" under HKLM, HKLM\WOW6432Node, HKCU -> all absent
+The worker never compiled, so there is no worker output sha256 to compare against (E:\Tsuki-project\_scratch\wf1003\I\out\ is empty).
+The audit did not try to install Inno Setup itself: the worker showed the install-mode dialog needs a human click, and
+computer-use access was already denied by the user. The audit_I scratch folder was not created (nothing to put in it).
+
+== 2. git status / diff vs. claimed changed_files ==
+HEAD = bee2889, branch fix/deep-physics-audit-20260716 (as expected).
+`git diff --quiet HEAD -- tools/installer src CMakeLists.txt` -> no change. TsukiSynth.iss is unmodified, so there is no .iss diff to review.
+Untracked files with the I prefix: only reports/gate_outputs/wf1003_I_installer.txt. This matches the worker's changed_files.
+The other untracked files (wf1003_C2S4_*, wf1003_H_*, reports/wf1003_c2s4_same_note_level.zh-TW.md, tools/hash75_compare.py) belong to other cards and were not touched.
+
+== 3. Worker's claims I checked on my own ==
+[OK] Installer sha256: sha256sum E:\Tsuki-project\_tools\innosetup\innosetup-7.1.0-x64.exe
+     = 0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f, the same as the GitHub API digest in wf0930_T_downloads.txt line 10.
+[OK] Step 1 input snapshot: I hashed the repo sources directly and all 5 match inputs_sha256.txt:
+     aa955545...a985 THIRD_PARTY_NOTICES.txt (repo root)
+     6a325842...26d  build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+     fa13ac17...b03  build\...\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+     709526f5...994  build\...\VST3\TsukiSynth.vst3\Contents\Resources\moduleinfo.json
+     f99b4a80...692  build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+     The VST3 bundle has exactly these 2 files, so the snapshot covers the whole [Files] Vst3BundleDir\* recursion.
+[OK] EULA #error: tools\installer\EULA.txt does not exist. TsukiSynth.iss lines 51-52 `#if !FileExists(EulaFile)` / `#error EULA.txt not found ...`.
+     So compiling the committed .iss as it is will stop at this #error by design. The worker reported this correctly.
+     Note: line 26 of the .iss now requires Inno Setup >= 7.0.0. The wf0930 note says the guard is 6.3.0, which is out of date.
+     7.1.0 meets either guard, so this does not affect the verdict.
+[OK] No installer was produced or run: repo output\installer\ does not exist (that is the .iss OutputDir), the scratch out\ folder is empty,
+     and no *setup*.exe exists under _scratch\wf1003. No innosetup, ISCC or is-* setup process is running (Get-Process).
+     Two is-*.tmp folders are in %TEMP%. They are dated 2025-11-27/2026-07-06 and 2026-08-31, before this card, so they are not from it and were left as they are.
+[NOT CHECKED] Screenshot of the install-mode dialog (E:\Tsuki-project\_scratch\wf1003\I\screen.png): I did not re-check what it shows.
+     I did confirm that nothing was installed (see section 1).
+[NOT DONE BY ANYONE] License comparison (step 6) and compile exit code / warnings / output sha256 (steps 3-5): no numbers exist to sample.
+
+== 4. Rule compliance ==
+R7: no commit, push or add. src\ and CMakeLists.txt are untouched, so R6 does not apply. The .iss is untouched. Nothing was written inside the repo's output\ folder.
+The worker did not get around the user's computer-use denial (claimed, and the state matches: nothing installed).
+
+== 5. What unblocks it (one human action) ==
+月月 runs E:\Tsuki-project\_tools\innosetup\innosetup-7.1.0-x64.exe and clicks "僅為我安裝" (per-user, no UAC) to finish the wizard.
+Then re-run I steps 3-6 and this audit: compile a SCRATCH copy of the .iss with a stand-in EULA, /O to a scratch folder,
+record exit code, warnings and output sha256, then compare the license. Never run the produced setup exe.

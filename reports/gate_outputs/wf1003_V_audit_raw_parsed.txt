@@ -1,0 +1,76 @@
+==== E:/Tsuki-project/_scratch/wf1003/V_audit/out_q09v_pool16.txt
+-- fur_elise (piano)
+  Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+  Q09V steals pool16 = 0 (held 0), pool32 = 0 (held 0), pool128 = 0
+  Q09V max active voices at block end: pool16 = 12, pool32 = 12, pool128 = 12
+  Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+  Q09V output: max|twin16 - twin32| = 0 (0 = a 32 pool changes nothing for this input)
+  Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 12415, mean = 1.1417 ms, p99 = 3.7150 ms, max = 25.2191 ms, max/budget = 2.3643, blocks >= budget = 2
+  twin pool16: reps=5 mean[min..max]=1.037..1.039 p99[min..max]=3.413..3.468 max_worst=6.092 viol per rep=[0, 0, 0, 0, 0] steals=[0, 0, 0, 0, 0] maxActive=[12, 12, 12, 12, 12]
+  twin pool32: reps=5 mean[min..max]=1.065..1.066 p99[min..max]=3.480..3.511 max_worst=5.505 viol per rep=[0, 0, 0, 0, 0] steals=[0, 0, 0, 0, 0] maxActive=[12, 12, 12, 12, 12]
+-- moonlight_mvt1_tongue_drum
+  Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+  Q09V steals pool16 = 64 (held 4), pool32 = 0 (held 0), pool128 = 0
+  Q09V max active voices at block end: pool16 = 16, pool32 = 20, pool128 = 20
+  Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 0.030227  (0 identifies the pool size the VST3 binary was built with)
+  Q09V output: max|twin16 - twin32| = 0.030227 (0 = a 32 pool changes nothing for this input)
+  Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 29168, mean = 0.2843 ms, p99 = 0.4489 ms, max = 0.8741 ms, max/budget = 0.0819, blocks >= budget = 0
+  twin pool16: reps=5 mean[min..max]=0.188..0.188 p99[min..max]=0.346..0.351 max_worst=1.149 viol per rep=[0, 0, 0, 0, 0] steals=[64, 64, 64, 64, 64] maxActive=[16, 16, 16, 16, 16]
+  twin pool32: reps=5 mean[min..max]=0.224..0.225 p99[min..max]=0.390..0.392 max_worst=1.135 viol per rep=[0, 0, 0, 0, 0] steals=[0, 0, 0, 0, 0] maxActive=[20, 20, 20, 20, 20]
+-- stress32_chromatic (synthetic)
+  Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+  Q09V steals pool16 = 16 (held 16), pool32 = 0 (held 0), pool128 = 0
+  Q09V max active voices at block end: pool16 = 16, pool32 = 32, pool128 = 32
+  Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 0.921249  (0 identifies the pool size the VST3 binary was built with)
+  Q09V output: max|twin16 - twin32| = 0.921249 (0 = a 32 pool changes nothing for this input)
+  Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 469, mean = 0.2831 ms, p99 = 0.6525 ms, max = 0.8723 ms, max/budget = 0.0818, blocks >= budget = 0
+  twin pool16: reps=5 mean[min..max]=0.188..0.191 p99[min..max]=0.522..0.559 max_worst=1.025 viol per rep=[0, 0, 0, 0, 0] steals=[16, 16, 16, 16, 16] maxActive=[16, 16, 16, 16, 16]
+  twin pool32: reps=5 mean[min..max]=0.446..0.448 p99[min..max]=1.304..1.413 max_worst=1.819 viol per rep=[0, 0, 0, 0, 0] steals=[0, 0, 0, 0, 0] maxActive=[32, 32, 32, 32, 32]
+-- stress32_piano (synthetic)
+  Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+  Q09V steals pool16 = 16 (held 16), pool32 = 0 (held 0), pool128 = 0
+  Q09V max active voices at block end: pool16 = 16, pool32 = 32, pool128 = 32
+  Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 3.63242  (0 identifies the pool size the VST3 binary was built with)
+  Q09V output: max|twin16 - twin32| = 3.63242 (0 = a 32 pool changes nothing for this input)
+  Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 469, mean = 2.5139 ms, p99 = 10.8261 ms, max = 11.2113 ms, max/budget = 1.0511, blocks >= budget = 6
+  twin pool16: reps=5 mean[min..max]=2.478..2.488 p99[min..max]=10.542..10.717 max_worst=11.294 viol per rep=[4, 5, 4, 4, 4] steals=[16, 16, 16, 16, 16] maxActive=[16, 16, 16, 16, 16]
+  twin pool32: reps=5 mean[min..max]=7.372..7.383 p99[min..max]=20.742..20.779 max_worst=22.135 viol per rep=[153, 152, 152, 154, 153] steals=[0, 0, 0, 0, 0] maxActive=[32, 32, 32, 32, 32]
+budget_ms=10.6667
+==== E:/Tsuki-project/_scratch/wf1003/V_audit/out_q09v_pool32.txt
+-- fur_elise (piano)
+  Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+  Q09V steals pool16 = 0 (held 0), pool32 = 0 (held 0), pool128 = 0
+  Q09V max active voices at block end: pool16 = 12, pool32 = 12, pool128 = 12
+  Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+  Q09V output: max|twin16 - twin32| = 0 (0 = a 32 pool changes nothing for this input)
+  Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 12415, mean = 1.1766 ms, p99 = 3.6065 ms, max = 5.4781 ms, max/budget = 0.5136, blocks >= budget = 0
+  twin pool16: reps=5 mean[min..max]=1.038..1.042 p99[min..max]=3.433..3.485 max_worst=5.616 viol per rep=[0, 0, 0, 0, 0] steals=[0, 0, 0, 0, 0] maxActive=[12, 12, 12, 12, 12]
+  twin pool32: reps=5 mean[min..max]=1.064..1.065 p99[min..max]=3.469..3.491 max_worst=6.224 viol per rep=[0, 0, 0, 0, 0] steals=[0, 0, 0, 0, 0] maxActive=[12, 12, 12, 12, 12]
+-- moonlight_mvt1_tongue_drum
+  Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+  Q09V steals pool16 = 64 (held 4), pool32 = 0 (held 0), pool128 = 0
+  Q09V max active voices at block end: pool16 = 16, pool32 = 20, pool128 = 20
+  Q09V identity: max|VST3 - twin16| = 0.030227, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+  Q09V output: max|twin16 - twin32| = 0.030227 (0 = a 32 pool changes nothing for this input)
+  Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 29168, mean = 0.3444 ms, p99 = 0.5175 ms, max = 2.5687 ms, max/budget = 0.2408, blocks >= budget = 0
+  twin pool16: reps=5 mean[min..max]=0.188..0.189 p99[min..max]=0.349..0.353 max_worst=7.270 viol per rep=[0, 0, 0, 0, 0] steals=[64, 64, 64, 64, 64] maxActive=[16, 16, 16, 16, 16]
+  twin pool32: reps=5 mean[min..max]=0.224..0.225 p99[min..max]=0.392..0.393 max_worst=1.083 viol per rep=[0, 0, 0, 0, 0] steals=[0, 0, 0, 0, 0] maxActive=[20, 20, 20, 20, 20]
+-- stress32_chromatic (synthetic)
+  Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+  Q09V steals pool16 = 16 (held 16), pool32 = 0 (held 0), pool128 = 0
+  Q09V max active voices at block end: pool16 = 16, pool32 = 32, pool128 = 32
+  Q09V identity: max|VST3 - twin16| = 0.921249, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+  Q09V output: max|twin16 - twin32| = 0.921249 (0 = a 32 pool changes nothing for this input)
+  Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 469, mean = 0.5697 ms, p99 = 1.4229 ms, max = 1.8622 ms, max/budget = 0.1746, blocks >= budget = 0
+  twin pool16: reps=5 mean[min..max]=0.188..0.189 p99[min..max]=0.521..0.630 max_worst=0.805 viol per rep=[0, 0, 0, 0, 0] steals=[16, 16, 16, 16, 16] maxActive=[16, 16, 16, 16, 16]
+  twin pool32: reps=5 mean[min..max]=0.445..0.448 p99[min..max]=1.297..1.390 max_worst=1.857 viol per rep=[0, 0, 0, 0, 0] steals=[0, 0, 0, 0, 0] maxActive=[32, 32, 32, 32, 32]
+-- stress32_piano (synthetic)
+  Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+  Q09V steals pool16 = 16 (held 16), pool32 = 0 (held 0), pool128 = 0
+  Q09V max active voices at block end: pool16 = 16, pool32 = 32, pool128 = 32
+  Q09V identity: max|VST3 - twin16| = 3.63242, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+  Q09V output: max|twin16 - twin32| = 3.63242 (0 = a 32 pool changes nothing for this input)
+  Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 469, mean = 7.4084 ms, p99 = 20.9319 ms, max = 21.2989 ms, max/budget = 1.9968, blocks >= budget = 152
+  twin pool16: reps=5 mean[min..max]=2.482..2.491 p99[min..max]=10.603..10.856 max_worst=11.363 viol per rep=[5, 4, 5, 4, 6] steals=[16, 16, 16, 16, 16] maxActive=[16, 16, 16, 16, 16]
+  twin pool32: reps=5 mean[min..max]=7.379..7.410 p99[min..max]=20.765..20.941 max_worst=23.236 viol per rep=[154, 154, 154, 153, 152] steals=[0, 0, 0, 0, 0] maxActive=[32, 32, 32, 32, 32]
+budget_ms=10.6667

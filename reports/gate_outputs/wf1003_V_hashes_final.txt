@@ -1,0 +1,3 @@
+e8791f1101cf8b40218860e1f2fa773c4ccc53d21ee6e788de86b454ad941963 *E:/Tsuki-project/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+dadde02d2877cc073a0e8ee688562acba58c1dbe5f162aedbea8576916067ea9 *E:/Tsuki-project/_scratch/wf1003/V/b32/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+c413096ddaf7d184b19c6f761f756b7380d185567243c5f359a7d9c41d97ccd9 *E:/Tsuki-project/tsuki-synth/build/Release/TsukiSynthHostProbe.exe

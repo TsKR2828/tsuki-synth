@@ -1,0 +1,677 @@
+# WF1003-C2S4 method sources (scratch only; not product, not a GATE). <C2S4> = E:/Tsuki-project/_scratch/wf1003/C2S4
+
+## binaries (built from <C2S4>/proj, Release, static CRT, JUCE from repo libs/JUCE read-only)
+2959f096e223e2fdb3e51769da879244180592e1850af7d28e73d7dffb790351 *bin/c2s4_new.exe
+620e6f8b86a94e9c3925afa62c0f01f5ca478c5f4801c2872df4e58364980fda *bin/c2s4_old.exe
+
+## header copies (git show) used for the two builds
+dab6a51c7ccb97543a2c6898be5f84aef6ca8b55ecf339476ff5ec5a75fba159 *old/src/dsp/Envelope.h
+a0ffcfeee4b2dda12500b40e98ef6df4f3ad0664c539b89c68060575c69134a9 *old/src/dsp/NoiseGen.h
+6e4027d08f7a4aac07a08f2826644db4a0ca6e90de76b7c7066c5ed317597029 *old/src/engines/FMPianoEngine.h
+9ed69018448b2663c85f0e676ef8557f4c25b278450287d7b172bf6a9219135e *new/src/dsp/Envelope.h
+a0ffcfeee4b2dda12500b40e98ef6df4f3ad0664c539b89c68060575c69134a9 *new/src/dsp/NoiseGen.h
+6e4027d08f7a4aac07a08f2826644db4a0ca6e90de76b7c7066c5ed317597029 *new/src/engines/FMPianoEngine.h
+
+==============================================================================
+== <C2S4>/proj/CMakeLists.txt  sha256 d1b71cd506d769245c0687522fdfc0f56b8a0e6153496c7472f2036f3a36c71d
+==============================================================================
+cmake_minimum_required(VERSION 3.22)
+project(C2S4 VERSION 1.0.0 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+add_subdirectory(E:/Tsuki-project/tsuki-synth/libs/JUCE juce)
+
+foreach(V old new)
+    juce_add_console_app(c2s4_${V} PRODUCT_NAME c2s4_${V})
+    target_sources(c2s4_${V} PRIVATE harness.cpp)
+    target_include_directories(c2s4_${V} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../${V}/src)
+    target_compile_definitions(c2s4_${V} PRIVATE
+        JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 _ALLOW_KEYWORD_MACROS=1
+        C2S4_VARIANT="${V}")
+    target_link_libraries(c2s4_${V} PRIVATE
+        juce::juce_audio_processors juce::juce_audio_formats
+        juce::juce_recommended_config_flags)
+endforeach()
+
+==============================================================================
+== <C2S4>/proj/harness.cpp  sha256 fe3bd58e2ecfb2aeca0cb8fae2942c6c2140f9259375aeebcca5118722ef228d
+==============================================================================
+// WF1003-C2S4 read-only investigation harness (scratch only; NOT product, NOT a GATE).
+// Rebuild of the WF1002-C2 "mirror" mode (reports/gate_outputs/wf1002_C2_method_sources.txt)
+// with two additions: (1) per-note-instance ("tag") contribution recording,
+// (2) raw mono output. Built twice: include dir old/src (Envelope.h of 59c0b06^)
+// and new/src (Envelope.h of bee2889). Everything else is byte-identical.
+//
+//   c2s4 run <events.txt> <numVoices> <stats.json> [raw.f32] [tagsPrefix]
+//
+// events.txt: sr <hz> | block <n> | len <samples> | pset id type ratio index bright fb att rel
+//             ev <sample> <on|off> <midi> <vel> <pset>     (pre-sorted, offs before ons)
+
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <algorithm>
+#include <cstdio>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <vector>
+
+#define private public
+#include "engines/FMPianoEngine.h"
+#undef private
+
+namespace
+{
+struct PSet { int type; float ratio, index, brightness, feedback, attackMs, releaseMs; };
+struct Ev   { long long sample; int kind; int midi; float vel; int pset; };
+
+struct Events
+{
+    double sr = 48000.0; int block = 512; long long len = 0;
+    std::map<int, PSet> psets;
+    std::vector<Ev> evs;
+};
+
+Events loadEvents (const std::string& path)
+{
+    Events E; std::ifstream f (path); std::string line;
+    while (std::getline (f, line))
+    {
+        std::istringstream ss (line); std::string tag; ss >> tag;
+        if (tag == "sr") ss >> E.sr;
+        else if (tag == "block") ss >> E.block;
+        else if (tag == "len") ss >> E.len;
+        else if (tag == "pset")
+        {
+            int id; PSet p; ss >> id >> p.type >> p.ratio >> p.index >> p.brightness
+                               >> p.feedback >> p.attackMs >> p.releaseMs;
+            E.psets[id] = p;
+        }
+        else if (tag == "ev")
+        {
+            Ev e; std::string k; ss >> e.sample >> k >> e.midi >> e.vel >> e.pset;
+            e.kind = (k == "off") ? 0 : 1;
+            E.evs.push_back (e);
+        }
+    }
+    return E;
+}
+
+struct Rec
+{
+    bool on = false;
+    long long len = 0, blockStart = 0;
+    int nextTag = 0;
+    std::vector<std::vector<float>> series;
+    std::vector<int> note;
+};
+
+class TVoice : public FMPianoVoice
+{
+public:
+    Rec* rec = nullptr;
+    int tag = -1;
+    juce::AudioBuffer<float> scratch { 2, 512 };
+
+    void startNote (int n, float v, juce::SynthesiserSound* s, int p) override
+    {
+        if (rec != nullptr && rec->on)
+        {
+            tag = rec->nextTag++;
+            rec->note.push_back (n);
+            rec->series.emplace_back ((size_t) rec->len, 0.0f);
+        }
+        FMPianoVoice::startNote (n, v, s, p);
+    }
+    void renderNextBlock (juce::AudioBuffer<float>& out, int start, int num) override
+    {
+        if (rec == nullptr || ! rec->on) { FMPianoVoice::renderNextBlock (out, start, num); return; }
+        if (scratch.getNumSamples() < num) scratch.setSize (2, num);
+        scratch.clear();
+        FMPianoVoice::renderNextBlock (scratch, 0, num);
+        for (int ch = 0; ch < out.getNumChannels(); ++ch)
+            out.addFrom (ch, start, scratch, juce::jmin (ch, 1), 0, num);
+        if (tag >= 0)
+        {
+            const float* s = scratch.getReadPointer (0);
+            auto& ser = rec->series[(size_t) tag];
+            for (int i = 0; i < num; ++i)
+            {
+                const long long g = rec->blockStart + start + i;
+                if (g < rec->len) ser[(size_t) g] += s[i];
+            }
+        }
+    }
+};
+
+class MirrorSynth : public juce::Synthesiser
+{
+public:
+    long long steals = 0, tailOffHits = 0, releaseRetriggers = 0;
+    bool pedal = false;
+    static FMPianoVoice* fm (juce::SynthesiserVoice* v) { return static_cast<FMPianoVoice*> (v); }
+    void countRetrig (int note, bool isNoteOff)
+    {
+        if (isNoteOff && pedal) return;
+        for (int i = 0; i < getNumVoices(); ++i)
+        {
+            auto* v = getVoice (i);
+            if (v->getCurrentlyPlayingNote() == note)
+            {
+                ++tailOffHits;
+                if (fm (v)->ampEnv.getState() == Envelope::State::Release) ++releaseRetriggers;
+            }
+        }
+    }
+    void noteOn (int ch, int note, float vel) override
+    {
+        countRetrig (note, false);
+        juce::Synthesiser::noteOn (ch, note, vel);
+    }
+    void noteOff (int ch, int note, float vel, bool tail) override
+    {
+        countRetrig (note, true);
+        juce::Synthesiser::noteOff (ch, note, vel, tail);
+    }
+    juce::SynthesiserVoice* findFreeVoice (juce::SynthesiserSound* s, int ch, int note, bool steal) const override
+    {
+        auto* v = juce::Synthesiser::findFreeVoice (s, ch, note, steal);
+        if (v != nullptr && v->isVoiceActive()) ++const_cast<MirrorSynth*> (this)->steals;
+        return v;
+    }
+};
+
+int run (const std::string& evPath, int numVoices, const std::string& statsPath,
+         const std::string& rawPath, const std::string& tagsPrefix)
+{
+    const Events E = loadEvents (evPath);
+    std::atomic<float> aType { 0 }, aRatio { 1.0f }, aIndex { 4.5f }, aBright { 0.6f }, aFb { 0.02f },
+                       aAtt { 5.0f }, aRel { 500.0f };
+    std::atomic<float> mM { 0.5f }, mT { 0.5f }, mD { 0.5f }, mS { 0.5f }, mB { 0.5f }, mY { 0.5f }, mN { 0.0f };
+    const long long nBlocks = (E.len + E.block - 1) / E.block;
+    const long long N = nBlocks * E.block;
+    Rec rec; rec.len = N; rec.on = ! tagsPrefix.empty();
+    MirrorSynth synth;
+    synth.addSound (new FMPianoSound());
+    for (int i = 0; i < numVoices; ++i)
+    {
+        auto* v = new TVoice();
+        v->rec = &rec;
+        v->setNoiseIdentity ((uint64_t) i);
+        v->pType = &aType; v->pRatio = &aRatio; v->pIndex = &aIndex; v->pBrightness = &aBright;
+        v->pFeedback = &aFb; v->pAttack = &aAtt; v->pRelease = &aRel;
+        v->pMacroMaterial = &mM; v->pMacroTension = &mT; v->pMacroDamping = &mD; v->pMacroStrike = &mS;
+        v->pMacroBrightness = &mB; v->pMacroBody = &mY; v->pMacroNoise = &mN;
+        synth.addVoice (v);
+    }
+    synth.setCurrentPlaybackSampleRate (E.sr);
+    // single pset for the whole run (all C2S4 cases use one)
+    {
+        const PSet& p = E.psets.begin()->second;
+        aType = (float) p.type; aRatio = p.ratio; aIndex = p.index; aBright = p.brightness;
+        aFb = p.feedback; aAtt = p.attackMs; aRel = p.releaseMs;
+    }
+    std::vector<float> raw ((size_t) N, 0.0f);
+    juce::AudioBuffer<float> buf (2, E.block);
+    juce::MidiBuffer midi;
+    size_t next = 0;
+    double sumsq = 0; float peak = 0; int maxActive = 0; double activeSum = 0;
+    for (long long b = 0; b < nBlocks; ++b)
+    {
+        juce::ScopedNoDenormals nd;
+        const long long bs = b * E.block;
+        midi.clear();
+        while (next < E.evs.size() && E.evs[next].sample < bs + E.block)
+        {
+            const auto& e = E.evs[next++];
+            midi.addEvent (e.kind == 1 ? juce::MidiMessage::noteOn (1, e.midi, e.vel)
+                                       : juce::MidiMessage::noteOff (1, e.midi),
+                           (int) (e.sample - bs));
+        }
+        buf.clear();
+        rec.blockStart = bs;
+        synth.renderNextBlock (buf, midi, 0, E.block);
+        int act = 0;
+        for (int i = 0; i < synth.getNumVoices(); ++i) act += synth.getVoice (i)->isVoiceActive() ? 1 : 0;
+        maxActive = std::max (maxActive, act); activeSum += act;
+        const float* x = buf.getReadPointer (0);
+        for (int i = 0; i < E.block; ++i)
+        {
+            raw[(size_t) (bs + i)] = x[i];
+            sumsq += (double) x[i] * x[i]; peak = std::max (peak, std::abs (x[i]));
+        }
+    }
+    auto db10 = [] (double v) { return v > 0 ? 10.0 * std::log10 (v) : -999.0; };
+    std::ofstream st (statsPath);
+    char b[1024];
+    std::snprintf (b, sizeof b,
+        "{\"variant\":\"%s\",\"voices\":%d,\"n\":%lld,\"sumsq\":%.12e,\"rms_dbfs\":%.6f,\"peak\":%.9g,"
+        "\"peak_dbfs\":%.6f,\"steals\":%lld,\"max_active\":%d,\"mean_active\":%.4f,"
+        "\"tail_off_hits\":%lld,\"tail_off_in_release\":%lld,\"ntags\":%d}\n",
+        C2S4_VARIANT, numVoices, N, sumsq, db10 (sumsq / (double) N), (double) peak,
+        peak > 0 ? 20.0 * std::log10 ((double) peak) : -999.0, synth.steals, maxActive,
+        activeSum / (double) nBlocks, synth.tailOffHits, synth.releaseRetriggers, rec.nextTag);
+    st << b;
+    if (! rawPath.empty())
+    {
+        FILE* f = std::fopen (rawPath.c_str(), "wb");
+        std::fwrite (raw.data(), sizeof (float), raw.size(), f);
+        std::fclose (f);
+    }
+    if (rec.on)
+    {
+        FILE* f = std::fopen ((tagsPrefix + "_tags.f32").c_str(), "wb");
+        for (auto& s : rec.series) std::fwrite (s.data(), sizeof (float), s.size(), f);
+        std::fclose (f);
+        std::ofstream h (tagsPrefix + "_tags.txt");
+        h << "ntags " << rec.nextTag << " len " << N << "\n";
+        for (int i = 0; i < rec.nextTag; ++i) h << i << " " << rec.note[(size_t) i] << "\n";
+    }
+    return 0;
+}
+} // namespace
+
+int main (int argc, char** argv)
+{
+    juce::ScopedJuceInitialiser_GUI juceInit;
+    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+    const std::string mode = argc > 1 ? argv[1] : "";
+    if (mode == "run" && argc >= 5)
+        return run (argv[2], std::atoi (argv[3]), argv[4], argc > 5 ? argv[5] : "", argc > 6 ? argv[6] : "");
+    std::cerr << "usage: c2s4 run <events.txt> <numVoices> <stats.json> [raw.f32] [tagsPrefix]\n";
+    return 2;
+}
+
+==============================================================================
+== <C2S4>/c2s4_driver.py  sha256 a87d8cd8762718e8230db43d0cf1ac166f3adaa1310c1c22f0e310beba7f6f70
+==============================================================================
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""WF1003-C2S4 read-only investigation driver (scratch; descriptive numbers only, no thresholds).
+
+Subcommands (all use the two built harnesses bin/c2s4_old.exe and bin/c2s4_new.exe):
+  repro      reproduce WF1002-C2 S4 dry-mirror numbers (16 / 1024 voices) + S1/S3 as controls
+  decomp     S4 per-note-instance decomposition: total energy vs sum of single-voice energies
+  sweepT     S4 pattern, re-strike interval T swept over one fundamental period
+  sweepP     S4 pattern, T=0.5 s, MIDI pitch swept 48..72
+  jitter     S4 pattern, each strike jittered by a random +-2 ms (phase relation scrambled)
+  levels     cross-check of the 1.5 dB with a second window / second metric
+"""
+import json
+import math
+import subprocess
+import sys
+from pathlib import Path
+
+import numpy as np
+
+ROOT = Path(__file__).resolve().parent
+BIN = ROOT / "bin"
+RUNS = ROOT / "runs"
+RUNS.mkdir(exist_ok=True)
+SR = 48000
+BLOCK = 512
+REL_MS = 1500.0
+
+
+def db10(x):
+    return 10.0 * math.log10(x) if x > 0 else float("-inf")
+
+
+def write_events(path, notes, release_ms=REL_MS, tail_s=2.0):
+    """notes: list of (on_sample, off_sample, midi, vel). One FM-Piano pset (S4 params:
+    fm_preset 0, everything else APVTS default, release=release_ms)."""
+    rows = []
+    for order, (on, off, m, v) in enumerate(notes):
+        rows.append((on, 1, order, "on", m, v))
+        rows.append((off, 0, order, "off", m, 0.0))
+    last_off = max(r[0] for r in rows if r[3] == "off")
+    rows.sort(key=lambda r: (r[0], r[1], r[2]))
+    length = last_off + 2 + int((release_ms / 1000.0 + tail_s) * SR)
+    with open(path, "w", newline="\n") as f:
+        f.write("sr %d\nblock %d\nlen %d\n" % (SR, BLOCK, length))
+        f.write("pset 0 0 1.0 4.5 0.6 0.02 5.0 %r\n" % release_ms)
+        for s, _k, _o, kind, m, v in rows:
+            f.write("ev %d %s %d %r 0\n" % (s, kind, m, v))
+    return length
+
+
+def s4_notes(T_samples=24000, midi=60, vel=0.7, n=40, hold_factor=2, jitter=None):
+    out = []
+    for i in range(n):
+        on = i * T_samples + (0 if jitter is None else int(jitter[i]))
+        out.append((on, on + hold_factor * T_samples, midi, vel))
+    return out
+
+
+def run(variant, ev, voices, tag, raw=False, tags=False):
+    stats = RUNS / ("%s_%s_%d.json" % (tag, variant, voices))
+    cmd = [str(BIN / ("c2s4_%s.exe" % variant)), "run", str(ev), str(voices), str(stats)]
+    if raw or tags:
+        cmd.append(str(RUNS / ("%s_%s_%d_raw.f32" % (tag, variant, voices))) if raw else "")
+    if tags:
+        cmd.append(str(RUNS / ("%s_%s_%d" % (tag, variant, voices))))
+    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+    return json.loads(stats.read_text())
+
+
+def pair(ev, voices, tag, **kw):
+    return run("old", ev, voices, tag, **kw), run("new", ev, voices, tag, **kw)
+
+
+# ------------------------------------------------------------------ repro
+def cmd_repro():
+    out = []
+    # S4 exactly as c2_make_events.py wrote it: t=i*0.5, dur 1.0, midi 60, vel 0.7, rel 1500
+    ev = RUNS / "S4.txt"
+    L = write_events(ev, s4_notes())
+    out.append("S4 events: 40 notes, on=i*24000, off=on+48000, midi 60, vel 0.7, release 1500 ms, len %d samples (%.3f s)"
+               % (L, L / SR))
+    for voices in (16, 1024):
+        o, n = pair(ev, voices, "S4")
+        out.append("S4 voices=%d | old rms %.3f peak %.3f steals %d maxActive %d tailOffHits %d inRelease %d"
+                   % (voices, o["rms_dbfs"], o["peak_dbfs"], o["steals"], o["max_active"],
+                      o["tail_off_hits"], o["tail_off_in_release"]))
+        out.append("S4 voices=%d | new rms %.3f peak %.3f steals %d maxActive %d tailOffHits %d inRelease %d"
+                   % (voices, n["rms_dbfs"], n["peak_dbfs"], n["steals"], n["max_active"],
+                      n["tail_off_hits"], n["tail_off_in_release"]))
+        out.append("S4 voices=%d | new - old = %+.3f dB (rms), %+.3f dB (peak)"
+                   % (voices, n["rms_dbfs"] - o["rms_dbfs"], n["peak_dbfs"] - o["peak_dbfs"]))
+    out.append("reference (wf1002_C2_plugin_before_after.txt line 239): "
+               "base_16 rms -26.980 pk -16.487 | fix_16 rms -25.502 pk -16.388 | "
+               "base_1024 rms -26.974 pk -16.487 | fix_1024 rms -25.502 pk -16.388")
+    # controls from the C2 report: S3 (every 0.40 s, 0.13 s long, midi 44, vel .6, rel 150): bit-identical expected
+    ev3 = RUNS / "S3.txt"
+    T = int(round(0.40 * SR))
+    notes = [(i * T, i * T + int(round(0.13 * SR)), 44, 0.6) for i in range(50)]
+    write_events(ev3, notes, release_ms=150.0)
+    # S3 pset in C2 was index 5.6 brightness .62 release 150; this harness uses fixed APVTS-default pset, so
+    # S3 here is only a *structural* control (no restart ever happens -> identical output expected)
+    o, n = pair(ev3, 16, "S3")
+    out.append("control S3-like (same note every 0.40 s, 0.13 s long, release 150 ms): old rms %.6f new rms %.6f "
+               "tailOffInRelease old %d new %d"
+               % (o["rms_dbfs"], n["rms_dbfs"], o["tail_off_in_release"], n["tail_off_in_release"]))
+    return out
+
+
+# ------------------------------------------------------------------ decomp
+def load_tags(prefix):
+    hdr = (Path(str(prefix) + "_tags.txt")).read_text().splitlines()
+    nt, N = int(hdr[0].split()[1]), int(hdr[0].split()[3])
+    a = np.fromfile(str(prefix) + "_tags.f32", dtype=np.float32).reshape(nt, N)
+    return a
+
+
+def cmd_decomp():
+    out = []
+    ev = RUNS / "S4.txt"
+    write_events(ev, s4_notes())
+    res = {}
+    for v in ("old", "new"):
+        st = run(v, ev, 1024, "S4dec", raw=True, tags=True)
+        tg = load_tags(RUNS / ("S4dec_%s_1024" % v))
+        tot = np.fromfile(str(RUNS / ("S4dec_%s_1024_raw.f32" % v)), dtype=np.float32)
+        sumtags = tg.astype(np.float64).sum(axis=0)
+        err = float(np.max(np.abs(sumtags - tot.astype(np.float64))))
+        res[v] = (st, tg, tot, err)
+        out.append("[%s] ntags %d, max|sum(tags)-total| = %.3e (float rounding only; must be ~1e-7)" % (v, tg.shape[0], err))
+    N = res["old"][2].shape[0]
+    rows = []
+    for name, lo, hi in (("whole file 0-24 s", 0, N), ("steady 5-20 s", 5 * SR, 20 * SR),
+                         ("steady 8-18 s", 8 * SR, 18 * SR)):
+        line = {"window": name}
+        for v in ("old", "new"):
+            st, tg, tot, _ = res[v]
+            Et = float(np.sum(tot[lo:hi].astype(np.float64) ** 2))
+            Ej = np.sum(tg[:, lo:hi].astype(np.float64) ** 2, axis=1)
+            Es = float(Ej.sum())
+            line[v] = dict(E_total=Et, E_sum_single=Es,
+                           total_dB=db10(Et / (hi - lo)), sum_single_dB=db10(Es / (hi - lo)),
+                           interference_dB=db10(Et / Es))
+        rows.append(line)
+        o, n = line["old"], line["new"]
+        out.append("== window: %s" % name)
+        out.append("   %-34s %10s %10s %12s" % ("", "old", "new", "new-old"))
+        out.append("   %-34s %10.3f %10.3f %+12.3f" % ("total power (dB re full scale^2)", o["total_dB"], n["total_dB"], n["total_dB"] - o["total_dB"]))
+        out.append("   %-34s %10.3f %10.3f %+12.3f" % ("sum of single-voice powers (dB)", o["sum_single_dB"], n["sum_single_dB"], n["sum_single_dB"] - o["sum_single_dB"]))
+        out.append("   %-34s %10.3f %10.3f %+12.3f" % ("interference = total/sum_single (dB)", o["interference_dB"], n["interference_dB"], n["interference_dB"] - o["interference_dB"]))
+    # voice overlap structure
+    for v in ("old", "new"):
+        st, tg, tot, _ = res[v]
+        nz = tg != 0
+        alive = np.zeros(N, dtype=np.int32)
+        first = np.argmax(nz, axis=1)
+        last = N - 1 - np.argmax(nz[:, ::-1], axis=1)
+        for a, b in zip(first, last):
+            alive[a:b + 1] += 1
+        seg = alive[8 * SR:18 * SR]
+        out.append("[%s] voices sounding (non-zero output) in 8-18 s: mean %.2f min %d max %d ; per-voice audible length: median %.2f s max %.2f s"
+                   % (v, seg.mean(), seg.min(), seg.max(), float(np.median(last - first)) / SR, float(np.max(last - first)) / SR))
+    # per-voice energy old vs new for the same note instance
+    o_tg, n_tg = res["old"][1], res["new"][1]
+    Eo = np.sum(o_tg.astype(np.float64) ** 2, axis=1)
+    En = np.sum(n_tg.astype(np.float64) ** 2, axis=1)
+    out.append("single-voice energy old/new per note instance (dB), notes 10..30: " +
+               " ".join("%+.2f" % db10(Eo[i] / En[i]) for i in range(10, 31)))
+    out.append("   mean over notes 5..34: %+.3f dB  (positive = old voice carries MORE energy than the same voice after the fix)"
+               % db10(float(np.mean(Eo[5:35] / En[5:35]))))
+    # per-harmonic band split, steady window 8-18 s
+    lo, hi = 8 * SR, 18 * SR
+    f0 = 440.0 * 2 ** ((60 - 69) / 12)
+    out.append("per-harmonic split, window 8-18 s, f0 = %.4f Hz, band = k*f0 +- f0/2 (rect FFT):" % f0)
+    out.append("   k   total_old  sumsingle_old  interf_old | total_new  sumsingle_new  interf_new | new-old(total)  (dB)")
+    n_fft = hi - lo
+    freqs = np.fft.rfftfreq(n_fft, 1.0 / SR)
+
+    def bands(x):
+        X = np.fft.rfft(x[lo:hi].astype(np.float64) * 1.0)
+        return np.abs(X) ** 2
+
+    def band_E(P, k):
+        m = (freqs >= (k - 0.5) * f0) & (freqs < (k + 0.5) * f0)
+        return float(P[m].sum())
+    spec = {}
+    for v in ("old", "new"):
+        st, tg, tot, _ = res[v]
+        Pt = bands(tot)
+        Ps = np.zeros_like(Pt)
+        for j in range(tg.shape[0]):
+            Ps += bands(tg[j])
+        spec[v] = (Pt, Ps)
+    hrows = []
+    for k in range(1, 11):
+        ot, os_ = band_E(spec["old"][0], k), band_E(spec["old"][1], k)
+        nt, ns = band_E(spec["new"][0], k), band_E(spec["new"][1], k)
+        out.append("  %2d  %9.2f  %12.2f  %9.2f | %9.2f  %12.2f  %9.2f | %+8.2f" %
+                   (k, db10(ot), db10(os_), db10(ot / os_), db10(nt), db10(ns), db10(nt / ns), db10(nt / ot)))
+        hrows.append(dict(k=k, old_total=ot, old_single=os_, new_total=nt, new_single=ns))
+    (RUNS / "decomp.json").write_text(json.dumps(dict(windows=rows, harmonics=hrows), indent=1))
+    return out
+
+
+# ------------------------------------------------------------------ sweeps
+def cmd_sweepT():
+    out = ["# S4 pattern, midi 60, T = 24000 + d samples (on = i*T, off = on+2T), release 1500 ms, 1024 voices (no steals)",
+           "# phase step per re-strike of the fundamental = frac(f0*T) cycles; f0 = 261.6256 Hz -> period 183.5 samples",
+           "d_samples,T_ms,frac_f0T,old_rms_dbfs,new_rms_dbfs,new_minus_old_rms_dB,old_peak_dbfs,new_peak_dbfs,new_minus_old_peak_dB"]
+    f0 = 440.0 * 2 ** ((60 - 69) / 12)
+    rows = []
+    for d in range(0, 188, 4):
+        T = 24000 + d
+        ev = RUNS / "sw.txt"
+        write_events(ev, s4_notes(T_samples=T))
+        o, n = pair(ev, 1024, "sw")
+        fr = (f0 * T / SR) % 1.0
+        rows.append((d, T / SR * 1000, fr, o["rms_dbfs"], n["rms_dbfs"], n["rms_dbfs"] - o["rms_dbfs"],
+                     o["peak_dbfs"], n["peak_dbfs"], n["peak_dbfs"] - o["peak_dbfs"]))
+        out.append("%d,%.4f,%.4f,%.3f,%.3f,%+.3f,%.3f,%.3f,%+.3f" % rows[-1])
+    a = np.array([r[5] for r in rows])
+    p = np.array([r[8] for r in rows])
+    out.append("# summary rms: new-old mean %+.3f dB, min %+.3f, max %+.3f, std %.3f ; share of points where new is louder: %d/%d"
+               % (a.mean(), a.min(), a.max(), a.std(), int((a > 0).sum()), len(a)))
+    out.append("# summary peak: new-old mean %+.3f dB, min %+.3f, max %+.3f" % (p.mean(), p.min(), p.max()))
+    # power-average (energy domain) of the difference
+    out.append("# energy-domain mean of new/old ratio: %+.3f dB" % db10(float(np.mean([10 ** (x / 10) for x in a]))))
+    return out
+
+
+def cmd_sweepP():
+    out = ["# S4 pattern, T = 24000 samples (0.5 s), pitch swept, 1024 voices",
+           "midi,f0_hz,frac_f0T,old_rms_dbfs,new_rms_dbfs,new_minus_old_rms_dB,old_peak_dbfs,new_peak_dbfs"]
+    rows = []
+    for m in range(48, 73):
+        ev = RUNS / "sp.txt"
+        write_events(ev, s4_notes(midi=m))
+        o, n = pair(ev, 1024, "sp")
+        f0 = 440.0 * 2 ** ((m - 69) / 12)
+        fr = (f0 * 0.5) % 1.0
+        rows.append((m, f0, fr, o["rms_dbfs"], n["rms_dbfs"], n["rms_dbfs"] - o["rms_dbfs"], o["peak_dbfs"], n["peak_dbfs"]))
+        out.append("%d,%.4f,%.4f,%.3f,%.3f,%+.3f,%.3f,%.3f" % rows[-1])
+    a = np.array([r[5] for r in rows])
+    out.append("# summary: new-old mean %+.3f dB, min %+.3f, max %+.3f, std %.3f ; new louder at %d/%d pitches"
+               % (a.mean(), a.min(), a.max(), a.std(), int((a > 0).sum()), len(a)))
+    return out
+
+
+def cmd_jitter():
+    out = ["# S4 pattern at T=0.5 s, midi 60, each strike jittered by uniform integer +-96 samples (+-2 ms); "
+           "the fixed phase step between strikes is destroyed. seed = numpy default_rng(seed)",
+           "seed,old_rms_dbfs,new_rms_dbfs,new_minus_old_rms_dB,old_peak_dbfs,new_peak_dbfs"]
+    rows = []
+    for seed in range(1, 41):
+        rng = np.random.default_rng(seed)
+        jit = rng.integers(-96, 97, size=40)
+        jit[0] = 0
+        ev = RUNS / "jt.txt"
+        write_events(ev, s4_notes(jitter=jit))
+        o, n = pair(ev, 1024, "jt")
+        rows.append((seed, o["rms_dbfs"], n["rms_dbfs"], n["rms_dbfs"] - o["rms_dbfs"], o["peak_dbfs"], n["peak_dbfs"]))
+        out.append("%d,%.3f,%.3f,%+.3f,%.3f,%.3f" % rows[-1])
+    a = np.array([r[3] for r in rows])
+    out.append("# summary: new-old mean %+.3f dB, min %+.3f, max %+.3f, std %.3f ; new louder in %d/%d seeds"
+               % (a.mean(), a.min(), a.max(), a.std(), int((a > 0).sum()), len(a)))
+    return out
+
+
+def main():
+    cmd = sys.argv[1]
+    fn = {"repro": cmd_repro, "decomp": cmd_decomp, "sweepT": cmd_sweepT, "sweepP": cmd_sweepP,
+          "jitter": cmd_jitter}[cmd]
+    lines = fn()
+    text = "\n".join(lines) + "\n"
+    (ROOT / ("out_%s.txt" % cmd)).write_text(text, encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
+    print(text)
+
+
+if __name__ == "__main__":
+    main()
+
+==============================================================================
+== <C2S4>/c2s4_model.py  sha256 c34d7b40769a154a2e4fb6dce6ea0766b599c0dc9982a0686ccba767038b9ce4
+==============================================================================
+#!/usr/bin/env python3
+# WF1003-C2S4: (a) collapse test: pitch-sweep vs interval-sweep, as function of frac(f0*T)
+#              (b) a-priori mechanism model of the OLD tail voices, compared with the measured per-voice recording.
+# Model: a voice older than ~8 s is a pure carrier sine (FM index and hammer/body terms decayed to <1e-10),
+#   x_j(n) = 0.1*vel * env_j(n) * sin(2*pi*f0*(n-s_j)/SR),
+#   env_j = linear ramp that restarts from its current level over the FULL release on EVERY same-note
+#   on/off event while releasing (old Envelope::noteOff).  No fitted constant.
+# Compared quantity: power of the sum of all voice samples whose age (n - start) is >= 6 s, in the 8-20 s window,
+#   (older samples are pure sine to < 1e-9), measured from c2s4_old per-note-instance recording vs the model.
+import sys, math, csv
+from pathlib import Path
+import numpy as np
+sys.path.insert(0, str(Path(__file__).parent))
+import c2s4_driver as D
+SR = D.SR
+N = 1152002 // 512 * 512 + 512   # harness length = nBlocks*512
+def db10(x): return 10 * math.log10(x)
+
+def env_old(i, T, n_notes=40, rel_s=1.5, attack_s=0.005, decay_s=3.5):
+    start = i * T
+    E = sorted(set([j * T for j in range(n_notes)] + [(j + 2) * T for j in range(n_notes)]))
+    E = [t for t in E if t > start]
+    env = np.zeros(N)
+    first = E[0]
+    n_att = int(round(attack_s * SR))
+    k = np.arange(first - start)
+    env[start:first] = np.where(k + 1 > n_att, 1 - (k + 1 - n_att) / (decay_s * SR), np.minimum(k + 1, n_att) / n_att)
+    lvl = env[first - 1]
+    Nrel = int(round(rel_s * SR))
+    for idx, e in enumerate(E):
+        rem = Nrel; rate = lvl / Nrel
+        end = E[idx + 1] if idx + 1 < len(E) else N
+        length = min(end - e, rem, N - e)
+        if length <= 0: break
+        seg = lvl - rate * np.arange(1, length + 1)
+        env[e:e + length] = np.maximum(seg, 0)
+        lvl = max(seg[-1], 0.0)
+        if length == rem and end - e >= rem: break   # reached Idle before next event
+    return env
+
+def model_power(T, f0, voices=range(40), lo=8 * SR, hi=20 * SR, vel=0.7, age=6 * SR):
+    n = np.arange(lo, hi)
+    x = np.zeros(hi - lo); inc = np.zeros(hi - lo)
+    for i in voices:
+        e = env_old(i, T)[lo:hi] * ((n - i * T) >= age)
+        ph = 2 * math.pi * f0 * (n - i * T) / SR
+        x += 0.1 * vel * e * np.sin(ph)
+        inc += (0.1 * vel * e) ** 2 * 0.5
+    return float(np.mean(x ** 2)), float(np.mean(inc))
+
+def main():
+    out = []
+    f0 = 440.0 * 2 ** ((60 - 69) / 12)
+    out.append("# (b) mechanism model of old tail voices vs measurement (voice samples aged >= 6 s, window 8-20 s, midi 60)")
+    out.append("d_samples,frac_f0T,measured_sum_dB,measured_sum_of_singles_dB,measured_interf_dB,model_sum_dB,model_sum_of_singles_dB,model_interf_dB,measured_minus_model_sum_dB")
+    rows = []
+    lo, hi = 8 * SR, 20 * SR
+    for d in (0, 12, 24, 36, 48, 64, 96, 128, 160):
+        T = 24000 + d
+        ev = D.RUNS / "mod.txt"
+        D.write_events(ev, D.s4_notes(T_samples=T))
+        D.run("old", ev, 1024, "mod", tags=True)
+        tg = np.fromfile(str(D.RUNS / "mod_old_1024_tags.f32"), dtype=np.float32).reshape(40, -1)
+        nn = np.arange(lo, hi)
+        mask = np.array([(nn - i * T) >= 6 * SR for i in range(40)])
+        x = tg[:, lo:hi].astype(np.float64) * mask
+        ms = float(np.mean(x.sum(axis=0) ** 2)); mi = float(np.mean(np.sum(x ** 2, axis=0)))
+        ps, pi_ = model_power(T, f0)
+        fr = (f0 * T / SR) % 1.0
+        rows.append((d, fr, db10(ms), db10(mi), db10(ms / mi), db10(ps), db10(pi_), db10(ps / pi_), db10(ms / ps)))
+        out.append("%d,%.4f,%.3f,%.3f,%+.3f,%.3f,%.3f,%+.3f,%+.3f" % rows[-1])
+    r = np.array(rows)
+    out.append("# measured-minus-model of the summed power: mean %+.3f dB, max |.| %.3f dB over %d phases; "
+               "measured interference range %.2f..%.2f dB, model %.2f..%.2f dB"
+               % (r[:, 8].mean(), np.abs(r[:, 8]).max(), len(r), r[:, 4].min(), r[:, 4].max(), r[:, 7].min(), r[:, 7].max()))
+    # (a) collapse: pitch sweep points vs interval-sweep curve at same frac
+    out.append("# (a) pitch-sweep (T=0.5 s, midi 48..72) vs interval-sweep curve (midi 60) interpolated at the same frac(f0*T)")
+    sw = [l.split(",") for l in (D.ROOT / "out_sweepT.txt").read_text().splitlines() if l and l[0].isdigit()]
+    fr_s = np.array([float(a[2]) for a in sw]); df_s = np.array([float(a[5]) for a in sw])
+    o = np.argsort(fr_s); fr_s, df_s = fr_s[o], df_s[o]
+    sp = [l.split(",") for l in (D.ROOT / "out_sweepP.txt").read_text().splitlines() if l and l[0].isdigit()]
+    out.append("midi,frac_f0T,pitch_sweep_new_minus_old_dB,interval_curve_at_same_frac_dB,diff")
+    diffs = []
+    for a in sp:
+        fr = float(a[2]); v = float(a[5])
+        if fr < fr_s.min() or fr > fr_s.max(): continue
+        c = float(np.interp(fr, fr_s, df_s))
+        diffs.append(v - c)
+        out.append("%s,%.4f,%+.3f,%+.3f,%+.3f" % (a[0], fr, v, c, v - c))
+    diffs = np.array(diffs)
+    out.append("# %d of 25 pitches fall inside the swept frac range (0.009..0.987); residual mean %+.3f, max |.| %.3f dB"
+               % (len(diffs), diffs.mean(), np.abs(diffs).max()))
+    text = "\n".join(out) + "\n"
+    (D.ROOT / "out_model.txt").write_text(text, encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8"); print(text)
+main()
+

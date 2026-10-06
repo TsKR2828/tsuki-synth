@@ -1,0 +1,138 @@
+WF1003-S 小修批次 稽核（Opus 稽核層）-- 2026-10-03
+repo E:\Tsuki-project\tsuki-synth，分支 fix/deep-physics-audit-20260716，HEAD bee2889（稽核時核對）。
+稽核沒有 git add、commit 或 push。照 R7，git add 只在整合卡稽核 PASS 後做一次。
+
+判定：PASS
+
+======================================================================
+§A 改了哪些檔：git status／diff 對工兵宣稱的 changed_files
+======================================================================
+git status 列出的已追蹤改動有 10 檔。本卡的部分如下：
+  tools/melody_verify.py、tools/stem_verify.py、tools/crossplatform_verify.py、
+  tests/test_stem_verify.py、tests/test_measurement_selfcal.py、
+  docs/KNOWN_LIMITS_INDEX.zh-TW.md、docs/EARFREE_MELODY_GATE_DESIGN.zh-TW.md：全部是本卡改的。
+  tests/host_probe.cpp：本卡只改了「Q05 clip indicator: REAL lit path (WF1003-S)」一個區塊（diff 第 2516 行起，
+    約 80 行，在 E16 與 synthetic controls 之後、Q09 之前）。檔內其餘改動有 BlockTimeStats、replayTwinTimed、
+    makeStress32Events、Q09V 和 TSUKI_Q09V，都標了 WF1003-V，屬於 V 卡。
+不屬於本卡、本卡也沒碰的：
+  src/PluginProcessor.cpp（V 卡加的 kVoicePoolSize＝TSUKI_VOICE_POOL_SIZE，預設 16，行為不變）、
+  docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md（V 卡加的 §10 補記一行）。
+gitignored 的 exports/ 底下，本卡改了：CHANGES_v1_1.md 和 _X2_MANIFEST_SHA256.txt，mtime 都是 14:17。
+  同資料夾其他檔的 mtime 都早於本輪。
+本卡新增的檔（untracked）：reports/gate_outputs/ 下的 wf1003_S_fixes.txt、_raw_hostprobe.txt、_raw_ctest.txt、
+  _raw_pytest_full.txt、_code_diff.patch。其他 untracked 檔分屬 B2、C2S4、H、I、R、V 各卡。
+工兵的 wf1003_S_code_diff.patch 跟現在工作樹的 diff 比對（7 檔，不含 host_probe.cpp）：
+  +/- 行的 md5 兩邊都是 e1c23774…，完全一致。
+TODO.md 和 HANDOVER.md 沒有改動，工兵說這兩檔留給整合卡處理。
+結論：工兵宣稱的 changed_files 和實際改動一一對應，沒有夾帶。
+
+======================================================================
+§B 逐項對照 TODO.md 條目（TODO.md:66-69；來源 WF0925_README §7-8 第 3、4、5 點）
+======================================================================
+1. melody_verify.verify() 加 cli=None（TODO:67）
+   - 稽核讀了程式碼。cli 是 None 時照舊呼叫 vs.find_cli()。cli 會傳給 render_score、dump_modes 和 expected_f0s(cli,…)。
+     verify() 裡沒有其他地方再查 find_cli。
+     melody_verify.py 第 921、1107 行也呼叫 find_cli，但那兩處在 selftest 和 main 裡，跟這項無關。
+   - stem_verify：_melody_verify_uses_cli 和 import contextlib 都刪掉了。
+     judge_stem(…, cli=None) 會把 cli 轉給 mv.verify(cli=)。
+     逐 stem 判定和 baseline 都改成傳 cli=explicit_cli。
+     run() 在 cli 是 None 時，explicit_cli 也是 None，跟舊行為相同。
+     grep「_melody_verify_uses_cli」：tools、tests、docs 下 0 筆（只剩 __pycache__ 裡的舊 .pyc）。
+   - 測試的改法：原本斷言「hack 有生效」，改成斷言「find_cli 從頭到尾沒被動過，渲染拿到的是 explicit 路徑」。
+     這是換掉測試對象，不是縮小 GATE。
+   - 稽核自己做了變異測試（mutation check，scratch\wf1003\S_audit\mut\test_mutation_s.py）：
+     (a) 讓 judge_stem 不轉 cli；(b) 讓 baseline 的 mv.verify 拿掉 cli。
+     兩個變體都讓 e2e 測試 test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary 丟出 AssertionError，被抓到。
+     沒有變異的原版通過。3 passed（8–11 s，有真實渲染）。
+2. sustain 網格的 0 拒量搬出 strict xfail（TODO:67）
+   - (i) 加了 production rows（new_rows）的 sustain 1170 格 0 拒量斷言。
+     (m) 加了 legacy rows 的 sustain 1040 格 0 拒量斷言。
+     判準是 fail_reason is None 而且 error_cents is not None，跟 WF0925b-TF 對 release 段的先例寫法逐字相同。
+     (m) 用 legacy rows 的理由也跟先例相同：(i) 已經逐格保證 production 和 legacy 相同，fail_reason 也包含在內。
+   - 5 個 strict xfail 的程式碼，diff 裡一行都沒動。沒有新門檻（R2），也沒縮範圍（R3）。
+3. crossplatform_verify.py docstring（TODO:67）
+   - 開工時 bee2889 已經改成 GCC。本卡只是把措辭寫得更明確並重新斷行，純 docstring。
+   - ast.parse 通過。grep -i「linux.{0,10}clang」在 tools/、.github/、src/ 下 0 筆。
+4. 文件行號改條目名（TODO:68，KNOWN_LIMITS_INDEX／ENGINE_DOMAIN_CLAIMS）
+   - KNOWN_LIMITS_INDEX B1 的 (:138) 和 B8 的 (:750) 改成了條目名。
+     稽核用 git show 18430c4:TODO.md（檔頭寫明的行號基準 HEAD）核對：
+     第 138 行就是「BeamModel `*2` 阻尼加權去留」，第 750 行就是「D7 揚琴／舌鼓／鑼的實體試體量測」，對應正確。
+     現行 TODO.md 也找得到 D7 條目（:736）和「✓ 已結：WF0925 裁決包 38 題」Q17 列（:99）。
+   - 殘留檢查：兩份文件中每一行含「TODO」的都檢查了 (:NNN)。
+     KNOWN_LIMITS 剩下 10 行有 (:NNN)，ENGINE_DOMAIN_CLAIMS 剩 1 行。
+     這些行號逐筆核對，全是 ROADMAP_PHYSICS.md、HAMMER_CONTACT_SOURCES.md、A14 和 B6 裁決包、damping_broadband_findings.md、
+     BeamModel.h 的行號，不是 TODO.md。
+     → TODO.md 行號引用殘留 0 筆。
+5. 其他文件（TODO:68）
+   (a) EARFREE :371 補記：稽核核對了 tools/partial_verify.py:723-729 現行的 caveats[0] 字串，
+       也確認 git log -S"C10 self-cal was ruled A" 指到 31851d5。補記內容屬實。
+   (b) reports/partial_verify_full_2026-09-25.zh-TW.md:181：git diff 沒有改動，mtime 還是 2026-09-25 08:33。確認沒動（skipped）。
+   (c) reports/voice_pool_occupancy_2026-09-25.zh-TW.md §1：沒有改動。全檔 TODO 引用 0 筆。
+       §1 的程式碼行號已經在檔頭釘死在 HEAD 18430c4。
+       稽核在 18430c4 抽查了 PluginProcessor.cpp:34-36、69-71、103-105（addVoice 16）、Envelope.h:29（noteOff）、
+       ScoreRenderer.h:1113（renderEvent），全部對得上。
+       工兵判定「無可改項」可以接受。
+       不過 TODO 的原文「§1 行號」意思不明確，所以整合卡勾 TODO 時應該寫明：
+       「§1 行號釘在 18430c4，已抽查正確，不改」。不能寫成「已改」。
+6. CHANGES_v1_1.md §2.2（TODO:69 的一部分）
+   - 稽核用 diff 跟 scratch 的 .bak 比，只有第 249、257、264 三列不同。
+   - 新措辭三語都能在 LISTING_COPY_v1_1.md 找到原文：第 29 行（JA）、158 行（EN）、183 行（ZH）。
+   - .bak 的 sha256 是 58241540…，跟 DOC-C 的 SHA256SUMS_after 記的 CHANGES 值相同，所以備份確實是改之前的版本。
+   - sha256sum -c _X2_MANIFEST_SHA256.txt：56/56 OK。
+     manifest 只改了第 1 行；第 2～56 行跟 DOC-C 改完時相同，第 7 行的差異是 DOC-C 自己改的 PRODUCT_SHEET。
+   - TODO:69 的其他子項（x2_build_packages 的 0.1 dB 問題、xa_zip_text 重寫）本卡沒做，也沒宣稱做了。
+     整合卡不要把 TODO:69 整條勾掉。
+7. HostProbe Q05 真實亮燈路徑（TODO:66）
+   - 新區塊沒有新增容差或物理常數。用到的 1.0 是 0 dBFS 的定義，判定也是沿用 OutputPeakMeter::isOverFullScale。
+     旋鈕的 normalised 0 和 1 對應範圍的兩端：ParameterLayout.cpp:193-197，Freq 範圍 100–16000 Hz（skew 0.3），
+     Gain 範圍 −24 到 +24 dB。0 和 1 不受 skew 影響。
+   - TODO 原本的例子是「preset 11＋Body 0.5」，工兵改用 EQ shelf。
+     理由是 Body 那條路徑會跟 B2 響度正規化連動，B2 稽核判 FAIL 已還原、日後重做時可能讓輸出不再超過 0 dBFS。
+     稽核認為這個理由成立：本卡 src 零改動，E16 和合成對照的既有 CHECK 都沒動。
+   - 新增的 CHECK 共 10 條：instance 3 條、參數有暴露給 host 2 條、meter 和獨立峰值一致 3 條、控制組不亮 1 條、EQ 案例亮燈 1 條。
+
+======================================================================
+§C 稽核親自重跑（不採用工兵的 log）
+======================================================================
+暫存：E:\Tsuki-project\_scratch\wf1003\S_audit\（repo 外）
+1) X4 重建：cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest
+   TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe TsukiSynth_VST3 TsukiSynthCLI
+   → EXIT 0，error 行 0。
+   HostProbe.exe 的 mtime 14:23:44，晚於 host_probe.cpp 的 14:23:35。
+   sha256：HostProbe 5dc898f3…、CLI 5d0f9b13…，跟工兵記錄的值相同。
+2) ctest --test-dir build -C Release → 4/4 passed，EXIT 0。
+3) HostProbe 全跑：cwd 在 repo 外，有設 TSUKI_REPO_ROOT，outdir 用短路徑。
+   → [PASS]=241、[FAIL]=0，「PASS (0 failures)」，EXIT 0。
+   基線是 231；新增 10 條，全是「Q05 real lit path」。
+   - 控制組 preset 15：0.808498（−1.85 dBFS）→ off
+   - EQ +24 dB、2000 Hz：0.840243（−1.51 dBFS）→ off
+   - EQ 100 Hz、+24 dB：12.5743（+21.99 dBFS）→ LIT
+   三個案例的 meter 讀值都等於獨立掃出的峰值，take() 之後都歸零。
+   raw log：reports/gate_outputs/wf1003_S_audit_raw_hostprobe.txt
+4) melody_verify／stem_verify 相關的 pytest 子集：
+   python -m pytest tests/test_stem_verify.py tests/test_partial_verify.py tests/test_stem_stream.py
+     tests/test_score_vs_midi_verify.py tests/test_schema_contract_sync.py tests/test_render_app_filename_safety.py
+   → 140 passed、1 skipped，62.07 s，EXIT 0。
+   另外 -k "wf1003s or tf_stem_verify" -v → 5 passed。e2e 真渲染那條是 PASSED，不是 skip。
+5) sustain 那檔：python -m pytest tests/test_measurement_selfcal.py -rxX
+   → 8 passed、5 xfailed，398.10 s，EXIT 0。
+   5 個 XFAIL 都是原本那 5 條 strict xfail（dev、hold-out、release dev、release hold-out、gain fidelity），沒有 XPASS。
+   新加的兩段 sustain 0 拒量斷言在 (i) 和 (m) 裡，都通過。
+   4)、5)、ctest 的 raw log：reports/gate_outputs/wf1003_S_audit_raw_pytest_ctest.txt
+6) 變異測試：見 §B-1，3 passed，兩個變體都被抓到。
+
+全套 pytest（306+1+5＝312）稽核沒有重跑全部，只重跑了本卡改動涉及的檔案。全套留給整合卡。
+
+======================================================================
+§D 附記（不影響判定）
+======================================================================
+- 行尾：tools/crossplatform_verify.py 和 docs/KNOWN_LIMITS_INDEX.zh-TW.md 的工作樹是 LF，其他改動檔是 CRLF。
+  repo 的 core.autocrlf=true，index blob 本來就是 LF，所以 git add 後內容沒有差別。
+  這兩檔在開工前的工作樹是不是已經是 LF，查不到。
+- 整合卡同步 TODO 時：
+  - :66 可以勾。
+  - :67 三項都可以勾。
+  - :68 的 KNOWN_LIMITS、ENGINE_DOMAIN_CLAIMS、EARFREE 可以勾。voice_pool §1 依 §B-5(c) 記成「核對正確不改」。
+    partial_verify_full:181 仍待決定。
+  - :69 只勾 CHANGES §2.2 那一子項。
+- 基線變化：HostProbe 231 → 241，pytest 310 → 312（全套數字以整合卡為準）。

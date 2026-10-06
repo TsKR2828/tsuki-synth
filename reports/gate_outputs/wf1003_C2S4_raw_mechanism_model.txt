@@ -1,0 +1,41 @@
+# WF1003-C2S4 raw measurement (read-only investigation, descriptive numbers only, no thresholds)
+# repo HEAD bee2889 (FM fix landed in 59c0b06; old Envelope.h = 804bf037b4d57346420fe5f5ebd49ca6a5cbd0ea:src/dsp/Envelope.h; FMPianoEngine.h / NoiseGen.h byte-identical in both)
+# harness = mirror of WF1002-C2 c2_fm_harness "mirror" mode (dry Synthesiser, 512-sample blocks, 48 kHz, one pset), see wf1003_C2S4_raw_method_sources.txt
+# <C2S4> = E:/Tsuki-project/_scratch/wf1003/C2S4 (outside the repo)
+# a-priori model of old tail voices vs measured; collapse test pitch vs interval
+
+# (b) mechanism model of old tail voices vs measurement (voice samples aged >= 6 s, window 8-20 s, midi 60)
+d_samples,frac_f0T,measured_sum_dB,measured_sum_of_singles_dB,measured_interf_dB,model_sum_dB,model_sum_of_singles_dB,model_interf_dB,measured_minus_model_sum_dB
+0,0.8128,-67.411,-65.135,-2.276,-67.431,-65.152,-2.279,+0.020
+12,0.8782,-64.541,-65.175,+0.634,-64.522,-65.158,+0.636,-0.018
+24,0.9436,-60.512,-65.167,+4.655,-60.508,-65.164,+4.656,-0.004
+36,0.0090,-58.409,-65.187,+6.778,-58.391,-65.169,+6.778,-0.018
+48,0.0744,-61.677,-65.177,+3.500,-61.677,-65.175,+3.498,-0.000
+64,0.1616,-66.435,-65.154,-1.282,-66.467,-65.183,-1.285,+0.032
+96,0.3360,-70.996,-65.194,-5.802,-71.007,-65.198,-5.809,+0.011
+128,0.5105,-72.100,-65.179,-6.921,-72.134,-65.214,-6.920,+0.034
+160,0.6849,-70.664,-65.220,-5.444,-70.668,-65.229,-5.439,+0.004
+# measured-minus-model of the summed power: mean +0.007 dB, max |.| 0.034 dB over 9 phases; measured interference range -6.92..6.78 dB, model -6.92..6.78 dB
+# (a) pitch-sweep (T=0.5 s, midi 48..72) vs interval-sweep curve (midi 60) interpolated at the same frac(f0*T)
+midi,frac_f0T,pitch_sweep_new_minus_old_dB,interval_curve_at_same_frac_dB,diff
+48,0.4064,-0.160,-0.193,+0.033
+49,0.2957,-0.022,-0.182,+0.160
+50,0.4162,-0.109,-0.125,+0.016
+51,0.7817,+1.211,+1.150,+0.061
+52,0.4069,-0.172,-0.190,+0.018
+53,0.3071,-0.251,-0.316,+0.065
+54,0.4986,+0.149,+0.178,-0.029
+56,0.8262,+1.503,+1.503,+0.000
+58,0.5409,+0.103,+0.105,-0.002
+59,0.4708,+0.140,+0.143,-0.003
+60,0.8128,+1.473,+1.473,+0.000
+61,0.5913,-0.168,-0.178,+0.010
+62,0.8324,+1.522,+1.509,+0.013
+63,0.5635,+0.013,+0.001,+0.012
+64,0.8138,+1.478,+1.480,-0.002
+65,0.6141,-0.333,-0.340,+0.007
+68,0.6523,-0.557,-0.505,-0.052
+70,0.0819,-0.074,-0.221,+0.147
+71,0.9417,-1.074,-1.203,+0.129
+72,0.6256,-0.408,-0.411,+0.003
+# 20 of 25 pitches fall inside the swept frac range (0.009..0.987); residual mean +0.029, max |.| 0.160 dB

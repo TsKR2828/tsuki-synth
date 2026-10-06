@@ -1,0 +1,39 @@
+# WF1003-C2S4 raw measurement (read-only investigation, descriptive numbers only, no thresholds)
+# repo HEAD bee2889 (FM fix landed in 59c0b06; old Envelope.h = 804bf037b4d57346420fe5f5ebd49ca6a5cbd0ea:src/dsp/Envelope.h; FMPianoEngine.h / NoiseGen.h byte-identical in both)
+# harness = mirror of WF1002-C2 c2_fm_harness "mirror" mode (dry Synthesiser, 512-sample blocks, 48 kHz, one pset), see wf1003_C2S4_raw_method_sources.txt
+# <C2S4> = E:/Tsuki-project/_scratch/wf1003/C2S4 (outside the repo)
+# S4 per-note-instance decomposition (total vs sum of single voices)
+
+[old] ntags 40, max|sum(tags)-total| = 1.304e-08 (float rounding only; must be ~1e-7)
+[new] ntags 40, max|sum(tags)-total| = 1.828e-08 (float rounding only; must be ~1e-7)
+== window: whole file 0-24 s
+                                             old        new      new-old
+   total power (dB re full scale^2)      -26.974    -25.502       +1.473
+   sum of single-voice powers (dB)       -25.021    -25.602       -0.581
+   interference = total/sum_single (dB)     -1.954      0.100       +2.054
+== window: steady 5-20 s
+                                             old        new      new-old
+   total power (dB re full scale^2)      -26.363    -24.748       +1.616
+   sum of single-voice powers (dB)       -24.216    -24.808       -0.592
+   interference = total/sum_single (dB)     -2.147      0.060       +2.207
+== window: steady 8-18 s
+                                             old        new      new-old
+   total power (dB re full scale^2)      -26.361    -24.748       +1.613
+   sum of single-voice powers (dB)       -24.216    -24.808       -0.592
+   interference = total/sum_single (dB)     -2.145      0.060       +2.205
+[old] voices sounding (non-zero output) in 8-18 s: mean 26.50 min 17 max 36 ; per-voice audible length: median 12.25 s max 22.00 s
+[new] voices sounding (non-zero output) in 8-18 s: mean 4.00 min 3 max 4 ; per-voice audible length: median 2.00 s max 2.00 s
+single-voice energy old/new per note instance (dB), notes 10..30: +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59 +0.59
+   mean over notes 5..34: +0.592 dB  (positive = old voice carries MORE energy than the same voice after the fix)
+per-harmonic split, window 8-18 s, f0 = 261.6256 Hz, band = k*f0 +- f0/2 (rect FFT):
+   k   total_old  sumsingle_old  interf_old | total_new  sumsingle_new  interf_new | new-old(total)  (dB)
+   1      83.16         85.61      -2.45 |     85.15         84.89       0.25 |    +1.98
+   2      76.65         77.70      -1.06 |     76.64         77.70      -1.06 |    -0.00
+   3      69.40         69.59      -0.19 |     69.40         69.59      -0.19 |    +0.00
+   4      64.80         64.80      -0.00 |     64.80         64.80      -0.00 |    -0.00
+   5      56.65         56.66      -0.01 |     56.65         56.66      -0.01 |    +0.00
+   6      56.37         56.37      -0.01 |     56.36         56.36      -0.01 |    -0.01
+   7      50.61         50.62      -0.02 |     50.59         50.60      -0.01 |    -0.02
+   8      48.62         48.65      -0.03 |     48.67         48.70      -0.03 |    +0.05
+   9      42.58         42.64      -0.06 |     42.61         42.66      -0.05 |    +0.03
+  10      37.49         37.65      -0.16 |     37.43         37.58      -0.15 |    -0.06

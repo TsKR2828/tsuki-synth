@@ -1,0 +1,69 @@
+22c22
+< [PASS] D12 scenario 4: 31 s legacy IR fixture written and not in the managed library (<SCRATCH>\int_b_hp\out\d12_legacy_ir_31s.wav)
+---
+> [PASS] D12 scenario 4: 31 s legacy IR fixture written and not in the managed library (<SCRATCH>\INT\hp\out\d12_legacy_ir_31s.wav)
+29c29
+< [PASS] D12: legacy IR source fixture hashes (<SCRATCH>\int_b_hp\out\d12_legacy_ir_source.wav)
+---
+> [PASS] D12: legacy IR source fixture hashes (<SCRATCH>\INT\hp\out\d12_legacy_ir_source.wav)
+37c37
+< [PASS] E14 preset format: version=99 preset file written (<APPDATA>\TsukiSynth\Presets\wf0925_k1_future.tsukipreset)
+---
+> [PASS] E14 preset format: version=99 preset file written (<APPDATA>\TsukiSynth\Presets\wf0925_k1_future.tsukipreset)
+156c156
+< [PASS] H1 scan: VST3 format finds the bundle (<REPO>\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)
+---
+> [PASS] H1 scan: VST3 format finds the bundle (<REPO>\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)
+159c159
+< [PASS] H3 MIDI render: WAV written: <SCRATCH>\int_b_hp\out\hostprobe_render.wav
+---
+> [PASS] H3 MIDI render: WAV written: <SCRATCH>\INT\hp\out\hostprobe_render.wav
+181,185c181,185
+< [PASS] H6: WAV written for block size 1024: <SCRATCH>\int_b_hp\out\h6_block_1024.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+< [PASS] H6: WAV written for block size 256: <SCRATCH>\int_b_hp\out\h6_block_256.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+< [PASS] H6: WAV written for block size 4096: <SCRATCH>\int_b_hp\out\h6_block_4096.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+< [PASS] H6: WAV written for block size 512: <SCRATCH>\int_b_hp\out\h6_block_512.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+< [PASS] H6: WAV written for block size 64: <SCRATCH>\int_b_hp\out\h6_block_64.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+---
+> [PASS] H6: WAV written for block size 1024: <SCRATCH>\INT\hp\out\h6_block_1024.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+> [PASS] H6: WAV written for block size 256: <SCRATCH>\INT\hp\out\h6_block_256.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+> [PASS] H6: WAV written for block size 4096: <SCRATCH>\INT\hp\out\h6_block_4096.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+> [PASS] H6: WAV written for block size 512: <SCRATCH>\INT\hp\out\h6_block_512.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+> [PASS] H6: WAV written for block size 64: <SCRATCH>\INT\hp\out\h6_block_64.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+196,201c196,201
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="3a748035f1004ba4852faf080f1820bc": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="3a748035f1004ba4852faf080f1820bc": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+< [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="3a748035f1004ba4852faf080f1820bc": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId 3a748035f1004ba4852faf080f1820bc)
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId 3a748035f1004ba4852faf080f1820bc)
+< [PASS] H7: DAW-state blob built from the saved preset file (presetId 3a748035f1004ba4852faf080f1820bc)
+---
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="63c41a3e9d99464095db270a628ae56e": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="63c41a3e9d99464095db270a628ae56e": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+> [PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="63c41a3e9d99464095db270a628ae56e": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId 63c41a3e9d99464095db270a628ae56e)
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId 63c41a3e9d99464095db270a628ae56e)
+> [PASS] H7: DAW-state blob built from the saved preset file (presetId 63c41a3e9d99464095db270a628ae56e)
+204c204
+< [PASS] H7: cleanup -- PresetManager::deleteUserPreset() removed "wf0908_h7" (<APPDATA>\TsukiSynth\Presets\wf0908_h7.tsukipreset)
+---
+> [PASS] H7: cleanup -- PresetManager::deleteUserPreset() removed "wf0908_h7" (<APPDATA>\TsukiSynth\Presets\wf0908_h7.tsukipreset)
+212c212
+< [PASS] H7: preset file written: <APPDATA>\TsukiSynth\Presets\wf0908_h7.tsukipreset
+---
+> [PASS] H7: preset file written: <APPDATA>\TsukiSynth\Presets\wf0908_h7.tsukipreset
+216c216
+< [PASS] H8 tail: MaterialDB loads <REPO>\data\materials.json
+---
+> [PASS] H8 tail: MaterialDB loads <REPO>\data\materials.json
+227a228,237
+> [PASS] Q05 real lit path: 'EQ Shelf Freq (Hz)' and 'EQ Shelf Gain (dB)' parameters exposed to host
+> [PASS] Q05 real lit path: 'EQ Shelf Freq (Hz)' and 'EQ Shelf Gain (dB)' parameters exposed to host
+> [PASS] Q05 real lit path: EQ Shelf 100 Hz / +24 dB drives real VST3 output above 0 dBFS -> indicator LIT
+> [PASS] Q05 real lit path: OutputPeakMeter fed 'preset 15, EQ Shelf 100 Hz / +24 dB (both range extremes)' reports peak N (independent N, N dBFS) -> indicator LIT (require lit <=> peak > 0 dBFS; take() resets to 0)
+> [PASS] Q05 real lit path: OutputPeakMeter fed 'preset 15, EQ Shelf Gain +24 dB at the loaded 2000 Hz' reports peak N (independent N, N dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
+> [PASS] Q05 real lit path: OutputPeakMeter fed 'preset 15, knobs as loaded (control)' reports peak N (independent N, N dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
+> [PASS] Q05 real lit path: control (knobs as loaded) -> indicator off
+> [PASS] Q05 real lit path: fresh VST3 instance created (preset 15, EQ Shelf 100 Hz / +24 dB (both range extremes))
+> [PASS] Q05 real lit path: fresh VST3 instance created (preset 15, EQ Shelf Gain +24 dB at the loaded 2000 Hz)
+> [PASS] Q05 real lit path: fresh VST3 instance created (preset 15, knobs as loaded (control))

@@ -1,0 +1,120 @@
+START 2026-10-03 14:49:34
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthAuditTest.dir\Release\) 包含從其他專案 (TsukiSynthAuditTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthAuditTest.vcxproj]
+  Building Custom Rule <REPO>/CMakeLists.txt
+  audit_repro.cpp
+  juce_audio_formats.cpp
+  juce_audio_basics.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_dsp.cpp
+  juce_graphics_Sheenbidi.c
+  TsukiSynthAuditTest.vcxproj -> <REPO>\build\Release\TsukiSynthAuditTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthTunerTest.dir\Release\) 包含從其他專案 (TsukiSynthTunerTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthTunerTest.vcxproj]
+  Building Custom Rule <REPO>/CMakeLists.txt
+  tuner_repro.cpp
+  juce_audio_formats.cpp
+  juce_audio_basics.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_graphics_Sheenbidi.c
+  TsukiSynthTunerTest.vcxproj -> <REPO>\build\Release\TsukiSynthTunerTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthPhysicsModelsTest.dir\Release\) 包含從其他專案 (TsukiSynthPhysicsModelsTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthPhysicsModelsTest.vcxproj]
+  Building Custom Rule <REPO>/CMakeLists.txt
+  physics_models_repro.cpp
+  juce_audio_formats.cpp
+  juce_audio_basics.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_dsp.cpp
+  juce_graphics_Sheenbidi.c
+  TsukiSynthPhysicsModelsTest.vcxproj -> <REPO>\build\Release\TsukiSynthPhysicsModelsTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthSpectrumViewTest.dir\Release\) 包含從其他專案 (TsukiSynthSpectrumViewTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthSpectrumViewTest.vcxproj]
+  Building Custom Rule <REPO>/CMakeLists.txt
+  spectrum_view_repro.cpp
+  juce_audio_formats.cpp
+  juce_audio_basics.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_dsp.cpp
+  juce_graphics_Sheenbidi.c
+  TsukiSynthSpectrumViewTest.vcxproj -> <REPO>\build\Release\TsukiSynthSpectrumViewTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+<MSVC>\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthHostProbe.dir\Release\) 包含從其他專案 (TsukiSynthHostProbe.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [<REPO>\build\TsukiSynthHostProbe.vcxproj]
+  Building Custom Rule <REPO>/CMakeLists.txt
+  host_probe.cpp
+  ParameterLayout.cpp
+  juce_audio_formats.cpp
+  juce_audio_basics.cpp
+  juce_core.cpp
+  juce_core_CompilationTime.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_gui_basics.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_audio_utils.cpp
+  juce_audio_devices.cpp
+  juce_dsp.cpp
+  juce_graphics_Sheenbidi.c
+  TsukiSynthHostProbe.vcxproj -> <REPO>\build\Release\TsukiSynthHostProbe.exe
+EXIT_CODE=0
+END 2026-10-03 14:53:47

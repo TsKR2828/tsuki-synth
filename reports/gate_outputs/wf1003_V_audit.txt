@@ -1,0 +1,115 @@
+WF1003 V 卡（Q09 voice pool 16 vs 32，證據門檻制）稽核
+稽核：Opus 稽核層　日期：2026-10-03（重跑 13:52～14:05）　機器：同工兵（Ryzen 5 3500X 開發機）
+判定：PASS（結論「維持 16」成立；工兵數字由稽核親自重跑重現）
+
+======================================================================
+0. 改動範圍核對（git status / git diff，HEAD=bee2889）
+======================================================================
+本卡在 repo 的改動：
+  M  src/PluginProcessor.cpp       三個迴圈字面 16 -> kVoicePoolSize（= TSUKI_VOICE_POOL_SIZE，預設 16）＋檔頭註解。值不變。
+  M  tests/host_probe.cpp          diff stat 180 行（幾乎全是新增）：twin32、逐區塊計時、兩個合成壓力測例，全部在 TSUKI_Q09V=1 後面；不新增 CHECK。
+  M  docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md  只在檔尾「2026-10-03 狀態補記」加 1 行。
+  ?? reports/wf1003_v_voice_pool.zh-TW.md
+  ?? reports/decision_packets/WF1003_decisions.zh-TW.md（本卡新建，只有 Q09 一節）
+  ?? reports/gate_outputs/wf1003_V_*（19 個檔，含 summarize.py）
+與工兵宣稱的 changed_files 一致（工兵清單只列了部分 wf1003_V_* 證據檔，其餘 raw/summary/hashes 也是本卡的，沒有越界檔）。
+工作樹其他 ?? 檔（wf1003_B2_/C2S4_/H_/I_/R_ 開頭、tools/hash75_compare.py、wf1003_c2s4 報告）屬其他卡，未碰。
+沒有 staged 檔、沒有新 commit（git log HEAD=bee2889）。
+
+======================================================================
+1. 判準是否先射箭再畫靶（時間線，檔案 mtime）
+======================================================================
+  12:56:01.17  _scratch/wf1003/V 目錄建立
+  12:56:01.22  wf1003_V_criteria_preregistered.txt（最後修改時間也是這個 -> 之後沒被改過）
+  12:56:54     _scratch/wf1003/V/patch_hostprobe.py（量測程式碼的產生器，晚於判準）
+  12:59        build16.log；13:00 cfg32.log；13:01:40 build32.log
+  13:01:55     第一輪正式量測開始（run/start.txt）；13:07:10 第一份 out_pool16_run1.txt
+  13:34:11     patch_gate.py（加環境變數閘門，量測已完成；最終版確認輪 13:37～13:48 結論相同）
+_scratch 下所有含 "Q09V"／"TSUKI_VOICE_POOL_SIZE" 的檔，最早的是 12:56:54 的 patch 腳本，沒有任何早於判準的量測輸出。
+判準 C1（搶音 ≤ 一半）、C2（0 個區塊 ≥ 10.667 ms）、C3（最慢 ≤ 5.333 ms）、C4（愛麗絲逐樣本相同＋CLI 不共用）的數字在判準檔裡
+全部寫死，報告 §2 照抄，沒有事後改；C3 量法不好工兵自己承認並「沒有事後改判準」——核對屬實。
+→ 不是先射箭再畫靶。
+小瑕疵：判準檔第 3 行說時間「見 wf1003_V_run_log.txt 的 date 行」，但這個檔不存在（gate_outputs 與 _scratch 都沒有）；時間證據實際靠 mtime。
+
+======================================================================
+2. 稽核親自重跑（不看工兵 log）
+======================================================================
+2-1 X4：先重建五個測試 target＋VST3（repo build），再重建 pool 32 的 VST3（_scratch/wf1003/V/b32，-DTSUKI_VOICE_POOL_SIZE=32 只在 CMAKE_CXX_FLAGS，
+    其餘旗標與 repo build 相同：/DWIN32 /D_WINDOWS /EHsc，Release /O2 /Ob2 /DNDEBUG）
+    EXIT16=0、EXIT32=0（全部 up-to-date，二進位雜湊與工兵 wf1003_V_hashes_final.txt 相同）：
+      VST3(pool16, repo build) e8791f11…41963
+      VST3(pool32, b32)        dadde02d…67ea9
+      HostProbe                c413096d…7ccd9
+2-2 ctest --test-dir build -C Release：4/4 Passed，CTEST_EXIT=0
+2-3 HostProbe 全跑，TSUKI_Q09V 未設，cwd 在 repo 外：[PASS] 231 / [FAIL] 0，EXIT=0，72 秒，末行 "PASS (0 failures)"。
+    Q09 原段落不變：愛麗絲 搶 0／最多 12，twin16 vs VST3 max|diff| = 0；月光舌鼓 搶 64（4 次搶到按著的音）／最多 16，pool128 需求 20。
+2-4 HostProbe TSUKI_Q09V=1，VST3=pool16（採用側）：231/0，EXIT=0，318 秒
+2-5 HostProbe TSUKI_Q09V=1，VST3=pool32：231/0，EXIT=0，324 秒
+    （數字用稽核自寫的 wf1003_V_audit_parse.py 解析，不用工兵的 summarize.py）
+
+稽核重跑數字（每個 HostProbe 跑內 twin 各 5 次重複；預算 10.6667 ms）：
+| 測例 | 項目 | 稽核 pool16 跑 | 稽核 pool32 跑 | 工兵報告 |
+| 月光舌鼓 | 搶音 16→32（按著的） | 64(4)→0(0) | 64(4)→0(0) | 64(4)→0(0) |
+| 月光舌鼓 | 最多同時 16/32 | 16/20 | 16/20 | 16/20 |
+| 月光舌鼓 | twin32 平均/p99 | 0.224～0.225／0.390～0.392 | 0.224～0.225／0.392～0.393 | 0.221／0.388（中位） |
+| 月光舌鼓 | twin32 違規區塊 | 0×5 | 0×5 | 0 |
+| 月光舌鼓 | VST3 違規區塊 | 0（pool16 binary） | 0（pool32 binary，max 2.57 ms） | 0／0 |
+| 愛麗絲 | twin16 vs twin32 | max|差|=0 | max|差|=0 | 0（C4） |
+| 壓力 Chromatic | twin32 平均/p99/最慢 | 0.446～0.448／≤1.413／1.82 | 0.445～0.448／≤1.390／1.86 | 0.441／1.287／2.05 |
+| 壓力 Piano | twin16 平均/p99 | 2.48～2.49／10.54～10.72 | 2.48～2.49／10.60～10.86 | 2.447／10.545 |
+| 壓力 Piano | twin16 違規/次 | 4,5,4,4,4 | 5,4,5,4,6 | 2～5 |
+| 壓力 Piano | twin32 平均/p99 | 7.37～7.38／20.74～20.78 | 7.38～7.41／20.77～20.94 | 7.281／20.515 |
+| 壓力 Piano | twin32 違規/次 | 153,152,152,154,153 | 154,154,154,153,152 | 148～153 |
+| 壓力 Piano | VST3 | pool16：平均 2.51、p99 10.83、6 個違規 | pool32：平均 7.41、p99 20.93、152 個違規 | 448／3 輪 |
+雙胞胎＝真外掛：pool16 binary 對 twin16、pool32 binary 對 twin32，四個測例 max|差| 全部 = 0（雙向都重現）。
+→ 搶音是確定性數字，逐位重現；負載數字與工兵相差 < 2%（違規區塊 152～154 vs 148～153，同量級）。C2 不過的結論穩定，不是雜訊：
+  壓力 Piano pool 32 平均就占預算 69%，約三分之一區塊（~153/469）來不及，三種量法（twin 10 次、真 VST3 2 輪）都一樣。
+雜訊旁證：稽核 pool16 跑的愛麗絲 VST3（pool16 binary）出現一個 25.2 ms 區塊、2 個違規，pool 16 本身也會被 OS 尖峰打到，
+  與工兵 §4-2 ※ 與 C3 的說明一致。
+判準對照（稽核重算）：C1 過（64→0 ≤ 32）；C2 不過（c 壓力 Piano）；C3 不過；C4 過。採用規則＝四條全過才用 32 → 維持 16。
+結論不依賴 C3、也不依賴愛麗絲那 3 個邊緣區塊：只看壓力 Piano 就已不過。
+
+======================================================================
+3. 主張域 §10 與測試的字面同步（grep 核對）
+======================================================================
+- 結論是維持 16，§10 標題「16 顆 voice」與第 1 點「各 16 顆」仍為真，不需改字；檔尾補記 1 行說明 V 卡結論，正確。
+- src/ 全域 grep（`< 16`、`16 voice`、addVoice、getNumVoices、kVoicePoolSize）：三個 addVoice 迴圈都已改用 kVoicePoolSize，沒有漏掉的寫死 16 迴圈。
+  剩下的 16：PluginProcessor.cpp:236、:271 註解「All 16 voices」（預設值下為真；只有用覆寫旗標時才不準，屬註解，非行為）；
+  IRLibrary.h:74 是 SHA 運算的 16，與 voice 無關。其他存取都用 getNumVoices()（:155/:159/:163），會跟著常數走。
+- tests/host_probe.cpp:2647 wireTwinSynth(twin16, …, 16) 是刻意寫死「產品 = 16」，與 VST3 pool16 binary 逐樣本相同（max|diff| = 0），正確。
+- 文件：UI_FUNCTIONAL_SPEC、KNOWN_LIMITS_INDEX B4/C9、ROADMAP、SCORE_GUIDE 等寫「16 voice」處，因值未改仍為真。
+- 待同步（非本卡阻擋項，給整合卡／文件卡）：HANDOVER.md:82 與 TODO.md:43 仍寫「要不要加大 pool 沒裁」，應改成「WF1003-V 證據門檻檢驗＝維持 16」。
+
+======================================================================
+4. CLI 不受影響的論證
+======================================================================
+- CMakeLists.txt:150-170：TsukiSynthCLI 的 target_sources 只有 src/cli/RenderApp.cpp；PluginProcessor.cpp 只在 target_sources(TsukiSynth …)（:124）。
+- RenderApp.cpp 的 #include 只有 score/ScoreParser.h、score/ScoreRenderer.h、physics/MaterialDB.h、dsp/DiagnosticOverrides.h、BuildProvenance.h、BinaryData.h；
+  src/ 下沒有任何其他檔引用 kVoicePoolSize／TSUKI_VOICE_POOL_SIZE。
+- 實物：build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe sha256 = f99b4a8096f9…72692，mtime 2026-10-02 23:58，與 HANDOVER §1-3 現行基線相同；
+  本次重建五個測試 target＋VST3 沒有觸發 CLI 重編。
+→ 論證成立：本卡不可能改變 CLI 渲染，75 首 WAV 不受影響（R10 不觸發）。
+
+======================================================================
+5. 其他觀察（不影響判定）
+======================================================================
+a) VST3 二進位雜湊由基線 fa13ac17… 變成 e8791f11…（PluginProcessor.cpp 原始碼變了）；行為等價的證據是 HostProbe 231/0 與 VST3==twin16 逐樣本相同，
+   不是雜湊。整合卡要記新雜湊；已部署到 Common Files 的仍是 fa13ac17。
+b) wf1003_V_code_diff.patch（13:49）只含 src＋tests 兩檔，沒有 docs/ENGINE_DOMAIN_CLAIMS 那 1 行（docs 是之後才改的）。
+c) 主張域補記那行放在「文件卡 DOC-B」的狀態補記段裡（段首寫「只補狀態，主張原句一字未改」——內容符合，只是段名歸屬不精確）。
+d) 判準檔提到的 wf1003_V_run_log.txt 不存在（見 §1）。
+e) 工兵自報缺口屬實且已寫進報告：FM 引擎沒量、DAW 同跑沒量、記憶體沒量、只有開發機。
+f) 未採用選項「Chromatic 32、Piano／FM 16」與「現行 16 顆 Piano 低音滿載 p99 ≈ 10.5～10.9 ms 貼著預算」需月月另裁，本卡沒擅自做——正確。
+   稽核重跑也看到 pool16 壓力 Piano 每次 4～6 個區塊 ≥ 預算、VST3(16) 6 個，這是現行產品的狀態。
+g) R6 全套（pytest／physics_verify／verify_score／75 首雜湊／位元不變 8/8／pluginval）依規劃放整合卡，本卡與本稽核都沒跑。
+
+======================================================================
+6. 判定
+======================================================================
+PASS。重跑數字與報告相符；判準在量測前寫下且未事後改；ctest 4/4、HostProbe 231/0（預設與兩個 Q09V 跑都是）；
+CLI 不受影響有程式碼與雜湊雙重證據；src 裡沒有漏改的寫死 16。未 git add（依任務書：git add 只由整合卡稽核 PASS 後做一次）、未 commit、未 push。
+
+稽核原始檔：
+  wf1003_V_audit_raw_default_hostprobe.txt、wf1003_V_audit_raw_q09v_pool16.txt、wf1003_V_audit_raw_q09v_pool32.txt、
+  wf1003_V_audit_raw_ctest_times_hashes.txt、wf1003_V_audit_raw_parsed.txt、wf1003_V_audit_parse.py
+  建置 log：E:\Tsuki-project\_scratch\wf1003\V_audit\build16.log、build32.log

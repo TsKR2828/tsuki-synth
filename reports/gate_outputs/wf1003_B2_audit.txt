@@ -1,0 +1,141 @@
+WF1003-B2 稽核（Opus 稽核層）— 2026-10-03
+基底 HEAD bee2889（分支 fix/deep-physics-audit-20260716）。稽核親自重建、重跑；工兵 log 只拿來對照。
+
+==================================================================
+判定：FAIL
+==================================================================
+指定的五個重點項目全部重跑通過（見 §1～§5）。判 FAIL 是因為 §6 的額外發現：
+- g 沒有上限。在外掛裡用得到的 Custom Harmonics 設定下，B2 讓輸出比改前大 +22.7 dB，峰值到 +14.80 dBFS（改前 −7.90，同設定 Body 0 為 −1.07）。
+- 報告 §2 寫「g>1 時輸出只是回到 Body 關的能量，不是超過它」。實際外掛 RMS 比 Body 關大 +7.5 dB，這句話不成立。
+- 這是賣出去的外掛的安全回歸，而且交付文件的安全主張是錯的。依稽核規約，已還原本卡的檔案（§8）。
+- 工作本身品質高，修法很小（§7），整份差異已存成 patch，可以直接套回去重做。
+
+------------------------------------------------------------------
+§0 git 範圍核對（git status／git diff，開工時）
+------------------------------------------------------------------
+tracked 改動 6 檔，與工兵宣稱一致，diff 內容逐段看過，全部是 B2 的內容：
+  ROADMAP_PHYSICS.md（+1 列，§6）、docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md（+2 行）、
+  src/dsp/BodyResonance.h（+88/−6）、src/engines/ChromaticEngine.h（+6）、src/engines/CimbalomEngine.h（+6）、
+  tests/physics_models_repro.cpp（+163，只有新增）
+untracked、屬於 B2 的 11 檔：reports/decision_packets/WF1003_decisions.zh-TW.md、
+  reports/wf1003_b2_body_normalization_before_after.zh-TW.md、reports/gate_outputs/wf1003_B2_{GATE,cli_unchanged,
+  e16_before_after,hostprobe_after,hostprobe_before,hscan,probe_harness_source,probe_sweeps,unit_tests}.txt
+其他卡（C2S4、H、I、R、tools/hash75_compare.py）的檔案沒有動。
+
+------------------------------------------------------------------
+§1 常數推導親自驗算 — PASS
+------------------------------------------------------------------
+用 Python 雙精度、從 RBJ biquad 係數（照抄 src/dsp/BiquadFilter.h 的公式）獨立重算 H(f)＝1＋4a(1.4·BP1＋0.8·BP2)·LP500，
+以及 g＝√(ΣÊᵢ / ΣÊᵢ|H(fᵢ)|²)（腳本 _scratch\wf1003\failed_B2\derive.py，輸出 derive_out.txt）：
+  ln1000＝6.907755（程式用 6.9078 ✓）。能量積分數值積分 vs 解析式：比值 1.00004 ✓
+  C4 基頻 |H|：Body 0.2/0.5/0.8/1.0＝+6.53/+11.85/+15.16/+16.83 dB（與報告、裁決包一致 ✓）
+  g（單元測試的兩組模態表）：諧波 C4 −5.00/−10.07/−13.37/−15.04 dB；非諧 G3 −1.26/−5.69/−9.19/−11.01 dB
+    → 與 C++ 單元測試輸出逐位數一致 ✓
+  時域測試的 |H(300 Hz)|＝5.5400（測試印 5.5402 ✓）
+  0.3 s 視窗、modeAttackEnergy 都是既有的（ModalResonator.h:131-143）。本卡沒有新的物理常數；
+  只多了數值防護 1e-18（除以零防護，非物理）。processSample 回傳 (g−1)x＋g·wet、呼叫端 sample+=…，
+  所以輸出＝g(x＋wet)。四個呼叫點都確認（Chromatic :563/:678、Cimbalom :788/:881）✓
+  （候選一「只看基頻」在非諧表上多壓：G3 Body 0.5 會補 −12.80 dB，能量法是 −5.69 dB，差 7.1 dB；
+   報告的「4～8 dB」估計合理。）
+
+------------------------------------------------------------------
+§2 重建＋ctest＋HostProbe（X4）— PASS
+------------------------------------------------------------------
+私有建置樹 E:\Tsuki-project\_scratch\wf1003\B2_audit\b（全新 configure，VS 18 2026 x64 Release）：
+  cmake --build … --target TsukiSynth_VST3 TsukiSynthCLI TsukiSynthAuditTest TsukiSynthTunerTest
+        TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe  → build_exit=0，0 個 error 行
+  確認原始碼 mtime（12:14～12:17）早於 configure（12:40），建置的就是要稽核的內容。
+  ctest --test-dir b -C Release → 100% tests passed, 0 failed out of 4
+  AuditTest 直接跑 → 111 [PASS]／0 [FAIL]，PASS (0 failures)
+  PhysicsModelsTest 直接跑 → 230 [PASS]／0 [FAIL]；新增 11 條 Body level normalisation 全 PASS
+  HostProbe 改前（build\ 的 HostProbe＋build\ VST3 fa13ac17）→ 231 PASS／0 FAIL
+  HostProbe 改後（稽核建置的 HostProbe＋VST3 2f7de3a2…）→ 231 PASS／0 FAIL
+  （cwd 在 repo 外、TSUKI_REPO_ROOT 有設、outdir 用短路徑）
+  稽核建置的 sha256：VST3 2f7de3a22aed…、CLI 1974205ee946…（跟工兵的不同，是建置路徑不同造成的，預期中）
+
+------------------------------------------------------------------
+§3 preset 前後峰值抽量 — PASS（與報告表一致）
+------------------------------------------------------------------
+(a) 稽核自己跑兩次 HostProbe 的 E16，27 列全部比對（_scratch\wf1003\failed_B2\e16_compare.txt）：
+    27 列峰值與 RMS 跟報告 §3、wf1003_B2_e16_before_after.txt 逐列相同（小數兩位）。
+    有變的：0（−7.81，預設參數狀態）、6（−13.95）、7（−9.41）、14（−13.28）、15（−8.07）、25（−9.60）、26（−0.90）；
+    其餘 20 列 +0.00。最大峰值：改前 −1.85（15 號），改後 −3.03（11 號）。
+(b) b2_probe 抽量。harness 原始碼已讀過並核對，用的是工兵的 exe，但 VST3 是稽核自己建的，案例檔也是稽核自己寫的：
+    p11 Body 0.5   +3.799 → −2.640 dBFS（目標 ✓）   p11 Body 1.0  +5.063 → −2.514
+    p6 −7.273→−21.221；p7 −4.674→−14.076；p14 −11.443→−24.719；p15 −1.846→−9.916；
+    p25 −12.431→−22.035；p26 −13.981→−14.875；p1 不變（−12.970）；p7/p15 Body 0 不變
+    p12 Body 1.0：改前 −34.144 → 改後 −51.032 RMS；Body 0 是 −41.876 → Body 開比關 −9.16 dB（報告最差例 ✓）
+
+------------------------------------------------------------------
+§4 「不影響 CLI 渲染」— PASS（看程式路徑＋位元實證）
+------------------------------------------------------------------
+程式路徑：setLevelNormalisation() 只在 Cimbalom/Chromatic 的 startNote() 被呼叫（外掛 voice）。
+  src/score、src/cli 都沒有呼叫 startNote；ScoreRenderer 只呼叫 voice.noteOn()，而 noteOn() 在 prepare 之後立刻
+  clearLevelNormalisation()。levelNormalised 預設是 false。關閉時 processSample 走原本那行
+  `return body*amount*4.0f`，rawTotalResponse 的算式也跟原本的 totalResponse 一樣（只把私有區段往上移）。
+  FMPianoEngine 不含 BodyResonance。
+實證（稽核 CLI）：
+  render_wf_scores.py 8 首 → diff --strip-trailing-cr 對 b6_method/sha256_before_post_a14.txt：8/8 IDENTICAL
+  --body-amount 0.5（Body 層實際開著）用舊 CLI（build\ f99b4a80）和新 CLI 渲染：
+    physical_piano 41d04b16…＝41d04b16…；water_gong_free 6ac0357f…＝6ac0357f…（兩引擎都涵蓋）。
+    兩者都跟 Body 關的雜湊（1233b53f…／31b539c6…）不同，所以這個測試確實會抓到改變。
+  --dump-modes＋--body-amount 0.5（body_mag 讀 totalResponse）：新舊輸出逐位元組相同（cmp），兩首都一樣。
+
+------------------------------------------------------------------
+§5 ROADMAP §6 登記與 R2/R3 — PASS（格式）
+------------------------------------------------------------------
+新增 1 列，4 欄，跟鄰列格式一致，明寫「慣例，不是物理主張、不是容差」，並附裁決出處與推導。
+既有列一字未動。tests 與 tools 沒有改任何既有容差，也沒刪任何 CHECK（tests diff 只有新增）。
+GATE 範圍沒縮。新單元測試的 1e-4／2e-3 是閉合檢查的數值誤差界，註解寫了出處，不是物理容差。
+備註：插入這一列讓 §6 之後的行號 +1。查過 git grep，現行文件沒有引用 :477 之後的 ROADMAP 行號（只有歷史報告）。
+裁決包把月月原話逐字照錄，「規劃者轉成 B2＝A」的寫法透明。
+
+------------------------------------------------------------------
+§6 額外發現（FAIL 理由）：g 無上限，深陷波時穩態近似失效 → 啟音瞬態被放大
+------------------------------------------------------------------
+機制：H(f) 有很深的陷波（hscan 全域最小 −55 dB；C4 tension 0.5 時，在 Body 1.0、ratio2 2.576 的條件下，
+  比值 3.396 處 −48.5 dB）。如果能量集中在陷波上的模態，算出來的 g 就很大（+31 dB）。
+  但「wet 抵消 dry」要等濾波器建立起來，大約要幾 ms。在那之前輸出≈dry，再乘上 g，就是一個大瞬態。
+  報告 §2「此時輸出只是回到 Body 關的能量，不是超過它」只在穩態成立。
+Python 模擬（同一套 biquad，notch_sim.py → notch_sim_out.txt）：
+  g＝+31.1 dB；峰值比 Body 關 +32.6 dB（t＝0.35 ms）；前 0.3 s 能量是 Body 關的 21.8 倍（+13.4 dB）
+真實外掛實測（稽核建置的 VST3 vs build\ VST3，b2_probe，C4 v0.7；案例檔 cases_notch.txt）：
+  preset 11＋macro_tension=0.5 macro_noise=0 chr_amp_0=0.01 chr_amp_1=0.01 chr_ratio_1=2.576
+           chr_ratio_2..7=3.396 chr_amp_2..7=1.0：
+    Body 0      ：改前 −1.067 dBFS／改後 −1.067（RMS −11.371）
+    Body 1.0    ：改前 −7.896 dBFS（RMS −25.496）→ 改後 **+14.799 dBFS @0.12 ms**（RMS −3.870）
+    → 改後比改前大 +22.7 dB，比 Body 關大 +15.9 dB（峰值）／+7.5 dB（RMS）；外掛浮點輸出超過 0 dBFS 14.8 dB
+  對照：比較像正常用法的設定（H1/H2 amp 0.1、H3～8 amp 0.5、比值 3.25～3.55 分散）：Body 1.0 改後 −3.575，
+    Body 關 −2.556，改前 −7.434 → 正常範圍。
+  所以觸發條件很窄：大部分能量要放在陷波上，而且基頻和第二模態都要調到很弱。但這個條件用一般旋鈕或自動化就做得到，
+    而改前同樣的設定是 −7.9 dBFS。
+與文件的衝突：
+  報告 §2「不加 clamp…此時輸出只是回到 Body 關的能量，不是超過它」→ 外掛實測被推翻。
+  ROADMAP §6 新列「不加 clamp（g 只在 Body 會把模態壓低時才 >1；實測最大 +3.3 dB）」：
+    「實測」在工兵的測試條件下是真的，但沒寫最壞情況，會被讀成安全保證。
+  UI 規格補記「少數高音域例外會稍微變大」→ 低估了最壞情況。
+
+------------------------------------------------------------------
+§7 建議修法（給重做的卡；要不要做由規劃者／月月決定，稽核沒有改任何程式碼）
+------------------------------------------------------------------
+(1) g＝min(g, 1)：正規化只准衰減（「Body 開不比 Body 關更大聲」）。這沒有引入新數值，1 就是 Body 關的基準。
+    代價：工兵量到的高音域 g>1 情況（最多 +3.3 dB）會維持改前音量，比 Body 關小最多約 3.3 dB。
+    外掛最壞情況回到改前的 −7.9 dBFS。
+(2) 或者保留 g>1，但要有可溯源的上界（例如用暫態期 dry 的能量來界定），需要 §6 登記並由月月裁決。
+重做時要補：上面 notch 案例的單元測試／probe 回歸；ROADMAP 列、報告 §2、UI 補記要寫最壞情況。
+重做方法：git apply E:\Tsuki-project\_scratch\wf1003\failed_B2\B2_tracked_changes.patch，再把 failed_B2 下的新檔移回原位，
+  然後只改 setLevelNormalisation() 和文件。
+
+------------------------------------------------------------------
+§8 FAIL 處置（只動本卡的檔案）
+------------------------------------------------------------------
+先存檔：git diff（6 個 tracked 檔）→ E:\Tsuki-project\_scratch\wf1003\failed_B2\B2_tracked_changes.patch（395 行，
+  git apply --check -R 驗過）
+git restore（6 檔）：ROADMAP_PHYSICS.md docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md src/dsp/BodyResonance.h
+  src/engines/ChromaticEngine.h src/engines/CimbalomEngine.h tests/physics_models_repro.cpp
+移到 E:\Tsuki-project\_scratch\wf1003\failed_B2\（保留原本的相對路徑）：上面 §0 列的 11 個 untracked 檔
+本稽核檔 wf1003_B2_audit.txt 留在 reports/gate_outputs/。
+稽核的證據副本在 _scratch\wf1003\failed_B2\：derive.py/derive_out.txt、notch_sim.py/notch_sim_out.txt、
+  cases.txt/probe_before.txt/probe_after.txt、cases_notch.txt/notch_before.txt/notch_after.txt、e16_compare.txt。
+  完整 HostProbe log 在 _scratch\wf1003\B2_audit\hp_before.txt、hp_after.txt。
+沒有 git add、commit、push（R7）。

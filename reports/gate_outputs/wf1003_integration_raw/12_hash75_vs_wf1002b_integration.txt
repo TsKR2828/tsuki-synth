@@ -1,0 +1,86 @@
+# WF1003-INT 75 首 WAV 雜湊逐首比對（參考＝WF1002b 整合卡逐首表）
+# $ python tools/hash75_compare.py <SCRATCH>/INT/raw/10_verify_score_all.txt reports/gate_outputs/wf1002b_integration_raw/12_hash75_vs_wf1002_integration.txt
+# hash75_compare: per-score WAV SHA256 (first 12 hex)  $ python tools/hash75_compare.py <SCRATCH>/INT/raw/10_verify_score_all.txt reports/gate_outputs/wf1002b_integration_raw/12_hash75_vs_wf1002_integration.txt
+reference: reports/gate_outputs/wf1002b_integration_raw/12_hash75_vs_wf1002_integration.txt (table) -> 75 scores
+this run : <SCRATCH>/INT/raw/10_verify_score_all.txt -> 75 scores
+identical 75, different 0, only in reference 0, only in this run 0, unusable hash 0
+
+per-score (score, reference hash, this run hash, status):
+  scores\examples\akashic_bell.score.json 830d2089427a 830d2089427a SAME
+  scores\examples\epiano_3stack_test.score.json 67f6bc4200ea 67f6bc4200ea SAME
+  scores\examples\fur_elise_opening.score.json b0877774da9e b0877774da9e SAME
+  scores\examples\layered_transition.score.json a11756195de3 a11756195de3 SAME
+  scores\examples\moonlight_sonata_complete.score.json a628a3b6e289 a628a3b6e289 SAME
+  scores\examples\moonlight_sonata_movement1_tongue_drum.score.json f539aefa9191 f539aefa9191 SAME
+  scores\examples\moonlight_sonata_movement1_yangqin.score.json 49514b007e3e 49514b007e3e SAME
+  scores\examples\moonlight_sonata_movement1_yangqin_tongue_mix.score.json 280cbdac3c11 280cbdac3c11 SAME
+  scores\examples\physical_piano.score.json 1233b53f1e86 1233b53f1e86 SAME
+  scores\examples\rabbit_warning.score.json 47cffef2bdc5 47cffef2bdc5 SAME
+  scores\examples\restraint_metal_click.score.json be634798c4a0 be634798c4a0 SAME
+  scores\examples\water_gong_clamped.score.json 00764a8d8eda 00764a8d8eda SAME
+  scores\examples\water_gong_free.score.json 31b539c6ac08 31b539c6ac08 SAME
+  scores\classical\fur_elise\fur_elise_complete.score.json 3a444ccfa346 3a444ccfa346 SAME
+  scores\classical\fur_elise\fur_elise_complete_cimbalom.score.json 7c599ecee271 7c599ecee271 SAME
+  scores\classical\vivaldi_four_seasons\autumn\vivaldi_four_seasons_autumn_m1.score.json 8f106119ef69 8f106119ef69 SAME
+  scores\classical\vivaldi_four_seasons\autumn\vivaldi_four_seasons_autumn_m2.score.json 18fb540f0194 18fb540f0194 SAME
+  scores\classical\vivaldi_four_seasons\autumn\vivaldi_four_seasons_autumn_m3.score.json 7a33371bba83 7a33371bba83 SAME
+  scores\classical\vivaldi_four_seasons\spring\vivaldi_four_seasons_spring_m1.score.json 7a35e3290de2 7a35e3290de2 SAME
+  scores\classical\vivaldi_four_seasons\spring\vivaldi_four_seasons_spring_m2.score.json e29df716ac0b e29df716ac0b SAME
+  scores\classical\vivaldi_four_seasons\spring\vivaldi_four_seasons_spring_m3.score.json 6a332e48c32b 6a332e48c32b SAME
+  scores\classical\vivaldi_four_seasons\summer\vivaldi_four_seasons_summer_m1.score.json 68029d285635 68029d285635 SAME
+  scores\classical\vivaldi_four_seasons\summer\vivaldi_four_seasons_summer_m2.score.json f57f7daaa8c1 f57f7daaa8c1 SAME
+  scores\classical\vivaldi_four_seasons\summer\vivaldi_four_seasons_summer_m3.score.json 442b7ef4d7ed 442b7ef4d7ed SAME
+  scores\classical\vivaldi_four_seasons\winter\vivaldi_four_seasons_winter_m1.score.json dccf23c1ec50 dccf23c1ec50 SAME
+  scores\classical\vivaldi_four_seasons\winter\vivaldi_four_seasons_winter_m2.score.json 7b1acb6b42b1 7b1acb6b42b1 SAME
+  scores\classical\vivaldi_four_seasons\winter\vivaldi_four_seasons_winter_m3.score.json 854f58d6f258 854f58d6f258 SAME
+  scores\originals\ai_radiance\ai_radiance_complete.score.json 91f204247e43 91f204247e43 SAME
+  scores\originals\ai_radiance\ai_radiance_m1.score.json 74122637a0c7 74122637a0c7 SAME
+  scores\originals\ai_radiance\ai_radiance_m2.score.json f8adaa0be3e0 f8adaa0be3e0 SAME
+  scores\originals\ai_radiance\ai_radiance_m3.score.json a67440a78738 a67440a78738 SAME
+  scores\originals\ai_radiance\ai_radiance_m4.score.json 98d607b7fb10 98d607b7fb10 SAME
+  scores\library\akashic\akashic_action_001.score.json 591debffb547 591debffb547 SAME
+  scores\library\akashic\akashic_ambient_001.score.json 1e4765630be7 1e4765630be7 SAME
+  scores\library\akashic\akashic_loop_001.score.json b704f5799280 b704f5799280 SAME
+  scores\library\akashic\akashic_notify_001.score.json ff3e3cf8f8c1 ff3e3cf8f8c1 SAME
+  scores\library\akashic\akashic_opening_bell_001.score.json c672c9415f57 c672c9415f57 SAME
+  scores\library\akashic\akashic_transition_001.score.json 0669dc6aaa71 0669dc6aaa71 SAME
+  scores\library\akashic\akashic_transition_var01.score.json 9dd3a9a4ff44 9dd3a9a4ff44 SAME
+  scores\library\akashic\akashic_ui_001.score.json 532ad3ce4bb6 532ad3ce4bb6 SAME
+  scores\library\clockwork\clockwork_action_001.score.json 22ae12c18ad2 22ae12c18ad2 SAME
+  scores\library\clockwork\clockwork_ambient_001.score.json 993a3eabbf55 993a3eabbf55 SAME
+  scores\library\clockwork\clockwork_loop_001.score.json 9a75d9e56ba2 9a75d9e56ba2 SAME
+  scores\library\clockwork\clockwork_notify_001.score.json aafc592e2a62 aafc592e2a62 SAME
+  scores\library\clockwork\clockwork_notify_var01.score.json f5166e23ad7b f5166e23ad7b SAME
+  scores\library\clockwork\clockwork_transition_001.score.json c0f128a94462 c0f128a94462 SAME
+  scores\library\clockwork\clockwork_ui_001.score.json c115a372e787 c115a372e787 SAME
+  scores\library\forest\forest_action_001.score.json 4e621d8322db 4e621d8322db SAME
+  scores\library\forest\forest_ambient_001.score.json b0163d24d3fa b0163d24d3fa SAME
+  scores\library\forest\forest_loop_001.score.json 2b019768661f 2b019768661f SAME
+  scores\library\forest\forest_notify_001.score.json e21a06f342a8 e21a06f342a8 SAME
+  scores\library\forest\forest_notify_var01.score.json 9a0a01495a92 9a0a01495a92 SAME
+  scores\library\forest\forest_transition_001.score.json e3036f8feeaf e3036f8feeaf SAME
+  scores\library\forest\forest_ui_001.score.json e74063ba83c2 e74063ba83c2 SAME
+  scores\library\ocean\ocean_action_001.score.json 445fa0cda2bb 445fa0cda2bb SAME
+  scores\library\ocean\ocean_ambient_001.score.json 4c5c4d4effdc 4c5c4d4effdc SAME
+  scores\library\ocean\ocean_loop_001.score.json d08fa7ae8683 d08fa7ae8683 SAME
+  scores\library\ocean\ocean_notify_001.score.json 266a0a115de2 266a0a115de2 SAME
+  scores\library\ocean\ocean_notify_var01.score.json ce1c9241d9f8 ce1c9241d9f8 SAME
+  scores\library\ocean\ocean_transition_001.score.json d4258d3c3d78 d4258d3c3d78 SAME
+  scores\library\ocean\ocean_ui_001.score.json b4cde0cd2a7e b4cde0cd2a7e SAME
+  scores\library\rabbit\rabbit_action_001.score.json 26bee7a4702e 26bee7a4702e SAME
+  scores\library\rabbit\rabbit_ambient_001.score.json 3abeaed9ffe6 3abeaed9ffe6 SAME
+  scores\library\rabbit\rabbit_loop_001.score.json 4f034b6eba1a 4f034b6eba1a SAME
+  scores\library\rabbit\rabbit_notify_001.score.json e37d8e6ee278 e37d8e6ee278 SAME
+  scores\library\rabbit\rabbit_notify_var01.score.json 2d2f4a63aea9 2d2f4a63aea9 SAME
+  scores\library\rabbit\rabbit_transition_001.score.json 9d116e7dd1ba 9d116e7dd1ba SAME
+  scores\library\rabbit\rabbit_ui_001.score.json 43fc77a782f0 43fc77a782f0 SAME
+  scores\library\restraint\restraint_action_001.score.json 168230920528 168230920528 SAME
+  scores\library\restraint\restraint_ambient_001.score.json 3123e72019c5 3123e72019c5 SAME
+  scores\library\restraint\restraint_loop_001.score.json 2344a312ed00 2344a312ed00 SAME
+  scores\library\restraint\restraint_notify_001.score.json b1ada62f915c b1ada62f915c SAME
+  scores\library\restraint\restraint_notify_var01.score.json 6d609feeca78 6d609feeca78 SAME
+  scores\library\restraint\restraint_transition_001.score.json 195506cc9c63 195506cc9c63 SAME
+  scores\library\restraint\restraint_ui_001.score.json 8cf07afe80f3 8cf07afe80f3 SAME
+
+RESULT: PASS
+EXIT_CODE=0

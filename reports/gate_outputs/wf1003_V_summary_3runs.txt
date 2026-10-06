@@ -1,0 +1,45 @@
+=== per-case aggregates (all HostProbe runs x 5 reps) ===
+
+## fur_elise (piano)
+Q09V steals pool16 = 0 (held 0), pool32 = 0 (held 0), pool128 = 0
+Q09V max active voices at block end: pool16 = 12, pool32 = 12, pool128 = 12
+  twin pool16: n_reps=30 mean(ms) median=1.0228 | p99(ms) median=3.4255 | max(ms) median=7.8590 worst=9.6765 (max/budget worst=0.9072) | blocks>=budget: min=0 max=0 total=0
+  twin pool32: n_reps=30 mean(ms) median=1.0505 | p99(ms) median=3.4481 | max(ms) median=7.9643 worst=11.7079 (max/budget worst=1.0976) | blocks>=budget: min=0 max=1 total=3
+  VST3 built pool16: runs=3 mean median=1.1107 | p99 median=3.4940 | max worst=9.4530 (max/budget=0.8862) | blocks>=budget total=0
+  VST3 built pool32: runs=3 mean median=1.1571 | p99 median=3.5402 | max worst=8.1810 (max/budget=0.7670) | blocks>=budget total=0
+  identity sample (16, 1) Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+  VST3 built pool16: identical to twin16 in all 3 runs: True; identical to twin32: True
+  VST3 built pool32: identical to twin16 in all 3 runs: True; identical to twin32: True
+
+## moonlight_mvt1_tongue_drum
+Q09V steals pool16 = 64 (held 4), pool32 = 0 (held 0), pool128 = 0
+Q09V max active voices at block end: pool16 = 16, pool32 = 20, pool128 = 20
+  twin pool16: n_reps=30 mean(ms) median=0.1852 | p99(ms) median=0.3460 | max(ms) median=1.2627 worst=7.4858 (max/budget worst=0.7018) | blocks>=budget: min=0 max=0 total=0
+  twin pool32: n_reps=30 mean(ms) median=0.2205 | p99(ms) median=0.3881 | max(ms) median=1.7548 worst=7.3039 (max/budget worst=0.6847) | blocks>=budget: min=0 max=0 total=0
+  VST3 built pool16: runs=3 mean median=0.2816 | p99 median=0.4485 | max worst=6.8747 (max/budget=0.6445) | blocks>=budget total=0
+  VST3 built pool32: runs=3 mean median=0.3416 | p99 median=0.5231 | max worst=7.1826 (max/budget=0.6734) | blocks>=budget total=0
+  identity sample (16, 1) Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 0.030227  (0 identifies the pool size the VST3 binary was built with)
+  VST3 built pool16: identical to twin16 in all 3 runs: True; identical to twin32: False
+  VST3 built pool32: identical to twin16 in all 3 runs: False; identical to twin32: True
+
+## stress32_chromatic (synthetic)
+Q09V steals pool16 = 16 (held 16), pool32 = 0 (held 0), pool128 = 0
+Q09V max active voices at block end: pool16 = 16, pool32 = 32, pool128 = 32
+  twin pool16: n_reps=30 mean(ms) median=0.1859 | p99(ms) median=0.5125 | max(ms) median=0.7758 worst=0.8736 (max/budget worst=0.0819) | blocks>=budget: min=0 max=0 total=0
+  twin pool32: n_reps=30 mean(ms) median=0.4406 | p99(ms) median=1.2866 | max(ms) median=1.7500 worst=2.0470 (max/budget worst=0.1919) | blocks>=budget: min=0 max=0 total=0
+  VST3 built pool16: runs=3 mean median=0.2805 | p99 median=0.6189 | max worst=0.8819 (max/budget=0.0827) | blocks>=budget total=0
+  VST3 built pool32: runs=3 mean median=0.5641 | p99 median=1.4163 | max worst=1.9066 (max/budget=0.1787) | blocks>=budget total=0
+  identity sample (16, 1) Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 0.921249  (0 identifies the pool size the VST3 binary was built with)
+  VST3 built pool16: identical to twin16 in all 3 runs: True; identical to twin32: False
+  VST3 built pool32: identical to twin16 in all 3 runs: False; identical to twin32: True
+
+## stress32_piano (synthetic)
+Q09V steals pool16 = 16 (held 16), pool32 = 0 (held 0), pool128 = 0
+Q09V max active voices at block end: pool16 = 16, pool32 = 32, pool128 = 32
+  twin pool16: n_reps=30 mean(ms) median=2.4465 | p99(ms) median=10.5452 | max(ms) median=11.1035 worst=15.9513 (max/budget worst=1.4954) | blocks>=budget: min=2 max=5 total=107
+  twin pool32: n_reps=30 mean(ms) median=7.2808 | p99(ms) median=20.5145 | max(ms) median=21.1203 worst=26.0216 (max/budget worst=2.4395) | blocks>=budget: min=148 max=153 total=4516
+  VST3 built pool16: runs=3 mean median=2.4901 | p99 median=10.8160 | max worst=11.5822 (max/budget=1.0858) | blocks>=budget total=14
+  VST3 built pool32: runs=3 mean median=7.2902 | p99 median=20.5680 | max worst=28.3220 (max/budget=2.6552) | blocks>=budget total=448
+  identity sample (16, 1) Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 3.63242  (0 identifies the pool size the VST3 binary was built with)
+  VST3 built pool16: identical to twin16 in all 3 runs: True; identical to twin32: False
+  VST3 built pool32: identical to twin16 in all 3 runs: False; identical to twin32: True

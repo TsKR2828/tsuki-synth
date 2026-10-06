@@ -1,0 +1,51 @@
+# WF1003 H 卡稽核（Opus 稽核層）  2026-10-03
+# repo HEAD bee2889, branch fix/deep-physics-audit-20260716
+# 判定：PASS
+
+## 1. 改動範圍核對（git status --short / git diff --stat HEAD）
+  ?? reports/gate_outputs/wf1003_H_hash75_selftest.txt
+  ?? tools/hash75_compare.py
+  git diff --stat HEAD: 空（無已追蹤檔被改）
+  -> 跟工兵宣稱的 changed_files 一致（兩個新檔、未追蹤）。src/、CMakeLists.txt 都沒動，所以這張卡不適用 R6 全套；ctest / HostProbe 本卡不需要跑。
+  沒有 commit、沒有 add（HEAD 仍是 bee2889，沒有 staged 檔）。
+  工具只讀輸入檔；不帶 --out 時不寫任何檔。稽核跑完後 git status 不變。
+
+## 2. 稽核親自重跑（沒用工兵的 log；變造輸入放 E:\Tsuki-project\_scratch\wf1003\H_audit\）
+  驅動腳本：_scratch\wf1003\H_audit\run_audit.py；完整輸出：_scratch\wf1003\H_audit\audit_cases_out.txt、A1_full.txt
+  正例（期望 exit 0）：
+  A1 wf1002b INT log (10_verify_score_all.txt) vs wf1002b 參考表 (wf1002b_integration_raw/12_hash75_vs_wf1002_integration.txt)，--expect 75
+     -> reference 自動判為 (table) 75 scores；identical 75, different 0, only in reference 0, only in this run 0, unusable hash 0；SAME 列 75；RESULT: PASS；exit 0
+  A2 wf1002b INT log vs wf1002 INT log (12_verify_score_all.txt)，--expect 75 -> identical 75 / 0 / 0 / 0 / 0，exit 0
+  A3 wf1002b_C_raw_06 log vs wf1002b_C_raw_07 table，--expect 75 -> identical 75，exit 0
+  A4 wf1002b_C_raw_06 log vs wf1002b INT log -> identical 75，exit 0
+  反例（期望 exit 1，最後一個 exit 2）：
+  N1  改 this-log 一個雜湊字元（score#40 akashic_ui_001，第 5 字元 532ad3ce4bb6755b->532a03ce4bb6755b）vs 參考表
+      -> identical 74, different 1；列 "akashic_ui_001 532ad3ce4bb6 532a03ce4bb6 DIFF"；RESULT: FAIL；exit 1
+  N2  改第 16 字元（12 字元顯示寬度以外；830d2089427a9c32->...9c30）log vs log -> different 1, DIFF, exit 1
+      （確認工具比的是雙方都有的最長前綴 16 hex，不只比顯示的 12 hex）
+  N3  刪掉第一首的 block（缺首），不帶 --expect -> only in reference 1 (GONE akashic_bell)，exit 1
+  N4  刪掉最後一首的 determinism 行 -> unusable hash 1 (BAD)，exit 1
+  N5  第 10 首的 determinism 行改成 [FAIL] -> BAD，exit 1
+  N6  改參考表一個雜湊字元（row#20 e29df716ac0b->e290f716ac0b）-> DIFF，exit 1
+  N7  參考表刪掉第一列 -> NEW 1，exit 1
+  N8  this-log 是空檔 -> PROBLEM: this run parsed to zero scores, GONE 75, exit 1
+  N9  參考檔是垃圾內容 -> PROBLEM: reference parsed to zero scores, NEW 75, exit 1
+  N10 this-log 某首的 block 重複 -> PROBLEM: repeated + BAD，exit 1
+  N11 --expect 76（實際 75）-> PROBLEM: expected 76, found 75，exit 1
+  N12 輸入檔不存在 -> exit 2（stderr: cannot read input）
+  合計：16 個案例，exit code 跟期望不符的 0 個。--help exit 0。
+
+## 3. 寬鬆度檢查（讀 tools/hash75_compare.py 原始碼，看有沒有偷偷放寬）
+  - 判 PASS 要同時滿足：沒有 PROBLEM、DIFF=NEW=GONE=BAD=0、SAME>0。缺首、缺尾、缺 determinism 行、determinism FAIL、重複 block、任一邊解析成 0 首，都會 exit 1（上面 N3-N10 都實測過）。
+  - 雜湊 regex 要求至少 12 hex，比對用兩邊共同的最長前綴（log 對 log 是 16 hex），N2 證明第 13-16 字元的差異也會抓到。
+  - 只認含 "[OK" 的 determinism 行；只要不是 OK，就判 BAD，不會拿去比。
+  - 沒有任何容差或略過清單，也沒有寫死首數（75 只能從 --expect 給）。
+  - 小地方（不影響判定，只記下來）：
+    (a) N2 這種只差在第 13-16 字元的 DIFF 列，因為兩邊都只顯示 12 hex，看起來雜湊一樣；狀態欄仍是 DIFF，exit 1 也正確。
+    (b) 參考檔是表格時，表格內的重複列不會報 PROBLEM（後面那列會蓋掉前面的）。參考表是這個工具自己印的，所以實務上影響很小。
+    (c) 參考表的 DIFF 列，會拿「this run」欄當參考（這是文件寫明的設計）。
+  - 看不到偷寬鬆的地方。
+
+## 4. 判定
+  PASS。對 wf1002b 參考表重跑：75/75 SAME、exit 0；改一個雜湊字元：DIFF、exit 1；缺首會報錯（GONE、exit 1）。改動範圍跟宣稱一致，沒動 src/ 或 CMake，沒有 commit/add/push。
+  沒有需要 git restore 的東西。

@@ -1,0 +1,519 @@
+[PASS] H1 scan: VST3 format finds the bundle (E:\Tsuki-project\_scratch\wf1003\V\b32\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 -> 1 type)
+[PASS] H1 scan: described as instrument named TsukiSynth (got 'TsukiSynth', isInstrument=1, version 0.3.0)
+[PASS] H2 instantiate: instance created
+[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.300974) -- melody-position verdict follows via melody_verify.py
+[PASS] H3 MIDI render: WAV written: E:\Tsuki-project\_scratch\wf1003\V_audit\hp32\hostprobe_render.wav
+[PASS] H3 determinism: second instance created
+[PASS] H3 determinism: fresh-instance re-render is byte-identical
+[PASS] H4 automation: instances created
+[PASS] H4 automation: 'EQ Shelf Gain (dB)' parameter exposed to host
+[PASS] H4 automation: identically-automated renders are byte-identical
+[PASS] H4 automation: +12 dB shelf ramp lifts 3-12 kHz band by 8.51 dB (require >= 6)
+[PASS] H5 state: 'Strike Position' parameter found
+[PASS] H5 state: non-empty state captured (3843 bytes)
+[PASS] E14 state_version: captured state carries state_version=3 (require 3 = PluginProcessor.h kStateVersion; -1 = absent)
+[PASS] H5 state: two fresh instances created
+[PASS] H5 state: parameter survives round-trip exactly (requested 0.42, settled 0.42, restored 0.42)
+[PASS] H5 state: two restores of the same state render byte-identically
+[PASS] E14 state_version: survives restore -> re-capture unchanged (3 -> 3)
+
+-- H6 variable block size (sentinel melody) --
+[PASS] H6: fresh instance created for block size 64
+[PASS] H6: WAV written for block size 64: E:\Tsuki-project\_scratch\wf1003\V_audit\hp32\h6_block_64.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+[PASS] H6: fresh instance created for block size 256
+[PASS] H6: WAV written for block size 256: E:\Tsuki-project\_scratch\wf1003\V_audit\hp32\h6_block_256.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 512
+[PASS] H6: WAV written for block size 512: E:\Tsuki-project\_scratch\wf1003\V_audit\hp32\h6_block_512.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 1024
+[PASS] H6: WAV written for block size 1024: E:\Tsuki-project\_scratch\wf1003\V_audit\hp32\h6_block_1024.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+[PASS] H6: fresh instance created for block size 4096
+[PASS] H6: WAV written for block size 4096: E:\Tsuki-project\_scratch\wf1003\V_audit\hp32\h6_block_4096.wav -- judged by melody_verify.py (GATE step, not this program's exit code)
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+
+-- H6 water_gong Pitch Glide=1.0 (hardened to CHECK, WF0908-E10b) --
+[PASS] H6 glide: fresh instance created for block size 64
+[PASS] H6 glide: fresh instance created for block size 256
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+[PASS] H6 glide: block 256 vs 64 water_gong Pitch Glide=1.0 render is byte-identical (max|delta|=0.000000 LSB@24bit, require 0)
+[PASS] H6 glide: fresh instance created for block size 512
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+[PASS] H6 glide: block 512 vs 64 water_gong Pitch Glide=1.0 render is byte-identical (max|delta|=0.000000 LSB@24bit, require 0)
+[PASS] H6 glide: fresh instance created for block size 1024
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+[PASS] H6 glide: block 1024 vs 64 water_gong Pitch Glide=1.0 render is byte-identical (max|delta|=0.000000 LSB@24bit, require 0)
+[PASS] H6 glide: fresh instance created for block size 4096
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+[PASS] H6 glide: block 4096 vs 64 water_gong Pitch Glide=1.0 render is byte-identical (max|delta|=0.000000 LSB@24bit, require 0)
+
+-- H6 supplementary (informational only, not melody_verify-judged): FM Piano high note (MIDI 96) --
+  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-210.68 dB re signal (n=96000 samples/ch)
+  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-210.68 dB re signal (n=96000 samples/ch)
+  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-210.68 dB re signal (n=96000 samples/ch)
+  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-210.68 dB re signal (n=96000 samples/ch)
+
+-- H7 user preset round-trip --
+[PASS] H7: IR fixture imported into managed library ()
+  [INFO] preset directory: C:\Users\admin\AppData\Roaming\TsukiSynth\Presets
+  [INFO] IR library directory: C:\Users\admin\AppData\Roaming\TsukiSynth\IR
+[PASS] Q06: fresh VST3 instance getNumPrograms() = 27 (require == factory count 27 == 27; host programs are factory presets only)
+[PASS] H7: shadow PresetManager::saveUserPreset("wf0908_h7", true) succeeded
+[PASS] H7: preset file written: C:\Users\admin\AppData\Roaming\TsukiSynth\Presets\wf0908_h7.tsukipreset
+[PASS] H7: saved user preset's reverb_ir block records the imported IR's sha256 (fx_reverb_mode was saved as Impulse Response)
+[PASS] E14 preset format: saved "wf0908_h7" file reads back as format version 2 (require 2 = PresetManager::kPresetFormatVersion)
+[PASS] Q06: after saving user preset "wf0908_h7", a fresh VST3 instance still reports getNumPrograms() = 27 (require unchanged 27) and no host program is named "wf0908_h7" (none)
+[PASS] Q06: getCurrentProgram() = 0 lies inside [0, 27)
+[PASS] Q06: user preset still in the plug-in's own preset list (PresetManager index 27 >= factory count 27) and PresetManager::loadPreset() restores all 60 parameters (0 mismatches, same 1e-6 bar) plus its reverb_ir block
+
+  -- H7 scenario 1: matched --
+[PASS] H7: fresh real VST3 instance created for LOAD side
+[PASS] H7: DAW-state blob built from the saved preset file (presetId 3a09cb8c462e4a4ebe21e4a13a9a083e)
+[PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="3a09cb8c462e4a4ebe21e4a13a9a083e": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+[PASS] H7: loaded real instance exposes at least the shadow's 60 product parameters (2142 total, incl. VST3-wrapper extras -- Bypass/Program/MIDI CC)
+[PASS] H7: restoring user preset "wf0908_h7" (its file's bytes, via setStateInformation -- WF1002 Q06) on a real VST3 instance restores every one of 60 product parameters bit-identical to the shadow APVTS that saved it (0 value mismatches, 0 name mismatches)
+[PASS] H7 scenario 1 (matched): getStateInformation() carries a reverb_ir block with the imported sha256, ir_missing=0, ir_mismatch=0 -- getIRStatus().loaded == effectChain.hasImpulseResponse() by construction (PluginProcessor.h's IRStatus comment: single field, not a second independently-tracked bool)
+
+  -- H7 scenario 3: missing (no GUI) --
+[PASS] H7: IR fixture present in library before missing simulation
+[PASS] H7: library IR file moved aside to simulate a missing file
+[PASS] H7: fresh real VST3 instance created for LOAD side
+[PASS] H7: DAW-state blob built from the saved preset file (presetId 3a09cb8c462e4a4ebe21e4a13a9a083e)
+[PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="3a09cb8c462e4a4ebe21e4a13a9a083e": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+[PASS] H7 scenario 3: fx_reverb_mode forced back to Algorithmic (0) -- red line 1, never keeps the instance's previous IR
+[PASS] H7 scenario 3 (missing, no GUI): getStateInformation() carries NO reverb_ir block (red line 1: nothing is remembered as loaded) and ir_missing=1 -- UI shows "not loaded", never claims IR while audio silently runs algorithmic (red line 2)
+
+  -- H7 scenario 2: mismatch (library index rewritten) --
+[PASS] H7: library index rewritten -- different IR content placed at the sha-named path the preset expects (simulates "使用者指了別的檔", behaviourally identical from the processor's point of view: loaded content whose hash disagrees with the recorded identity)
+[PASS] H7: fresh real VST3 instance created for LOAD side
+[PASS] H7: DAW-state blob built from the saved preset file (presetId 3a09cb8c462e4a4ebe21e4a13a9a083e)
+[PASS] H7/Q06: after restore the instance's state still names user preset "wf0908_h7" (presetId="3a09cb8c462e4a4ebe21e4a13a9a083e": resolved by id through the plug-in's own preset scan, not overwritten by a factory program) and getCurrentProgram() = 0 stays inside the factory range
+[PASS] H7 scenario 2: fx_reverb_mode stays Impulse Response -- loaded anyway per §2.3 row 2, mismatch does not silently fall back to algorithmic
+[PASS] H7 scenario 2 (mismatch): getStateInformation() carries a reverb_ir block (something IS loaded, audio truth == UI truth) and ir_mismatch=1 (UI would flag "not the same IR as the preset")
+[PASS] H7: cleanup -- PresetManager::deleteUserPreset() removed "wf0908_h7" (C:\Users\admin\AppData\Roaming\TsukiSynth\Presets\wf0908_h7.tsukipreset)
+[PASS] H7: cleanup -- preset file no longer on disk
+
+-- E14 newer user-preset file format --
+[PASS] E14 preset format: version=99 preset file written (C:\Users\admin\AppData\Roaming\TsukiSynth\Presets\wf0925_k1_future.tsukipreset)
+[PASS] E14 preset format: newer-format file still listed after rescan, version read as 99
+[PASS] E14 preset format: newer-format preset loads and its parameters are read (cim_strike_pos normalised saved 0.633333, loaded 0.633333)
+[PASS] E14 preset format: saveUserPreset(allowOverwrite=true) refuses to overwrite the newer-format file (returned false, file bytes unchanged)
+[PASS] E14 preset format: cleanup -- newer-format test file removed
+
+-- D12 legacy reverb_ir_path migration --
+[PASS] D12: template instance created for building synthetic legacy state blobs
+
+  -- D12 scenario 1: legacy path resolves to a file --
+[PASS] D12: legacy IR source fixture hashes (E:\Tsuki-project\_scratch\wf1003\V_audit\hp32\d12_legacy_ir_source.wav)
+[PASS] D12: legacy IR source not yet in the managed library (migration must import it itself, not assume it's already there)
+[PASS] D12 scenario 1: synthetic legacy state blob built
+[PASS] D12 scenario 1: fresh real VST3 instance created
+[PASS] D12 scenario 1: fx_reverb_mode left as the saved state had it (Algorithmic) -- migration imports the IR but does not force-switch the mode (switchModeToIR=false), matching the removed pre-F-03 code's own choice
+[PASS] D12 scenario 1: migrated state carries a reverb_ir block with the legacy file's own content hash and ir_missing=0 -- resolved through the managed library exactly like a fresh GUI import
+[PASS] D12 scenario 1: legacy IR now present in the managed library under its content hash (hash/dedupe/kind=user, workcard §1 item 1)
+[PASS] D12 scenario 1: migrated output state no longer carries reverb_ir_path (consumed legacy key dropped, PluginProcessor.cpp tree.removeProperty)
+[PASS] E14 state_version: an unversioned (pre-K1) state still migrates and is re-saved as state_version=3 (require 3)
+[PASS] D12 scenario 1 (audit fix): migrated state is marked dirty -- a migration silently changes in-memory state (new reverb_ir block) that no longer matches the bytes on disk, so it must not come back as "not dirty" (setStateInformation() runs presetManager.setDirty() after restoreDirty() when migration ran, so restoreDirty()'s read of the OLD presetDirty=0 does not silently survive)
+
+  -- D12 scenario 2: legacy path does not resolve --
+[PASS] D12: legacy IR source deliberately absent for scenario 2
+[PASS] D12 scenario 2: synthetic legacy state blob built
+[PASS] D12 scenario 2: fresh real VST3 instance created
+[PASS] D12 scenario 2: fx_reverb_mode forced to Algorithmic -- F-03's normal missing-IR path (§2.3 row 3), not the silent "leave algorithmic without saying anything" this card exists to remove (workcard §1 item 2)
+[PASS] D12 scenario 2: migrated state carries NO reverb_ir block (red line 1: nothing remembered as loaded) and ir_missing=1 -- the same three-state "missing" signature H7 scenario 3 validates for the new schema, now also reached from the legacy key
+[PASS] D12 scenario 2: migrated output state no longer carries reverb_ir_path (consumed legacy key dropped even when the file is missing)
+[PASS] D12 scenario 2 (audit fix): migrated state is marked dirty even on the missing-file path -- fx_reverb_mode was force-changed to Algorithmic and a warning raised, which also diverges from the bytes on disk
+
+  -- D12 scenario 3: reverb_ir already present, legacy key ignored --
+[PASS] D12: IR-A imported into managed library ()
+[PASS] D12: IR-B not in the managed library before scenario 3 (must stay that way -- migration must not run)
+[PASS] D12 scenario 3: synthetic state blob built (reverb_ir=IR-A + legacy reverb_ir_path=IR-B)
+[PASS] D12 scenario 3: fresh real VST3 instance created
+[PASS] D12 scenario 3: migrated state still carries IR-A's own sha256 (the new schema's identity), never IR-B's -- legacy reverb_ir_path is ignored once a reverb_ir block already exists (workcard §1 item 3)
+[PASS] D12 scenario 3: IR-B still absent from the managed library -- migrateLegacyReverbIRPath() never ran, no import happened
+[PASS] D12 scenario 3 (audit fix contrast): migration never ran, so unlike scenarios 1/2 the dirty flag is untouched by D12 code -- confirms the setDirty() call in setStateInformation() is gated on migratedLegacyIR actually having run, not unconditional
+[PASS] D12 scenario 3 (Q10=B): output state no longer carries the ignored legacy reverb_ir_path (dropped like scenarios 1/2, without marking dirty)
+
+  -- D12 scenario 4: legacy path resolves but the file is > 30 s --
+[PASS] D12 scenario 4: 31 s legacy IR fixture written and not in the managed library (E:\Tsuki-project\_scratch\wf1003\V_audit\hp32\d12_legacy_ir_31s.wav)
+[PASS] D12 scenario 4: synthetic legacy state blob built (reverb_ir_path -> existing 31 s file, fx_reverb_mode saved as Impulse Response)
+[PASS] D12 scenario 4: fresh real VST3 instance created
+[PASS] D12 scenario 4 (Q10=B): fx_reverb_mode forced from the saved Impulse Response to Algorithmic -- load failure now takes the missing-IR three-state path instead of silently dropping the path
+[PASS] D12 scenario 4 (Q10=B): migrated state carries NO reverb_ir block, ir_missing=1 (UI shows "not loaded: <original file name>"), the consumed legacy key dropped, and presetDirty=1 -- same signature as scenario 2 (the warning text/reason is not observable through the VST3 ABI)
+[PASS] D12 scenario 4: the > 30 s file was NOT imported into the managed library (validateAndLoadIRFile() refuses it before import)
+
+  -- E14: state_version newer than this build knows --
+[PASS] E14: legacy-key IR fixture exists on disk and is not yet in the managed library (so a skipped migration is observable)
+[PASS] E14: synthetic state blob built with state_version=99 + legacy reverb_ir_path (read back 99)
+[PASS] E14: fresh real VST3 instance created
+[PASS] E14: newer-version state loads without crashing and its parameters are read (Strike Position settled 0.55, restored 0.55; same 1e-6 bar as H5)
+[PASS] E14: re-saved state is tagged with this build's own format version 3 (require 3, never the loaded 99)
+[PASS] E14: D12 legacy migration conservatively skipped for a newer-version state -- no reverb_ir block, ir_missing=0 (no missing-IR path either), IR not imported into the managed library
+  H8 materials.json used: E:\Tsuki-project\tsuki-synth\data\materials.json (found in an ancestor of the executable's directory)
+[PASS] H8 tail: MaterialDB loads E:\Tsuki-project\tsuki-synth\data\materials.json
+[PASS] H8 tail: instance created for cimbalom
+[PASS] H8 tail: cimbalom getTailLengthSeconds()=34.4814s >= engine worstCaseTailSeconds()=33.0287s
+[PASS] H8 tail: instance created for tongue_drum
+[PASS] H8 tail: tongue_drum getTailLengthSeconds()=178.734s >= engine worstCaseTailSeconds()=177.281s
+[PASS] H8 tail: instance created for water_gong
+[PASS] H8 tail: water_gong getTailLengthSeconds()=319.848s >= engine worstCaseTailSeconds()=318.395s
+[PASS] H8 tail: tongue_drum sustain instance created
+[PASS] H8 tail: tongue_drum MIDI 40 tail RMS at 10s = -16.09 dB relative to peak (require > -60, -60dB IS the T60 definition)
+[PASS] H8 tail: tongue_drum still audibly ringing at 10s -> getTailLengthSeconds()=178.734s (require > 10)
+
+  -- E16 factory presets --
+  E16: src/Presets.h registers 27 factory presets
+[PASS] E16 negative control: a paramID absent from createTsukiParameterLayout() does not resolve
+[PASS] E16 factory preset 0 'Steel Hammered Dulcimer': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 0 'Steel Hammered Dulcimer': fresh VST3 instance created
+[PASS] E16 factory preset 0 'Steel Hammered Dulcimer': VST3 program 0 is named 'Steel Hammered Dulcimer' and setCurrentProgram(0) -> getCurrentProgram()=0
+[PASS] E16 factory preset 0 'Steel Hammered Dulcimer': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 0 'Steel Hammered Dulcimer': peak -11.71 dBFS, RMS -27.69 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 1 'Copper Warm Strings': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 1 'Copper Warm Strings': fresh VST3 instance created
+[PASS] E16 factory preset 1 'Copper Warm Strings': VST3 program 1 is named 'Copper Warm Strings' and setCurrentProgram(1) -> getCurrentProgram()=1
+[PASS] E16 factory preset 1 'Copper Warm Strings': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 1 'Copper Warm Strings': peak -12.97 dBFS, RMS -27.50 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 2 'Glass Wind Chimes': all 15 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 2 'Glass Wind Chimes': fresh VST3 instance created
+[PASS] E16 factory preset 2 'Glass Wind Chimes': VST3 program 2 is named 'Glass Wind Chimes' and setCurrentProgram(2) -> getCurrentProgram()=2
+[PASS] E16 factory preset 2 'Glass Wind Chimes': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 2 'Glass Wind Chimes': peak -9.27 dBFS, RMS -25.56 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 3 'Muted Felt Piano': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 3 'Muted Felt Piano': fresh VST3 instance created
+[PASS] E16 factory preset 3 'Muted Felt Piano': VST3 program 3 is named 'Muted Felt Piano' and setCurrentProgram(3) -> getCurrentProgram()=3
+[PASS] E16 factory preset 3 'Muted Felt Piano': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 3 'Muted Felt Piano': peak -33.74 dBFS, RMS -47.85 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 4 'Brass Gamelan': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 4 'Brass Gamelan': fresh VST3 instance created
+[PASS] E16 factory preset 4 'Brass Gamelan': VST3 program 4 is named 'Brass Gamelan' and setCurrentProgram(4) -> getCurrentProgram()=4
+[PASS] E16 factory preset 4 'Brass Gamelan': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 4 'Brass Gamelan': peak -13.34 dBFS, RMS -32.61 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 5 'Rubber Muted Pluck': all 14 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 5 'Rubber Muted Pluck': fresh VST3 instance created
+[PASS] E16 factory preset 5 'Rubber Muted Pluck': VST3 program 5 is named 'Rubber Muted Pluck' and setCurrentProgram(5) -> getCurrentProgram()=5
+[PASS] E16 factory preset 5 'Rubber Muted Pluck': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 5 'Rubber Muted Pluck': peak -19.82 dBFS, RMS -52.13 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 6 'Steel Hammered Dulcimer (Body)': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 6 'Steel Hammered Dulcimer (Body)': fresh VST3 instance created
+[PASS] E16 factory preset 6 'Steel Hammered Dulcimer (Body)': VST3 program 6 is named 'Steel Hammered Dulcimer (Body)' and setCurrentProgram(6) -> getCurrentProgram()=6
+[PASS] E16 factory preset 6 'Steel Hammered Dulcimer (Body)': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 6 'Steel Hammered Dulcimer (Body)': peak -7.27 dBFS, RMS -23.53 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 7 'Copper Warm Strings (Body)': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 7 'Copper Warm Strings (Body)': fresh VST3 instance created
+[PASS] E16 factory preset 7 'Copper Warm Strings (Body)': VST3 program 7 is named 'Copper Warm Strings (Body)' and setCurrentProgram(7) -> getCurrentProgram()=7
+[PASS] E16 factory preset 7 'Copper Warm Strings (Body)': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 7 'Copper Warm Strings (Body)': peak -4.67 dBFS, RMS -20.00 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 8 'Crystal Tongue Drum': all 12 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 8 'Crystal Tongue Drum': fresh VST3 instance created
+[PASS] E16 factory preset 8 'Crystal Tongue Drum': VST3 program 8 is named 'Crystal Tongue Drum' and setCurrentProgram(8) -> getCurrentProgram()=8
+[PASS] E16 factory preset 8 'Crystal Tongue Drum': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 8 'Crystal Tongue Drum': peak -23.84 dBFS, RMS -32.36 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 9 'Bronze Water Gong': all 12 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 9 'Bronze Water Gong': fresh VST3 instance created
+[PASS] E16 factory preset 9 'Bronze Water Gong': VST3 program 9 is named 'Bronze Water Gong' and setCurrentProgram(9) -> getCurrentProgram()=9
+[PASS] E16 factory preset 9 'Bronze Water Gong': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 9 'Bronze Water Gong': peak -9.37 dBFS, RMS -23.28 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 10 'Wooden Kalimba': all 12 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 10 'Wooden Kalimba': fresh VST3 instance created
+[PASS] E16 factory preset 10 'Wooden Kalimba': VST3 program 10 is named 'Wooden Kalimba' and setCurrentProgram(10) -> getCurrentProgram()=10
+[PASS] E16 factory preset 10 'Wooden Kalimba': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 10 'Wooden Kalimba': peak -20.83 dBFS, RMS -38.86 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 11 'Ethereal Steel Bells': all 14 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 11 'Ethereal Steel Bells': fresh VST3 instance created
+[PASS] E16 factory preset 11 'Ethereal Steel Bells': VST3 program 11 is named 'Ethereal Steel Bells' and setCurrentProgram(11) -> getCurrentProgram()=11
+[PASS] E16 factory preset 11 'Ethereal Steel Bells': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 11 'Ethereal Steel Bells': peak -3.03 dBFS, RMS -13.31 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 12 'Glass Singing Bowl': all 14 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 12 'Glass Singing Bowl': fresh VST3 instance created
+[PASS] E16 factory preset 12 'Glass Singing Bowl': VST3 program 12 is named 'Glass Singing Bowl' and setCurrentProgram(12) -> getCurrentProgram()=12
+[PASS] E16 factory preset 12 'Glass Singing Bowl': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 12 'Glass Singing Bowl': peak -30.49 dBFS, RMS -41.88 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 13 'Rubber Tongue Pad': all 14 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 13 'Rubber Tongue Pad': fresh VST3 instance created
+[PASS] E16 factory preset 13 'Rubber Tongue Pad': VST3 program 13 is named 'Rubber Tongue Pad' and setCurrentProgram(13) -> getCurrentProgram()=13
+[PASS] E16 factory preset 13 'Rubber Tongue Pad': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 13 'Rubber Tongue Pad': peak -44.29 dBFS, RMS -68.36 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 14 'Crystal Tongue Drum (Body)': all 12 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 14 'Crystal Tongue Drum (Body)': fresh VST3 instance created
+[PASS] E16 factory preset 14 'Crystal Tongue Drum (Body)': VST3 program 14 is named 'Crystal Tongue Drum (Body)' and setCurrentProgram(14) -> getCurrentProgram()=14
+[PASS] E16 factory preset 14 'Crystal Tongue Drum (Body)': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 14 'Crystal Tongue Drum (Body)': peak -11.44 dBFS, RMS -19.93 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 15 'Bronze Water Gong (Body)': all 12 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 15 'Bronze Water Gong (Body)': fresh VST3 instance created
+[PASS] E16 factory preset 15 'Bronze Water Gong (Body)': VST3 program 15 is named 'Bronze Water Gong (Body)' and setCurrentProgram(15) -> getCurrentProgram()=15
+[PASS] E16 factory preset 15 'Bronze Water Gong (Body)': C4 render, all 192512 output samples finite (non-finite: 0)
+[PASS] Q05 clip indicator: OutputPeakMeter fed E16 factory preset 15 'Bronze Water Gong (Body)''s real VST3 output reports peak 0.808498 (independent 0.808498, -1.85 dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
+    [info] E16 factory preset 15 'Bronze Water Gong (Body)': peak -1.85 dBFS, RMS -16.56 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 16 'Acoustic Piano': all 11 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 16 'Acoustic Piano': fresh VST3 instance created
+[PASS] E16 factory preset 16 'Acoustic Piano': VST3 program 16 is named 'Acoustic Piano' and setCurrentProgram(16) -> getCurrentProgram()=16
+[PASS] E16 factory preset 16 'Acoustic Piano': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 16 'Acoustic Piano': peak -19.83 dBFS, RMS -30.60 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 17 'Electric Rhodes': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 17 'Electric Rhodes': fresh VST3 instance created
+[PASS] E16 factory preset 17 'Electric Rhodes': VST3 program 17 is named 'Electric Rhodes' and setCurrentProgram(17) -> getCurrentProgram()=17
+[PASS] E16 factory preset 17 'Electric Rhodes': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 17 'Electric Rhodes': peak -22.90 dBFS, RMS -34.57 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 18 'Layered E.Piano': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 18 'Layered E.Piano': fresh VST3 instance created
+[PASS] E16 factory preset 18 'Layered E.Piano': VST3 program 18 is named 'Layered E.Piano' and setCurrentProgram(18) -> getCurrentProgram()=18
+[PASS] E16 factory preset 18 'Layered E.Piano': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 18 'Layered E.Piano': peak -21.21 dBFS, RMS -32.57 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 19 'FM Vibraphone': all 11 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 19 'FM Vibraphone': fresh VST3 instance created
+[PASS] E16 factory preset 19 'FM Vibraphone': VST3 program 19 is named 'FM Vibraphone' and setCurrentProgram(19) -> getCurrentProgram()=19
+[PASS] E16 factory preset 19 'FM Vibraphone': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 19 'FM Vibraphone': peak -16.23 dBFS, RMS -28.53 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 20 'DX7 Crystal Bell': all 11 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 20 'DX7 Crystal Bell': fresh VST3 instance created
+[PASS] E16 factory preset 20 'DX7 Crystal Bell': VST3 program 20 is named 'DX7 Crystal Bell' and setCurrentProgram(20) -> getCurrentProgram()=20
+[PASS] E16 factory preset 20 'DX7 Crystal Bell': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 20 'DX7 Crystal Bell': peak -9.07 dBFS, RMS -20.98 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 21 'Church Organ': all 11 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 21 'Church Organ': fresh VST3 instance created
+[PASS] E16 factory preset 21 'Church Organ': VST3 program 21 is named 'Church Organ' and setCurrentProgram(21) -> getCurrentProgram()=21
+[PASS] E16 factory preset 21 'Church Organ': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 21 'Church Organ': peak -12.85 dBFS, RMS -20.99 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 22 'Ambient Pad': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 22 'Ambient Pad': fresh VST3 instance created
+[PASS] E16 factory preset 22 'Ambient Pad': VST3 program 22 is named 'Ambient Pad' and setCurrentProgram(22) -> getCurrentProgram()=22
+[PASS] E16 factory preset 22 'Ambient Pad': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 22 'Ambient Pad': peak -12.43 dBFS, RMS -19.84 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 23 'FM Bass': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 23 'FM Bass': fresh VST3 instance created
+[PASS] E16 factory preset 23 'FM Bass': VST3 program 23 is named 'FM Bass' and setCurrentProgram(23) -> getCurrentProgram()=23
+[PASS] E16 factory preset 23 'FM Bass': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 23 'FM Bass': peak -22.38 dBFS, RMS -38.79 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 24 'FM Brass': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 24 'FM Brass': fresh VST3 instance created
+[PASS] E16 factory preset 24 'FM Brass': VST3 program 24 is named 'FM Brass' and setCurrentProgram(24) -> getCurrentProgram()=24
+[PASS] E16 factory preset 24 'FM Brass': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 24 'FM Brass': peak -20.98 dBFS, RMS -34.42 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 25 'Grand Piano (Physical)': all 13 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 25 'Grand Piano (Physical)': fresh VST3 instance created
+[PASS] E16 factory preset 25 'Grand Piano (Physical)': VST3 program 25 is named 'Grand Piano (Physical)' and setCurrentProgram(25) -> getCurrentProgram()=25
+[PASS] E16 factory preset 25 'Grand Piano (Physical)': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 25 'Grand Piano (Physical)': peak -12.43 dBFS, RMS -25.75 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+[PASS] E16 factory preset 26 'Bright Upright (Physical)': all 11 paramIDs resolve in createTsukiParameterLayout()
+[PASS] E16 factory preset 26 'Bright Upright (Physical)': fresh VST3 instance created
+[PASS] E16 factory preset 26 'Bright Upright (Physical)': VST3 program 26 is named 'Bright Upright (Physical)' and setCurrentProgram(26) -> getCurrentProgram()=26
+[PASS] E16 factory preset 26 'Bright Upright (Physical)': C4 render, all 192512 output samples finite (non-finite: 0)
+    [info] E16 factory preset 26 'Bright Upright (Physical)': peak -13.98 dBFS, RMS -33.98 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+
+-- Q05 clip indicator: synthetic controls --
+[PASS] Q05 clip indicator controls: peak 1.0 -> off (1); a 1.0001 sample in the middle of 3 blocks -> lit, held (1.0001); -1.5 -> lit (1.5); NaN -> lit (3.40282e+38)
+
+-- Q09 voice-steal measurement (informational only, no PASS/FAIL; 月月 2026-10-02 Q09=D) --
+  repo root (from materials.json lookup): E:\Tsuki-project\tsuki-synth
+  [WF1003-V] TSUKI_Q09V=1: extended 16-vs-32 pool evidence ON
+
+  [Q09] fur_elise (piano): E:\Tsuki-project\tsuki-synth\scores\classical\fur_elise\fur_elise_complete.score.json
+    score engine 'piano', 905 events, 0 unparsed; MIDI = note-on round(time*sr), note-off round((time+duration)*sr), offs before ons at equal samples (report scenario A / M1-M2), channel 1, block 512, 48000 Hz, realtime processBlock
+    plug-in params: engine=Piano(3), cim_material=Steel, cim_diameter=1.0 mm (score params: steel, diameter_mm 1.0); every other plug-in parameter at its default (macros 0.5)
+    FX set to an exact identity for the twin comparison: reverb mix 0, delay mix 0, compressor ratio 1 (bypass), drive 0, EQ 0 dB, Output 1.0
+    rendered 132.43 s (12415 blocks) through the VST3 + two twins in 56.1 s wall clock
+    twin(16 voices) vs VST3 output: max |diff| = 0 over 12712960 samples (0 samples differ; VST3 peak -3.26 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+    MEASURED (twin, 16-voice pool = product): steals = 0 (0 hit a still-held note); max active voices at a block end = 12
+    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch note-on = 21; extra held voices released by another note's note-off = 11
+    MEASURED (twin, 128-voice pool ~ unlimited): max active voices at a block end = 12 (block-end sampling, 512-sample granularity, can undercount a momentary peak); steals = 0; same-pitch early damping = 21; extra released by another note-off = 11
+    REPORT ESTIMATE (reports/voice_pool_occupancy_2026-09-25.zh-TW.md): report §4.2/§4.4 (scenario A, score T60, per engine): demand 12 voices, 0 steals; same-note early damping 21 + released-by-another-note-off 21
+    Q09V case=fur_elise (piano)
+    Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+    Q09V steals pool16 = 0 (held 0), pool32 = 0 (held 0), pool128 = 0
+    Q09V max active voices at block end: pool16 = 12, pool32 = 12, pool128 = 12
+    Q09V identity: max|VST3 - twin16| = 0, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+    Q09V output: max|twin16 - twin32| = 0 (0 = a 32 pool changes nothing for this input)
+    Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 12415, mean = 1.1766 ms, p99 = 3.6065 ms, max = 5.4781 ms, max/budget = 0.5136, blocks >= budget = 0
+    Q09V twin(synth only) pool16 rep1: blocks = 12415, mean = 1.0425 ms, p99 = 3.4850 ms, max = 5.3934 ms, max/budget = 0.5056, blocks >= budget = 0, steals = 0, maxActive = 12
+    Q09V twin(synth only) pool16 rep2: blocks = 12415, mean = 1.0385 ms, p99 = 3.4554 ms, max = 5.4703 ms, max/budget = 0.5128, blocks >= budget = 0, steals = 0, maxActive = 12
+    Q09V twin(synth only) pool16 rep3: blocks = 12415, mean = 1.0386 ms, p99 = 3.4652 ms, max = 5.3813 ms, max/budget = 0.5045, blocks >= budget = 0, steals = 0, maxActive = 12
+    Q09V twin(synth only) pool16 rep4: blocks = 12415, mean = 1.0384 ms, p99 = 3.4334 ms, max = 5.6159 ms, max/budget = 0.5265, blocks >= budget = 0, steals = 0, maxActive = 12
+    Q09V twin(synth only) pool16 rep5: blocks = 12415, mean = 1.0393 ms, p99 = 3.4367 ms, max = 5.4415 ms, max/budget = 0.5101, blocks >= budget = 0, steals = 0, maxActive = 12
+    Q09V twin(synth only) pool32 rep1: blocks = 12415, mean = 1.0655 ms, p99 = 3.4908 ms, max = 5.5314 ms, max/budget = 0.5186, blocks >= budget = 0, steals = 0, maxActive = 12
+    Q09V twin(synth only) pool32 rep2: blocks = 12415, mean = 1.0655 ms, p99 = 3.4792 ms, max = 5.3818 ms, max/budget = 0.5045, blocks >= budget = 0, steals = 0, maxActive = 12
+    Q09V twin(synth only) pool32 rep3: blocks = 12415, mean = 1.0644 ms, p99 = 3.4804 ms, max = 5.4110 ms, max/budget = 0.5073, blocks >= budget = 0, steals = 0, maxActive = 12
+    Q09V twin(synth only) pool32 rep4: blocks = 12415, mean = 1.0643 ms, p99 = 3.4694 ms, max = 6.2241 ms, max/budget = 0.5835, blocks >= budget = 0, steals = 0, maxActive = 12
+    Q09V twin(synth only) pool32 rep5: blocks = 12415, mean = 1.0641 ms, p99 = 3.4814 ms, max = 5.4169 ms, max/budget = 0.5078, blocks >= budget = 0, steals = 0, maxActive = 12
+
+  [Q09] moonlight_mvt1_tongue_drum: E:\Tsuki-project\tsuki-synth\scores\examples\moonlight_sonata_movement1_tongue_drum.score.json
+    score engine 'tongue_drum', 1142 events, 0 unparsed; MIDI = note-on round(time*sr), note-off round((time+duration)*sr), offs before ons at equal samples (report scenario A / M1-M2), channel 1, block 512, 48000 Hz, realtime processBlock
+    plug-in params: engine=Chromatic(1), sub=Tongue Drum, chr_material=Steel, thickness 2.6 mm, size 100 mm, strike 0.44 = the score's majority param set (952 of 1142 events); the other 176 (3.2 mm/30 mm wide) + 14 (aluminum 2.0 mm) events, the score's width_mm and its wood_mallet exciter have no per-note plug-in equivalent, so every note uses this one set (exciter = plug-in default Medium)
+    FX set to an exact identity for the twin comparison: reverb mix 0, delay mix 0, compressor ratio 1 (bypass), drive 0, EQ 0 dB, Output 1.0
+    rendered 311.13 s (29168 blocks) through the VST3 + two twins in 33.4 s wall clock
+    twin(16 voices) vs VST3 output: max |diff| = 0.030227 over 29868032 samples (26580244 samples differ; VST3 peak -12.92 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+    MEASURED (twin, 16-voice pool = product): steals = 64 (4 hit a still-held note); max active voices at a block end = 16
+    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch note-on = 291; extra held voices released by another note's note-off = 117
+    MEASURED (twin, 128-voice pool ~ unlimited): max active voices at a block end = 20 (block-end sampling, 512-sample granularity, can undercount a momentary peak); steals = 0; same-pitch early damping = 291; extra released by another note-off = 120
+    REPORT ESTIMATE (reports/voice_pool_occupancy_2026-09-25.zh-TW.md): report §4.3(a) (scenario A, score T60 per EVENT, per engine): demand 20 voices (max at 254.240 s, first > 16 at 17.92 s), 64 steals (34 rule 2 + 30 rule 1), 4 of them hit a still-held note
+    Q09V case=moonlight_mvt1_tongue_drum
+    Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+    Q09V steals pool16 = 64 (held 4), pool32 = 0 (held 0), pool128 = 0
+    Q09V max active voices at block end: pool16 = 16, pool32 = 20, pool128 = 20
+    Q09V identity: max|VST3 - twin16| = 0.030227, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+    Q09V output: max|twin16 - twin32| = 0.030227 (0 = a 32 pool changes nothing for this input)
+    Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 29168, mean = 0.3444 ms, p99 = 0.5175 ms, max = 2.5687 ms, max/budget = 0.2408, blocks >= budget = 0
+    Q09V twin(synth only) pool16 rep1: blocks = 29168, mean = 0.1881 ms, p99 = 0.3507 ms, max = 1.0790 ms, max/budget = 0.1012, blocks >= budget = 0, steals = 64, maxActive = 16
+    Q09V twin(synth only) pool16 rep2: blocks = 29168, mean = 0.1887 ms, p99 = 0.3535 ms, max = 7.2701 ms, max/budget = 0.6816, blocks >= budget = 0, steals = 64, maxActive = 16
+    Q09V twin(synth only) pool16 rep3: blocks = 29168, mean = 0.1883 ms, p99 = 0.3497 ms, max = 1.0980 ms, max/budget = 0.1029, blocks >= budget = 0, steals = 64, maxActive = 16
+    Q09V twin(synth only) pool16 rep4: blocks = 29168, mean = 0.1884 ms, p99 = 0.3517 ms, max = 0.6404 ms, max/budget = 0.0600, blocks >= budget = 0, steals = 64, maxActive = 16
+    Q09V twin(synth only) pool16 rep5: blocks = 29168, mean = 0.1884 ms, p99 = 0.3488 ms, max = 1.2603 ms, max/budget = 0.1182, blocks >= budget = 0, steals = 64, maxActive = 16
+    Q09V twin(synth only) pool32 rep1: blocks = 29168, mean = 0.2245 ms, p99 = 0.3933 ms, max = 0.9545 ms, max/budget = 0.0895, blocks >= budget = 0, steals = 0, maxActive = 20
+    Q09V twin(synth only) pool32 rep2: blocks = 29168, mean = 0.2247 ms, p99 = 0.3933 ms, max = 0.9857 ms, max/budget = 0.0924, blocks >= budget = 0, steals = 0, maxActive = 20
+    Q09V twin(synth only) pool32 rep3: blocks = 29168, mean = 0.2245 ms, p99 = 0.3933 ms, max = 0.7163 ms, max/budget = 0.0672, blocks >= budget = 0, steals = 0, maxActive = 20
+    Q09V twin(synth only) pool32 rep4: blocks = 29168, mean = 0.2244 ms, p99 = 0.3922 ms, max = 0.8282 ms, max/budget = 0.0776, blocks >= budget = 0, steals = 0, maxActive = 20
+    Q09V twin(synth only) pool32 rep5: blocks = 29168, mean = 0.2245 ms, p99 = 0.3916 ms, max = 1.0826 ms, max/budget = 0.1015, blocks >= budget = 0, steals = 0, maxActive = 20
+      steal #1 at 17.920 s: new note 52 took the voice of note 33 (released/tailing)
+      steal #2 at 33.973 s: new note 59 took the voice of note 59 (released/tailing)
+      steal #3 at 35.840 s: new note 64 took the voice of note 30 (released/tailing)
+      steal #4 at 36.213 s: new note 59 took the voice of note 59 (released/tailing)
+      steal #5 at 53.760 s: new note 47 took the voice of note 47 (released/tailing)
+      steal #6 at 53.760 s: new note 54 took the voice of note 54 (still held)
+      steal #7 at 53.760 s: new note 66 took the voice of note 66 (still held)
+      steal #8 at 57.493 s: new note 59 took the voice of note 59 (released/tailing)
+      steal #9 at 58.240 s: new note 66 took the voice of note 35 (released/tailing)
+      steal #10 at 58.613 s: new note 59 took the voice of note 59 (released/tailing)
+      steal #11 at 60.480 s: new note 66 took the voice of note 66 (released/tailing)
+      steal #12 at 70.560 s: new note 59 took the voice of note 59 (released/tailing)
+      steal #13 at 70.560 s: new note 70 took the voice of note 30 (released/tailing)
+      steal #14 at 71.680 s: new note 59 took the voice of note 59 (released/tailing)
+      steal #15 at 71.680 s: new note 71 took the voice of note 35 (released/tailing)
+      steal #16 at 79.520 s: new note 70 took the voice of note 35 (released/tailing)
+      steal #17 at 80.640 s: new note 71 took the voice of note 40 (released/tailing)
+      steal #18 at 91.840 s: new note 54 took the voice of note 32 (released/tailing)
+      steal #19 at 91.840 s: new note 66 took the voice of note 29 (released/tailing)
+      steal #20 at 112.000 s: new note 63 took the voice of note 42 (released/tailing)
+      steal #21 at 112.000 s: new note 75 took the voice of note 51 (released/tailing)
+      steal #22 at 115.360 s: new note 75 took the voice of note 75 (released/tailing)
+      steal #23 at 116.480 s: new note 49 took the voice of note 39 (released/tailing)
+      steal #24 at 116.480 s: new note 64 took the voice of note 37 (released/tailing)
+      steal #25 at 116.480 s: new note 76 took the voice of note 36 (released/tailing)
+      steal #26 at 119.840 s: new note 73 took the voice of note 73 (released/tailing)
+      steal #27 at 120.960 s: new note 32 took the voice of note 36 (released/tailing)
+      steal #28 at 120.960 s: new note 44 took the voice of note 44 (released/tailing)
+      steal #29 at 120.960 s: new note 72 took the voice of note 37 (released/tailing)
+      steal #30 at 181.440 s: new note 51 took the voice of note 51 (released/tailing)
+      steal #31 at 184.053 s: new note 56 took the voice of note 56 (released/tailing)
+      steal #32 at 184.427 s: new note 61 took the voice of note 32 (released/tailing)
+      steal #33 at 185.547 s: new note 64 took the voice of note 33 (released/tailing)
+      steal #34 at 199.733 s: new note 59 took the voice of note 59 (released/tailing)
+      steal #35 at 201.600 s: new note 64 took the voice of note 30 (released/tailing)
+      steal #36 at 201.973 s: new note 59 took the voice of note 59 (released/tailing)
+      steal #37 at 215.040 s: new note 48 took the voice of note 39 (released/tailing)
+      steal #38 at 215.040 s: new note 63 took the voice of note 40 (released/tailing)
+      steal #39 at 215.040 s: new note 75 took the voice of note 51 (released/tailing)
+      steal #40 at 217.280 s: new note 64 took the voice of note 64 (released/tailing)
+      steal #41 at 217.280 s: new note 76 took the voice of note 39 (released/tailing)
+      steal #42 at 232.960 s: new note 73 took the voice of note 37 (released/tailing)
+      steal #43 at 241.920 s: new note 73 took the voice of note 37 (released/tailing)
+      steal #44 at 252.000 s: new note 57 took the voice of note 57 (still held)
+      steal #45 at 252.000 s: new note 69 took the voice of note 69 (released/tailing)
+      steal #46 at 253.120 s: new note 56 took the voice of note 30 (released/tailing)
+      steal #47 at 253.120 s: new note 68 took the voice of note 68 (released/tailing)
+      steal #48 at 254.240 s: new note 49 took the voice of note 49 (released/tailing)
+      steal #49 at 254.240 s: new note 56 took the voice of note 56 (still held)
+      steal #50 at 254.240 s: new note 68 took the voice of note 68 (released/tailing)
+      steal #51 at 255.360 s: new note 54 took the voice of note 40 (released/tailing)
+      steal #52 at 255.360 s: new note 66 took the voice of note 66 (released/tailing)
+      steal #53 at 256.853 s: new note 61 took the voice of note 61 (released/tailing)
+      steal #54 at 257.600 s: new note 44 took the voice of note 37 (released/tailing)
+      steal #55 at 257.600 s: new note 56 took the voice of note 39 (released/tailing)
+      steal #56 at 257.600 s: new note 68 took the voice of note 36 (released/tailing)
+      steal #57 at 258.720 s: new note 69 took the voice of note 37 (released/tailing)
+      steal #58 at 259.840 s: new note 56 took the voice of note 56 (released/tailing)
+      steal #59 at 259.840 s: new note 68 took the voice of note 68 (released/tailing)
+      steal #60 at 262.080 s: new note 44 took the voice of note 44 (released/tailing)
+      steal #61 at 262.080 s: new note 54 took the voice of note 33 (released/tailing)
+      steal #62 at 262.080 s: new note 68 took the voice of note 68 (released/tailing)
+      steal #63 at 264.320 s: new note 61 took the voice of note 32 (released/tailing)
+      steal #64 at 264.693 s: new note 56 took the voice of note 30 (released/tailing)
+
+  [Q09] stress32_chromatic (synthetic): E:\Tsuki-project\tsuki-synth\(none)
+    score engine 'synthetic', 32 events, 0 unparsed; MIDI = note-on round(time*sr), note-off round((time+duration)*sr), offs before ons at equal samples (report scenario A / M1-M2), channel 1, block 512, 48000 Hz, realtime processBlock
+    plug-in params: engine=Chromatic(1), Tongue Drum, Steel 2.6 mm / 100 mm / strike 0.44 (as the moonlight case)
+    FX set to an exact identity for the twin comparison: reverb mix 0, delay mix 0, compressor ratio 1 (bypass), drive 0, EQ 0 dB, Output 1.0
+    rendered 5.00 s (469 blocks) through the VST3 + two twins in 0.9 s wall clock
+    twin(16 voices) vs VST3 output: max |diff| = 0.921249 over 480256 samples (480254 samples differ; VST3 peak 2.78 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+    MEASURED (twin, 16-voice pool = product): steals = 16 (16 hit a still-held note); max active voices at a block end = 16
+    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch note-on = 0; extra held voices released by another note's note-off = 0
+    MEASURED (twin, 128-voice pool ~ unlimited): max active voices at a block end = 32 (block-end sampling, 512-sample granularity, can undercount a momentary peak); steals = 0; same-pitch early damping = 0; extra released by another note-off = 0
+    REPORT ESTIMATE (reports/voice_pool_occupancy_2026-09-25.zh-TW.md): WF1003-V synthetic: 32 distinct notes (MIDI 36..67) held 3 s
+    Q09V case=stress32_chromatic (synthetic)
+    Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+    Q09V steals pool16 = 16 (held 16), pool32 = 0 (held 0), pool128 = 0
+    Q09V max active voices at block end: pool16 = 16, pool32 = 32, pool128 = 32
+    Q09V identity: max|VST3 - twin16| = 0.921249, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+    Q09V output: max|twin16 - twin32| = 0.921249 (0 = a 32 pool changes nothing for this input)
+    Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 469, mean = 0.5697 ms, p99 = 1.4229 ms, max = 1.8622 ms, max/budget = 0.1746, blocks >= budget = 0
+    Q09V twin(synth only) pool16 rep1: blocks = 469, mean = 0.1894 ms, p99 = 0.5630 ms, max = 0.7860 ms, max/budget = 0.0737, blocks >= budget = 0, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool16 rep2: blocks = 469, mean = 0.1884 ms, p99 = 0.5275 ms, max = 0.7984 ms, max/budget = 0.0748, blocks >= budget = 0, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool16 rep3: blocks = 469, mean = 0.1889 ms, p99 = 0.6297 ms, max = 0.7863 ms, max/budget = 0.0737, blocks >= budget = 0, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool16 rep4: blocks = 469, mean = 0.1886 ms, p99 = 0.5213 ms, max = 0.7819 ms, max/budget = 0.0733, blocks >= budget = 0, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool16 rep5: blocks = 469, mean = 0.1884 ms, p99 = 0.5592 ms, max = 0.8053 ms, max/budget = 0.0755, blocks >= budget = 0, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool32 rep1: blocks = 469, mean = 0.4467 ms, p99 = 1.3671 ms, max = 1.7762 ms, max/budget = 0.1665, blocks >= budget = 0, steals = 0, maxActive = 32
+    Q09V twin(synth only) pool32 rep2: blocks = 469, mean = 0.4449 ms, p99 = 1.2982 ms, max = 1.8567 ms, max/budget = 0.1741, blocks >= budget = 0, steals = 0, maxActive = 32
+    Q09V twin(synth only) pool32 rep3: blocks = 469, mean = 0.4474 ms, p99 = 1.3900 ms, max = 1.7772 ms, max/budget = 0.1666, blocks >= budget = 0, steals = 0, maxActive = 32
+    Q09V twin(synth only) pool32 rep4: blocks = 469, mean = 0.4466 ms, p99 = 1.2973 ms, max = 1.7915 ms, max/budget = 0.1680, blocks >= budget = 0, steals = 0, maxActive = 32
+    Q09V twin(synth only) pool32 rep5: blocks = 469, mean = 0.4475 ms, p99 = 1.3363 ms, max = 1.7763 ms, max/budget = 0.1665, blocks >= budget = 0, steals = 0, maxActive = 32
+      steal #1 at 0.000 s: new note 52 took the voice of note 37 (still held)
+      steal #2 at 0.000 s: new note 53 took the voice of note 38 (still held)
+      steal #3 at 0.000 s: new note 54 took the voice of note 39 (still held)
+      steal #4 at 0.000 s: new note 55 took the voice of note 40 (still held)
+      steal #5 at 0.000 s: new note 56 took the voice of note 41 (still held)
+      steal #6 at 0.000 s: new note 57 took the voice of note 42 (still held)
+      steal #7 at 0.000 s: new note 58 took the voice of note 43 (still held)
+      steal #8 at 0.000 s: new note 59 took the voice of note 44 (still held)
+      steal #9 at 0.001 s: new note 60 took the voice of note 45 (still held)
+      steal #10 at 0.001 s: new note 61 took the voice of note 46 (still held)
+      steal #11 at 0.001 s: new note 62 took the voice of note 47 (still held)
+      steal #12 at 0.001 s: new note 63 took the voice of note 48 (still held)
+      steal #13 at 0.001 s: new note 64 took the voice of note 49 (still held)
+      steal #14 at 0.001 s: new note 65 took the voice of note 50 (still held)
+      steal #15 at 0.001 s: new note 66 took the voice of note 51 (still held)
+      steal #16 at 0.001 s: new note 67 took the voice of note 52 (still held)
+
+  [Q09] stress32_piano (synthetic): E:\Tsuki-project\tsuki-synth\(none)
+    score engine 'synthetic', 32 events, 0 unparsed; MIDI = note-on round(time*sr), note-off round((time+duration)*sr), offs before ons at equal samples (report scenario A / M1-M2), channel 1, block 512, 48000 Hz, realtime processBlock
+    plug-in params: engine=Piano(3), Steel, 1.0 mm (as the fur_elise case)
+    FX set to an exact identity for the twin comparison: reverb mix 0, delay mix 0, compressor ratio 1 (bypass), drive 0, EQ 0 dB, Output 1.0
+    rendered 5.00 s (469 blocks) through the VST3 + two twins in 11.7 s wall clock
+    twin(16 voices) vs VST3 output: max |diff| = 3.63242 over 480256 samples (379606 samples differ; VST3 peak 16.44 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+    MEASURED (twin, 16-voice pool = product): steals = 16 (16 hit a still-held note); max active voices at a block end = 16
+    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch note-on = 0; extra held voices released by another note's note-off = 0
+    MEASURED (twin, 128-voice pool ~ unlimited): max active voices at a block end = 32 (block-end sampling, 512-sample granularity, can undercount a momentary peak); steals = 0; same-pitch early damping = 0; extra released by another note-off = 0
+    REPORT ESTIMATE (reports/voice_pool_occupancy_2026-09-25.zh-TW.md): WF1003-V synthetic: 32 distinct notes (MIDI 36..67) held 3 s
+    Q09V case=stress32_piano (synthetic)
+    Q09V block budget = 10.6667 ms (512 / 48000 Hz)
+    Q09V steals pool16 = 16 (held 16), pool32 = 0 (held 0), pool128 = 0
+    Q09V max active voices at block end: pool16 = 16, pool32 = 32, pool128 = 32
+    Q09V identity: max|VST3 - twin16| = 3.63242, max|VST3 - twin32| = 0  (0 identifies the pool size the VST3 binary was built with)
+    Q09V output: max|twin16 - twin32| = 3.63242 (0 = a 32 pool changes nothing for this input)
+    Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = 469, mean = 7.4084 ms, p99 = 20.9319 ms, max = 21.2989 ms, max/budget = 1.9968, blocks >= budget = 152
+    Q09V twin(synth only) pool16 rep1: blocks = 469, mean = 2.4913 ms, p99 = 10.8561 ms, max = 11.2386 ms, max/budget = 1.0536, blocks >= budget = 5, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool16 rep2: blocks = 469, mean = 2.4825 ms, p99 = 10.6029 ms, max = 11.3629 ms, max/budget = 1.0653, blocks >= budget = 4, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool16 rep3: blocks = 469, mean = 2.4838 ms, p99 = 10.6835 ms, max = 11.1808 ms, max/budget = 1.0482, blocks >= budget = 5, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool16 rep4: blocks = 469, mean = 2.4834 ms, p99 = 10.6530 ms, max = 11.2062 ms, max/budget = 1.0506, blocks >= budget = 4, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool16 rep5: blocks = 469, mean = 2.4836 ms, p99 = 10.8081 ms, max = 11.1230 ms, max/budget = 1.0428, blocks >= budget = 6, steals = 16, maxActive = 16
+    Q09V twin(synth only) pool32 rep1: blocks = 469, mean = 7.3872 ms, p99 = 20.9412 ms, max = 21.2439 ms, max/budget = 1.9916, blocks >= budget = 154, steals = 0, maxActive = 32
+    Q09V twin(synth only) pool32 rep2: blocks = 469, mean = 7.4095 ms, p99 = 20.8443 ms, max = 23.2361 ms, max/budget = 2.1784, blocks >= budget = 154, steals = 0, maxActive = 32
+    Q09V twin(synth only) pool32 rep3: blocks = 469, mean = 7.3912 ms, p99 = 20.7884 ms, max = 20.9003 ms, max/budget = 1.9594, blocks >= budget = 154, steals = 0, maxActive = 32
+    Q09V twin(synth only) pool32 rep4: blocks = 469, mean = 7.3786 ms, p99 = 20.8611 ms, max = 21.2391 ms, max/budget = 1.9912, blocks >= budget = 153, steals = 0, maxActive = 32
+    Q09V twin(synth only) pool32 rep5: blocks = 469, mean = 7.3881 ms, p99 = 20.7651 ms, max = 20.8310 ms, max/budget = 1.9529, blocks >= budget = 152, steals = 0, maxActive = 32
+      steal #1 at 0.000 s: new note 52 took the voice of note 37 (still held)
+      steal #2 at 0.000 s: new note 53 took the voice of note 38 (still held)
+      steal #3 at 0.000 s: new note 54 took the voice of note 39 (still held)
+      steal #4 at 0.000 s: new note 55 took the voice of note 40 (still held)
+      steal #5 at 0.000 s: new note 56 took the voice of note 41 (still held)
+      steal #6 at 0.000 s: new note 57 took the voice of note 42 (still held)
+      steal #7 at 0.000 s: new note 58 took the voice of note 43 (still held)
+      steal #8 at 0.000 s: new note 59 took the voice of note 44 (still held)
+      steal #9 at 0.001 s: new note 60 took the voice of note 45 (still held)
+      steal #10 at 0.001 s: new note 61 took the voice of note 46 (still held)
+      steal #11 at 0.001 s: new note 62 took the voice of note 47 (still held)
+      steal #12 at 0.001 s: new note 63 took the voice of note 48 (still held)
+      steal #13 at 0.001 s: new note 64 took the voice of note 49 (still held)
+      steal #14 at 0.001 s: new note 65 took the voice of note 50 (still held)
+      steal #15 at 0.001 s: new note 66 took the voice of note 51 (still held)
+      steal #16 at 0.001 s: new note 67 took the voice of note 52 (still held)
+PASS (0 failures)
