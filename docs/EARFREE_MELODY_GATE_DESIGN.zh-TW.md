@@ -369,7 +369,7 @@ A13 §4 選項 C 查遍文獻找不到可溯源的振幅容差，本工具不自
 `gate_ready_reason` 改成：升 GATE 要月月另行裁決；A13 選項 B+ 原本以 C10 選 A 為升級前提，但 D15 A'
 （2026-09-15）之後，放鍵/阻尼段的量測器已知誤差上界約 7.2 c，大於 ±5 c，這個前提照原文已不成立。
 `gate_ready` 仍是 false。09-25 V1 那份報告的 `caveats[0]` 還寫「C10 self-cal still pending 月月裁決」，是舊字串
-（出自 WF0925 staged 版 `tools/partial_verify.py`；更新這個字串屬裁決包 O16，不在本文件範圍）。要不要升 GATE、期望值慣例怎麼定，見
+（出自 WF0925 staged 版 `tools/partial_verify.py`；更新這個字串屬裁決包 O16，不在本文件範圍；**2026-10-03 補記：`caveats` 已由 WF0925b-TF（`31851d5`）更新，現行 `caveats[0]` 寫的是 C10 於 2026-09-10 裁 A、D15 於 2026-09-15 裁 A'，升 GATE 另待月月裁決**）。要不要升 GATE、期望值慣例怎麼定，見
 `reports/decision_packets/WF0925_open_decisions.zh-TW.md` Q18。）
 
 **拒答（reuse，不新增邏輯）**：partial 帶碰撞（本事件自己的 partial 之間
