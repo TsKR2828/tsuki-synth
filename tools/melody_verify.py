@@ -531,12 +531,17 @@ def expected_f0s_layered(dumped_events):
     return f0s, partials, refusals, decays
 
 
-def verify(score_path, wav_path=None, keep_json=None, quiet=False):
+def verify(score_path, wav_path=None, keep_json=None, quiet=False, cli=None):
+    """cli=None (default, unchanged behaviour): TsukiSynthCLI is found by
+    verify_score.find_cli(). cli=<path> (WF1003-S): that binary is used for
+    the baseline render and every --dump-modes call, so a caller that runs
+    an explicit --cli (stem_verify) needs no lookup override."""
     score_path = Path(score_path)
     score = json.loads(score_path.read_text(encoding="utf-8"))
     is_layered = "layers" in score
     events = score.get("events", [])
-    cli = vs.find_cli()
+    if cli is None:
+        cli = vs.find_cli()
 
     tmpdir = None
     if wav_path is None:

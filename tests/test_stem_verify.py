@@ -877,7 +877,7 @@ def test_c11_e2e_unverified_event_populates_refusal_histogram(tmp_path, monkeypa
     reason = ("f0 120.0 Hz < 167 Hz: band too narrow for +/-10 ms onset "
                "refinement (Re)")
 
-    def fake_judge_stem(score_path_i, wav_path_i):
+    def fake_judge_stem(score_path_i, wav_path_i, cli=None):
         return {"verdict": "UNVERIFIED", "reason": reason,
                 "rules": sv.extract_rule_ids(reason)}
 
@@ -1196,8 +1196,8 @@ def test_c12_own_temp_cleanup_marks_deleted_flag_not_path_suffix(tmp_path, monke
 #   * a relative --cli is made absolute;
 #   * ONE binary serves the whole run -- stem_verify's own renders AND the
 #     --dump-modes / baseline-render calls melody_verify.verify() makes
-#     through its own private verify_score instance -- and the override is
-#     removed again afterwards, also when the run raises.
+#     (WF1003-S: handed over as verify(..., cli=<path>); melody_verify's own
+#     private find_cli lookup is never replaced, and is never consulted).
 # (partial_verify's tests live here because tests/test_partial_verify.py is
 # outside this card's file list; they only exercise the CLI plumbing.)
 # ============================================================================
@@ -1258,7 +1258,8 @@ def test_tf_stem_verify_cli_reaches_renders_and_melody_verify(tmp_path, monkeypa
 
     def capture_and_stop(cli, jobs, tasks):
         seen["render_cli"] = cli
-        seen["melody_verify_cli"] = sv.mv.vs.find_cli()
+        # WF1003-S: no temporary override of melody_verify's private lookup
+        seen["mv_lookup_untouched"] = sv.mv.vs.find_cli is original_mv_lookup
         raise _StopRun()
 
     monkeypatch.setattr(sv, "render_many", capture_and_stop)
@@ -1270,9 +1271,45 @@ def test_tf_stem_verify_cli_reaches_renders_and_melody_verify(tmp_path, monkeypa
                cli="fake_cli.exe")  # relative to the cwd set above
     expected = Path(os.path.abspath(str(fake_cli)))
     assert seen["render_cli"] == expected
-    assert seen["melody_verify_cli"] == expected
-    # restored even though the run raised
+    assert seen["mv_lookup_untouched"] is True
     assert sv.mv.vs.find_cli is original_mv_lookup
+
+
+def test_wf1003s_judge_stem_forwards_cli_to_melody_verify(monkeypatch):
+    seen = {}
+
+    def spy(*a, **kw):
+        seen.update(kw)
+        return {"events": [{"verdict": "PASS", "reason": "ok"}]}
+
+    monkeypatch.setattr(sv.mv, "verify", spy)
+    sv.judge_stem("unused_score.json", "unused.wav", cli="X.exe")
+    assert seen["cli"] == "X.exe" and seen["wav_path"] == "unused.wav"
+    seen.clear()
+    sv.judge_stem("unused_score.json", "unused.wav")  # default: cli=None
+    assert seen["cli"] is None
+
+
+def test_wf1003s_melody_verify_explicit_cli_never_consults_find_cli(tmp_path, monkeypatch):
+    """melody_verify.verify(..., cli=<path>): the dump-modes/render calls get
+    exactly that path and the module's own find_cli lookup is not used."""
+    mvmod = sv.mv
+    monkeypatch.setattr(mvmod.vs, "find_cli", _no_find_cli)
+    seen = {}
+
+    class _Stop(Exception):
+        pass
+
+    def fake_render(cli, score, outdir, *a, **kw):
+        seen["render"] = cli
+        raise _Stop()
+
+    monkeypatch.setattr(mvmod.vs, "render_score", fake_render)
+    score = tmp_path / "s.score.json"
+    score.write_text(json.dumps({"events": [], "global": {}}), encoding="utf-8")
+    with pytest.raises(_Stop):
+        mvmod.verify(str(score), quiet=True, cli="EXPLICIT.exe")
+    assert seen["render"] == "EXPLICIT.exe"
 
 
 def test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary(tmp_path, monkeypatch):
@@ -1298,13 +1335,15 @@ def test_tf_stem_verify_e2e_every_cli_call_uses_the_explicit_binary(tmp_path, mo
         return wrapped
 
     monkeypatch.setattr(sv.vs, "find_cli", _no_find_cli)
+    # WF1003-S: melody_verify's own lookup must not be needed any more either
+    monkeypatch.setattr(sv.mv.vs, "find_cli", _no_find_cli)
     monkeypatch.setattr(sv.vs, "render_score",
                         recorder("stem_verify.render", sv.vs.render_score))
     monkeypatch.setattr(sv.mv.vs, "render_score",
                         recorder("melody_verify.render", sv.mv.vs.render_score))
     monkeypatch.setattr(sv.mv.vs, "dump_modes",
                         recorder("melody_verify.dump_modes", sv.mv.vs.dump_modes))
-    original_mv_lookup = sv.mv.vs.find_cli
+    original_mv_lookup = sv.mv.vs.find_cli  # == _no_find_cli (patched above)
 
     score_path = tmp_path / "sentinel.score.json"
     score_path.write_text(json.dumps(SENTINEL_SCORE), encoding="utf-8")

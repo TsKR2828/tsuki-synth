@@ -97,7 +97,6 @@ existing CLI/melody_verify.py -- it does not touch src/.
 
 import argparse
 import concurrent.futures
-import contextlib
 import copy
 import datetime
 import json
@@ -641,15 +640,16 @@ def extract_rule_ids(reason):
     return seen
 
 
-def judge_stem(stem_score_path, wav_path):
+def judge_stem(stem_score_path, wav_path, cli=None):
     """Runs melody_verify.verify() on a single-event stem against its own
-    (already-rendered) WAV. Returns the ONE event result dict it produces,
+    (already-rendered) WAV. `cli` (WF1003-S) is handed to melody_verify's own
+    `cli` parameter for its --dump-modes calls (None = its default lookup). Returns the ONE event result dict it produces,
     i.e. {"verdict": ..., "reason": ..., ...} -- unmodified from
     melody_verify's own judgment, plus a `rules` key (WF0907-C11): passed
     through as-is if melody_verify's own event dict already had one (it
     currently never does), otherwise derived via extract_rule_ids() above --
     never re-implementing or relaxing melody_verify's own judgment (R6)."""
-    report = mv.verify(stem_score_path, wav_path=wav_path, quiet=True)
+    report = mv.verify(stem_score_path, wav_path=wav_path, quiet=True, cli=cli)
     events = report.get("events", [])
     if len(events) != 1:
         reason = ("melody_verify returned %d results for a single-event "
@@ -869,44 +869,21 @@ def check_superposition_completeness(used, missing_from_sum, stem_list_len,
 # orchestration
 # ============================================================================
 
-@contextlib.contextmanager
-def _melody_verify_uses_cli(cli_path):
-    """WF0925b-TF (O16): makes melody_verify.verify() -- which this tool calls
-    to judge every stem and for the whole-score baseline, and which looks
-    the CLI up by itself through its OWN private verify_score instance
-    (mv.vs.find_cli(), used for --dump-modes and for the baseline render) --
-    use the same explicit --cli binary as this tool's own stem/reference
-    renders, so one run never mixes two binaries. Only this tool's private
-    `mv` module object is touched (loaded by _load_module(), not registered
-    in sys.modules), and the original lookup is restored on exit."""
-    target = mv.vs
-    saved = target.find_cli
-    target.find_cli = lambda: cli_path
-    try:
-        yield
-    finally:
-        target.find_cli = saved
-
-
 def run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
         quiet=False, force_clean=False, analysis_dry=True, cli=None):
     """cli=None (default, unchanged behaviour): TsukiSynthCLI is found by
     verify_score.find_cli() (Release-first under <repo>/build/). cli=<path>
     (the --cli flag, WF0925b-TF / O16): that binary is used for every render
     AND every --dump-modes call of the run, including the ones
-    melody_verify.verify() makes (see _melody_verify_uses_cli()); a path
+    melody_verify.verify() makes (passed to it as verify(..., cli=...), WF1003-S;
+    the former temporary replacement of melody_verify's private lookup is gone); a path
     that is not an existing file is an error (exit 1), never a fallback to
     find_cli(). A relative path is taken relative to the current working
     directory and made absolute before use."""
-    if cli is None:
-        return _run(score_path, out_dir=out_dir, jobs=jobs, limit=limit,
-                    keep_stems=keep_stems, quiet=quiet, force_clean=force_clean,
-                    analysis_dry=analysis_dry, explicit_cli=None)
-    explicit_cli = Path(os.path.abspath(str(cli)))
-    with _melody_verify_uses_cli(explicit_cli):
-        return _run(score_path, out_dir=out_dir, jobs=jobs, limit=limit,
-                    keep_stems=keep_stems, quiet=quiet, force_clean=force_clean,
-                    analysis_dry=analysis_dry, explicit_cli=explicit_cli)
+    explicit_cli = None if cli is None else Path(os.path.abspath(str(cli)))
+    return _run(score_path, out_dir=out_dir, jobs=jobs, limit=limit,
+                keep_stems=keep_stems, quiet=quiet, force_clean=force_clean,
+                analysis_dry=analysis_dry, explicit_cli=explicit_cli)
 
 
 def _run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
@@ -1131,7 +1108,7 @@ def _run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
         score_path_i = rendered[stem_key]["score_path"]
         wav_path_i = rendered[stem_key]["wav_path"]
         try:
-            r = judge_stem(score_path_i, wav_path_i)
+            r = judge_stem(score_path_i, wav_path_i, cli=explicit_cli)
             entry["verdict"] = r.get("verdict", "UNVERIFIED")
             if r.get("reason") is not None:
                 entry["reason"] = r["reason"]
@@ -1247,7 +1224,7 @@ def _run(score_path, out_dir=None, jobs=4, limit=None, keep_stems=False,
     #    which file/hash both of them ran on -- no separate flag needed.
     baseline = None
     try:
-        baseline = mv.verify(analysis_score_path, quiet=True)
+        baseline = mv.verify(analysis_score_path, quiet=True, cli=explicit_cli)
     except SystemExit as e:
         baseline = {"refused": True, "exit_code": e.code}
     except Exception as e:  # noqa: BLE001

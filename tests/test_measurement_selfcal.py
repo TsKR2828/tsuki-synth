@@ -91,6 +91,12 @@ development grid) and (m) (legacy rows, hold-out grid). Relocated, not new:
 0 refusals is what both grids measure today (2026-09-25: dev 1170/1170 and
 hold-out 1040/1040 release cells measured, 0 refused).
 
+WF1003-S: the SUSTAIN segment's "zero refusals" condition, until then
+asserted only inside the strict xfails (d) and (e), is likewise now also
+asserted in the plain tests (i) (production rows, development grid) and (m)
+(legacy rows, hold-out grid). Relocated, not new; (d)/(e) keep their own copy.
+Measured 2026-10-03: sustain 1170/1170 and 1040/1040 cells measured, 0 refused.
+
   NOT here any more: the three C10C candidate tests (they imported
   melody_verify.measure_pitch_cents_nls, which option A kept out of the
   tree). See the comment block at the bottom of this file for what they
@@ -407,6 +413,23 @@ def test_measure_pitch_cents_matches_legacy_after_revert():
         % (len(mismatches), len(new_rows), mismatches[:3]))
     legacy_sustain = [r for r in legacy_rows if r["segment"] == "sustain"]
     assert len(legacy_sustain) == 1170
+    # WF1003-S (TODO: sustain grid zero-refusal condition out of the strict
+    # xfail): the SUSTAIN segment's "zero refusals" condition was, until now,
+    # asserted only inside the strict xfail (d), where a new refusal would just
+    # count as the expected failure and stay invisible -- the same gap
+    # WF0925b-TF closed for the RELEASE segment right below. Same condition,
+    # relocated -- not a new threshold (R2); xfail (d) keeps its own copy.
+    # Checked on the PRODUCTION rows (new_rows; the mismatch check above ties
+    # their fail_reason to the legacy rows cell by cell).
+    new_sustain = [r for r in new_rows if r["segment"] == "sustain"]
+    assert len(new_sustain) == 1170
+    sustain_refused = [r for r in new_sustain
+                       if r["fail_reason"] is not None or r["error_cents"] is None]
+    assert not sustain_refused, (
+        "the production estimator refused %d/%d SUSTAIN-segment development-"
+        "grid cells (on record: 0) -- the pinned 1.1721 c is no longer a max "
+        "over all 1170 points: %r"
+        % (len(sustain_refused), len(new_sustain), sustain_refused[:5]))
     legacy_max = max(abs(r["error_cents"]) for r in legacy_sustain
                      if r["error_cents"] is not None)
     assert abs(legacy_max - LEGACY_DEV_GRID_MAX_ABS_CENTS) < 5e-4, (
@@ -463,6 +486,18 @@ def test_holdout_grid_pins_match_record(monkeypatch):
 
     legacy_sustain = [r for r in legacy_rows if r["segment"] == "sustain"]
     assert len(legacy_sustain) == 1040
+    # WF1003-S: the SUSTAIN segment's zero-refusal condition, relocated out of
+    # the strict xfail (e) (where a new refusal would only count as the
+    # expected failure) -- same condition, not a new threshold (R2); (e) keeps
+    # its own copy. Legacy rows, for the reason given for the release check
+    # below.
+    sustain_refused = [r for r in legacy_sustain
+                       if r["fail_reason"] is not None or r["error_cents"] is None]
+    assert not sustain_refused, (
+        "the legacy centroid refused %d/%d SUSTAIN-segment hold-out-grid "
+        "cells (on record: 0) -- the pinned 1.0840 c is no longer a max over "
+        "all 1040 points: %r"
+        % (len(sustain_refused), len(legacy_sustain), sustain_refused[:5]))
     sustain_max = max(abs(r["error_cents"]) for r in legacy_sustain
                       if r["error_cents"] is not None)
     assert abs(sustain_max - LEGACY_HOLDOUT_GRID_MAX_ABS_CENTS) < 5e-4, (

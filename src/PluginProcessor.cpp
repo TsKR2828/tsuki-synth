@@ -9,6 +9,18 @@
 #include <algorithm>
 #include <cmath>
 
+// Voices per engine (one juce::Synthesiser each). Stays 16: WF1003-V measured
+// 16 vs 32 and 32 failed the pre-registered real-time criteria (32 Piano voices
+// held at once need 7.3 ms mean / 20.5 ms p99 per 512-sample block vs a 10.67 ms
+// budget) -- reports/wf1003_v_voice_pool.zh-TW.md. The CLI renderer does NOT use
+// this pool (one voice per event; src/cli/RenderApp.cpp does not compile this file).
+// TSUKI_VOICE_POOL_SIZE is a compile-time override that exists only so the
+// 16-vs-32 evidence can be re-run (method: reports/gate_outputs/wf1003_V_method.txt).
+#ifndef TSUKI_VOICE_POOL_SIZE
+ #define TSUKI_VOICE_POOL_SIZE 16
+#endif
+static constexpr int kVoicePoolSize = TSUKI_VOICE_POOL_SIZE;
+
 // == Constructor ==
 TsukiSynthProcessor::TsukiSynthProcessor()
     : AudioProcessor (BusesProperties()
@@ -33,7 +45,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
 
         cimbalomSynth.addSound (new CimbalomSound());
 
-        for (int i = 0; i < 16; ++i)
+        for (int i = 0; i < kVoicePoolSize; ++i)
         {
             auto* voice = new CimbalomVoice();
             voice->setMaterialDB (&materialDB);
@@ -68,7 +80,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
 
         chromaticSynth.addSound (new ChromaticSound());
 
-        for (int i = 0; i < 16; ++i)
+        for (int i = 0; i < kVoicePoolSize; ++i)
         {
             auto* voice = new ChromaticVoice();
             voice->setMaterialDB (&materialDB);
@@ -102,7 +114,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
 
         fmPianoSynth.addSound (new FMPianoSound());
 
-        for (int i = 0; i < 16; ++i)
+        for (int i = 0; i < kVoicePoolSize; ++i)
         {
             auto* voice = new FMPianoVoice();
             voice->setNoiseIdentity ((uint64_t) i);

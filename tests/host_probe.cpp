@@ -1150,6 +1150,95 @@ std::vector<ScoreMidiEvent> loadScoreMidi (const juce::File& scoreFile, juce::St
     });
     return out;
 }
+
+// ── WF1003-V (月月 2026-10-03 "照 Fable 的建議": Q09 pool 16 -> 32 evidence) ──
+// INFORMATIONAL ONLY, like the rest of Q09: prints numbers, asserts nothing.
+// Criteria were written down BEFORE measuring in
+// reports/gate_outputs/wf1003_V_criteria_preregistered.txt.
+// OFF by default (it adds ~4 minutes of timing replays); set the environment
+// variable TSUKI_Q09V=1 to run it. Method + commands:
+// reports/gate_outputs/wf1003_V_method.txt.
+
+struct BlockTimeStats
+{
+    int blocks = 0;
+    double meanMs = 0.0, p99Ms = 0.0, maxMs = 0.0;
+    int violating = 0;   // blocks with time >= real-time budget
+};
+
+BlockTimeStats summariseBlockTimes (std::vector<double> ms, double budgetMs)
+{
+    BlockTimeStats s;
+    s.blocks = (int) ms.size();
+    if (ms.empty()) return s;
+    double sum = 0.0;
+    for (double v : ms)
+    {
+        sum += v;
+        if (v >= budgetMs) ++s.violating;
+    }
+    s.meanMs = sum / (double) ms.size();
+    std::sort (ms.begin(), ms.end());
+    s.p99Ms = ms[(size_t) juce::jmin ((double) (ms.size() - 1),
+                                      std::floor (0.99 * (double) ms.size()))];
+    s.maxMs = ms.back();
+    return s;
+}
+
+// Replays `events` into a FRESH twin synth of `poolSize` voices and times
+// ONLY juce::Synthesiser::renderNextBlock() per block (the synth path; the
+// effects chain is not included -- the VST3 pass measures the full chain).
+// Returns per-block times in ms. `stealsOut` = steals counted in that pass.
+std::vector<double> replayTwinTimed (const std::vector<ScoreMidiEvent>& events,
+                                     juce::AudioProcessorValueTreeState& vts, MaterialDB& db,
+                                     bool chromatic, int poolSize, int numBlocks,
+                                     size_t& stealsOut, int& maxActiveOut)
+{
+    StealCountingSynth synth;
+    wireTwinSynth (synth, vts, db, chromatic, poolSize);
+    juce::AudioBuffer<float> buf (2, kBlockSize);
+    juce::MidiBuffer midi;
+    std::vector<double> ms;
+    ms.reserve ((size_t) numBlocks);
+    size_t nextEvent = 0;
+    const double tickToMs = 1000.0 / (double) juce::Time::getHighResolutionTicksPerSecond();
+    for (int b = 0; b < numBlocks; ++b)
+    {
+        const juce::int64 blockStart = (juce::int64) b * kBlockSize;
+        midi.clear();
+        while (nextEvent < events.size() && events[nextEvent].sample < blockStart + kBlockSize)
+        {
+            const auto& e = events[nextEvent++];
+            const int pos = (int) (e.sample - blockStart);
+            midi.addEvent (e.isOn ? juce::MidiMessage::noteOn (1, e.note, e.velocity)
+                                  : juce::MidiMessage::noteOff (1, e.note), pos);
+        }
+        synth.blockStartSample = blockStart;
+        buf.clear();
+        juce::ScopedNoDenormals noDenormals;   // as TsukiSynthProcessor::processBlock()
+        const auto t0 = juce::Time::getHighResolutionTicks();
+        synth.renderNextBlock (buf, midi, 0, kBlockSize);
+        const auto t1 = juce::Time::getHighResolutionTicks();
+        ms.push_back ((double) (t1 - t0) * tickToMs);
+        synth.noteActiveVoiceCount();
+    }
+    stealsOut = synth.steals.size();
+    maxActiveOut = synth.maxActiveVoices;
+    return ms;
+}
+
+// 32 DISTINCT notes (MIDI 36..67) all started within the first block (1 sample
+// apart, velocity 0.8), held for 3 s: the most load a 32-voice pool can ever
+// ask of one engine (every voice busy at once). Synthetic, not a score.
+std::vector<ScoreMidiEvent> makeStress32Events()
+{
+    std::vector<ScoreMidiEvent> out;
+    for (int i = 0; i < 32; ++i)
+        out.push_back ({ (juce::int64) i, true, 36 + i, 0.8f });
+    for (int i = 0; i < 32; ++i)
+        out.push_back ({ (juce::int64) std::llround (3.0 * kSampleRate) + i, false, 36 + i, 0.0f });
+    return out;
+}
 } // namespace
 
 int main (int argc, char** argv)
@@ -2426,6 +2515,87 @@ int main (int argc, char** argv)
                << negOver << "); NaN -> lit (" << nonFinite << ")");
     }
 
+    // -- Q05 clip indicator: REAL lit path (WF1003-S) -------------------------
+    // The E16 check above only ever saw "indicator off" on real VST3 output (every
+    // factory preset peaks below 0 dBFS since WF1002b's compressor-makeup removal,
+    // loudest -1.85 dBFS), and the synthetic controls prove the logic with
+    // hand-made samples. This block closes the gap: a REAL VST3 instance, a REAL
+    // user-reachable knob setting that pushes the output above 0 dBFS, and the same
+    // header (src/dsp/OutputPeakMeter.h, as processBlock() uses it) fed that output
+    // block by block. The knobs are "EQ Shelf Freq (Hz)" and "EQ Shelf Gain (dB)"
+    // (ParameterLayout.cpp: 100..16000 Hz and -24..+24 dB, defaults 2000 Hz / 0 dB):
+    // the extreme combination 100 Hz / +24 dB lifts essentially the whole spectrum
+    // by 24 dB. They are independent of any Body-level or compressor convention, so
+    // this lit path does not depend on how loud the Body macro is. (The first try,
+    // +24 dB at the default 2000 Hz, only reached -1.51 dBFS on preset 15 -- a
+    // low-frequency-heavy water gong -- and was NOT lit; it is kept below as a
+    // second "off" case so the lit result is attributable to the shelf frequency.)
+    // Every case must satisfy lit <=> independent peak > 1.0 (0 dBFS); the control
+    // case (knobs untouched) must be off and the 100 Hz / +24 dB case must be lit,
+    // so the "off" and the "lit" outcomes both come from the real binary.
+    {
+        std::cout << "\n-- Q05 clip indicator: real lit path (WF1003-S) --\n";
+        // freqNorm < 0: leave "EQ Shelf Freq" as loaded. Normalised 0 = 100 Hz
+        // (range minimum), gainNorm 1 = +24 dB (range maximum).
+        struct LitCase { int program; float freqNorm; float gainNorm; bool lastIsLit; const char* label; };
+        const LitCase litCases[] = {
+            { 15, -1.0f, -1.0f, false, "preset 15, knobs as loaded (control)" },
+            { 15, -1.0f,  1.0f, false, "preset 15, EQ Shelf Gain +24 dB at the loaded 2000 Hz" },
+            { 15,  0.0f,  1.0f, true,  "preset 15, EQ Shelf 100 Hz / +24 dB (both range extremes)" },
+        };
+        bool controlOff = false, eqLit = false;
+        for (const auto& lc : litCases)
+        {
+            auto litInst = fm.createPluginInstance (desc, kSampleRate, kBlockSize, err);
+            CHECK (litInst != nullptr, "Q05 real lit path: fresh VST3 instance created (" << lc.label << ")");
+            if (litInst == nullptr)
+                continue;
+            litInst->setCurrentProgram (lc.program);
+            if (lc.gainNorm >= 0.0f)
+            {
+                auto* eqF = findParam (*litInst, "EQ Shelf Freq");
+                auto* eqG = findParam (*litInst, "EQ Shelf Gain");
+                CHECK (eqF != nullptr && eqG != nullptr,
+                       "Q05 real lit path: 'EQ Shelf Freq (Hz)' and 'EQ Shelf Gain (dB)' parameters exposed to host");
+                if (eqF != nullptr && lc.freqNorm >= 0.0f)
+                    eqF->setValue (lc.freqNorm);
+                if (eqG != nullptr)
+                    eqG->setValue (lc.gainNorm);
+            }
+            auto litRender = renderNoteAsLoaded (*litInst, 60, 0.7f, 1.0, 2.0);
+
+            double litPeak = 0.0;
+            for (int c = 0; c < litRender.getNumChannels(); ++c)
+            {
+                const float* d = litRender.getReadPointer (c);
+                for (int smp = 0; smp < litRender.getNumSamples(); ++smp)
+                    if (std::isfinite (d[smp]))
+                        litPeak = juce::jmax (litPeak, (double) std::abs (d[smp]));
+            }
+            OutputPeakMeter litMeter;
+            for (int start = 0; start < litRender.getNumSamples(); start += kBlockSize)
+            {
+                const int n = juce::jmin (kBlockSize, litRender.getNumSamples() - start);
+                juce::AudioBuffer<float> blockView (litRender.getArrayOfWritePointers(),
+                                                    litRender.getNumChannels(), start, n);
+                litMeter.pushBlock (blockView);
+            }
+            const float litMeterPeak = litMeter.takePeak();
+            const bool litFlag = OutputPeakMeter::isOverFullScale (litMeterPeak);
+            const bool litTruth = litPeak > 1.0;
+            CHECK (litMeterPeak == (float) litPeak && litFlag == litTruth && litMeter.takePeak() == 0.0f,
+                   "Q05 real lit path: OutputPeakMeter fed '" << lc.label << "' reports peak "
+                   << litMeterPeak << " (independent " << litPeak << ", "
+                   << juce::String (20.0 * std::log10 (juce::jmax (litPeak, 1.0e-12)), 2)
+                   << " dBFS) -> indicator " << (litFlag ? "LIT" : "off")
+                   << " (require lit <=> peak > 0 dBFS; take() resets to 0)");
+            if (lc.gainNorm < 0.0f) controlOff = ! litFlag;
+            if (lc.lastIsLit)       eqLit = litFlag;
+        }
+        CHECK (controlOff, "Q05 real lit path: control (knobs as loaded) -> indicator off");
+        CHECK (eqLit, "Q05 real lit path: EQ Shelf 100 Hz / +24 dB drives real VST3 output above 0 dBFS -> indicator LIT");
+    }
+
     // -- Q09 voice-steal measurement (WF1002-C1, INFORMATIONAL, no PASS/FAIL) --
     // See the StealCountingSynth comment block above. Prints only.
     {
@@ -2447,6 +2617,7 @@ int main (int argc, char** argv)
             std::vector<std::pair<const char*, float>> params;   // plain values
             const char* paramNote;
             const char* reportNote;
+            bool synthetic = false;   // WF1003-V: built-in 32-note stress, no score file
         };
         const Q09Case cases[] = {
             { "fur_elise (piano)", "scores/classical/fur_elise/fur_elise_complete.score.json",
@@ -2468,15 +2639,33 @@ int main (int argc, char** argv)
               "report §4.3(a) (scenario A, score T60 per EVENT, per engine): demand 20 voices"
               " (max at 254.240 s, first > 16 at 17.92 s), 64 steals (34 rule 2 + 30 rule 1),"
               " 4 of them hit a still-held note" },
+            // WF1003-V stress cases: 32 distinct notes held at once (see
+            // makeStress32Events()). Same plug-in parameters as the two score
+            // cases above; informational, steals/timing only.
+            { "stress32_chromatic (synthetic)", "(none)", true, 1,
+              { { "chr_sub_engine", 0.0f }, { "chr_material", 0.0f }, { "chr_thickness", 2.6f },
+                { "chr_size", 100.0f }, { "chr_strike_pos", 0.44f } },
+              "engine=Chromatic(1), Tongue Drum, Steel 2.6 mm / 100 mm / strike 0.44 (as the moonlight case)",
+              "WF1003-V synthetic: 32 distinct notes (MIDI 36..67) held 3 s", true },
+            { "stress32_piano (synthetic)", "(none)", false, 3,
+              { { "cim_material", 0.0f }, { "cim_diameter", 1.0f } },
+              "engine=Piano(3), Steel, 1.0 mm (as the fur_elise case)",
+              "WF1003-V synthetic: 32 distinct notes (MIDI 36..67) held 3 s", true },
         };
 
+        const bool q09v = juce::SystemStats::getEnvironmentVariable ("TSUKI_Q09V", "") == "1";
+        if (q09v)
+            std::cout << "  [WF1003-V] TSUKI_Q09V=1: extended 16-vs-32 pool evidence ON\n";
         for (const auto& c : cases)
         {
             if (! q09DbOk) break;
+            if (c.synthetic && ! q09v) continue;
             const juce::File scoreFile = repoRoot.getChildFile (c.scorePath);
             juce::String engineName;
             int numEvents = 0, unparsed = 0;
-            const auto events = loadScoreMidi (scoreFile, engineName, numEvents, unparsed);
+            const auto events = c.synthetic ? makeStress32Events()
+                                            : loadScoreMidi (scoreFile, engineName, numEvents, unparsed);
+            if (c.synthetic) { engineName = "synthetic"; numEvents = 32; }
             std::cout << "\n  [Q09] " << c.label << ": " << scoreFile.getFullPathName() << "\n"
                       << "    score engine '" << engineName << "', " << numEvents << " events, "
                       << unparsed << " unparsed; MIDI = note-on round(time*sr), note-off"
@@ -2539,6 +2728,14 @@ int main (int argc, char** argv)
             wireTwinSynth (twin16, q09Shadow.apvts, q09DB, c.chromatic, 16);
             constexpr int kWidePool = 128;   // stand-in for "unlimited" (demand estimate only)
             wireTwinSynth (twinWide, q09Shadow.apvts, q09DB, c.chromatic, kWidePool);
+            StealCountingSynth twin32;   // WF1003-V: the candidate pool
+            if (q09v)
+                wireTwinSynth (twin32, q09Shadow.apvts, q09DB, c.chromatic, 32);
+            juce::AudioBuffer<float> twin32Block (2, kBlockSize);
+            double maxDiff16v32 = 0.0, maxDiffVstV32 = 0.0;
+            std::vector<double> vstBlockMs;
+            const double budgetMs = 1000.0 * (double) kBlockSize / kSampleRate;
+            const double tickToMs = 1000.0 / (double) juce::Time::getHighResolutionTicksPerSecond();
 
             const int chans = juce::jmax (2, q09Inst->getTotalNumOutputChannels());
             juce::AudioBuffer<float> vstBlock (chans, kBlockSize), twinBlock (2, kBlockSize),
@@ -2565,7 +2762,9 @@ int main (int argc, char** argv)
                 // twins get a copy taken BEFORE the VST3 call.
                 const juce::MidiBuffer midiForTwins (midi);
                 vstBlock.clear();
+                const auto vt0 = juce::Time::getHighResolutionTicks();
                 q09Inst->processBlock (vstBlock, midi);
+                vstBlockMs.push_back ((double) (juce::Time::getHighResolutionTicks() - vt0) * tickToMs);
 
                 {
                     juce::ScopedNoDenormals noDenormals;   // as TsukiSynthProcessor::processBlock()
@@ -2577,6 +2776,13 @@ int main (int argc, char** argv)
                     wideBlock.clear();
                     twinWide.renderNextBlock (wideBlock, midiForTwins, 0, kBlockSize);
                     twinWide.noteActiveVoiceCount();
+                    if (q09v)
+                    {
+                        twin32.blockStartSample = blockStart;
+                        twin32Block.clear();
+                        twin32.renderNextBlock (twin32Block, midiForTwins, 0, kBlockSize);
+                        twin32.noteActiveVoiceCount();
+                    }
                 }
 
                 for (int ch = 0; ch < 2; ++ch)
@@ -2589,6 +2795,13 @@ int main (int argc, char** argv)
                         if (d > 0.0) ++diffSamples;
                         maxAbsDiff = juce::jmax (maxAbsDiff, d);
                         vstPeak = juce::jmax (vstPeak, (double) std::abs (v[s]));
+                        if (q09v)
+                        {
+                            maxDiff16v32 = juce::jmax (maxDiff16v32,
+                                               std::abs ((double) t[s] - (double) twin32Block.getReadPointer (ch)[s]));
+                            maxDiffVstV32 = juce::jmax (maxDiffVstV32,
+                                               std::abs ((double) v[s] - (double) twin32Block.getReadPointer (ch)[s]));
+                        }
                     }
                 }
             }
@@ -2625,6 +2838,52 @@ int main (int argc, char** argv)
                       << twinWide.extraVoicesReleasedByNoteOff << "\n"
                       << "    REPORT ESTIMATE (reports/voice_pool_occupancy_2026-09-25.zh-TW.md): "
                       << c.reportNote << "\n";
+            // ---- WF1003-V evidence lines (greppable prefix "Q09V") ----------
+            if (q09v)
+            {
+                int stolenHeld32 = 0;
+                for (const auto& s : twin32.steals)
+                    if (s.stolenKeyHeld) ++stolenHeld32;
+                std::cout << "    Q09V case=" << c.label << "\n"
+                          << "    Q09V block budget = " << juce::String (budgetMs, 4) << " ms ("
+                          << kBlockSize << " / " << kSampleRate << " Hz)\n"
+                          << "    Q09V steals pool16 = " << twin16.steals.size()
+                          << " (held " << stolenHeld << "), pool32 = " << twin32.steals.size()
+                          << " (held " << stolenHeld32 << "), pool128 = " << twinWide.steals.size() << "\n"
+                          << "    Q09V max active voices at block end: pool16 = " << twin16.maxActiveVoices
+                          << ", pool32 = " << twin32.maxActiveVoices
+                          << ", pool128 = " << twinWide.maxActiveVoices << "\n"
+                          << "    Q09V identity: max|VST3 - twin16| = " << maxAbsDiff
+                          << ", max|VST3 - twin32| = " << maxDiffVstV32
+                          << "  (0 identifies the pool size the VST3 binary was built with)\n"
+                          << "    Q09V output: max|twin16 - twin32| = " << maxDiff16v32
+                          << " (0 = a 32 pool changes nothing for this input)\n";
+                const auto vs = summariseBlockTimes (vstBlockMs, budgetMs);
+                std::cout << "    Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = "
+                          << vs.blocks << ", mean = " << juce::String (vs.meanMs, 4)
+                          << " ms, p99 = " << juce::String (vs.p99Ms, 4)
+                          << " ms, max = " << juce::String (vs.maxMs, 4) << " ms, max/budget = "
+                          << juce::String (vs.maxMs / budgetMs, 4) << ", blocks >= budget = "
+                          << vs.violating << "\n";
+                constexpr int kReps = 5;
+                for (int pool : { 16, 32 })
+                {
+                    for (int rep = 1; rep <= kReps; ++rep)
+                    {
+                        size_t st = 0; int ma = 0;
+                        const auto ms = replayTwinTimed (events, q09Shadow.apvts, q09DB, c.chromatic,
+                                                         pool, numBlocks, st, ma);
+                        const auto ts = summariseBlockTimes (ms, budgetMs);
+                        std::cout << "    Q09V twin(synth only) pool" << pool << " rep" << rep
+                                  << ": blocks = " << ts.blocks << ", mean = " << juce::String (ts.meanMs, 4)
+                                  << " ms, p99 = " << juce::String (ts.p99Ms, 4)
+                                  << " ms, max = " << juce::String (ts.maxMs, 4)
+                                  << " ms, max/budget = " << juce::String (ts.maxMs / budgetMs, 4)
+                                  << ", blocks >= budget = " << ts.violating
+                                  << ", steals = " << st << ", maxActive = " << ma << "\n";
+                    }
+                }
+            }
             const size_t listMax = 80;
             for (size_t k = 0; k < twin16.steals.size() && k < listMax; ++k)
             {
