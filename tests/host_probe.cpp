@@ -197,6 +197,7 @@
 #include "engines/CimbalomEngine.h"
 #include "engines/ChromaticEngine.h"
 #include "ParameterLayout.h"
+#include "VoicePool.h"
 #include "PresetManager.h"
 #include "IRLibrary.h"
 #include "Presets.h"
@@ -937,7 +938,8 @@ juce::MemoryBlock buildStateBlobFromPresetFile (const juce::File& presetFile,
 // ── Q09 (WF1002-C1, 月月 2026-10-02 Q09=D 的量測半) ─────────────────────────
 // INFORMATIONAL ONLY: prints numbers, asserts nothing (no new threshold, R2).
 //
-// What it measures: how many notes JUCE's 16-voice pool steals when the
+// What it measures: how many notes JUCE's per-engine voice pool (src/VoicePool.h;
+// 16 before WF1004-P, now Chromatic 32 / Cimbalom-Piano 16) steals when the
 // plug-in streams a real corpus score's MIDI through processBlock() in
 // realtime mode (setNonRealtime(false)), compared against the ANALYTIC
 // estimates in reports/voice_pool_occupancy_2026-09-25.zh-TW.md §4.
@@ -947,7 +949,7 @@ juce::MemoryBlock buildStateBlobFromPresetFile (const juce::File& presetFile,
 // stream (same blocks, same sample offsets) is also played into an
 // in-process juce::Synthesiser built exactly like TsukiSynthProcessor's
 // constructor builds it (same voice classes from the same engine headers,
-// same 16 voices, same APVTS layout via ShadowProcessor, same per-voice
+// same per-engine voice count (TsukiVoicePool), same APVTS layout via ShadowProcessor, same per-voice
 // noise identities), instrumented by overriding the two virtual hooks JUCE
 // provides (handleMidiEvent / findFreeVoice). To tie the twin to the real
 // binary, the VST3 instance is configured with an effects chain that is an
@@ -1025,8 +1027,9 @@ private:
 // Mirrors TsukiSynthProcessor's constructor wiring (src/PluginProcessor.cpp
 // "Cimbalom engine" / "Chromatic engine" / "Macro parameters" blocks) for
 // ONE synth, against a ShadowProcessor APVTS built from the same
-// createTsukiParameterLayout(). `numVoices` = 16 reproduces the product;
-// a larger pool is used only to estimate the unconstrained demand.
+// createTsukiParameterLayout(). `numVoices` = the engine's TsukiVoicePool size
+// reproduces the product; other sizes are used for the 16-vs-32 evidence and to
+// estimate the unconstrained demand.
 void wireTwinSynth (StealCountingSynth& synth, juce::AudioProcessorValueTreeState& vts,
                     MaterialDB& db, bool chromatic, int numVoices)
 {
@@ -2642,11 +2645,25 @@ int main (int argc, char** argv)
             // WF1003-V stress cases: 32 distinct notes held at once (see
             // makeStress32Events()). Same plug-in parameters as the two score
             // cases above; informational, steals/timing only.
-            { "stress32_chromatic (synthetic)", "(none)", true, 1,
+            { "stress32_chromatic_tongue (synthetic)", "(none)", true, 1,
               { { "chr_sub_engine", 0.0f }, { "chr_material", 0.0f }, { "chr_thickness", 2.6f },
                 { "chr_size", 100.0f }, { "chr_strike_pos", 0.44f } },
               "engine=Chromatic(1), Tongue Drum, Steel 2.6 mm / 100 mm / strike 0.44 (as the moonlight case)",
               "WF1003-V synthetic: 32 distinct notes (MIDI 36..67) held 3 s", true },
+            // WF1004-P: the other two Chromatic sub-engines cost more per voice
+            // (Tongue Drum 12 modes, Water Gong 20 modes, Custom 8 partials), so the
+            // per-engine pool criterion C2 covers all three.
+            { "stress32_chromatic_watergong (synthetic)", "(none)", true, 1,
+              { { "chr_sub_engine", 1.0f }, { "chr_material", 0.0f }, { "chr_thickness", 2.6f },
+                { "chr_size", 100.0f }, { "chr_strike_pos", 0.44f } },
+              "engine=Chromatic(1), Water Gong, Steel 2.6 mm / 100 mm / strike 0.44",
+              "WF1004-P synthetic: 32 distinct notes (MIDI 36..67) held 3 s", true },
+            { "stress32_chromatic_custom (synthetic)", "(none)", true, 1,
+              { { "chr_sub_engine", 2.0f }, { "chr_material", 0.0f },
+                { "chr_amp_0", 1.0f }, { "chr_amp_1", 1.0f }, { "chr_amp_2", 1.0f }, { "chr_amp_3", 1.0f },
+                { "chr_amp_4", 1.0f }, { "chr_amp_5", 1.0f }, { "chr_amp_6", 1.0f }, { "chr_amp_7", 1.0f } },
+              "engine=Chromatic(1), Custom Harmonics, Steel, all 8 harmonic amps = 1.0 (default ratios)",
+              "WF1004-P synthetic: 32 distinct notes (MIDI 36..67) held 3 s", true },
             { "stress32_piano (synthetic)", "(none)", false, 3,
               { { "cim_material", 0.0f }, { "cim_diameter", 1.0f } },
               "engine=Piano(3), Steel, 1.0 mm (as the fur_elise case)",
@@ -2724,15 +2741,27 @@ int main (int argc, char** argv)
                 q09Inst->prepareToPlay (kSampleRate, kBlockSize);
             }
 
-            StealCountingSynth twin16, twinWide;
-            wireTwinSynth (twin16, q09Shadow.apvts, q09DB, c.chromatic, 16);
+            // WF1004-P: the "product" twin uses the plug-in's own per-engine pool
+            // size (src/VoicePool.h: Chromatic 32, Cimbalom/Piano 16), so the default
+            // run's identity and steal lines describe the product as shipped.
+            const int productPool = c.chromatic ? TsukiVoicePool::kChromatic
+                                                : TsukiVoicePool::kCimbalom;
+            StealCountingSynth twinProd, twinWide;
+            wireTwinSynth (twinProd, q09Shadow.apvts, q09DB, c.chromatic, productPool);
             constexpr int kWidePool = 128;   // stand-in for "unlimited" (demand estimate only)
             wireTwinSynth (twinWide, q09Shadow.apvts, q09DB, c.chromatic, kWidePool);
-            StealCountingSynth twin32;   // WF1003-V: the candidate pool
+            // WF1003-V / WF1004-P evidence twins (TSUKI_Q09V=1 only): fixed 16 and 32,
+            // independent of the product pool, so a baseline (all-16) build and the
+            // per-engine build can both be tied to a twin by the identity lines.
+            StealCountingSynth twin16, twin32;
             if (q09v)
+            {
+                wireTwinSynth (twin16, q09Shadow.apvts, q09DB, c.chromatic, 16);
                 wireTwinSynth (twin32, q09Shadow.apvts, q09DB, c.chromatic, 32);
-            juce::AudioBuffer<float> twin32Block (2, kBlockSize);
-            double maxDiff16v32 = 0.0, maxDiffVstV32 = 0.0;
+            }
+            juce::AudioBuffer<float> twin16Block (2, kBlockSize), twin32Block (2, kBlockSize);
+            double maxDiff16v32 = 0.0, maxDiffVstV16 = 0.0, maxDiffVstV32 = 0.0;
+            juce::int64 firstDiff16v32 = -1;   // first global sample (per channel) where twin16 != twin32
             std::vector<double> vstBlockMs;
             const double budgetMs = 1000.0 * (double) kBlockSize / kSampleRate;
             const double tickToMs = 1000.0 / (double) juce::Time::getHighResolutionTicksPerSecond();
@@ -2768,16 +2797,20 @@ int main (int argc, char** argv)
 
                 {
                     juce::ScopedNoDenormals noDenormals;   // as TsukiSynthProcessor::processBlock()
-                    twin16.blockStartSample = blockStart;
+                    twinProd.blockStartSample = blockStart;
                     twinBlock.clear();
-                    twin16.renderNextBlock (twinBlock, midiForTwins, 0, kBlockSize);
-                    twin16.noteActiveVoiceCount();
+                    twinProd.renderNextBlock (twinBlock, midiForTwins, 0, kBlockSize);
+                    twinProd.noteActiveVoiceCount();
                     twinWide.blockStartSample = blockStart;
                     wideBlock.clear();
                     twinWide.renderNextBlock (wideBlock, midiForTwins, 0, kBlockSize);
                     twinWide.noteActiveVoiceCount();
                     if (q09v)
                     {
+                        twin16.blockStartSample = blockStart;
+                        twin16Block.clear();
+                        twin16.renderNextBlock (twin16Block, midiForTwins, 0, kBlockSize);
+                        twin16.noteActiveVoiceCount();
                         twin32.blockStartSample = blockStart;
                         twin32Block.clear();
                         twin32.renderNextBlock (twin32Block, midiForTwins, 0, kBlockSize);
@@ -2797,10 +2830,14 @@ int main (int argc, char** argv)
                         vstPeak = juce::jmax (vstPeak, (double) std::abs (v[s]));
                         if (q09v)
                         {
-                            maxDiff16v32 = juce::jmax (maxDiff16v32,
-                                               std::abs ((double) t[s] - (double) twin32Block.getReadPointer (ch)[s]));
-                            maxDiffVstV32 = juce::jmax (maxDiffVstV32,
-                                               std::abs ((double) v[s] - (double) twin32Block.getReadPointer (ch)[s]));
+                            const double a16 = (double) twin16Block.getReadPointer (ch)[s];
+                            const double a32 = (double) twin32Block.getReadPointer (ch)[s];
+                            const double d1632 = std::abs (a16 - a32);
+                            maxDiff16v32 = juce::jmax (maxDiff16v32, d1632);
+                            if (d1632 > 0.0 && (firstDiff16v32 < 0 || blockStart + s < firstDiff16v32))
+                                firstDiff16v32 = blockStart + s;
+                            maxDiffVstV16 = juce::jmax (maxDiffVstV16, std::abs ((double) v[s] - a16));
+                            maxDiffVstV32 = juce::jmax (maxDiffVstV32, std::abs ((double) v[s] - a32));
                         }
                     }
                 }
@@ -2812,23 +2849,24 @@ int main (int argc, char** argv)
             std::cout << "    rendered " << juce::String (renderedS, 2) << " s (" << numBlocks
                       << " blocks) through the VST3 + two twins in " << juce::String (elapsedS, 1)
                       << " s wall clock\n";
-            std::cout << "    twin(16 voices) vs VST3 output: max |diff| = " << maxAbsDiff
+            std::cout << "    twin(" << productPool << " voices = product pool) vs VST3 output: max |diff| = " << maxAbsDiff
                       << " over " << (2LL * numBlocks * kBlockSize) << " samples ("
                       << diffSamples << " samples differ; VST3 peak "
                       << juce::String (20.0 * std::log10 (juce::jmax (vstPeak, 1.0e-12)), 2)
                       << " dBFS) -- 0 means the twin reproduced the binary's voice"
                          " allocation exactly; descriptive only\n";
-            std::cout << "    MEASURED (twin, 16-voice pool = product): steals = "
-                      << twin16.steals.size();
+            std::cout << "    MEASURED (twin, " << productPool << "-voice pool = product, "
+                      << (c.chromatic ? "Chromatic" : "Cimbalom/Piano") << " engine): steals = "
+                      << twinProd.steals.size();
             int stolenHeld = 0;
-            for (const auto& s : twin16.steals)
+            for (const auto& s : twinProd.steals)
                 if (s.stolenKeyHeld) ++stolenHeld;
             std::cout << " (" << stolenHeld << " hit a still-held note); max active voices at a"
-                         " block end = " << twin16.maxActiveVoices << "\n"
-                      << "    MEASURED (twin, 16-voice pool): held note damped early by a same-pitch"
-                         " note-on = " << twin16.heldNoteDampedBySameNoteOn
+                         " block end = " << twinProd.maxActiveVoices << "\n"
+                      << "    MEASURED (twin, " << productPool << "-voice pool): held note damped early by a same-pitch"
+                         " note-on = " << twinProd.heldNoteDampedBySameNoteOn
                       << "; extra held voices released by another note's note-off = "
-                      << twin16.extraVoicesReleasedByNoteOff << "\n"
+                      << twinProd.extraVoicesReleasedByNoteOff << "\n"
                       << "    MEASURED (twin, " << kWidePool << "-voice pool ~ unlimited): max"
                          " active voices at a block end = " << twinWide.maxActiveVoices
                       << " (block-end sampling, " << kBlockSize << "-sample granularity, can"
@@ -2841,23 +2879,32 @@ int main (int argc, char** argv)
             // ---- WF1003-V evidence lines (greppable prefix "Q09V") ----------
             if (q09v)
             {
-                int stolenHeld32 = 0;
+                int stolenHeld16 = 0, stolenHeld32 = 0;
+                for (const auto& s : twin16.steals)
+                    if (s.stolenKeyHeld) ++stolenHeld16;
                 for (const auto& s : twin32.steals)
                     if (s.stolenKeyHeld) ++stolenHeld32;
                 std::cout << "    Q09V case=" << c.label << "\n"
                           << "    Q09V block budget = " << juce::String (budgetMs, 4) << " ms ("
                           << kBlockSize << " / " << kSampleRate << " Hz)\n"
+                          << "    Q09V product pool of this engine class = " << productPool
+                          << " (" << (c.chromatic ? "Chromatic" : "Cimbalom/Piano") << "), product twin steals = "
+                          << twinProd.steals.size() << "\n"
                           << "    Q09V steals pool16 = " << twin16.steals.size()
-                          << " (held " << stolenHeld << "), pool32 = " << twin32.steals.size()
+                          << " (held " << stolenHeld16 << "), pool32 = " << twin32.steals.size()
                           << " (held " << stolenHeld32 << "), pool128 = " << twinWide.steals.size() << "\n"
                           << "    Q09V max active voices at block end: pool16 = " << twin16.maxActiveVoices
                           << ", pool32 = " << twin32.maxActiveVoices
                           << ", pool128 = " << twinWide.maxActiveVoices << "\n"
-                          << "    Q09V identity: max|VST3 - twin16| = " << maxAbsDiff
+                          << "    Q09V identity: max|VST3 - twin16| = " << maxDiffVstV16
                           << ", max|VST3 - twin32| = " << maxDiffVstV32
+                          << ", max|VST3 - twinProd| = " << maxAbsDiff
                           << "  (0 identifies the pool size the VST3 binary was built with)\n"
                           << "    Q09V output: max|twin16 - twin32| = " << maxDiff16v32
-                          << " (0 = a 32 pool changes nothing for this input)\n";
+                          << " (0 = a 32 pool changes nothing for this input); first differing sample = "
+                          << (firstDiff16v32 < 0 ? juce::String ("none")
+                                                  : juce::String (firstDiff16v32) + " (" + juce::String ((double) firstDiff16v32 / kSampleRate, 3) + " s)")
+                          << "\n";
                 const auto vs = summariseBlockTimes (vstBlockMs, budgetMs);
                 std::cout << "    Q09V VST3 processBlock (full effect chain, this binary's pool): blocks = "
                           << vs.blocks << ", mean = " << juce::String (vs.meanMs, 4)
@@ -2885,16 +2932,16 @@ int main (int argc, char** argv)
                 }
             }
             const size_t listMax = 80;
-            for (size_t k = 0; k < twin16.steals.size() && k < listMax; ++k)
+            for (size_t k = 0; k < twinProd.steals.size() && k < listMax; ++k)
             {
-                const auto& s = twin16.steals[k];
+                const auto& s = twinProd.steals[k];
                 std::cout << "      steal #" << (k + 1) << " at " << juce::String (s.timeS, 3)
                           << " s: new note " << s.newNote << " took the voice of note "
                           << s.stolenNote << (s.stolenKeyHeld ? " (still held)" : " (released/tailing)")
                           << "\n";
             }
-            if (twin16.steals.size() > listMax)
-                std::cout << "      ... " << (twin16.steals.size() - listMax) << " more\n";
+            if (twinProd.steals.size() > listMax)
+                std::cout << "      ... " << (twinProd.steals.size() - listMax) << " more\n";
         }
     }
 

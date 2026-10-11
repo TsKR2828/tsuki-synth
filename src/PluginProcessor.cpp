@@ -9,17 +9,12 @@
 #include <algorithm>
 #include <cmath>
 
-// Voices per engine (one juce::Synthesiser each). Stays 16: WF1003-V measured
-// 16 vs 32 and 32 failed the pre-registered real-time criteria (32 Piano voices
-// held at once need 7.3 ms mean / 20.5 ms p99 per 512-sample block vs a 10.67 ms
-// budget) -- reports/wf1003_v_voice_pool.zh-TW.md. The CLI renderer does NOT use
-// this pool (one voice per event; src/cli/RenderApp.cpp does not compile this file).
-// TSUKI_VOICE_POOL_SIZE is a compile-time override that exists only so the
-// 16-vs-32 evidence can be re-run (method: reports/gate_outputs/wf1003_V_method.txt).
-#ifndef TSUKI_VOICE_POOL_SIZE
- #define TSUKI_VOICE_POOL_SIZE 16
-#endif
-static constexpr int kVoicePoolSize = TSUKI_VOICE_POOL_SIZE;
+// Voices per engine (one juce::Synthesiser each), sizes in VoicePool.h:
+// Chromatic 32, Cimbalom/Piano 16, FM 16 (WF1004-P; per-engine because only
+// Chromatic voices are cheap enough for 32 -- reports/wf1004_p_per_engine_pool.zh-TW.md,
+// reports/wf1003_v_voice_pool.zh-TW.md). The CLI renderer does NOT use this pool
+// (one voice per event; src/cli/RenderApp.cpp does not compile this file).
+#include "VoicePool.h"
 
 // == Constructor ==
 TsukiSynthProcessor::TsukiSynthProcessor()
@@ -45,7 +40,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
 
         cimbalomSynth.addSound (new CimbalomSound());
 
-        for (int i = 0; i < kVoicePoolSize; ++i)
+        for (int i = 0; i < TsukiVoicePool::kCimbalom; ++i)
         {
             auto* voice = new CimbalomVoice();
             voice->setMaterialDB (&materialDB);
@@ -80,7 +75,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
 
         chromaticSynth.addSound (new ChromaticSound());
 
-        for (int i = 0; i < kVoicePoolSize; ++i)
+        for (int i = 0; i < TsukiVoicePool::kChromatic; ++i)
         {
             auto* voice = new ChromaticVoice();
             voice->setMaterialDB (&materialDB);
@@ -114,7 +109,7 @@ TsukiSynthProcessor::TsukiSynthProcessor()
 
         fmPianoSynth.addSound (new FMPianoSound());
 
-        for (int i = 0; i < kVoicePoolSize; ++i)
+        for (int i = 0; i < TsukiVoicePool::kFMPiano; ++i)
         {
             auto* voice = new FMPianoVoice();
             voice->setNoiseIdentity ((uint64_t) i);
@@ -233,7 +228,7 @@ void TsukiSynthProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 
 void TsukiSynthProcessor::refreshEngineTailCache()
 {
-    // All 16 voices of a synth share identical APVTS parameter pointers
+    // All voices of a synth share identical APVTS parameter pointers
     // (only materialDB/noiseIdentity differ per voice), so voice 0 is
     // representative -- same reasoning getTailLengthSeconds() documents.
     if (auto* v = dynamic_cast<CimbalomVoice*> (cimbalomSynth.getVoice (0)))
@@ -268,7 +263,7 @@ double TsukiSynthProcessor::getTailLengthSeconds() const
     // zh-TW.md §1/§4-B: Tongue Drum measured T60 30.18 s vs the old
     // envelope-only estimate of 2-3.45 s). FM Piano (engine==2) is out of
     // the physics-verified domain (ROADMAP_PHYSICS.md §0) and stays on the
-    // envelope estimate. All 16 voices of a synth share identical APVTS
+    // envelope estimate. All voices of a synth share identical APVTS
     // parameter pointers (only materialDB/noiseIdentity differ per voice --
     // see the constructor's addVoice() loops), so voice 0 is representative
     // of the live parameter state.

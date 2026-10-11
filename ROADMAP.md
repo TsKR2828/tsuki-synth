@@ -87,7 +87,7 @@ instrument-physics correctness. Branch `Codex-fix-bug`.
 
 **Skeleton:**
 - `CMakeLists.txt` — JUCE as git submodule, VST3 + Standalone + CLI targets
-- `PluginProcessor` — APVTS-based, 3 `juce::Synthesiser` instances (16 voices each)
+- `PluginProcessor` — APVTS-based, 3 `juce::Synthesiser` instances (voices per engine in `src/VoicePool.h`: Chromatic 32, Cimbalom/Piano 16, FM 16)
 - `PluginEditor` — 540x850 window, tab switching, preset bar, MIDI keyboard
 - AAX/AU conditional build support (`-DTSUKI_AAX=ON`, `-DTSUKI_AU=ON`)
 

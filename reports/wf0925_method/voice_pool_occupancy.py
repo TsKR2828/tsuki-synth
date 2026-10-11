@@ -106,8 +106,19 @@ FAMILY = {"string": "cimbalom", "cimbalom": "cimbalom", "piano": "cimbalom",
 def read_code_constants():
     pp = (REPO / "src/PluginProcessor.cpp").read_text(encoding="utf-8")
     pools = {}
-    for m in re.finditer(r"for \(int i = 0; i < (\d+); \+\+i\)\s*\{\s*auto\* voice = new (\w+)Voice\(\);", pp):
-        pools[m.group(2)] = int(m.group(1))
+    # Before WF1004-P the three addVoice loops had a literal count; since then the sizes
+    # come from src/VoicePool.h (per engine). Read the loop bound if it is a number
+    # (old tree), otherwise resolve TsukiVoicePool::kXxx against VoicePool.h's defaults.
+    vp_path = REPO / "src/VoicePool.h"
+    vp = vp_path.read_text(encoding="utf-8") if vp_path.exists() else ""
+    vp_default = {k: int(v) for k, v in re.findall(r"#define TSUKI_VOICE_POOL_(CIMBALOM|CHROMATIC|FM) (\d+)", vp)}
+    vp_name = {"kCimbalom": "CIMBALOM", "kChromatic": "CHROMATIC", "kFMPiano": "FM"}
+    for m in re.finditer(r"for \(int i = 0; i < ([\w:]+); \+\+i\)\s*\{\s*auto\* voice = new (\w+)Voice\(\);", pp):
+        bound = m.group(1)
+        if bound.isdigit():
+            pools[m.group(2)] = int(bound)
+        else:
+            pools[m.group(2)] = vp_default[vp_name[bound.split("::")[-1]]]
     need = {"Cimbalom", "Chromatic", "FMPiano"}
     if set(pools) != need:
         raise SystemExit("could not read voice-pool sizes from PluginProcessor.cpp: %r" % pools)
@@ -154,7 +165,7 @@ def read_code_constants():
         "fm_default_attack_ms": float(ma.group(1)),
         "fm_default_release_ms": float(mr.group(1)),
         "sources": {
-            "pool_size": "src/PluginProcessor.cpp addVoice loops",
+            "pool_size": "src/PluginProcessor.cpp addVoice loops (bounds from src/VoicePool.h)",
             "damp_factor.cimbalom": "src/engines/CimbalomEngine.h applyDamp()",
             "damp_factor.chromatic": "src/engines/ChromaticEngine.h stopNote()",
             "fm tables": "src/engines/FMPianoEngine.h decays[]/sustains[], FMParams",
