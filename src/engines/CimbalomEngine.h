@@ -362,6 +362,11 @@ public:
         setupExciter (hammer, velocity, mBrightness, mNoise, materialBright, getSampleRate());
         seedNoise (0x504C5547494Eull, noiseEventCounter++, midiNoteNumber, velocity);
         configureCreativeBodyLayer (baseModes);
+        // WF1003-B2 (月月 2026-10-03 裁決 B2＝A)：Body 層響度正規化，只在外掛路徑。
+        // 用 string 0 的「最終」模態表（已含槌頭頻譜與 gain；各弦只差數 cents detune，
+        // 對能量影響 << 1 dB）；推導見 BodyResonance::setLevelNormalisation()。
+        bodyRes.setLevelNormalisation (stringModesScratch[0].data(),
+                                       stringModesScratch[0].size());
         damped = false;
     }
 
@@ -610,6 +615,7 @@ public:
         seedNoise (params.randomSeed, params.eventIndex, midiNote, velocity);
 
         bodyRes.prepare (sr);
+        bodyRes.clearLevelNormalisation();   // WF1003-B2: CLI path never normalised
         // DIAGNOSTIC-ONLY: --body-amount overrides the CLI default body mix
         // of 0.0f, i.e. the body-resonance layer is OFF in this standalone /
         // physics-verified path unless the flag is passed (the plugin's

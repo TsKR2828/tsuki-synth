@@ -6,6 +6,7 @@
 #include "engines/ChromaticEngine.h"
 #include "engines/CimbalomEngine.h"
 #include "dsp/NoiseGen.h"
+#include "dsp/BodyResonance.h"
 #include "dsp/DiagnosticOverrides.h"
 #include "dsp/EffectsChain.h"
 #include "effects/EffectChain.h"
@@ -1917,6 +1918,330 @@ void testWaterGongGlideSettlesIndependentlyOfBlockSize()
            "The settled glide phase is the same at every sample rate");
 }
 
+// WF1003-B2 (月月 2026-10-03 裁決 B2＝A): Body 層響度正規化。
+// 推導見 src/dsp/BodyResonance.h::setLevelNormalisation()。這裡檢查四件事，
+// 全部是「實作對自己公式的閉合／回歸」，不是新的物理容差：
+//   (1) 閉合：正規化後 Σ w_i·|H_norm(f_i)|² / Σ w_i == 1（起音能量 Body 開＝關）。
+//       容差 1e-4＝float32 運算誤差上限（eps 1.2e-7 × 數十次連乘加＋biquad 係數量化），
+//       不是設計寬容。
+//   (2) CLI 路徑保證：從沒開過正規化（或開了又 clear）的 BodyResonance，逐樣本與
+//       WF1003 之前的行為逐位元相同（== 比較，無容差）。
+//   (3) 時域與頻域一致：正弦激發的穩態輸出振幅 == g·|H_raw(f)|（processSample 回傳
+//       (g-1)·dry + g·wet，加回 dry 後應等於 g·(dry+wet)）。容差 2e-3 相對誤差：
+//       解調視窗取整數個週期（300 Hz @48 kHz＝160 樣本/週期 × 100），暫態 Q/(πf)≈2 ms
+//       遠短於 1 s 暖機，剩下是 float32 biquad 數值噪聲。
+//   (4) 邊界：amount < 0.001（旁路）、空模態表、nullptr、全部模態超出可渲染頻率，
+//       皆 g == 1，不產生 NaN。
+void testBodyLevelNormalisation()
+{
+    constexpr double sr = 48000.0;
+    struct Case { const char* name; std::vector<ModalResonator::Mode> modes; };
+    std::vector<Case> cases;
+    {
+        Case harmonic { "harmonic C4 (string/beam-like)", {} };
+        const float f1 = 261.63f;
+        for (int n = 1; n <= 12; ++n)
+            harmonic.modes.push_back ({ f1 * (float) n, 1.0f / (float) n, 2.0f });
+        cases.push_back (std::move (harmonic));
+
+        Case plate { "inharmonic G3 (plate/gong-like)", {} };
+        const float ratios[] = { 1.0f, 1.59f, 2.14f, 2.30f, 2.65f, 2.92f, 3.16f, 3.50f };
+        for (float r : ratios)
+            plate.modes.push_back ({ 196.0f * r, 1.0f, 1.5f });
+        cases.push_back (std::move (plate));
+    }
+
+    for (const auto& c : cases)
+    {
+        for (float amount : { 0.2f, 0.5f, 0.8f, 1.0f })
+        {
+            BodyResonance body;
+            body.prepare (sr);
+            body.setAmount (amount);
+            body.setFrequencies (c.modes[0].frequency, c.modes[1].frequency);
+            body.reset();
+            body.setLevelNormalisation (c.modes.data(), c.modes.size());
+
+            double wSum = 0.0, wH2 = 0.0;
+            for (const auto& m : c.modes)
+            {
+                const double w = ModalResonator::modeAttackEnergy (
+                    m.frequency, m.amplitude, m.decayTime, sr);
+                const double h = body.magnitudeAt (m.frequency);   // includes g
+                wSum += w;
+                wH2  += w * h * h;
+            }
+            const double closure = wH2 / wSum;
+            const float g = body.levelNormalisationGain();
+            CHECK (std::abs (closure - 1.0) < 1.0e-4 && g > 0.0f && g < 1.0f,
+                   "Body level normalisation closes (" << c.name << ", Body " << amount
+                   << "): attack-energy ratio Body-on/Body-off = "
+                   << juce::String (closure, 6) << " (require 1 +- 1e-4), g = "
+                   << juce::String (20.0 * std::log10 (g), 2) << " dB");
+        }
+    }
+
+    // (2) never-normalised and normalised-then-cleared are bit-identical.
+    {
+        BodyResonance a, b;
+        for (auto* x : { &a, &b })
+        {
+            x->prepare (sr);
+            x->setAmount (0.8f);
+            x->setFrequencies (261.63f, 523.25f);
+            x->reset();
+        }
+        b.setLevelNormalisation (cases[0].modes.data(), cases[0].modes.size());
+        b.clearLevelNormalisation();
+
+        uint32_t state = 12345u;
+        bool identical = true;
+        for (int i = 0; i < 4096 && identical; ++i)
+        {
+            state = state * 1664525u + 1013904223u;
+            const float x = ((float) (state >> 8) / 8388608.0f) - 1.0f;   // [-1, 1)
+            identical = (a.processSample (x) == b.processSample (x));
+        }
+        CHECK (identical && b.levelNormalisationGain() == 1.0f
+                   && a.totalResponse (300.0f) == b.totalResponse (300.0f),
+               "Body level normalisation OFF path is bit-identical to the pre-B2 behaviour "
+               "(never-enabled vs enabled-then-cleared, 4096 samples, exact ==)");
+    }
+
+    // (3) time-domain steady state == g * |H_raw|.
+    {
+        const float f = 300.0f;                       // 160 samples/period at 48 kHz
+        const int period = 160, warm = 48000, n = period * 100;
+        std::vector<ModalResonator::Mode> one { { f, 1.0f, 2.0f }, { 600.0f, 0.5f, 2.0f } };
+        auto steadyAmp = [&] (BodyResonance& body)
+        {
+            double re = 0.0, im = 0.0;
+            for (int i = 0; i < warm + n; ++i)
+            {
+                const float x = std::sin (juce::MathConstants<float>::twoPi * (float) (i % period) / (float) period);
+                const float y = x + body.processSample (x);
+                if (i >= warm)
+                {
+                    const double ph = 2.0 * juce::MathConstants<double>::pi * (double) (i % period) / (double) period;
+                    re += y * std::cos (ph);
+                    im += y * std::sin (ph);
+                }
+            }
+            return 2.0 * std::hypot (re, im) / (double) n;
+        };
+        BodyResonance raw, norm;
+        for (auto* x : { &raw, &norm })
+        {
+            x->prepare (sr);
+            x->setAmount (0.8f);
+            x->setFrequencies (f, 600.0f);
+            x->reset();
+        }
+        norm.setLevelNormalisation (one.data(), one.size());
+        const double hRaw = std::abs (raw.totalResponse (f));
+        const double aRaw = steadyAmp (raw);
+        const double aNorm = steadyAmp (norm);
+        const double g = norm.levelNormalisationGain();
+        CHECK (std::abs (aRaw / hRaw - 1.0) < 2.0e-3 && std::abs (aNorm / (g * hRaw) - 1.0) < 2.0e-3,
+               "Body level normalisation: sine steady state matches the analytic transfer function "
+               "(raw " << juce::String (aRaw, 4) << " vs |H| " << juce::String (hRaw, 4)
+               << "; normalised " << juce::String (aNorm, 4) << " vs g*|H| "
+               << juce::String (g * hRaw, 4) << ", require rel. err < 2e-3)");
+    }
+
+    // (4) boundaries.
+    {
+        BodyResonance off;
+        off.prepare (sr);
+        off.setAmount (0.0f);
+        off.setFrequencies (261.63f, 523.25f);
+        off.setLevelNormalisation (cases[0].modes.data(), cases[0].modes.size());
+        const bool offOk = off.levelNormalisationGain() == 1.0f && off.processSample (0.5f) == 0.0f;
+
+        BodyResonance empty;
+        empty.prepare (sr);
+        empty.setAmount (0.8f);
+        empty.setFrequencies (261.63f, 523.25f);
+        empty.setLevelNormalisation (nullptr, 0);
+        const bool emptyOk = empty.levelNormalisationGain() == 1.0f;
+
+        BodyResonance nyquist;   // every mode above the renderable limit -> zero energy -> g = 1
+        nyquist.prepare (sr);
+        nyquist.setAmount (0.8f);
+        nyquist.setFrequencies (261.63f, 523.25f);
+        std::vector<ModalResonator::Mode> tooHigh { { 30000.0f, 1.0f, 1.0f } };
+        nyquist.setLevelNormalisation (tooHigh.data(), tooHigh.size());
+        const bool nyqOk = nyquist.levelNormalisationGain() == 1.0f;
+
+        CHECK (offOk && emptyOk && nyqOk,
+               "Body level normalisation boundaries: amount<0.001, empty/nullptr mode list, "
+               "all-modes-unrenderable all give g == 1 (no NaN, no division by zero)");
+    }
+
+    // (5) WF1004-B2b (月月 2026-10-07 裁決「照 Fable 建議」＝g = min(g, 1)) 回歸。
+    // 起因：WF1003-B2 稽核（reports/gate_outputs/wf1003_B2_audit.txt §6）——當模態能量集中在
+    // H(f) 的深陷波上，穩態 g 很大（+31 dB），但濾波器要數 ms 才建立起來，起音瞬態被 g 放大
+    // （外掛實測 +14.80 dBFS，比改前大 +22.7 dB）。修法：g 只准衰減。1 就是 Body-off 基準，
+    // 沒有新常數。下面兩組檢查都不調任何容差：
+    //   (5a) 掃描：Body 旋鈕 × 第二模態比 × 陷波比的格點上 g <= 1 且 g > 0 且有限（精確比較，無容差）。
+    //   (5b) 稽核陷波案例（H1/H2 振幅 0.01、H3～H8 比值 3.396 振幅 1.0、Body 1.0，見
+    //        _scratch\wf1003\failed_B2\cases_notch.txt；C4）：用實際的 BodyResonance 逐樣本渲染 0.5 s：
+    //        - 未封頂的 g（用同一公式在測試裡重算）確實 > 1（證明這個案例真的踩到封頂）；
+    //        - 實際 g == 1.0f 恰好；
+    //        - 正規化輸出峰值 <= 改前（Body 開、沒正規化）同設定峰值（相對 epsilon 1e-6＝float32 捨入）；
+    //          **不**對「<= Body-off」下斷言（WF1004-B2c：Body 濾波器本身就可能比 Body-off 大，只印 [INFO]）；
+    //   (5c) 逐樣本 |加上限| <= |改前|（陷波案例 g＝1、諧波案例 g<1 各一）。
+    {
+        // (5a)
+        bool allCapped = true;
+        int  gridCount = 0, capEngaged = 0;
+        float worstG = 0.0f;
+        const float f1 = 261.63f;
+        for (float amount : { 0.1f, 0.2f, 0.5f, 0.8f, 1.0f })
+            for (float r2 : { 1.5f, 2.0f, 2.576f, 3.0f, 5.0f })
+                for (float rn = 0.25f; rn <= 20.0f; rn += 0.05f)
+                {
+                    std::vector<ModalResonator::Mode> m {
+                        { f1, 0.01f, 1.5f }, { f1 * r2, 0.01f, 1.5f },
+                        { f1 * rn, 1.0f, 1.5f }, { f1 * rn, 1.0f, 1.5f } };
+                    BodyResonance b;
+                    b.prepare (sr);
+                    b.setAmount (amount);
+                    b.setFrequencies (m[0].frequency, m[1].frequency);
+                    b.reset();
+                    b.setLevelNormalisation (m.data(), m.size());
+                    const float g = b.levelNormalisationGain();
+                    ++gridCount;
+                    if (g == 1.0f) ++capEngaged;
+                    worstG = std::max (worstG, g);
+                    if (! (g > 0.0f && g <= 1.0f && std::isfinite (g)))
+                        allCapped = false;
+                }
+        CHECK (allCapped && worstG <= 1.0f && capEngaged > 0,
+               "Body level normalisation gain never exceeds 1 on a " << gridCount
+               << "-point sweep (Body x ratio2 x notch ratio): max g = " << juce::String (worstG, 6)
+               << ", cap engaged at " << capEngaged << " points (exact <= 1, no tolerance)");
+
+        // (5b)
+        const float ratio2 = 2.576f, ratioN = 3.396f;
+        std::vector<ModalResonator::Mode> notch { { f1, 0.01f, 1.5f }, { f1 * ratio2, 0.01f, 1.5f } };
+        for (int k = 0; k < 6; ++k)
+            notch.push_back ({ f1 * ratioN, 1.0f, 1.5f });
+
+        BodyResonance raw, norm;
+        for (auto* x : { &raw, &norm })
+        {
+            x->prepare (sr);
+            x->setAmount (1.0f);
+            x->setFrequencies (notch[0].frequency, notch[1].frequency);
+            x->reset();
+        }
+        norm.setLevelNormalisation (notch.data(), notch.size());
+
+        // Uncapped g, recomputed from the same formula (raw has no normalisation => magnitudeAt is raw).
+        double eDry = 0.0, eBody = 0.0;
+        for (const auto& m : notch)
+        {
+            const double w = ModalResonator::modeAttackEnergy (m.frequency, m.amplitude, m.decayTime, sr);
+            const double h = raw.magnitudeAt (m.frequency);
+            eDry += w;
+            eBody += w * h * h;
+        }
+        const double gUncapped = std::sqrt (eDry / eBody);
+        const float  gApplied  = norm.levelNormalisationGain();
+
+        const int n = (int) (0.5 * sr);
+        double peakOff = 0.0, peakRaw = 0.0, peakNorm = 0.0;
+        double e03Off = 0.0, e03Norm = 0.0;           // first 0.3 s energy (the window the gain is defined on)
+        const int n03 = (int) (0.3 * sr);
+        for (int i = 0; i < n; ++i)
+        {
+            const double t = (double) i / sr;
+            double x = 0.0;
+            for (const auto& m : notch)
+                x += (double) m.amplitude * std::exp (-6.9078 / (double) m.decayTime * t)
+                     * std::sin (2.0 * juce::MathConstants<double>::pi * (double) m.frequency * t);
+            const float xf = (float) x;
+            peakOff  = std::max (peakOff,  std::abs ((double) xf));
+            peakRaw  = std::max (peakRaw,  std::abs ((double) (xf + raw.processSample (xf))));
+            const double yn = (double) (xf + norm.processSample (xf));
+            peakNorm = std::max (peakNorm, std::abs (yn));
+            if (i < n03) { e03Off += (double) xf * (double) xf; e03Norm += yn * yn; }
+        }
+        const auto dB = [] (double v) { return 20.0 * std::log10 (v); };
+        CHECK (gUncapped > 1.0 && gApplied == 1.0f,
+               "Body level normalisation: audit notch case really hits the cap (uncapped g = "
+               << juce::String (dB (gUncapped), 2) << " dB, applied g = " << juce::String (gApplied, 6) << ")");
+        CHECK (peakNorm <= peakRaw * (1.0 + 1.0e-6),
+               "Body level normalisation: notch case normalised peak " << juce::String (dB (peakNorm), 2)
+               << " dB <= pre-B2 (Body on, no normalisation) peak " << juce::String (dB (peakRaw), 2)
+               << " dB (exact consequence of g <= 1)");
+        // WF1004-B2c (acceptance criterion corrected, 月月委託 Fable 裁 B2b 稽核 §8 選項 (1)):
+        // the criterion is "capped output <= pre-B2 output", NOT "<= Body-off". Reason: the Body
+        // filter itself (dry+wet, before any normalisation) already puts the output ABOVE Body-off
+        // in some settings (plug-in measured up to +3.98 dB peak, +3.69 dB first-0.3 s energy,
+        // +4.41 dB 2-s RMS over 473 adversarial pairs, wf1004_B2b_audit.txt §2), and g <= 1 can only
+        // bring the output back to pre-B2, never below it. So Body-off comparisons on the SYNTHETIC
+        // stress case are printed as [INFO] only and are NOT asserted; what IS asserted is the
+        // exact consequence of g <= 1: sample-by-sample |capped| <= |pre-B2| (rel. 1e-6 = float32
+        // rounding) on the notch case (g clamped to 1 -> identical) and on a harmonic case (g < 1
+        // -> strictly attenuated).
+        std::cout << "[INFO] Body level normalisation: notch case synthetic peaks (dB): Body-off "
+                  << juce::String (dB (peakOff), 2) << ", pre-B2 / capped-normalised "
+                  << juce::String (dB (peakNorm), 2) << " (capped - Body-off "
+                  << juce::String (dB (peakNorm / peakOff), 2)
+                  << " dB; this is the Body filter's own behaviour, not asserted); 0.3 s energy ratio "
+                  << "capped/Body-off " << juce::String (10.0 * std::log10 (e03Norm / e03Off), 2)
+                  << " dB (not asserted)" << std::endl;
+
+        // (5c) sample-by-sample |capped| <= |pre-B2| on the notch case (g == 1) and a harmonic case (g < 1).
+        {
+            auto perSampleBound = [&] (const std::vector<ModalResonator::Mode>& modes, float amount,
+                                       double& worstRatio, float& gOut)
+            {
+                BodyResonance r, c;
+                for (auto* x : { &r, &c })
+                {
+                    x->prepare (sr);
+                    x->setAmount (amount);
+                    x->setFrequencies (modes[0].frequency, modes[1].frequency);
+                    x->reset();
+                }
+                c.setLevelNormalisation (modes.data(), modes.size());
+                gOut = c.levelNormalisationGain();
+                bool ok = true;
+                worstRatio = 0.0;
+                for (int i = 0; i < n; ++i)
+                {
+                    const double t = (double) i / sr;
+                    double x = 0.0;
+                    for (const auto& m : modes)
+                        x += (double) m.amplitude * std::exp (-6.9078 / (double) m.decayTime * t)
+                             * std::sin (2.0 * juce::MathConstants<double>::pi * (double) m.frequency * t);
+                    const float xf = (float) x;
+                    const double yr = std::abs ((double) (xf + r.processSample (xf)));
+                    const double yc = std::abs ((double) (xf + c.processSample (xf)));
+                    if (yr > 1.0e-9)
+                        worstRatio = std::max (worstRatio, yc / yr);
+                    if (yc > yr * (1.0 + 1.0e-6) + 1.0e-12)
+                        ok = false;
+                }
+                return ok;
+            };
+            double worstNotch = 0.0, worstHarm = 0.0;
+            float  gNotch = 0.0f, gHarm = 0.0f;
+            const bool okNotch = perSampleBound (notch, 1.0f, worstNotch, gNotch);
+            const bool okHarm  = perSampleBound (cases[0].modes, 0.8f, worstHarm, gHarm);
+            CHECK (okNotch && okHarm && gNotch == 1.0f && gHarm < 1.0f,
+                   "Body level normalisation: sample-by-sample |capped| <= |pre-B2| over 0.5 s "
+                   "(notch case g = " << juce::String (gNotch, 6) << ", max ratio "
+                   << juce::String (worstNotch, 6) << "; harmonic case g = "
+                   << juce::String (gHarm, 4) << ", max ratio " << juce::String (worstHarm, 4)
+                   << "; exact consequence of g <= 1, rel. 1e-6 float32 rounding)");
+        }
+    }
+}
+
 int main()
 {
     std::cout << "TsukiSynth physical-model regression tests\n";
@@ -1943,6 +2268,7 @@ int main()
     testPathBAndPathCDoNotInterfere();
     testRelativeCutoffAndNoiseStreams();
     testLongDelayAndSharedEffects();
+    testBodyLevelNormalisation();
     std::cout << (failures == 0 ? "PASS" : "FAIL")
               << " (" << failures << " failures)\n";
     return failures == 0 ? 0 : 1;

@@ -259,6 +259,11 @@ public:
             }
         }
 
+        // WF1003-B2 (月月 2026-10-03 裁決 B2＝A)：Body 層響度正規化，只在外掛路徑。
+        // 此時 modes 已含槌頭頻譜與跨音域補償（最終振幅）；推導見
+        // BodyResonance::setLevelNormalisation()。
+        bodyRes.setLevelNormalisation (modes.data(), modes.size());
+
         // 保存基礎模態用於 pitch glide
         baseModes = modes;
         glidePhase = 0.0f;
@@ -398,6 +403,7 @@ public:
         seedNoise (params.randomSeed, params.eventIndex, midiNote, velocity);
 
         bodyRes.prepare (sr);
+        bodyRes.clearLevelNormalisation();   // WF1003-B2: CLI path never normalised
         // DIAGNOSTIC-ONLY: --body-amount overrides the CLI default body mix
         // of 0.0f, i.e. the body-resonance layer is OFF in this standalone /
         // physics-verified path unless the flag is passed (the plugin's
