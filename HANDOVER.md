@@ -1,6 +1,6 @@
 # TsukiSynth 交接文件
 
-> 交接視窗：**2026-10-03（WF1002＋WF1002b 完工、已 push；WF1003 整合卡全綠、staged 未 commit）**　repo：`E:\Tsuki-project\tsuki-synth`　分支：`fix/deep-physics-audit-20260716`
+> 交接視窗：**2026-10-07（WF1003 已 commit＋push 到 `6198922`；WF1004＋WF1004b＋WF1004c（B2d 落地）整合卡全綠、staged 未 commit）**　repo：`E:\Tsuki-project\tsuki-synth`　分支：`fix/deep-physics-audit-20260716`
 > **新 session 先讀 §0、§1 再動手。** 最新裁定表與各卡結果在 `docs/workcards/WF1002_README.md`（§1 裁定表、§3 WF1002、§4 WF1002b）；
 > 待辦勾選清單在 `TODO.md` 開頭；各輪細節與歷史決策在 `DEVLOG.md`（本檔不再保留舊輪的大段數字）。
 
@@ -8,7 +8,41 @@
 
 ## 0. 現況
 
-### WF1003（2026-10-03 下午；**staged、沒 commit、沒 push**，等月月審）
+### WF1004（2026-10-07；**staged、沒 commit、沒 push**，等月月審）
+
+月月 10-07 裁：WF1003 commit＋push（已做，`8b4d053`～`6198922`）、Inno Setup 7 已自己裝好（`E:\Inno Setup 7`）、兩題（B2 重做、按引擎分 pool）照建議做，
+另要求查既有成品品質、找「音效怎麼做才正確」的論文、確認有沒有反推有效程度的審核方式。整合卡全套 GATE 1～10 全綠，
+證據 `reports/gate_outputs/wf1004_INTEGRATION.txt`＋`wf1004_integration_raw/`。
+
+| 卡 | 結果 | 白話 |
+|---|---|---|
+| CI | PASS | WF1003 push 後 `physics.yml` run 37493811777 在 `6198922` 6 job 全綠（CI 上 HostProbe 241/0）。`wf1004_ci_push.txt`。 |
+| P voice pool 按引擎分 | PASS → **採用 Chromatic 32、Piano／Cimbalom 16、FM 16** | 判準先寫再量（`wf1004_P_criteria_preregistered.txt`），四條全過：月光舌鼓版搶音 64→0；Chromatic 32 顆滿載 p99 1.3～1.7 ms、0 個超預算區塊；Piano／Cimbalom／FM 新舊逐樣本相同。新檔 `src/VoicePool.h`。外掛層 Chromatic >16 顆同時發聲時聲音會變（本意，R10 前後對照在 `reports/wf1004_p_per_engine_pool.zh-TW.md`）。FM 沒量過。 |
+| B2b Body 層 g 上限 | **稽核 FAIL，已還原** | 程式本身對（加上限後 473 組對抗設定都不比改前大），但驗收標準要「Body 開不比 Body 關大聲」，實測 71/473 組超過 +1 dB、最大 +3.98 dB——是 Body 濾波器本身造成，改前一樣大。修程式擋不住，要月月／規劃者改驗收標準或接受並改文件（`wf1004_B2b_audit.txt` §8）。檔案在 `E:\Tsuki-project\_scratch\wf1004\failed_B2b\`。 |
+| B2c（WF1004b）Body 層 g 上限，照標準 (1) 重做 | **稽核 FAIL（只因文件），已還原** | 驗收標準由規劃者依月月委託裁成 `wf1004_B2b_audit.txt` §8 選項 (1)：(a) 加上限版峰值 ≤ 改前、(b) g ≤ 1；Body 開比 Body 關大只需如實記載。程式（跟 B2b patch 逐位元組相同）與 (a)(b) 全過：稽核自建兩棵樹、自產 403 組（單音 244＋和弦 159），加上限 − 改前 峰值最大 +0.0000 dB、0/403 違反；g 最大 1.000000。FAIL 的原因是三類文件句子被實測推翻（`wf1004_B2c_audit.txt` §3：(A)「+3.98 dB 是 Body 濾波器固有增幅」出處錯，改前最多 +16.58 dB；(B)「g 夾在 1 很少、在高音域、Body 開比關小」——實際 217/473 組，RMS 最多 +4.01 dB／+5.28 dB；(C) 樣本最大值要寫明不是上界）。重做只要改這幾句（程式不用改），patch＋29 個檔在 `E:\Tsuki-project\_scratch\wf1004\failed_B2c\`（§8）。**→ 已由 B2d 重做落地（下一列）。** |
+| B2d（WF1004c）B2c 文件重做 | **PASS → B2 Body 層 g 上限落地** | 套回 B2c patch＋29 檔，只改 §3 (A)(B)(C) 句子；(D) `BodyResonance.h:55、:89` 兩行註解經規劃者授權改成「1＝不放大＝改前」。稽核（`wf1004_B2d_audit.txt`）：src／tests 對 B2c patch 只差那兩行註解，對照表 23 項用原始輸出重算全部有數據支持。外掛層行為：Body 開時輸出 ≤ 改前（逐 voice 證明、和弦 159 組實測 0 違反），有 Body 的工廠 preset 變小聲（6 號 −7.27→−21.22、15 號 −1.85→−9.92 dBFS）；Body 開仍可能比 Body 關大（樣本最大峰值 +3.99 dB、2 秒 RMS +5.28 dB，非上界），已如實寫進 ROADMAP §6／UI 規格／報告 `reports/wf1003_b2_body_normalization_before_after.zh-TW.md`。CLI 渲染不變。 |
+| I2 `.iss` 編譯 | PASS | Inno Setup 7.1.0 編譯 exit 0、0 警告；本機 license.txt 跟官網逐位元相同。整合卡第 10 步也用最終 binaries 重編成功（sha256 `40a35d28…`，替身 EULA，**不得發行**、沒執行）。 |
+| Q 成品品質＋論文＋反推審核（唯讀） | PASS（稽核附真峰值四位小數勘誤，結論不變） | 報告 `reports/wf1004_product_quality_review.zh-TW.md`。見下面三點。 |
+
+**Q 卡給月月的三個答案**（細節看報告 §0、§5）：
+1. **論文有，但是殘檔**：`E:\Tsuki-project\_tools\papers\Alon2015_York_MSc_handpan.pdf`（handpan 碩士論文）只下載了 22.9%（5,259,264／22,959,998 B），第 4 章量測讀不到；要重下載（**要月月同意**）。
+   「音效怎麼做才正確」比較貼近的是 `docs/SOUND_DESIGN_KNOWLEDGE.zh-TW.md`（業界知識庫，不是論文），它列的 6 支檢查器**全部沒實作**。
+2. **反推有效程度的審核有**，是專案核心：`physics_verify`、`melody_verify`／`stem_verify`、`measurement_selfcal`（量測器自己的誤差：持續段 ≤1.18 c，放鍵段約 7.2 c，原訂 ≤1.0 c 從未達成）、`verify_score --all`。
+   但它驗的是「渲染＝模型預測」，**沒有真實樂器量測當錨**，而且物理 GATE 全關效果；商品音效 43 個都有 reverb，所以**商品 WAV 本身不在物理主張範圍內**。
+3. **成品品質**：音訊本體沒查到擋上架的問題（0 削波、格式與宣稱相符、sha256／catalog 全對）。擋上架的只有已知的授權草稿（SE 包 12 處 [TBD]、專輯 zip 沒授權檔）。
+   建議修：專輯 README 真峰值句補量測器註記、專輯 README 標「部分樂章含非物理 FM 音色」、把 `loop_seam_check`／`loudness_check` 做出來；單聲道摺疊時 Ocean Tide Wash 小 5.04 dB（資訊性）。
+
+渲染：75 首 WAV 逐首、8 首位元基準都跟 WF1002b／WF1003 相同（B2b 已還原；P 是外掛層，CLI 不經 voice pool）。
+
+**WF1004b 收尾整合卡（2026-10-07 03:52～04:34）**：B2c 稽核 FAIL 已還原，所以最終樹＝WF1004 整合版（HEAD＋P 卡）。全套 GATE 1～10 全綠，
+證據 `reports/gate_outputs/wf1004b_INTEGRATION.txt`＋`wf1004b_integration_raw/`。數字跟 WF1004 整合卡全部相同（PhysicsModelsTest 仍 219，不是 234）；
+75 首對 WF1002b 表 75/75 SAME、8/8 IDENTICAL、HostProbe 判定行只差隨機 presetId、資訊行只差時間。沒有 R10 事件。
+
+**WF1004c 收尾整合卡（2026-10-07 05:01～05:43，最終）**：B2d 工兵 PASS／稽核 PASS，B2 在樹上。全套 GATE 1～10 全綠，
+證據 `reports/gate_outputs/wf1004c_INTEGRATION.txt`＋`wf1004c_integration_raw/`。PhysicsModelsTest **234**（B2 的 15 條）；75 首對 WF1002b 表 75/75 SAME、8/8 IDENTICAL（CLI 不經 Body 正規化，渲染不變，沒有 R10 事件）；
+HostProbe 241/0，判定行逐行同 B2d 工兵（只差隨機 presetId），對 WF1004b 只差 B2 本意造成的數值（H3、H4、Q05 preset 15，全部仍 PASS）。B2d 的改動與全部 B2 歷史證據已一併 `git add`。
+
+### WF1003（2026-10-03 下午；10-07 已 commit＋push：`8b4d053`、`eb48b1a`、`958cac6`、`6198922`）
 
 月月 10-03 裁「都重跑，開 Dynamic Workflow；裁決兩項照建議規劃」。本輪 8 張卡（Sonnet 工兵＋Opus 稽核親自重跑），整合卡全套 GATE 1～9 全綠，
 證據 `reports/gate_outputs/wf1003_INTEGRATION.txt`＋`wf1003_integration_raw/`。
@@ -58,7 +92,19 @@ IR 載入失敗改走缺檔三態、F5 量法換 Blackman-Harris 窗（「F5 PAS
 - 環境：清空資源回收筒；Cubase 重掃外掛（§1-4）；要不要把 branch merge 進 `main`（目前沒 merge）。
 - 舊的未裁小題 O02～O14（UI 規格送誰、換源排程、安裝包附不附 CLI 等），清單在 `TODO.md`「仍開著」。
 
-### 1-2 git 狀態（2026-10-03 核對）
+**WF1004 新增（10-07）**：
+- **審 staged 內容後決定 commit／push**（WF1004＋WF1004b＋WF1004c 全部；最新清單 `reports/gate_outputs/wf1004c_integration_raw/19_git_status_after_add.txt`）。
+- ~~**B2b 驗收標準二選一**（`wf1004_B2b_audit.txt` §8）~~ → 規劃者依月月委託裁 (1)「Body 開峰值 ≤ 改前」＋g ≤ 1；B2c 只因文件 FAIL → **B2d 重做 PASS、已落地**（WF1004c）。
+  PhysicsModelsTest 基線 219→234。（稽核 §5 N4：`tests/physics_models_repro.cpp:2084`「1 就是 Body-off 基準」、`:2182`「up to +3.98 dB peak」兩行測試註解仍是舊說法，不在 B2d 授權範圍；要不要授權改，規劃者／月月決定。）
+- **York handpan 論文重下載要月月同意**（完整檔 22,959,998 B，本機殘檔 5,259,264 B，可用遠端 Content-MD5 驗；Q 卡 R7）。
+- Q 卡「建議修」R1～R3 要不要做（專輯 README 文字兩處，屬 R2 邊界）；R4 要不要開卡實作 `loop_seam_check`／`loudness_check`。
+- **重部署待裁**：本輪 VST3 外掛層行為有變（Chromatic pool 32、Body 層 g 上限＝有 Body 的 preset 變小聲），部署位置仍是 WF1002b 版（`fa13ac17…`），要不要用 `build\` 的 WF1004c 版（VST3 `760aa93b…`）重部署。
+
+### 1-2 git 狀態（2026-10-07 核對）
+
+- **WF1004（10-07）**：HEAD＝`origin/fix/deep-physics-audit-20260716`＝`6198922`（WF1003 四個 commit `8b4d053`～`6198922` 已 push，CI run 37493811777 全綠）；
+  WF1004 全部改動與證據已由整合卡 **`git add`（staged）**，沒 commit、沒 push。branch 比 `main` 多 32 個 commit，沒 merge。
+  WF1004b、WF1004c（B2d 程式／測試／文件＋B2 歷史證據＋整合證據）也都已 staged；工作樹對 index 0 檔、untracked 0 檔（`wf1004c_integration_raw/19_git_status_after_add.txt`）。
 
 - **WF1003（10-03 下午）**：HEAD＝`origin/...`＝`bee2889`（10-03 上午兩個文件 commit `cde44c6`、`bee2889` 已 push）；WF1003 全部改動與證據已由整合卡 **`git add`（staged）**，沒 commit、沒 push，等月月審。
   staged 清單見 `reports/gate_outputs/wf1003_integration_raw/19_git_status_after_add.txt`。
@@ -69,6 +115,25 @@ IR 載入失敗改走缺檔三態、F5 量法換 Blackman-Harris 窗（「F5 PAS
 - R7 現行字面（10-02 Q03＝A）：不 commit、不 push（月月明示裁決時除外）；稽核 PASS 後由稽核 `git add` 供月月審。
 
 ### 1-3 基線
+
+**WF1004c 最終整合卡基線（`reports/gate_outputs/wf1004c_INTEGRATION.txt`，2026-10-07；現行）**——B2d 落地後：ctest 4/4、AuditTest 111/0、**PhysicsModelsTest 行首 [PASS] 234／[FAIL] 0**、
+pytest 312（306＋1＋5）、`--full` NO CHECKED FAILURES（輸出逐行同 WF1004b）、`--selftest` 14/14、`verify_score --all` 75/75（75 首對 WF1002b 表 75/75 SAME）、8/8 IDENTICAL、
+HostProbe 241/0（E16 最大峰值改成 11 號 −3.03 dBFS；有 Body 的 preset 變小聲，判定行仍全 PASS）、pluginval SUCCESS＋validator 47/47、靜態 CRT 匯入 0、ISCC 7.1.0 exit 0／0 警告。
+`build\` 的 sha256：CLI `1af414a9…`、VST3 `760aa93b…`、Standalone `af837ae1…`、HostProbe `154b31cd…`；manifest renderer 欄現行 `1af414a9b695`；
+安裝檔（替身 EULA、不得發行、沒執行）sha256 `24d571f6…`。**75 首下次參考表用 `wf1004c_integration_raw/12_hash75_vs_wf1002b_integration.txt`**（內容跟 WF1004b 那份逐首相同）。
+HostProbe 下次逐行比對的參考用 `wf1004c_integration_raw/15_hostprobe_cwd_outside_repo.txt`（B2 落地後的數值）。
+
+**WF1004b 收尾整合卡基線（`reports/gate_outputs/wf1004b_INTEGRATION.txt`，2026-10-07）**——GATE 數字跟下面 WF1004 整合卡全部相同（B2c 已還原，PhysicsModelsTest 仍 219）；
+只有重編造成的雜湊變了：`build\` 的 sha256 CLI `d892bc5f…`、VST3 `62a2f5ac…`、Standalone `f1ceac8c…`、HostProbe `5c68e662…`；manifest renderer 欄現行 `d892bc5f5087`；
+安裝檔（替身 EULA、不得發行、沒執行）sha256 `53a25fb8…`。75 首參考表下次可用 `wf1004b_integration_raw/12_hash75_vs_wf1002b_integration.txt`（內容跟 WF1004 那份逐首相同）。
+
+**WF1004 整合卡新基線（`reports/gate_outputs/wf1004_INTEGRATION.txt`，2026-10-07）**——數字跟 WF1003 全部相同：
+ctest 4/4、AuditTest 111/0、PhysicsModelsTest 行首 [PASS] 219／[FAIL] 0（B2b 已還原，不是 234）、pytest 312（306＋1＋5）、`--full` NO CHECKED FAILURES（輸出逐行同 WF1003）、`--selftest` 14/14、
+`verify_score --all` 75/75（75 首雜湊對 WF1002b 表 75/75 SAME；**下次參考表用 `wf1004_integration_raw/12b_hash75_vs_wf1002b_integration.txt`**）、8/8 IDENTICAL、
+HostProbe **241/0**（判定行逐行同 WF1003，只差隨機 presetId；Q09 資訊行月光舌鼓版 steals 64→0）、pluginval SUCCESS＋validator 47/47、靜態 CRT 匯入 0、
+安裝檔 ISCC 7.1.0 編譯 exit 0／0 警告（sha256 `40a35d28…`，替身 EULA）。
+`build\` 的 sha256：CLI `e59ddfd0…`、VST3 `72f503c7…`、Standalone `4e1896dd…`、HostProbe `b16a57ad…`。manifest renderer 欄現行 `e59ddfd04f18`。
+**CI**：`physics.yml` run 37493811777 在 `6198922` 6 job 全綠。
 
 **WF1003 整合卡新基線（`reports/gate_outputs/wf1003_INTEGRATION.txt`，2026-10-03）**——跟下面 WF1002b 表只差這幾格：
 pytest **312＝306＋1 skip＋5 xfail**（+2＝S 卡兩條 stem_verify 單元測試）；HostProbe **241 PASS／0 FAIL**（+10＝S 卡「Q05 real lit path」）；
@@ -103,6 +168,10 @@ WF1002b 整合卡的基線（`reports/gate_outputs/wf1002b_INTEGRATION.txt`）�
   Cubase 外掛快取 `vst3plugins.xml` 還停在 08-22 → 要月月開 Cubase 重掃，之後 AI 可跑 `tools/cubase_scan_verify.py` 核對只出現一份。
 
 ### 1-5 仍開著、AI 可以接著做的後續卡（要不要開由月月決定）
+
+> **WF1004 更新（10-07）**：按引擎分 pool 已落地（Chromatic 32／其他 16，FM 沒量過）；`.iss` 已能編譯（替身 EULA，真 EULA 待 Q32）；
+> B2b 程式對、驗收標準不過 → 已裁 (1)，WF1004b-B2c 重做後稽核只因文件 FAIL、已還原 → **WF1004c-B2d 改文件後 PASS、已落地**（剩兩行測試註解舊說法待授權，§1-1）；Q 卡列的後續：York 論文重下載、`loop_seam_check`／`loudness_check` 實作、專輯 README 兩處文字；
+> `tools/installer/README.md` 與 `.iss` 檔頭仍寫「從未編譯」，已過時（文件小項）；Piano 16 顆低音滿載 p99 10.2～10.5 ms 貼著預算，要不要列已知限制（要月月裁）。
 
 > **WF1003 更新**：B2 做了但稽核 FAIL、已還原（要加 g 上限後重做）；C2 S4 已解釋（不用改程式）；Q09 量完維持 16（按引擎分大小待裁）；
 > release CI 已重跑全綠；小項（`melody_verify` 加 `cli`、sustain 搬出 xfail、`crossplatform_verify` docstring、HostProbe Q05 亮燈路徑）已做；

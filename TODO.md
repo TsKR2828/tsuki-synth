@@ -1,11 +1,37 @@
 # TsukiSynth — Current TODO
 
-> Last updated: **2026-10-03**（WF1002＋WF1002b 完工、已 push 到 `168688e`）。新 session 請先讀 [`HANDOVER.md`](HANDOVER.md)。
+> Last updated: **2026-10-07**（WF1003 已 push 到 `6198922`；WF1004＋WF1004b＋WF1004c（B2d 落地）最終整合卡全綠、staged 未 commit）。新 session 請先讀 [`HANDOVER.md`](HANDOVER.md)。
 > 舊快照（08-15～10-02 各輪的開頭快照、09-25 盤點新登記的逐條長文）已收合：原文看 `git show 168688e:TODO.md`，各輪經過看 `DEVLOG.md`。
 > 本檔後半「待辦總表（原始條目）」照舊保留，仍有效的條目沒刪。
 > **行號注意**：`docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md`、`docs/KNOWN_LIMITS_INDEX.zh-TW.md` 引用本檔的行號是當時 HEAD 的行號，本檔改寫後已位移，請以條目名稱為準。
 
-## 2026-10-03 下午 WF1003 快照（staged、沒 commit、沒 push）
+## 2026-10-07 WF1004 快照（staged、沒 commit、沒 push）
+
+WF1004 整合卡全套 GATE 1～10 全綠（`reports/gate_outputs/wf1004_INTEGRATION.txt`），安裝檔這次也編出來了。
+新基線＝WF1003 數字全部不變：ctest 4/4（AuditTest 111、PhysicsModelsTest 行首 [PASS] 219）、pytest 312（306＋1 skip＋5 xfail）、`--full` NO CHECKED FAILURES、`--selftest` 14/14、
+`verify_score --all` 75/75（75 首雜湊對 WF1002b 表全 SAME）、8/8 IDENTICAL、HostProbe 241/0（Q09 資訊行月光舌鼓版搶音 64→0）、pluginval＋validator 47/47、靜態 CRT 匯入 0、ISCC 7.1.0 exit 0。
+各卡：CI PASS（run 37493811777 在 `6198922` 全綠）／P 按引擎分 pool PASS（Chromatic 32、Piano／Cimbalom 16、FM 16）／B2b **稽核 FAIL 已還原**（程式對，驗收標準不過）／I2 `.iss` 編譯 PASS／Q 成品品質總查 PASS（唯讀）。
+**WF1004b 收尾**：B2c（照標準 (1) 重做）**稽核 FAIL（只因文件）已還原**；收尾整合卡全套 GATE 全綠、數字同上（`reports/gate_outputs/wf1004b_INTEGRATION.txt`；新 build 雜湊 CLI `d892bc5f…`、VST3 `62a2f5ac…`）。
+**WF1004c 最終**：B2d（B2c 文件重做）工兵 PASS／稽核 PASS → **B2 Body 層 g 上限落地**；最終整合卡全套 GATE 1～10 全綠（`reports/gate_outputs/wf1004c_INTEGRATION.txt`）。
+新基線：PhysicsModelsTest 行首 [PASS] **234**（219＋B2 的 15 條），其餘數字同上；75 首對 WF1002b 表 75/75 SAME、8/8 IDENTICAL（CLI 渲染不變）；HostProbe 241/0（有 Body 的 preset 變小聲，E16 最大峰值 11 號 −3.03 dBFS）；
+build 雜湊 CLI `1af414a9…`、VST3 `760aa93b…`、Standalone `af837ae1…`；安裝檔 `24d571f6…`（替身 EULA、不得發行）。
+
+- [x] 審 WF1003 staged 後 commit＋push（月月 10-07 裁；`8b4d053`～`6198922`）。
+- [x] Q09 按引擎分 pool（月月 10-07「照建議」；WF1004-P，判準先寫、四條全過；報告 `reports/wf1004_p_per_engine_pool.zh-TW.md`）。FM 16 沒量過。
+- [x] `.iss` 編譯（月月 10-07 已裝 Inno Setup 7 到 `E:\Inno Setup 7`；WF1004-I2＋整合卡第 10 步，替身 EULA、不得發行、沒執行）。
+- [x] 成品品質總查、論文與反推審核盤點（WF1004-Q，`reports/wf1004_product_quality_review.zh-TW.md`）：音訊本體沒查到擋上架問題；論文是殘檔；反推審核存在但不涵蓋有效果的商品 WAV。
+- [x] ~~**B2b 驗收標準要月月裁**（`wf1004_B2b_audit.txt` §8）~~ → 規劃者依月月委託裁 (1)「Body 開峰值 ≤ 改前」＋g ≤ 1；WF1004b-B2c 已照做。
+- [x] ~~**B2d（B2c 文件重做）**~~ → WF1004c-B2d 工兵 PASS／稽核 PASS（`reports/gate_outputs/wf1004_B2d_audit.txt`）、最終整合卡全綠、已 staged。只改 §3 (A)(B)(C) 句子＋規劃者授權的 `BodyResonance.h:55、:89` 兩行註解；PhysicsModelsTest 基線 219→234。
+- [ ] B2 殘留舊說法（B2d 稽核 §5 N4，不在 B2d 授權範圍）：`tests/physics_models_repro.cpp:2084` 註解「1 就是 Body-off 基準」、`:2182`「up to +3.98 dB peak」沒寫「樣本最大值」。只是測試註解，要規劃者／月月授權才改。
+- [ ] **York handpan 論文重下載——待月月同意**（22,959,998 B；本機 5,259,264 B 殘檔；`_tools/papers/README.txt`、`SHA256SUMS.txt` 要跟著改）。
+- [ ] Q 卡建議修：專輯 README 真峰值句補量測器註記（R1）、專輯 README 標「部分樂章含非物理 FM 音色」（R3）、loop-ready 真峰值範圍併入下方「−0.94886 寫法」那條（R2）；真峰值數字以 `wf1004_Q_audit.txt` §2 為準。
+- [ ] 實作 `SOUND_DESIGN_KNOWLEDGE.zh-TW.md` §8 的 `loop_seam_check`、`loudness_check`（目前 6 支檢查器零實作；Q 卡 R4）。
+- [ ] `tools/installer/README.md`、`.iss` 檔頭的「從未編譯」字樣改掉（文件小項）；正式 EULA（Q32）到位後再編一次正式安裝檔。
+- [ ] Piano 16 顆低音滿載 p99 10.2～10.5 ms 貼著預算：要不要列已知限制（要月月裁）。
+- [ ] **月月審 staged**（WF1004＋WF1004b＋WF1004c 全部；清單 `reports/gate_outputs/wf1004c_integration_raw/19_git_status_after_add.txt`）後決定 commit／push。
+- [ ] **重部署待裁**：部署位置的 VST3 仍是 WF1002b 版（`fa13ac17…`）；本輪外掛層行為有變（Chromatic pool 32、Body 層 g 上限），要不要用 WF1004c 版（`760aa93b…`）重新部署。
+
+## 2026-10-03 下午 WF1003 快照（10-07 已 commit＋push）
 
 WF1003 整合卡全套 GATE 1～9 全綠（`reports/gate_outputs/wf1003_INTEGRATION.txt`）；第 10 步（ISCC 重編安裝檔）BLOCKED：Inno Setup 沒安裝。
 新基線：ctest 4/4（AuditTest 111）、pytest **312**（306＋1 skip＋5 xfail；+2＝S 卡）、`--full` NO CHECKED FAILURES、`--selftest` 14/14、
@@ -21,10 +47,10 @@ WF1003 整合卡全套 GATE 1～9 全綠（`reports/gate_outputs/wf1003_INTEGRAT
 - [x] C2 S4 +1.5 dB 調查（WF1003-C2S4）：重打間隔造成的相位巧合，不用改程式；WF1002-C2 報告的「S4 +1.5 dB」應改寫成「隨重打間隔在 −3～+1.5 dB 間變動」（報告文字還沒改）。
 - [x] 重跑 `release-physics.yml`（WF1003-R）。
 - [x] Q09 voice pool 量 16 vs 32（WF1003-V）：維持 16。
-- [ ] **要月月裁**：Q09 按引擎分大小（Chromatic 32、Piano／FM 16；FM 沒量）；16 顆 Piano 低音滿載 p99 10.5 ms 貼著預算，要不要列已知限制。
-- [ ] **B2 重做**：加 g 上限（`reports/gate_outputs/wf1003_B2_audit.txt` §7；舊 patch 在 `E:\Tsuki-project\_scratch\wf1003\failed_B2\`），還需要月月裁新慣例常數。
-- [ ] **`.iss` 編譯**：月月本人執行 `E:\Tsuki-project\_tools\innosetup\innosetup-7.1.0-x64.exe` 點「僅為我安裝」後，AI 再編（EULA.txt 還不存在，要用替身）。
-- [ ] 審 WF1003 staged 內容後決定 commit／push；部署位置的 VST3 仍是 WF1002b 版（`fa13ac17…`，本輪行為等價），要不要重新部署。
+- [x] ~~**要月月裁**：Q09 按引擎分大小（Chromatic 32、Piano／FM 16；FM 沒量）~~ → 10-07 裁照建議、WF1004-P 落地；16 顆 Piano 低音滿載貼著預算那半題仍開著（見 WF1004 快照）。
+- [x] ~~**B2 重做**~~（10-07 WF1004-B2b 已重做、程式對，但稽核依驗收標準判 FAIL 已還原 → 標準已裁 (1)，WF1004b-B2c 重做後只因文件 FAIL 已還原 → **WF1004c-B2d 改文件後 PASS、已落地**，見 WF1004 快照）。原文：加 g 上限（`reports/gate_outputs/wf1003_B2_audit.txt` §7；舊 patch 在 `E:\Tsuki-project\_scratch\wf1003\failed_B2\`），還需要月月裁新慣例常數。
+- [x] ~~**`.iss` 編譯**~~ → WF1004-I2＋整合卡已編成功（月月 10-07 自己裝了 Inno Setup 7）。原文：月月本人執行 `E:\Tsuki-project\_tools\innosetup\innosetup-7.1.0-x64.exe` 點「僅為我安裝」後，AI 再編（EULA.txt 還不存在，要用替身）。
+- [x] 審 WF1003 staged 內容後決定 commit／push（10-07 已 commit＋push 到 `6198922`）；部署位置的 VST3 仍是 WF1002b 版（`fa13ac17…`，本輪行為等價），要不要重新部署。
 
 ## 2026-10-03 快照
 
