@@ -1,0 +1,28 @@
+WF1004-B2d step 1: re-apply B2c patch + restore 29 files; step 2: src diff vs B2c patch
+git apply --check B2c_tracked_changes.patch: OK (before apply); git apply: OK
+moved_files.txt: 29 files copied back from failed_B2c with relative paths (cp -n, none pre-existing)
+
+src diff (git diff --binary -- src) right after apply: sha256 dd6c48022b251b354e14b39847c66c1d5f0c9a2b376def20fb6d9f895226b9f8  (= B2c cur_src.patch dd6c4802...)
+src diff after B2d comment edit:                       sha256 32418893eb0526a8069a8dcc2a1bcfe10569232bd8d389a6936e3d173757ba14
+diff after-apply vs after-B2d (should be: index-hash line + exactly the 2 authorised comment lines):
+2c2
+< index f74489d..646fc7d 100644
+---
+> index f74489d..0172ef0 100644
+38c38
+< +    // 1 即 Body-off 基準，無新常數。套用後起音能量 E_out = min(g,1)²·E_body = min(E_dry, E_body)
+---
+> +    // 1＝不放大（等於改前未補償行為），無新常數。套用後起音能量 E_out = min(g,1)²·E_body = min(E_dry, E_body)
+72c72
+< +            // normalisation may only ATTENUATE, never amplify. 1 is the Body-off
+---
+> +            // normalisation may only ATTENUATE, never amplify. 1 means no amplification, i.e. the pre-B2
+
+git diff --stat -- src tests:
+ src/dsp/BodyResonance.h        | 108 +++++++++++++-
+ src/engines/ChromaticEngine.h  |   6 +
+ src/engines/CimbalomEngine.h   |   6 +
+ tests/physics_models_repro.cpp | 326 +++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 440 insertions(+), 6 deletions(-)
+
+tests/physics_models_repro.cpp unchanged by B2d (patch content only): dab5d1112c6ce4ad

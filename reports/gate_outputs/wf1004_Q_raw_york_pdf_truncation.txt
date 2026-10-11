@@ -1,0 +1,24 @@
+# wf1004_Q York PDF integrity audit (read-only) 2026-10-07T00:33:47+08:00
+file: E:/Tsuki-project/_tools/papers/Alon2015_York_MSc_handpan.pdf
+size_bytes 5259264 = 5136.0 KiB multiple of 1024: True
+sha256 2101f483745ee6ef929401c3e6ff515229379741144e91a3ef1e5d6959c2e734
+header b'%PDF-1.5'
+count: obj-end 63  startxref 0  %%EOF 0  trailer 0  /Type /Catalog 0  /Type /Page(s) 0
+last 24 bytes (hex): 99e919ef8efaa2ea32216c8c274d9c27601e221e037270f1
+PyMuPDF page_count 0
+-- pdftotext (poppler) says:
+Syntax Error: Couldn't read xref table
+Syntax Warning: PDF file is damaged - attempting to reconstruct xref table...
+Syntax Error: Couldn't find trailer dictionary
+Syntax Error: Couldn't read xref table
+-- source HTTP HEAD (no download; one request) https://etheses.whiterose.ac.uk/id/eprint/12260/1/EyalMSc.pdf
+HTTP/1.1 200 OK
+X-Content-Type-Options: nosniff
+ETag: 7526a6e8c0d272a9182191fcfeb1c898
+Content-MD5: dSam6MDScqkYIZH8/rHImA==
+Last-Modified: Sun, 13 Mar 2016 15:51:54 GMT
+Content-Length: 22959998
+Content-Type: application/pdf
+local / remote Content-Length = 5259264 / 22959998 = 22.9%
+-- what is recoverable: 34 page content streams (printed pages 1-34: title, abstract, contents, lists, ch1, ch2 up to 2.1.5 Hang) were decoded from the truncated file (plain TJ text, script alon_extract.py); NO page of chapter 3-6 or appendices is in the file. The extracted text is NOT stored in the repo (thesis is CC BY-NC-ND 2.5; kept only in scratch).
+remote Content-MD5 as hex: 7526a6e8c0d272a9182191fcfeb1c898

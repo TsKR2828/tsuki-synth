@@ -1,0 +1,23 @@
+chromatic_custom_chord12                     n=   221184 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+chromatic_custom_exact16                     n=   192512 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+chromatic_custom_stress32_EXPECT_DIFF        n=   240128 bitwise_equal=False max|d|=5.1912e+00 n_diff=480254 first=2.0833333333333333e-05
+chromatic_tongue_chord12                     n=   221184 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+chromatic_tongue_exact16                     n=   192512 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+chromatic_tongue_stress32_EXPECT_DIFF        n=   240128 bitwise_equal=False max|d|=6.5053e-01 n_diff=480254 first=2.0833333333333333e-05
+chromatic_watergong_chord12                  n=   221184 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+chromatic_watergong_exact16                  n=   192512 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+chromatic_watergong_stress32_EXPECT_DIFF     n=   240128 bitwise_equal=False max|d|=9.1069e-01 n_diff=480254 first=2.0833333333333333e-05
+cimbalom_chord12                             n=   221184 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+cimbalom_exact16                             n=   192512 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+cimbalom_stress32                            n=   240128 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+corpus_fur_elise_piano                       n=  6356480 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+corpus_moonlight_tongue_EXPECT_DIFF          n= 14934016 bitwise_equal=False max|d|=2.4733e-02 n_diff=27620692 first=17.92
+   R10: peak A -10.955 B -10.948 dBFS; RMS A -27.239 B -27.237; diff RMS -61.56 dBFS (rel A -34.32 dB), diff peak -32.13 dBFS
+   before first diff bitwise equal: True
+fm_chord12                                   n=   221184 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+fm_exact16                                   n=   192512 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+fm_stress32                                  n=   240128 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+piano_chord12                                n=   221184 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+piano_exact16                                n=   192512 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+piano_stress32                               n=   240128 bitwise_equal=True max|d|=0.0000e+00 n_diff=0 first=None
+UNEXPECTED_DIFFS = 0

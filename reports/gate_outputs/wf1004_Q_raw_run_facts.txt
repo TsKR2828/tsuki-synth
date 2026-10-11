@@ -1,0 +1,7 @@
+# wf1004_Q tool versions and run facts
+ffmpeg: ffmpeg version 8.1.1-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers
+python 3.13.3 numpy 2.4.4 scipy 1.17.1 soundfile 0.13.1 PyMuPDF 1.28.0
+dump-modes renderer: exports/renderer_archive/TsukiSynthCLI_9123db8f_build20260915.exe sha256 9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8
+dump-modes with current build/ CLI (sha256 prefix a747c8368bef15a0) gave identical q_tongue.json
+products extracted to scratch E:/Tsuki-project/_scratch/wf1004/Q/x (zip members byte-identical to packages/ by sha256, see manifest check)
+TP meters: scipy resample_poly 4x/8x/32x (chunked, 4096-sample pad); ffmpeg ebur128 for I/LRA/maxM (400 ms, tail padded 0.5 s)

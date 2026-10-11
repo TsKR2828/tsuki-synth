@@ -1,0 +1,3 @@
+tests/test_verify_score_contract.py::RenderManifestContractTests::test_v4_with_complete_dependency_tree_passes
+
+312 tests collected in 1.85s

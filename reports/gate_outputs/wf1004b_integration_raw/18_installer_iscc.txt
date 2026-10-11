@@ -1,0 +1,83 @@
+ISCC: E:\Inno Setup 7\ISCC.exe  Authenticode=Valid Signer=CN=Pyrsys B.V., O=Pyrsys B.V., S=Noord-Holland, C=NL
+START 2026-10-07 04:02:15
+Inno Setup 7 Command-Line Compiler
+Copyright (C) 1997-2026 Jordan Russell. All rights reserved.
+Portions Copyright (C) 2000-2026 Martijn Laan. All rights reserved.
+Portions Copyright (C) 2001-2004 Alex Yackimoff. All rights reserved.
+https://www.innosetup.com
+
+Compiler engine version: Inno Setup 7.1.0
+Non-commercial use only
+
+Preprocessing
+   Reading file: E:\Inno Setup 7\ISPPBuiltins.iss
+Parsing [Setup] section, line 68
+Parsing [Setup] section, line 69
+Parsing [Setup] section, line 70
+Parsing [Setup] section, line 71
+Parsing [Setup] section, line 72
+Parsing [Setup] section, line 76
+Parsing [Setup] section, line 77
+Parsing [Setup] section, line 81
+Parsing [Setup] section, line 82
+Parsing [Setup] section, line 90
+Parsing [Setup] section, line 93
+Parsing [Setup] section, line 95
+Parsing [Setup] section, line 96
+Parsing [Setup] section, line 97
+Parsing [Setup] section, line 98
+Parsing [Setup] section, line 100
+Parsing [Setup] section, line 102
+Parsing [Setup] section, line 103
+Parsing [Setup] section, line 105
+Parsing [Setup] section, line 106
+Parsing [Setup] section, line 107
+Parsing [Setup] section, line 108
+Parsing [Setup] section, line 109
+Reading file (LicenseFile)
+Reading file (WizardImageFile)
+Reading file (WizardSmallImageFile)
+Preparing Setup program executable
+   Verification successful
+   Updating icons (Setup.e64)
+   Updating version info (Setup.e64)
+Determining language code pages
+   Reading file: E:\Inno Setup 7\Default.isl
+   Messages in script file
+Reading default messages from Default.isl
+Parsing [LangOptions], [Messages], and [CustomMessages] sections
+   Reading file: E:\Inno Setup 7\Default.isl
+   Messages in script file
+Reading [Code] section
+Parsing [Types] section, line 115
+Parsing [Types] section, line 116
+Parsing [Components] section, line 119
+Parsing [Components] section, line 120
+Parsing [Components] section, line 123
+Parsing [Icons] section, line 135
+Parsing [Icons] section, line 136
+Parsing [Icons] section, line 137
+Parsing [Run] section, line 140
+Parsing [Files] section, line 127
+Parsing [Files] section, line 128
+Parsing [Files] section, line 129
+Parsing [Files] section, line 131
+Parsing [Files] section, line 132
+Creating setup files
+   Verification successful
+   Updating icons (Setup.exe)
+   Compressing: \\?\<REPO>\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\Resources\moduleinfo.json
+   Compressing: \\?\<REPO>\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+   Compressing: \\?\<REPO>\build\TsukiSynth_artefacts\Release\Standalone\TsukiSynth.exe
+   Compressing: \\?\<REPO>\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+   Compressing: \\?\<SCRATCH>\INTb\iss\EULA.txt
+   Compressing: \\?\<REPO>\THIRD_PARTY_NOTICES.txt
+   Compressing Setup program executable
+   Updating version info (Setup.exe)
+   Updating manifest (Setup.exe)
+
+
+Successful compile (4.735 sec). Resulting Setup program filename is:
+<SCRATCH>\INTb\installer\TsukiSynth-0.3.0-win-x64-setup.exe
+EXIT_CODE=0
+END 2026-10-07 04:02:20

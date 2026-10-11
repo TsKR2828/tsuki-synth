@@ -1,0 +1,37 @@
+WF1004 CI card - physics.yml after push of WF1003 (headSha 6198922)
+=====================================================================
+Workflow : Physics Verification (physics.yml)
+Branch   : fix/deep-physics-audit-20260716
+Run      : 37493811777  https://github.com/TsKR2828/tsuki-synth/actions/runs/37493811777
+headSha  : 6198922881b753fed262f7a44836b3bbe334e5b2  (matches local HEAD 6198922)
+Created  : 2026-10-06T16:12:08Z   Finished: 2026-10-06T16:38:07Z   (about 26 min)
+Run conclusion: success   (watched with gh run watch --interval 60 --exit-status, exit=0; no re-trigger)
+
+Jobs (6/6 success)
+  build-and-verify                                   success  16:12:11 -> 16:38:07
+  cross-platform-emit (ubuntu-24.04, gcc)            success  16:12:11 -> 16:17:44
+  cross-platform-emit (windows-2022, msvc)           success  16:12:11 -> 16:17:00
+  cross-platform-emit (macos-14, appleclang)         success  16:12:16 -> 16:16:03
+  cpp-address-sanitizer                              success  16:12:12 -> 16:21:43
+  cross-platform-compare                             success  16:17:47 -> 16:18:14
+    log: "Cross-platform renders agree (bit-identical or within registered tolerance)."
+
+build-and-verify key steps (from job log, raw log saved in scratch)
+  ctest (audit/tuner/physics_models/spectrum_view): 100% tests passed, 0 failed out of 4
+  Spectral/T60 metrology self-tests: all PASS lines
+  Standalone T60 gate: RESULT: ALL WITHIN TOLERANCE
+  Complete physics gate (M1+M2+M5): NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED (pre-existing wording)
+  Whole-score verification (CI smoke): RESULT: ALL CHECKS PASSED (determinism sha256_match OK)
+  Event-specific consonance gate: 13 pairs, 13 PASS, 0 not-PASS
+  L2 HostProbe against built VST3: "PASS (0 failures)", exit code 0;
+     counted [PASS] lines = 241, [FAIL] lines = 0  -> matches new baseline 241/0
+     (Q05 real lit path checks present; Q09 voice-steal block is informational only)
+  Upload HostProbe log: artifact hostprobe-log-windows (id 11428465770)
+
+Notes
+  - Only annotations were Node.js 20 deprecation warnings and a macOS queue-capacity notice (not failures).
+  - Raw job log: E:\Tsuki-project\_scratch\wf1004\ci\build_verify.log ; final run JSON: ...\ci\final.json
+  - No repo files other than this evidence file were touched by this card. The working tree also holds
+    other WF1004 cards' unstaged edits (src/, tests/, docs) - not from this card.
+
+VERDICT: PASS

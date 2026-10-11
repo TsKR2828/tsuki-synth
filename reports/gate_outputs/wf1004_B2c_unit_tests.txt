@@ -1,0 +1,45 @@
+WF1004-B2c unit tests (X4: five test targets rebuilt before ctest) -- 2026-10-07, base HEAD 6198922 + P card (staged), B2b patch re-applied unchanged
+== build (VST3, CLI, five test targets) ==
+error lines: 0
+build_exit=0
+
+== ctest --test-dir build -C Release ==
+Test project E:/Tsuki-project/tsuki-synth/build
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.84 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.51 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.43 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   3.79 sec
+
+== AuditTest direct ==
+[PASS] lines: 111  [FAIL] lines: 0
+PASS (0 failures)
+
+== PhysicsModelsTest direct ==
+[PASS] lines: 234  [FAIL] lines: 0  Body level normalisation PASS lines: 15
+PASS (0 failures)
+
+== Body level normalisation lines (full text) ==
+[PASS] Body level normalisation closes (harmonic C4 (string/beam-like), Body 0.2): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -5.00 dB
+[PASS] Body level normalisation closes (harmonic C4 (string/beam-like), Body 0.5): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -10.07 dB
+[PASS] Body level normalisation closes (harmonic C4 (string/beam-like), Body 0.8): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -13.37 dB
+[PASS] Body level normalisation closes (harmonic C4 (string/beam-like), Body 1): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -15.04 dB
+[PASS] Body level normalisation closes (inharmonic G3 (plate/gong-like), Body 0.2): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -1.26 dB
+[PASS] Body level normalisation closes (inharmonic G3 (plate/gong-like), Body 0.5): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -5.69 dB
+[PASS] Body level normalisation closes (inharmonic G3 (plate/gong-like), Body 0.8): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -9.19 dB
+[PASS] Body level normalisation closes (inharmonic G3 (plate/gong-like), Body 1): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -11.01 dB
+[PASS] Body level normalisation OFF path is bit-identical to the pre-B2 behaviour (never-enabled vs enabled-then-cleared, 4096 samples, exact ==)
+[PASS] Body level normalisation: sine steady state matches the analytic transfer function (raw 5.5401 vs |H| 5.5402; normalised 1.1076 vs g*|H| 1.1076, require rel. err < 2e-3)
+[PASS] Body level normalisation boundaries: amount<0.001, empty/nullptr mode list, all-modes-unrenderable all give g == 1 (no NaN, no division by zero)
+[PASS] Body level normalisation gain never exceeds 1 on a 9900-point sweep (Body x ratio2 x notch ratio): max g = 1.000000, cap engaged at 8437 points (exact <= 1, no tolerance)
+[PASS] Body level normalisation: audit notch case really hits the cap (uncapped g = 31.12 dB, applied g = 1.000000)
+[PASS] Body level normalisation: notch case normalised peak 17.07 dB <= pre-B2 (Body on, no normalisation) peak 17.07 dB (exact consequence of g <= 1)
+[INFO] Body level normalisation: notch case synthetic peaks (dB): Body-off 15.56, pre-B2 / capped-normalised 17.07 (capped - Body-off 1.51 dB; this is the Body filter's own behaviour, not asserted); 0.3 s energy ratio capped/Body-off -17.75 dB (not asserted)
+[PASS] Body level normalisation: sample-by-sample |capped| <= |pre-B2| over 0.5 s (notch case g = 1.000000, max ratio 1.000000; harmonic case g = 0.2146, max ratio 0.2146; exact consequence of g <= 1, rel. 1e-6 float32 rounding)

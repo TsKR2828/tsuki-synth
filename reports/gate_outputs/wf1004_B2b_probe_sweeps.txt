@@ -1,0 +1,57 @@
+WF1004-B2b end-to-end probe (b2_probe from WF1003-B2: fresh VST3 instance, setCurrentProgram(i), parameter overrides, 8 silent warm-up blocks, note-on, 188 blocks kept; harness source = wf1003_B2_probe_harness_source.txt, unchanged).
+pre  = pre-B2 VST3 built from HEAD 6198922 (private tree, sha256 e3215486d783...)
+capped = build\ VST3 with B2 + g=min(g,1) (sha256 2351b215767f...)
+uncapped = WF1003 audit build of the FAILED uncapped B2 (E:\Tsuki-project\_scratch\wf1003\B2_audit\b, reference only)
+cases: cases_main.txt + cases_diag.txt (WF1003) + cases_notch.txt (audit notch settings), 150 cases, all three VST3. DESCRIPTIVE ONLY.
+
+== (A) 83 conditions (11 preset Body sweeps + 3 presets x 5 pitches x 3 velocities at Body 0.5), relative to same-condition Body 0 ==
+unc    : n=83  |RMS diff| <= 3 dB: 80/83  median|RMS diff|=1.11  RMS diff range -9.16..+2.29  peak diff range -9.66..+1.73
+         worst RMS diff -9.16 at sweep_p12_b1.0
+cap    : n=83  |RMS diff| <= 3 dB: 80/83  median|RMS diff|=1.23  RMS diff range -9.16..+1.60  peak diff range -9.66..+0.51
+         worst RMS diff -9.16 at sweep_p12_b1.0
+(uncapped row reproduces the WF1003 report: 80/83, median 1.11, RMS -9.16..+2.29, peak -9.66..+1.73)
+unc     minus pre-B2, same condition (Body>0): peak -16.89..+3.25  RMS -16.89..+3.25
+cap     minus pre-B2, same condition (Body>0): peak -16.89..+0.00  RMS -16.89..+0.00
+
+== (B) conditions among the 83 where the cap engaged (capped != uncapped): 12 ==
+condition | pre-B2 peak/RMS | uncapped peak/RMS | capped peak/RMS | capped-vs-Body0 peak/RMS | capped == pre-B2 ?
+grid_p7_n84_v0.3_b0.5 | -40.88/-58.95 | -39.08/-57.16 | -40.88/-58.95 | -0.76/-2.60 | yes
+grid_p7_n84_v0.7_b0.5 | -31.43/-50.53 | -29.66/-48.76 | -31.43/-50.53 | -0.05/-2.60 | yes
+grid_p7_n84_v1.0_b0.5 | -20.36/-38.00 | -18.56/-36.20 | -20.36/-38.00 | -0.98/-2.62 | yes
+grid_p11_n84_v0.3_b0.5 | -15.67/-31.25 | -14.02/-29.59 | -15.67/-31.25 | -0.64/-1.65 | yes
+grid_p11_n84_v0.7_b0.5 | -8.27/-23.86 | -6.62/-22.21 | -8.27/-23.86 | -0.64/-1.66 | yes
+grid_p11_n84_v1.0_b0.5 | -5.18/-20.77 | -3.53/-19.12 | -5.18/-20.77 | -0.64/-1.65 | yes
+grid_p15_n72_v0.3_b0.5 | -21.11/-37.40 | -17.86/-34.15 | -21.11/-37.40 | -2.25/-0.97 | yes
+grid_p15_n72_v0.7_b0.5 | -12.42/-29.33 | -9.26/-26.17 | -12.42/-29.33 | -2.20/-1.24 | yes
+grid_p15_n72_v1.0_b0.5 | -8.94/-25.97 | -5.85/-22.87 | -8.94/-25.97 | -2.19/-1.32 | yes
+grid_p15_n84_v0.3_b0.5 | -23.27/-40.21 | -21.59/-38.53 | -23.27/-40.21 | -2.83/-2.96 | yes
+grid_p15_n84_v0.7_b0.5 | -14.53/-31.37 | -12.84/-29.68 | -14.53/-31.37 | -2.99/-2.98 | yes
+grid_p15_n84_v1.0_b0.5 | -10.80/-27.79 | -9.12/-26.11 | -10.80/-27.79 | -2.87/-2.97 | yes
+
+== (C) Body 0 cases are unchanged by B2 (capped == pre-B2 for every case whose name ends in _b0)
+60/60 identical
+
+== (D) audit notch cases (C4 v0.7, preset 11, macro_tension=0.5, macro_noise=0) ==
+case | pre-B2 peak/RMS | uncapped(WF1003 B2) peak/RMS | capped(WF1004) peak/RMS
+notch_b0 | -1.067/-11.371 | -1.067/-11.371 | -1.067/-11.371
+notch_b1 | -7.896/-25.496 | 14.799/-3.870 | -7.896/-25.496
+plaus_b0 | -2.556/-16.536 | -2.556/-16.536 | -2.556/-16.536
+plaus_b1 | -7.434/-17.361 | -3.575/-13.502 | -7.434/-17.361
+notch_b1 capped peak -7.896 dBFS vs Body-off (notch_b0) -1.067 dBFS: capped - Body-off = -6.829 dB  -> <= 0 PASS
+notch_b1 capped == pre-B2: True; uncapped - pre-B2 = +22.695 dB (the WF1003 audit's +22.7 dB), uncapped - Body-off = +15.866 dB
+plaus_b1 capped peak -7.434 vs Body-off -2.556: capped - Body-off = -4.878 dB; capped == pre-B2: True
+
+== (E) target: preset 11, Body sweep (C4 v0.7), peak / RMS dBFS ==
+Body | pre-B2 | capped | uncapped(WF1003)
+0 | -3.028/-13.308 | -3.028/-13.308 | -3.028/-13.308
+0.2 | 1.805/-7.506 | -2.710/-11.970 | -2.710/-11.970
+0.35 | 3.084/-5.931 | -2.682/-11.799 | -2.682/-11.799
+0.5 | 3.799/-5.250 | -2.640/-11.758 | -2.640/-11.758
+0.65 | 4.316/-4.760 | -2.578/-11.752 | -2.578/-11.752
+0.8 | 4.682/-4.388 | -2.541/-11.757 | -2.541/-11.757
+1.0 | 5.063/-3.985 | -2.514/-11.767 | -2.514/-11.767
+target preset 11 Body 0.5: +3.799 -> -2.640 dBFS (WF1003 value -2.640 unchanged)
+
+== (F) all 150 cases: capped peak never above pre-B2 peak (exact consequence of g<=1) ==
+cases where capped peak > pre-B2 peak + 0.0005 dB: 0  []
+cases where capped RMS  > pre-B2 RMS  + 0.0005 dB: 0  []

@@ -1,0 +1,27 @@
+WF1004-B2b audit notch regression on the real plug-in (b2_probe; settings = wf1003 audit cases_notch.txt, copied as wf1004_B2b_notch_cases.txt)
+pre-B2 = HEAD 6198922 VST3; uncapped = failed WF1003 B2 build; capped = this card. Raw probe lines:
+--- pre
+notch_b0	prog=11	note=60	vel=0.70	peak_dBFS=-1.067	peak_t_ms=619.67	peak_ch=1	RMS_dBFS=-11.371
+notch_b1	prog=11	note=60	vel=0.70	peak_dBFS=-7.896	peak_t_ms=96.65	peak_ch=1	RMS_dBFS=-25.496
+plaus_b0	prog=11	note=60	vel=0.70	peak_dBFS=-2.556	peak_t_ms=378.00	peak_ch=1	RMS_dBFS=-16.536
+plaus_b1	prog=11	note=60	vel=0.70	peak_dBFS=-7.434	peak_t_ms=266.00	peak_ch=0	RMS_dBFS=-17.361
+--- unc
+notch_b0	prog=11	note=60	vel=0.70	peak_dBFS=-1.067	peak_t_ms=619.67	peak_ch=1	RMS_dBFS=-11.371
+notch_b1	prog=11	note=60	vel=0.70	peak_dBFS=14.799	peak_t_ms=0.12	peak_ch=0	RMS_dBFS=-3.870
+plaus_b0	prog=11	note=60	vel=0.70	peak_dBFS=-2.556	peak_t_ms=378.00	peak_ch=1	RMS_dBFS=-16.536
+plaus_b1	prog=11	note=60	vel=0.70	peak_dBFS=-3.575	peak_t_ms=266.00	peak_ch=0	RMS_dBFS=-13.502
+--- cap
+notch_b0	prog=11	note=60	vel=0.70	peak_dBFS=-1.067	peak_t_ms=619.67	peak_ch=1	RMS_dBFS=-11.371
+notch_b1	prog=11	note=60	vel=0.70	peak_dBFS=-7.896	peak_t_ms=96.65	peak_ch=1	RMS_dBFS=-25.496
+plaus_b0	prog=11	note=60	vel=0.70	peak_dBFS=-2.556	peak_t_ms=378.00	peak_ch=1	RMS_dBFS=-16.536
+plaus_b1	prog=11	note=60	vel=0.70	peak_dBFS=-7.434	peak_t_ms=266.00	peak_ch=0	RMS_dBFS=-17.361
+== (D) audit notch cases (C4 v0.7, preset 11, macro_tension=0.5, macro_noise=0) ==
+case | pre-B2 peak/RMS | uncapped(WF1003 B2) peak/RMS | capped(WF1004) peak/RMS
+notch_b0 | -1.067/-11.371 | -1.067/-11.371 | -1.067/-11.371
+notch_b1 | -7.896/-25.496 | 14.799/-3.870 | -7.896/-25.496
+plaus_b0 | -2.556/-16.536 | -2.556/-16.536 | -2.556/-16.536
+plaus_b1 | -7.434/-17.361 | -3.575/-13.502 | -7.434/-17.361
+notch_b1 capped peak -7.896 dBFS vs Body-off (notch_b0) -1.067 dBFS: capped - Body-off = -6.829 dB  -> <= 0 PASS
+notch_b1 capped == pre-B2: True; uncapped - pre-B2 = +22.695 dB (the WF1003 audit's +22.7 dB), uncapped - Body-off = +15.866 dB
+plaus_b1 capped peak -7.434 vs Body-off -2.556: capped - Body-off = -4.878 dB; capped == pre-B2: True
+

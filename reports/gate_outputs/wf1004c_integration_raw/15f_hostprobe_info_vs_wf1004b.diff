@@ -1,0 +1,51 @@
+# ref=<REPO>/reports/gate_outputs/wf1004b_integration_raw/15_hostprobe_cwd_outside_repo.txt
+# cur=raw/15_hostprobe_cwd_outside_repo.txt
+# mode=i ref_lines=84 cur_lines=84 changed_lines=38
+--- ref
++++ cur
+@@ -2,4 +2,4 @@
+-  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+-  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+-  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
+-  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-213.41 dB re signal (n=216000 samples/ch)
++  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-206.65 dB re signal (n=216000 samples/ch)
++  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-206.65 dB re signal (n=216000 samples/ch)
++  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-206.65 dB re signal (n=216000 samples/ch)
++  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-206.65 dB re signal (n=216000 samples/ch)
+@@ -7,4 +7,4 @@
+-  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+-  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+-  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
+-  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-218.22 dB re signal (n=216000 samples/ch)
++  [INFO] block 256 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-209.41 dB re signal (n=216000 samples/ch)
++  [INFO] block 512 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-209.41 dB re signal (n=216000 samples/ch)
++  [INFO] block 1024 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-209.41 dB re signal (n=216000 samples/ch)
++  [INFO] block 4096 vs 64: max|delta|=0.000 LSB@24bit, RMS delta=-209.41 dB re signal (n=216000 samples/ch)
+@@ -32 +32 @@
+-    [info] E16 factory preset 0 'Steel Hammered Dulcimer': peak -11.71 dBFS, RMS -27.69 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
++    [info] E16 factory preset 0 'Steel Hammered Dulcimer': peak -19.52 dBFS, RMS -35.50 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+@@ -38,2 +38,2 @@
+-    [info] E16 factory preset 6 'Steel Hammered Dulcimer (Body)': peak -7.27 dBFS, RMS -23.53 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+-    [info] E16 factory preset 7 'Copper Warm Strings (Body)': peak -4.67 dBFS, RMS -20.00 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
++    [info] E16 factory preset 6 'Steel Hammered Dulcimer (Body)': peak -21.22 dBFS, RMS -35.56 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
++    [info] E16 factory preset 7 'Copper Warm Strings (Body)': peak -14.08 dBFS, RMS -29.45 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+@@ -46,2 +46,2 @@
+-    [info] E16 factory preset 14 'Crystal Tongue Drum (Body)': peak -11.44 dBFS, RMS -19.93 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+-    [info] E16 factory preset 15 'Bronze Water Gong (Body)': peak -1.85 dBFS, RMS -16.56 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
++    [info] E16 factory preset 14 'Crystal Tongue Drum (Body)': peak -24.72 dBFS, RMS -33.21 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
++    [info] E16 factory preset 15 'Bronze Water Gong (Body)': peak -9.92 dBFS, RMS -24.63 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+@@ -57,2 +57,2 @@
+-    [info] E16 factory preset 25 'Grand Piano (Physical)': peak -12.43 dBFS, RMS -25.75 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+-    [info] E16 factory preset 26 'Bright Upright (Physical)': peak -13.98 dBFS, RMS -33.98 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
++    [info] E16 factory preset 25 'Grand Piano (Physical)': peak -22.03 dBFS, RMS -35.45 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
++    [info] E16 factory preset 26 'Bright Upright (Physical)': peak -14.88 dBFS, RMS -34.87 dBFS (descriptive only, not a GATE; 1e-12 floor = -240 dB printed for digital silence)
+@@ -67,2 +67,2 @@
+-    rendered 132.43 s (12415 blocks) through the VST3 + two twins in 40.6 s wall clock
+-    twin(16 voices = product pool) vs VST3 output: max |diff| = 0 over 12712960 samples (0 samples differ; VST3 peak -3.26 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
++    rendered 132.43 s (12415 blocks) through the VST3 + two twins in 41.4 s wall clock
++    twin(16 voices = product pool) vs VST3 output: max |diff| = 0 over 12712960 samples (0 samples differ; VST3 peak -10.52 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+@@ -77,2 +77,2 @@
+-    rendered 311.13 s (29168 blocks) through the VST3 + two twins in 26.2 s wall clock
+-    twin(32 voices = product pool) vs VST3 output: max |diff| = 0 over 29868032 samples (0 samples differ; VST3 peak -12.92 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
++    rendered 311.13 s (29168 blocks) through the VST3 + two twins in 26.9 s wall clock
++    twin(32 voices = product pool) vs VST3 output: max |diff| = 0 over 29868032 samples (0 samples differ; VST3 peak -24.33 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only

@@ -1,0 +1,46 @@
+WF1004-B2c GATE summary (R1: GATE outputs only) -- 2026-10-07, base HEAD 6198922 (+ staged P card / integration), nothing added/committed/pushed (R7)
+Task: re-land WF1004-B2b (Body level normalisation, g = min(g,1)) under the CORRECTED acceptance criterion chosen by Fable (B2b audit sec. 8 option (1)):
+  (a) capped output peak <= pre-B2 (un-normalised) per case; (b) g <= 1 always.  "Body-on can exceed Body-off (measured up to +3.98 dB)" is a pre-existing Body-filter property, not a B2 defect, and is written into the docs.
+
+== step 1: pre reference VST3 (R10 baseline = current state incl. P card) ==
+E:\Tsuki-project\_scratch\wf1004\B2c\pre\TsukiSynth.vst3  sha256 72f503c75cbdb6444606da759a22afe0b71eb6c119196cd5c5bd88323380ad8a  (HostProbe b16a57ad..., CLI e59ddfd0... = integration baseline)  -> wf1004_B2c_patch_apply.txt
+
+== step 2: B2b patch re-applied, program code untouched ==
+git apply --check + git apply B2b_tracked_changes.patch (working tree only); 19 plain files copied back from failed_B2b; WF1004_decisions merged (B2 section before the P section).
+sha256 of src/dsp/BodyResonance.h, src/engines/ChromaticEngine.h, src/engines/CimbalomEngine.h == the B2b final (3/3 identical) -> wf1004_B2c_patch_apply.txt
+
+== step 3: documentation corrected to measured numbers (no sentence left that the plug-in measurement refutes) ==
+docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md  : "upper limit 1 = no amplification (= pre-B2 behaviour); Body-on can still exceed Body-off (max +3.98 dB, pre-existing filter property)"
+reports/wf1003_b2_body_normalization_before_after.zh-TW.md : sec.0 item 7, sec.2 items 2-4, sec.5, sec.9 rewritten; new sec.11 "external plug-in worst case" (473-pair scan, B2c rerun == audit numbers)
+ROADMAP_PHYSICS.md sec.6 row : criterion = relative to pre-B2; measured worst case written (peak +3.98, 2-s RMS +4.41, first-0.3-s energy +3.69 / +1.51 when g clamped)
+reports/decision_packets/WF1004_decisions.zh-TW.md : B2b/B2c section (10-07 "follow the suggestion" -> min(g,1); B2b audit FAIL -> Fable chose option (1), with reasons) placed before the P section; WF1003_decisions B2 section carries the B2c note
+
+== step 4: unit tests (wf1004_B2c_unit_tests.txt) ==
+tests/physics_models_repro.cpp: the B2b assertion "first-0.3-s energy <= Body-off" (synthetic case) replaced by an exact per-sample "|capped| <= |pre-B2|" assertion on a notch case (g == 1) and a harmonic case (g < 1);
+synthetic-case vs Body-off numbers are printed as [INFO] only. No tolerance loosened; the assertion count stays 15 in testBodyLevelNormalisation().
+
+== step 5: verification ==
+build (X4: VST3, CLI, 5 test targets rebuilt before ctest): build_exit=0, 0 error lines            VST3 3441686e7ba6... CLI 551de7a7256c... HostProbe c3ed81da7584...
+ctest -C Release                           : 100% tests passed, 0 tests failed out of 4
+AuditTest direct                           : [PASS] 111 / [FAIL] 0, PASS (0 failures)
+PhysicsModelsTest direct                   : [PASS] 234 / [FAIL] 0, PASS (0 failures); Body level normalisation 15/15; [INFO] line present (synthetic: peak +1.51 dB vs Body-off, 0.3 s energy -17.75 dB)
+pytest tests -q                            : 306 passed, 1 skipped, 5 xfailed (= 312)                    -> wf1004_B2c_pytest.txt
+HostProbe (TSUKI_REPO_ROOT set, cwd outside repo, short outdir): before (pre VST3) 241 PASS / 0 FAIL; after 241 PASS / 0 FAIL (baseline 241)
+27 presets before/after                    : rows identical to the WF1003 uncapped 'after' table: 27 / 27 (<= 0.005 dB); max peak after -3.03 dBFS (preset 11); presets above 0 dBFS after: 0
+preset 11 Body 0.5 (C4 v0.7, real VST3)    : +3.799 -> -2.640 dBFS  (target -2.64)                          -> wf1004_B2c_preset_probe.txt
+old notch attack (real VST3)               : pre -7.896, capped -7.896 (capped - pre = +0.0000 dB <= 0 PASS), uncapped(WF1003) +14.799; capped - Body-off (-1.067) = -6.829 dB
+473-pair adversarial scan (audit's cases)  : capped - pre peak max +0.0000 dB, 0/473 above pre; capped - Body-off peak max +3.975 dB (71 pairs > +1 dB), 2-s RMS max +4.415, first-0.3-s energy max +3.69 (g<1) / +1.51 (g clamped); pre-B2 - Body-off max +16.58 dB (248 pairs > +1 dB); positive control (uncapped) max +21.11 dB  -> wf1004_B2c_adversarial_scan.txt
+CLI                                        : 8/8 IDENTICAL vs b6_method/sha256_before_post_a14.txt; --body-amount 0.5 old CLI == new CLI (4 scores); --dump-modes identical (2 scores) -> wf1004_B2c_cli_unchanged.txt
+
+== NOT run in this card ==
+physics_verify --full/--selftest, verify_score --all (75-WAV hash table), pluginval/validator, release CI, ISCC (left to the integration card; CLI path proven unchanged by 8/8 + --body-amount 0.5 old==new).
+
+== deviations / notes (reported, not hidden) ==
+1. Task text attributed "+1.51 dB first-0.3-s energy when g is clamped" to the synthetic notch case. Measured attribution: +1.51 dB is the max over the 217 g-clamped pairs of the real-plug-in scan (audit energy03.txt, reproduced in B2c). The synthetic unit-test notch case gives peak +1.51 dB vs Body-off and first-0.3-s energy -17.75 dB. The docs state the real attribution.
+2. src/dsp/BodyResonance.h still carries two comments from B2b saying "1 = Body-off baseline" (header comment line ~55 and the English comment in setLevelNormalisation()). Program text was frozen by the task ("do not change a line of the program part"), so they were left; they are comments only (no binary effect) and are superseded by the docs. Suggest a comment-only fix in a later card.
+3. B2b gate files (wf1004_B2b_*.txt, wf1003_B2_*.txt) were restored verbatim as history; they still contain the retired criterion "peak <= Body-off" wording and are superseded by wf1004_B2b_audit.txt and the B2c files.
+4. sec.6/sec.7 of the report (83-condition sweeps, side-effect magnitudes) are carried over from B2b (same program code; B2c re-measured the 27 presets, the preset 11 Body 0/0.5 rows, the ATK notch case, the 473-pair scan and the CLI).
+
+files changed (git status, B2c scope): ROADMAP_PHYSICS.md, docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md, reports/decision_packets/WF1003_decisions.zh-TW.md, reports/decision_packets/WF1004_decisions.zh-TW.md (staged P-only version + working-tree B2 section),
+  src/dsp/BodyResonance.h, src/engines/ChromaticEngine.h, src/engines/CimbalomEngine.h (patch, unchanged vs B2b), tests/physics_models_repro.cpp, reports/wf1003_b2_body_normalization_before_after.zh-TW.md,
+  reports/gate_outputs/wf1003_B2_*.txt (9, restored), wf1004_B2b_*.txt (9, restored), wf1004_B2c_*.txt (10 new incl. this one).

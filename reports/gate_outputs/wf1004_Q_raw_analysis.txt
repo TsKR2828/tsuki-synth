@@ -1,0 +1,171 @@
+=== A. FORMAT (soundfile vs ffprobe vs README claim 48k/24bit/stereo) ===
+SE zip WAV count=49  all 48k/24bit/2ch/pcm_s24le & ffprobe nb_samples==frames: True bad=[]
+Album WAV count=7 all 44.1k/16bit/2ch: True bad=[]
+
+=== B. TRUE PEAK / SAMPLE PEAK (own meters: scipy resample_poly 4x/8x/32x; ffmpeg ebur128 prints 1 decimal) ===
+SE distribution 43: TP(any of 4x/8x/32x) range -1.0544 .. -0.9489 dBTP; files with any-meter TP > -1.000: 8/43; with 8x TP > -1.000: 8; sample-peak range -1.3455 .. -1.0455 dBFS
+SE loop_ready 6: TP(any of 4x/8x/32x) range -1.0008 .. -0.9941 dBTP; files with any-meter TP > -1.000: 6/6; with 8x TP > -1.000: 5; sample-peak range -1.2139 .. -1.0000 dBFS
+Album WAV 7: TP(any of 4x/8x/32x) range -1.8200 .. -0.9915 dBTP; files with any-meter TP > -1.000: 4/7; with 8x TP > -1.000: 4; sample-peak range -1.8333 .. -1.0004 dBFS
+README(SE) claim: distribution -0.949 .. -1.048 dBTP (3 meters); loop-ready -0.996 .. -1.002 dBTP; Album README: -1.00 .. -1.83 dBTP
+
+per-file (SE distribution): file | sample peak | TP4 | TP8 | TP32 | spread(4..32) | within README -0.949..-1.048?
+akashic/akashic__Akashic_Gate_Open.wav                    -1.0455   -1.0213   -1.0196   -1.0194  0.0019 Y
+akashic/akashic__Akashic_Gate_Open_Dark.wav               -1.0455   -1.0365   -1.0363   -1.0362  0.0003 Y
+akashic/akashic__Akashic_Library_Drone.wav                -1.0455   -1.0400   -1.0398   -1.0397  0.0003 Y
+akashic/akashic__Akashic_Light_Tap.wav                    -1.1455   -0.9939   -0.9867   -0.9841  0.0097 Y
+akashic/akashic__Akashic_Meditation_Loop.wav              -1.0455   -1.0400   -1.0397   -1.0397  0.0003 Y
+akashic/akashic__Akashic_Page_Turn.wav                    -1.0455   -1.0388   -1.0384   -1.0382  0.0006 Y
+akashic/akashic__Akashic_Record_Chime.wav                 -1.0455   -1.0400   -1.0371   -1.0370  0.0030 Y
+akashic/akashic__Library_Opening_Bell.wav                 -1.0455   -1.0400   -1.0397   -1.0397  0.0003 Y
+clockwork/clockwork__Clockwork_Bell_Strike.wav            -1.0455   -1.0400   -1.0398   -1.0397  0.0003 Y
+clockwork/clockwork__Clockwork_Bell_Strike_Wavefold.wav   -1.0455   -1.0234   -1.0231   -1.0216  0.0017 Y
+clockwork/clockwork__Clockwork_Gear_Click.wav             -1.0455   -1.0007   -0.9896   -0.9866  0.0142 Y
+clockwork/clockwork__Clockwork_Gear_Shift.wav             -1.3455   -1.0074   -0.9923   -0.9899  0.0175 Y
+clockwork/clockwork__Clockwork_Spring_Release.wav         -1.0455   -1.0384   -1.0367   -1.0366  0.0018 Y
+clockwork/clockwork__Clockwork_Tick_Loop.wav              -1.2455   -1.0328   -1.0325   -1.0276  0.0052 Y
+clockwork/clockwork__Clockwork_Ticking_Room.wav           -1.0455   -0.9692   -0.9496   -0.9489  0.0203 NO
+forest/forest__Forest_Acorn_Tap.wav                       -1.0455   -0.9707   -0.9704   -0.9701  0.0006 Y
+forest/forest__Forest_Bamboo_Rain.wav                     -1.0455   -1.0389   -1.0380   -1.0379  0.0010 Y
+forest/forest__Forest_Bird_Call.wav                       -1.1455   -1.0544   -1.0521   -1.0498  0.0046 NO
+forest/forest__Forest_Bird_Call_Alarm.wav                 -1.0455   -1.0139   -1.0040   -1.0018  0.0121 Y
+forest/forest__Forest_Branch_Snap.wav                     -1.0455   -1.0307   -1.0304   -1.0303  0.0003 Y
+forest/forest__Forest_Leaf_Sweep.wav                      -1.0455   -1.0400   -1.0398   -1.0397  0.0003 Y
+forest/forest__Forest_Rain_Pattern.wav                    -1.0455   -1.0400   -1.0398   -1.0397  0.0003 Y
+ocean/ocean__Ocean_Abyss_Hum.wav                          -1.0455   -1.0400   -1.0398   -1.0397  0.0003 Y
+ocean/ocean__Ocean_Bubble_Pop.wav                         -1.0455   -1.0400   -1.0397   -1.0397  0.0003 Y
+ocean/ocean__Ocean_Bubble_Pop_Deep.wav                    -1.0455   -1.0400   -1.0398   -1.0397  0.0003 Y
+ocean/ocean__Ocean_Depth_Slam.wav                         -1.0455   -1.0400   -1.0397   -1.0397  0.0003 Y
+ocean/ocean__Ocean_Droplet_Tap.wav                        -1.0455   -1.0132   -1.0117   -1.0115  0.0017 Y
+ocean/ocean__Ocean_Tide_Wash.wav                          -1.0455   -1.0400   -1.0397   -1.0397  0.0003 Y
+ocean/ocean__Ocean_Wave_Cycle.wav                         -1.0455   -1.0400   -1.0397   -1.0397  0.0003 Y
+rabbit/rabbit__Rabbit_Bounce_Loop.wav                     -1.0455   -1.0316   -1.0313   -1.0305  0.0011 Y
+rabbit/rabbit__Rabbit_Carrot_Button.wav                   -1.0455   -1.0088   -1.0086   -1.0084  0.0004 Y
+rabbit/rabbit__Rabbit_Ding.wav                            -1.0455   -1.0179   -1.0139   -1.0119  0.0059 Y
+rabbit/rabbit__Rabbit_Ding_Angry.wav                      -1.1455   -0.9965   -0.9963   -0.9878  0.0087 Y
+rabbit/rabbit__Rabbit_Hop_Transition.wav                  -1.0455   -1.0324   -1.0321   -1.0319  0.0004 Y
+rabbit/rabbit__Rabbit_Stomp.wav                           -1.0455   -1.0400   -1.0398   -1.0392  0.0008 Y
+rabbit/rabbit__Rabbit_Wind_Chimes.wav                     -1.0455   -1.0225   -1.0212   -1.0211  0.0015 Y
+restraint/restraint__Restraint_Bolt_Click.wav             -1.1455   -1.0361   -1.0359   -1.0358  0.0003 Y
+restraint/restraint__Restraint_Chain_Drag.wav             -1.0455   -1.0400   -1.0384   -1.0383  0.0017 Y
+restraint/restraint__Restraint_Industrial_Pulse.wav       -1.0455   -1.0400   -1.0398   -1.0397  0.0003 Y
+restraint/restraint__Restraint_Iron_Drone.wav             -1.0455   -1.0400   -1.0398   -1.0397  0.0003 Y
+restraint/restraint__Restraint_Lock_Click.wav             -1.0455   -0.9586   -0.9583   -0.9582  0.0004 Y
+restraint/restraint__Restraint_Lock_Click_Distorted.wav   -1.1455   -1.0218   -0.9688   -0.9687  0.0530 Y
+restraint/restraint__Restraint_Shackle_Slam.wav           -1.0455   -1.0400   -1.0395   -1.0393  0.0007 Y
+
+per-file (loop-ready):
+/akashic__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav sp=-1.0008 tp4=-0.9953 tp8=-0.9951 tp32=-0.9950 inR=False
+k/clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav sp=-1.2139 tp4=-1.0008 tp8=-1.0005 tp32=-0.9956 inR=False
+orest/forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav sp=-1.0000 tp4=-0.9945 tp8=-0.9942 tp32=-0.9941 inR=False
+ady/ocean/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav sp=-1.0000 tp4=-0.9945 tp8=-0.9942 tp32=-0.9941 inR=False
+abbit/rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav sp=-1.0119 tp4=-0.9980 tp8=-0.9977 tp32=-0.9969 inR=True
+aint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav sp=-1.0005 tp4=-0.9949 tp8=-0.9947 tp32=-0.9946 inR=False
+
+per-file (album):
+WAV/Original_AI_Radiance_Complete_44k16_tpdf.wav        sp=-1.0058 tp4=-0.9971 tp8=-0.9966 tp32=nan
+WAV/Original_AI_Radiance_Movement1_44k16_tpdf.wav       sp=-1.8333 tp4=-1.8200 tp8=-1.8198 tp32=-1.8195420601739323
+WAV/Original_AI_Radiance_Movement2_44k16_tpdf.wav       sp=-1.3025 tp4=-1.2921 tp8=-1.2918 tp32=-1.2914502538788382
+WAV/Original_AI_Radiance_Movement3_44k16_tpdf.wav       sp=-1.0004 tp4=-0.9949 tp8=-0.9947 tp32=-0.9945923208649015
+WAV/Original_AI_Radiance_Movement4_44k16_tpdf.wav       sp=-1.1505 tp4=-1.1449 tp8=-1.1447 tp32=-1.144537621498316
+WAV/fur_elise_complete_44k16_tpdf.wav                   sp=-1.0016 tp4=-0.9961 tp8=-0.9959 tp32=nan
+WAV/fur_elise_complete_cimbalom_44k16_tpdf.wav          sp=-1.0186 tp4=-0.9917 tp8=-0.9915 tp32=nan
+
+=== C. LOUDNESS vs README / catalog ===
+SE 43 distribution: max momentary (400ms) range -28.357 .. -5.357 LUFS (README: -28.4 .. -5.4)
+Album 7 WAV: ebur128 integrated -14.3 .. -13.9 LUFS (1 decimal) (README loudnorm: -13.98 .. -14.35)
+
+=== D. CATALOG vs ACTUAL FILE (43 sfx; zip member path = <group>/<basename of distribution>) ===
+catalog duration_s vs frames/sr: within 0.6 ms: 43/43; max |diff| = 0.479 ms (akashic/akashic__Akashic_Library_Drone.wav)
+catalog dist_sha256 == zip member sha256: 43/43
+loop dy/akashic/akashic__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav: catalog samples 768000 vs actual 768000 -> True; sha True; bpm 60 bars 4
+      expected N = floor(bars*4*60*48000/bpm+0.5) = 768000  match=True
+loop y/clockwork/clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav: catalog samples 192000 vs actual 192000 -> True; sha True; bpm 120 bars 2
+      expected N = floor(bars*4*60*48000/bpm+0.5) = 192000  match=True
+loop op_ready/forest/forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav: catalog samples 576000 vs actual 576000 -> True; sha True; bpm 80 bars 4
+      expected N = floor(bars*4*60*48000/bpm+0.5) = 576000  match=True
+loop loop_ready/ocean/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav: catalog samples 384000 vs actual 384000 -> True; sha True; bpm 60 bars 2
+      expected N = floor(bars*4*60*48000/bpm+0.5) = 384000  match=True
+loop op_ready/rabbit/rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav: catalog samples 164571 vs actual 164571 -> True; sha True; bpm 140 bars 2
+      expected N = floor(bars*4*60*48000/bpm+0.5) = 164571  match=True
+loop aint/restraint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav: catalog samples 230400 vs actual 230400 -> True; sha True; bpm 100 bars 2
+      expected N = floor(bars*4*60*48000/bpm+0.5) = 230400  match=True
+music fur_elise_complete           dur cat 133.39 act 133.389 | album sha eq True | cat tp_full -1.0001 own tp4 -0.9961 tp8 -0.9959 | cat lufs -13.98 ebur I -13.9
+music fur_elise_complete_cimbalom  dur cat 133.39 act 133.389 | album sha eq True | cat tp_full -1.0 own tp4 -0.9917 tp8 -0.9915 | cat lufs -14.13 ebur I -14.1
+music ai_radiance_complete         dur cat 136.6 act 136.603 | album sha eq True | cat tp_full -1.0001 own tp4 -0.9971 tp8 -0.9966 | cat lufs -14.35 ebur I -14.3
+music ai_radiance_m1               dur cat 35.93 act 35.930 | album sha eq True | cat tp_full -1.8252 own tp4 -1.8200 tp8 -1.8198 | cat lufs -14.0 ebur I -14.0
+music ai_radiance_m2               dur cat 29.2 act 29.196 | album sha eq True | cat tp_full -1.2944 own tp4 -1.2921 tp8 -1.2918 | cat lufs -14.0 ebur I -14.0
+music ai_radiance_m3               dur cat 32.22 act 32.222 | album sha eq True | cat tp_full -1.0001 own tp4 -0.9949 tp8 -0.9947 | cat lufs -14.02 ebur I -14.0
+music ai_radiance_m4               dur cat 38.58 act 38.580 | album sha eq True | cat tp_full -1.1498 own tp4 -1.1449 tp8 -1.1447 | cat lufs -14.0 ebur I -14.0
+
+=== E. CLIPPING / DC / EDGES / STEREO ===
+file | full-scale code hits | max flat run>=0.5FS | DC mean dBFS (L,R) | lead exact-zero ms | lead<-80 ms | trail exact-zero ms | trail<-80 ms | last10ms RMS dBFS | first sample abs | L/R corr | max|L-R|
+akashic/akashic__Akashic_Gate_Open.wav               fs=0 flat=0 atmax=1/1 dc=(-73.5,-73.7) lz=0.00 l80=0.02 tz=0.0 t80=7068 l10=-141.5 fsa=0.00003 corr=-0.0290 dLR=1.18369
+akashic/akashic__Akashic_Gate_Open_Dark.wav          fs=0 flat=0 atmax=1/1 dc=(-71.3,-71.5) lz=0.00 l80=0.00 tz=0.0 t80=9054 l10=-140.8 fsa=0.00074 corr=-0.0470 dLR=1.39224
+akashic/akashic__Akashic_Library_Drone.wav           fs=0 flat=0 atmax=1/1 dc=(-62.8,-62.9) lz=0.00 l80=0.02 tz=0.8 t80=14453 l10=-142.5 fsa=0.00005 corr=-0.3820 dLR=1.10589
+akashic/akashic__Akashic_Light_Tap.wav               fs=0 flat=0 atmax=2/1 dc=(-77.1,-77.1) lz=0.00 l80=0.00 tz=0.0 t80=274 l10=-114.2 fsa=0.00712 corr=0.6232 dLR=0.48065
+akashic/akashic__Akashic_Meditation_Loop.wav         fs=0 flat=0 atmax=1/1 dc=(-75.6,-75.8) lz=0.00 l80=0.00 tz=0.0 t80=4406 l10=-125.2 fsa=0.00026 corr=0.1758 dLR=0.84076
+akashic/akashic__Akashic_Page_Turn.wav               fs=0 flat=0 atmax=1/1 dc=(-68.1,-68.2) lz=0.00 l80=0.00 tz=0.0 t80=412 l10=-94.2 fsa=0.00266 corr=0.3651 dLR=0.83828
+akashic/akashic__Akashic_Record_Chime.wav            fs=0 flat=0 atmax=1/1 dc=(-77.4,-77.6) lz=0.00 l80=0.00 tz=0.0 t80=1176 l10=-113.5 fsa=0.00073 corr=0.1002 dLR=1.13438
+akashic/akashic__Library_Opening_Bell.wav            fs=0 flat=0 atmax=1/1 dc=(-70.0,-70.1) lz=0.00 l80=0.00 tz=1.6 t80=4883 l10=-139.6 fsa=0.00090 corr=0.0021 dLR=1.28103
+clockwork/clockwork__Clockwork_Bell_Strike.wav       fs=0 flat=0 atmax=2/1 dc=(-79.7,-79.8) lz=0.00 l80=0.00 tz=0.0 t80=752 l10=-118.0 fsa=0.02567 corr=0.3825 dLR=0.56593
+ckwork/clockwork__Clockwork_Bell_Strike_Wavefold.wav fs=0 flat=0 atmax=1/1 dc=(-81.5,-81.5) lz=0.00 l80=0.00 tz=0.0 t80=1095 l10=-133.6 fsa=0.01682 corr=0.4710 dLR=0.69286
+clockwork/clockwork__Clockwork_Gear_Click.wav        fs=0 flat=0 atmax=2/1 dc=(-74.6,-74.7) lz=0.00 l80=0.00 tz=0.0 t80=114 l10=-109.0 fsa=0.02096 corr=0.9280 dLR=0.21560
+clockwork/clockwork__Clockwork_Gear_Shift.wav        fs=0 flat=0 atmax=1/1 dc=(-71.2,-71.3) lz=0.00 l80=0.00 tz=0.1 t80=1047 l10=-140.3 fsa=0.02383 corr=0.5430 dLR=0.52263
+clockwork/clockwork__Clockwork_Spring_Release.wav    fs=0 flat=0 atmax=2/1 dc=(-69.8,-69.8) lz=0.00 l80=0.00 tz=0.0 t80=472 l10=-121.6 fsa=0.00237 corr=0.7392 dLR=0.15958
+clockwork/clockwork__Clockwork_Tick_Loop.wav         fs=0 flat=0 atmax=1/1 dc=(-68.7,-68.8) lz=0.00 l80=0.00 tz=0.0 t80=1 l10=-87.4 fsa=0.02438 corr=0.5855 dLR=0.46538
+clockwork/clockwork__Clockwork_Ticking_Room.wav      fs=0 flat=0 atmax=1/1 dc=(-68.8,-68.9) lz=0.00 l80=0.00 tz=0.0 t80=2653 l10=-141.5 fsa=0.03081 corr=0.4139 dLR=0.85036
+forest/forest__Forest_Acorn_Tap.wav                  fs=0 flat=0 atmax=2/1 dc=(-67.7,-67.7) lz=0.00 l80=0.00 tz=0.0 t80=116 l10=-100.6 fsa=0.00378 corr=0.8705 dLR=0.21361
+forest/forest__Forest_Bamboo_Rain.wav                fs=0 flat=0 atmax=1/1 dc=(-70.0,-70.1) lz=0.00 l80=0.02 tz=0.0 t80=3540 l10=-141.6 fsa=0.00007 corr=0.0292 dLR=1.36506
+forest/forest__Forest_Bird_Call.wav                  fs=0 flat=0 atmax=2/1 dc=(-74.0,-74.1) lz=0.00 l80=0.00 tz=0.0 t80=436 l10=-112.2 fsa=0.00149 corr=0.3385 dLR=0.69462
+forest/forest__Forest_Bird_Call_Alarm.wav            fs=0 flat=0 atmax=2/1 dc=(-75.0,-75.1) lz=0.00 l80=0.00 tz=0.0 t80=357 l10=-119.9 fsa=0.00037 corr=0.5006 dLR=0.42888
+forest/forest__Forest_Branch_Snap.wav                fs=0 flat=0 atmax=2/1 dc=(-60.8,-60.8) lz=0.00 l80=0.00 tz=0.0 t80=85 l10=-97.1 fsa=0.00111 corr=0.8318 dLR=0.33243
+forest/forest__Forest_Leaf_Sweep.wav                 fs=0 flat=0 atmax=1/1 dc=(-64.7,-64.8) lz=0.00 l80=0.00 tz=0.0 t80=1581 l10=-134.8 fsa=0.00124 corr=0.1810 dLR=1.11060
+forest/forest__Forest_Rain_Pattern.wav               fs=0 flat=0 atmax=1/1 dc=(-65.3,-65.4) lz=0.00 l80=0.00 tz=0.1 t80=2499 l10=-141.8 fsa=0.00060 corr=0.1074 dLR=1.43318
+ocean/ocean__Ocean_Abyss_Hum.wav                     fs=0 flat=2 atmax=1/1 dc=(-58.3,-58.4) lz=0.00 l80=0.02 tz=0.9 t80=5719 l10=-137.3 fsa=0.00000 corr=0.2763 dLR=0.73664
+ocean/ocean__Ocean_Bubble_Pop.wav                    fs=0 flat=0 atmax=1/1 dc=(-72.0,-72.1) lz=0.00 l80=0.00 tz=0.0 t80=0 l10=-83.4 fsa=0.00150 corr=0.3017 dLR=1.18879
+ocean/ocean__Ocean_Bubble_Pop_Deep.wav               fs=0 flat=0 atmax=1/1 dc=(-73.0,-73.1) lz=0.00 l80=0.00 tz=0.0 t80=602 l10=-102.0 fsa=0.00010 corr=0.3249 dLR=0.99560
+ocean/ocean__Ocean_Depth_Slam.wav                    fs=0 flat=2 atmax=1/1 dc=(-54.7,-54.8) lz=0.00 l80=0.00 tz=0.0 t80=1063 l10=-107.6 fsa=0.00015 corr=-0.1240 dLR=1.15750
+ocean/ocean__Ocean_Droplet_Tap.wav                   fs=0 flat=0 atmax=2/1 dc=(-68.6,-68.7) lz=0.00 l80=0.00 tz=0.0 t80=0 l10=-80.6 fsa=0.00084 corr=0.3935 dLR=0.79102
+ocean/ocean__Ocean_Tide_Wash.wav                     fs=0 flat=0 atmax=1/1 dc=(-61.5,-61.6) lz=0.00 l80=0.02 tz=0.0 t80=3120 l10=-133.7 fsa=0.00001 corr=-0.4728 dLR=1.47557
+ocean/ocean__Ocean_Wave_Cycle.wav                    fs=0 flat=2 atmax=1/1 dc=(-60.5,-60.7) lz=0.00 l80=0.02 tz=0.0 t80=5019 l10=-141.3 fsa=0.00000 corr=-0.4070 dLR=1.50598
+rabbit/rabbit__Rabbit_Bounce_Loop.wav                fs=0 flat=0 atmax=1/1 dc=(-72.7,-72.8) lz=0.00 l80=0.02 tz=0.0 t80=1245 l10=-142.1 fsa=0.00002 corr=0.7084 dLR=0.58746
+rabbit/rabbit__Rabbit_Carrot_Button.wav              fs=0 flat=0 atmax=2/1 dc=(-71.5,-71.6) lz=0.00 l80=0.00 tz=0.0 t80=165 l10=-104.2 fsa=0.00140 corr=0.9376 dLR=0.16774
+rabbit/rabbit__Rabbit_Ding.wav                       fs=0 flat=0 atmax=2/1 dc=(-81.2,-81.2) lz=0.00 l80=0.00 tz=0.0 t80=194 l10=-95.4 fsa=0.00961 corr=0.3778 dLR=0.69487
+rabbit/rabbit__Rabbit_Ding_Angry.wav                 fs=0 flat=0 atmax=2/1 dc=(-82.0,-82.1) lz=0.00 l80=0.00 tz=0.0 t80=109 l10=-90.9 fsa=0.03463 corr=0.1642 dLR=0.70440
+rabbit/rabbit__Rabbit_Hop_Transition.wav             fs=0 flat=0 atmax=1/1 dc=(-77.7,-77.8) lz=0.00 l80=0.00 tz=0.0 t80=148 l10=-98.0 fsa=0.00395 corr=0.2580 dLR=1.08616
+rabbit/rabbit__Rabbit_Stomp.wav                      fs=0 flat=0 atmax=2/1 dc=(-65.9,-66.0) lz=0.00 l80=0.00 tz=0.0 t80=501 l10=-120.8 fsa=0.00102 corr=0.7781 dLR=0.09566
+rabbit/rabbit__Rabbit_Wind_Chimes.wav                fs=0 flat=0 atmax=1/1 dc=(-88.2,-88.3) lz=0.00 l80=0.02 tz=0.0 t80=3215 l10=-141.5 fsa=0.00001 corr=0.1427 dLR=0.95419
+restraint/restraint__Restraint_Bolt_Click.wav        fs=0 flat=0 atmax=2/1 dc=(-80.4,-80.4) lz=0.00 l80=0.00 tz=0.0 t80=0 l10=-77.5 fsa=0.04131 corr=0.9560 dLR=0.16907
+restraint/restraint__Restraint_Chain_Drag.wav        fs=0 flat=0 atmax=2/1 dc=(-57.7,-57.8) lz=0.00 l80=0.00 tz=0.0 t80=2172 l10=-141.0 fsa=0.00410 corr=0.2236 dLR=0.44219
+restraint/restraint__Restraint_Industrial_Pulse.wav  fs=0 flat=0 atmax=1/1 dc=(-53.4,-53.5) lz=0.00 l80=0.00 tz=0.0 t80=1908 l10=-141.4 fsa=0.01638 corr=0.0261 dLR=1.23764
+restraint/restraint__Restraint_Iron_Drone.wav        fs=0 flat=2 atmax=1/1 dc=(-59.7,-59.8) lz=0.00 l80=0.02 tz=0.0 t80=7779 l10=-141.0 fsa=0.00000 corr=-0.2229 dLR=1.46103
+restraint/restraint__Restraint_Lock_Click.wav        fs=0 flat=0 atmax=1/1 dc=(-76.4,-76.5) lz=0.00 l80=0.00 tz=0.0 t80=543 l10=-128.2 fsa=0.04313 corr=0.4825 dLR=0.84462
+traint/restraint__Restraint_Lock_Click_Distorted.wav fs=0 flat=0 atmax=1/1 dc=(-54.4,-54.4) lz=0.00 l80=0.00 tz=0.0 t80=619 l10=-134.1 fsa=0.02598 corr=0.8101 dLR=0.51483
+restraint/restraint__Restraint_Shackle_Slam.wav      fs=0 flat=0 atmax=2/1 dc=(-57.7,-57.8) lz=0.00 l80=0.00 tz=0.0 t80=466 l10=-105.6 fsa=0.00185 corr=0.4662 dLR=0.21807
+__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav fs=0 flat=0 atmax=1/1 dc=(-71.9,-72.1) lz=0.00 l80=0.00 tz=0.0 t80=0 l10=-44.6 fsa=0.00768 corr=0.1757 dLR=0.84509
+ork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav fs=0 flat=0 atmax=1/1 dc=(-66.4,-66.5) lz=0.00 l80=0.00 tz=0.0 t80=0 l10=-35.0 fsa=0.02110 corr=0.5858 dLR=0.45560
+rest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav fs=0 flat=0 atmax=1/1 dc=(-62.3,-62.5) lz=0.00 l80=0.00 tz=0.0 t80=0 l10=-31.6 fsa=0.03135 corr=0.1074 dLR=1.44071
+n/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav fs=0 flat=0 atmax=1/1 dc=(-54.6,-54.7) lz=0.00 l80=0.00 tz=0.0 t80=0 l10=-53.7 fsa=0.00245 corr=-0.4069 dLR=1.51535
+bbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav fs=0 flat=0 atmax=1/1 dc=(-68.8,-68.9) lz=0.00 l80=0.00 tz=0.0 t80=0 l10=-30.5 fsa=0.03375 corr=0.7084 dLR=0.58974
+straint_Industrial_Pulse__LoopReady_100bpm_2bars.wav fs=0 flat=0 atmax=1/1 dc=(-48.3,-48.5) lz=0.00 l80=0.00 tz=0.0 t80=0 l10=-30.6 fsa=0.07223 corr=0.0257 dLR=1.24407
+WAV/Original_AI_Radiance_Complete_44k16_tpdf.wav     fs=0 flat=2 atmax=1/1 dc=(-45.5,-45.7) lz=0.00 l80=0.00 tz=0.0 t80=10780 l10=-96.2 fsa=0.00629 corr=0.0052 dLR=1.43500
+WAV/Original_AI_Radiance_Movement1_44k16_tpdf.wav    fs=0 flat=0 atmax=1/1 dc=(-55.7,-55.9) lz=0.00 l80=0.00 tz=0.0 t80=5964 l10=-96.3 fsa=0.01279 corr=0.0159 dLR=1.11346
+WAV/Original_AI_Radiance_Movement2_44k16_tpdf.wav    fs=0 flat=2 atmax=1/1 dc=(-42.9,-43.0) lz=0.00 l80=0.00 tz=0.0 t80=2819 l10=-96.7 fsa=0.00598 corr=0.0078 dLR=0.96054
+WAV/Original_AI_Radiance_Movement3_44k16_tpdf.wav    fs=0 flat=2 atmax=1/1 dc=(-65.8,-65.9) lz=0.00 l80=0.00 tz=0.0 t80=4252 l10=-96.3 fsa=0.00192 corr=0.1092 dLR=1.10568
+WAV/Original_AI_Radiance_Movement4_44k16_tpdf.wav    fs=0 flat=2 atmax=1/1 dc=(-51.2,-51.3) lz=0.00 l80=0.00 tz=0.0 t80=5755 l10=-96.2 fsa=0.00211 corr=-0.1386 dLR=1.30600
+WAV/fur_elise_complete_44k16_tpdf.wav                fs=0 flat=2 atmax=1/1 dc=(-52.7,-52.8) lz=0.00 l80=0.00 tz=0.0 t80=1319 l10=-96.3 fsa=0.00305 corr=0.8666 dLR=0.56644
+WAV/fur_elise_complete_cimbalom_44k16_tpdf.wav       fs=0 flat=2 atmax=1/1 dc=(-53.5,-53.6) lz=0.00 l80=0.00 tz=0.0 t80=1394 l10=-96.3 fsa=0.00620 corr=0.8284 dLR=0.65521
+
+=== F. LOOP-READY SEAM (descriptive; whether a click is audible is NOT decided here) ===
+ic/akashic__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav jump=0.00070 (pct of in-file steps <= jump: 22.0%) in-file step p50/p99/max=0.00252/0.03351/0.06323
+      seam curvature d2 (wrap, two positions)=0.00031/0.00502  in-file d2 p99/max=0.00264/0.00655  seam HF energy vs file-median 2ms window=-4.5 dB, vs file-max window=-26.8 dB
+ork/clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav jump=0.03034 (pct of in-file steps <= jump: 52.7%) in-file step p50/p99/max=0.02830/0.16570/0.54497
+      seam curvature d2 (wrap, two positions)=0.02973/0.51471  in-file d2 p99/max=0.09693/0.51421  seam HF energy vs file-median 2ms window=16.4 dB, vs file-max window=-2.7 dB
+/forest/forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav jump=0.00530 (pct of in-file steps <= jump: 44.7%) in-file step p50/p99/max=0.00616/0.04714/0.11296
+      seam curvature d2 (wrap, two positions)=0.00012/0.03928  in-file d2 p99/max=0.00843/0.11370  seam HF energy vs file-median 2ms window=8.7 dB, vs file-max window=-12.6 dB
+ready/ocean/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav jump=0.00010 (pct of in-file steps <= jump: 4.6%) in-file step p50/p99/max=0.00104/0.00625/0.00907
+      seam curvature d2 (wrap, two positions)=0.00002/0.00106  in-file d2 p99/max=0.00053/0.00165  seam HF energy vs file-median 2ms window=-3.3 dB, vs file-max window=-19.4 dB
+/rabbit/rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav jump=0.00324 (pct of in-file steps <= jump: 1.4%) in-file step p50/p99/max=0.03048/0.11291/0.19735
+      seam curvature d2 (wrap, two positions)=0.00049/0.11486  in-file d2 p99/max=0.05324/0.18128  seam HF energy vs file-median 2ms window=2.4 dB, vs file-max window=-6.4 dB
+traint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav jump=0.01823 (pct of in-file steps <= jump: 77.8%) in-file step p50/p99/max=0.00936/0.05471/0.13582
+      seam curvature d2 (wrap, two positions)=0.01703/0.04444  in-file d2 p99/max=0.02534/0.14050  seam HF energy vs file-median 2ms window=5.6 dB, vs file-max window=-10.4 dB

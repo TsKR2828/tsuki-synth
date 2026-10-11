@@ -1,0 +1,32 @@
+Test project E:/Tsuki-project/tsuki-synth/build
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    0.98 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.51 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.07 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   1.58 sec
+
+--- AuditTest direct: [PASS] lines / [FAIL] lines
+111 / 0
+--- HostProbe default (env unset, cwd outside repo, build\ VST3 c324cfc1): [PASS] 241 / [FAIL] 0
+--- HostProbe TSUKI_Q09V=1 candidate: [PASS] 241 / [FAIL] 0
+--- HostProbe TSUKI_Q09V=1 baseline(12921524): [PASS] 241 / [FAIL] 0
+--- X4 build log tail
+  removing moduleinfo.json
+  creating E:/Tsuki-project/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+EXIT 0
+end 2026-10-07 01:53:41
+start 2026-10-07 01:53:38
+--- CLI target rebuild (dependency check)
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+  TsukiSynthCLI_rc_lib.vcxproj -> E:\Tsuki-project\tsuki-synth\build\TsukiSynthCLI_rc_lib.dir\Release\TsukiSynthCLI_rc_lib.lib
+  TsukiSynthData.vcxproj -> E:\Tsuki-project\tsuki-synth\build\Release\TsukiSynthData.lib
+  TsukiSynthCLI.vcxproj -> E:\Tsuki-project\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe

@@ -1,0 +1,9 @@
+ ROADMAP_PHYSICS.md                                 |   1 +
+ docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md              |   2 +
+ reports/decision_packets/WF1003_decisions.zh-TW.md |  41 ++-
+ reports/decision_packets/WF1004_decisions.zh-TW.md |  75 ++++-
+ src/dsp/BodyResonance.h                            | 108 ++++++-
+ src/engines/ChromaticEngine.h                      |   6 +
+ src/engines/CimbalomEngine.h                       |   6 +
+ tests/physics_models_repro.cpp                     | 326 +++++++++++++++++++++
+ 8 files changed, 551 insertions(+), 14 deletions(-)

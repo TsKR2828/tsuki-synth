@@ -1,0 +1,73 @@
+ M ROADMAP.md
+ M docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md
+ M docs/KNOWN_LIMITS_INDEX.zh-TW.md
+ M reports/wf0925_method/voice_pool_occupancy.py
+ M src/PluginProcessor.cpp
+ M tests/host_probe.cpp
+?? reports/decision_packets/WF1004_decisions.zh-TW.md
+?? reports/gate_outputs/wf1004_B2b_audit.txt
+?? reports/gate_outputs/wf1004_I2_audit.txt
+?? reports/gate_outputs/wf1004_I2_installer.txt
+?? reports/gate_outputs/wf1004_P_ab_probe.cpp.txt
+?? reports/gate_outputs/wf1004_P_audit.txt
+?? reports/gate_outputs/wf1004_P_audit_compare.py
+?? reports/gate_outputs/wf1004_P_audit_raw_ab_compare.txt
+?? reports/gate_outputs/wf1004_P_audit_raw_ctest_hostprobe.txt
+?? reports/gate_outputs/wf1004_P_audit_raw_q09v_summary.txt
+?? reports/gate_outputs/wf1004_P_compare_ab.py
+?? reports/gate_outputs/wf1004_P_criteria_preregistered.txt
+?? reports/gate_outputs/wf1004_P_ctest.txt
+?? reports/gate_outputs/wf1004_P_method.txt
+?? reports/gate_outputs/wf1004_P_raw_ab_compare_baseline_vs_candidate.txt
+?? reports/gate_outputs/wf1004_P_raw_ab_compare_control.txt
+?? reports/gate_outputs/wf1004_P_raw_ab_index_baseline.txt
+?? reports/gate_outputs/wf1004_P_raw_ab_index_candidate.txt
+?? reports/gate_outputs/wf1004_P_raw_baseline_hashes.txt
+?? reports/gate_outputs/wf1004_P_raw_baseline_run1.txt
+?? reports/gate_outputs/wf1004_P_raw_baseline_run2.txt
+?? reports/gate_outputs/wf1004_P_raw_baseline_run3.txt
+?? reports/gate_outputs/wf1004_P_raw_build_x4.log
+?? reports/gate_outputs/wf1004_P_raw_candidate_hashes.txt
+?? reports/gate_outputs/wf1004_P_raw_candidate_run1.txt
+?? reports/gate_outputs/wf1004_P_raw_candidate_run2.txt
+?? reports/gate_outputs/wf1004_P_raw_candidate_run3.txt
+?? reports/gate_outputs/wf1004_P_raw_cli_sha_after.txt
+?? reports/gate_outputs/wf1004_P_raw_cli_sha_before.txt
+?? reports/gate_outputs/wf1004_P_raw_default_hostprobe.txt
+?? reports/gate_outputs/wf1004_P_raw_prechange_default_hostprobe.txt
+?? reports/gate_outputs/wf1004_P_raw_rounds_log.txt
+?? reports/gate_outputs/wf1004_P_summarize.py
+?? reports/gate_outputs/wf1004_P_summary_3runs.txt
+?? reports/gate_outputs/wf1004_Q_audit.txt
+?? reports/gate_outputs/wf1004_Q_raw_album_measure.json
+?? reports/gate_outputs/wf1004_Q_raw_analysis.txt
+?? reports/gate_outputs/wf1004_Q_raw_extra.txt
+?? reports/gate_outputs/wf1004_Q_raw_manifest_check.txt
+?? reports/gate_outputs/wf1004_Q_raw_markers_and_readme_check.txt
+?? reports/gate_outputs/wf1004_Q_raw_pdf_inventory.txt
+?? reports/gate_outputs/wf1004_Q_raw_report_claim_checks.txt
+?? reports/gate_outputs/wf1004_Q_raw_run_facts.txt
+?? reports/gate_outputs/wf1004_Q_raw_script_alon_extract.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_analyze.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_extra.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_f0check.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_markers.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_measure.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_pdfs.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_readme.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_sdk.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_tongue.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_tongue_table.py
+?? reports/gate_outputs/wf1004_Q_raw_script_q_verify_claims.py
+?? reports/gate_outputs/wf1004_Q_raw_se_measure.json
+?? reports/gate_outputs/wf1004_Q_raw_sound_design_checks.json
+?? reports/gate_outputs/wf1004_Q_raw_sound_design_checks.txt
+?? reports/gate_outputs/wf1004_Q_raw_tongue_drum.json
+?? reports/gate_outputs/wf1004_Q_raw_tongue_f0_two_estimators.json
+?? reports/gate_outputs/wf1004_Q_raw_tongue_table.txt
+?? reports/gate_outputs/wf1004_Q_raw_york_pdf_truncation.txt
+?? reports/gate_outputs/wf1004_ci_push.txt
+?? reports/gate_outputs/wf1004_integration_raw/
+?? reports/wf1004_p_per_engine_pool.zh-TW.md
+?? reports/wf1004_product_quality_review.zh-TW.md
+?? src/VoicePool.h

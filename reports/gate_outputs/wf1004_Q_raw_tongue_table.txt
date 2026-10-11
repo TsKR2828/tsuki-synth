@@ -1,0 +1,28 @@
+independent cantilever eigenvalue ratios (betaL 1.8751041/4.6940911/7.8547574/10.9955407/14.1371684): 1.0000 : 6.2669 : 17.5475 : 34.3861 : 56.8426
+file | note/material | model modes f (Hz) / model T60 (s) [dump-modes, archived master renderer 9123db8f] | FFT-peak f1 vs model (c) | inst-freq f1 vs model (c, bw3%) | partial ratio meas (model) for modes with rel level > -50 dB | FX
+akashic__Akashic_Light_Tap | C7 glass beam cantilever(default) | 2093Hz,0.323s / 13117Hz,0.0376s | +2.1 | -3.0 | 1.000(1.000, +0dB); 6.262(6.267, -36dB) | reverb wet 0.15 decay 0.8
+clockwork__Clockwork_Bell_Strike | E5 brass beam cantilever(default) | 659Hz,1.03s / 4131Hz,0.123s / 11568Hz,0.0288s | -6.0 | -0.4 | 1.000(1.000, +0dB); 6.303(6.267, -7dB); 17.568(17.547, -35dB) | reverb wet 0.2 decay 1.5
+clockwork__Clockwork_Gear_Click | D5 brass beam cantilever(default) | 587Hz,1.16s / 3681Hz,0.143s / 10306Hz,0.0343s | -12.8 | -8.1 | 1.000(1.000, +0dB); 6.313(6.267, -9dB); 17.673(17.547, -28dB) | reverb wet 0.08 decay 0.3
+forest__Forest_Acorn_Tap | F5 wood_oak beam cantilever(default) | 698Hz,0.0967s / 4377Hz,0.0144s / 12256Hz,0.00447s | -1.6 | -0.1 | 1.000(1.000, +0dB); 6.280(6.267, -27dB) | reverb wet 0.12 decay 0.4
+ocean__Ocean_Droplet_Tap | A5 glass beam cantilever(default) | 880Hz,0.802s / 5515Hz,0.11s / 15442Hz,0.0302s | -3.3 | -1.2 | 1.000(1.000, +0dB); 6.263(6.267, -41dB) | reverb wet 0.2 decay 0.8
+ocean__Ocean_Bubble_Pop | C6 glass beam cantilever(default) | 1047Hz,0.67s / 6558Hz,0.0896s / 18363Hz,0.0238s | +4.0 | -5.1 | 1.000(1.000, +0dB) | reverb wet 0.3 decay 1.5
+ocean__Ocean_Bubble_Pop_Deep | C5 glass beam cantilever(default) | 523Hz,1.37s / 3279Hz,0.198s / 9182Hz,0.0594s | -1.3 | -3.6 | 1.000(1.000, +0dB) | reverb wet 0.45 decay 3.0
+rabbit__Rabbit_Ding | G6 aluminum beam cantilever(default) | 1568Hz,2.76s / 9826Hz,0.114s | -0.3 | +0.4 | 1.000(1.000, +0dB); 6.271(6.267, -47dB) | reverb wet 0.2 decay 1.0
+rabbit__Rabbit_Ding_Angry | G6 steel beam cantilever(default) | 1568Hz,1.64s / 9826Hz,0.0737s | +1.2 | +1.0 | 1.000(1.000, +0dB); 6.266(6.267, -24dB) | reverb wet 0.25 decay 1.5
+rabbit__Rabbit_Carrot_Button | A5 wood_maple beam cantilever(default) | 880Hz,0.102s / 5515Hz,0.0147s / 15442Hz,0.00437s | -11.4 | +0.1 | 1.000(1.000, +0dB); 6.365(6.267, -30dB) | reverb wet 0.1 decay 0.5
+restraint__Restraint_Bolt_Click | G3 steel beam cantilever(default) | 196Hz,22.6s / 1228Hz,2.33s / 3439Hz,0.473s | +0.1 | +1.0 | 1.000(1.000, +0dB); 6.264(6.267, -20dB); 17.572(17.547, -33dB) | reverb wet 0.1 decay 0.3
+akashic__Library_Opening_Bell | D4 steel tongue_drum cantilever(default) | 294Hz,14.4s / 1840Hz,1.29s / 5153Hz,0.237s | -3.4 | -3.3 | 1.000(1.000, +0dB); 6.282(6.267, -26dB) | reverb wet 0.35 decay 6.0
+
+model p2/p1 T60 ratio (dump-modes) and measured T60 f1/p2 on the FX-baked product WAV (method-limited, see report):
+akashic__Akashic_Light_Tap           model T60 p1 0.323s p2 0.0376s ratio 0.116 | measured f1 0.4038677489263604 p2 0.07434673988072486 | window 0.80s
+clockwork__Clockwork_Bell_Strike     model T60 p1 1.03s p2 0.123s ratio 0.120 | measured f1 0.6456103737486234 p2 5.213603136356343 | window 0.80s
+clockwork__Clockwork_Gear_Click      model T60 p1 1.16s p2 0.143s ratio 0.123 | measured f1 0.3298126027861138 p2 0.24808778724399622 | window 0.51s
+forest__Forest_Acorn_Tap             model T60 p1 0.0967s p2 0.0144s ratio 0.149 | measured f1 1.5496616075284082 p2 0.00762520336930675 | window 0.61s
+ocean__Ocean_Droplet_Tap             model T60 p1 0.802s p2 0.11s ratio 0.137 | measured f1 1.3923744008420886 p2 None | window 0.80s
+ocean__Ocean_Bubble_Pop              model T60 p1 0.67s p2 0.0896s ratio 0.134 | measured f1 0.2856032665948933 p2 1.3424509367354955 | window 0.80s
+ocean__Ocean_Bubble_Pop_Deep         model T60 p1 1.37s p2 0.198s ratio 0.145 | measured f1 3.1496940084387073 p2 2.435028971779208 | window 0.80s
+rabbit__Rabbit_Ding                  model T60 p1 2.76s p2 0.114s ratio 0.041 | measured f1 1.2158034983311032 p2 0.125776068568675 | window 0.80s
+rabbit__Rabbit_Ding_Angry            model T60 p1 1.64s p2 0.0737s ratio 0.045 | measured f1 3.27481538223277 p2 0.11969038544394245 | window 0.80s
+rabbit__Rabbit_Carrot_Button         model T60 p1 0.102s p2 0.0147s ratio 0.145 | measured f1 0.18644589979015705 p2 0.016601919407510792 | window 0.77s
+restraint__Restraint_Bolt_Click      model T60 p1 22.6s p2 2.33s ratio 0.103 | measured f1 1.809239186567727 p2 0.29286631411634295 | window 0.80s
+akashic__Library_Opening_Bell        model T60 p1 14.4s p2 1.29s ratio 0.089 | measured f1 6.441828765247646 p2 7.873152231489211 | window 1.20s

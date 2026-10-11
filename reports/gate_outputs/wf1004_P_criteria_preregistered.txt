@@ -1,0 +1,69 @@
+WF1004 P card -- per-engine voice pool (Chromatic 32, Piano/Cimbalom 16, FM 16): PRE-REGISTERED DECISION CRITERIA
+Written BEFORE any per-engine measurement was run (R1/R2: no after-the-fact fitting).
+Written at: see file mtime (also `date` echoed into E:\Tsuki-project\_scratch\wf1004\P\criteria_written_at.txt right after this file was saved).
+
+Ruling (month-month 2026-10-07 "照 Fable 建議"): Chromatic engine pool 32, Piano and FM stay 16, still the
+evidence-threshold rule: ADOPT only if ALL of C1..C4 hold; otherwise REVERT to 16 for every engine and write the
+failed item down (that is a legitimate result, not a FAIL of the card).
+
+Facts established by reading the source before measuring (not measurements):
+  - Moonlight tongue-drum score (HostProbe Q09 case "moonlight_mvt1_tongue_drum") plays through plug-in engine index 1 =
+    Chromatic (chr_sub_engine 0 = Tongue Drum), i.e. the `chromaticSynth` juce::Synthesiser (ChromaticSound/ChromaticVoice).
+    Engine 0 (Cimbalom) and engine 3 (Piano) share `cimbalomSynth`; engine 2 (FM Piano) uses `fmPianoSynth`.
+  - The pool size lives in src/PluginProcessor.cpp: three `for (i < kVoicePoolSize)` addVoice loops (WF1003-V made them one
+    shared constant). The CLI target compiles only src/cli/RenderApp.cpp (CMakeLists.txt:150-170) and has no pool.
+  - The pre-existing evidence from WF1003-V is the baseline: Piano pool 16 fully loaded (32 distinct notes held) p99 10.5 ms,
+    4-6 blocks >= budget per round. This card RE-MEASURES that baseline in the same runs; V-card numbers are context only.
+
+Block budget = kBlockSize / kSampleRate = 512 / 48000 Hz = 10.6667 ms (HostProbe's own block size and rate).
+"violating block" = a block whose processing time >= budget.
+
+Measured with HostProbe's existing Q09 machinery (twin = in-process juce::Synthesiser wired exactly like the processor
+constructor; twin output must be sample-identical to the VST3 for the pool size the VST3 was built with; timing = wall time of
+renderNextBlock() per block, 5 fresh repeats per case per pool, plus the real VST3 binary's processBlock() with the full effect chain).
+Rounds: 3 HostProbe runs on the candidate build (per-engine pool) and 3 on the baseline build (all engines 16), alternating.
+Machine = dev box (Ryzen 5 3500X); absolute ms do not transfer, the comparison to the Piano-16 baseline measured in the SAME run does.
+
+C1  steal elimination on the known worst real score:
+      moonlight_mvt1_tongue_drum:  steals(baseline build, pool 16) must be 64 (reproduces WF1002-C1/WF1003-V; if it is not 64 the
+      baseline is not what the V card measured -> stop and report), and steals(candidate build, Chromatic pool 32) must be 0.
+      Steal counts are deterministic (same in every round). Measured via the twin tied to the binary (identity max|VST3-twin| = 0
+      for the pool the binary was built with).
+
+C2  Chromatic 32-voice full load is not worse than the current Piano 16-voice full load (the product's accepted worst case):
+      Load = 32 distinct notes (MIDI 36..67) held 3 s (synthetic; the most a 32-voice pool can ask of one engine). Chromatic has THREE
+      sub-engines with different per-voice cost (Tongue Drum 12 modes, Water Gong 20 modes, Custom Harmonics 8 partials), so the
+      criterion covers ALL THREE, not only Tongue Drum:
+        X in { stress32_chromatic_tongue (sub 0), stress32_chromatic_watergong (sub 1), stress32_chromatic_custom (sub 2, all 8 amps = 1.0) }
+      Baseline B = stress32_piano at pool 16 (Piano engine, 16 voices busy), measured in the same HostProbe run.
+      For each of the 3 candidate-build rounds and each X, BOTH must hold (strict, no tolerance):
+        (a) median over the 5 repeats of per-repeat p99 block time: Chromatic-32(X) <= B(same round)
+        (b) total violating blocks over the 5 repeats:                Chromatic-32(X) <= B(same round)
+      Same two inequalities on the REAL VST3 (candidate build, full effect chain; one pass per round): X (VST3 uses pool 32 for
+      Chromatic) <= stress32_piano (VST3 uses pool 16 for Piano), per round, p99 and violating blocks.
+      (The moonlight replay on the real VST3 must also have 0 violating blocks in the candidate rounds, as the V card found at pool 32;
+       reported, and a nonzero count caused by a lone OS spike will be shown with its block time rather than hidden, but the
+       decision uses the inequalities above.)
+
+C3  Piano/Cimbalom and FM behaviour and output unchanged:
+      Real-binary A/B: baseline VST3 (all 16) vs candidate VST3, same MIDI, offline render, sample-by-sample max|diff| must be 0 for
+        engine 0 Cimbalom, engine 3 Piano and engine 2 FM, each with (i) a 12-note chord/arpeggio (<16 voices) and
+        (ii) the 32-distinct-notes overflow stress (steals happen at 16 in both builds, so this also proves the two pools still steal identically).
+      Plus: HostProbe twin(16) vs candidate-VST3 identity max|diff| = 0 on fur_elise (Piano) and stress32_piano.
+
+C4  Existing cases unchanged where the pool was already enough:
+      (a) fur_elise (Piano, demand 12): VST3 candidate output == twin pool-16 output (max|diff| = 0) and baseline==candidate (C3 chord);
+      (b) Chromatic (Tongue Drum / Water Gong / Custom) with <= 16 voices demanded: A/B baseline vs candidate max|diff| = 0;
+      (c) default HostProbe run (no env var) on the candidate build: [FAIL] 0, [PASS] count equal to the pre-change default run on the same
+          tree (231 PASS / 0 FAIL per WF1003-V default run; HANDOVER baseline 241 includes WF1003's S card +10 -> the pre-change number is
+          re-measured here before changing anything and the candidate must equal it);
+      (d) ctest 4/4;
+      (e) CLI not affected: build\TsukiSynthCLI.exe sha256 identical before and after this card's work (the CLI target does not compile
+          PluginProcessor.cpp and must not include the new header), and `grep` shows no CLI file includes the per-engine constants.
+
+Not a GATE tolerance: the "not worse than the Piano-16 baseline" rule is this card's decision rule (month-month's "evidence-threshold"
+ruling), it enters no ROADMAP section 6 table. No threshold number is tuned: 32 comes from the ruling, 16 is the status quo.
+
+Reported but NOT part of the decision (honest gaps): FM engine load at any pool size (no FM twin in HostProbe; FM stays 16 so no change
+is claimed), DAW co-load with other tracks, memory growth of 16 extra ChromaticVoice objects (not measured), machines other than the
+dev box. If any of C1..C4 fails: revert the constants to 16 (all engines), keep the evidence, state which item failed.

@@ -1,0 +1,8 @@
+installer: <SCRATCH>/INT/installer/TsukiSynth-0.3.0-win-x64-setup.exe
+size 8579225 bytes
+40a35d282890e216cbc02b73052615a0d92044e39d0bd986a719fa1c8798be72 *<SCRATCH>/INT/installer/TsukiSynth-0.3.0-win-x64-setup.exe
+PE machine=0x8664
+build binaries at compile time (should equal 05_bin_sha256_after.txt):
+e59ddfd04f18cc2fe0201883582ee6bce5fa2b9b1f3d8978909692a7f34ddc9d *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+72f503c75cbdb6444606da759a22afe0b71eb6c119196cd5c5bd88323380ad8a *build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+4e1896dd26fd708d99cf0bbea3a2bec0f09b6b9a8bd71bdc50f1d3fe724d5f14 *build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe

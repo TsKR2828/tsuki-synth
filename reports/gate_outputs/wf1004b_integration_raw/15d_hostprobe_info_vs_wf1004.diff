@@ -1,0 +1,10 @@
+# WF1004b-INT HostProbe non-verdict lines vs WF1004-INT (scratch paths normalised)
+1c1
+< START 2026-10-07 02:21:05 cwd=<SCRATCHDIR>/hp
+---
+> START 2026-10-07 03:59:51 cwd=<SCRATCHDIR>/hp
+106c106
+< END 2026-10-07 02:22:17
+---
+> END 2026-10-07 04:01:04
+DIFF_EXIT=1

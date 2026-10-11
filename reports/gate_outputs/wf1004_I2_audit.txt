@@ -1,0 +1,85 @@
+WF1004 I2 audit (Opus audit layer) -- .iss compile smoke test + Inno Setup license check
+Date: 2026-10-07   Verdict: PASS
+Method: the auditor re-ran the key checks. The worker's log was used only for comparison.
+Audit scratch: E:\Tsuki-project\_scratch\wf1004\audit_I2\
+
+[A] What this card changed (git status / diff, repo HEAD 6198922, branch fix/deep-physics-audit-20260716)
+  git status --porcelain:  ?? reports/gate_outputs/wf1004_I2_installer.txt   (only line)
+  git diff --stat: empty. tools/installer/TsukiSynth.iss and README.md are unchanged (mtime 10-02 / 10-03).
+  output\installer\ does not exist in the repo.
+  -> Matches the worker's changed_files (one evidence file). No src\, CMakeLists.txt or .iss change, so R6 full suite is not triggered.
+     No git add / commit / push was found.
+
+[B] Independent recompile
+  Command: "E:\Inno Setup 7\ISCC.exe" "/OE:\Tsuki-project\_scratch\wf1004\audit_I2\out" "E:\Tsuki-project\_scratch\wf1004\I2\iss\TsukiSynth.iss"
+  ISCC.exe Authenticode: Valid, CN=Pyrsys B.V., O=Pyrsys B.V., C=NL
+  Banner: "Compiler engine version: Inno Setup 7.1.0" / "Non-commercial use only"
+  Exit code: 0   "Successful compile (5.000 sec)"
+  Warnings: 0 (case-insensitive grep "warning" = 0; no "error" or "hint" lines).
+  The worker's log and the audit log match line by line except the timing line and the output folder.
+  Output: TsukiSynth-0.3.0-win-x64-setup.exe  8,580,179 bytes
+    audit  sha256 30ed1a40eb0566b081c2c8891dcf09b8d0cbc3dd95a158ee59f65119fecca857
+    worker sha256 30ed1a40eb0566b081c2c8891dcf09b8d0cbc3dd95a158ee59f65119fecca857   -> IDENTICAL
+    (Two separate compiles gave the same bytes, so the build from these inputs is reproducible.)
+  PE machine field of both outputs = 0x8664 (x64). Read from the header only; the file was not run.
+
+[C] Inputs re-hashed from the repo build\ (not from the worker's snapshot)
+  TsukiSynthCLI.exe       d308fed24af8042c448b259d1aa4a009843c51e106e5603b7f397fb2bcc6e944
+  Standalone TsukiSynth.exe 05e41a85a1cc7d04a9025763ac26762738f9a185ac603ca6f246a7b49dc80610
+  VST3 binary             f6147296be878b56b52ae8c170e9068abb2c83b30649f054fcbd765f36f0eb6b
+  moduleinfo.json         709526f55057e53be431ba288aa4e89671c4ea77fd7320b60afdff631535d994
+  THIRD_PARTY_NOTICES.txt aa955545d249e2c521f1d6b38b5a1b9e1c8b76c0f74ee811f25c5814bf32a985
+  CLI / VST3 / Standalone equal the wf1003_INTEGRATION.txt table (lines 61-64). The VST3 bundle has exactly 2 files.
+
+[D] Scratch .iss vs repo .iss
+  diff tools/installer/TsukiSynth.iss  _scratch/.../I2/iss/TsukiSynth.iss  -> one line only (line 39):
+    repo    #define RepoRoot       InstallerDir + "\..\.."
+    scratch #define RepoRoot       "E:\Tsuki-project\tsuki-synth"
+  No line-ending change (a plain diff would show every line otherwise). README.md copy is identical.
+  This is a path-only change; it does not change any installer behavior setting.
+
+[E] Stand-in EULA
+  Line 1: "*** 編譯煙霧測試用替身，非正式 EULA（COMPILE SMOKE TEST STAND-IN, NOT THE OFFICIAL EULA） ***"
+  Line 2: "*** 內容取自 docs/legal/EULA_BUYER_DRAFT.md 草稿；不得發行。 ***"
+  Line 3 is blank. From line 4 on it is byte-equal to docs/legal/EULA_BUYER_DRAFT.md (whose title also says DRAFT).
+  The stand-in lives only in the scratch folder; tools/installer/EULA.txt does not exist in the repo, so the repo .iss
+  will still hit its #error guard until 月月 supplies the approved EULA. -> The stand-in is clearly marked as not official.
+
+[F] License check (sampled independently)
+  curl https://jrsoftware.org/files/is/license.txt -> HTTP 200, 1521 B,
+    sha256 2e5346868c2a18434489824e11d65c3031620f792fefc415d05f19cd441abf5c
+  E:\Inno Setup 7\license.txt sha256 2e5346868c2a18434489824e11d65c3031620f792fefc415d05f19cd441abf5c
+  cmp -> BYTE_IDENTICAL. The worker's saved copy has the same hash. Worker claim confirmed.
+
+[G] Was any produced installer run?  No evidence of it.
+  - Uninstall key {FC4D29B8-412E-4982-A4F2-4BF404A3BCDD}_is1 (AppId from the .iss) is absent in HKLM, HKLM\WOW6432Node and HKCU.
+  - C:\Program Files\TsukiSynth, C:\Program Files (x86)\TsukiSynth and %LOCALAPPDATA%\Programs\TsukiSynth are all absent.
+  - C:\Program Files\Common Files\VST3\TsukiSynth.vst3 exists but its files are dated 2026-10-03 00:00 and the binary hash
+    starts FA13AC17661F (not f6147296). An install from this installer would write f6147296. So this is an older
+    deployment from before the 10-03 14:49 build, not from this card.
+  - %TEMP%\is-*.tmp folders created 10-07 00:08 contain innosetup-7.1.0-x64.tmp / isdonate.bmp. They belong to the
+    Inno Setup 7.1.0 installer itself (its processes, started 00:08, are still running), not to the TsukiSynth installer.
+  - No running process named TsukiSynth*.
+  - C:\Windows\Prefetch returned no TSUKISYNTH* entry.
+
+[H] Warnings / claims the worker might have downplayed -- checked
+  - "Non-commercial use only" banner: the worker reported it and said it did not verify whether the installer is marked.
+    A byte search for "commercial" (ASCII and UTF-16) in the setup.exe found 0 hits. Setup data is compressed, so
+    this does NOT prove the absence of a mark. Still unverified, as the worker said.
+  - 0 compiler warnings, confirmed.
+  - Stale docs: the .iss header (lines 2, 23-24, 89) and README.md still say "NEVER COMPILED / not installed". This is
+    correct as a follow-up (doc-only) for the integration card.
+
+[I] Residual items (not FAIL reasons; outside this card)
+  1. The stand-in EULA is UTF-8 without BOM. README.md line 31 cites the official docs that from 6.3.0 on UTF-8 *script*
+     files need no BOM. Whether the LicenseFile .txt page shows the Chinese text correctly without a BOM was not
+     checked (it would need running the installer). Check this when the real EULA is exported.
+  2. The deployed VST3 in Common Files (FA13AC17661F...) is older than the current build (f6147296...). Out of scope
+     for I2; noted for whoever handles deployment.
+  3. The Inno Setup 7.1.0 installer processes (PID 13932/18060/4004/21536) are still running. The install files are all present
+     (unins000.* dated 00:08), so it probably sits on its final page. 月月 can close that window.
+  4. No test install / uninstall was done. Do it before release, with the final binaries and the approved EULA.
+
+Verdict: PASS. The recompile gave exit 0, 0 warnings and the same sha256 30ed1a40...; the inputs equal the WF1003 hashes;
+the scratch .iss differs only in one path line; the stand-in EULA is clearly marked; the license is byte-identical to the website;
+there is no sign that any produced installer was run; and the repo change is only the evidence file.

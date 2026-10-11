@@ -1,0 +1,14 @@
+start Wed Oct  7 01:12:45     2026
+run baseline 1 start 01:12:45
+run baseline 1 exit=0 end 01:18:28
+run candidate 1 start 01:18:28
+run candidate 1 exit=0 end 01:24:20
+run baseline 2 start 01:24:20
+run baseline 2 exit=0 end 01:29:58
+run candidate 2 start 01:29:58
+run candidate 2 exit=0 end 01:35:38
+run baseline 3 start 01:35:38
+run baseline 3 exit=0 end 01:41:13
+run candidate 3 start 01:41:13
+run candidate 3 exit=0 end 01:46:49
+ALL_DONE Wed Oct  7 01:46:49     2026

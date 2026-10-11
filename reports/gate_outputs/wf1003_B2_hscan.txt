@@ -1,0 +1,40 @@
+# Python scan of the Body dry+wet transfer function (RBJ biquads as in src/dsp/BiquadFilter.h, sr 48 kHz)
+import numpy as np
+sr=48000.0
+def bq(kind,fc,q):
+    w0=2*np.pi*fc/sr; c=np.cos(w0); s=np.sin(w0); al=s/(2*q)
+    if kind=='bp': b=[al,0,-al]
+    else: b=[(1-c)/2,1-c,(1-c)/2]
+    a=[1+al,-2*c,1-al]
+    return [x/a[0] for x in b],[x/a[0] for x in a]
+def resp(ba,f):
+    b,a=ba; z1=np.exp(-1j*2*np.pi*f/sr); z2=z1*z1
+    return (b[0]+b[1]*z1+b[2]*z2)/(1+a[1]*z1+a[2]*z2)
+lp=bq('lp',500,0.707)
+fs=np.geomspace(20,20000,4000)
+worst=(9,None)
+rows=[]
+for f1 in np.geomspace(40,4000,40):
+    for ratio in (1.0,1.59,2.0,2.76,3.5):
+        f2=min(4000,max(40,f1*ratio))
+        for amt in (0.05,0.2,0.35,0.5,0.65,0.8,1.0):
+            lo=bq('bp',f1,1.8); mi=bq('bp',f2,1.4)
+            H=1+amt*4*(1.4*resp(lo,fs)+0.8*resp(mi,fs))*resp(lp,fs)
+            m=np.abs(H).min()
+            if m<worst[0]: worst=(m,(f1,ratio,amt,fs[np.abs(H).argmin()]))
+            # f1-only gain
+            rows.append((f1,ratio,amt,20*np.log10(abs(1+amt*4*(1.4*resp(lo,f1)+0.8*resp(mi,f1))*resp(lp,f1)))))
+print('global min |H| over f in [20,20k], f1 40..4000, ratios, amounts:',worst, 20*np.log10(worst[0]),'dB')
+f1gain=[r for r in rows if r[1]==2.0 and abs(r[0]-261)<20]
+# gain at f1 for reference amounts at f1~262
+for amt in (0.2,0.35,0.5,0.8,1.0):
+    lo=bq('bp',261.63,1.8); mi=bq('bp',523.25,1.4)
+    print(amt, round(20*np.log10(abs(1+amt*4*(1.4*resp(lo,261.63)+0.8*resp(mi,261.63))*resp(lp,261.63))),2))
+
+# output
+global min |H| over f in [20,20k], f1 40..4000, ratios, amounts: (np.float64(0.0017370285890570198), (np.float64(235.12064289099655), 2.76, 1.0, np.float64(869.8404467242095))) -55.20386067230696 dB
+0.2 6.53
+0.35 9.58
+0.5 11.85
+0.8 15.16
+1.0 16.83

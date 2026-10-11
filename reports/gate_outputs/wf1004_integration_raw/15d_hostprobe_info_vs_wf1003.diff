@@ -1,0 +1,92 @@
+# WF1004-INT HostProbe non-verdict lines vs WF1003-INT (scratch paths stripped). Deleted block 104-167 = the 64 'steal #' lines of the old 16-voice Chromatic pool
+1c1
+< START 2026-10-03 14:54:53
+---
+> START 2026-10-07 02:21:05 cwd=
+87,89c87,89
+<     rendered 132.43 s (12415 blocks) through the VST3 + two twins in 42.0 s wall clock
+<     twin(16 voices) vs VST3 output: max |diff| = 0 over 12712960 samples (0 samples differ; VST3 peak -3.26 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+<     MEASURED (twin, 16-voice pool = product): steals = 0 (0 hit a still-held note); max active voices at a block end = 12
+---
+>     rendered 132.43 s (12415 blocks) through the VST3 + two twins in 40.6 s wall clock
+>     twin(16 voices = product pool) vs VST3 output: max |diff| = 0 over 12712960 samples (0 samples differ; VST3 peak -3.26 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+>     MEASURED (twin, 16-voice pool = product, Cimbalom/Piano engine): steals = 0 (0 hit a still-held note); max active voices at a block end = 12
+98,101c98,101
+<     rendered 311.13 s (29168 blocks) through the VST3 + two twins in 24.3 s wall clock
+<     twin(16 voices) vs VST3 output: max |diff| = 0 over 29868032 samples (0 samples differ; VST3 peak -12.93 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+<     MEASURED (twin, 16-voice pool = product): steals = 64 (4 hit a still-held note); max active voices at a block end = 16
+<     MEASURED (twin, 16-voice pool): held note damped early by a same-pitch note-on = 291; extra held voices released by another note's note-off = 117
+---
+>     rendered 311.13 s (29168 blocks) through the VST3 + two twins in 26.2 s wall clock
+>     twin(32 voices = product pool) vs VST3 output: max |diff| = 0 over 29868032 samples (0 samples differ; VST3 peak -12.92 dBFS) -- 0 means the twin reproduced the binary's voice allocation exactly; descriptive only
+>     MEASURED (twin, 32-voice pool = product, Chromatic engine): steals = 0 (0 hit a still-held note); max active voices at a block end = 20
+>     MEASURED (twin, 32-voice pool): held note damped early by a same-pitch note-on = 291; extra held voices released by another note's note-off = 120
+104,167d103
+<       steal #1 at 17.920 s: new note 52 took the voice of note 33 (released/tailing)
+<       steal #2 at 33.973 s: new note 59 took the voice of note 59 (released/tailing)
+<       steal #3 at 35.840 s: new note 64 took the voice of note 30 (released/tailing)
+<       steal #4 at 36.213 s: new note 59 took the voice of note 59 (released/tailing)
+<       steal #5 at 53.760 s: new note 47 took the voice of note 47 (released/tailing)
+<       steal #6 at 53.760 s: new note 54 took the voice of note 54 (still held)
+<       steal #7 at 53.760 s: new note 66 took the voice of note 66 (still held)
+<       steal #8 at 57.493 s: new note 59 took the voice of note 59 (released/tailing)
+<       steal #9 at 58.240 s: new note 66 took the voice of note 35 (released/tailing)
+<       steal #10 at 58.613 s: new note 59 took the voice of note 59 (released/tailing)
+<       steal #11 at 60.480 s: new note 66 took the voice of note 66 (released/tailing)
+<       steal #12 at 70.560 s: new note 59 took the voice of note 59 (released/tailing)
+<       steal #13 at 70.560 s: new note 70 took the voice of note 30 (released/tailing)
+<       steal #14 at 71.680 s: new note 59 took the voice of note 59 (released/tailing)
+<       steal #15 at 71.680 s: new note 71 took the voice of note 35 (released/tailing)
+<       steal #16 at 79.520 s: new note 70 took the voice of note 35 (released/tailing)
+<       steal #17 at 80.640 s: new note 71 took the voice of note 40 (released/tailing)
+<       steal #18 at 91.840 s: new note 54 took the voice of note 32 (released/tailing)
+<       steal #19 at 91.840 s: new note 66 took the voice of note 29 (released/tailing)
+<       steal #20 at 112.000 s: new note 63 took the voice of note 42 (released/tailing)
+<       steal #21 at 112.000 s: new note 75 took the voice of note 51 (released/tailing)
+<       steal #22 at 115.360 s: new note 75 took the voice of note 75 (released/tailing)
+<       steal #23 at 116.480 s: new note 49 took the voice of note 39 (released/tailing)
+<       steal #24 at 116.480 s: new note 64 took the voice of note 37 (released/tailing)
+<       steal #25 at 116.480 s: new note 76 took the voice of note 36 (released/tailing)
+<       steal #26 at 119.840 s: new note 73 took the voice of note 73 (released/tailing)
+<       steal #27 at 120.960 s: new note 32 took the voice of note 36 (released/tailing)
+<       steal #28 at 120.960 s: new note 44 took the voice of note 44 (released/tailing)
+<       steal #29 at 120.960 s: new note 72 took the voice of note 37 (released/tailing)
+<       steal #30 at 181.440 s: new note 51 took the voice of note 51 (released/tailing)
+<       steal #31 at 184.053 s: new note 56 took the voice of note 56 (released/tailing)
+<       steal #32 at 184.427 s: new note 61 took the voice of note 32 (released/tailing)
+<       steal #33 at 185.547 s: new note 64 took the voice of note 33 (released/tailing)
+<       steal #34 at 199.733 s: new note 59 took the voice of note 59 (released/tailing)
+<       steal #35 at 201.600 s: new note 64 took the voice of note 30 (released/tailing)
+<       steal #36 at 201.973 s: new note 59 took the voice of note 59 (released/tailing)
+<       steal #37 at 215.040 s: new note 48 took the voice of note 39 (released/tailing)
+<       steal #38 at 215.040 s: new note 63 took the voice of note 40 (released/tailing)
+<       steal #39 at 215.040 s: new note 75 took the voice of note 51 (released/tailing)
+<       steal #40 at 217.280 s: new note 64 took the voice of note 64 (released/tailing)
+<       steal #41 at 217.280 s: new note 76 took the voice of note 39 (released/tailing)
+<       steal #42 at 232.960 s: new note 73 took the voice of note 37 (released/tailing)
+<       steal #43 at 241.920 s: new note 73 took the voice of note 37 (released/tailing)
+<       steal #44 at 252.000 s: new note 57 took the voice of note 57 (still held)
+<       steal #45 at 252.000 s: new note 69 took the voice of note 69 (released/tailing)
+<       steal #46 at 253.120 s: new note 56 took the voice of note 30 (released/tailing)
+<       steal #47 at 253.120 s: new note 68 took the voice of note 68 (released/tailing)
+<       steal #48 at 254.240 s: new note 49 took the voice of note 49 (released/tailing)
+<       steal #49 at 254.240 s: new note 56 took the voice of note 56 (still held)
+<       steal #50 at 254.240 s: new note 68 took the voice of note 68 (released/tailing)
+<       steal #51 at 255.360 s: new note 54 took the voice of note 40 (released/tailing)
+<       steal #52 at 255.360 s: new note 66 took the voice of note 66 (released/tailing)
+<       steal #53 at 256.853 s: new note 61 took the voice of note 61 (released/tailing)
+<       steal #54 at 257.600 s: new note 44 took the voice of note 37 (released/tailing)
+<       steal #55 at 257.600 s: new note 56 took the voice of note 39 (released/tailing)
+<       steal #56 at 257.600 s: new note 68 took the voice of note 36 (released/tailing)
+<       steal #57 at 258.720 s: new note 69 took the voice of note 37 (released/tailing)
+<       steal #58 at 259.840 s: new note 56 took the voice of note 56 (released/tailing)
+<       steal #59 at 259.840 s: new note 68 took the voice of note 68 (released/tailing)
+<       steal #60 at 262.080 s: new note 44 took the voice of note 44 (released/tailing)
+<       steal #61 at 262.080 s: new note 54 took the voice of note 33 (released/tailing)
+<       steal #62 at 262.080 s: new note 68 took the voice of note 68 (released/tailing)
+<       steal #63 at 264.320 s: new note 61 took the voice of note 32 (released/tailing)
+<       steal #64 at 264.693 s: new note 56 took the voice of note 30 (released/tailing)
+170c106
+< END 2026-10-03 14:56:05
+---
+> END 2026-10-07 02:22:17

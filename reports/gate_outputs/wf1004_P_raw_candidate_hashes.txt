@@ -1,0 +1,2 @@
+b700ded05d202ae02ac79393b1a994d4734e3b6d5aacafab0e2e7526786f2264 *candidate/HostProbe_candidate.exe
+c324cfc1c6b8bcbde482dbbfd87001cc5ad2fad4e16906c52cac38ec883e2048 *candidate/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3

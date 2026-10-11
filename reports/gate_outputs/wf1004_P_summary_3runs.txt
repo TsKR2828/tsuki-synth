@@ -1,0 +1,290 @@
+WF1004-P summary of .   (budget 10.6667 ms)
+
+=== baseline run 1 ===
+ case fur_elise (piano)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 0
+   steals pool16=0 (held 0) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 12/12/12
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.0 first diff none
+   VST3 (full chain): mean 1.095 p99 3.422 max 5.371 ms, blocks>=budget 0/12415
+   twin pool16 (5 reps): mean 1.006 | p99 median-of-reps 3.436 (worst rep 3.581) | worst block 21.45 | blocks>=budget total 5
+   twin pool32 (5 reps): mean 1.050 | p99 median-of-reps 3.450 (worst rep 4.179) | worst block 29.16 | blocks>=budget total 3
+ case moonlight_mvt1_tongue_drum
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=64 (held 4) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/20/20
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.030227 max|VST3-twinProd|=0.030227; max|twin16-twin32|=0.030227 first diff 860160 (17.920 s)
+   VST3 (full chain): mean 0.281 p99 0.465 max 3.455 ms, blocks>=budget 0/29168
+   twin pool16 (5 reps): mean 0.189 | p99 median-of-reps 0.372 (worst rep 0.390) | worst block 7.51 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.223 | p99 median-of-reps 0.394 (worst rep 0.420) | worst block 14.54 | blocks>=budget total 2
+ case stress32_chromatic_tongue (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.921249 max|VST3-twinProd|=0.921249; max|twin16-twin32|=0.921249 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.284 p99 0.626 max 0.863 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.187 | p99 median-of-reps 0.516 (worst rep 0.519) | worst block 0.78 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.446 | p99 median-of-reps 1.296 (worst rep 1.405) | worst block 1.77 | blocks>=budget total 0
+ case stress32_chromatic_watergong (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=1.37037 max|VST3-twinProd|=1.37037; max|twin16-twin32|=1.37037 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.571 p99 0.843 max 0.966 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.482 | p99 median-of-reps 0.760 (worst rep 0.803) | worst block 0.96 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.024 | p99 median-of-reps 1.431 (worst rep 1.499) | worst block 1.99 | blocks>=budget total 0
+ case stress32_chromatic_custom (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=12.9409 max|VST3-twinProd|=12.9409; max|twin16-twin32|=12.9409 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.563 p99 0.956 max 0.994 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.475 | p99 median-of-reps 0.870 (worst rep 0.958) | worst block 16.34 | blocks>=budget total 1
+   twin pool32 (5 reps): mean 1.052 | p99 median-of-reps 1.641 (worst rep 1.677) | worst block 2.47 | blocks>=budget total 0
+ case stress32_piano (synthetic)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 16
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=3.63242 max|VST3-twinProd|=0.0; max|twin16-twin32|=3.63242 first diff 1 (0.000 s)
+   VST3 (full chain): mean 2.507 p99 10.632 max 11.024 ms, blocks>=budget 4/469
+   twin pool16 (5 reps): mean 2.382 | p99 median-of-reps 10.461 (worst rep 10.652) | worst block 27.03 | blocks>=budget total 17
+   twin pool32 (5 reps): mean 7.142 | p99 median-of-reps 20.326 (worst rep 21.039) | worst block 36.25 | blocks>=budget total 743
+
+=== baseline run 2 ===
+ case fur_elise (piano)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 0
+   steals pool16=0 (held 0) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 12/12/12
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.0 first diff none
+   VST3 (full chain): mean 1.098 p99 3.451 max 14.185 ms, blocks>=budget 1/12415
+   twin pool16 (5 reps): mean 0.998 | p99 median-of-reps 3.348 (worst rep 3.429) | worst block 17.57 | blocks>=budget total 2
+   twin pool32 (5 reps): mean 1.029 | p99 median-of-reps 3.363 (worst rep 3.421) | worst block 14.50 | blocks>=budget total 2
+ case moonlight_mvt1_tongue_drum
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=64 (held 4) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/20/20
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.030227 max|VST3-twinProd|=0.030227; max|twin16-twin32|=0.030227 first diff 860160 (17.920 s)
+   VST3 (full chain): mean 0.276 p99 0.428 max 0.647 ms, blocks>=budget 0/29168
+   twin pool16 (5 reps): mean 0.185 | p99 median-of-reps 0.346 (worst rep 0.353) | worst block 5.42 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.219 | p99 median-of-reps 0.376 (worst rep 0.397) | worst block 9.35 | blocks>=budget total 0
+ case stress32_chromatic_tongue (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.921249 max|VST3-twinProd|=0.921249; max|twin16-twin32|=0.921249 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.275 p99 0.615 max 0.864 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.186 | p99 median-of-reps 0.515 (worst rep 0.551) | worst block 0.86 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.453 | p99 median-of-reps 1.312 (worst rep 1.510) | worst block 7.73 | blocks>=budget total 0
+ case stress32_chromatic_watergong (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=1.37037 max|VST3-twinProd|=1.37037; max|twin16-twin32|=1.37037 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.576 p99 0.961 max 1.199 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.482 | p99 median-of-reps 0.797 (worst rep 0.853) | worst block 1.12 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.017 | p99 median-of-reps 1.450 (worst rep 1.521) | worst block 1.92 | blocks>=budget total 0
+ case stress32_chromatic_custom (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=12.9409 max|VST3-twinProd|=12.9409; max|twin16-twin32|=12.9409 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.553 p99 0.940 max 0.996 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.481 | p99 median-of-reps 0.959 (worst rep 1.355) | worst block 6.94 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.052 | p99 median-of-reps 1.634 (worst rep 2.494) | worst block 3.28 | blocks>=budget total 0
+ case stress32_piano (synthetic)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 16
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=3.63242 max|VST3-twinProd|=0.0; max|twin16-twin32|=3.63242 first diff 1 (0.000 s)
+   VST3 (full chain): mean 2.489 p99 10.709 max 11.148 ms, blocks>=budget 5/469
+   twin pool16 (5 reps): mean 2.329 | p99 median-of-reps 10.345 (worst rep 10.411) | worst block 10.91 | blocks>=budget total 6
+   twin pool32 (5 reps): mean 6.998 | p99 median-of-reps 20.131 (worst rep 20.427) | worst block 20.59 | blocks>=budget total 710
+
+=== baseline run 3 ===
+ case fur_elise (piano)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 0
+   steals pool16=0 (held 0) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 12/12/12
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.0 first diff none
+   VST3 (full chain): mean 1.085 p99 3.426 max 5.323 ms, blocks>=budget 0/12415
+   twin pool16 (5 reps): mean 0.987 | p99 median-of-reps 3.281 (worst rep 3.306) | worst block 5.23 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.015 | p99 median-of-reps 3.316 (worst rep 3.337) | worst block 5.60 | blocks>=budget total 0
+ case moonlight_mvt1_tongue_drum
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=64 (held 4) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/20/20
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.030227 max|VST3-twinProd|=0.030227; max|twin16-twin32|=0.030227 first diff 860160 (17.920 s)
+   VST3 (full chain): mean 0.274 p99 0.429 max 0.784 ms, blocks>=budget 0/29168
+   twin pool16 (5 reps): mean 0.183 | p99 median-of-reps 0.333 (worst rep 0.335) | worst block 0.83 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.217 | p99 median-of-reps 0.372 (worst rep 0.373) | worst block 0.69 | blocks>=budget total 0
+ case stress32_chromatic_tongue (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.921249 max|VST3-twinProd|=0.921249; max|twin16-twin32|=0.921249 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.273 p99 0.604 max 0.838 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.183 | p99 median-of-reps 0.507 (worst rep 0.512) | worst block 0.76 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.434 | p99 median-of-reps 1.266 (worst rep 1.291) | worst block 1.73 | blocks>=budget total 0
+ case stress32_chromatic_watergong (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=1.37037 max|VST3-twinProd|=1.37037; max|twin16-twin32|=1.37037 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.561 p99 0.825 max 0.964 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.474 | p99 median-of-reps 0.748 (worst rep 0.796) | worst block 0.94 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.008 | p99 median-of-reps 1.452 (worst rep 1.470) | worst block 1.59 | blocks>=budget total 0
+ case stress32_chromatic_custom (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=12.9409 max|VST3-twinProd|=12.9409; max|twin16-twin32|=12.9409 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.549 p99 0.939 max 0.968 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.459 | p99 median-of-reps 0.853 (worst rep 0.878) | worst block 1.06 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.033 | p99 median-of-reps 1.592 (worst rep 1.639) | worst block 1.83 | blocks>=budget total 0
+ case stress32_piano (synthetic)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 16
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=3.63242 max|VST3-twinProd|=0.0; max|twin16-twin32|=3.63242 first diff 1 (0.000 s)
+   VST3 (full chain): mean 2.427 p99 10.503 max 10.896 ms, blocks>=budget 2/469
+   twin pool16 (5 reps): mean 2.309 | p99 median-of-reps 10.175 (worst rep 10.270) | worst block 10.82 | blocks>=budget total 6
+   twin pool32 (5 reps): mean 6.940 | p99 median-of-reps 19.980 (worst rep 19.994) | worst block 20.42 | blocks>=budget total 705
+
+=== candidate run 1 ===
+ case fur_elise (piano)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 0
+   steals pool16=0 (held 0) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 12/12/12
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.0 first diff none
+   VST3 (full chain): mean 1.179 p99 3.705 max 23.105 ms, blocks>=budget 4/12415
+   twin pool16 (5 reps): mean 1.020 | p99 median-of-reps 3.451 (worst rep 3.511) | worst block 16.84 | blocks>=budget total 1
+   twin pool32 (5 reps): mean 1.058 | p99 median-of-reps 3.508 (worst rep 3.669) | worst block 30.45 | blocks>=budget total 8
+ case moonlight_mvt1_tongue_drum
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=64 (held 4) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/20/20
+   identity max|VST3-twin16|=0.030227 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.030227 first diff 860160 (17.920 s)
+   VST3 (full chain): mean 0.322 p99 0.501 max 9.723 ms, blocks>=budget 0/29168
+   twin pool16 (5 reps): mean 0.190 | p99 median-of-reps 0.353 (worst rep 0.393) | worst block 18.95 | blocks>=budget total 3
+   twin pool32 (5 reps): mean 0.227 | p99 median-of-reps 0.414 (worst rep 0.468) | worst block 45.45 | blocks>=budget total 2
+ case stress32_chromatic_tongue (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.921249 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.921249 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.551 p99 1.497 max 2.180 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.188 | p99 median-of-reps 0.517 (worst rep 0.539) | worst block 0.92 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.457 | p99 median-of-reps 1.370 (worst rep 1.516) | worst block 3.17 | blocks>=budget total 0
+ case stress32_chromatic_watergong (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=1.37037 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=1.37037 first diff 1 (0.000 s)
+   VST3 (full chain): mean 1.143 p99 1.710 max 2.352 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.487 | p99 median-of-reps 0.816 (worst rep 0.881) | worst block 1.14 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.071 | p99 median-of-reps 1.693 (worst rep 3.540) | worst block 4.70 | blocks>=budget total 0
+ case stress32_chromatic_custom (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=12.9409 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=12.9409 first diff 1 (0.000 s)
+   VST3 (full chain): mean 1.153 p99 1.762 max 2.095 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.470 | p99 median-of-reps 0.873 (worst rep 0.891) | worst block 1.03 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.058 | p99 median-of-reps 1.646 (worst rep 1.836) | worst block 2.61 | blocks>=budget total 0
+ case stress32_piano (synthetic)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 16
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=3.63242 max|VST3-twinProd|=0.0; max|twin16-twin32|=3.63242 first diff 1 (0.000 s)
+   VST3 (full chain): mean 2.513 p99 10.775 max 11.193 ms, blocks>=budget 5/469
+   twin pool16 (5 reps): mean 2.366 | p99 median-of-reps 10.389 (worst rep 10.703) | worst block 10.98 | blocks>=budget total 18
+   twin pool32 (5 reps): mean 7.162 | p99 median-of-reps 20.449 (worst rep 25.025) | worst block 38.42 | blocks>=budget total 725
+
+=== candidate run 2 ===
+ case fur_elise (piano)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 0
+   steals pool16=0 (held 0) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 12/12/12
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.0 first diff none
+   VST3 (full chain): mean 1.124 p99 3.469 max 28.206 ms, blocks>=budget 1/12415
+   twin pool16 (5 reps): mean 1.012 | p99 median-of-reps 3.469 (worst rep 3.585) | worst block 118.11 | blocks>=budget total 9
+   twin pool32 (5 reps): mean 1.022 | p99 median-of-reps 3.330 (worst rep 3.498) | worst block 15.16 | blocks>=budget total 1
+ case moonlight_mvt1_tongue_drum
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=64 (held 4) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/20/20
+   identity max|VST3-twin16|=0.030227 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.030227 first diff 860160 (17.920 s)
+   VST3 (full chain): mean 0.311 p99 0.479 max 2.933 ms, blocks>=budget 0/29168
+   twin pool16 (5 reps): mean 0.183 | p99 median-of-reps 0.334 (worst rep 0.336) | worst block 1.25 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.217 | p99 median-of-reps 0.372 (worst rep 0.377) | worst block 2.09 | blocks>=budget total 0
+ case stress32_chromatic_tongue (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.921249 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.921249 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.525 p99 1.379 max 1.801 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.184 | p99 median-of-reps 0.507 (worst rep 0.512) | worst block 0.76 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.435 | p99 median-of-reps 1.278 (worst rep 1.286) | worst block 1.73 | blocks>=budget total 0
+ case stress32_chromatic_watergong (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=1.37037 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=1.37037 first diff 1 (0.000 s)
+   VST3 (full chain): mean 1.096 p99 1.472 max 1.549 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.476 | p99 median-of-reps 0.750 (worst rep 0.792) | worst block 0.88 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.010 | p99 median-of-reps 1.415 (worst rep 1.432) | worst block 1.56 | blocks>=budget total 0
+ case stress32_chromatic_custom (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=12.9409 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=12.9409 first diff 1 (0.000 s)
+   VST3 (full chain): mean 1.125 p99 1.782 max 1.877 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.461 | p99 median-of-reps 0.856 (worst rep 0.863) | worst block 1.03 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.037 | p99 median-of-reps 1.593 (worst rep 1.604) | worst block 1.80 | blocks>=budget total 0
+ case stress32_piano (synthetic)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 16
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=3.63242 max|VST3-twinProd|=0.0; max|twin16-twin32|=3.63242 first diff 1 (0.000 s)
+   VST3 (full chain): mean 2.463 p99 10.590 max 10.892 ms, blocks>=budget 3/469
+   twin pool16 (5 reps): mean 2.317 | p99 median-of-reps 10.192 (worst rep 10.305) | worst block 10.91 | blocks>=budget total 8
+   twin pool32 (5 reps): mean 6.964 | p99 median-of-reps 20.034 (worst rep 20.065) | worst block 20.47 | blocks>=budget total 706
+
+=== candidate run 3 ===
+ case fur_elise (piano)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 0
+   steals pool16=0 (held 0) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 12/12/12
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.0 first diff none
+   VST3 (full chain): mean 1.107 p99 3.417 max 5.343 ms, blocks>=budget 0/12415
+   twin pool16 (5 reps): mean 0.984 | p99 median-of-reps 3.289 (worst rep 3.299) | worst block 5.21 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.013 | p99 median-of-reps 3.305 (worst rep 3.320) | worst block 5.34 | blocks>=budget total 0
+ case moonlight_mvt1_tongue_drum
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=64 (held 4) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/20/20
+   identity max|VST3-twin16|=0.030227 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.030227 first diff 860160 (17.920 s)
+   VST3 (full chain): mean 0.309 p99 0.466 max 0.640 ms, blocks>=budget 0/29168
+   twin pool16 (5 reps): mean 0.183 | p99 median-of-reps 0.334 (worst rep 0.335) | worst block 0.51 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.217 | p99 median-of-reps 0.372 (worst rep 0.373) | worst block 0.69 | blocks>=budget total 0
+ case stress32_chromatic_tongue (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.921249 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=0.921249 first diff 1 (0.000 s)
+   VST3 (full chain): mean 0.525 p99 1.375 max 1.767 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.184 | p99 median-of-reps 0.508 (worst rep 0.559) | worst block 0.77 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 0.434 | p99 median-of-reps 1.278 (worst rep 1.339) | worst block 1.83 | blocks>=budget total 0
+ case stress32_chromatic_watergong (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=1.37037 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=1.37037 first diff 1 (0.000 s)
+   VST3 (full chain): mean 1.093 p99 1.529 max 1.625 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.474 | p99 median-of-reps 0.749 (worst rep 0.818) | worst block 0.92 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.005 | p99 median-of-reps 1.414 (worst rep 1.472) | worst block 1.62 | blocks>=budget total 0
+ case stress32_chromatic_custom (synthetic)
+   product pool of engine class = 32 (Chromatic), product-twin steals = 0
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=12.9409 max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0; max|twin16-twin32|=12.9409 first diff 1 (0.000 s)
+   VST3 (full chain): mean 1.120 p99 1.675 max 1.836 ms, blocks>=budget 0/469
+   twin pool16 (5 reps): mean 0.459 | p99 median-of-reps 0.853 (worst rep 0.859) | worst block 1.01 | blocks>=budget total 0
+   twin pool32 (5 reps): mean 1.032 | p99 median-of-reps 1.600 (worst rep 1.653) | worst block 1.85 | blocks>=budget total 0
+ case stress32_piano (synthetic)
+   product pool of engine class = 16 (Cimbalom/Piano), product-twin steals = 16
+   steals pool16=16 (held 16) pool32=0 (held 0) pool128=0; maxActive 16/32/128 = 16/32/32
+   identity max|VST3-twin16|=0.0 max|VST3-twin32|=3.63242 max|VST3-twinProd|=0.0; max|twin16-twin32|=3.63242 first diff 1 (0.000 s)
+   VST3 (full chain): mean 2.453 p99 10.416 max 11.074 ms, blocks>=budget 3/469
+   twin pool16 (5 reps): mean 2.308 | p99 median-of-reps 10.164 (worst rep 10.367) | worst block 10.86 | blocks>=budget total 6
+   twin pool32 (5 reps): mean 6.939 | p99 median-of-reps 19.911 (worst rep 20.049) | worst block 20.34 | blocks>=budget total 705
+
+=========== CRITERIA EVALUATION (as pre-registered) ===========
+C1  moonlight steals
+  round 1: baseline build: twin16 steals=64 (held 4), identity max|VST3-twin16|=0.0;  candidate build: twin32 steals=0, product-twin steals=0, identity max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0  -> OK
+  round 2: baseline build: twin16 steals=64 (held 4), identity max|VST3-twin16|=0.0;  candidate build: twin32 steals=0, product-twin steals=0, identity max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0  -> OK
+  round 3: baseline build: twin16 steals=64 (held 4), identity max|VST3-twin16|=0.0;  candidate build: twin32 steals=0, product-twin steals=0, identity max|VST3-twin32|=0.0 max|VST3-twinProd|=0.0  -> OK
+C1 => PASS
+
+C2  Chromatic 32 full load vs Piano 16 full load (same run), strict <=
+  round 1: Piano16 twin: p99 median 10.389 ms, violations 18;  VST3: p99 10.775, violations 5   (VST3 pool used by this binary for Piano = 16)
+     stress32_chromatic_tongue (synthetic)        twin32: p99 median 1.370 (<= 10.389: True), viol 0 (<= 18: True); VST3(pool 32): p99 1.497 (<= 10.775: True), viol 0 (<= 5: True)  -> OK
+     stress32_chromatic_watergong (synthetic)     twin32: p99 median 1.693 (<= 10.389: True), viol 0 (<= 18: True); VST3(pool 32): p99 1.710 (<= 10.775: True), viol 0 (<= 5: True)  -> OK
+     stress32_chromatic_custom (synthetic)        twin32: p99 median 1.646 (<= 10.389: True), viol 0 (<= 18: True); VST3(pool 32): p99 1.762 (<= 10.775: True), viol 0 (<= 5: True)  -> OK
+     moonlight on candidate VST3: blocks>=budget 0, max block 9.723 ms, p99 0.501  (reported; not in the inequalities)
+  round 2: Piano16 twin: p99 median 10.192 ms, violations 8;  VST3: p99 10.590, violations 3   (VST3 pool used by this binary for Piano = 16)
+     stress32_chromatic_tongue (synthetic)        twin32: p99 median 1.278 (<= 10.192: True), viol 0 (<= 8: True); VST3(pool 32): p99 1.379 (<= 10.590: True), viol 0 (<= 3: True)  -> OK
+     stress32_chromatic_watergong (synthetic)     twin32: p99 median 1.415 (<= 10.192: True), viol 0 (<= 8: True); VST3(pool 32): p99 1.472 (<= 10.590: True), viol 0 (<= 3: True)  -> OK
+     stress32_chromatic_custom (synthetic)        twin32: p99 median 1.593 (<= 10.192: True), viol 0 (<= 8: True); VST3(pool 32): p99 1.782 (<= 10.590: True), viol 0 (<= 3: True)  -> OK
+     moonlight on candidate VST3: blocks>=budget 0, max block 2.933 ms, p99 0.479  (reported; not in the inequalities)
+  round 3: Piano16 twin: p99 median 10.164 ms, violations 6;  VST3: p99 10.416, violations 3   (VST3 pool used by this binary for Piano = 16)
+     stress32_chromatic_tongue (synthetic)        twin32: p99 median 1.278 (<= 10.164: True), viol 0 (<= 6: True); VST3(pool 32): p99 1.375 (<= 10.416: True), viol 0 (<= 3: True)  -> OK
+     stress32_chromatic_watergong (synthetic)     twin32: p99 median 1.414 (<= 10.164: True), viol 0 (<= 6: True); VST3(pool 32): p99 1.529 (<= 10.416: True), viol 0 (<= 3: True)  -> OK
+     stress32_chromatic_custom (synthetic)        twin32: p99 median 1.600 (<= 10.164: True), viol 0 (<= 6: True); VST3(pool 32): p99 1.675 (<= 10.416: True), viol 0 (<= 3: True)  -> OK
+     moonlight on candidate VST3: blocks>=budget 0, max block 0.640 ms, p99 0.466  (reported; not in the inequalities)
+C2 => PASS

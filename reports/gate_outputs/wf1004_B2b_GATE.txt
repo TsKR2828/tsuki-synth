@@ -1,0 +1,74 @@
+WF1004-B2b GATE summary (R1: GATE outputs only) -- 2026-10-07, base HEAD 6198922, nothing committed/staged (R7)
+Task: redo WF1003-B2 (Body level normalisation) with g = min(g, 1)  (月月 2026-10-07 裁決 B2b=A)
+
+== step 1: patch re-applied ==
+git apply --check + git apply E:\Tsuki-project\_scratch\wf1003\failed_B2\B2_tracked_changes.patch -> clean (6 files); failed_B2\reports\{wf1003_b2_*.md, gate_outputs\wf1003_B2_*.txt} moved back (copied) to repo; WF1003_decisions B2 section merged before Q09 (not overwritten).
+
+== step 2: cap ==
+src/dsp/BodyResonance.h setLevelNormalisation(): normGain = std::min (g, 1.0f)  (only non-1 write of normGain; git grep normGain -- src hits only BodyResonance.h)
+  68:        normGain = 1.0f;
+  96:            // This is the ONLY place normGain is assigned a non-1 value
+  100:                normGain = std::min (g, 1.0f);
+  107:        normGain = 1.0f;
+  112:    float levelNormalisationGain() const { return levelNormalised ? normGain : 1.0f; }
+  154:        return (normGain - 1.0f) * input + normGain * (body * amount * 4.0f);
+  178:        return levelNormalised ? h * normGain : h;   // WF1003-B2: g = 1 unless normalised
+  201:    float  normGain   = 1.0f;
+
+== builds (X4: VST3, CLI, five test targets rebuilt before ctest) ==
+build\ : cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynthCLI TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe -> build_exit=0, 0 error lines (rebuilt a second time after a comment-only edit of BodyResonance.h: exit 0, 0 error lines; all evidence above was re-run on that final build)
+final sha256: VST3 2351b215767f87e494e94b63f3815c483d6f426c1add62f020bc4f390ba15035 | CLI c01d729e35b0983cbefa426e36715c2131995329cdd3ca87528ceaa445405a1d | HostProbe b302a8bc5f546431e6f467207f4dd379086eafa667e138b21b771fe0ed9a6d17
+pre-B2 reference (private tree E:\Tsuki-project\_scratch\wf1004\B2b\pre, HEAD 6198922 source, git archive + libs/JUCE copy): VST3 e3215486d7837d3bd6bff97aa0664e06da4fc9a82931396f9d3c58a09796ae68, CLI 0d9a4b3cf3cda90a2c71777bb878de8e762e4a9e7742b0dc43777013c62bdc59
+
+== ctest / AuditTest / PhysicsModelsTest (wf1004_B2b_unit_tests.txt) ==
+100% tests passed, 0 tests failed out of 4
+[PASS]: 111 [FAIL]: 0
+PASS (0 failures)
+[PASS] lines: 234; [FAIL] lines: 0; Body level normalisation PASS lines: 15
+
+== HostProbe (TSUKI_REPO_ROOT set, cwd outside repo, short outdir) ==
+before (pre-B2 VST3): 241 PASS / 0 FAIL; after (capped VST3): 241 PASS / 0 FAIL  (baseline 241)
+PASS (0 failures)
+
+== step 5: re-verification ==
+27 presets before/after: wf1004_B2b_e16_before_after.txt -> rows identical to WF1003 uncapped table (<=0.005 dB): 27 / 27
+max peak before -1.85 (preset 15); max peak after -3.03 (preset 11); presets above 0 dBFS after: 0
+preset 11 Body 0.5 target (C4 v0.7): target preset 11 Body 0.5: +3.799 -> -2.640 dBFS (WF1003 value -2.640 unchanged)
+audit notch case (real plug-in): notch_b1 capped peak -7.896 dBFS vs Body-off (notch_b0) -1.067 dBFS: capped - Body-off = -6.829 dB  -> <= 0 PASS
+notch_b1 capped == pre-B2: True; uncapped - pre-B2 = +22.695 dB (the WF1003 audit's +22.7 dB), uncapped - Body-off = +15.866 dB
+83-condition stats: see wf1004_B2b_probe_sweeps.txt (A),(B); all-150-case check: cases where capped peak > pre-B2 peak + 0.0005 dB: 0  []
+CLI unaffected: wf1004_B2b_cli_unchanged.txt -> 8/8 IDENTICAL; --body-amount 0.5 old CLI == new CLI (yangqin a74a953e..., tongue drum e696f7aa...); --dump-modes identical
+
+== deviation from the task text (reported, not hidden) ==
+Task step 3 asked for 'notch-case output peak <= Body-off peak' as a unit assertion. On the synthetic in-phase-partial stress case this is FALSE even with g<=1 (capped peak is +1.51 dB above Body-off; pre-B2 peak is itself above Body-off). No tolerance was loosened. Asserted instead: g<=1 on a 9900-point sweep; cap engages on the audit notch case; capped peak <= pre-B2 peak (exact); first-0.3 s energy <= Body-off (-17.75 dB). The 'peak <= Body-off' claim holds on the real plug-in (-7.896 vs -1.067 dBFS) and is evidenced in wf1004_B2b_notch_probe.txt, not as a ctest assertion.
+
+== NOT run in this card (left to integration card, per card spec): pytest, physics_verify --full/--selftest, verify_score --all (75 WAV hashes), pluginval/validator, release CI ==
+
+== files changed (git status --short, excluding other cards' wf1004_I2/Q/ci/product_quality files) ==
+ M ROADMAP_PHYSICS.md
+ M docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md
+ M reports/decision_packets/WF1003_decisions.zh-TW.md
+ M src/dsp/BodyResonance.h
+ M src/engines/ChromaticEngine.h
+ M src/engines/CimbalomEngine.h
+ M tests/physics_models_repro.cpp
+?? reports/decision_packets/WF1004_decisions.zh-TW.md
+?? reports/gate_outputs/wf1003_B2_GATE.txt
+?? reports/gate_outputs/wf1003_B2_cli_unchanged.txt
+?? reports/gate_outputs/wf1003_B2_e16_before_after.txt
+?? reports/gate_outputs/wf1003_B2_hostprobe_after.txt
+?? reports/gate_outputs/wf1003_B2_hostprobe_before.txt
+?? reports/gate_outputs/wf1003_B2_hscan.txt
+?? reports/gate_outputs/wf1003_B2_probe_harness_source.txt
+?? reports/gate_outputs/wf1003_B2_probe_sweeps.txt
+?? reports/gate_outputs/wf1003_B2_unit_tests.txt
+?? reports/gate_outputs/wf1004_B2b_GATE.txt
+?? reports/gate_outputs/wf1004_B2b_cli_unchanged.txt
+?? reports/gate_outputs/wf1004_B2b_e16_before_after.txt
+?? reports/gate_outputs/wf1004_B2b_hostprobe_after.txt
+?? reports/gate_outputs/wf1004_B2b_hostprobe_before.txt
+?? reports/gate_outputs/wf1004_B2b_notch_cases.txt
+?? reports/gate_outputs/wf1004_B2b_notch_probe.txt
+?? reports/gate_outputs/wf1004_B2b_probe_sweeps.txt
+?? reports/gate_outputs/wf1004_B2b_unit_tests.txt
+?? reports/wf1003_b2_body_normalization_before_after.zh-TW.md

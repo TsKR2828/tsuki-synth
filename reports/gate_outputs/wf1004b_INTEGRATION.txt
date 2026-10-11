@@ -1,0 +1,174 @@
+WF1004b-INT（收尾整合卡，Opus）全套 GATE 執行記錄（2026-10-07 03:52 開工 → 04:34 GATE 跑完）
+================================================================
+HEAD 6198922（沒動 HEAD、沒 commit、沒 push）。分支 fix/deep-physics-audit-20260716。
+原始輸出全部在 reports/gate_outputs/wf1004b_integration_raw/（檔名前面的編號＝本檔的段落）。
+本機路徑一律換成代稱：<REPO>＝repo 根目錄、<TOOLS>＝E 槽工具資料夾、<SCRATCH>＝repo 外的暫存資料夾 E 槽 _scratch\wf1004（本卡用其下 INTb\）、
+<MSVC>＝Visual Studio 安裝資料夾、<APPDATA>＝使用者 AppData\Roaming、<OLD_REPO>＝搬家前的舊 repo 路徑（C 槽；pytest 既有 skip 訊息裡出現）、<USERPROFILE>＝使用者資料夾。
+換代稱前的原始 log 在 <SCRATCH>\INTb\raw\（repo 外），換代稱用 <SCRATCH>\INTb\sanitize.py（WF1004 那支，只改註解一行；只換路徑，其他文字不動；
+換完 grep 本機路徑字串 0 筆）。Inno Setup 的安裝路徑「E:\Inno Setup 7\」不是個人路徑，保留原樣。
+
+結論：GATE 1～10 全綠（status＝GREEN）。沒有 R10 事件：75 首 WAV 逐首對 WF1002b 參考表 75/75 SAME、8 首位元基準 8/8 IDENTICAL。
+      B2c 稽核 FAIL、改動已被稽核還原，所以本卡驗的最終樹＝WF1004 整合版（HEAD＋已 staged 的 109 檔，src 只有 P 卡的 PluginProcessor.cpp＋VoicePool.h）。
+      PhysicsModelsTest 因此是 219，不是 234。本卡沒修任何程式。
+
+  各 GATE 數字：
+    重建：configure EXIT 0；三主 target --clean-first 全量重建 EXIT 0（54 個 .cpp）；五測試 target 隨後全部重編 EXIT 0（82 個 .cpp）；
+          編譯器 error 0／warning C 0（只有既有 MSB8028 tlog 殘留各 5 行）
+    dumpbin：CLI／VST3／Standalone／HostProbe 的 MSVCP140*／VCRUNTIME140*／api-ms-win-crt* 匯入都是 0
+    ctest 4/4；AuditTest 直接跑 [PASS] 111、[FAIL] 0（Q01：|IR−ALGO| = 0.112 dB，上限 0.25 dB）；
+          PhysicsModelsTest 直接跑：行首 [PASS] 219、行首 [FAIL] 0、「PASS (0 failures)」（B2c 不在樹上）
+    pytest 312 collected；306 passed＋1 skipped＋5 xfailed（＝基線 312）
+    physics_verify --full：NO CHECKED FAILURES（3 個 rubber N/A 是既有的）；去掉 START／END 後跟 WF1004 整合卡逐行相同（diff 0 行）；--selftest 14/14
+    verify_score --all：75/75（1 項既有豁免）；manifest renderer 欄 75 筆都是 d892bc5f5087（本次重建的 CLI）
+    75 首 WAV 雜湊：對 WF1002b 參考表 identical 75／different 0／GONE 0／NEW 0／BAD 0，RESULT: PASS；對 WF1004 整合卡逐首表也 75/75 SAME
+    位元不變（8 首代表曲，--label wf1004b）：8/8 IDENTICAL（DIFF_EXIT=0）
+    HostProbe（cwd 在 repo 外、TSUKI_REPO_ROOT 未設）：[PASS] 241、[FAIL] 0；判定行逐行對 WF1004 整合版：少 0 行、多 0 行，只差 H7 每次隨機的 presetId；
+          非判定行（含 Q09、E16 27 列）只差 START／END 時間
+    pluginval strictness 10：SUCCESS（自己的 log 25 組測項，Num programs 27）；Steinberg validator 47 passed／0 failed；PLUGIN VALIDATION RESULT: PASS
+    安裝檔：Inno Setup 7.1.0 ISCC 編譯 EXIT 0、警告 0；輸出 sha256 53a25fb8…（8,575,620 B，PE x64），打包的三支執行檔＝本次最終 binaries；替身 EULA、未執行
+
+----------------------------------------------------------------------
+本輪卡況（整合卡開工時）
+----------------------------------------------------------------------
+  B2c（照 wf1004_B2b_audit.txt §8 選項 (1) 重做 Body 層 g 上限）：工兵 PASS／稽核 FAIL（只因文件）→ 稽核已還原。
+      稽核結論（wf1004_B2c_audit.txt）：src 三檔 diff 跟 failed_B2b patch 逐位元組相同（sha256 dd6c4802…）；測試只把已撤銷的「≤ Body 關」斷言
+      換成更嚴的逐樣本「|加上限| ≤ |改前|」，沒有放寬容差；自建兩棵樹、seed 20261008 自產 403 組（單音 244＋和弦 159）：加上限 − 改前 峰值最大 +0.0000 dB、
+      0/403 違反；g 最大 1.000000。FAIL 原因：三類文件句子被實測推翻（§3 (A)(B)(C)）。重做只要改文件（§8）。
+      本卡核對：開工時 git diff（工作樹對 index）0 檔；git diff --cached 的 src 只有 PluginProcessor.cpp、VoicePool.h；tests 只有 host_probe.cpp；
+      ROADMAP_PHYSICS.md、UI 規格、BodyResonance.h、ChromaticEngine.h、CimbalomEngine.h、physics_models_repro.cpp 都不在 diff 裡。
+      唯一 untracked 是 reports/gate_outputs/wf1004_B2c_audit.txt（稽核證據，本卡一併 add）。B2c 的檔案在 <SCRATCH>\failed_B2c\。
+
+----------------------------------------------------------------------
+0. 開工狀態（raw 00_*、17_status_porcelain_after_gates.txt）
+----------------------------------------------------------------------
+命令：git rev-parse HEAD；git status --porcelain；git diff --stat；git diff --cached --stat；git stash list
+- HEAD 6198922881b753fed262f7a44836b3bbe334e5b2；stash 空。
+- staged 109 檔（「109 files changed, 22948 insertions(+), 67 deletions(-)」＝WF1004 整合卡 add 的合法狀態，本卡沒 unstage、沒還原）。
+- 未 stage 的追蹤改動 0 檔；untracked 1 檔：reports/gate_outputs/wf1004_B2c_audit.txt。
+- GATE 跑完再 git status --porcelain（raw 17）跟開工時逐行相同（diff 0）：跑 GATE 沒改到任何追蹤檔、沒多出 untracked。
+[PASS]
+
+----------------------------------------------------------------------
+1. 重建 build\（raw 01、02、03、04、05）
+----------------------------------------------------------------------
+重建前 build\ 的 sha256（raw 01；B2c 稽核還原後重建的版本）：CLI 479384de…、VST3 b8240832…、Standalone 4e1896dd…、HostProbe 2dbc9a7c…
+命令：cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON → EXIT_CODE=0
+命令：cmake --build build --config Release --clean-first --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3 → EXIT_CODE=0（03:52:33 → 03:55:23，54 個 .cpp）
+命令（X4）：cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe
+      → EXIT_CODE=0（03:55:23 → 03:59:09，82 個 .cpp 重編）
+兩次建置：編譯器 error 0、warning C 開頭 0；MSB8028 各 5 行（既有 tlog 殘留，不影響輸出）。
+重建後 sha256（raw 05）：
+  CLI               d892bc5f508747fb0d6dff5a0c7e5207a7960e023aec0fe0ce8212dd7acdb018
+  VST3              62a2f5ac1b4af524e6c9d2fa9cc998b15dee87605b5a01deb5c61e37a703ce01
+  VST3 moduleinfo   709526f55057e53be431ba288aa4e89671c4ea77fd7320b60afdff631535d994（跟 WF1002b／WF1003／WF1004 相同）
+  Standalone        f1ceac8c8c2fe1cbe1183e5902bd1bdbb809d17fe88e68035657850083cad861
+  AuditTest         d710c946434a9ee72d0d7d472e4fad312162d8eabdd7c8c619a3d76af3820f2a
+  TunerTest         f8f6b56be3a353208faa8a67248b4cacddb6ac6d0bfe8081959d5e712952e2f8
+  PhysicsModelsTest 81ef60784cc63c1c1778037fb5e08c4078d31bfa1bdaaf3c78522e123f441933
+  SpectrumViewTest  8754e9efad09900ef1858ef76108d49317bdfa1027cc49d9a3c446c5317cc21d
+  HostProbe         5c68e66212d37823cec5367cb39e11c375b793e997f61a528d11ba6f036159cd
+  （原始碼跟 WF1004 整合卡相同，雜湊仍變：MSVC 重編不保證位元重現。判斷渲染有沒有變只看 WAV 雜湊——第 6、7 步全部相同。）
+[PASS]
+
+----------------------------------------------------------------------
+2. 靜態 CRT 匯入檢查（raw 06_dumpbin_dependents.txt）
+----------------------------------------------------------------------
+命令：<MSVC>/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/dumpbin.exe /DEPENDENTS <exe>（Git Bash 加 MSYS2_ARG_CONV_EXCL='*'）
+結果：CLI、VST3、Standalone、HostProbe 四支 DUMPBIN_EXIT=0，相依的都只有系統 DLL；grep -ciE 'MSVCP|VCRUNTIME|api-ms-win-crt' 四支都是 0。
+[PASS]
+
+----------------------------------------------------------------------
+3. ctest（raw 07_ctest.txt、07b_audittest_direct.txt、07c_physicsmodels_direct.txt）
+----------------------------------------------------------------------
+命令：ctest --test-dir build -C Release --output-on-failure → 「100% tests passed, 0 tests failed out of 4」EXIT_CODE=0
+命令：build/Release/TsukiSynthAuditTest.exe → 行首 [PASS] 111、[FAIL] 0、「PASS (0 failures)」EXIT_CODE=0；「[Q01] |IR - ALGO| = 0.112 dB, limit 0.25 dB, margin 0.138 dB」
+命令：build/Release/TsukiSynthPhysicsModelsTest.exe → 行首 [PASS] 219、行首 [FAIL] 0、「PASS (0 failures)」EXIT_CODE=0
+      任務書：B2c 在樹上應為 234，不在則 219 → B2c 已被稽核還原、不在樹上，219 是正確值（＝WF1004 整合卡基線）。
+[PASS]
+
+----------------------------------------------------------------------
+4. pytest 全套（raw 11_pytest_collect_only.txt、14_pytest.txt）
+----------------------------------------------------------------------
+命令：python -m pytest tests --collect-only -q → 「312 tests collected」
+命令：python -m pytest tests -q -rsxX（04:26:46 → 04:34:07）
+結果：「306 passed, 1 skipped, 5 xfailed in 439.47s」EXIT_CODE=0 ＝ 基線 312（306＋1＋5）；5 條 strict xfail 原樣、沒有 XPASS；1 skip 是既有的 test_render_app_filename_safety.py:135。
+[PASS]
+
+----------------------------------------------------------------------
+5. physics_verify（raw 08_physics_verify_full.txt、08b_physics_verify_full_vs_wf1004.diff、09_physics_verify_selftest.txt）
+----------------------------------------------------------------------
+命令：python tools/physics_verify.py --full --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe（04:01:21 → 04:03:28）
+結果：「RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED」EXIT_CODE=0
+  UNVERIFIED/N/A 逐項：cimbalom/rubber（T60 0.028 s）、tongue_drum/rubber（0.014 s）、water_gong/rubber（0.028 s）——既有 3 項。
+  整份輸出去掉 START／END 兩行（暫存路徑段 INT→INTb 正規化）後，跟 WF1004 整合卡的 08 逐行相同（raw 08b：diff 0 行）。
+命令：python tools/physics_verify.py --selftest → 14 行「: PASS」、EXIT_CODE=0
+[PASS]
+
+----------------------------------------------------------------------
+6. verify_score --all＋75 首逐首雜湊比對（raw 10、12、12b）
+----------------------------------------------------------------------
+命令：python tools/verify_score.py --all --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe（04:03:30 → 04:25:24）
+結果：「75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.」EXIT_CODE=0
+  manifest renderer 欄：75 筆都是「renderer d892bc5f5087」＝本次重建的 CLI。
+命令：python tools/hash75_compare.py <SCRATCH>/INTb/raw/10_verify_score_all.txt reports/gate_outputs/wf1002b_integration_raw/12_hash75_vs_wf1002_integration.txt
+結果（raw 12，任務書指定的 WF1002b 參考表）：「identical 75, different 0, only in reference 0, only in this run 0, unusable hash 0」「RESULT: PASS」EXIT_CODE=0
+      → 75 首全 SAME，沒有 DIFF，沒有 R10 事件。
+命令：同上，參考改為 reports/gate_outputs/wf1004_integration_raw/12b_hash75_vs_wf1002b_integration.txt（HANDOVER §1-3 寫的「下次參考表」）
+結果（raw 12b）：identical 75、different 0，RESULT: PASS。
+[PASS]
+
+----------------------------------------------------------------------
+7. 位元不變 8/8（raw 13_render_wf_scores_bit_identity.txt、13b_bit_identity_diff.txt）
+----------------------------------------------------------------------
+命令（cwd＝<REPO>）：python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf1004b --workdir <SCRATCH>\INTb\bi
+      --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --outdir <SCRATCH>\INTb\bi_out → EXIT_CODE=0（04:25:24 → 04:26:43），8 首
+命令：diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt <SCRATCH>/INTb/bi_out/sha256_wf1004b.txt → 沒有輸出，DIFF_EXIT=0
+結果：8/8 IDENTICAL。
+[PASS]
+
+----------------------------------------------------------------------
+8. HostProbe（raw 15_hostprobe_cwd_outside_repo.txt、15_hostprobe_env.txt、15c_hostprobe_verdicts_vs_wf1004.diff、15d_hostprobe_info_vs_wf1004.diff）
+----------------------------------------------------------------------
+命令（cwd＝<SCRATCH>\INTb\hp，TSUKI_REPO_ROOT 未設）：<REPO>/build/Release/TsukiSynthHostProbe.exe <REPO>\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 <SCRATCH>\INTb\hp\out
+結果：[PASS] 241、[FAIL] 0，「PASS (0 failures)」EXIT_CODE=0（03:59:51 → 04:01:04）
+  判定行（[PASS]/[FAIL] 開頭、暫存路徑正規化）逐行對 WF1004 整合版（raw 15c）：兩邊都 241 行；少 0 行、多 0 行；
+  不同的只有 6 行 H7／H7-Q06 裡每次隨機產生的 presetId（0abf6d47… → 6ceeef99…）。
+  非判定行對 WF1004 整合版（raw 15d）：只差 START／END 時間；Q09 資訊行（月光舌鼓版 32 顆、steals 0）與 E16 27 個 preset 峰值／RMS 逐行相同。
+  %APPDATA%\TsukiSynth 的 IR、Presets 檔數：跑前 0／0，跑後 0／0。
+[PASS]
+
+----------------------------------------------------------------------
+9. pluginval＋Steinberg validator（raw 16_validate_plugin.txt、16a_pluginval_stdout.txt、16b_pluginval_own_log.txt）
+----------------------------------------------------------------------
+命令：pwsh -NoProfile -File tools/validate_plugin.ps1 -Plugin build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3
+      -Pluginval <TOOLS>\pluginval\extracted\pluginval.exe -Vst3Validator <TOOLS>\vst3sdk-build\bin\Release\validator.exe -Strictness 10
+結果：「pluginval strictness 10」；Steinberg validator「Result: 47 tests passed, 0 tests failed」；「PLUGIN VALIDATION RESULT: PASS」EXIT_CODE=0
+另跑 pluginval 取它自己的 log：<TOOLS>\pluginval\extracted\pluginval.exe --strictness-level 10 --validate-in-process --output-dir <SCRATCH>\INTb\pv_log --validate <VST3>
+結果：PLUGINVAL_EXIT=0，log 結尾 SUCCESS，25 組測項；「Num programs: 27」
+[PASS]
+
+----------------------------------------------------------------------
+10. 安裝檔重編（raw 18_installer_iscc.txt、18b_installer_sha256.txt）
+----------------------------------------------------------------------
+做法：照 I2／WF1004 整合卡流程。把 <SCRATCH>\INT\iss\ 原樣複製到 <SCRATCH>\INTb\iss\（diff -r 相同；跟 repo 的 tools/installer/TsukiSynth.iss 只差第 39 行 RepoRoot；
+      EULA.txt 是替身，檔頭寫明「編譯煙霧測試用替身，非正式 EULA…不得發行」），讓它直接吃 <REPO>\build\ 的最終 binaries。
+命令（PowerShell）：& 'E:\Inno Setup 7\ISCC.exe' "/O<SCRATCH>\INTb\installer" "<SCRATCH>\INTb\iss\TsukiSynth.iss"
+  ISCC.exe Authenticode：Valid，Signer CN=Pyrsys B.V.；「Compiler engine version: Inno Setup 7.1.0」
+結果：「Successful compile (4.735 sec)」EXIT_CODE=0；log 裡 Warning 0 行。
+  Compressing 6 個來源：moduleinfo.json、VST3、Standalone、CLI（都在 <REPO>\build\）、替身 EULA.txt、<REPO>\THIRD_PARTY_NOTICES.txt。
+  編譯當下 build\ 三支 sha256（raw 18b）＝第 1 步 raw 05（CLI d892bc5f…、VST3 62a2f5ac…、Standalone f1ceac8c…）。
+  產出：<SCRATCH>\INTb\installer\TsukiSynth-0.3.0-win-x64-setup.exe　8,575,620 B
+        sha256 53a25fb8e82034d6880112b51fe112655e1d637356e44ae48abc067cdfdba209；PE machine 0x8664（x64）——只讀檔頭，沒有執行。
+  <REPO>\output\installer\ 沒有被建立（/O 讓輸出留在 repo 外）。替身 EULA，不得發行。
+[PASS]
+
+----------------------------------------------------------------------
+11～12. 收尾
+----------------------------------------------------------------------
+- GATE 1～10 全綠 → 照任務第 12 步 git add 本輪新改動（原本 staged 的 109 檔保持 staged）：
+  reports/gate_outputs/wf1004_B2c_audit.txt、本檔、wf1004b_integration_raw/、HANDOVER.md、TODO.md。
+  B2c 沒落地（稽核 FAIL 已還原），所以沒有 B2c 的程式／測試／文件可 add。
+- HANDOVER.md（§0 表格加 B2c 列＋WF1004b 段、§1-1 B2b 二選一改成 B2c 結果與 B2d 選項、§1-3 加 WF1004b 基線、§1-5）、
+  TODO.md（WF1004 快照：B2b 待裁勾掉、加 B2d 條目；B2 重做條目更新）——「B2b 已還原待裁標準」段落已改成 B2c 結果。
+- git status 截錄：raw 19_git_status_after_add.txt。不 commit、不 push。
+- 部署位置的 VST3 仍是 WF1002b 版（fa13ac17…），本卡沒動。

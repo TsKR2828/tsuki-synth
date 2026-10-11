@@ -1,0 +1,24 @@
+A=run/ab_baseline
+B=run/ab_baseline_ctrl
+case                                             samples    max|diff|    n_diff  first_diff_s  verdict
+chromatic_custom_chord12                          221184    0.000e+00         0             -  IDENTICAL
+chromatic_custom_exact16                          192512    0.000e+00         0             -  IDENTICAL
+chromatic_custom_stress32_EXPECT_DIFF             240128    0.000e+00         0             -  SAME (no overflow effect)
+chromatic_tongue_chord12                          221184    0.000e+00         0             -  IDENTICAL
+chromatic_tongue_exact16                          192512    0.000e+00         0             -  IDENTICAL
+chromatic_tongue_stress32_EXPECT_DIFF             240128    0.000e+00         0             -  SAME (no overflow effect)
+chromatic_watergong_chord12                       221184    0.000e+00         0             -  IDENTICAL
+chromatic_watergong_exact16                       192512    0.000e+00         0             -  IDENTICAL
+chromatic_watergong_stress32_EXPECT_DIFF          240128    0.000e+00         0             -  SAME (no overflow effect)
+cimbalom_chord12                                  221184    0.000e+00         0             -  IDENTICAL
+cimbalom_exact16                                  192512    0.000e+00         0             -  IDENTICAL
+cimbalom_stress32                                 240128    0.000e+00         0             -  IDENTICAL
+corpus_fur_elise_piano                           6356480    0.000e+00         0             -  IDENTICAL
+corpus_moonlight_tongue_EXPECT_DIFF             14934016    0.000e+00         0             -  SAME (no overflow effect)
+fm_chord12                                        221184    0.000e+00         0             -  IDENTICAL
+fm_exact16                                        192512    0.000e+00         0             -  IDENTICAL
+fm_stress32                                       240128    0.000e+00         0             -  IDENTICAL
+piano_chord12                                     221184    0.000e+00         0             -  IDENTICAL
+piano_exact16                                     192512    0.000e+00         0             -  IDENTICAL
+piano_stress32                                    240128    0.000e+00         0             -  IDENTICAL
+UNEXPECTED_DIFFS = 0

@@ -1,0 +1,37 @@
+WF1004 P card -- per-engine voice pool: METHOD (how to re-run every number)
+Date: 2026-10-07. Machine: AMD Ryzen 5 3500X 6C/6T, Windows 10 Home 10.0.19045, MSVC Release (static CRT, repo build flags).
+Dev box, NOT the user's DAW machine: absolute ms differ elsewhere; the comparison between Chromatic-32 and the Piano-16
+baseline measured in the SAME run is what transfers. Criteria: wf1004_P_criteria_preregistered.txt (written 01:04:21, first
+measurement 01:10:54).
+
+0. Code touched
+   src/VoicePool.h (new)        per-engine constants TsukiVoicePool::kCimbalom=16 / kChromatic=32 / kFMPiano=16, each with a
+                                compile-time override macro TSUKI_VOICE_POOL_CIMBALOM/CHROMATIC/FM (+ WF1003-V's uniform
+                                TSUKI_VOICE_POOL_SIZE) used only to re-run the baseline evidence; provenance comment inside.
+   src/PluginProcessor.cpp      the three addVoice loops use the three constants; two "All 16 voices" comments reworded.
+   tests/host_probe.cpp         Q09: "product twin" = per-engine product pool (twinProd), evidence twins twin16/twin32 only under
+                                TSUKI_Q09V=1 (identity vs VST3, first differing sample), three stress cases (Chromatic Tongue Drum / Water Gong /
+                                Custom Harmonics) next to stress32_piano; NO new CHECK (informational, default run 241/0 unchanged).
+   reports/wf0925_method/voice_pool_occupancy.py   reads pool sizes from src/VoicePool.h (it used to regex a literal in the loops).
+   CLI: src/cli/RenderApp.cpp is the only CLI source; it does not include VoicePool.h. build\TsukiSynthCLI.exe sha256 before == after.
+
+1. Binaries (copied to E:\Tsuki-project\_scratch\wf1004\P\ so later rebuilds cannot change them)
+   baseline\TsukiSynth.vst3   = the repo build of HEAD 6198922 source (all engines 16), taken before any edit (sha256 12921524...)
+   candidate\TsukiSynth.vst3  = the repo build after this card's edit (Chromatic 32), sha256 c324cfc1...
+   candidate\HostProbe_candidate.exe  = the HostProbe used for BOTH builds' timing rounds (only the .vst3 argument differs).
+   pre-change default HostProbe (baseline\HostProbe_prechange.exe vs baseline vst3): 241 PASS / 0 FAIL (pre_default_hostprobe.txt).
+
+2. Timing / steal rounds (TSUKI_Q09V=1, cwd outside the repo, TSUKI_REPO_ROOT=E:/Tsuki-project/tsuki-synth)
+   run_rounds.sh: baseline, candidate, baseline, candidate, baseline, candidate (3 rounds each, alternating).
+   Per run the HostProbe prints, per case: steals (twin16 / twin32 / twin128), identity max|VST3 - twin16|, |VST3 - twin32|,
+   |VST3 - twinProd|, first sample where twin16 != twin32, real-VST3 processBlock stats (full chain), and twin(synth only) pool16/pool32
+   x 5 fresh repeats (mean, p99, max, blocks >= 10.667 ms).
+   summarize_p.py parses the raw files and evaluates C1/C2 exactly as pre-registered -> wf1004_P_summary_3runs.txt.
+
+3. A/B real-binary render (C3/C4): ab_probe.exe (source kept in wf1004_P_ab_probe.cpp.txt) loads one .vst3, renders 20 fixed MIDI cases
+   offline through processBlock() with the default effect chain, writes raw float32; compare_ab.py compares baseline vs candidate sample by sample.
+   Positive control: cases named *_EXPECT_DIFF (32 notes on Chromatic, moonlight) must differ (proves the compare can see a difference).
+   Negative control: baseline rendered twice must be identical (proves rendering is deterministic, so "0 diff" means something).
+
+4. R6 plug-in layer (X4 order): rebuild five test targets + VST3 -> ctest 4/4 -> HostProbe full run (env var unset) -> wf1004_P_ctest.txt,
+   wf1004_P_raw_default_hostprobe.txt.

@@ -1,0 +1,65 @@
+=== G. loop-ready re-derivation: wrap-sum of the shipped ORIGINAL file vs shipped loop-ready (independent recompute) ===
+Method: y_ref[n] = sum_k x[n+kN] on the shipped original (24-bit float), N = loop-ready frame count; LS-fit one gain g (y_lr ~ g*y_ref); residual in LSB24 (2^-23).
+akashic__Akashic_Meditation_Loop N=768000 orig_frames=1167588 wraps=2 fit_gain=+0.0447 dB  max|resid|=1.99 LSB24  rms|resid|=0.576 LSB24
+clockwork__Clockwork_Tick_Loop   N=192000 orig_frames=247955 wraps=2 fit_gain=+0.0320 dB  max|resid|=1.97 LSB24  rms|resid|=0.510 LSB24
+forest__Forest_Rain_Pattern      N=576000 orig_frames=800988 wraps=2 fit_gain=+0.0454 dB  max|resid|=2.00 LSB24  rms|resid|=0.528 LSB24
+ocean__Ocean_Wave_Cycle          N=384000 orig_frames=759588 wraps=2 fit_gain=+0.0522 dB  max|resid|=1.98 LSB24  rms|resid|=0.653 LSB24
+rabbit__Rabbit_Bounce_Loop       N=164571 orig_frames=257547 wraps=2 fit_gain=+0.0336 dB  max|resid|=1.97 LSB24  rms|resid|=0.528 LSB24
+restraint__Restraint_Industrial_Pulse N=230400 orig_frames=409205 wraps=2 fit_gain=+0.0451 dB  max|resid|=1.98 LSB24  rms|resid|=0.612 LSB24
+
+=== H. mono-compatibility (descriptive): mono fold-down (L+R)/2 RMS vs mean per-channel RMS ===
+ocean/ocean__Ocean_Tide_Wash.wav                             mono fold-down level change -5.04 dB  L/R corr -0.473
+ocean/ocean__Ocean_Wave_Cycle.wav                            mono fold-down level change -4.65 dB  L/R corr -0.407
+ady/ocean/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav mono fold-down level change -4.65 dB  L/R corr -0.407
+akashic/akashic__Akashic_Library_Drone.wav                   mono fold-down level change -4.63 dB  L/R corr -0.382
+restraint/restraint__Restraint_Iron_Drone.wav                mono fold-down level change -4.01 dB  L/R corr -0.223
+WAV/Original_AI_Radiance_Movement4_44k16_tpdf.wav            mono fold-down level change -3.65 dB  L/R corr -0.139
+ocean/ocean__Ocean_Depth_Slam.wav                            mono fold-down level change -3.46 dB  L/R corr -0.124
+akashic/akashic__Akashic_Gate_Open_Dark.wav                  mono fold-down level change -3.21 dB  L/R corr -0.047
+akashic/akashic__Akashic_Gate_Open.wav                       mono fold-down level change -3.12 dB  L/R corr -0.029
+akashic/akashic__Library_Opening_Bell.wav                    mono fold-down level change -3.00 dB  L/R corr +0.002
+WAV/Original_AI_Radiance_Complete_44k16_tpdf.wav             mono fold-down level change -2.99 dB  L/R corr +0.005
+WAV/Original_AI_Radiance_Movement2_44k16_tpdf.wav            mono fold-down level change -2.98 dB  L/R corr +0.008
+all 56 files: fold-down change range -5.04 .. -0.10 dB; files with corr<0: 9
+
+=== I. DC detail: file mean and per-quarter means (dBFS of |mean|, L channel) for the 8 largest file means ===
+nt__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav mean -48.3 dBFS (+0.00383)  quarters: -48.1(+0.00394) -47.8(+0.00406) -48.5(+0.00374) -48.9(+0.00357)
+restraint/restraint__Restraint_Industrial_Pulse.wav        mean -53.4 dBFS (+0.00214)  quarters: -47.3(+0.00430) -48.2(+0.00389) -68.4(+0.00038) -136.1(+0.00000)
+restraint/restraint__Restraint_Lock_Click_Distorted.wav    mean -54.4 dBFS (+0.00191)  quarters: -42.2(+0.00780) -77.6(-0.00013) -97.7(-0.00001) -127.4(-0.00000)
+y/ocean/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav mean -54.6 dBFS (+0.00187)  quarters: -47.9(+0.00401) -67.6(+0.00042) -51.3(+0.00273) -70.0(+0.00032)
+ocean/ocean__Ocean_Depth_Slam.wav                          mean -54.7 dBFS (+0.00184)  quarters: -42.8(+0.00723) -77.5(+0.00013) -108.3(+0.00000) -140.0(-0.00000)
+restraint/restraint__Restraint_Chain_Drag.wav              mean -57.7 dBFS (+0.00131)  quarters: -46.7(+0.00465) -64.7(+0.00058) -101.2(+0.00001) -147.7(+0.00000)
+restraint/restraint__Restraint_Shackle_Slam.wav            mean -57.7 dBFS (+0.00130)  quarters: -46.7(+0.00462) -65.4(+0.00053) -87.5(+0.00004) -110.5(+0.00000)
+ocean/ocean__Ocean_Abyss_Hum.wav                           mean -58.3 dBFS (+0.00122)  quarters: -47.7(+0.00413) -62.6(+0.00074) -98.9(+0.00001) -141.8(-0.00000)
+
+=== J. start/end abruptness (descriptive): first-sample level re file peak; last-sample level ===
+largest first-sample step re peak (dB):
+  aint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav first sample -21.8 dB re peak; last sample -25.4 dBFS
+  restraint/restraint__Restraint_Lock_Click.wav                first sample -26.3 dB re peak; last sample -132.5 dBFS
+  restraint/restraint__Restraint_Bolt_Click.wav                first sample -26.5 dB re peak; last sample -75.9 dBFS
+  rabbit/rabbit__Rabbit_Ding_Angry.wav                         first sample -28.1 dB re peak; last sample -94.7 dBFS
+  abbit/rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav first sample -28.4 dB re peak; last sample -29.7 dBFS
+  orest/forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav first sample -29.1 dB re peak; last sample -31.7 dBFS
+  clockwork/clockwork__Clockwork_Ticking_Room.wav              first sample -29.2 dB re peak; last sample -138.5 dBFS
+  restraint/restraint__Restraint_Lock_Click_Distorted.wav      first sample -30.6 dB re peak; last sample -138.5 dBFS
+highest last-sample level (one-shots only, loop-ready excluded):
+  restraint/restraint__Restraint_Bolt_Click.wav                last sample -75.9 dBFS
+  ocean/ocean__Ocean_Droplet_Tap.wav                           last sample -77.4 dBFS
+  ocean/ocean__Ocean_Bubble_Pop.wav                            last sample -83.1 dBFS
+  clockwork/clockwork__Clockwork_Tick_Loop.wav                 last sample -83.6 dBFS
+  rabbit/rabbit__Rabbit_Hop_Transition.wav                     last sample -92.1 dBFS
+  rabbit/rabbit__Rabbit_Ding_Angry.wav                         last sample -94.7 dBFS
+  forest/forest__Forest_Branch_Snap.wav                        last sample -95.2 dBFS
+  rabbit/rabbit__Rabbit_Ding.wav                               last sample -100.1 dBFS
+
+=== K. album MP3 (ffprobe + decode TP/LUFS) ===
+Original_AI_Radiance_Complete.mp3        codec=mp3 sr=44100 ch=2 br=320k dur_mp3=136.603 dur_wav=136.603 decodedTP=-0.944 I=-14.3
+Original_AI_Radiance_Movement1.mp3       codec=mp3 sr=44100 ch=2 br=320k dur_mp3=35.930 dur_wav=35.930 decodedTP=-1.790 I=-14.0
+Original_AI_Radiance_Movement2.mp3       codec=mp3 sr=44100 ch=2 br=320k dur_mp3=29.196 dur_wav=29.196 decodedTP=-1.302 I=-14.0
+Original_AI_Radiance_Movement3.mp3       codec=mp3 sr=44100 ch=2 br=320k dur_mp3=32.222 dur_wav=32.222 decodedTP=-0.984 I=-14.0
+Original_AI_Radiance_Movement4.mp3       codec=mp3 sr=44100 ch=2 br=320k dur_mp3=38.580 dur_wav=38.580 decodedTP=-1.159 I=-14.0
+fur_elise_complete.mp3                   codec=mp3 sr=44100 ch=2 br=320k dur_mp3=133.389 dur_wav=133.389 decodedTP=-0.986 I=-13.9
+fur_elise_complete_cimbalom.mp3          codec=mp3 sr=44100 ch=2 br=320k dur_mp3=133.389 dur_wav=133.389 decodedTP=-0.948 I=-14.1
+
+=== L. demo reel (listed in release list) ===
+demo/TsukiSynth_Worldview_SE_Pack_Vol1_demo_reel.wav sr 48000 ch 2 PCM_24 363.560s sample peak -1.2515 TP {4: -1.1646, 8: -1.1556} I -14.0 sha 90ffd898e763e9dd

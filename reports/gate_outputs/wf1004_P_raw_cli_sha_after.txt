@@ -1,0 +1,1 @@
+51dbbb25645caffc256f9c9f246e43e7fc49aaa01e0f25f42f27caf11ae99082 *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe

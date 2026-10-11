@@ -1,0 +1,7 @@
+WF1004-B2d behaviour equivalence of the rebuilt VST3 (B2d build dda39b61...) vs the B2c capped VST3 (3441686e...) and vs the pre-B2 VST3 (72f503c7...)
+Same probe (b2_probe), same case files as B2c (cases_audit 251 pairs + cases_round2 222 pairs = 473 pairs = 946 renders; plus 7 preset lines).
+cases_audit: B2d build vs B2c capped build: 502 of 502 output lines byte-identical (peak, peak time, RMS, warm-up peak, overrides)
+cases_round2: B2d build vs B2c capped build: 444 of 444 output lines byte-identical (peak, peak time, RMS, warm-up peak, overrides)
+preset probes: B2d build vs B2c capped build: 7 of 7 output lines byte-identical (peak, peak time, RMS, warm-up peak, overrides)
+B2d build - pre-B2 VST3, 946 renders: peak max +0.0000 dB; renders with peak or RMS above pre by > 0.001 dB: 0
+Conclusion: the comment-only change left behaviour unchanged (946/946 + 7/7 lines byte-identical to B2c capped); capped never exceeds pre-B2 (0 violations).

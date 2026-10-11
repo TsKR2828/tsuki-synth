@@ -1,0 +1,55 @@
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+D:\Visual_Studio\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynth_rc_lib.dir\Release\) 包含從其他專案 (TsukiSynth_rc_lib.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [E:\Tsuki-project\tsuki-synth\build\TsukiSynth_rc_lib.vcxproj]
+  TsukiSynth_rc_lib.vcxproj -> E:\Tsuki-project\tsuki-synth\build\TsukiSynth_rc_lib.dir\Release\TsukiSynth_rc_lib.lib
+  TsukiSynthData.vcxproj -> E:\Tsuki-project\tsuki-synth\build\Release\TsukiSynthData.lib
+  PluginProcessor.cpp
+  TsukiSynth.vcxproj -> E:\Tsuki-project\tsuki-synth\build\TsukiSynth_artefacts\Release\TsukiSynth_SharedCode.lib
+D:\Visual_Studio\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynth_vst3_helper.dir\Release\) 包含從其他專案 (TsukiSynth_vst3_helper.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [E:\Tsuki-project\tsuki-synth\build\TsukiSynth_vst3_helper.vcxproj]
+  TsukiSynth_vst3_helper.vcxproj -> E:\Tsuki-project\tsuki-synth\build\Release\TsukiSynth_vst3_helper.exe
+     正在建立程式庫 E:/Tsuki-project/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.lib 和物件 E:/Tsuki-project/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.exp
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynth_VST3.vcxproj -> E:\Tsuki-project\tsuki-synth\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3\Contents\x86_64-win\TsukiSynth.vst3
+  removing moduleinfo.json
+  creating E:/Tsuki-project/tsuki-synth/build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+D:\Visual_Studio\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthCLI_rc_lib.dir\Release\) 包含從其他專案 (TsukiSynthCLI_rc_lib.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [E:\Tsuki-project\tsuki-synth\build\TsukiSynthCLI_rc_lib.vcxproj]
+  TsukiSynthCLI_rc_lib.vcxproj -> E:\Tsuki-project\tsuki-synth\build\TsukiSynthCLI_rc_lib.dir\Release\TsukiSynthCLI_rc_lib.lib
+  TsukiSynthData.vcxproj -> E:\Tsuki-project\tsuki-synth\build\Release\TsukiSynthData.lib
+  RenderApp.cpp
+  正在產生程式碼
+  已完成程式碼產生
+  TsukiSynthCLI.vcxproj -> E:\Tsuki-project\tsuki-synth\build\TsukiSynthCLI_artefacts\Release\TsukiSynthCLI.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+D:\Visual_Studio\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthAuditTest.dir\Release\) 包含從其他專案 (TsukiSynthAuditTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [E:\Tsuki-project\tsuki-synth\build\TsukiSynthAuditTest.vcxproj]
+  audit_repro.cpp
+  TsukiSynthAuditTest.vcxproj -> E:\Tsuki-project\tsuki-synth\build\Release\TsukiSynthAuditTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+D:\Visual_Studio\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthTunerTest.dir\Release\) 包含從其他專案 (TsukiSynthTunerTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [E:\Tsuki-project\tsuki-synth\build\TsukiSynthTunerTest.vcxproj]
+  TsukiSynthTunerTest.vcxproj -> E:\Tsuki-project\tsuki-synth\build\Release\TsukiSynthTunerTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+D:\Visual_Studio\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthPhysicsModelsTest.dir\Release\) 包含從其他專案 (TsukiSynthPhysicsModelsTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [E:\Tsuki-project\tsuki-synth\build\TsukiSynthPhysicsModelsTest.vcxproj]
+  physics_models_repro.cpp
+  TsukiSynthPhysicsModelsTest.vcxproj -> E:\Tsuki-project\tsuki-synth\build\Release\TsukiSynthPhysicsModelsTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+D:\Visual_Studio\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthSpectrumViewTest.dir\Release\) 包含從其他專案 (TsukiSynthSpectrumViewTest.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [E:\Tsuki-project\tsuki-synth\build\TsukiSynthSpectrumViewTest.vcxproj]
+  TsukiSynthSpectrumViewTest.vcxproj -> E:\Tsuki-project\tsuki-synth\build\Release\TsukiSynthSpectrumViewTest.exe
+.NET Framework 的 MSBuild 版本 18.5.4+cb4e32d21
+
+  Checking File Globs
+D:\Visual_Studio\MSBuild\Microsoft\VC\v180\Microsoft.CppBuild.targets(551,5): warning MSB8028: 中繼目錄 (TsukiSynthHostProbe.dir\Release\) 包含從其他專案 (TsukiSynthHostProbe.vcxproj) 共用的檔案。這可能導致錯誤的清除和重建行為。 [E:\Tsuki-project\tsuki-synth\build\TsukiSynthHostProbe.vcxproj]
+  host_probe.cpp
+  TsukiSynthHostProbe.vcxproj -> E:\Tsuki-project\tsuki-synth\build\Release\TsukiSynthHostProbe.exe
+build_exit=0

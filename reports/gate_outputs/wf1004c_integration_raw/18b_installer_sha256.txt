@@ -1,0 +1,9 @@
+installer:
+24d571f6b08949dd7e116976b584518be968b6f0f6f03735943d29970da87d72 *<SCRATCH>/INTc/installer/TsukiSynth-0.3.0-win-x64-setup.exe
+size_bytes=8578910
+MZ= True PE= True machine=0x8664
+build binaries at compile time:
+1af414a9b695d59b1ca0c185d33a4cb4485dd268565aa2ee12a5e5ac90bfcfae *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+760aa93b595ddfd5c5bd6b3a0c37cd37860db4690eea4b09f2025bcae5bd7803 *build/TsukiSynth_artefacts/Release/VST3/TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+af837ae10714e1044190593dc1f13152fe29c198cf3ba68def44b468fdf644f8 *build/TsukiSynth_artefacts/Release/Standalone/TsukiSynth.exe
+repo output/installer exists: no

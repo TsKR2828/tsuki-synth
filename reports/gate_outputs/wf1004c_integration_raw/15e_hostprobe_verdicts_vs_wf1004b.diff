@@ -1,0 +1,23 @@
+# ref=<REPO>/reports/gate_outputs/wf1004b_integration_raw/15_hostprobe_cwd_outside_repo.txt
+# cur=raw/15_hostprobe_cwd_outside_repo.txt
+# mode=v ref_lines=241 cur_lines=241 changed_lines=12
+--- ref
++++ cur
+@@ -4 +4 @@
+-[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.300974) -- melody-position verdict follows via melody_verify.py
++[PASS] H3 MIDI render: non-silent, non-clipping output (peak 0.151618) -- melody-position verdict follows via melody_verify.py
+@@ -11 +11 @@
+-[PASS] H4 automation: +12 dB shelf ramp lifts 3-12 kHz band by 8.51 dB (require >= 6)
++[PASS] H4 automation: +12 dB shelf ramp lifts 3-12 kHz band by 9.44 dB (require >= 6)
+@@ -186 +186 @@
+-[PASS] Q05 clip indicator: OutputPeakMeter fed E16 factory preset 15 'Bronze Water Gong (Body)''s real VST3 output reports peak 0.808498 (independent 0.808498, -1.85 dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
++[PASS] Q05 clip indicator: OutputPeakMeter fed E16 factory preset 15 'Bronze Water Gong (Body)''s real VST3 output reports peak 0.319308 (independent 0.319308, -9.92 dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
+@@ -233 +233 @@
+-[PASS] Q05 real lit path: OutputPeakMeter fed 'preset 15, knobs as loaded (control)' reports peak 0.808498 (independent 0.808498, -1.85 dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
++[PASS] Q05 real lit path: OutputPeakMeter fed 'preset 15, knobs as loaded (control)' reports peak 0.319308 (independent 0.319308, -9.92 dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
+@@ -236 +236 @@
+-[PASS] Q05 real lit path: OutputPeakMeter fed 'preset 15, EQ Shelf Gain +24 dB at the loaded 2000 Hz' reports peak 0.840243 (independent 0.840243, -1.51 dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
++[PASS] Q05 real lit path: OutputPeakMeter fed 'preset 15, EQ Shelf Gain +24 dB at the loaded 2000 Hz' reports peak 0.331847 (independent 0.331847, -9.58 dBFS) -> indicator off (require lit <=> peak > 0 dBFS; take() resets to 0)
+@@ -239 +239 @@
+-[PASS] Q05 real lit path: OutputPeakMeter fed 'preset 15, EQ Shelf 100 Hz / +24 dB (both range extremes)' reports peak 12.5743 (independent 12.5743, 21.99 dBFS) -> indicator LIT (require lit <=> peak > 0 dBFS; take() resets to 0)
++[PASS] Q05 real lit path: OutputPeakMeter fed 'preset 15, EQ Shelf 100 Hz / +24 dB (both range extremes)' reports peak 4.96603 (independent 4.96603, 13.92 dBFS) -> indicator LIT (require lit <=> peak > 0 dBFS; take() resets to 0)

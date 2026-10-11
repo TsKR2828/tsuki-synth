@@ -1,0 +1,3 @@
+TSUKI_REPO_ROOT=<unset>
+APPDATA_IR_before=0 Presets_before=0
+APPDATA_IR_after=0 Presets_after=0

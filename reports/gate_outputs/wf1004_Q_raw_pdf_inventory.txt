@@ -1,0 +1,41 @@
+path | bytes | %%EOF in last 2KB | pages(fitz) | first text
+_tools/papers/Alon2015_York_MSc_handpan.pdf | 5259264 | False | 0 | 
+tsuki-synth/external_data/ir/echothief/_EchoThief License.pdf | 65022 | True | 1 | EchoThief License    Permitted Use    Subject to the terms and conditions of this Agreemen
+tsuki-synth/external_data/tu_berlin_directivity/0_Documentation.pdf | 1107344 | True | 8 | A Database of Anechoic Microphone Array Measurements of Musical Instruments Recordings, Di
+tsuki-synth/external_data/weinzierl_2018_jasa/weinzierl_2018_jasa_1.5053113.pdf | 2094542 | True | 10 | Sound power and timbre as cues for the dynamic strength of orchestral instruments Stefan W
+tsuki-synth/output/wf0907/R4/2467_1_online.pdf | 5619 | False | 1 | Enable JavaScript and cookies to continue 
+tsuki-synth/output/wf0907/R4/3504_1_online.pdf | 5619 | False | 1 | Enable JavaScript and cookies to continue 
+tsuki-synth/output/wf0907/R4/arx_1011.5372.pdf | 1142304 | True | 10 | arXiv:1011.5372v1  [physics.pop-ph]  24 Nov 2010 The eﬀect of Mounted Ribs on the Radiatio
+tsuki-synth/output/wf0907/R4/arx_1210.5688.pdf | 3662281 | True | 7 | Synthetic description of the piano soundboard mechanical mobility Kerem Ege and Xavier Bou
+tsuki-synth/output/wf0907/R4/arx_1212.3068.pdf | 7100018 | True | 7 | Vibrational and acoustical characteristics of the piano soundboard Kerem Ege and Xavier Bo
+tsuki-synth/output/wf0907/R4/arx_1305.3057.pdf | 1291982 | True | 36 | arXiv:1305.3057v1  [physics.class-ph]  14 May 2013 Vibroacoustics of the piano soundboard:
+tsuki-synth/output/wf0907/R4/chabassier2013.pdf | 3079103 | True | 18 | Modeling and simulation of a grand piano Juliette Chabassier Poems Team, INRIA Rocquencour
+tsuki-synth/output/wf0907/R4/ege2013.pdf | 8236538 | True | 33 | Vibroacoustics of the piano soundboard: (Non)linearity and modal properties in the low- an
+tsuki-synth/output/wf0907/R4/goebl_diss.pdf | 1535950 | False | 0 | 
+tsuki-synth/output/wf0907/R4/goebl_diss2.pdf | 2946357 | True | 194 | — The Role of Timing and Intensity in the Production and Perception of Melody in Expressiv
+tsuki-synth/output/wf0907/R4/hal_hal-00714295.pdf | 12506 | False | 2 | Making sure you're not a bot! [image] [image] Loading... You are seeing this because the a
+tsuki-synth/output/wf0907/R4/hal_hal-00755332.pdf | 12506 | False | 2 | Making sure you're not a bot! [image] [image] Loading... You are seeing this because the a
+tsuki-synth/output/wf0907/R4/isma2010_grand.pdf | 550934 | True | 14 | Modal analysis of a grand piano soundboard  R. Corradi1, P. Fazioli2, S. Marforio1, A. Pal
+tsuki-synth/output/wf0907/R4/iso23591_2021.pdf | 789727 | True | 11 | Acoustic quality criteria for music  rehearsal rooms and spaces Critères de qualité acoust
+tsuki-synth/output/wf0907/R4/iso23591_dis.pdf | 432021 | True | 12 | © ISO 2020 Acoustic quality criteria for music rehearsal rooms and  spaces ICS: 91.120.20 
+tsuki-synth/output/wf0907/R4/mcgill_amplitude.pdf | 382452 | False | 4 | Accéder au contenu principal [image][image] English Français Se connecter(current) Communa
+tsuki-synth/output/wf0907/R4/midispec.pdf | 10109522 | True | 334 |                 The Complete MIDI 1.0   Detailed Specification  Incorporating all Recommen
+tsuki-synth/output/wf0907/R4/odeon_daga.pdf | 1042639 | True | 4 | On the importance of sound strength in music rehearsal rooms  Jens Holger Rindel1   1 Odeo
+tsuki-synth/output/wf0907/R4/rindel2014.pdf | 859970 | True | 6 |       New Norwegian standard on the acoustics of  rooms for music rehearsal and performanc
+tsuki-synth/output/wf0907/R4/round3/arx_1210.5109.pdf | 997166 | True | 9 | arXiv:1210.5109v1  [physics.class-ph]  18 Oct 2012 Global and local synthetic descriptions
+tsuki-synth/output/wf0907/R4/round4/arx_1210.3948.pdf | 984806 | True | 6 | arXiv:1210.3948v1  [physics.class-ph]  15 Oct 2012 Comparison of the vibroacoustical chara
+tsuki-synth/output/wf0907/R4/round4/ege_these.pdf | 12563 | False | 2 | Making sure you're not a bot! [image] [image] Loading... You are seeing this because the a
+tsuki-synth/output/wf0907/R4/round4/jasa144_1347.pdf | 5769 | False | 1 | Enable JavaScript and cookies to continue 
+tsuki-synth/output/wf0907/R4/round4/mamou.pdf | 3251800 | True | 40 |                   Université Pierre et Marie Curie, Paris 6        Effets de la mise en ch
+tsuki-synth/output/wf0907/R4/round4/nasm_pama.pdf | 811257 | True | 11 |       Protecting Your Hearing Health        Student Information Sheet on   Noise-Induced H
+tsuki-synth/output/wf0907/R4/round4/poma_roginska.pdf | 5883 | False | 1 | Enable JavaScript and cookies to continue 
+tsuki-synth/output/wf0907/R4/round4/trevisan2017.pdf | 12602 | False | 2 | Making sure you're not a bot! [image] [image] Loading... You are seeing this because the a
+tsuki-synth/output/wf0907/R4/round4/tub_anechoic.pdf | 992710 | True | 7 | A Database of Anechoic Microphone Array Measurements of Musical Instruments Recordings, Di
+tsuki-synth/output/wf0907/R4/rr8181.pdf | 12506 | False | 2 | Making sure you're not a bot! [image] [image] Loading... You are seeing this because the a
+tsuki-synth/output/wf0907/R4/rr8181b.pdf | 12600 | False | 2 | Making sure you're not a bot! [image] [image] Loading... You are seeing this because the a
+tsuki-synth/output/wf0907/R4/soton_408405.pdf | 2314 | False | 1 | Error [image] Access Denied: error code ac980f49c4d35fab. Go home or if you believe you sh
+tsuki-synth/output/wf0907/R4/uncg_practice.pdf | 23826 | False | 4 | Go to main content login Home > NC DOCKS Scholarship [image] NC DOCKS Scholarship Search 1
+tsuki-synth/output/wf0907/R5/audit5/arxiv.pdf | 3025887 | True | 10 | PREPRINT A Database with Directivities of Musical Instruments * David Ackermann Fabian Bri
+tsuki-synth/output/wf0907/R6/icsv27.pdf | 5928 | False | 1 | Enable JavaScript and cookies to continue 
+tsuki-synth/output/wf0914/D9/EchoThief/_EchoThief License.pdf | 65022 | True | 1 | EchoThief License    Permitted Use    Subject to the terms and conditions of this Agreemen
+total PDFs 39  w/o EOF marker or unopenable: ['tsuki-synth/output/wf0907/R4/2467_1_online.pdf', 'tsuki-synth/output/wf0907/R4/3504_1_online.pdf', 'tsuki-synth/output/wf0907/R4/goebl_diss.pdf', 'tsuki-synth/output/wf0907/R4/hal_hal-00714295.pdf', 'tsuki-synth/output/wf0907/R4/hal_hal-00755332.pdf', 'tsuki-synth/output/wf0907/R4/mcgill_amplitude.pdf', 'tsuki-synth/output/wf0907/R4/rr8181.pdf', 'tsuki-synth/output/wf0907/R4/rr8181b.pdf', 'tsuki-synth/output/wf0907/R4/soton_408405.pdf', 'tsuki-synth/output/wf0907/R4/uncg_practice.pdf', 'tsuki-synth/output/wf0907/R4/round4/ege_these.pdf', 'tsuki-synth/output/wf0907/R4/round4/jasa144_1347.pdf', 'tsuki-synth/output/wf0907/R4/round4/poma_roginska.pdf', 'tsuki-synth/output/wf0907/R4/round4/trevisan2017.pdf', 'tsuki-synth/output/wf0907/R6/icsv27.pdf', '_tools/papers/Alon2015_York_MSc_handpan.pdf']

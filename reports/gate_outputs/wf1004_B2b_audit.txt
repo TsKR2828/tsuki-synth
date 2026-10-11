@@ -1,0 +1,174 @@
+WF1004-B2b 稽核（Opus 稽核層，對抗性）— 2026-10-07
+基底 HEAD 6198922（分支 fix/deep-physics-audit-20260716）。關鍵驗證都由稽核親自重跑；工兵的 log 只拿來對照。
+稽核暫存：E:\Tsuki-project\_scratch\wf1004\audit_B2b\（腳本、案例檔、探針原始輸出、分析輸出都在這裡）
+
+==================================================================
+判定：FAIL（依任務書第 2 項的字面標準；程式改動本身正確，見下方「判定理由」）
+==================================================================
+判定理由：
+- 任務書第 2 項：「記錄 max(輸出峰值 − Body-off 峰值)，任何顯著超過 0 的設定就是 FAIL」。
+  稽核在掃之前先把「顯著」定為 > +1.0 dB（寫在 gen_cases.py 檔頭，掃之前就寫好了）。
+  結果：在 473 組 Body 開／關配對裡，有 71 組超過 +1.0 dB，最大 +3.98 dB（N037p15：Body 開 +2.78 dBFS，Body 關 −1.20 dBFS）。
+- 這些超出都不是 min(g,1) 造成的：473 組裡 Body 開的峰值都 ≤ 改前（max(上限版 − 改前)＝+0.0000 dB）。
+  超出的原因是 Body 濾波器本身就會讓峰值變大（改前在同樣的設定下一樣大，或更大）。
+  min(g,1) 能保證的是「不比改前大」，保證不了「不比 Body 關大」；任務書第 2 項要的是後者。
+- 交付文件有三句話被外掛實測推翻（§7），寫法類似 WF1003 稽核 FAIL 的第二個理由：
+  (a) UI 規格補記：「補償量上限為 1（1＝Body 關的音量）」——讀者會理解成「Body 開不會比 Body 關大聲」。實測峰值最多高 +3.98 dB，2 秒 RMS 最多高 +4.41 dB。
+  (b) 報告 §2 第 2 點：「Body 開的起音能量不會超過 Body 關」（ROADMAP §6 也寫「g 被夾在 1 時 Body 開的能量本來就 ≤ Body 關」）。
+      從 WAV 直接算前 0.3 s 能量：上限版有 28 組比 Body 關大 1 dB 以上，最大 +3.69 dB（X008p10，g<1 分支）；
+      g 被夾在 1 的 217 組裡最大 +1.51 dB。文件雖然寫了「穩態近似下」，但結論是用不帶條件的語氣寫的。
+  (c) 報告 §2 第 4 點、ROADMAP 列：「不保證峰值 ≤ Body 關」只舉了合成案例 +1.51 dB。外掛的實測最壞值（目前找到 +3.98 dB）沒有寫。
+- 程式本身：B2b 對 WF1003 版的修正正確、範圍最小。WF1003 的陷波攻擊已經不成立；改前／改後的關係在每組都成立；
+  ctest、HostProbe、27 個 preset、CLI 也都過。重做只需要改文件，或請規劃者／月月改驗收標準（§8）。
+  依稽核規約，本卡的檔案已還原（§9）。
+
+------------------------------------------------------------------
+§0 git 範圍核對（開工時 git status／git diff）
+------------------------------------------------------------------
+tracked 改動 7 檔，跟工兵宣稱的 changed_files 一致：ROADMAP_PHYSICS.md(+1)、docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md(+2)、
+  reports/decision_packets/WF1003_decisions.zh-TW.md(+34/−4)、src/dsp/BodyResonance.h(+98/−6)、src/engines/ChromaticEngine.h(+6)、
+  src/engines/CimbalomEngine.h(+6)、tests/physics_models_repro.cpp(+280，只有新增)。diff 逐段看過，內容全部屬於 B2/B2b。
+untracked、屬於本卡的 20 檔：WF1004_decisions.zh-TW.md、wf1003_b2_body_normalization_before_after.zh-TW.md、wf1003_B2_*.txt 9 檔、wf1004_B2b_*.txt 9 檔。
+其他卡的檔案（wf1004_I2_*、wf1004_Q_*、wf1004_ci_push.txt、wf1004_product_quality_review.zh-TW.md）沒有動。
+git log 仍是 6198922，沒有 staged 的檔案。
+
+------------------------------------------------------------------
+§1 WF1003 的陷波攻擊親自重跑 — PASS
+------------------------------------------------------------------
+探針 harness：稽核把 b2_probe.cpp 跟 wf1003_B2_probe_harness_source.txt 比對過（只差檔尾一個空行），讀過全文，
+  在 _scratch\wf1004\audit_B2b\probe\b 自己重新編出 b2_probe.exe（沒有用工兵編的 exe）。
+三個 VST3（都複製到 audit_B2b\vst\）：
+  cap＝build\ 目前這份（sha256 2351b215…，X4 重建後雜湊不變，原始碼 mtime 早於二進位檔）
+  pre＝已部署的 C:\Program Files\Common Files\VST3\TsukiSynth.vst3（fa13ac17…，168688e 編的；168688e→6198922 的 src 只差 PluginProcessor.cpp
+       voice pool 常數化，值仍是 16，所以功能上等於改前；這份不是工兵編的，獨立於工兵的 pre 樹）
+  unc＝WF1003 稽核自己編的未加上限版（2f7de3a2…），當正對照用
+ATK（preset 11、C4 v0.7、tension 0.5、H1/H2 0.01、H2 比值 2.576、H3～H8 比值 3.396 振幅 1.0）：
+  Body 關 −1.067 dBFS；Body 1.0：上限版 −7.896、改前 −7.896、未加上限版 +14.799 dBFS
+  → 上限版比 Body 關低 6.829 dB；未加上限版的 +22.7 dB 消失 ✓（跟工兵數字逐位一致）
+
+------------------------------------------------------------------
+§2 自己找別的爆音設定（對抗性掃描，473 組配對、1419 次渲染）— 觸發 FAIL 條件
+------------------------------------------------------------------
+案例由稽核自己產生（gen_cases.py seed 20261007、gen_round2.py seed 1007），每組都渲染 Body 關／Body 開兩次，Body 開再用改前和未加上限版各渲一次：
+  第 1 輪 251 組：R 隨機 Custom Harmonics 80｜N 對準陷波（用 Python 照 BiquadFilter 公式算 |H|，把 6 個泛音放在 |H| 最小的比值上，
+    前兩個泛音振幅 0.01～1.0）80｜E 8 個泛音同一比值、振幅 1（同相壓力）30｜X 極端值（A0／C8、比值 0.25／20、Body 0.05／1.0）20｜
+    O 揚琴＋舌鼓／水鑼隨機參數 40｜ATK 1
+  第 2 輪 222 組：把第 1 輪 d 最大的 9 組隨機擾動，每組 22 次（音高 ±12、力度、Body、tension、比值 ±10%、振幅、材質），
+    再加 Z 組 24 組（模態振幅都 0.01、Noise 0.7～1，看 g 沒算到的槌頭噪音）
+判定標準在掃之前寫好（gen_cases.py 檔頭）：
+  J1 上限版 Body 開峰值 ≤ 改前 + 0.01 dB（每一組都要成立）；J2 d＝峰值(Body 開) − 峰值(Body 關)，d > +1.0 dB 算「顯著」；
+  J3 正對照：未加上限版要掃得出大的 d，不然代表這次掃描抓不到問題
+結果（analysis.txt、analysis_r2.txt）：
+  J1：0／473 違反；max(上限版 − 改前)＝+0.0000 dB（兩輪都是），min −16.9 dB → 上限版從沒比改前大 ✓
+      Body 關的兩個 VST3 渲染逐值相同（差 0.0000 dB）✓
+  J3：未加上限版 max d＝+21.11 dB（N046）；d > +3 dB 的有 37＋38 組 → 這次掃描抓得到 WF1003 的問題 ✓
+  J2：上限版 max d＝+3.975 dB；d > +1.0 dB 的 26＋45＝71 組；d > 0 的 66＋114＝180 組（共 473 組）
+    最大的幾組（上限版）：
+      N037p15 d +3.98（開 +2.78／關 −1.20 dBFS，改前 +2.78，未加上限 +5.03，峰值在 0.79 ms，2 秒 RMS 開比關 −0.84 dB）
+        設定：program −1、engine 1、Custom、A3(57) v1.0、tension 0.016、noise 0.197、H1 比值 0.982 振幅 0.1、H2 1.620/0.01、
+              H3～H8 比值 2.99 振幅 1.0（落在模型算的陷波附近）、Body 1.0 → g 夾在 1，Body 對基頻放大＋陷波泛音的瞬態
+      N037p07 +3.80、N037p20 +3.07、X008p11 +2.79、N028p16 +2.73、N028p12 +2.69…
+      第 1 輪最大：E019 +2.11（8 個泛音同比值 4.09、振幅 1、Body 1.0；開 +3.34／關 +1.23 dBFS，RMS 差 −0.04 dB）
+    這 71 組的「上限版 − 改前」都 ≤ 0，所以 B2b 沒有讓它們變大，是 Body 本來的行為（改前最大 d：O 組 +16.58、Z 組 +15.21 dB）。
+  能量（energy03.txt，直接從上限版 WAV 算前 0.3 s 能量 Body 開／關）：
+    g 夾在 1 的 217 組：最大 +1.51 dB，> 0 的 9 組；g<1 的 256 組：最大 +3.69 dB，> +1 dB 的 27 組（集中在 X008 這組：A0 附近、8 個諧波、Body 1.0、program 11）
+  另外：上限版 Body 開的峰值超過 0 dBFS 的有 64＋57 組；不過同樣的極端設定 Body 關就超過 0 dBFS 的也有 88＋47 組（8 個泛音振幅 1 本來就很大聲）。
+
+------------------------------------------------------------------
+§3 min(g,1) 的位置有沒有涵蓋所有呼叫路徑 — PASS
+------------------------------------------------------------------
+git grep setLevelNormalisation／clearLevelNormalisation／normGain／levelNormalised（src tests tools）：
+  寫入 normGain 的地方只有 BodyResonance.h:68（=1）、:100（=std::min(g,1.0f)，前面有 isfinite 檢查）、:107（clear 時 =1）。
+  setLevelNormalisation 只在 ChromaticEngine.h:265、CimbalomEngine.h:368（外掛 startNote()）被呼叫。
+  呼叫時 setAmount（:176／:213）和 configureCreativeBodyLayer→setFrequencies（:223／:364）都已經做完，所以 g 用的是這顆音最後的濾波器狀態。
+  bodyRes.setAmount／setFrequencies 在別的地方沒有呼叫（每個 block 不會改），所以音符進行中 g 不會過期。
+  音訊路徑：processSample 回傳 (g−1)x＋g·wet，四個呼叫點都是 sample += …（Chromatic :563/:678、Cimbalom :788/:881），所以輸出＝g(x＋wet)。
+  CLI noteOn() 在 prepare 之後會呼叫 clearLevelNormalisation（:406／:618）。FMPiano 沒有 BodyResonance。
+  實證：J1 在 473 組都成立，上限版從沒比改前大。
+
+------------------------------------------------------------------
+§4 27 個 preset 表、抽 5 個、preset 11 — PASS
+------------------------------------------------------------------
+稽核自己跑 HostProbe（§5）取出 E16 的 27 列，跟工兵 wf1004_B2b_e16_before_after.txt 的「after」欄比對：27/27 列相同（小數兩位）；
+  最大峰值 −3.03 dBFS（11 號），沒有 preset 超過 0 dBFS。
+b2_probe 抽 5 個（改前＝部署的 fa13ac17 → 上限版）：
+  p6 −7.273 → −21.221｜p7 −4.674 → −14.076｜p14 −11.443 → −24.719｜p15 −1.846 → −9.916｜p25 −12.431 → −22.035
+  → 跟工兵表的 before／after 欄、WF1003 稽核 §3(b) 的數字都一樣 ✓
+preset 11 Body 0.5（C4 v0.7）：改前 +3.799 → 上限版 −2.640 dBFS ✓（同設定 Body 0 是 −3.028：峰值高 0.39 dB，RMS −11.758 比 −13.308 高 1.55 dB）
+
+------------------------------------------------------------------
+§5 X4 重建＋ctest＋HostProbe（親自跑）— PASS
+------------------------------------------------------------------
+cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynthCLI TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+  TsukiSynthSpectrumViewTest TsukiSynthHostProbe → build_exit=0，0 個 error 行；VST3 2351b215…／CLI c01d729e…／HostProbe b302a8bc… 跟工兵宣稱的一樣
+ctest --test-dir build -C Release → 100% tests passed, 0 tests failed out of 4
+AuditTest 直接跑：行首 [PASS] 111／[FAIL] 0，PASS (0 failures)
+PhysicsModelsTest 直接跑：行首 [PASS] 234／[FAIL] 0，PASS (0 failures)；Body level normalisation 15 條全 PASS
+  （其中 g 掃 9900 格最大 1.000000、上限啟動 8437 格；陷波 uncapped g +31.12 dB → 套用 1.000000）
+  （grep 不限行首會數到 5 個 [FAIL]，那是 SENTINEL 突變自測的說明文字「would report: [FAIL] (GOOD…)」，不是失敗）
+HostProbe（cwd 在 repo 外、TSUKI_REPO_ROOT 有設、outdir 用短路徑）：行首 [PASS] 241／[FAIL] 0，PASS (0 failures)
+
+------------------------------------------------------------------
+§6 CLI 不受影響 — PASS（看程式路徑＋稽核自己渲染）
+------------------------------------------------------------------
+論證（§3）：CLI／ScoreRenderer 只走 noteOn()，noteOn() 會 clearLevelNormalisation()；levelNormalised＝false 時 processSample 走原本那行，
+  rawTotalResponse 就是原本的 totalResponse 算式。
+實證（稽核自己渲染）：
+  render_wf_scores.py --label aud（CLI c01d729e）→ diff --strip-trailing-cr 對 b6_method/sha256_before_post_a14.txt：8/8 IDENTICAL
+  --body-amount 0.5（Body 層真的開著）：physical_piano 41d04b16…、water_gong_free 6ac0357f…，新 CLI＝改前 CLI（工兵的 pre 樹 0d9a4b3c；
+    稽核用 git archive HEAD 核對過，pre 樹的 src／CMakeLists 跟 HEAD 逐字相同），也跟 WF1003 稽核用 f99b4a80 CLI 得到的雜湊相同；
+    跟 Body 關的雜湊（1233b53f…／31b539c6…）不同，表示這個測試有效（改了會抓得到）。
+
+------------------------------------------------------------------
+§7 裁決檔併回、新檔、文件內容 — 結構 PASS；有 3 處說法被實測推翻（列入 FAIL 理由）
+------------------------------------------------------------------
+WF1003_decisions.zh-TW.md：B2 一節放在 Q09 前面；Q09 一節跟 HEAD 逐位元組相同（1988 字元）。檔頭的 V 卡歷史註記改寫成現況說明（沒有遺失資訊）。
+WF1004_decisions.zh-TW.md（新檔）：題目、A/B/C 三個選項、Fable 建議的出處（寫明查不到原文）、月月 10-07 原話逐字照錄
+  （「兩題都照你的建議去做」，跟 harness 轉來的月月原話一致），而且寫明另一題不在本卡範圍。完整。
+ROADMAP §6 列：格式跟鄰列一致，寫明「慣例，不是物理主張、不是容差」，有附出處，沒有改既有列。tests 只有新增，沒有放寬任何容差（R2／R3 PASS）。
+被外掛實測推翻的說法（數字見 §2）：
+  (a) UI 規格補記：「補償量上限為 1（1＝Body 關的音量）」、「只會讓聲音變小、不會變大」——前一句會讓讀者理解成「Body 開 ≤ Body 關」，
+      實測峰值最多高 +3.98 dB、2 秒 RMS 最多高 +4.41 dB（N 組）。（後一句以「相對改前」來讀是對的。）
+  (b) 報告 §2 第 2 點「Body 開的起音能量不會超過 Body 關」，以及 ROADMAP 列「g 被夾在 1 時 Body 開的能量本來就 ≤ Body 關」：
+      外掛前 0.3 s 能量最多高 +3.69 dB（g<1）、+1.51 dB（夾在 1）。
+  (c) 報告 §2 第 4 點、ROADMAP 列：「不保證峰值 ≤ Body 關」只舉合成的 +1.51 dB，沒寫外掛實測最壞值 +3.98 dB。
+  另外，「實測 83 組…RMS 範圍 −9.16～+1.60 dB」有寫明是 83 組的範圍，不算錯；但對抗掃描的 2 秒 RMS 差最多到 +4.41 dB，建議一起補上。
+
+------------------------------------------------------------------
+§8 建議（由規劃者／月月決定；稽核沒有改任何程式或文件）
+------------------------------------------------------------------
+程式不用改：B2b 的 min(g,1) 做到了它能做的事（不比改前大，WF1003 的爆音消失），重做可以直接套用 patch。要過關需要擇一：
+ (1) 規劃者把第 2 項驗收標準改成「Body 開峰值 ≤ 改前」（473/473 成立），並把 §7 的三句改成實測數字：
+     「Body 開仍可能比 Body 關大：對抗掃描 473 組，峰值最多 +3.98 dB、前 0.3 s 能量最多 +3.69 dB、2 秒 RMS 最多 +4.41 dB；
+      這些都是 Body 濾波器本來的行為（改前一樣大或更大），上限只保證不比改前大」，
+     UI 規格把「1＝Body 關的音量」改成「1＝不補償（等於改前）」。
+ (2) 一定要「Body 開峰值 ≤ Body 關」的話，min(g,1) 做不到，要換一個以峰值或瞬態為準的慣例（新的 §6 登記），要月月另外裁決。
+重做方法：git apply E:\Tsuki-project\_scratch\wf1004\failed_B2b\B2b_tracked_changes.patch（--check 已驗過可以正向套回），
+  把 failed_B2b 下的 20 個檔案依原本的相對路徑搬回去，再改文件。整合卡的 PhysicsModelsTest 基線要用 234。
+
+------------------------------------------------------------------
+§9 FAIL 處置（只動本卡的檔案）
+------------------------------------------------------------------
+動手前先重新核對一次 git status／git diff --stat：跟開工時一樣是 7 檔、+431/−10（中間只多了別張卡的 wf1004_Q_audit.txt，沒碰）。
+先存 patch：git diff --binary（7 個 tracked 檔）→ E:\Tsuki-project\_scratch\wf1004\failed_B2b\B2b_tracked_changes.patch（575 行）；
+  git apply --check -R 通過；7 檔還原前的 sha256 存在 failed_B2b\tracked_files_sha256_before_restore.txt
+git restore（7 檔）：ROADMAP_PHYSICS.md docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md reports/decision_packets/WF1003_decisions.zh-TW.md
+  src/dsp/BodyResonance.h src/engines/ChromaticEngine.h src/engines/CimbalomEngine.h tests/physics_models_repro.cpp
+  還原後 git apply --check（正向）通過，patch 可以重複使用。
+搬到 E:\Tsuki-project\_scratch\wf1004\failed_B2b\（保留原本的相對路徑；清單在 failed_B2b\moved_files.txt）：20 個 untracked 檔
+  （reports/decision_packets/WF1004_decisions.zh-TW.md、reports/wf1003_b2_body_normalization_before_after.zh-TW.md、
+   reports/gate_outputs/wf1003_B2_{GATE,cli_unchanged,e16_before_after,hostprobe_after,hostprobe_before,hscan,probe_harness_source,probe_sweeps,unit_tests}.txt、
+   reports/gate_outputs/wf1004_B2b_{GATE,cli_unchanged,e16_before_after,hostprobe_after,hostprobe_before,notch_cases,notch_probe,probe_sweeps,unit_tests}.txt）
+  wf1003_B2_audit.txt（已 commit 的 WF1003 稽核）沒動；本稽核檔 wf1004_B2b_audit.txt 留在 reports/gate_outputs/。
+build\：工兵把含 B2b 的二進位檔建在 build\。還原原始碼之後，稽核重建了 build\（VST3、CLI、五個測試 target），讓二進位檔跟原始碼一致，結果見 §10。
+沒有 git add、commit、push（R7）。
+
+------------------------------------------------------------------
+§10 還原後的 build\ 核對
+------------------------------------------------------------------
+重建（同 X4 的 target 清單）→ build_exit=0，0 個 error 行（_scratch\wf1004\audit_B2b\rebuild_after_restore.txt）
+build\ 現在的 sha256：VST3 12921524b26f…、CLI 51dbbb25645c…、HostProbe 774d209ff38a…（整合卡會再全量重建一次；Standalone 這次沒有重建）
+還原後的 VST3 跑 b2_probe：p11 Body 0.5 +3.799、p6 −7.273、p7 −4.674、p14 −11.443、p15 −1.846、p25 −12.431 dBFS
+  → 跟改前（部署的 fa13ac17）逐值相同，B2b 的效果確實已經移除
+ctest 4/4 通過；PhysicsModelsTest 行首 [PASS] 219／[FAIL] 0（＝HEAD 基線，B2 那 15 條已經移除）
+git status：本卡只剩這份稽核檔（untracked）；其他卡的檔案都在原位。

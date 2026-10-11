@@ -1,0 +1,196 @@
+WF1004-INT（整合卡，Opus）全套 GATE 執行記錄（2026-10-07 02:13 開工 → 02:57 GATE 跑完）
+================================================================
+HEAD 6198922（沒動 HEAD、沒 commit、沒 push）。分支 fix/deep-physics-audit-20260716。
+原始輸出全部在 reports/gate_outputs/wf1004_integration_raw/（檔名前面的編號＝本檔的段落）。
+本機路徑一律換成代稱：<REPO>＝repo 根目錄、<TOOLS>＝E 槽工具資料夾、<SCRATCH>＝repo 外的暫存資料夾 E 槽 _scratch\wf1004、
+<MSVC>＝Visual Studio 安裝資料夾、<APPDATA>＝使用者 AppData\Roaming、<OLD_REPO>＝搬家前的舊 repo 路徑（C 槽，已不存在）、<USER>／<GROUP>＝ls 的擁有者欄。
+換代稱前的原始 log 在 <SCRATCH>\INT\raw\（repo 外），換代稱用 <SCRATCH>\INT\sanitize.py（WF1003 那支，只把 wf1003 改 wf1004；只換路徑，其他文字不動；
+換完 grep 本機路徑字串 0 筆）。Inno Setup 的安裝路徑「E:\Inno Setup 7\ISCC.exe」不是個人路徑，保留原樣。
+
+結論：GATE 1～10 全綠（status＝GREEN）。沒有 R10 觸發：75 首 WAV 逐首、8 首位元基準都跟 WF1003／WF1002b 參考表相同（B2b 已還原、P 是外掛層、CLI 不經 voice pool）。
+      本卡沒修任何程式。第 10 步安裝檔這次真的編出來了（WF1003 時 BLOCKED，月月 10-07 已裝 Inno Setup 7）。
+
+  各 GATE 數字：
+    重建：configure EXIT 0；三主 target --clean-first 全量重建 EXIT 0（54 個 .cpp）；五測試 target 隨後全部重編 EXIT 0（82 個 .cpp）；
+          編譯器 error 0／warning C 0（只有既有 MSB8028 tlog 殘留各 5 行）
+    dumpbin：CLI／VST3／Standalone／HostProbe 的 MSVCP140*／VCRUNTIME140*／api-ms-win-crt* 匯入都是 0（靜態 CRT 沒退化）
+    ctest 4/4；AuditTest 直接跑 [PASS] 111、[FAIL] 0（Q01：|IR−ALGO| = 0.112 dB，上限 0.25 dB）；
+          PhysicsModelsTest 直接跑：行首 [PASS] 219、行首 [FAIL] 0、「PASS (0 failures)」（B2b 已還原，它新增的 CHECK 不在樹裡，見下）
+    pytest 312＝306 passed＋1 skipped＋5 xfailed（跟 WF1003 基線完全相同；本輪沒有新增或改動任何 tests/*.py）
+    physics_verify --full：NO CHECKED FAILURES（3 個 rubber N/A 是既有的）；輸出去掉 START／END 後跟 WF1003 整合卡逐行相同（diff 0 行）；--selftest 14/14
+    verify_score --all：75/75（1 項既有豁免）；manifest renderer 欄 75 筆都是 e59ddfd04f18（本次重建的 CLI）
+    75 首 WAV 雜湊：對 WF1002b 參考表（任務書指定）identical 75／different 0／GONE 0／NEW 0／BAD 0，RESULT: PASS；
+                     對 WF1003 整合卡逐首表也一樣 75/75 SAME
+    位元不變（8 首代表曲）：8/8 IDENTICAL（DIFF_EXIT=0）
+    HostProbe（cwd 在 repo 外、TSUKI_REPO_ROOT 未設）：[PASS] 241、[FAIL] 0；判定行逐行對 WF1003 整合卡：少 0 行、多 0 行，
+          只差 H7 每次隨機的 presetId；資訊行只差 Q09（月光舌鼓版 16→32 顆、搶音 64→0）與路徑／時鐘
+    pluginval strictness 10：SUCCESS（自己的 log 25 組測項，Num programs 27）；Steinberg validator 47 passed／0 failed；PLUGIN VALIDATION RESULT: PASS
+    安裝檔：Inno Setup 7.1.0 ISCC 編譯 EXIT 0、警告 0；輸出 sha256 40a35d28…（8,579,225 B，PE x64），打包的三支執行檔＝本次最終 binaries；替身 EULA、未執行
+
+----------------------------------------------------------------------
+本輪各卡（整合卡開工時的狀態；稽核 FAIL 的卡改動已被還原，本卡驗的是現在工作樹的最終狀態）
+----------------------------------------------------------------------
+  CI（WF1003 push 後的 physics.yml）：工兵 PASS（無稽核）。run 37493811777 在 headSha 6198922，6 job 全綠，CI 上 HostProbe 241/0。證據 wf1004_ci_push.txt。
+  I2（Inno Setup 已裝後重做 .iss 編譯＋授權比對）：工兵 PASS／稽核 PASS。ISCC 7.1.0 Authenticode Valid（CN=Pyrsys B.V.）；
+      本機 license.txt 跟 jrsoftware.org 版逐位元相同。repo 的 tools/installer/ 沒改（編的是 <SCRATCH>\I2\iss 副本，只改 RepoRoot 一行＋替身 EULA）。
+  Q（既有成品品質總查＋論文／反推審核盤點，唯讀）：工兵 PASS／稽核 PASS（附真峰值四位小數勘誤，結論不變）。
+      報告 reports/wf1004_product_quality_review.zh-TW.md；products／papers 沒有寫入。
+  B2b（Body 層 g 上限 min(g,1) 重做）：工兵 PASS／稽核 FAIL → 已還原。
+      FAIL 理由（wf1004_B2b_audit.txt）：程式改動本身正確（473 組對抗配對裡上限版都 ≤ 改前），但任務書第 2 項要的是「Body 開峰值不顯著高於 Body 關」，
+      實測 71/473 組超過 +1.0 dB、最大 +3.98 dB（Body 濾波器本身造成，改前一樣大）；另有三句文件被實測推翻。
+      本卡核對：git diff --stat 只有 P 卡的 6 個追蹤檔，src/dsp/BodyResonance.h、ChromaticEngine.h、CimbalomEngine.h、ROADMAP_PHYSICS.md、
+      UI 規格、tests/physics_models_repro.cpp 都不在 diff 裡；B2b 的檔案在 <SCRATCH>\failed_B2b\（moved_files.txt）。
+      所以 PhysicsModelsTest 仍是 219 行 [PASS]，B2b 工兵說的「234 PASS」不適用於最終工作樹。
+  P（voice pool 按引擎分：Chromatic 32、Piano／Cimbalom 16、FM 16，證據門檻制）：工兵 PASS／稽核 PASS。
+      改動：src/PluginProcessor.cpp、新增 src/VoicePool.h、tests/host_probe.cpp（Q09 資訊行改按引擎）、reports/wf0925_method/voice_pool_occupancy.py、
+      docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md、docs/KNOWN_LIMITS_INDEX.zh-TW.md、ROADMAP.md；新增 reports/decision_packets/WF1004_decisions.zh-TW.md、
+      reports/wf1004_p_per_engine_pool.zh-TW.md、wf1004_P_*。
+
+----------------------------------------------------------------------
+0. 開工狀態（raw 00_*、00c_stash_list.txt、17_status_porcelain_after_gates.txt）
+----------------------------------------------------------------------
+命令：git rev-parse HEAD；git status --porcelain；git diff --stat；git diff --cached --stat；git stash list
+- HEAD 6198922881b753fed262f7a44836b3bbe334e5b2；stash 空；staged 0 檔。
+- 未 stage 的追蹤檔 6 檔（「6 files changed, 118 insertions(+), 58 deletions(-)」）：ROADMAP.md、docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md、
+  docs/KNOWN_LIMITS_INDEX.zh-TW.md、reports/wf0925_method/voice_pool_occupancy.py、src/PluginProcessor.cpp、tests/host_probe.cpp（全部是 P 卡）。
+- untracked：src/VoicePool.h（P）、WF1004_decisions（P）、兩份報告（P、Q）、reports/gate_outputs/wf1004_*（CI、I2、Q、B2b 稽核、P 各卡證據）。
+- GATE 跑完再 git status --porcelain（raw 17），跟開工時相比只少一行「?? reports/gate_outputs/wf1004_integration_raw/」——
+  那是開工快照時本卡剛建的空資料夾，隨後把 raw 移到 repo 外、最後才換代稱寫回。跑 GATE 沒改到任何追蹤檔、沒多出別的 untracked。
+
+----------------------------------------------------------------------
+1. 重建 build\（raw 01、02、03、04、05）
+----------------------------------------------------------------------
+重建前 build\ 的 sha256（raw 01；P 稽核重建的版本）：CLI 51dbbb25…、VST3 c324cfc1…、Standalone 05e41a85…、HostProbe b700ded0…
+命令：cmake -B build -DCMAKE_BUILD_TYPE=Release -DTSUKI_BUILD_TESTS=ON → EXIT_CODE=0（CMakeCache 沒有 TSUKI_VOICE_POOL_* 覆寫，CMAKE_CXX_FLAGS＝/DWIN32 /D_WINDOWS /EHsc 預設）
+命令：cmake --build build --config Release --clean-first --target TsukiSynthCLI TsukiSynth_Standalone TsukiSynth_VST3 → EXIT_CODE=0（02:13:40 → 02:16:32，54 個 .cpp 重編）
+命令：cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe → EXIT_CODE=0
+      （02:16:32 → 02:20:17，82 個 .cpp 重編）
+兩次建置：編譯器 error 0、warning C 開頭 0；MSB8028 各 5 行（搬家前 tlog 殘留，跟 WF1002／WF1003 相同，不影響輸出）。
+重建後 sha256（raw 05）：
+  CLI               e59ddfd04f18cc2fe0201883582ee6bce5fa2b9b1f3d8978909692a7f34ddc9d
+  VST3              72f503c75cbdb6444606da759a22afe0b71eb6c119196cd5c5bd88323380ad8a
+  VST3 moduleinfo   709526f55057e53be431ba288aa4e89671c4ea77fd7320b60afdff631535d994（跟 WF1002b／WF1003 相同）
+  Standalone        4e1896dd26fd708d99cf0bbea3a2bec0f09b6b9a8bd71bdc50f1d3fe724d5f14
+  AuditTest         68bf72834efda7d0a4807a9a3234f449bb82043f2b4d1a42aa0c80913d0060c0
+  TunerTest         cf75dc3dc2f05922c130cf483adfb7362797ed0fe2b7b6aacb695eb38392791f
+  PhysicsModelsTest b90b4b8e2e238952489cc1a6ec0b496804e5ac99febdaa9b8c0eb1d7f81c154a
+  SpectrumViewTest  8d7e5d4b27556ae5e87ac4585b103a7c1ae39078b28b3ce7ef167ce89fd60d26
+  HostProbe         b16a57ad53dd91e7ccffc3a2fce02040d974cc23d52d8a0264f0e3a8062918a3
+  （CLI 原始碼本輪沒改，雜湊仍會變：MSVC 連結輸出含時間戳記等，重編就會變；判斷渲染有沒有變只看 WAV 雜湊——第 6、7 步全部相同。）
+[PASS]
+
+----------------------------------------------------------------------
+2. 靜態 CRT 匯入檢查（raw 06_dumpbin_dependents.txt）
+----------------------------------------------------------------------
+命令：<MSVC>/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/dumpbin.exe /DEPENDENTS <exe>（Git Bash 加 MSYS2_ARG_CONV_EXCL='*'）
+結果：CLI、VST3、Standalone、HostProbe 四支 DUMPBIN_EXIT=0，相依的都只有系統 DLL；grep -ciE 'MSVCP|VCRUNTIME|api-ms-win-crt' 四支都是 0。
+[PASS]
+
+----------------------------------------------------------------------
+3. ctest（raw 07_ctest.txt、07b_audittest_direct.txt、07c_physicsmodels_direct.txt）
+----------------------------------------------------------------------
+命令：ctest --test-dir build -C Release --output-on-failure → 「100% tests passed, 0 tests failed out of 4」EXIT_CODE=0
+命令：build/Release/TsukiSynthAuditTest.exe → [PASS] 開頭 111 行、[FAIL] 0 行、「PASS (0 failures)」EXIT_CODE=0
+      「[Q01] |IR - ALGO| = 0.112 dB, limit 0.25 dB, margin 0.138 dB」→ [PASS]。基線 111 不變。
+命令：build/Release/TsukiSynthPhysicsModelsTest.exe → 行首 [PASS] 219、行首 [FAIL] 0、「PASS (0 failures)」EXIT_CODE=0
+      （檔內另有 5 行「... would report: [FAIL] (GOOD -- regression caught / power law checked)」是哨兵突變體的預期結果，不是失敗；
+       1 行 [PASS] 在縮排後面。tests/physics_models_repro.cpp 本輪沒改，B2b 加的 CHECK 已隨還原拿掉。）
+[PASS]
+
+----------------------------------------------------------------------
+4. pytest 全套（raw 11_pytest_collect_only.txt、14_pytest.txt）
+----------------------------------------------------------------------
+命令：python -m pytest tests --collect-only -q → 「312 tests collected」
+命令：python -m pytest tests -q -rsxX（Python 3.13.3；02:48:57 → 02:56:41）
+結果：「306 passed, 1 skipped, 5 xfailed in 460.57s」EXIT_CODE=0
+  - 跟 WF1003 基線 312＝306＋1＋5 完全相同；差異來源：無（本輪 git diff／untracked 裡沒有任何 tests/*.py；P 卡改的 voice_pool_occupancy.py 是報告腳本，不在 tests/）。
+  - 5 條 strict xfail 原封不動、沒有 XPASS；1 skip 是既有的 test_render_app_filename_safety.py:135。
+[PASS]
+
+----------------------------------------------------------------------
+5. physics_verify（raw 08_physics_verify_full.txt、09_physics_verify_selftest.txt）
+----------------------------------------------------------------------
+命令：python tools/physics_verify.py --full --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe（02:23:31 → 02:25:33）
+結果：「RESULT: NO CHECKED FAILURES; UNVERIFIED/N/A RANGES REPORTED」EXIT_CODE=0
+  UNVERIFIED/N/A 逐項：cimbalom/rubber（T60 0.028 s）、tongue_drum/rubber（0.014 s）、water_gong/rubber（0.028 s）——既有 3 項，需要 ≥0.031 s 才夠 8 個週期。
+  F5 殘差（Blackman-Harris 窗，門檻 −60.0 dB）：cimbalom −88.4、tongue_drum −96.3、water_gong −84.5、water_gong_free −84.6、piano −87.4 dB，全 PASS。
+  整份輸出去掉 START／END 兩行後，跟 WF1003 整合卡的 08 逐行相同（diff 0 行）。
+命令：python tools/physics_verify.py --selftest → 14 行「: PASS」、EXIT_CODE=0
+[PASS]
+
+----------------------------------------------------------------------
+6. verify_score --all＋75 首逐首雜湊比對（raw 10_verify_score_all.txt、12b_hash75_vs_wf1002b_integration.txt、12_hash75_vs_wf1003_integration.txt）
+----------------------------------------------------------------------
+命令：python tools/verify_score.py --all --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe（→ 02:47:37）
+結果：「75/75 score(s) passed all checks (1 check(s) covered by registered exemption(s)), 0 failed.」EXIT_CODE=0
+  manifest renderer 欄：75 筆都是「renderer e59ddfd04f18」＝本次重建的 CLI。
+命令：python tools/hash75_compare.py <SCRATCH>/INT/raw/10_verify_score_all.txt reports/gate_outputs/wf1002b_integration_raw/12_hash75_vs_wf1002_integration.txt
+結果（raw 12b，任務書指定的 WF1002b 參考表）：「identical 75, different 0, only in reference 0, only in this run 0, unusable hash 0」「RESULT: PASS」EXIT_CODE=0
+      N9 已接受的兩首 overdrive 譜 9dd3a9a4ff44、2344a312ed00 都是 SAME。
+命令：同上，參考改為 reports/gate_outputs/wf1003_integration_raw/12_hash75_vs_wf1002b_integration.txt（HANDOVER §1-3 寫的「下次參考表」）
+結果（raw 12）：identical 75、different 0，RESULT: PASS。
+  → B2b（已還原）與 P（外掛層 PluginProcessor.cpp＋VoicePool.h，CLI 不編譯這兩檔）沒有改到 CLI 渲染。沒有 R10 事件。
+  本次逐首表（raw 12b）可以直接當下一張整合卡的參考表。
+[PASS]
+
+----------------------------------------------------------------------
+7. 位元不變 8/8（raw 13_render_wf_scores_bit_identity.txt、13b_bit_identity_diff.txt）
+----------------------------------------------------------------------
+命令（cwd＝<REPO>）：python reports/gate_outputs/wf0907_method/render_wf_scores.py --label wf1004_INT --workdir <SCRATCH>\INT\bi
+      --cli build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe --outdir <SCRATCH>\INT\bi_out → EXIT_CODE=0（→ 02:48:57），8 首
+命令：diff --strip-trailing-cr reports/gate_outputs/b6_method/sha256_before_post_a14.txt <SCRATCH>/INT/bi_out/sha256_wf1004_INT.txt → 沒有輸出，DIFF_EXIT=0
+結果：8/8 IDENTICAL。
+[PASS]
+
+----------------------------------------------------------------------
+8. HostProbe（raw 15_hostprobe_cwd_outside_repo.txt、15_hostprobe_env.txt、15c_hostprobe_verdicts_vs_wf1003.diff、15d_hostprobe_info_vs_wf1003.diff）
+----------------------------------------------------------------------
+命令（cwd＝<SCRATCH>\INT\hp，TSUKI_REPO_ROOT 未設）：<REPO>/build/Release/TsukiSynthHostProbe.exe <REPO>\build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3 <SCRATCH>\INT\hp\out
+結果：[PASS] 241、[FAIL] 0，「PASS (0 failures)」EXIT_CODE=0（02:21:05 → 02:22:17）
+  判定行（[PASS]/[FAIL] 開頭、去掉暫存路徑）逐行對 WF1003 整合卡（raw 15c）：兩邊都 241 行；少掉 0 行、多出 0 行；
+  不同的只有 6 行 H7／H7-Q06 裡每次隨機產生的 presetId（63c41a3e… → 0abf6d47…）。P 卡沒有新增或刪除任何 CHECK，基線維持 241。
+  資訊行對 WF1003（raw 15d）只差 Q09 段：
+    給愛麗絲：「twin(16 voices = product pool)」max|diff| = 0、steals 0、最多 12 顆（措辭多了「Cimbalom/Piano engine」，數字不變）
+    月光舌鼓版：舊「twin(16 voices) … steals = 64 (4 hit a still-held note); max active = 16」＋64 行「steal #」清單
+             → 新「twin(32 voices = product pool) vs VST3 max|diff| = 0 … steals = 0 (0 hit a still-held note); max active = 20」，steal 清單 64 → 0 行；
+             VST3 峰值 −12.93 → −12.92 dBFS；「extra held voices released by another note's note-off」117 → 120（pool 變大後的預期變化，資訊性、不判定）。
+    其他只差 START／END 時間、wall clock。
+  E16 27 個 preset 的 [info] 峰值／RMS 28 行跟 WF1003 逐行相同（diff 0），最大仍是 −1.85 dBFS，沒有任何一列 > 0 dBFS。
+  %APPDATA%\TsukiSynth 的 IR、Presets 檔數：跑前 0／0，跑後 0／0。
+[PASS]
+
+----------------------------------------------------------------------
+9. pluginval＋Steinberg validator（raw 16_validate_plugin.txt、16a_pluginval_stdout.txt、16b_pluginval_own_log.txt）
+----------------------------------------------------------------------
+命令：pwsh -NoProfile -File tools/validate_plugin.ps1 -Plugin build\TsukiSynth_artefacts\Release\VST3\TsukiSynth.vst3
+      -Pluginval <TOOLS>\pluginval\extracted\pluginval.exe -Vst3Validator <TOOLS>\vst3sdk-build\bin\Release\validator.exe -Strictness 10
+結果：「pluginval strictness 10」；Steinberg validator「Result: 47 tests passed, 0 tests failed」；「PLUGIN VALIDATION RESULT: PASS」EXIT_CODE=0
+另跑 pluginval 取它自己的 log：<TOOLS>\pluginval\extracted\pluginval.exe --strictness-level 10 --validate-in-process --output-dir <SCRATCH>\INT\pv_log --validate <VST3>
+結果：PLUGINVAL_EXIT=0，log 結尾 SUCCESS，25 組測項；「pluginval / Plugin programs」：Num programs: 27 / All program names checked
+[PASS]
+
+----------------------------------------------------------------------
+10. 安裝檔重編（raw 18_installer_iscc.txt、18b_installer_sha256.txt）
+----------------------------------------------------------------------
+做法：照 I2 卡流程。把 <SCRATCH>\I2\iss\ 原樣複製到 <SCRATCH>\INT\iss\（diff -r 相同；跟 repo 的 tools/installer/TsukiSynth.iss 只差第 39 行 RepoRoot 指向 <REPO>；
+      EULA.txt 是替身，檔頭兩行寫明「編譯煙霧測試用替身，非正式 EULA…不得發行」），讓它直接吃 <REPO>\build\ 的最終 binaries。
+命令（PowerShell）：& 'E:\Inno Setup 7\ISCC.exe' "/O<SCRATCH>\INT\installer" "<SCRATCH>\INT\iss\TsukiSynth.iss"
+  ISCC.exe Authenticode：Valid，Signer CN=Pyrsys B.V.；「Compiler engine version: Inno Setup 7.1.0」
+結果：「Successful compile (4.891 sec)」EXIT_CODE=0；log 裡 Warning 0 行；#error 沒觸發。
+  Compressing 6 個來源：moduleinfo.json、VST3、Standalone、CLI（都在 <REPO>\build\）、替身 EULA.txt、<REPO>\THIRD_PARTY_NOTICES.txt。
+  編譯當下 build\ 三支 sha256 ＝ 第 1 步 raw 05（CLI e59ddfd0…、VST3 72f503c7…、Standalone 4e1896dd…），所以包進去的就是本次最終 binaries。
+  產出：<SCRATCH>\INT\installer\TsukiSynth-0.3.0-win-x64-setup.exe　8,579,225 B
+        sha256 40a35d282890e216cbc02b73052615a0d92044e39d0bd986a719fa1c8798be72；PE machine 0x8664（x64）——只讀檔頭，沒有執行。
+  <REPO>\output\installer\ 沒有被建立（/O 讓輸出留在 repo 外）。
+  log 有一行編譯器橫幅「Non-commercial use only」（沒輸入商業授權碼時的橫幅；授權本身允許商業使用、年營收 >US$5,000 才被請求購買，見 wf1002b_innosetup_license.zh-TW.md）。
+  沒做：安裝／解除安裝實測、檔案落點、精靈 UI。這個安裝檔用的是替身 EULA，不得發行。
+[PASS]
+
+----------------------------------------------------------------------
+11～13. 收尾
+----------------------------------------------------------------------
+- GATE 1～10 全綠 → 照任務第 12 步 git add 本輪改動與新增檔（清單與 git status 截錄見 raw 19_git_status_after_add.txt）。不 commit、不 push。
+- HANDOVER.md §0／§1、TODO.md 補了 WF1004 段（新基線、各卡結果、CI 卡與 Q 卡結論、月月待辦更新），一併 add。
+- 部署位置 C:\Program Files\Common Files\VST3\TsukiSynth.vst3 仍是 WF1002b 那版（fa13ac17…）；本輪 VST3 行為有變（Chromatic pool 16→32），
+  要不要重新部署由月月決定，本卡沒動。
+- 留給後續（文件小項，本卡沒動）：tools/installer/README.md 與 .iss 檔頭仍寫「從未編譯／Inno Setup 沒裝」，已過時（I2 卡指出）。

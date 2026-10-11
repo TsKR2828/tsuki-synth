@@ -1,0 +1,33 @@
+WF1004-B2c HostProbe E16 before/after (C4 vel 0.7, note-off 1.0 s, 2.0 s render, 48 kHz, block 512). DESCRIPTIVE ONLY, not a GATE.
+before = pre VST3 (current state incl. P card, sha256 72f503c7...); after = build VST3 with B2 + g=min(g,1) (sha256 3441686e...)
+last 2 columns: after vs WF1003 uncapped 'after' table (wf1003_B2_e16_before_after.txt) peak, RMS; 'same' = |diff|<=0.005
+# preset | peak before | peak after | d peak | RMS before | RMS after | d RMS | after-WF1003after (peak, RMS)
+ 0 Steel Hammered Dulcimer              -11.71   -19.52   -7.81   -27.69   -35.50   -7.81  +0.00 +0.00
+ 1 Copper Warm Strings                  -12.97   -12.97   +0.00   -27.50   -27.50   +0.00  +0.00 +0.00
+ 2 Glass Wind Chimes                     -9.27    -9.27   +0.00   -25.56   -25.56   +0.00  +0.00 +0.00
+ 3 Muted Felt Piano                     -33.74   -33.74   +0.00   -47.85   -47.85   +0.00  +0.00 +0.00
+ 4 Brass Gamelan                        -13.34   -13.34   +0.00   -32.61   -32.61   +0.00  +0.00 +0.00
+ 5 Rubber Muted Pluck                   -19.82   -19.82   +0.00   -52.13   -52.13   +0.00  +0.00 +0.00
+ 6 Steel Hammered Dulcimer (Body)        -7.27   -21.22  -13.95   -23.53   -35.56  -12.03  +0.00 +0.00
+ 7 Copper Warm Strings (Body)            -4.67   -14.08   -9.41   -20.00   -29.45   -9.45  +0.00 +0.00
+ 8 Crystal Tongue Drum                  -23.84   -23.84   +0.00   -32.36   -32.36   +0.00  +0.00 +0.00
+ 9 Bronze Water Gong                     -9.37    -9.37   +0.00   -23.28   -23.28   +0.00  +0.00 +0.00
+10 Wooden Kalimba                       -20.83   -20.83   +0.00   -38.86   -38.86   +0.00  +0.00 +0.00
+11 Ethereal Steel Bells                  -3.03    -3.03   +0.00   -13.31   -13.31   +0.00  +0.00 +0.00
+12 Glass Singing Bowl                   -30.49   -30.49   +0.00   -41.88   -41.88   +0.00  +0.00 +0.00
+13 Rubber Tongue Pad                    -44.29   -44.29   +0.00   -68.36   -68.36   +0.00  +0.00 +0.00
+14 Crystal Tongue Drum (Body)           -11.44   -24.72  -13.28   -19.93   -33.21  -13.28  +0.00 +0.00
+15 Bronze Water Gong (Body)              -1.85    -9.92   -8.07   -16.56   -24.63   -8.07  +0.00 +0.00
+16 Acoustic Piano                       -19.83   -19.83   +0.00   -30.60   -30.60   +0.00  +0.00 +0.00
+17 Electric Rhodes                      -22.90   -22.90   +0.00   -34.57   -34.57   +0.00  +0.00 +0.00
+18 Layered E.Piano                      -21.21   -21.21   +0.00   -32.57   -32.57   +0.00  +0.00 +0.00
+19 FM Vibraphone                        -16.23   -16.23   +0.00   -28.53   -28.53   +0.00  +0.00 +0.00
+20 DX7 Crystal Bell                      -9.07    -9.07   +0.00   -20.98   -20.98   +0.00  +0.00 +0.00
+21 Church Organ                         -12.85   -12.85   +0.00   -20.99   -20.99   +0.00  +0.00 +0.00
+22 Ambient Pad                          -12.43   -12.43   +0.00   -19.84   -19.84   +0.00  +0.00 +0.00
+23 FM Bass                              -22.38   -22.38   +0.00   -38.79   -38.79   +0.00  +0.00 +0.00
+24 FM Brass                             -20.98   -20.98   +0.00   -34.42   -34.42   +0.00  +0.00 +0.00
+25 Grand Piano (Physical)               -12.43   -22.03   -9.60   -25.75   -35.45   -9.70  +0.00 +0.00
+26 Bright Upright (Physical)            -13.98   -14.88   -0.90   -33.98   -34.87   -0.89  +0.00 +0.00
+rows identical to WF1003 uncapped 'after' table (<=0.005 dB): 27 / 27
+max peak before -1.85; max peak after -3.03; presets above 0 dBFS after: 0

@@ -1,0 +1,28 @@
+WF1004-B2c step 1-2: pre reference VST3 + B2b patch re-apply (no program edits) -- 2026-10-07
+
+== pre reference (R10 baseline = current state incl. P card, no B2) ==
+build was up to date (cmake --build exit 0, 5 s), copied to E:\Tsuki-project\_scratch\wf1004\B2c\pre\TsukiSynth.vst3
+72f503c75cbdb6444606da759a22afe0b71eb6c119196cd5c5bd88323380ad8a *TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3
+b16a57ad53dd91e7ccffc3a2fce02040d974cc23d52d8a0264f0e3a8062918a3 *build/Release/TsukiSynthHostProbe.exe
+e59ddfd04f18cc2fe0201883582ee6bce5fa2b9b1f3d8978909692a7f34ddc9d *build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe
+(equals the WF1004 integration baseline: CLI e59ddfd0..., VST3 72f503c7..., HostProbe b16a57ad... per HANDOVER.md 0/1-3)
+
+== git apply ==
+$ git apply --check -v failed_B2b/B2b_tracked_changes.patch  -> CHECK_OK (7 files)
+$ git apply failed_B2b/B2b_tracked_changes.patch (working tree only, no --index)  -> APPLIED
+files: ROADMAP_PHYSICS.md docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md reports/decision_packets/WF1003_decisions.zh-TW.md src/dsp/BodyResonance.h src/engines/ChromaticEngine.h src/engines/CimbalomEngine.h tests/physics_models_repro.cpp
+
+== moved_files.txt: 19 plain files copied back to original paths (cp from failed_B2b, the preserved copy is kept), WF1004_decisions merged by hand ==
+WF1004_decisions.zh-TW.md: repo copy (staged by the integration card) has only the P section; B2b version (B2 section only) was merged: new B2b/B2c section placed BEFORE the P section, P section untouched
+
+== program code unchanged vs the B2b final (sha256 of the 3 src files, before-restore listing in failed_B2b/tracked_files_sha256_before_restore.txt) ==
+3bd5caf3dfbe195d2a62c35af4deb0ba915154508c26baf84e94c7161d962d59 *src/dsp/BodyResonance.h
+f63f0e93068b68937f2392429fa7737d3682018b5b0d78483e20f8d9acfb4c93 *src/engines/ChromaticEngine.h
+1b31b7f360d5d8a7448593561f2f19d574ed1aca1fd24ddc67ff468a3ae532d8 *src/engines/CimbalomEngine.h
+3bd5caf3dfbe195d2a62c35af4deb0ba915154508c26baf84e94c7161d962d59 *src/dsp/BodyResonance.h
+f63f0e93068b68937f2392429fa7737d3682018b5b0d78483e20f8d9acfb4c93 *src/engines/ChromaticEngine.h
+1b31b7f360d5d8a7448593561f2f19d574ed1aca1fd24ddc67ff468a3ae532d8 *src/engines/CimbalomEngine.h
+-> identical (3/3). Only tests/physics_models_repro.cpp (assertions) and docs were edited in B2c.
+
+== git state ==
+HEAD: 6198922; staged files (git diff --cached --name-only | wc -l): 109 (unchanged; R7: nothing added/committed/pushed in B2c)

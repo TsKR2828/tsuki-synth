@@ -1,0 +1,52 @@
+WF1003-B2 GATE summary (R1: GATE outputs only) -- 2026-10-03, base HEAD bee2889, nothing committed/staged (R7)
+
+Private build tree (repo-external, to leave build\ untouched for other lanes): E:\Tsuki-project\_scratch\wf1003\B2\b
+  configure: cmake -S <repo> -B <tree> -G "Visual Studio 18 2026" -A x64 -DTSUKI_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release   -> cfg_exit=0
+  build: cmake --build <tree> --config Release --target TsukiSynth_VST3 TsukiSynthCLI TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe --parallel 6
+    first build build_exit=0; incremental rebuild after adding the unit test: exit 0 (build2.log)
+  sha256 CLI       29b44f997525433ae8eee71241a4ecedec7997ae60a74dd4b8c624f5ccb7c3fd
+  sha256 VST3      ad458879e63a0da5ecb83a4287abc02e037b9df7a6effbeb2db47830fc74f4ab
+  sha256 HostProbe 29b3095d04e1dfbc9aa7312e3cfa83b242664b7b5d56b20a21c2e278e8c27aaa
+  baseline (build\): VST3 fa13ac17661ff50351b8b4c0920715d7a81d3497bd983197b885874969620b03, CLI f99b4a8096f93cdab8eb7c36118efb3ca5c8235e44ecacb58ad31d9528872692
+
+== ctest --test-dir <tree> -C Release ==
+2/4 Test #2: tuner_repro ......................   Passed    0.66 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.07 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.16 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   3.89 sec
+
+== AuditTest (direct) ==
+PASS (0 failures)
+[PASS] lines: 111
+
+== PhysicsModelsTest ==
+PASS (0 failures)
+[PASS] lines: 230; Body level normalisation lines: 11
+
+== HostProbe (TSUKI_REPO_ROOT set, cwd outside repo, short outdir) ==
+before (build\ VST3): 231 PASS / 0 FAIL, PASS (0 failures)
+after  (B2 VST3):      231 PASS / 0 FAIL, PASS (0 failures)
+melody_verify on H3 render: before 5 PASS / 0 FAIL / 0 UNVERIFIED; after 5 PASS / 0 FAIL / 0 UNVERIFIED
+
+== CLI path ==
+see wf1003_B2_cli_unchanged.txt: 8/8 IDENTICAL; --body-amount 0.5 renders identical old vs new
+
+== Target (preset 11, Body 0.5, C4 v0.7) ==
+sweep_p11_b0.5	peak_dBFS=3.799	peak_ch=1
+sweep_p11_b0.5	peak_dBFS=-2.640	peak_ch=1
+(before = +3.80 dBFS -> after = -2.64 dBFS)
+
+== NOT run in this card (left to integration card, per card spec): pytest, physics_verify --full/--selftest, verify_score --all (75 WAV hashes), bit-identity beyond 8/8, pluginval/validator ==
+
+== files changed (git status, tracked) ==
+ M ROADMAP_PHYSICS.md
+ M docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md
+ M src/dsp/BodyResonance.h
+ M src/engines/ChromaticEngine.h
+ M src/engines/CimbalomEngine.h
+ M tests/physics_models_repro.cpp

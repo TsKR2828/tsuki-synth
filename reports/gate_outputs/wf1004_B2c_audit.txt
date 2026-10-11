@@ -1,0 +1,175 @@
+WF1004-B2c 稽核（Opus 稽核層，對抗性）— 2026-10-07
+基底 HEAD 6198922（分支 fix/deep-physics-audit-20260716；staged 109 檔＝整合卡的合法狀態，稽核沒有動）。
+驗收標準（規劃者依月月委託裁定＝wf1004_B2b_audit.txt §8 選項 (1)）：(a) 加上限版輸出峰值 ≤ 改前；(b) g ≤ 1 恆成立；
+Body 開 vs Body 關的既有差異「只需如實記載」，本身不是 FAIL 條件。任務書第 3 項另要求：三處文件「每一句宣稱都要能被實測數字支持」。
+稽核暫存：E:\Tsuki-project\_scratch\wf1004\audit_B2c\（自建兩棵樹、探針、案例、原始輸出、分析腳本都在這裡）
+
+==================================================================
+判定：FAIL（只因文件；程式與驗收標準 (a)(b) 全部 PASS）
+==================================================================
+- 程式：src 三檔的 diff 與 failed_B2b patch 的 src 部分逐位元組相同（§1）。
+- 驗收標準 (a)：稽核自建「改前」「加上限」兩棵樹（都含 P 卡），自產 244 組單音＋159 組和弦，共 403 組：
+  加上限 − 改前 峰值最大 +0.0000 dB，0/403 違反，RMS 也是 0 違反（§2）。(b) g ≤ 1：單元測試 9900 格 max g＝1.000000（§4）。
+- 文件：有 3 類句子被 B2c 自己的證據（wf1004_B2c_adversarial_scan.txt 那 473 組資料）以及稽核的重掃推翻（§3）。
+  任務書第 3 項是硬性要求，所以判 FAIL。重做時程式不用改，只要改這幾句（另建議順手改 2 行程式註解，§3-D）。
+- 依規約已還原本卡的檔案（§6）；build\ 已重建，並驗證回到改前（§7）。
+
+------------------------------------------------------------------
+§1 程式 diff 跟 failed_B2b patch 是否逐位元組相同 — PASS
+------------------------------------------------------------------
+目前的 git diff --binary（src/dsp/BodyResonance.h、src/engines/ChromaticEngine.h、src/engines/CimbalomEngine.h）
+  vs failed_B2b\B2b_tracked_changes.patch 裡 a/src/ 那三段：cmp 結果相同；兩者 sha256 都是 dd6c4802…（audit_B2c\old_src.patch、cur_src.patch）。
+三檔 sha256（3bd5caf3…／f63f0e93…／1b31b7f3…）＝failed_B2b\tracked_files_sha256_before_restore.txt。
+src 下其他改動（PluginProcessor.cpp、VoicePool.h）只在 index（P 卡），B2c 沒有碰。
+tests/physics_models_repro.cpp 對 B2b 版的差異：稽核把 B2b 的 test patch 套回 HEAD 重建 B2b 版本，再 diff，結果只有三處：
+  (5) 的註解；把「合成案例前 0.3 s 能量 ≤ Body 關」那條 CHECK 換成 (5c)「逐樣本 |加上限| ≤ |改前|」（陷波 g＝1、諧波 g<1）；
+  合成案例對 Body 關的比較改成只印 [INFO]。換掉的是已經被裁決撤銷的主張，不是 §6 容差；新斷言比舊的嚴（逐樣本、相對 1e-6）。
+  所以 R2 沒有違反。斷言數仍是 15（234）。
+
+------------------------------------------------------------------
+§2 對抗重掃（稽核自建兩棵樹＋自產案例）— 驗收標準 (a) PASS
+------------------------------------------------------------------
+建置：用 git checkout-index 匯出 index（＝HEAD＋P，不含 B2c）→ pretree；同一份再把工作樹的 3 個 src 檔與 test 檔蓋上去 → captree。
+  libs/JUCE 用 junction。兩棵樹各從零 configure＋build（TsukiSynth_VST3、TsukiSynthCLI）：build_exit=0、0 個 error 行。
+  VST3 sha256：pre d16f87c8…、cap 4d002f54…。雜湊跟 build\ 不同，因為路徑字串不同；功能上做了核對：
+  build\ 的 VST3（3441686e…）跟 captree 在 40 組案例的峰值、RMS 逐字相同；
+  pretree 跟工兵的 pre（72f503c7…）在 E16 27 列、5 個 preset 探針上逐值相同（§4）。
+  正對照：WF1003 未加上限版（2f7de3a2…，B2b 稽核留下的）。
+探針：audit_B2c\probe\b2c_probe.cpp。這是稽核從 b2_probe 改出來的，多了 chord= 和弦參數（多個 note-on，起點可以錯開），
+  峰值輸出到線性 10 位小數。
+案例：gen_b2c.py，seed 20261008（跟 B2b 稽核的 seed 不同）。判準在渲染前寫在檔頭：
+  單音 244 組（每組 Body 關／開）：F 工廠 preset 強制 Body 60｜R 隨機 Custom Harmonics 50｜N 對準陷波 60｜O 揚琴／舌鼓／水鑼 40｜
+    P N037p15 擾動 30｜W B2b 稽核的最壞組與參考組原樣 4（WN037p15、WATK＝舊陷波攻擊、WX008p10、WE019）
+  和弦 159 組（B2b 稽核和 B2c 掃描都沒涵蓋）：K1 工廠 preset 2～4 音、隨機錯開 60｜K2 自訂泛音／陷波設定，低音＋高音（g<1 跟 g 夾在 1 混在一起）50｜
+    K3 低音 g<1＋note 84（g 夾在 1）、起點錯開 0～480 樣本 50
+結果（analysis.txt）：
+  J1  單音：加上限 − 改前 峰值最大 +0.0000 dB，最小 −16.041 dB；RMS 最大 +0.0000 dB；違反 0/244
+       （判準：線性峰值 ≤ 改前 ×(1+1e-5)、RMS ≤ +0.0001 dB）
+       g 夾在 1（輸出＝改前）123 組；g<1 121 組
+  J1b Body 關：兩個 VST3 逐值相同（峰值、RMS 差都是 0.000000 dB）
+  J2  和弦 159 組：加上限 − 改前 峰值最大 +0.0000 dB，RMS 最大 +0.0000 dB；比改前大 +0.0001 dB 以上的 0 組
+       （逐樣本界本來只對單顆 voice 證明；混音後的和弦這次實測也沒有反例）
+  J3  正對照：未加上限版 − 改前 最大 +22.70 dB（WATK），> +3 dB 的有 40/94 → 這次掃描抓得到放大
+  B2b 稽核的最壞組原樣重渲（dBFS）：
+    WN037p15：Body 關 −1.197，改前 +2.778，加上限 +2.778，未加上限 +5.033（加上限 − 改前 +0.0000）
+    WATK（舊陷波攻擊）：Body 關 −1.067，改前 −7.896，加上限 −7.896，未加上限 +14.799（加上限 − 改前 +0.0000）
+    WX008p10：改前 +6.872 → 加上限 +3.823；WE019：改前＝加上限 +3.339
+  資訊（不判 PASS/FAIL；文件怎麼寫要拿這些數字對）：加上限 − Body 關
+    峰值：最大 +3.985 dB（P000，g 夾在 1，note 55），WN037p15 +3.975，P023 +3.951
+    2 秒 RMS：最大 +5.277 dB（N049，g 夾在 1，note 61），N053 +3.385（夾在 1），WX008p10 +3.136（g<1）
+    前 0.3 s 能量：g<1 最大 +3.69 dB（WX008p10）；g 夾在 1 最大 +1.14 dB（N016）
+    改前 − Body 關 峰值：最大 +14.98 dB（O 組）
+
+------------------------------------------------------------------
+§3 三處文件逐句檢查 — FAIL（有被實測推翻的句子）
+------------------------------------------------------------------
+檢查範圍：ROADMAP_PHYSICS.md:476 §6 列、docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md:137 補記、reports/wf1003_b2_body_normalization_before_after.zh-TW.md 全文，
+  加上兩份裁決檔裡的 B2 節。下面的反證都用 B2c 自己的 473 組資料（_scratch\wf1004\B2c\probe_*.txt、r2_*.txt），稽核重掃的數字附在後面。
+
+(A) 「+3.98 dB 是 Body 濾波器的固有增幅上限」——出處寫錯，被推翻
+  - 報告檔頭第 4 行：「（Body 濾波器改前即有最多 +3.98 dB 的固有增幅）」
+  - WF1003_decisions.zh-TW.md:38：「舊驗收標準『Body 開峰值 ≤ Body 關』連改前都達不到（Body 濾波器固有增幅，實測最大 +3.98 dB）」
+  反證：+3.98 dB 是「加上限版 − Body 關」的最大值，不是 Body 濾波器本身（改前）的最大值。
+    改前 − Body 關 的最大值是 +16.58 dB（wf1004_B2c_adversarial_scan.txt J2 那行「same for pre-B2: max d +16.576 dB; pairs d>+1.0: 248」）；
+    稽核重掃是 +14.98 dB。WF1004_decisions 第二段寫的「改前最壞 +16.58 dB」才對。
+  正確寫法：「Body 濾波器本身（改前）最多讓峰值比 Body 關高 +16.58 dB；加上限後剩下的部分最多 +3.98 dB（473 組），而且每一組都 ≤ 改前」。
+  UI 規格、ROADMAP 列、報告 §0-7／§2-4／§11 寫的「改前同設定一樣大或更大」是對的，這一類不用改。
+
+(B) 「g 被夾在 1 的情況很少、在高音域，而且 Body 開比 Body 關小」——被推翻
+  - UI 規格:137：「另一面：g 被夾在 1 的少數情況（高音域，實測 83 組中 12 組）Body 開的 RMS 比 Body 關小 0.97～2.98 dB。」
+  - 報告 §0 第 6 點（第 22 行）：「上限的代價：極少數情況（高音域，83 組裡 12 組）g 被夾在 1，等於不補償，Body 開比關小最多約 3 dB。」
+  - ROADMAP:476：「g>1 的情況（高音域等，實測 83 組中 12 組）維持改前音量，比 Body 關小最多約 3 dB（該 12 組…）」
+  反證（B2c 自己的 473 組資料，「加上限＝改前」判為 g 夾在 1）：
+    - g 夾在 1 的有 217/473 組（報告 §11 自己也寫 217），不是「少數」。也不限高音域：最壞的 N037p15 本身就是 g 夾在 1、A3（note 57）。
+    - g 夾在 1 而 Body 開比 Body 關大聲的：2 秒 RMS 有 16 組比 Body 關大，最多 +4.01 dB（N017）；峰值最多 +3.975 dB（N037p15）。
+    - 稽核重掃：g 夾在 1 有 123/244 組；N049（note 61）2 秒 RMS 比 Body 關高 +5.28 dB。
+    同一段文字前面才寫 N037p15 比 Body 關大 +3.98 dB，後面又寫「g 夾在 1 時 Body 開比 Body 關小」，自相矛盾。
+    括號裡「83 組中 12 組／−0.97～−2.98 dB」限定在那 83 組實測條件時是對的；錯的是「少數／高音域／比 Body 關小」這三個一般化的說法。
+  正確寫法例：「在 83 組一般 preset 條件裡，g 夾在 1 的 12 組都在高音域，Body 開 RMS 比關小 0.97～2.98 dB；
+    但對抗設定下 g 夾在 1 很常見（473 組裡 217 組），這時 Body 開可能比 Body 關大（RMS 最多 +4.01 dB、峰值 +3.98 dB），等於改前行為」。
+
+(C) 「最多 +3.98 dB／+4.41 dB」會被讀成上限，其實只是樣本最大值（要補一句，不是推翻）
+  UI 規格、ROADMAP 寫「外掛對抗掃描 473 組…最多 +3.98 dB（…2 秒 RMS 最多 +4.41 dB）」。這句限定在那次掃描，字面上是對的。
+  但稽核另一批案例掃出：峰值 +3.985 dB（P000）、2 秒 RMS +5.28 dB（N049），都比文件寫的大。
+  報告 §11 有寫「不是窮舉」，UI 規格和 ROADMAP 列沒寫。重做時要寫明「是對抗樣本的最大值，不是上界」，數字一併更新
+  （目前找到：峰值 +3.99 dB、2 秒 RMS +5.28 dB、前 0.3 s 能量 +3.69 dB）。
+
+(D) 程式註解（工兵自己已揭露；任務書不准改程式，所以沒改）
+  src/dsp/BodyResonance.h:55「1 即 Body-off 基準」、:89「1 is the Body-off baseline」——跟 (A) 同一類錯誤（1＝不放大＝改前，不是 Body 關）。
+  只是註解，不影響二進位。但 patch 一旦套回，這兩句會跟著入庫。建議規劃者在重做卡准許改這兩行註解
+  （改完要核對 VST3／CLI 的建置雜湊跟只改註解前相同，或至少位元不變 8/8＋探針逐值相同）。
+
+其餘逐句核對過、有實測支持的（列出主要的）：
+  - 逐樣本界 |y_out|＝g·|y_pre| ≤ |y_pre|：程式路徑 sample += (g−1)x＋g·wet，四個呼叫點後面只有乘 outputGain（線性），對單顆 voice 精確成立；
+    和弦這次實測 159/159 也成立。建議文件補「對每一顆音」。
+  - 報告 §11 表：0/473、−16.875、+16.58／248、+21.11／75、217、121／135、28＝27＋1：都跟 wf1004_B2c_adversarial_scan.txt、
+    B2b 稽核數字一致；「X008p10…A0 附近」實際是 note 26（D1），是沿用 X008 系列（note 21）的家族描述，措辭可以再精確。
+  - 報告 §2-4、ROADMAP 寫的合成案例「峰值 +1.51 dB、前 0.3 s 能量 −17.75 dB」：稽核親跑 PhysicsModelsTest 的 [INFO] 行一致。
+  - 「+3.98 dB 是既有特性」在 UI 規格、ROADMAP 列、報告 §0-7／§2-4／§11 都附了出處（wf1004_B2b_audit.txt §2、wf1004_B2c_*.txt、§11），
+    理由寫「改前同設定一樣大或更大」——對（加上限 ≤ 改前逐案例成立）。出處錯的只有 (A) 那兩處。
+
+------------------------------------------------------------------
+§4 親自重跑 — PASS
+------------------------------------------------------------------
+X4：cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynthCLI TsukiSynthAuditTest TsukiSynthTunerTest
+  TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe → build_exit=0、0 個 error 行；
+  雜湊不變（VST3 3441686e…、CLI 551de7a7…、HostProbe c3ed81da…、PhysicsModelsTest a1df051b…），跟工兵宣稱的一樣。
+ctest --test-dir build -C Release：100% tests passed, 0 tests failed out of 4
+AuditTest 直接跑：行首 [PASS] 111／[FAIL] 0，PASS (0 failures)
+PhysicsModelsTest 直接跑：行首 [PASS] 234／[FAIL] 0，PASS (0 failures)；Body level normalisation 15 條 PASS＋1 行 [INFO]
+HostProbe（cwd＝E:\hpb2c_a，在 repo 外；TSUKI_REPO_ROOT 有設；outdir 用短路徑）：
+  加上限（build\ VST3）241 PASS／0 FAIL；改前（稽核 pretree VST3）241 PASS／0 FAIL
+27 個 preset 表：稽核自己的 E16 前後 27 列，跟工兵 wf1004_B2c_e16_before_after.txt 的改前／改後、峰值／RMS 欄（小數 2 位）27/27 相同；
+  最大峰值 −3.03 dBFS（11 號），超過 0 dBFS 的 0 個。
+抽 5 個（b2c_probe；改前＝稽核 pretree → 加上限＝build\ 跟 captree，兩份逐值相同）：
+  p6 −7.273 → −21.221｜p7 −4.674 → −14.076｜p14 −11.443 → −24.719｜p15 −1.846 → −9.916｜p25 −12.431 → −22.035 dBFS（跟工兵表一致）
+preset 11 Body 0.5（C4 v0.7）：+3.799 → −2.640 dBFS ✓；Body 0：−3.028／−3.028
+CLI：render_wf_scores.py --label audb2c（build\ CLI 551de7a7…）→ diff --strip-trailing-cr 對 b6_method/sha256_before_post_a14.txt：8/8 IDENTICAL
+  --body-amount 0.5：yangqin a74a953e…、water_gong_free 6ac0357f…，改前 CLI（稽核 pretree 編的）＝新 CLI；
+  跟 Body 關（49514b00…／31b539c6…）不同，表示這個測試有效。
+（pytest 是文件與測試 cpp 的改動，跟 py 無關，沒有重跑；工兵報 312。）
+
+------------------------------------------------------------------
+§5 裁決檔內容完整性 — 結構 PASS；WF1003 那份有一句出處錯（§3-A）
+------------------------------------------------------------------
+WF1004_decisions.zh-TW.md：B2b／B2c 一節放在 P 節前面；工作樹對 index（P 版）的 diff 只有開頭一個 hunk，P 節沒動。
+  內容有：題目、A/B/C 三個選項；第一段（10-07 月月原話「兩題都照你的建議去做」→ B2b＝A，並更正「1＝Body 關的基準」）；
+  第二段（B2b 稽核 FAIL 的兩個理由、§8 兩個選項、委託裁決＝選項 (1)、驗收兩條、理由四點、B2c 落地註記）。兩段脈絡都齊全。
+  裁決者寫的是「月月委託 Fable 裁（以規劃者轉述為準；Fable 的獨立原文查不到）」。
+  稽核這邊收到的說法是「規劃者依月月委託裁定」，兩者沒有矛盾，查不到原文這件事也照實寫了。
+WF1003_decisions.zh-TW.md：B2 一節併回 Q09 前面（內容跟 B2b 版逐行相同，只多 3 行 B2c 註記）。B2c 註記裡「Body 濾波器固有增幅，實測最大 +3.98 dB」出處錯（§3-A）。
+
+------------------------------------------------------------------
+§6 FAIL 處置（只動本卡的檔案；staged 109 檔沒有動）
+------------------------------------------------------------------
+先存 patch：git diff --binary（8 個 tracked 檔：ROADMAP_PHYSICS.md、docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md、
+  reports/decision_packets/WF1003_decisions.zh-TW.md、reports/decision_packets/WF1004_decisions.zh-TW.md（只有工作樹那一層）、
+  src 三檔、tests/physics_models_repro.cpp）→ E:\Tsuki-project\_scratch\wf1004\failed_B2c\B2c_tracked_changes.patch（703 行），
+  git apply --check -R 通過；還原前的 sha256 存在 tracked_files_sha256_before_restore.txt；
+  WF1004_decisions 工作樹版另外整份存成 WF1004_decisions.zh-TW.worktree_with_B2.md。
+git restore（只還原工作樹到 index；WF1004_decisions 回到整合卡 staged 的 P 版，沒有 unstage）。
+本卡新增的 untracked 檔，保留相對路徑搬到 failed_B2c\（清單 moved_files.txt）：
+  reports/wf1003_b2_body_normalization_before_after.zh-TW.md、reports/gate_outputs/wf1003_B2_*.txt 9 檔、
+  wf1004_B2b_*.txt 9 檔（不含已 staged 的 wf1004_B2b_audit.txt）、wf1004_B2c_*.txt 10 檔（不含本稽核檔）。
+沒有 git add、commit、push（R7）。
+（處置的實際結果附在 §7。）
+
+------------------------------------------------------------------
+§7 還原後核對（實際結果）
+------------------------------------------------------------------
+git restore 8 檔完成；搬了 29 檔（wf1003_B2_audit.txt 已經入庫，所以跳過）；git apply --check（正向）failed_B2c\B2c_tracked_changes.patch 通過，可以重複使用。
+git status：本卡只剩本稽核檔（untracked）；staged 仍是 109 檔，HEAD 仍是 6198922；WF1004_decisions 回到 staged 的 P 版（狀態 "A "）。
+重建 build\（X4 同一份 target 清單）：build_exit=0、0 個 error 行。
+  sha256：VST3 b8240832…、CLI 479384de…、HostProbe 2dbc9a7c…。
+  跟整合卡基線（72f503c7／e59ddfd0／b16a57ad）不同，原因是 MSVC 重編本身不保證位元重現（B2b 稽核還原後也遇過）。行為上等於改前，證據：
+  ctest 4/4；PhysicsModelsTest 行首 [PASS] 219／[FAIL] 0（＝HEAD 基線）；b2c_probe：p11 Body 0.5 +3.799、p6 −7.273、p7 −4.674、
+  p14 −11.443、p15 −1.846、p25 −12.431 dBFS，峰值與 RMS 跟改前逐值相同；CLI 8/8 IDENTICAL。
+  整合卡會全量重建，manifest 的 renderer 欄到時要以整合卡的 CLI 雜湊為準。
+
+------------------------------------------------------------------
+§8 重做建議（交給規劃者）
+------------------------------------------------------------------
+程式不用改：git apply failed_B2c\B2c_tracked_changes.patch（含 B2c 的文件、測試、WF1004_decisions 工作樹層），
+  再把 failed_B2c 下的 29 個檔照原相對路徑搬回去，然後只改 §3 的 (A)(B)(C) 幾句。如果規劃者准許，(D) 兩行註解也一起改。
+改完要逐句對：B2c 的 473 組原始資料（_scratch\wf1004\B2c\probe_*.txt、r2_*.txt）跟稽核 403 組（_scratch\wf1004\audit_B2c\s_*.txt、k_*.txt、analysis.txt）。
+整合卡 PhysicsModelsTest 的基線：重做落地後是 234；目前還原後是 219。

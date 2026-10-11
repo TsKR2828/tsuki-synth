@@ -1,0 +1,146 @@
+WF1004-B2d 稽核（Opus 稽核層，WF1004c 收尾輪）— 2026-10-08
+基底 HEAD 6198922（分支 fix/deep-physics-audit-20260716）；staged 146 檔＝整合卡的合法狀態，稽核沒有動、沒有 unstage。
+驗收標準＝wf1004_B2c_audit.txt 選項 (1)：(a) 加上限版輸出 ≤ 改前；(b) g ≤ 1。規劃者依月月委託裁定。
+本卡範圍：核對文件修正與程式完整性。不重做 400 組對抗掃描（B2c 稽核做過，程式只改了註解）。
+稽核暫存：E:\Tsuki-project\_scratch\wf1004\audit_B2d\（patch 比對、重建紀錄、ctest、直接跑的測試、HostProbe、探針案例與輸出、CLI 渲染）
+
+==================================================================
+判定：PASS
+==================================================================
+- 程式：src 與 tests 的 diff 跟 failed_B2c patch 比，只差 BodyResonance.h:55、:89 兩行註解（已授權）和一行 index hash。其他三檔逐位元組相同（§1）。
+- 文件：對照表 (A)(B)(C)(D)(E)(F) 共 23 項。每一句改後文字都拿 SCAN、稽核 analysis.txt、原始探針輸出重算核對過，沒有一句被數據推翻（§2）。
+  (A) 的 +16.58 和 +3.98 歸屬正確；(B) 的 217/473 正確；(C)「樣本最大值，不是上界」在 UI 規格、ROADMAP、報告、裁決檔都確實加上了。
+- 親自重跑全部通過（§3）：X4 建置、ctest 4/4、AuditTest 111/0、PhysicsModelsTest 234/0、HostProbe 241/0、preset 11 −2.640、舊陷波攻擊 = 改前、CLI 8/8。
+- 抽掃 30 組：輸出與 B2c 加上限版逐位元組相同，0 組比改前大（§4）。
+- 有幾處不影響判定的小問題，列在 §5 給整合卡參考。
+
+------------------------------------------------------------------
+§1 程式 diff 對 failed_B2c patch — PASS
+------------------------------------------------------------------
+做法：把目前的 git diff --binary -- src tests（audit_B2d\cur_prog.patch）按檔切段，跟 failed_B2c\B2c_tracked_changes.patch 裡 src/、tests/ 那幾段逐段比對。
+結果在 audit_B2d\prog_diff_vs_B2c.txt：
+  src/engines/ChromaticEngine.h     IDENTICAL（段 sha256 前 12 碼 baa29b96cbe9 = baa29b96cbe9）
+  src/engines/CimbalomEngine.h      IDENTICAL（1978befe14c9 = 1978befe14c9）
+  tests/physics_models_repro.cpp    IDENTICAL（dab5d1112c6c = dab5d1112c6c）
+  src/dsp/BodyResonance.h           只差 3 行：
+    index f74489d..646fc7d → f74489d..0172ef0（blob hash，內容一改就會變）
+    :55  // 1 即 Body-off 基準，… → // 1＝不放大（等於改前未補償行為），…（後半句 E_out = … 沒動）
+    :89  // … never amplify. 1 is the Body-off → // … never amplify. 1 means no amplification, i.e. the pre-B2
+         （:90 的 "baseline, so this introduces no new constant." 沒動，接起來文法通順）
+  兩行都是 // 開頭的整行註解，不影響編譯結果。
+
+------------------------------------------------------------------
+§2 對照表逐句核對（wf1004_B2d_wording_table.txt）— PASS（23 項全部有數據支持）
+------------------------------------------------------------------
+核對方法：
+  1. 直接讀五個檔，確認對照表的「改後」句跟檔案內容一致：ROADMAP_PHYSICS.md:476、UI_FUNCTIONAL_SPEC:137、報告全文、WF1003_decisions:38-40、WF1004_decisions（git diff）。
+  2. 稽核用 B2c 原始輸出（_scratch\wf1004\B2c\probe_pre/cap、r2_pre/cap）和 B2c 稽核原始輸出（audit_B2c\s_pre/s_cap）自己重算一次，
+     不採信工兵的重算結果。g 夾在 1 的判法：加上限 = 改前，峰值與 RMS 差都 < 5e-4 dB。
+  稽核重算結果：
+    473 組：g 夾在 1 有 217 組、g<1 有 256 組
+    g 夾在 1 的組：2 秒 RMS 比 Body 關大的有 16 組，最大 +4.009（N017）；峰值差最大 +3.975（N037p15，note 57）
+    g<1 的組：峰值差最大 +3.070（N037p20）
+    全部 473 組：2 秒 RMS 差最大 +4.415（N015p10），峰值差最大 +3.975
+    改前 − Body 關：最大 +16.576（O016），> +1 dB 有 248 組；加上限 − Body 關 > +1 dB 有 71 組
+    稽核 244 組單音：g 夾在 1 有 123 組
+      P000：g 夾在 1，note 55，峰值差 +3.9852（四捨五入成 +3.99）
+      N049：g 夾在 1，note 61，2 秒 RMS 差 +5.2766
+      改前 − Body 關 最大 +14.975（O024）
+    前 0.3 s 能量（audit_B2c\energy03.txt）：g 夾在 1 最大 +1.14（N016）；g<1 最大 +3.69（WX008p10）
+    X008p10 是 note 26（g<1）；N017 是 note 59
+
+逐項結果：
+(A) 出處
+  A1 報告檔頭、A2 WF1003:38、A4 §11 正確說法段、A5 §11 表：都寫成「改前樣本最大差 +16.58（稽核獨立掃描 +14.98）；
+     +3.98 是加上限後對 Body 關的殘差樣本最大值，不是上界」。+16.576 和 +14.975 都對得上，+3.98 也歸到正確的量。
+     數據支持。
+  A3 WF1003:40：「前 0.3 s 能量樣本最大值 +3.69 dB，非上界」。數據支持。
+  補充：用 grep 掃了 repo（gate_outputs 除外），「固有增幅」已經找不到。
+(B) g 夾在 1 的一般化
+  B1 UI:137、B2 報告 §0-6、B3 ROADMAP:476、B4 報告 §2-5、§6、§7、§9：
+     「少數／高音域／Body 開比關小」都限定在「83 組一般 preset 條件」（12 組、−0.97～−2.98 dB，數字是 B2b probe_sweeps 原有的）。
+     另外補了一句：「對抗設定下 g 夾在 1 很常見，473 組中 217 組（稽核 244 組中 123 組），而且可能比 Body 關大
+     （2 秒 RMS 樣本最大 +4.01～+5.28、峰值 +3.98）」。217、123、4.009、5.277、3.975 都對得上。數據支持。
+  B5 §11 表新增兩列：217（46%）、256、123、121、N037p15 note 57、16 組、N017 +4.01、N049 +5.28、P000 +3.99、
+     X008p10 +3.69、N016 +1.14、473 組 +1.51（SCAN 第 97 行）。全部對得上。數據支持。
+(C) 樣本最大值，不是上界
+  C1 ROADMAP：加了「以下『最多』都是對抗樣本的最大值（掃描所得），非理論上界」，以及「這些是樣本最大值，不是上界，之後的掃描可能找到更大的」。
+  C2 UI：加了「樣本最大值，掃描所得，不是理論上界」，峰值、RMS 換成目前找到的最大值 +3.99、+5.28。
+  C3 報告 §0-7、§2-2、§2-4、§5、§9、§11 表頭與兩列、§11 正確說法段、§8：都有「樣本最大值」的限定。
+  C4 WF1004 第二段：改成「樣本最大 +3.98」和「473 組樣本最大值 +3.98 dB 峰值，非上界；稽核重掃另找到 +3.99 dB」。
+  數字核對：+3.975→3.98、+4.415→4.41、+3.69、+1.51、+3.9852→3.99、+5.2766→5.28，全部正確。數據支持。
+(D) 兩行註解：就是 §1 列的那兩行，內容「1＝不放大＝改前行為」與 AUD §3(D) 一致。數據支持。
+(E) 「對每一顆 voice」的限定
+  E1～E4 都寫成「證明層級是單 voice，和弦 159 組 0 違反是實測、不是證明」。
+  對得上 analysis.txt 第 26-27 行（J2 chords 159，cap−pre 峰值與 RMS 最大 +0.0000，n=0）。數據支持。
+(F) WF1004 第三段：B2c 稽核的 FAIL 理由、(A)(B)(C) 的摘要、授權範圍（僅 :55、:89）、R7 都寫了，摘要數字與上面一致。數據支持。
+
+------------------------------------------------------------------
+§3 親自重跑 — PASS
+------------------------------------------------------------------
+X4 建置：cmake --build build --config Release --target TsukiSynth_VST3 TsukiSynthCLI TsukiSynthAuditTest TsukiSynthTunerTest
+  TsukiSynthPhysicsModelsTest TsukiSynthSpectrumViewTest TsukiSynthHostProbe → build_exit=0，0 個 error 行（audit_B2d\x4_build.txt）。
+  建置前後 sha256 沒變，也跟工兵宣稱的一樣：VST3 dda39b61c310…、CLI 4081ff3d451e…、HostProbe c8c3d6d4104a…、PhysicsModelsTest cd67673dcd5f…
+ctest --test-dir build -C Release：100% tests passed，0 tests failed out of 4
+AuditTest 直接跑：行首 [PASS] 111／[FAIL] 0，PASS (0 failures)
+PhysicsModelsTest 直接跑：行首 [PASS] 234／[FAIL] 0，PASS (0 failures)
+  Body level normalisation：15 條 [PASS]、1 行 [INFO]（Body 關 15.56、加上限 17.07，差 +1.51；0.3 s 能量 −17.75 dB）
+HostProbe：cwd＝E:\hpb2d（在 repo 外），有設 TSUKI_REPO_ROOT，outdir 用短路徑。結果行首 [PASS] 241／[FAIL] 0，PASS (0 failures)，exit=0
+探針（B2c 的 b2_probe.exe 7a16f393…）：
+  目前的 build VST3 對 B2c\pre VST3（72f503c7…，改前）。案例檔是 B2d 的 cases_pa.txt，結果在 audit_B2d\pa_cur.txt、pa_pre.txt。
+  preset 11 Body 0.5：改前 +3.799 → 現在 −2.640 dBFS。符合要求的 −2.640。Body 0：兩邊都是 −3.028。
+  舊陷波攻擊 ATK_on：改前 −7.896、現在 −7.896，差 +0.000，沒有超過改前。ATK_off −1.067。
+  p6 −7.273→−21.221｜p7 −4.674→−14.076｜p14 −11.443→−24.719｜p15 −1.846→−9.916｜p25 −12.431→−22.035，跟 B2c 一致。
+  比對工兵的輸出：pa_cur 與 B2d\pa_new.txt 前 12 欄相同；pa_pre 與 B2d\pa_pre.txt 整檔相同。
+CLI：render_wf_scores.py --label audb2d 跑 8 首，產出的雜湊表 diff --strip-trailing-cr 對 b6_method/sha256_before_post_a14.txt，diff_exit=0，8/8 IDENTICAL。
+  --body-amount 0.5 跑四首：tongue_drum e696f7aa…、yangqin a74a953e…、physical_piano 41d04b16…、water_gong_free 6ac0357f…，
+  跟 B2c 記錄的 old==new 雜湊逐一相同（audit_B2d\body_amount_cli.txt）。
+
+------------------------------------------------------------------
+§4 30 組對抗抽掃 — PASS（行為與 B2c 版相同）
+------------------------------------------------------------------
+案例共 30 組（audit_B2d\spot_*.txt，結果在 spot_analysis.txt）：
+  B2c 的 473 組裡抽 22 組，用 b2_probe 跑 Body 開／關，共 44 次渲染：
+    N037p15、N017、ATK（舊陷波）、N015p10、O016、X008p10、N037p20、N037p07、E019、N046、X008p11、N028p12、
+    N028p15、E024、O010、R000、R017、Z003、X008、N006、E019p15、O018
+  B2c 稽核的 403 組裡抽 8 組，用稽核的 b2c_probe aaea27f8…：
+    單音 6 組（N049、P000、WN037p15、WATK、WX008p10、P023）＋和弦 2 組（K2_048、K2_020）
+結果：
+  - 22 組 44 次渲染：目前 build 的輸出行跟 B2c 加上限 VST3（3441686e…）的 probe_cap、r2_cap 逐位元組相同，44/44。
+    改前 VST3 重渲跟 B2c 的 probe_pre、r2_pre 也是 44/44 相同。
+  - 稽核組 12 次單音渲染＋2 個和弦：跟 B2c 稽核 captree VST3（4d002f54…）的 s_cap、k_cap 逐位元組相同，12/12＋2/2。
+  - 加上限比改前大（峰值或 RMS 超過 +1e-4 dB）：0/22＋0/8。
+  - 重點組：
+      N037p15 加上限 +2.778 = 改前 +2.778，對 Body 關 +3.975
+      N017 = 改前，2 秒 RMS 對 Body 關 +4.009
+      N049 = 改前，2 秒 RMS 對 Body 關 +5.2766
+      P000 = 改前，峰值對 Body 關 +3.9852
+      ATK／WATK −7.896 = 改前
+      O016 比改前低 −16.875
+      K2_048 cap−pre 0.0000；K2_020 cap−pre −0.2988
+另外核對工兵的 946 組等價掃描原始檔：B2d\audit_new.txt 跟 B2c\probe_cap.txt、B2d\r2_new.txt 跟 B2c\r2_cap.txt 都用 cmp 比過，整檔相同。
+
+------------------------------------------------------------------
+§5 不影響判定的觀察（給整合卡；都沒有被數據推翻）
+------------------------------------------------------------------
+N1 (B) 那幾句的寫法是「2 秒 RMS 樣本最大 +4.01～+5.28、峰值 +3.98」。RMS 的範圍涵蓋了兩次掃描，峰值卻只用 473 組的值。
+   兩次合起來，g 夾在 1 的峰值最大是 P000 的 +3.985（四捨五入成 +3.99）。+3.98 是實測值，沒有錯，報告 §11 表兩個值都列了。
+   想讓寫法一致的話，可以改成「峰值 +3.98～+3.99」。
+N2 「稽核另掃 403 組找到 +3.99／+5.28」：這兩個數字其實出自 403 組裡的 244 組單音，159 組和弦只比了 cap 對 pre，沒有 Body 關可比。
+   說法不算錯，但可以寫得更精確。
+N3 報告 §2-2 和 §11 寫「X008p10…A0 附近」，實際是 note 26（D1）。這是 B2c 稽核已經判可接受的家族描述，沒改。
+N4 還留著舊說法的地方，都不在本卡授權範圍內：
+     tests/physics_models_repro.cpp:2084 的註解「1 就是 Body-off 基準」（工兵已揭露）
+     tests/physics_models_repro.cpp:2182 的註解「up to +3.98 dB peak」，沒寫「樣本最大值」
+     HANDOVER.md:21 的 B2b 列還寫「稽核 FAIL，已還原」（這是 staged 的整合卡內容）
+   建議整合卡同步這幾處，或由規劃者授權改那兩行測試註解。
+N5 WF1004_decisions 的 B2b 選項表 A 列寫「原本 g>1 的高音域情況（最多 +3.3 dB）」。這是當時對 83 組條件的選項描述，屬歷史紀錄，不在對照表範圍內。
+N6 ROADMAP:476 的「g>1（未封頂）」指的是封頂前的 g₀>1，意思沒錯，只是用詞可以再清楚一點。
+
+------------------------------------------------------------------
+§6 狀態
+------------------------------------------------------------------
+PASS，所以不需要 FAIL 處置。工作樹維持工兵交付時的樣子，稽核只新增了本檔（untracked）。
+HEAD 仍是 6198922，staged 146 檔，沒有 git add、commit、push（R7）。
+build\ 的四個主要二進位雜湊沒有變。
+稽核暫存檔都在 _scratch\wf1004\audit_B2d\。E:\tw\audb2d、E:\tw\ba_aud 和 E:\hpb2d 是渲染用的臨時目錄。

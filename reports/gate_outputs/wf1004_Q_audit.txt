@@ -1,0 +1,148 @@
+# WF1004 Q 卡稽核（Opus 稽核層）2026-10-07
+# 判定：PASS（附勘誤：§3.1／R1／R2 的真峰值四位小數受工兵量測器低頻高估 +0.0055～+0.0059 dB 影響，結論方向不變，見 §2）
+# 方法：稽核親自重跑；不沿用工兵 log。稽核暫存與腳本：E:\Tsuki-project\_scratch\wf1004\audit_Q\（tp_audit.py、seam_audit.py、tailwrap_audit.py、my_alon.py，repo 外）
+# 稽核沒有寫入 products／papers／repo 內任何既有檔；本檔是稽核唯一新增的 repo 檔。
+
+== 0. 這張卡實際改了哪些檔（git status 對工兵 changed_files）
+HEAD 6198922，分支 fix/deep-physics-audit-20260716。
+Q 卡檔案＝untracked 新增 28 個：reports/wf1004_product_quality_review.zh-TW.md ＋ reports/gate_outputs/wf1004_Q_raw_*（15 份資料＋12 支腳本＝27）。
+與工兵宣稱 changed_files 28 項逐一相同。Q 卡沒有改任何 tracked 檔（tracked 的 M 檔為 src/dsp/BodyResonance.h、src/engines/*、tests/physics_models_repro.cpp、ROADMAP、UI spec、WF1003 decisions，屬他卡）。
+output/、exports/ 下沒有 2026-10-06 之後的新檔；repo 內沒有 symlink／junction；ignored 區沒有 wf1004/Q 相關殘留。
+
+== 1. products 與 papers 一個位元沒被改（稽核親跑）
+- _CANDIDATE_MANIFEST_SHA256.txt：84/85 OK，唯一 FAILED＝QA_REPORT.md；_X2_MANIFEST_SHA256.txt 第 9 行記 149bab69ef45…，磁碟 sha256 相同（已宣告的 XF 文字修改）。QA_REPORT.md mtime 2026-09-25 12:06（早於本輪）。
+- _X2_MANIFEST_SHA256.txt：56/56 OK。
+- 原版 212 檔（_ORIGINALS_SHA256_before.txt 對 clean_batch2/）：212/212 OK。
+- papers：SHA256SUMS.txt OK；Alon2015 sha256 2101f483…e734 ＝ 工兵 truncation 檔所記。
+- mtime：clean_batch2_v1_1_candidate 與 clean_batch2 下 2026-10-06 之後修改的檔＝0；candidate 最新 mtime 2026-10-03 14:17（_X2_MANIFEST／CHANGES）；papers 三檔 mtime 2026-10-02 00:14。
+- 註：工兵 manifest_check.txt 末兩行「newest mtime …」是空白（工兵的 mtime 指令沒有輸出），本稽核已補做上面這項。
+判定：PASS。
+
+== 2. 真峰值親量（56 個 WAV 全量，超過要求的 5 個）
+量測器（稽核自寫，與工兵 resample_poly 不同源）：
+ (a) sinc64：每個分數相位各自做 unity-DC 正規化的 Kaiser(β=12) 窗 sinc、單側 1024 taps、64 相位，於取樣峰值 1 dB 內的候選點細化；
+ (b) ffmpeg 8.1.1 aresample soxr precision=28 升 4×／8× ＋ astats Peak level。
+校準（已知真峰值、兩端 0.5 s 淡入淡出的正弦）：100 Hz 期望 −0.91515 → sinc64 −0.91515／soxr −0.91494；997 Hz −1.00245 → −1.00245／−1.00227；12 kHz −6.02060 → −6.02060／−6.02034；19 kHz −1.93820 → −1.93933／−1.93807。
+工兵量測器（scipy resample_poly(x,up,1)，預設 kaiser 5.0）同一校準：100 Hz 滿刻度正弦讀 +0.00553（4×）／+0.00578（8×）／+0.00586（32×）dB ⇒ 低頻內容系統性高估。
+在平滑檔上可直接看到：工兵值−sinc64 ＝ +0.00585（Library Drone）、+0.00586（Iron Drone、Ocean loop-ready）、+0.00584（Forest Rain loop-ready）……與校準偏差一致。工兵報告沒有揭露這個偏差。
+
+# WF1004 Q audit: independent TP (sinc64 per-phase unity gain; ffmpeg soxr precision28 4x/8x + astats) vs worker max(4x/8x/32x resample_poly)
+# calibration (faded sines, exact TP known): 100Hz -0.91515 exp -> sinc64 -0.91515, soxr -0.91494; 997Hz -1.00245 -> -1.00245/-1.00227; 12kHz -6.02060 -> -6.02060/-6.02034; 19kHz -1.93820 -> -1.93933/-1.93807
+# scipy resample_poly(up,1) default kaiser(5.0): 100Hz full-scale sine reads +0.00553 (4x) / +0.00578 (8x) / +0.00586 (32x) dB -> systematic over-read on LF content
+== se n=43
+  akashic__Akashic_Gate_Open.wav                                 sp=-1.04553 sinc64=-1.02109 soxr4=-1.02312 soxr8=-1.02103 worker_max=-1.01944 worker-sinc=+0.00165
+  akashic__Akashic_Gate_Open_Dark.wav                            sp=-1.04553 sinc64=-1.03877 soxr4=-1.03864 soxr8=-1.03864 worker_max=-1.03618 worker-sinc=+0.00259
+  akashic__Akashic_Library_Drone.wav                             sp=-1.04553 sinc64=-1.04552 soxr4=-1.04521 soxr8=-1.04521 worker_max=-1.03967 worker-sinc=+0.00585
+  akashic__Akashic_Light_Tap.wav                                 sp=-1.14553 sinc64=-1.01114 soxr4=-0.98830 soxr8=-0.98354 worker_max=-0.98413 worker-sinc=+0.02701
+  akashic__Akashic_Meditation_Loop.wav                           sp=-1.04553 sinc64=-1.04455 soxr4=-1.04432 soxr8=-1.04432 worker_max=-1.03967 worker-sinc=+0.00488
+  akashic__Akashic_Page_Turn.wav                                 sp=-1.04553 sinc64=-1.04094 soxr4=-1.04133 soxr8=-1.04133 worker_max=-1.03820 worker-sinc=+0.00274
+  akashic__Akashic_Record_Chime.wav                              sp=-1.04553 sinc64=-1.04367 soxr4=-1.04521 soxr8=-1.04372 worker_max=-1.03702 worker-sinc=+0.00665
+  akashic__Library_Opening_Bell.wav                              sp=-1.04553 sinc64=-1.04540 soxr4=-1.04521 soxr8=-1.04521 worker_max=-1.03967 worker-sinc=+0.00573
+  clockwork__Clockwork_Bell_Strike.wav                           sp=-1.04553 sinc64=-1.04464 soxr4=-1.05120 soxr8=-1.05120 worker_max=-1.03967 worker-sinc=+0.00497
+  clockwork__Clockwork_Bell_Strike_Wavefold.wav                  sp=-1.04553 sinc64=-1.02471 soxr4=-1.02491 soxr8=-1.02491 worker_max=-1.02164 worker-sinc=+0.00307
+  clockwork__Clockwork_Gear_Click.wav                            sp=-1.04553 sinc64=-0.98256 soxr4=-1.00197 soxr8=-0.98859 worker_max=-0.98657 worker-sinc=-0.00401
+  clockwork__Clockwork_Gear_Shift.wav                            sp=-1.34553 sinc64=-1.01005 soxr4=-1.01120 soxr8=-0.99364 worker_max=-0.98992 worker-sinc=+0.02013
+  clockwork__Clockwork_Spring_Release.wav                        sp=-1.04553 sinc64=-1.02825 soxr4=-1.02282 soxr8=-1.01954 worker_max=-1.03658 worker-sinc=-0.00833
+  clockwork__Clockwork_Tick_Loop.wav                             sp=-1.24553 sinc64=-1.04702 soxr4=-1.01715 soxr8=-1.01715 worker_max=-1.02763 worker-sinc=+0.01939
+  clockwork__Clockwork_Ticking_Room.wav                          sp=-1.04553 sinc64=-0.96427 soxr4=-0.95480 soxr8=-0.93588 worker_max=-0.94886 worker-sinc=+0.01541
+  forest__Forest_Acorn_Tap.wav                                   sp=-1.04553 sinc64=-0.95586 soxr4=-0.97405 soxr8=-0.97257 worker_max=-0.97014 worker-sinc=-0.01428
+  forest__Forest_Bamboo_Rain.wav                                 sp=-1.04553 sinc64=-1.04177 soxr4=-1.04192 soxr8=-1.04192 worker_max=-1.03790 worker-sinc=+0.00387
+  forest__Forest_Bird_Call.wav                                   sp=-1.14553 sinc64=-1.03659 soxr4=-1.07276 soxr8=-1.06257 worker_max=-1.04979 worker-sinc=-0.01320
+  forest__Forest_Bird_Call_Alarm.wav                             sp=-1.04553 sinc64=-0.99580 soxr4=-0.97672 soxr8=-0.95923 worker_max=-1.00177 worker-sinc=-0.00597
+  forest__Forest_Branch_Snap.wav                                 sp=-1.04553 sinc64=-1.04197 soxr4=-1.04073 soxr8=-1.04073 worker_max=-1.03033 worker-sinc=+0.01164
+  forest__Forest_Leaf_Sweep.wav                                  sp=-1.04553 sinc64=-1.04331 soxr4=-1.04312 soxr8=-1.04312 worker_max=-1.03967 worker-sinc=+0.00364
+  forest__Forest_Rain_Pattern.wav                                sp=-1.04553 sinc64=-1.04551 soxr4=-1.04521 soxr8=-1.04521 worker_max=-1.03967 worker-sinc=+0.00584
+  ocean__Ocean_Abyss_Hum.wav                                     sp=-1.04553 sinc64=-1.04552 soxr4=-1.04521 soxr8=-1.04521 worker_max=-1.03967 worker-sinc=+0.00585
+  ocean__Ocean_Bubble_Pop.wav                                    sp=-1.04553 sinc64=-1.04550 soxr4=-1.04581 soxr8=-1.04581 worker_max=-1.03967 worker-sinc=+0.00583
+  ocean__Ocean_Bubble_Pop_Deep.wav                               sp=-1.04553 sinc64=-1.04325 soxr4=-1.04312 soxr8=-1.04312 worker_max=-1.03967 worker-sinc=+0.00358
+  ocean__Ocean_Depth_Slam.wav                                    sp=-1.04553 sinc64=-1.04529 soxr4=-1.04491 soxr8=-1.04491 worker_max=-1.03967 worker-sinc=+0.00562
+  ocean__Ocean_Droplet_Tap.wav                                   sp=-1.04553 sinc64=-1.00232 soxr4=-1.01537 soxr8=-1.01537 worker_max=-1.01149 worker-sinc=-0.00917
+  ocean__Ocean_Tide_Wash.wav                                     sp=-1.04553 sinc64=-1.04551 soxr4=-1.04521 soxr8=-1.04521 worker_max=-1.03967 worker-sinc=+0.00584
+  ocean__Ocean_Wave_Cycle.wav                                    sp=-1.04553 sinc64=-1.04549 soxr4=-1.04521 soxr8=-1.04521 worker_max=-1.03967 worker-sinc=+0.00582
+  rabbit__Rabbit_Bounce_Loop.wav                                 sp=-1.04553 sinc64=-1.03343 soxr4=-1.03356 soxr8=-1.03356 worker_max=-1.03045 worker-sinc=+0.00298
+  rabbit__Rabbit_Carrot_Button.wav                               sp=-1.04553 sinc64=-1.02758 soxr4=-1.02789 soxr8=-1.02729 worker_max=-1.00841 worker-sinc=+0.01917
+  rabbit__Rabbit_Ding.wav                                        sp=-1.04553 sinc64=-1.02416 soxr4=-1.02073 soxr8=-1.01835 worker_max=-1.01194 worker-sinc=+0.01222
+  rabbit__Rabbit_Ding_Angry.wav                                  sp=-1.14553 sinc64=-1.00731 soxr4=-0.98711 soxr8=-0.98711 worker_max=-0.98779 worker-sinc=+0.01952
+  rabbit__Rabbit_Hop_Transition.wav                              sp=-1.04553 sinc64=-1.03947 soxr4=-1.03953 soxr8=-1.03953 worker_max=-1.03194 worker-sinc=+0.00753
+  rabbit__Rabbit_Stomp.wav                                       sp=-1.04553 sinc64=-1.03676 soxr4=-1.02163 soxr8=-1.01954 worker_max=-1.03919 worker-sinc=-0.00243
+  rabbit__Rabbit_Wind_Chimes.wav                                 sp=-1.04553 sinc64=-1.02733 soxr4=-1.02819 soxr8=-1.02729 worker_max=-1.02105 worker-sinc=+0.00628
+  restraint__Restraint_Bolt_Click.wav                            sp=-1.14553 sinc64=-1.03953 soxr4=-1.04252 soxr8=-1.04252 worker_max=-1.03578 worker-sinc=+0.00375
+  restraint__Restraint_Chain_Drag.wav                            sp=-1.04553 sinc64=-1.03330 soxr4=-1.05479 soxr8=-1.05359 worker_max=-1.03826 worker-sinc=-0.00496
+  restraint__Restraint_Industrial_Pulse.wav                      sp=-1.04553 sinc64=-1.04477 soxr4=-1.04462 soxr8=-1.04432 worker_max=-1.03967 worker-sinc=+0.00510
+  restraint__Restraint_Iron_Drone.wav                            sp=-1.04553 sinc64=-1.04553 soxr4=-1.04521 soxr8=-1.04521 worker_max=-1.03967 worker-sinc=+0.00586
+  restraint__Restraint_Lock_Click.wav                            sp=-1.04553 sinc64=-0.96242 soxr4=-0.96960 soxr8=-0.96960 worker_max=-0.95821 worker-sinc=+0.00421
+  restraint__Restraint_Lock_Click_Distorted.wav                  sp=-1.14553 sinc64=-1.00358 soxr4=-1.02550 soxr8=-1.02550 worker_max=-0.96874 worker-sinc=+0.03484
+  restraint__Restraint_Shackle_Slam.wav                          sp=-1.04553 sinc64=-1.03845 soxr4=-1.04790 soxr8=-1.04790 worker_max=-1.03933 worker-sinc=-0.00088
+  range sinc64 -1.04702..-0.95586; soxr(4/8) -1.07276..-0.93588; worker -1.04979..-0.94886
+  >-1.000: sinc64 5  soxr 8  worker 8  any-of-mine 8
+  names >-1 sinc64: ['Clockwork_Gear_Click.wav', 'Clockwork_Ticking_Room.wav', 'Forest_Acorn_Tap.wav', 'Forest_Bird_Call_Alarm.wav', 'Restraint_Lock_Click.wav']
+  names >-1 soxr  : ['Akashic_Light_Tap.wav', 'Clockwork_Gear_Click.wav', 'Clockwork_Gear_Shift.wav', 'Clockwork_Ticking_Room.wav', 'Forest_Acorn_Tap.wav', 'Forest_Bird_Call_Alarm.wav', 'Rabbit_Ding_Angry.wav', 'Restraint_Lock_Click.wav']
+== loop n=6
+  akashic__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav    sp=-1.00084 sinc64=-0.99986 soxr4=-0.99989 soxr8=-0.99989 worker_max=-0.99498 worker-sinc=+0.00488
+  clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav     sp=-1.21388 sinc64=-1.01502 soxr4=-0.98533 soxr8=-0.98503 worker_max=-0.99563 worker-sinc=+0.01939
+  forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav         sp=-1.00000 sinc64=-0.99998 soxr4=-0.99989 soxr8=-0.99989 worker_max=-0.99414 worker-sinc=+0.00584
+  ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav             sp=-1.00000 sinc64=-1.00000 soxr4=-0.99959 soxr8=-0.99959 worker_max=-0.99414 worker-sinc=+0.00586
+  rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav         sp=-1.01193 sinc64=-0.99983 soxr4=-0.99989 soxr8=-0.99989 worker_max=-0.99686 worker-sinc=+0.00297
+  restraint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars. sp=-1.00046 sinc64=-0.99970 soxr4=-0.99959 soxr8=-0.99929 worker_max=-0.99460 worker-sinc=+0.00510
+  range sinc64 -1.01502..-0.99970; soxr(4/8) -0.99989..-0.98503; worker -0.99686..-0.99414
+  >-1.000: sinc64 4  soxr 6  worker 6  any-of-mine 6
+  names >-1 sinc64: ['LoopReady_60bpm_4bars.wav', 'LoopReady_80bpm_4bars.wav', 'LoopReady_140bpm_2bars.wav', 'LoopReady_100bpm_2bars.wav']
+  names >-1 soxr  : ['LoopReady_60bpm_4bars.wav', 'LoopReady_120bpm_2bars.wav', 'LoopReady_80bpm_4bars.wav', 'LoopReady_60bpm_2bars.wav', 'LoopReady_140bpm_2bars.wav', 'LoopReady_100bpm_2bars.wav']
+== album n=7
+  Original_AI_Radiance_Complete_44k16_tpdf.wav                   sp=-1.00580 sinc64=-1.00131 soxr4=-1.00048 soxr8=-1.00048 worker_max=-0.99660 worker-sinc=+0.00471
+  Original_AI_Radiance_Movement1_44k16_tpdf.wav                  sp=-1.83327 sinc64=-1.82700 soxr4=-1.82384 soxr8=-1.82384 worker_max=-1.81954 worker-sinc=+0.00746
+  Original_AI_Radiance_Movement2_44k16_tpdf.wav                  sp=-1.30248 sinc64=-1.29301 soxr4=-1.29359 soxr8=-1.29359 worker_max=-1.29145 worker-sinc=+0.00156
+  Original_AI_Radiance_Movement3_44k16_tpdf.wav                  sp=-1.00045 sinc64=-1.00013 soxr4=-0.99989 soxr8=-0.99959 worker_max=-0.99459 worker-sinc=+0.00554
+  Original_AI_Radiance_Movement4_44k16_tpdf.wav                  sp=-1.15045 sinc64=-1.14890 soxr4=-1.14958 soxr8=-1.14867 worker_max=-1.14454 worker-sinc=+0.00436
+  fur_elise_complete_44k16_tpdf.wav                              sp=-1.00164 sinc64=-0.99694 soxr4=-0.99602 soxr8=-0.99602 worker_max=-0.99586 worker-sinc=+0.00108
+  fur_elise_complete_cimbalom_44k16_tpdf.wav                     sp=-1.01861 sinc64=-1.00844 soxr4=-0.99275 soxr8=-0.99275 worker_max=-0.99148 worker-sinc=+0.01696
+  range sinc64 -1.82700..-0.99694; soxr(4/8) -1.82384..-0.99275; worker -1.81954..-0.99148
+  >-1.000: sinc64 1  soxr 3  worker 4  any-of-mine 3
+  names >-1 sinc64: ['fur_elise_complete_44k16_tpdf.wav']
+  names >-1 soxr  : ['Original_AI_Radiance_Movement3_44k16_tpdf.wav', 'fur_elise_complete_44k16_tpdf.wav', 'fur_elise_complete_cimbalom_44k16_tpdf.wav']
+
+對報告的核對：
+- SE 43：工兵「8/43 讀數 > −1.000」→ 稽核 soxr 也是 8/43，其中 7 個檔名相同（Light Tap、Gear Click、Gear Shift、Ticking Room、Acorn Tap、Ding Angry、Lock Click）；第 8 個不同：工兵是 Lock Click (Distorted)（稽核 sinc64 −1.00358／soxr −1.02550，都 ≤ −1），稽核 soxr 是 Bird Call Alarm（−0.95923，工兵 −1.00177）；sinc64 為 5/43。✓ 件數重現，檔名 7/8 相同，差異屬量測器間分歧。範圍：工兵 −1.0498～−0.9489（4×/8×/32× 取大）；稽核 soxr −1.0728～−0.9359、sinc64 −1.0470～−0.9559。量測器之間差到約 0.03 dB，與 QA §2「同檔換量測器最多差約 0.065 dB」已知議題一致。Ticking Room：工兵 −0.94886、sinc64 −0.96427、soxr8× −0.93588 ⇒ TODO.md:79 那條（README 寫 −0.949）在 soxr 下仍成立（高 0.013 dB）。
+- loop-ready 6：工兵「6/6 > −1.000、最高 −0.9941、高於 README 上緣 −0.996 約 0.0019 dB」。稽核：soxr 6/6 > −1.000 ✓；sinc64 4/6。最高讀數是 Clockwork 在 soxr −0.98503（高於 README 上緣 0.011 dB），不是工兵寫的 −0.9941（那是低頻偏差造成，Akashic／Forest／Ocean／Restraint 在無偏量測器下是 −0.9997～−1.0000）。⇒ R2「README loop-ready 範圍沒涵蓋所有量測器」方向重現，但數字（0.0019 dB、−0.9941）要以本節為準。
+- 專輯 7：工兵「4/7 讀 −0.9915～−0.9966（> −1.000，最多高 0.0085 dB）」。稽核：soxr 3/7（Movement3 −0.99959、Für Elise −0.99602、Für Elise Cimbalom −0.99275），sinc64 1/7（Für Elise −0.99694）；Complete 兩支無偏量測器都 ≤ −1.000（−1.00048／−1.00131）⇒ 工兵的第 4 檔是偏差造成。最高讀數 −0.99275（高 0.0073 dB）。⇒ R1「專輯 README『−1.00 to −1.83』被兩支獨立量測器推翻、需要量測器註記」重現；件數改 3/7（或 sinc64 下 1/7）。
+- 取樣峰值：56 檔都 ≤ −1.00000 dBFS（Forest Rain／Ocean loop-ready −1.00000）✓。
+判定：數字對得上到「件數與方向」層級；四位小數層級有未揭露的 +0.0055～0.0059 dB 低頻偏差。因為（1）這張卡沒有 GATE、全是資訊性數字，（2）偏差讓商品看起來更差（保守方向），（3）R1／R2 的結論與建議在兩支校準過的量測器下都還成立，判為勘誤級，不判 FAIL。月月讀報告 §3.1／R1／R2 時請以本檔 §2 數字為準。
+
+== 3. loop 接縫與 tail-wrap（親算 4 檔接縫＋3 檔 tail-wrap；要求 3）
+定義照 QA_REPORT §3（每步取兩聲道相鄰差大者，N−1 步，不含接縫）：
+rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav N=164571 jump=0.00324 pct=1.4% p50=0.03048 p99=0.11291 max=0.19735 first_abs=0.0337 last_dbfs=-29.7
+ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav N=384000 jump=0.00010 pct=4.6% p50=0.00104 p99=0.00625 max=0.00907 first_abs=0.0024 last_dbfs=-52.4
+clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav N=192000 jump=0.03034 pct=52.7% p50=0.02830 p99=0.16570 max=0.54497 first_abs=0.0211 last_dbfs=-35.8
+restraint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav N=230400 jump=0.01823 pct=77.8% p50=0.00936 p99=0.05471 max=0.13582 first_abs=0.0722 last_dbfs=-25.4
+rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav N=164571 folds=2 gain_dB=+0.0336 max_resid_LSB24=1.97
+ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav N=384000 folds=2 gain_dB=+0.0522 max_resid_LSB24=1.98
+clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav N=192000 folds=2 gain_dB=+0.0320 max_resid_LSB24=1.97
+對照：接縫跳差／百分位／p50／p99／max 4/4 與 QA_REPORT §3 表及工兵 analysis §F 逐格相同（Rabbit 0.00324/1.4%、Ocean 0.00010/4.6%、Clockwork 0.03034/52.7%、Restraint 0.01823/77.8%）；N＝164571／384000／192000／230400 ✓；Restraint 首樣本 0.0722、末樣本 −25.4 dBFS、Ocean 末 −52.4 ✓（報告 §3.3 第 5 點）。
+tail-wrap：擬合增益 +0.0336／+0.0522／+0.0320 dB（README「原版小聲 0.03～0.05 dB」✓），最大殘差 1.97／1.98／1.97 LSB24（報告 1.97～2.00 ✓）。
+判定：PASS。
+
+== 4. 論文判準抽驗（親自從殘檔解出文字，自寫解析器 my_alon.py，不用工兵的 alon_extract.py）
+- 殘檔：5,259,264 B；%%EOF 0、startxref 0、trailer 0 ✓。可解文字串流 36 個，最後一頁印刷頁碼 34 ✓（工兵「前 34 頁」）。全文找不到 Table 4.1／4.2 ✓（第 4 章不在檔內）。
+- P1：§2.1.4 Steelpans（印刷頁約 28）原文意旨＝前三個主要模態調成 1:2:3（原文同段也提第二泛音有調成 3 倍或 4 倍兩種做法，但總結句是 1:2:3）；§2.1.5 Hang（頁 32～34）＝Hang 主要模態也是 1:2:3，引 [15]（Wessel、Morrison、Rossing），F3 Ding 174／348／520 Hz 出自圖說、引 [14]；Achong 書在 §2.1.4 有提。✓ 沒腦補。
+- P2：§2.1.2 Metallophones（頁約 24）＝鐵琴泛音非諧波，因衰減快、所在頻段對音高辨識較不重要，所以對音色影響小。✓
+- P3：§2.1.1.3 Beating（頁 20）＝拍頻速率＝兩頻率差；純音頻率差小於 12.5 Hz 時通常聽得到拍，引 [19]。✓
+- P4：第 4 章不在檔 ✓。
+判定：PASS（章節、頁碼、內容都對得上）。
+
+== 5. findings 分級；「擋上架」逐條親自重現
+- B1：SE zip 內 LICENSE.txt（與 LICENSE_SE_PACK_v1_1.txt 逐位元相同）檔頭方框含「Not yet approved. Do not ship as-is.」；含 [TBD 的行 14 行＝方框 2 行（第 7、8 行）＋正文 12 行（英 23/84/88/101、中 108/154/157/167、日 175/233/236/248，＝第 1、8、9、12 條×三語）✓；zip 檔名帶 _candidate、SE 與專輯 README 第一行都是「[v1.1 CANDIDATE - pending approval …]」✓；x2_build_packages.py:78-79 在 --release 時遇到「DRAFT v1.1」或「[TBD」會 sys.exit REFUSED ✓。重現。
+- B2：專輯 zip 成員只有 7 WAV＋7 MP3＋README.txt，沒有授權檔 ✓；專輯 README 第 22 行寫自己影片 BGM 可以 ✓；LICENSE_ALBUM_v1_1.txt「[TBD」16 處、「TBD」42 處 ✓。重現。
+- 分級合理性：兩條都是「授權未定稿就上架」＝真的會擋，且都是已知項（報告也這樣標）；音訊本體 0 削波／格式／雜湊無擋上架問題——稽核 56 檔取樣峰值 ≤ −1.00000 dBFS，與此一致。R1/R2 放「建議修」合理（文字修正、屬 R2 邊界由月月定）。R4 檢查器未實作：git grep 六支檢查器名稱只出現在 docs/SOUND_DESIGN_KNOWLEDGE.zh-TW.md ✓。
+判定：PASS。
+
+== 6. 兩個開頭直答有沒有回答月月的問題
+- 問題 (1)「資料夾內是不是有關於音效怎麼做才正確的論文」：§0 第一句直接答「有，但是壞檔」，給路徑、大小比（22.9%）、能讀與不能讀的章節，並指出更貼近「音效怎麼做才正確」的是 SOUND_DESIGN_KNOWLEDGE（非論文、檢查器未實作）。有答到，而且沒有把殘檔說成可用。
+- 問題 (2)「是不是原本就有反推有效程度的審核方式」：§0 直答「有」，列出 physics_verify／melody_verify／stem_verify／verify_score／measurement_selfcal；量測器有效程度數字稽核抽查出處：ROADMAP_PHYSICS.md:24-25、:474 與 EARFREE §8.5 記「持續段 ≤1.18 c、放鍵段約 7.2 c、不可宣稱 ≤1 c」✓；ENGINE_DOMAIN_CLAIMS.zh-TW.md:102-106 舌鼓 ×2「DECIDED CONVENTION，無文獻錨點」✓；TODO.md:79 −0.94886 議題 ✓。並清楚講出邊界（沒有真實樂器錨點、商品 WAV 有 reverb 在域外、沒有 DC／單聲道／頭尾檢查）。有答到。
+判定：PASS。
+
+== 7. 給整合卡／月月的待辦（稽核不動手）
+- 報告 §3.1、R1、R2 的真峰值數字請以本檔 §2 為準：專輯 > −1.000 是 3/7（soxr）／1/7（sinc64），不是 4/7；loop-ready 最高讀數 −0.985（Clockwork，soxr），不是 −0.9941。結論與建議不變。
+- 今後專案內用 scipy resample_poly 預設濾波器量真峰值，要知道它對低頻內容會多讀約 +0.0055～0.0059 dB；既有 XF「第四支量測器」若同屬此法，TODO.md:79 的 −0.94886 也是同一族讀數（稽核 soxr 讀 −0.93588，議題本身仍成立）。是否換量測器屬 R2，由月月決定，稽核不動。
+- R7 York 論文重新下載需月月同意（工兵只做了 HEAD，稽核沒有任何網路動作）。
+
+== 結論：PASS（附 §2 勘誤）。不需要 git restore；Q 卡 28 個新增檔保留原位。稽核遵守 R7：沒有 git add／commit／push。

@@ -1,0 +1,56 @@
+WF1004 I2 card -- .iss compile smoke test + Inno Setup license check (unblocked re-run of WF1003 I)
+Date: 2026-10-07   Result: PASS (compile exit 0, 0 warnings, license byte-identical to website)
+Smoke test only. The integration card must recompile with the final binaries. The installer was NOT executed.
+
+[1] Input snapshot -> E:\Tsuki-project\_scratch\wf1004\I2\inputs\   (hashes: E:\Tsuki-project\_scratch\wf1004\I2\inputs_sha256.txt)
+  d308fed24af8042c448b259d1aa4a009843c51e106e5603b7f397fb2bcc6e944  TsukiSynthCLI.exe      (expected d308fed2 -- MATCH)
+  05e41a85a1cc7d04a9025763ac26762738f9a185ac603ca6f246a7b49dc80610  TsukiSynth.exe (Standalone)  (expected 05e41a85 -- MATCH)
+  f6147296be878b56b52ae8c170e9068abb2c83b30649f054fcbd765f36f0eb6b  TsukiSynth.vst3/Contents/x86_64-win/TsukiSynth.vst3  (expected f6147296 -- MATCH)
+  709526f55057e53be431ba288aa4e89671c4ea77fd7320b60afdff631535d994  TsukiSynth.vst3/Contents/Resources/moduleinfo.json
+  aa955545d249e2c521f1d6b38b5a1b9e1c8b76c0f74ee811f25c5814bf32a985  THIRD_PARTY_NOTICES.txt
+  The VST3 bundle on disk has exactly these 2 files. Repo build\ originals were re-hashed and equal the snapshot.
+
+[2] Scratch copy of tools/installer -> E:\Tsuki-project\_scratch\wf1004\I2\iss  - Only one edit vs the repo .iss (diff checked): line 39
+      repo:    #define RepoRoot       InstallerDir + "\..\.."
+      scratch: #define RepoRoot       "E:\Tsuki-project\tsuki-synth"
+    (so the scratch copy points at the repo build\ outputs; the repo .iss is NOT modified, git status clean)
+  - EULA.txt = STAND-IN. First 2 lines of the file say:
+      *** 編譯煙霧測試用替身，非正式 EULA（COMPILE SMOKE TEST STAND-IN, NOT THE OFFICIAL EULA） ***
+      *** 內容取自 docs/legal/EULA_BUYER_DRAFT.md 草稿；不得發行。 ***
+    followed by docs/legal/EULA_BUYER_DRAFT.md. The installer built from it must not ship.
+
+[3] Compile
+  Command: "E:\Inno Setup 7\ISCC.exe" "/OE:\Tsuki-project\_scratch\wf1004\I2\out" "E:\Tsuki-project\_scratch\wf1004\I2\iss\TsukiSynth.iss"   (run through PowerShell; Git Bash mangles the /O path)
+  Compiler: Inno Setup 7.1.0 (ISCC banner: "Compiler engine version: Inno Setup 7.1.0"; copyright 1997-2026). ISCC.exe Authenticode: Valid, CN=Pyrsys B.V.
+  Exit code: 0   ("Successful compile (5.125 sec)")
+  Warnings: NONE (no "Warning" line in the full log; E:\Tsuki-project\_scratch\wf1004\I2\compile.log)
+  Notes from the log:
+    - The VER >= 7.0.0 guard passed; SetupArchitecture=x64 was accepted (no unknown-directive error), ArchitecturesAllowed/InstallIn64BitMode=x64compatible accepted.
+    - All 6 [Files] sources compressed: moduleinfo.json, TsukiSynth.vst3, Standalone TsukiSynth.exe, TsukiSynthCLI.exe, EULA.txt, THIRD_PARTY_NOTICES.txt. No #error fired.
+    - Line "Non-commercial use only" appears in the compiler banner (no commercial license entered). This is only a compiler banner line.
+      See wf1002b_innosetup_license.zh-TW.md: the license text allows commercial use; buying is a request above US$5,000 annual revenue, and unlicensed installers are not marked.
+      I did not verify whether this banner puts any mark inside the produced installer, because I did not run it.
+  Output: E:\Tsuki-project\_scratch\wf1004\I2\out\TsukiSynth-0.3.0-win-x64-setup.exe
+    size 8,580,179 bytes
+    sha256 30ed1a40eb0566b081c2c8891dcf09b8d0cbc3dd95a158ee59f65119fecca857
+    PE header machine = 0x8664 (x64), so SetupArchitecture=x64 took effect on the Setup.exe itself (header read only, file not run).
+  Repo E:\Tsuki-project\tsuki-synth\output\installer\ was not created (the /O override kept output in scratch).
+  NOT DONE (outside this card): test install / uninstall, checking which files land where, UI wizard behaviour.
+
+[4] License check
+  Local:  E:\Inno Setup 7\license.txt   1521 B  sha256 2e5346868c2a18434489824e11d65c3031620f792fefc415d05f19cd441abf5c
+  Web:    https://jrsoftware.org/files/is/license.txt (curl, HTTP 200, 1521 B)  sha256 2e5346868c2a18434489824e11d65c3031620f792fefc415d05f19cd441abf5c
+          saved at E:\Tsuki-project\_scratch\wf1004\I2\web_license.txt
+  cmp = BYTE-IDENTICAL (so also identical after stripping CR). This closes the open item in wf1002b_innosetup_license.zh-TW.md section 1
+  ("the LICENSE.TXT inside the installer vs the website was not compared").
+  Key text (as that report quotes): "Permission is granted to anyone to use this software for any purpose, including commercial applications",
+  with 4 conditions (keep copyright notices; keep notices/web addresses in binary redistributions; do not misrepresent origin; mark modified versions).
+  Not checked here: the isorder.php purchase-request page (covered by the 10-02 report, not re-fetched this card).
+
+[5] changed_files
+  Repo: only this evidence file (reports/gate_outputs/wf1004_I2_installer.txt). No src\, CMakeLists.txt or tools/installer change. No git add/commit/push.
+  Scratch: E:\Tsuki-project\_scratch\wf1004\I2\{inputs,iss,out,compile.log,web_license.txt,patch.py}
+
+[Follow-ups for the integration card]
+  - tools/installer/README.md and the .iss header still say "NEVER COMPILED / Inno Setup not installed". The compile is now verified, so those texts are stale (doc-only, not touched by this card).
+  - Recompile with the final binaries and a real EULA.txt (月月-approved) before any release.

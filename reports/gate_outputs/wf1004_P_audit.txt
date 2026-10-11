@@ -1,0 +1,138 @@
+WF1004 P 卡稽核（Opus 稽核層）— 外掛 voice pool 按引擎分大小（Chromatic 32、Piano／Cimbalom 16、FM 16）
+日期：2026-10-07（稽核實跑 01:51～02:20）　repo：E:\Tsuki-project\tsuki-synth（HEAD 6198922，分支 fix/deep-physics-audit-20260716）
+方法：稽核親自重建、親自重跑、親自寫比對程式，沒有採信工兵 log 的轉述。暫存在 E:\Tsuki-project\_scratch\wf1004\audit_P\。
+
+判定：PASS（附 3 項不擋判定的意見，見 §8）
+
+======================================================================
+§0 改了哪些檔（git status／git diff 對工兵宣稱）
+======================================================================
+已修改的追蹤檔（git diff --stat；共 6 檔 +118/-58）：ROADMAP.md、docs/ENGINE_DOMAIN_CLAIMS.zh-TW.md、
+docs/KNOWN_LIMITS_INDEX.zh-TW.md、reports/wf0925_method/voice_pool_occupancy.py、src/PluginProcessor.cpp、tests/host_probe.cpp。
+P 卡新增的未追蹤檔：src/VoicePool.h、reports/wf1004_p_per_engine_pool.zh-TW.md、reports/decision_packets/WF1004_decisions.zh-TW.md、
+reports/gate_outputs/wf1004_P_*（30 個）。
+跟工兵的 changed_files 完全一致；沒有多出沒報的改動。CMakeLists.txt 沒動（git diff --quiet）。
+工作樹裡其他未追蹤檔（wf1004_B2b_*、wf1004_I2_*、wf1004_Q_*、wf1004_ci_push.txt、wf1004_product_quality_review.zh-TW.md）屬於其他卡，本稽核沒有碰。
+
+======================================================================
+§1 先射箭再畫靶檢查（判準時間 vs 第一次量測）
+======================================================================
+- wf1004_P_criteria_preregistered.txt mtime 2026-10-07 01:04:21.32；_scratch\wf1004\P\criteria_written_at.txt 內容「01:04:24」。
+- src 改動的 mtime：src/VoicePool.h 與 src/PluginProcessor.cpp 01:06:19，tests/host_probe.cpp 01:07:47，都在判準之後。
+- 新版二進位建出：HostProbe 01:07:58、VST3 01:08:52。
+- _scratch\wf1004\P 底下全部檔案依時間排序：01:04:21 之前沒有任何檔案；01:04:31 複製舊版二進位、01:04:48 改前預設 HostProbe（不是按引擎量測）、
+  第一個按引擎量測是 A/B 渲染 01:10:55（run_ab.sh 01:10:54），計時輪 01:12:45 起。跟工兵寫的「判準 01:04:21、第一次量測 01:10:54」相符。
+- 另在 _scratch、reports、build-wf 搜 00:40～01:04:21 之間改過的檔，排除其他卡的之後，只有 WF1003_decisions.zh-TW.md（git diff 為空，內容沒變）
+  與 Q 卡的 wf1004_product_quality_review.zh-TW.md，都不是 P 卡的量測。
+- 判準內容跟後來的評估腳本（wf1004_P_summarize.py）逐條對過：C1 要舊版 64、新版 0 且雙胞胎與 VST3 同樣本；C2 是嚴格 ≤、沒有容差、三種子引擎×
+  （雙胞胎 p99 中位數、雙胞胎超預算數、VST3 p99、VST3 超預算數）。腳本照寫好的判準實作，沒有放寬。
+- 限制：時間順序的證據是檔案 mtime，不是密碼學時間戳；但 repo 與 scratch 兩邊的所有檔案時間互相一致，沒有矛盾。
+結論：通過，沒有先量後寫判準的跡象。
+說明：判準寫的時候已經知道 WF1003-V 的數字（Tongue Drum 32 顆 p99 約 1.3 ms），所以 Tongue Drum 那一項幾乎一定會過。判準另外加了
+WF1003-V 沒量過的 Water Gong 與 Custom Harmonics，這兩項在寫判準時結果還不知道，判準因此比只量 Tongue Drum 嚴格。
+
+======================================================================
+§2 X4 重建、ctest、HostProbe（稽核親自跑）
+======================================================================
+- X4：cmake --build build --config Release --target TsukiSynthAuditTest TsukiSynthTunerTest TsukiSynthPhysicsModelsTest
+  TsukiSynthSpectrumViewTest TsukiSynthHostProbe TsukiSynth_VST3 → EXIT 0（01:53:41 結束）。
+  重建後 build\ VST3 sha256 = c324cfc1…（與工兵的新版相同），HostProbe = b700ded0…。
+- ctest --test-dir build -C Release：4/4 Passed（audit_repro、tuner_repro、physics_models_repro、spectrum_view_repro）。
+- TsukiSynthAuditTest.exe 直接跑：[PASS] 111 行、[FAIL] 0 行，「PASS (0 failures)」。
+- HostProbe 預設（不設環境變數、cwd 在 repo 外）：241 PASS／0 FAIL，exit 0。
+  Q09 資訊行：給愛麗絲「twin(16 voices = product pool) vs VST3 max|diff| = 0」；月光舌鼓版「twin(32 voices = product pool) vs VST3 max|diff| = 0、steals = 0、最多 20 顆」。
+  跟工兵改前的預設輸出（wf1004_P_raw_prechange_default_hostprobe.txt）逐行 diff：只差輸出路徑、H7 每次隨機的 presetId、wall clock 與
+  Q09 資訊行（含舊版 64 行「steal #」清單），[PASS]/[FAIL] 行數相同（241/0）。
+證據：wf1004_P_audit_raw_ctest_hostprobe.txt。
+
+======================================================================
+§3 親自重跑月光舌鼓搶音（C1）與 Chromatic 32 滿載（C2）
+======================================================================
+用我重建的 HostProbe（TSUKI_Q09V=1）跑兩次：新版 = 我重建的 build\ VST3（01:55:32～02:01:08，exit 0，241/0），
+舊版 = _scratch\wf1004\P\baseline\TsukiSynth.vst3（sha256 12921524…，跟工兵 hashes.txt 相同；02:01:08～02:06:43，exit 0，241/0）。
+舊版的來源靠程式內比對確認：舊版 VST3 在 6 個測例都跟 twin16 逐樣本相同（max|VST3-twin16| = 0，包括三個 Chromatic 32 音壓力測例），
+所以它的 Chromatic 確實是 16；新版在 Chromatic 測例跟 twin32 相同、在 Piano 測例跟 twin16 相同。
+評估直接用工兵預先寫好的 wf1004_P_summarize.py（只有 1 輪，所以腳本對第 2、3 輪印「missing」並因此印 FAIL；看第 1 輪逐條的結果）。
+
+C1（稽核這一輪）：
+  舊版：twin16 搶音 64（其中 4 次搶到還按著的音），max|VST3-twin16| = 0。
+  新版：twin32 搶音 0，產品雙胞胎搶音 0，max|VST3-twin32| = 0，max|VST3-twinProd| = 0。最多同時 20 顆。
+  twin16 和 twin32 第一個不同的樣本 = 860160（17.920 s）。→ OK，跟報告相同（64→0、4 次還按著、20 顆、17.920 s）。
+C2（稽核這一輪，新版二進位；預算 10.6667 ms）：
+  基線 Piano 16 顆滿載：雙胞胎 p99 中位數 10.267 ms、超預算 6 個；VST3 p99 10.319 ms、超預算 2 個。
+  Tongue Drum 32 顆：雙胞胎 p99 1.283、超預算 0；VST3 p99 1.366、超預算 0 → OK
+  Water Gong 32 顆：雙胞胎 p99 1.377、超預算 0；VST3 p99 1.476、超預算 0 → OK
+  Custom Harmonics 32 顆：雙胞胎 p99 1.590、超預算 0；VST3 p99 1.680、超預算 0 → OK
+  月光舌鼓版在新版 VST3：超預算 0，最慢區塊 0.810 ms。
+  我量到的數字落在報告的範圍內（報告：Chromatic p99 1.28～1.69 ms、0 個超預算；Piano 16 p99 10.16～10.46 ms）。
+  12 條不等式全成立。三輪的重複性我沒有重做（只跑 1 輪），以工兵的 3 輪原始輸出為準，我這一輪沒有跟它矛盾的地方。
+證據：wf1004_P_audit_raw_q09v_summary.txt（原始輸出在 _scratch\wf1004\audit_P\q09v_candidate.txt、q09v_baseline.txt）。
+
+======================================================================
+§4 C3／C4「逐樣本相同」親自驗證
+======================================================================
+(a) 自己建 ab_probe：用 repo 裡的 wf1004_P_ab_probe.cpp.txt（先確認跟 scratch 的 ab_probe.cpp 去掉 CR 後完全一樣），
+    在 _scratch\wf1004\audit_P\ab\ 重新設定、編譯（EXIT 0）。用這個 probe 自己渲舊版（12921524…）與新版（我重建的 c324cfc1…）共 20 個測例。
+(b) 自己寫比對程式 wf1004_P_audit_compare.py，用 float32 位元樣式逐一比對（uint32 view，比 float == 嚴格）：
+    逐位元相同：cimbalom／piano／fm × chord12／exact16／stress32（9 個）、chromatic tongue／watergong／custom × chord12／exact16（6 個）、
+    給愛麗絲全曲（6,356,480 取樣/聲道）。UNEXPECTED_DIFFS = 0。
+    預期會不同的：Chromatic 32 音溢出三種（max|差| 0.651／0.911／5.191，從第 1 個取樣起就不同）、月光舌鼓全曲（max|差| 2.473e-2）。
+(c) R10 數字（月光舌鼓，我自己的渲染）：第一個不同在 17.920 s，之前的全部樣本逐位元相同；峰值 −10.955 → −10.948 dBFS；
+    整首 RMS −27.239 → −27.237 dBFS；差異 RMS −61.56 dBFS（比舊版整首 RMS 低 34.32 dB）；差異峰值 −32.13 dBFS。跟報告完全相同。
+(d) 交叉檢查：我渲的舊版跟工兵渲的舊版（_scratch\wf1004\P\run\ab_baseline）20 個測例全部逐位元相同，所以工兵的渲染可以重現。
+    用我的比對程式比工兵的 ab_baseline 對 ab_candidate，結果跟工兵的 compare_ab.py 輸出一致（UNEXPECTED_DIFFS = 0）。
+證據：wf1004_P_audit_raw_ab_compare.txt、wf1004_P_audit_compare.py。
+
+======================================================================
+§5 主張域 §10 字面 vs 實作；grep 殘留寫死值
+======================================================================
+- src/VoicePool.h：kCimbalom = 16（engine 0／3）、kChromatic = 32（engine 1）、kFMPiano = 16（engine 2）；CMakeLists.txt、.github、tools 都沒有定義
+  TSUKI_VOICE_POOL_* 巨集，所以產品建置用的就是這三個預設值。
+- src/PluginProcessor.cpp 三個 addVoice 迴圈分別用 TsukiVoicePool::kCimbalom／kChromatic／kFMPiano；processBlock 把 engine 0 和 3 都送 cimbalomSynth、
+  1 送 chromaticSynth、2 送 fmPianoSynth（PluginProcessor.cpp:386-391）。
+- 主張域 §10 標題與主張原句：「Chromatic 引擎（舌鼓／水鑼／自訂泛音）同時最多 32 顆，Piano（含 Cimbalom）與 FM 引擎各 16 顆」，跟實作一致。
+  第 1 點「Cimbalom 和 Piano 共用 cimbalomSynth 的 16 顆」也跟實作一致。舊句用刪除線保留，檔尾有補記。
+- 實際行為由二進位證實：新版 VST3 在 Chromatic 測例跟 twin32 逐樣本相同，在 Piano 測例跟 twin16 逐樣本相同（§3）。
+- grep src：kVoicePoolSize 已經沒有了；src 唯一的「i < 16」在 IRLibrary.h:74（SHA-256 訊息排程，跟 voice 無關）；
+  PluginProcessor.cpp 150-158 用 getNumVoices()，沒有寫死數字。原本兩處「All 16 voices」註解已改寫。
+- KNOWN_LIMITS_INDEX B4／C9、ROADMAP.md 骨架行已同步。
+- reports/wf0925_method/voice_pool_occupancy.py：稽核實際呼叫 read_code_constants()，讀出 {'cimbalom': 16, 'chromatic': 32, 'fm': 16}。
+
+======================================================================
+§6 CLI 不受影響
+======================================================================
+- CMakeLists.txt:150-170：TsukiSynthCLI 只編 src/cli/RenderApp.cpp；PluginProcessor.cpp 只在 TsukiSynth（外掛）target（:123-124）。
+- RenderApp.cpp 引用的是 score/ScoreParser.h、score/ScoreRenderer.h、physics/MaterialDB.h、dsp/DiagnosticOverrides.h、BuildProvenance.h、BinaryData.h；
+  grep src/cli、src/score、src/physics、src/dsp、src/engines 都找不到「VoicePool」或「PluginProcessor」。
+- 最強的證據（稽核另外加做）：在目前的工作樹對 build\ 執行 cmake --build --target TsukiSynthCLI，MSBuild 判定整個 target 已是最新，
+  沒有重編、沒有重新連結（log 裡沒有 RenderApp.cpp／ClCompile／Link）。CLI sha256 前後都是 51dbbb25…。
+  MSBuild 的標頭相依追蹤因此確認：CLI 的每個編譯單元都沒有引用這次改到的任何檔案。
+- 備註：HANDOVER 記錄的 WF1003 整合卡 CLI 是 d308fed2…，P 卡開工前（01:04:24）已經是 51dbbb25…，所以是 P 卡之前別人重編造成的，不是 P 卡。
+結論：通過。
+
+======================================================================
+§7 其他核對
+======================================================================
+- 工兵宣稱 HostProbe 6 輪計時都是 241/0、ctest 4/4、改前改後預設 241/0：稽核自己跑的 3 次 HostProbe（預設 1 次、Q09V 2 次）都是 241/0，ctest 4/4。
+- R7：沒有 commit、沒有 add（git status 裡 P 卡的檔案都是「 M」或「??」，沒有任何 staged）。
+- 沒量到的項目（FM 負載、DAW 內與其他音軌同跑、記憶體、其他機器）在報告 §6、主張域第 1／8 點、決定檔都有誠實寫出。FM 維持 16 標明「不是量過的結論」。
+
+======================================================================
+§8 意見（不擋判定）
+======================================================================
+1. 「Piano」A/B 測例不是獨立的覆蓋：ab_probe 的 piano_* 三個測例跟 cimbalom_* 三個測例的輸出逐位元相同（工兵和稽核的渲染都是）。原因是
+   外掛的 engine 0 和 3 都送 cimbalomSynth、voice 不讀 engine 編號，而 probe 給兩者設了一樣的 cim_* 參數。報告 §4-3 與 C3「三個引擎 × 三種
+   測例 9 個」所以實際上只驗了兩條 synth 路徑（cimbalomSynth、fmPianoSynth），Piano 那 3 個是重複的。結論不受影響（兩個版本的 cimbalomSynth 都是
+   16，路徑本來就相同），但建議整合卡在報告 §4-3 補一句「Piano 與 Cimbalom 在外掛裡是同一個 synth，這兩組數字是同一條路徑」。
+2. reports/wf0925_method/voice_pool_code_citations.py:21-23 的標籤還寫「16-voice loop」，而且引用的是舊 HEAD 的行號。這是歷史引用腳本，在 WF1003-V
+   就已經是這個狀態，不影響產品；之後可以順手改標籤。
+3. HANDOVER.md（§0 V 卡列、§1-5 Q09 條）與 TODO.md 仍是 WF1003 的說法，工兵已經說明要交給整合卡同步，稽核同意。
+   另外，決定檔與報告把月月的裁語寫成「照 Fable 建議」並標「規劃者轉述」。本輪轉來的月月原話是「兩題都照你的建議去做」，意思一致，標成轉述是對的。
+
+======================================================================
+§9 判定
+======================================================================
+PASS。C1～C4 經稽核親自重建與重跑確認：月光舌鼓版搶音 64 → 0；Chromatic 32 顆三種子引擎滿載的 p99 約 1.3～1.7 ms、0 個超預算，
+都低於同一輪 Piano 16 顆的 10.27 ms／6 個；Cimbalom（含 Piano）與 FM 新舊真二進位逐位元相同；HostProbe 241/0、ctest 4/4、AuditTest 111/0；
+CLI target 經 MSBuild 確認沒有受影響。判準寫在量測之前。
+不需要還原。依 R7，稽核也不 git add（只有整合卡稽核 PASS 後做一次）。

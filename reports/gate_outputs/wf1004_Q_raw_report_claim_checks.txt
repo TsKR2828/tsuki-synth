@@ -1,0 +1,22 @@
+(a) sfx scores with reverb wet>0: 43 / 43; without: []
+(b) akashic__Akashic_Light_Tap peaks near 2x/3x f1 (>-50 dB): []
+(b) clockwork__Clockwork_Bell_Strike peaks near 2x/3x f1 (>-50 dB): [(3.0, np.float64(1923.6), np.float64(-45.0))]
+(b) clockwork__Clockwork_Gear_Click peaks near 2x/3x f1 (>-50 dB): [(3.0, np.float64(1746.9), np.float64(-47.2))]
+(b) forest__Forest_Acorn_Tap peaks near 2x/3x f1 (>-50 dB): [(2.0, np.float64(1383.6), np.float64(-44.0)), (2.0, np.float64(1416.7), np.float64(-44.1)), (2.0, np.float64(1424.4), np.float64(-44.6)), (2.0, np.float64(1391.5), np.float64(-45.8)), (2.0, np.float64(1399.9), np.float64(-46.0)), (2.0, np.float64(1433.0), np.float64(-46.6)), (2.0, np.float64(1409.3), np.float64(-47.5)), (2.0, np.float64(1375.6), np.float64(-47.6))]
+(b) ocean__Ocean_Droplet_Tap peaks near 2x/3x f1 (>-50 dB): []
+(b) ocean__Ocean_Bubble_Pop peaks near 2x/3x f1 (>-50 dB): []
+(b) ocean__Ocean_Bubble_Pop_Deep peaks near 2x/3x f1 (>-50 dB): []
+(b) rabbit__Rabbit_Ding peaks near 2x/3x f1 (>-50 dB): []
+(b) rabbit__Rabbit_Ding_Angry peaks near 2x/3x f1 (>-50 dB): []
+(b) rabbit__Rabbit_Carrot_Button peaks near 2x/3x f1 (>-50 dB): [(2.0, np.float64(1746.8), np.float64(-39.7)), (2.0, np.float64(1699.4), np.float64(-43.4)), (2.0, np.float64(1728.8), np.float64(-43.4)), (2.0, np.float64(1705.9), np.float64(-44.2)), (2.0, np.float64(1758.2), np.float64(-45.0)), (2.0, np.float64(1763.4), np.float64(-49.1)), (2.0, np.float64(1770.7), np.float64(-49.2)), (2.0, np.float64(1778.3), np.float64(-49.4))]
+(b) restraint__Restraint_Bolt_Click peaks near 2x/3x f1 (>-50 dB): []
+(b) akashic__Library_Opening_Bell peaks near 2x/3x f1 (>-50 dB): [(2.0, np.float64(582.5), np.float64(-43.1)), (2.0, np.float64(586.3), np.float64(-48.0))]
+(c) measured/model T60 ratios: min (0.07990633276953127, 'restraint__Restraint_Bolt_Click', 'f1') max (42.32851454377156, 'clockwork__Clockwork_Bell_Strike', 'p2') n 23
+(d) akashic__Akashic_Meditation_Loop__LoopRe first sample abs 0.00768 last sample -41.5 dBFS
+(d) clockwork__Clockwork_Tick_Loop__LoopRead first sample abs 0.0211 last sample -35.8 dBFS
+(d) forest__Forest_Rain_Pattern__LoopReady_8 first sample abs 0.03135 last sample -31.7 dBFS
+(d) ocean__Ocean_Wave_Cycle__LoopReady_60bpm first sample abs 0.00245 last sample -52.4 dBFS
+(d) rabbit__Rabbit_Bounce_Loop__LoopReady_14 first sample abs 0.03375 last sample -29.7 dBFS
+(d) restraint__Restraint_Industrial_Pulse__L first sample abs 0.07223 last sample -25.4 dBFS
+(e) real/openable 23 web-stub pages 14 damaged [('_tools/papers/Alon2015_York_MSc_handpan.pdf', 5259264, 0), ('tsuki-synth/output/wf0907/R4/goebl_diss.pdf', 1535950, 0)]
+    stubs: [('tsuki-synth/output/wf0907/R4/2467_1_online.pdf', 5619), ('tsuki-synth/output/wf0907/R4/3504_1_online.pdf', 5619), ('tsuki-synth/output/wf0907/R4/hal_hal-00714295.pdf', 12506), ('tsuki-synth/output/wf0907/R4/hal_hal-00755332.pdf', 12506), ('tsuki-synth/output/wf0907/R4/mcgill_amplitude.pdf', 382452), ('tsuki-synth/output/wf0907/R4/round4/ege_these.pdf', 12563), ('tsuki-synth/output/wf0907/R4/round4/jasa144_1347.pdf', 5769), ('tsuki-synth/output/wf0907/R4/round4/poma_roginska.pdf', 5883), ('tsuki-synth/output/wf0907/R4/round4/trevisan2017.pdf', 12602), ('tsuki-synth/output/wf0907/R4/rr8181.pdf', 12506), ('tsuki-synth/output/wf0907/R4/rr8181b.pdf', 12600), ('tsuki-synth/output/wf0907/R4/soton_408405.pdf', 2314), ('tsuki-synth/output/wf0907/R4/uncg_practice.pdf', 23826), ('tsuki-synth/output/wf0907/R6/icsv27.pdf', 5928)]

@@ -1,0 +1,254 @@
+// WF1004-P -- A/B real-binary render probe (NOT part of the repo build).
+// Loads ONE .vst3 through juce::VST3PluginFormat (same path HostProbe uses), renders a FIXED list of
+// MIDI cases offline through the real processBlock() with the product's default effect chain, and writes
+// each case as raw interleaved float32 (L,R) next to a one-line index. Run it once per binary (baseline
+// all-16 build vs candidate per-engine build) and compare the .f32 files sample by sample (compare_ab.py).
+//
+// Usage: ab_probe <vst3> <out-dir> <repo-root>
+// Cases are identical for both binaries (defined here, no input file but the two corpus scores).
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_events/juce_events.h>
+#include "ParameterLayout.h"
+#include <cmath>
+#include <iostream>
+#include <memory>
+#include <vector>
+#include <algorithm>
+
+namespace
+{
+constexpr double kSampleRate = 48000.0;
+constexpr int    kBlockSize  = 512;
+constexpr int    kWarmBlocks = 8;
+
+class ShadowProcessor : public juce::AudioProcessor
+{
+public:
+    ShadowProcessor()
+        : juce::AudioProcessor (BusesProperties()
+                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+          apvts (*this, nullptr, "PARAMETERS", createTsukiParameterLayout())
+    {}
+    const juce::String getName() const override { return "Shadow"; }
+    void prepareToPlay (double, int) override {}
+    void releaseResources() override {}
+    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override {}
+    double getTailLengthSeconds() const override { return 0.0; }
+    bool acceptsMidi() const override { return true; }
+    bool producesMidi() const override { return false; }
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+    bool hasEditor() const override { return false; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram (int) override {}
+    const juce::String getProgramName (int) override { return {}; }
+    void changeProgramName (int, const juce::String&) override {}
+    void getStateInformation (juce::MemoryBlock&) override {}
+    void setStateInformation (const void*, int) override {}
+    juce::AudioProcessorValueTreeState apvts;
+};
+
+struct Ev { juce::int64 sample; bool on; int note; float vel; };
+using Params = std::vector<std::pair<juce::String, float>>;
+struct Case { juce::String name; Params params; std::vector<Ev> events; double tailSeconds; };
+
+// 12 distinct notes (<16 voices), staggered 0.1 s, each held 1.5 s
+std::vector<Ev> chord12()
+{
+    std::vector<Ev> e;
+    for (int i = 0; i < 12; ++i)
+    {
+        const juce::int64 on = (juce::int64) std::llround (0.1 * i * kSampleRate);
+        e.push_back ({ on, true, 48 + i * 2, 0.7f });
+        e.push_back ({ on + (juce::int64) std::llround (1.5 * kSampleRate), false, 48 + i * 2, 0.f });
+    }
+    return e;
+}
+// exactly 16 distinct notes started inside the first block, held 2 s: fills a 16 pool exactly, no steal in either build
+std::vector<Ev> exact16()
+{
+    std::vector<Ev> e;
+    for (int i = 0; i < 16; ++i)
+    {
+        e.push_back ({ (juce::int64) i, true, 40 + i * 2, 0.8f });
+        e.push_back ({ (juce::int64) std::llround (2.0 * kSampleRate) + i, false, 40 + i * 2, 0.f });
+    }
+    return e;
+}
+// 32 distinct notes (MIDI 36..67) in the first block, held 3 s (same as HostProbe makeStress32Events)
+std::vector<Ev> stress32()
+{
+    std::vector<Ev> e;
+    for (int i = 0; i < 32; ++i) e.push_back ({ (juce::int64) i, true, 36 + i, 0.8f });
+    for (int i = 0; i < 32; ++i) e.push_back ({ (juce::int64) std::llround (3.0 * kSampleRate) + i, false, 36 + i, 0.f });
+    return e;
+}
+
+int scoreNoteToMidi (const juce::var& v)
+{
+    if (v.isInt() || v.isInt64() || v.isDouble()) return (int) v;
+    const juce::String s = v.toString().trim();
+    if (s.isEmpty()) return -1;
+    static const int base[] = { 9, 11, 0, 2, 4, 5, 7 };
+    const juce::juce_wchar letter = juce::CharacterFunctions::toUpperCase (s[0]);
+    if (letter < 'A' || letter > 'G') return -1;
+    int pc = base[letter - 'A'];
+    int pos = 1;
+    while (pos < s.length() && (s[pos] == '#' || s[pos] == 'b')) pc += (s[pos++] == '#') ? 1 : -1;
+    const juce::String octStr = s.substring (pos);
+    if (! octStr.containsOnly ("-0123456789") || octStr.isEmpty()) return -1;
+    return (octStr.getIntValue() + 1) * 12 + pc;
+}
+
+std::vector<Ev> loadScore (const juce::File& f)
+{
+    std::vector<Ev> out;
+    const auto parsed = juce::JSON::parse (f.loadFileAsString());
+    const auto* events = parsed.getProperty ("events", juce::var()).getArray();
+    if (events == nullptr) return out;
+    for (const auto& e : *events)
+    {
+        const int note = scoreNoteToMidi (e.getProperty ("note", juce::var()));
+        const double t = (double) e.getProperty ("time", -1.0);
+        const double d = (double) e.getProperty ("duration", -1.0);
+        const float vel = (float) (double) e.getProperty ("velocity", 0.0);
+        if (note < 0 || note > 127 || t < 0.0 || d <= 0.0) continue;
+        out.push_back ({ (juce::int64) std::llround (t * kSampleRate), true, note, vel });
+        out.push_back ({ (juce::int64) std::llround ((t + d) * kSampleRate), false, note, 0.f });
+    }
+    std::stable_sort (out.begin(), out.end(), [] (const Ev& a, const Ev& b)
+    { if (a.sample != b.sample) return a.sample < b.sample; return (! a.on) && b.on; });
+    return out;
+}
+
+Params engineParams (int engine, int chrSub = 0)
+{
+    Params p;
+    p.push_back ({ "engine", (float) engine });
+    if (engine == 0 || engine == 3) { p.push_back ({ "cim_material", 0.0f }); p.push_back ({ "cim_diameter", 1.0f }); }
+    if (engine == 1)
+    {
+        p.push_back ({ "chr_sub_engine", (float) chrSub });
+        p.push_back ({ "chr_material", 0.0f }); p.push_back ({ "chr_thickness", 2.6f });
+        p.push_back ({ "chr_size", 100.0f }); p.push_back ({ "chr_strike_pos", 0.44f });
+        if (chrSub == 2)
+            for (int h = 0; h < 8; ++h) p.push_back ({ "chr_amp_" + juce::String (h), 1.0f });
+    }
+    return p;
+}
+} // namespace
+
+int main (int argc, char** argv)
+{
+    if (argc < 4) { std::cout << "usage: ab_probe <vst3> <out-dir> <repo-root>\n"; return 2; }
+    juce::ScopedJuceInitialiser_GUI juceInit;
+    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+    const auto cwd = juce::File::getCurrentWorkingDirectory();
+    const juce::File bundle = cwd.getChildFile (juce::String (argv[1]));
+    const juce::File outDir = cwd.getChildFile (juce::String (argv[2]));
+    const juce::File repo   = cwd.getChildFile (juce::String (argv[3]));
+    outDir.createDirectory();
+
+    juce::VST3PluginFormat vst3;
+    juce::OwnedArray<juce::PluginDescription> found;
+    vst3.findAllTypesForFile (found, bundle.getFullPathName());
+    if (found.isEmpty()) { std::cout << "no VST3 found\n"; return 1; }
+    juce::AudioPluginFormatManager fm;
+    fm.addFormat (new juce::VST3PluginFormat());
+    ShadowProcessor shadow;
+    auto& shadowParams = shadow.getParameters();
+
+    std::vector<Case> cases;
+    // C3: Cimbalom (0), Piano (3), FM (2): <16-voice chord and the 32-note overflow
+    const char* eng[] = { "cimbalom", "piano", "fm" };
+    const int engIdx[] = { 0, 3, 2 };
+    for (int i = 0; i < 3; ++i)
+    {
+        cases.push_back ({ juce::String (eng[i]) + "_chord12",  engineParams (engIdx[i]), chord12(), 2.0 });
+        cases.push_back ({ juce::String (eng[i]) + "_exact16",  engineParams (engIdx[i]), exact16(), 2.0 });
+        cases.push_back ({ juce::String (eng[i]) + "_stress32", engineParams (engIdx[i]), stress32(), 2.0 });
+    }
+    // C4(b): Chromatic sub-engines with <=16 voices; plus the overflow case (expected to differ: report only)
+    const char* sub[] = { "tongue", "watergong", "custom" };
+    for (int s = 0; s < 3; ++s)
+    {
+        cases.push_back ({ juce::String ("chromatic_") + sub[s] + "_chord12", engineParams (1, s), chord12(), 2.0 });
+        cases.push_back ({ juce::String ("chromatic_") + sub[s] + "_exact16", engineParams (1, s), exact16(), 2.0 });
+        cases.push_back ({ juce::String ("chromatic_") + sub[s] + "_stress32_EXPECT_DIFF", engineParams (1, s), stress32(), 2.0 });
+    }
+    // corpus replays (C1 R10 + C4a)
+    {
+        auto fe = loadScore (repo.getChildFile ("scores/classical/fur_elise/fur_elise_complete.score.json"));
+        cases.push_back ({ "corpus_fur_elise_piano", engineParams (3), fe, 2.0 });
+        auto ml = loadScore (repo.getChildFile ("scores/examples/moonlight_sonata_movement1_tongue_drum.score.json"));
+        Params mp = engineParams (1, 0);
+        cases.push_back ({ "corpus_moonlight_tongue_EXPECT_DIFF", mp, ml, 2.0 });
+    }
+
+    int failures = 0;
+    for (auto& c : cases)
+    {
+        if (c.events.empty()) { std::cout << c.name << "\tNO EVENTS (score missing?)\n"; ++failures; continue; }
+        juce::String err;
+        auto inst = fm.createPluginInstance (*found[0], kSampleRate, kBlockSize, err);
+        if (inst == nullptr) { std::cout << c.name << "\tINSTANCE FAIL " << err << "\n"; ++failures; continue; }
+        auto& loaded = inst->getParameters();
+        for (int i = 0; i < shadowParams.size(); ++i)
+            if (i >= loaded.size() || shadowParams[i]->getName (64) != loaded[i]->getName (64))
+            { std::cout << c.name << "\tPARAM ORDER MISMATCH at " << i << "\n"; return 1; }
+        for (auto& kv : c.params)
+        {
+            int idx = -1;
+            for (int i = 0; i < shadowParams.size(); ++i)
+                if (auto* wp = dynamic_cast<juce::RangedAudioParameter*> (shadowParams[i]))
+                    if (wp->getParameterID() == kv.first) { idx = i; break; }
+            if (idx < 0) { std::cout << c.name << "\tUNKNOWN PARAM " << kv.first << "\n"; ++failures; continue; }
+            auto* sp = dynamic_cast<juce::RangedAudioParameter*> (shadowParams[idx]);
+            loaded[idx]->setValue (sp->convertTo0to1 (kv.second));
+        }
+
+        std::sort (c.events.begin(), c.events.end(), [] (const Ev& a, const Ev& b)
+                   { if (a.sample != b.sample) return a.sample < b.sample; return (! a.on) && b.on; });
+        const juce::int64 last = c.events.back().sample;
+        const int keepBlocks = (int) ((last + (juce::int64) std::llround (c.tailSeconds * kSampleRate)) / kBlockSize) + 1;
+        inst->setNonRealtime (true);
+        inst->prepareToPlay (kSampleRate, kBlockSize);
+        const int chans = juce::jmax (2, inst->getTotalNumOutputChannels());
+        juce::AudioBuffer<float> block (chans, kBlockSize);
+        juce::MidiBuffer midi;
+        std::vector<float> out;
+        out.reserve ((size_t) keepBlocks * kBlockSize * 2);
+        size_t next = 0;
+        double peak = 0.0;
+        for (int b = 0; b < kWarmBlocks + keepBlocks; ++b)
+        {
+            midi.clear();
+            const juce::int64 rel = (juce::int64) (b - kWarmBlocks) * kBlockSize;
+            if (b >= kWarmBlocks)
+                while (next < c.events.size() && c.events[next].sample < rel + kBlockSize)
+                {
+                    const auto& e = c.events[next++];
+                    const int pos = (int) (e.sample - rel);
+                    midi.addEvent (e.on ? juce::MidiMessage::noteOn (1, e.note, e.vel)
+                                        : juce::MidiMessage::noteOff (1, e.note), pos);
+                }
+            block.clear();
+            inst->processBlock (block, midi);
+            if (b >= kWarmBlocks)
+                for (int s = 0; s < kBlockSize; ++s)
+                    for (int ch = 0; ch < 2; ++ch)
+                    {
+                        const float v = block.getSample (juce::jmin (ch, chans - 1), s);
+                        out.push_back (v);
+                        peak = juce::jmax (peak, (double) std::abs (v));
+                    }
+        }
+        inst->releaseResources();
+        const auto f = outDir.getChildFile (c.name + ".f32");
+        f.deleteFile();
+        { juce::FileOutputStream os (f); os.write (out.data(), out.size() * sizeof (float)); }
+        std::cout << c.name << "\tsamples=" << out.size() / 2 << "\tpeak_dBFS="
+                  << juce::String (20.0 * std::log10 (juce::jmax (peak, 1e-12)), 3) << "\n";
+    }
+    return failures == 0 ? 0 : 1;
+}

@@ -1,0 +1,29 @@
+WF1003-B2 unit tests / ctest (private build tree E:\Tsuki-project\_scratch\wf1003\B2, Release)
+== ctest ==
+Test project E:/Tsuki-project/_scratch/wf1003/B2/b
+    Start 1: audit_repro
+1/4 Test #1: audit_repro ......................   Passed    1.97 sec
+    Start 2: tuner_repro
+2/4 Test #2: tuner_repro ......................   Passed    0.66 sec
+    Start 3: physics_models_repro
+3/4 Test #3: physics_models_repro .............   Passed    0.07 sec
+    Start 4: spectrum_view_repro
+4/4 Test #4: spectrum_view_repro ..............   Passed    0.16 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   3.89 sec
+
+== TsukiSynthPhysicsModelsTest (Body level normalisation lines + verdict) ==
+[PASS] Body level normalisation closes (harmonic C4 (string/beam-like), Body 0.2): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -5.00 dB
+[PASS] Body level normalisation closes (harmonic C4 (string/beam-like), Body 0.5): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -10.07 dB
+[PASS] Body level normalisation closes (harmonic C4 (string/beam-like), Body 0.8): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -13.37 dB
+[PASS] Body level normalisation closes (harmonic C4 (string/beam-like), Body 1): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -15.04 dB
+[PASS] Body level normalisation closes (inharmonic G3 (plate/gong-like), Body 0.2): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -1.26 dB
+[PASS] Body level normalisation closes (inharmonic G3 (plate/gong-like), Body 0.5): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -5.69 dB
+[PASS] Body level normalisation closes (inharmonic G3 (plate/gong-like), Body 0.8): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -9.19 dB
+[PASS] Body level normalisation closes (inharmonic G3 (plate/gong-like), Body 1): attack-energy ratio Body-on/Body-off = 1.000000 (require 1 +- 1e-4), g = -11.01 dB
+[PASS] Body level normalisation OFF path is bit-identical to the pre-B2 behaviour (never-enabled vs enabled-then-cleared, 4096 samples, exact ==)
+[PASS] Body level normalisation: sine steady state matches the analytic transfer function (raw 5.5401 vs |H| 5.5402; normalised 1.1076 vs g*|H| 1.1076, require rel. err < 2e-3)
+[PASS] Body level normalisation boundaries: amount<0.001, empty/nullptr mode list, all-modes-unrenderable all give g == 1 (no NaN, no division by zero)
+PASS (0 failures)

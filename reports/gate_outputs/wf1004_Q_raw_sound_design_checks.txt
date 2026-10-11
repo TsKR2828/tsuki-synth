@@ -1,0 +1,75 @@
+=== M1. duration classes: UI-type (catalog primary_type == ui) files: file length vs time to -40 dB (10 ms RMS env) ===
+doc S4 candidate: micro-interaction 100-300 ms (UI only). Report-only.
+  akashic/akashic__Akashic_Light_Tap.wav                     file 1.266s  envelope falls to -40 dB at 0.38s after start
+  akashic/akashic__Akashic_Record_Chime.wav                  file 4.430s  envelope falls to -40 dB at 1.32s after start
+  akashic/akashic__Library_Opening_Bell.wav                  file 29.611s  envelope falls to -40 dB at 5.96s after start
+  clockwork/clockwork__Clockwork_Bell_Strike_Wavefold.wav    file 3.134s  envelope falls to -40 dB at 0.96s after start
+  clockwork/clockwork__Clockwork_Gear_Click.wav              file 0.514s  envelope falls to -40 dB at 0.17s after start
+  clockwork/clockwork__Clockwork_Bell_Strike.wav             file 2.725s  envelope falls to -40 dB at 0.91s after start
+  forest/forest__Forest_Bird_Call.wav                        file 2.045s  envelope falls to -40 dB at 0.69s after start
+  forest/forest__Forest_Bird_Call_Alarm.wav                  file 1.435s  envelope falls to -40 dB at 0.51s after start
+  forest/forest__Forest_Acorn_Tap.wav                        file 0.615s  envelope falls to -40 dB at 0.22s after start
+  ocean/ocean__Ocean_Droplet_Tap.wav                         file 1.093s  envelope falls to -40 dB at 0.50s after start
+  ocean/ocean__Ocean_Bubble_Pop.wav                          file 1.995s  envelope falls to -40 dB at 0.97s after start
+  ocean/ocean__Ocean_Bubble_Pop_Deep.wav                     file 4.655s  envelope falls to -40 dB at 1.68s after start
+  rabbit/rabbit__Rabbit_Bounce_Loop.wav                      file 5.366s  envelope falls to -40 dB at 3.59s after start
+  rabbit/rabbit__Rabbit_Ding.wav                             file 2.047s  envelope falls to -40 dB at 1.19s after start
+  rabbit/rabbit__Rabbit_Ding_Angry.wav                       file 2.325s  envelope falls to -40 dB at 1.09s after start
+  rabbit/rabbit__Rabbit_Carrot_Button.wav                    file 0.775s  envelope falls to -40 dB at 0.22s after start
+  restraint/restraint__Restraint_Lock_Click.wav              file 1.860s  envelope falls to -40 dB at 0.63s after start
+  restraint/restraint__Restraint_Lock_Click_Distorted.wav    file 1.860s  envelope falls to -40 dB at 0.62s after start
+  restraint/restraint__Restraint_Bolt_Click.wav              file 1.605s  envelope falls to -40 dB at 0.74s after start
+
+=== M2. attack_energy_ratio (RMS 0-20 ms / RMS whole file, dB), all 43 sfx (report-only; doc says compare within same category) ===
+  forest/forest__Forest_Rain_Pattern.wav                     ambience   loop       -10.3 dB
+  rabbit/rabbit__Rabbit_Wind_Chimes.wav                      ambience   oneshot    -10.2 dB
+  akashic/akashic__Akashic_Library_Drone.wav                 ambience   oneshot    -10.1 dB
+  ocean/ocean__Ocean_Abyss_Hum.wav                           ambience   oneshot     -6.0 dB
+  restraint/restraint__Restraint_Iron_Drone.wav              ambience   oneshot     -5.8 dB
+  akashic/akashic__Akashic_Gate_Open.wav                     magic      oneshot     -5.4 dB
+  akashic/akashic__Akashic_Meditation_Loop.wav               ambience   loop        -5.3 dB
+  akashic/akashic__Akashic_Gate_Open_Dark.wav                magic      variant     -4.4 dB
+  forest/forest__Forest_Leaf_Sweep.wav                       whoosh     oneshot     -3.8 dB
+  ocean/ocean__Ocean_Wave_Cycle.wav                          ambience   loop         1.2 dB
+  ocean/ocean__Ocean_Depth_Slam.wav                          impact     oneshot      1.6 dB
+  ocean/ocean__Ocean_Tide_Wash.wav                           whoosh     oneshot      2.3 dB
+  rabbit/rabbit__Rabbit_Hop_Transition.wav                   whoosh     oneshot      4.4 dB
+  ocean/ocean__Ocean_Bubble_Pop_Deep.wav                     ui         variant      4.5 dB
+  rabbit/rabbit__Rabbit_Bounce_Loop.wav                      ui         loop         5.9 dB
+  akashic/akashic__Library_Opening_Bell.wav                  ui         oneshot      6.7 dB
+  akashic/akashic__Akashic_Record_Chime.wav                  ui         oneshot      6.8 dB
+  restraint/restraint__Restraint_Shackle_Slam.wav            impact     oneshot      9.5 dB
+  forest/forest__Forest_Bamboo_Rain.wav                      ambience   oneshot     10.0 dB
+  restraint/restraint__Restraint_Industrial_Pulse.wav        mechanical loop        10.5 dB
+  clockwork/clockwork__Clockwork_Gear_Shift.wav              mechanical oneshot     10.8 dB
+  akashic/akashic__Akashic_Page_Turn.wav                     foley      oneshot     11.1 dB
+  restraint/restraint__Restraint_Lock_Click_Distorted.wav    ui         variant     11.1 dB
+  restraint/restraint__Restraint_Lock_Click.wav              ui         oneshot     11.2 dB
+  clockwork/clockwork__Clockwork_Ticking_Room.wav            ambience   oneshot     11.2 dB
+  ocean/ocean__Ocean_Bubble_Pop.wav                          ui         oneshot     11.2 dB
+  clockwork/clockwork__Clockwork_Tick_Loop.wav               mechanical loop        11.8 dB
+  forest/forest__Forest_Branch_Snap.wav                      impact     oneshot     12.2 dB
+  ocean/ocean__Ocean_Droplet_Tap.wav                         ui         oneshot     12.2 dB
+  clockwork/clockwork__Clockwork_Gear_Click.wav              ui         oneshot     12.7 dB
+  rabbit/rabbit__Rabbit_Ding.wav                             ui         oneshot     12.7 dB
+  restraint/restraint__Restraint_Chain_Drag.wav              whoosh     oneshot     13.0 dB
+  forest/forest__Forest_Bird_Call_Alarm.wav                  ui         variant     13.8 dB
+  forest/forest__Forest_Acorn_Tap.wav                        ui         oneshot     13.9 dB
+  rabbit/rabbit__Rabbit_Ding_Angry.wav                       ui         variant     14.2 dB
+  restraint/restraint__Restraint_Bolt_Click.wav              ui         oneshot     14.4 dB
+  forest/forest__Forest_Bird_Call.wav                        ui         oneshot     14.5 dB
+  clockwork/clockwork__Clockwork_Bell_Strike_Wavefold.wav    ui         variant     15.3 dB
+  rabbit/rabbit__Rabbit_Carrot_Button.wav                    ui         oneshot     15.5 dB
+  clockwork/clockwork__Clockwork_Bell_Strike.wav             ui         oneshot     16.1 dB
+  clockwork/clockwork__Clockwork_Spring_Release.wav          mechanical oneshot     16.4 dB
+  akashic/akashic__Akashic_Light_Tap.wav                     ui         oneshot     16.8 dB
+  rabbit/rabbit__Rabbit_Stomp.wav                            impact     oneshot     17.9 dB
+
+=== M3. 6-band energy share (%) and mud_ratio (250-500 Hz share) ===
+mud_ratio over 43 files: min 0.0%  median 0.7%  max 79.0% (doc sets NO absolute threshold; outliers vs median only)
+  top mud: akashic/akashic__Akashic_Gate_Open.wav                     79.0%  bands 0.0 0.1 79.0 8.7 12.1 0.0
+  top mud: forest/forest__Forest_Branch_Snap.wav                      62.2%  bands 0.6 4.6 62.2 25.5 7.0 0.1
+  top mud: akashic/akashic__Akashic_Gate_Open_Dark.wav                53.2%  bands 0.0 0.2 53.2 45.4 1.1 0.0
+  top mud: ocean/ocean__Ocean_Bubble_Pop_Deep.wav                     51.3%  bands 0.0 0.1 51.3 48.5 0.0 0.0
+  top mud: akashic/akashic__Library_Opening_Bell.wav                  50.4%  bands 0.0 48.9 50.4 0.7 0.0 0.0
+  top mud: restraint/restraint__Restraint_Chain_Drag.wav              41.2%  bands 5.4 14.5 41.2 36.1 2.8 0.0

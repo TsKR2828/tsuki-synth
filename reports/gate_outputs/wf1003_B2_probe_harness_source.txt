@@ -1,0 +1,239 @@
+# b2_probe.cpp (scratch, not in repo; adapted from wf1002_R_a r_probe + note=/vel= tokens)
+// WF1002-R (R-a, Q05 root cause) -- read-only research harness.
+// NOT part of the repo build. Loads a COPY of build\'s TsukiSynth.vst3 through
+// juce::VST3PluginFormat (same path HostProbe E16 uses), loads factory program
+// i via setCurrentProgram(i) (exactly like E16; i = -1 -> fresh instance, no
+// program call), optionally overrides some parameters (raw/plain values,
+// converted with the SAME createTsukiParameterLayout() the product uses --
+// shadow APVTS, index-matched and name-checked like HostProbe H7), renders C4
+// vel 0.7, note-off 1.0 s after note-on, keeps 188 blocks (= E16's 96256
+// samples/ch) from note-on, writes a float WAV and prints peak/RMS.
+//
+// Warm-up: parameter overrides set on a hosted VST3 reach the processor only at
+// the next process() call, while EffectChain/Output smoothers are initialised
+// in prepareToPlay(). To avoid a 20 ms smoothing ramp contaminating the onset,
+// every case (including the no-override baseline) first renders kWarmBlocks
+// silent blocks, then sends note-on at the start of the next block. The
+// baseline is checked against E16's numbers (warm-up must not change them).
+//
+// Usage: r_probe <TsukiSynth.vst3> <out-dir> <cases.txt>
+// cases.txt lines: <name> <program> [paramID=plainValue ...]   ('#' comments)
+
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_audio_formats/juce_audio_formats.h>
+#include <juce_events/juce_events.h>
+#include "ParameterLayout.h"
+#include <cmath>
+#include <iostream>
+#include <memory>
+
+namespace
+{
+constexpr double kSampleRate = 48000.0;
+constexpr int    kBlockSize  = 512;
+constexpr int    kWarmBlocks = 8;
+constexpr int    kKeepBlocks = 188;   // 188 * 512 = 96256 = HostProbe E16's per-channel length
+
+class ShadowProcessor : public juce::AudioProcessor
+{
+public:
+    ShadowProcessor()
+        : juce::AudioProcessor (BusesProperties()
+                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+          apvts (*this, nullptr, "PARAMETERS", createTsukiParameterLayout())
+    {}
+    const juce::String getName() const override { return "Shadow"; }
+    void prepareToPlay (double, int) override {}
+    void releaseResources() override {}
+    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override {}
+    double getTailLengthSeconds() const override { return 0.0; }
+    bool acceptsMidi() const override { return true; }
+    bool producesMidi() const override { return false; }
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+    bool hasEditor() const override { return false; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram (int) override {}
+    const juce::String getProgramName (int) override { return {}; }
+    void changeProgramName (int, const juce::String&) override {}
+    void getStateInformation (juce::MemoryBlock&) override {}
+    void setStateInformation (const void*, int) override {}
+    juce::AudioProcessorValueTreeState apvts;
+};
+
+bool writeWav (const juce::AudioBuffer<float>& buf, const juce::File& f)
+{
+    f.deleteFile();
+    juce::WavAudioFormat wav;
+    std::unique_ptr<juce::FileOutputStream> os (f.createOutputStream());
+    if (os == nullptr) return false;
+    std::unique_ptr<juce::AudioFormatWriter> w (wav.createWriterFor (
+        os.get(), kSampleRate, (unsigned) buf.getNumChannels(), 32, {}, 0));
+    if (w == nullptr) return false;
+    os.release();
+    return w->writeFromAudioSampleBuffer (buf, 0, buf.getNumSamples());
+}
+} // namespace
+
+int main (int argc, char** argv)
+{
+    if (argc < 4) { std::cout << "usage: r_probe <vst3> <out-dir> <cases.txt>\n"; return 2; }
+    juce::ScopedJuceInitialiser_GUI juceInit;
+    juce::MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+
+    const auto cwd = juce::File::getCurrentWorkingDirectory();
+    const juce::File bundle = cwd.getChildFile (juce::String (argv[1]));
+    const juce::File outDir = cwd.getChildFile (juce::String (argv[2]));
+    const juce::File casesFile = cwd.getChildFile (juce::String (argv[3]));
+    outDir.createDirectory();
+
+    juce::VST3PluginFormat vst3;
+    juce::OwnedArray<juce::PluginDescription> found;
+    vst3.findAllTypesForFile (found, bundle.getFullPathName());
+    if (found.isEmpty()) { std::cout << "no VST3 found\n"; return 1; }
+    juce::AudioPluginFormatManager fm;
+    fm.addFormat (new juce::VST3PluginFormat());
+
+    ShadowProcessor shadow;
+    auto& shadowParams = shadow.getParameters();
+
+    juce::StringArray lines;
+    casesFile.readLines (lines);
+    int failures = 0;
+    for (auto line : lines)
+    {
+        line = line.trim();
+        if (line.isEmpty() || line.startsWith ("#")) continue;
+        juce::StringArray tok;
+        tok.addTokens (line, " \t", "");
+        tok.removeEmptyStrings();
+        if (tok.size() < 2) continue;
+        const juce::String name = tok[0];
+        const int program = tok[1].getIntValue();
+
+        juce::String err;
+        auto inst = fm.createPluginInstance (*found[0], kSampleRate, kBlockSize, err);
+        if (inst == nullptr) { std::cout << name << " INSTANCE FAIL " << err << "\n"; ++failures; continue; }
+        if (program >= 0) inst->setCurrentProgram (program);   // -1 = fresh instance
+        auto& loaded = inst->getParameters();
+
+        for (int i = 0; i < shadowParams.size(); ++i)
+            if (i >= loaded.size() || shadowParams[i]->getName (64) != loaded[i]->getName (64))
+            { std::cout << name << " PARAM ORDER MISMATCH at " << i << "\n"; return 1; }
+
+        juce::String applied;
+        int probeNote = 60; float probeVel = 0.7f;
+        for (int k = 2; k < tok.size(); ++k)
+        {
+            if (tok[k].startsWith ("note=")) { probeNote = tok[k].fromFirstOccurrenceOf ("=", false, false).getIntValue(); continue; }
+            if (tok[k].startsWith ("vel="))  { probeVel  = tok[k].fromFirstOccurrenceOf ("=", false, false).getFloatValue(); continue; }
+            const auto id = tok[k].upToFirstOccurrenceOf ("=", false, false);
+            const float plain = tok[k].fromFirstOccurrenceOf ("=", false, false).getFloatValue();
+            int idx = -1;
+            for (int i = 0; i < shadowParams.size(); ++i)
+                if (auto* wp = dynamic_cast<juce::RangedAudioParameter*> (shadowParams[i]))
+                    if (wp->getParameterID() == id) { idx = i; break; }
+            if (idx < 0) { std::cout << name << " UNKNOWN PARAM " << id << "\n"; ++failures; continue; }
+            auto* sp = dynamic_cast<juce::RangedAudioParameter*> (shadowParams[idx]);
+            const float norm = sp->convertTo0to1 (plain);
+            loaded[idx]->setValue (norm);
+            applied << id << "=" << juce::String (plain, 4) << "(n" << juce::String (norm, 6) << ") ";
+        }
+
+        const int offRel = (int) std::llround (1.0 * kSampleRate);
+        const int numBlocks = kWarmBlocks + kKeepBlocks;
+        inst->setNonRealtime (true);
+        inst->prepareToPlay (kSampleRate, kBlockSize);
+        const int chans = juce::jmax (2, inst->getTotalNumOutputChannels());
+        juce::AudioBuffer<float> out (2, kKeepBlocks * kBlockSize);
+        out.clear();
+        juce::AudioBuffer<float> block (chans, kBlockSize);
+        juce::MidiBuffer midi;
+        double warmPeak = 0.0;
+        for (int b = 0; b < numBlocks; ++b)
+        {
+            midi.clear();
+            const int rel = (b - kWarmBlocks) * kBlockSize;
+            if (b == kWarmBlocks)
+                midi.addEvent (juce::MidiMessage::noteOn (1, probeNote, probeVel), 0);
+            if (b >= kWarmBlocks && offRel >= rel && offRel < rel + kBlockSize)
+                midi.addEvent (juce::MidiMessage::noteOff (1, probeNote), offRel - rel);
+            block.clear();
+            inst->processBlock (block, midi);
+            if (b < kWarmBlocks)
+                warmPeak = juce::jmax (warmPeak, (double) block.getMagnitude (0, kBlockSize));
+            else
+                for (int c = 0; c < 2; ++c)
+                    out.copyFrom (c, rel, block, juce::jmin (c, chans - 1), 0, kBlockSize);
+        }
+        inst->releaseResources();
+
+        double peak = 0.0, sumSq = 0.0; int peakIdx = 0, peakCh = 0;
+        for (int c = 0; c < 2; ++c)
+        {
+            const float* d = out.getReadPointer (c);
+            for (int s = 0; s < out.getNumSamples(); ++s)
+            {
+                const double a = std::abs ((double) d[s]);
+                if (a > peak) { peak = a; peakIdx = s; peakCh = c; }
+                sumSq += (double) d[s] * d[s];
+            }
+        }
+        const double rms = std::sqrt (sumSq / (2.0 * out.getNumSamples()));
+        writeWav (out, outDir.getChildFile (name + ".wav"));
+        std::cout << name << "\tprog=" << program << "	note=" << probeNote << "	vel=" << juce::String (probeVel, 2)
+                  << "\tpeak_dBFS=" << juce::String (20.0 * std::log10 (juce::jmax (peak, 1e-12)), 3)
+                  << "\tpeak_t_ms=" << juce::String (1000.0 * peakIdx / kSampleRate, 2)
+                  << "\tpeak_ch=" << peakCh
+                  << "\tRMS_dBFS=" << juce::String (20.0 * std::log10 (juce::jmax (rms, 1e-12)), 3)
+                  << "\twarmup_peak=" << juce::String (warmPeak, 9)
+                  << "\toverrides=" << (applied.isEmpty() ? juce::String ("none") : applied)
+                  << "\n";
+    }
+    return failures == 0 ? 0 : 1;
+}
+
+# CMakeLists.txt
+cmake_minimum_required(VERSION 3.22)
+project(b2_probe LANGUAGES C CXX)
+if(POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif()
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+add_compile_options(/utf-8)
+set(REPO E:/Tsuki-project/tsuki-synth)
+add_subdirectory(${REPO}/libs/JUCE juce)
+add_executable(b2_probe b2_probe.cpp ${REPO}/src/ParameterLayout.cpp)
+target_include_directories(b2_probe PRIVATE ${REPO}/src)
+target_compile_definitions(b2_probe PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_PLUGINHOST_VST3=1)
+target_link_libraries(b2_probe PRIVATE juce::juce_audio_formats juce::juce_audio_processors juce::juce_audio_utils juce::juce_dsp PUBLIC juce::juce_recommended_config_flags)
+
+# analyze.py
+import re,collections
+def load(f):
+    d={}
+    for l in open(f):
+        t=l.rstrip('\n').split('\t')
+        name=t[0]; kv=dict(x.split('=',1) for x in t[1:] if '=' in x)
+        d[name]=(float(kv['peak_dBFS']),float(kv['RMS_dBFS']))
+    return d
+b=load('probe_main_before.txt'); a=load('probe_main_after.txt')
+print("== Body sweep (C4 v0.7): peak dBFS  before -> after ; RMS before -> after ; after minus Body0(after) peak/RMS")
+bypre=collections.defaultdict(list)
+for n in b:
+    m=re.match(r'sweep_p(\d+)_b([\d.]+)',n)
+    if m: bypre[int(m[1])].append((float(m[2]),n))
+for p,l in sorted(bypre.items()):
+    base=a[f'sweep_p{p}_b0']
+    print(f'preset {p}')
+    for v,n in sorted(l):
+        print(f'  Body {v:<5} peak {b[n][0]:8.2f} -> {a[n][0]:8.2f}   RMS {b[n][1]:8.2f} -> {a[n][1]:8.2f}   | after vs Body0: peak {a[n][0]-base[0]:+6.2f}  RMS {a[n][1]-base[1]:+6.2f}   | before vs Body0(before): peak {b[n][0]-b[f"sweep_p{p}_b0"][0]:+6.2f} RMS {b[n][1]-b[f"sweep_p{p}_b0"][1]:+6.2f}')
+print("== grid: Body0.5 vs Body0 delta (RMS, peak), before and after")
+import itertools
+for p in (7,11,15):
+    for note in (36,48,60,72,84):
+        row=[]
+        for vel in (0.3,0.7,1.0):
+            n0=f'grid_p{p}_n{note}_v{vel}_b0'; n5=f'grid_p{p}_n{note}_v{vel}_b0.5'
+            row.append((b[n5][1]-b[n0][1],a[n5][1]-a[n0][1],b[n5][0]-b[n0][0],a[n5][0]-a[n0][0],a[n5][0]))
+        print(p,note,'  '.join(f'v{v}: RMSd {r[0]:+6.2f}->{r[1]:+6.2f} peakd {r[2]:+6.2f}->{r[3]:+6.2f} (abs peak after {r[4]:6.2f})' for v,r in zip((0.3,0.7,1.0),row)))

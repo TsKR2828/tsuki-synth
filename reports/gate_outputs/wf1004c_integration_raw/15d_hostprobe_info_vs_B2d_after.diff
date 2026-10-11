@@ -1,0 +1,17 @@
+# ref=<REPO>/reports/gate_outputs/wf1004_B2d_hostprobe_after.txt
+# cur=raw/15_hostprobe_cwd_outside_repo.txt
+# mode=i ref_lines=84 cur_lines=84 changed_lines=8
+--- ref
++++ cur
+@@ -29 +29 @@
+-  H8 materials.json used: <REPO>/data/materials.json (found via TSUKI_REPO_ROOT)
++  H8 materials.json used: <REPO>/data/materials.json (found in an ancestor of the executable's directory)
+@@ -67 +67 @@
+-    rendered 132.43 s (12415 blocks) through the VST3 + two twins in 41.3 s wall clock
++    rendered 132.43 s (12415 blocks) through the VST3 + two twins in 41.4 s wall clock
+@@ -77 +77 @@
+-    rendered 311.13 s (29168 blocks) through the VST3 + two twins in 26.7 s wall clock
++    rendered 311.13 s (29168 blocks) through the VST3 + two twins in 26.9 s wall clock
+@@ -84 +84 @@
+-exit=0
++EXIT_CODE=0

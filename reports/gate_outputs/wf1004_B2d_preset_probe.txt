@@ -1,0 +1,16 @@
+WF1004-B2d real plug-in probe (b2_probe, same harness/binary as B2c: C4 vel 0.7, note-off 1.0 s). pre = B2c/pre/TsukiSynth.vst3 (sha256 72f503c7..., = integration baseline), capped = build VST3 after B2d (sha256 dda39b61..., comment-only change vs B2c's 3441686e...; MSVC rebuild is not bit-reproducible, behaviour verified in wf1004_B2d_equivalence_scan.txt)
+
+== preset probes (peak dBFS / RMS dBFS), pre -> capped ==
+  p6       peak   -7.273 ->  -21.221    RMS  -23.530 ->  -35.560
+  p7       peak   -4.674 ->  -14.076    RMS  -20.000 ->  -29.446
+  p14      peak  -11.443 ->  -24.719    RMS  -19.931 ->  -33.206
+  p15      peak   -1.846 ->   -9.916    RMS  -16.561 ->  -24.630
+  p25      peak  -12.431 ->  -22.035    RMS  -25.752 ->  -35.455
+  p11_b0   peak   -3.028 ->   -3.028    RMS  -13.308 ->  -13.308
+  p11_b05  peak   +3.799 ->   -2.640    RMS   -5.250 ->  -11.758
+  TARGET preset 11 Body 0.5: +3.799 -> -2.640 dBFS (required -2.640; Body 0 same settings -3.028)
+
+== old notch attack (ATK; preset 11, C4 v0.7, macro_tension 0.5, H1/H2 amp 0.01, H2 ratio 2.576, H3..H8 ratio 3.396 amp 1.0) ==
+  ATK_off: pre -1.067  capped -1.067 dBFS   RMS pre -11.371  capped -11.371
+  ATK_on: pre -7.896  capped -7.896 dBFS   RMS pre -25.496  capped -25.496
+  capped - pre = +0.0000 dB (<= 0 required: PASS);  capped - Body-off = -6.829 dB

@@ -1,0 +1,21 @@
+# wf1004_Q step2a: sha256sum -c on candidate manifests (read-only) 2026-10-07T00:18:44+08:00
+== _CANDIDATE_MANIFEST_SHA256.txt
+./QA_REPORT.md: FAILED
+sha256sum: WARNING: 1 computed checksum did NOT match
+-- summary: total 85, OK 84
+== _X2_MANIFEST_SHA256.txt
+-- summary: total 56, OK 56
+== _ORIGINALS_SHA256_before.txt vs clean_batch2/
+-- summary: OK 212 / 212
+== _pre_WF1002_backup_SHA256.txt
+-- OK 19 / 19
+== papers
+Alon2015_York_MSc_handpan.pdf: OK
+
+# post-run re-check (after all measurements) 2026-10-07T00:39:56+08:00
+candidate manifest: OK 84 / 85 (only QA_REPORT.md expected to differ)
+X2 manifest: OK 56 / 56
+originals: OK 212 / 212
+Alon2015_York_MSc_handpan.pdf: OK
+newest mtime under products candidate (should be old): 
+newest mtime under papers: 

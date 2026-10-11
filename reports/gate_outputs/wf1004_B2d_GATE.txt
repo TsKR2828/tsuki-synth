@@ -1,0 +1,42 @@
+WF1004-B2d GATE summary (R1: GATE outputs only) -- 2026-10-08, base HEAD 6198922 (+ staged P card / WF1004-WF1004b integration, 146 files staged, untouched); nothing added/committed/pushed (R7)
+Task: final round. B2c audit FAILed only on documentation (wrong number provenance); program + acceptance criterion (a) capped <= pre-B2, (b) g <= 1 were confirmed 0/403 by the auditor. Planner (Fable, on the user's delegation) ruled: fix the sentences listed in wf1004_B2c_audit.txt, and authorised exactly two comment lines in BodyResonance.h (:55, :89).
+
+== step 1: re-apply B2c patch + restore files ==
+git apply --check + git apply failed_B2c\B2c_tracked_changes.patch OK (703 lines); 29 files from moved_files.txt copied back with relative paths (none pre-existing) -> wf1004_B2d_patch_apply.txt
+src diff right after apply: sha256 dd6c4802... (= B2c/B2b src part)
+
+== step 2: sentence fixes (A)(B)(C)(D)(E)(F) ==
+(A) +3.98 dB provenance, (B) "g clamped = few / high notes / Body-on smaller" limited to the 83 ordinary-preset conditions + adversarial counter-statement, (C) all "max +3.98 / +4.41 dB" labelled "sample maximum (scan result), not a theoretical bound" and updated to the best found: peak +3.99 dB, 2-s RMS +5.28 dB (first-0.3-s energy +3.69 dB),
+(E) "per-sample <= pre" qualified "per voice (chord scan 159 sets, 0 violations; proof level = single voice)", (F) WF1004_decisions third paragraph (2026-10-08).
+Files: ROADMAP_PHYSICS.md:476, docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md:137, reports/wf1003_b2_body_normalization_before_after.zh-TW.md (header, sec.0/2/5/6/7/8/9/11), reports/decision_packets/WF1003_decisions.zh-TW.md:38-40, reports/decision_packets/WF1004_decisions.zh-TW.md (second paragraph qualifiers + new third paragraph).
+Before -> after -> data-source table: wf1004_B2d_wording_table.txt
+(D) src/dsp/BodyResonance.h:55 "1 即 Body-off 基準" -> "1＝不放大（等於改前未補償行為）"; :89 "1 is the Body-off" -> "1 means no amplification, i.e. the pre-B2" (the sentence continues on :90, unchanged).
+Program diff vs the B2c patch: exactly those two lines (+ the index-hash line); ChromaticEngine.h, CimbalomEngine.h, tests/physics_models_repro.cpp unchanged -> wf1004_B2d_patch_apply.txt
+
+== step 3: verification ==
+build (X4: VST3, CLI and 5 test targets rebuilt before ctest): build_exit=0, 0 error lines -> wf1004_B2d_build_x4.txt
+   sha256 VST3 dda39b61c310..., CLI 4081ff3d451e..., HostProbe c8c3d6d4104a..., PhysicsModelsTest cd67673dcd5f...
+   (differs from B2c's 3441686e/551de7a7/c3ed81da: MSVC rebuild is not bit-reproducible, seen in B2b/B2c audits; behaviour proven identical below)
+ctest -C Release                  : 100% tests passed, 0 tests failed out of 4
+AuditTest direct                  : line-start [PASS] 111 / [FAIL] 0, PASS (0 failures)
+PhysicsModelsTest direct          : line-start [PASS] 234 / [FAIL] 0, PASS (0 failures); Body level normalisation 15 [PASS] + 1 [INFO]   -> wf1004_B2d_unit_tests.txt
+HostProbe (TSUKI_REPO_ROOT set, cwd outside repo, short outdir): line-start [PASS] 241 / [FAIL] 0, PASS (0 failures)   -> wf1004_B2d_hostprobe_after.txt
+preset 11 Body 0.5 (C4 v0.7, real VST3): +3.799 -> -2.640 dBFS (required -2.640; Body 0 same settings -3.028)       -> wf1004_B2d_preset_probe.txt
+old notch attack (real VST3)      : pre -7.896, capped -7.896 (capped - pre = +0.0000 dB <= 0: PASS), Body-off -1.067 (capped - Body-off = -6.829 dB)
+presets 6/7/14/15/25 pre -> capped: identical to B2c (-7.273->-21.221, -4.674->-14.076, -11.443->-24.719, -1.846->-9.916, -12.431->-22.035 dBFS)
+473-pair adversarial scan re-run on the rebuilt VST3 (B2c case files, 946 renders): 946/946 output lines byte-identical to the B2c capped VST3; capped - pre-B2 peak max +0.0000 dB, 0 renders above pre -> wf1004_B2d_equivalence_scan.txt
+CLI: 8/8 IDENTICAL vs b6_method/sha256_before_post_a14.txt (diff --strip-trailing-cr exit 0); --body-amount 0.5 four scores = B2c old==new hashes (yangqin a74a953e..., water_gong_free 6ac0357f...) -> wf1004_B2d_cli_unchanged.txt
+(pytest not re-run: no .py or Python-visible behaviour touched; B2c reported 312.)
+
+== NOT run in this card ==
+physics_verify --full/--selftest, verify_score --all, pluginval/validator, release CI, ISCC (integration card). Auditor's own 403-set re-scan was not repeated (needs the auditor's two trees); equivalence was shown against the B2c VST3 on B2c's 473 pairs instead.
+
+== deviations / notes (reported, not hidden) ==
+1. tests/physics_models_repro.cpp:2084 carries the same old comment ("1 就是 Body-off 基準"). Task authorised only BodyResonance.h :55/:89 and forbade any other program byte, so it was NOT changed. Planner may authorise it in a later card (comment only).
+2. Table row "g clamped & Body-on - Body-off 2-s RMS: 16 sets, max +4.01 dB (N017)" and "peak +3.975 (N037p15)" were re-derived by B2d from B2c raw outputs (not only quoted from the audit); numbers match the audit text.
+3. "+1.14 dB first-0.3-s energy when g clamped (audit N016)" is quoted from the audit §2 (needs the audit's energy03 run); the 473-set value +1.51 dB is B2c's own.
+4. The wording table lists provenance; "stale" figures still present in historical gate files (wf1003_B2_*.txt, wf1004_B2b_*.txt, wf1004_B2c_*.txt) were left verbatim as history.
+
+files changed (git status, B2d scope): ROADMAP_PHYSICS.md, docs/uiux/UI_FUNCTIONAL_SPEC.zh-TW.md, reports/decision_packets/WF1003_decisions.zh-TW.md, reports/decision_packets/WF1004_decisions.zh-TW.md (staged P-only version + working-tree B2 section),
+  src/dsp/BodyResonance.h (2 comment lines vs B2c), src/engines/ChromaticEngine.h, src/engines/CimbalomEngine.h, tests/physics_models_repro.cpp (patch, unchanged vs B2c), reports/wf1003_b2_body_normalization_before_after.zh-TW.md,
+  reports/gate_outputs/wf1003_B2_*.txt (9), wf1004_B2b_*.txt (9), wf1004_B2c_*.txt (10) restored as history; wf1004_B2d_*.txt (new: GATE, wording_table, patch_apply, build_x4, unit_tests, hostprobe_after, preset_probe, equivalence_scan, cli_unchanged).

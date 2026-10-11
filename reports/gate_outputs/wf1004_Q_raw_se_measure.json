@@ -1,0 +1,3020 @@
+[
+ {
+  "file": "akashic/akashic__Akashic_Gate_Open.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 843466,
+  "dur_s": 17.572208333333332,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 843466,
+   "dur": 17.572208
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0213403697872456,
+   "8": -1.019637875094785,
+   "32": -1.0194413487478222
+  },
+  "dc_mean_lin": [
+   0.00021036317921482384,
+   0.00020690854328351248
+  ],
+  "dc_mean_dbfs": [
+   -73.54060548649073,
+   -73.68443153764845
+  ],
+  "rms_dbfs": -24.50649607443781,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.020833333333333332,
+   "trail_below_80dBFS_ms": 7067.625,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 10072.416666666668,
+   "first_sample_abs": 2.5987625122070312e-05,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -33.05286995388807,
+   "last10ms_rms_dbfs": -141.46603995343855,
+   "peak_pos_ms": 651.7291666666667
+  },
+  "lr_max_abs_diff": 1.1836888790130615,
+  "lr_corr": -0.028986717273823362,
+  "ebur": {
+   "I": -13.6,
+   "LRA": 26.3,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -8.726
+  },
+  "sha256": "a1d0c0470fa0c76e6e2083219febe54c0279214123c97b5e9d17d26ef2fcd390"
+ },
+ {
+  "file": "akashic/akashic__Akashic_Gate_Open_Dark.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 1054626,
+  "dur_s": 21.971375,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 1054626,
+   "dur": 21.971375
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.03651066418028,
+   "8": -1.0362590833132588,
+   "32": -1.0361810299333738
+  },
+  "dc_mean_lin": [
+   0.0002717276616002298,
+   0.00026719883250090763
+  ],
+  "dc_mean_dbfs": [
+   -71.31732297188142,
+   -71.46330887598981
+  ],
+  "rms_dbfs": -24.02676097807984,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 9053.5625,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 12233.5,
+   "first_sample_abs": 0.0007402896881103516,
+   "last_sample_abs": 2.384185791015625e-07,
+   "first10ms_rms_dbfs": -31.663409742677512,
+   "last10ms_rms_dbfs": -140.77602585763265,
+   "peak_pos_ms": 556.2916666666666
+  },
+  "lr_max_abs_diff": 1.3922431468963623,
+  "lr_corr": -0.04701291370290535,
+  "ebur": {
+   "I": -13.3,
+   "LRA": 26.5,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -8.179
+  },
+  "sha256": "26e7183317a2f83082f7e71284067cb1981b899fddf6606debebde9e349508e2"
+ },
+ {
+  "file": "akashic/akashic__Akashic_Library_Drone.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 1608025,
+  "dur_s": 33.50052083333333,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 1608025,
+   "dur": 33.500521
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0397504203911758,
+   "32": -1.0396723670112895
+  },
+  "dc_mean_lin": [
+   0.000724740776467317,
+   0.0007126069201237842
+  ],
+  "dc_mean_dbfs": [
+   -62.79634606115885,
+   -62.94299929064082
+  ],
+  "rms_dbfs": -23.214142030346785,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.7708333333333334,
+   "lead_below_80dBFS_ms": 0.020833333333333332,
+   "trail_below_80dBFS_ms": 14453.333333333334,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 18314.041666666668,
+   "first_sample_abs": 5.3048133850097656e-05,
+   "last_sample_abs": 0.0,
+   "first10ms_rms_dbfs": -37.82279631142823,
+   "last10ms_rms_dbfs": -142.47587670670995,
+   "peak_pos_ms": 727.0833333333333
+  },
+  "lr_max_abs_diff": 1.105886697769165,
+  "lr_corr": -0.38200167747136454,
+  "ebur": {
+   "I": -14.3,
+   "LRA": 24.2,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -8.276
+  },
+  "sha256": "3084d7a1c0a9d3afda1418eaa68c6a3522181c1415cc7f8950b12ba139044acf"
+ },
+ {
+  "file": "akashic/akashic__Akashic_Light_Tap.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 60788,
+  "dur_s": 1.2664166666666667,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 60788,
+   "dur": 1.266417
+  },
+  "sample_peak_dbfs": -1.1455273645752275,
+  "tp_dbtp": {
+   "4": -0.9938706484329184,
+   "8": -0.986735842399279,
+   "32": -0.9841318561099109
+  },
+  "dc_mean_lin": [
+   0.00013982867452512644,
+   0.00013884622156286645
+  ],
+  "dc_mean_dbfs": [
+   -77.08807518252706,
+   -77.14931868510557
+  ],
+  "rms_dbfs": -23.705909224890775,
+  "code": {
+   "code_max": 7352136,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 274.0416666666667,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 540.5208333333334,
+   "first_sample_abs": 0.007117867469787598,
+   "last_sample_abs": 3.6954879760742188e-06,
+   "first10ms_rms_dbfs": -5.8804172103379235,
+   "last10ms_rms_dbfs": -114.1803806091945,
+   "peak_pos_ms": 0.3541666666666667
+  },
+  "lr_max_abs_diff": 0.48064637184143066,
+  "lr_corr": 0.6231995074914874,
+  "ebur": {
+   "I": -17.4,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -13.202
+  },
+  "sha256": "31a8a6fc7424b097b4b6de3c9687c66cc2ff1b16907a7772c894e6d3848f36fd"
+ },
+ {
+  "file": "akashic/akashic__Akashic_Meditation_Loop.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 1167588,
+  "dur_s": 24.32475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 1167588,
+   "dur": 24.32475
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0399996654842343,
+   "8": -1.0397480846172142,
+   "32": -1.0396700312373275
+  },
+  "dc_mean_lin": [
+   0.0001656326164694814,
+   0.0001629458071906607
+  ],
+  "dc_mean_dbfs": [
+   -75.61708275224036,
+   -75.75913620043416
+  ],
+  "rms_dbfs": -22.020859817316474,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 4405.791666666667,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 6188.958333333333,
+   "first_sample_abs": 0.00026023387908935547,
+   "last_sample_abs": 8.344650268554688e-07,
+   "first10ms_rms_dbfs": -29.81503576924365,
+   "last10ms_rms_dbfs": -125.200421556238,
+   "peak_pos_ms": 12179.895833333334
+  },
+  "lr_max_abs_diff": 0.8407566547393799,
+  "lr_corr": 0.17575466117747346,
+  "ebur": {
+   "I": -15.8,
+   "LRA": 11.7,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -8.181
+  },
+  "sha256": "c42f3bacf7b9384d7b5cd3be4a0e782b9b0e9e7fe669f482b49e96da4901657f"
+ },
+ {
+  "file": "akashic/akashic__Akashic_Page_Turn.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 155907,
+  "dur_s": 3.2480625,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 155907,
+   "dur": 3.248063
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0388475771782892,
+   "8": -1.0383699269725732,
+   "32": -1.038203209066134
+  },
+  "dc_mean_lin": [
+   0.00039199792228626846,
+   0.00038698788555735204
+  ],
+  "dc_mean_dbfs": [
+   -68.134324697448,
+   -68.24605260235782
+  ],
+  "rms_dbfs": -20.801744803807747,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 411.625,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 1054.125,
+   "first_sample_abs": 0.002656698226928711,
+   "last_sample_abs": 8.463859558105469e-06,
+   "first10ms_rms_dbfs": -11.132226169931911,
+   "last10ms_rms_dbfs": -94.17740161779142,
+   "peak_pos_ms": 162.9375
+  },
+  "lr_max_abs_diff": 0.8382768630981445,
+  "lr_corr": 0.36511692306381277,
+  "ebur": {
+   "I": -14.8,
+   "LRA": 12.9,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -10.275
+  },
+  "sha256": "882a7ffdb6d2e85390aed9a763f783dde6d018d4f0f61845bbd4043f13f7c50c"
+ },
+ {
+  "file": "akashic/akashic__Akashic_Record_Chime.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 212627,
+  "dur_s": 4.429729166666666,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 212627,
+   "dur": 4.429729
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0399996654842343,
+   "8": -1.0370942969933676,
+   "32": -1.0370162436134802
+  },
+  "dc_mean_lin": [
+   0.00013442544343697166,
+   0.00013249258747988988
+  ],
+  "dc_mean_dbfs": [
+   -77.43037044432396,
+   -77.5561683676199
+  ],
+  "rms_dbfs": -21.936527775407498,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 1176.0625,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 1891.25,
+   "first_sample_abs": 0.0007300376892089844,
+   "last_sample_abs": 2.1457672119140625e-06,
+   "first10ms_rms_dbfs": -17.259583551210113,
+   "last10ms_rms_dbfs": -113.53439854857382,
+   "peak_pos_ms": 255.02083333333331
+  },
+  "lr_max_abs_diff": 1.1343823671340942,
+  "lr_corr": 0.10021493819381465,
+  "ebur": {
+   "I": -12.2,
+   "LRA": 27.2,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -8.161
+  },
+  "sha256": "aafa96d8789df7744b8dc876ddc285e49eab88b03b9ebc7a8541899e2119ed18"
+ },
+ {
+  "file": "akashic/akashic__Library_Opening_Bell.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 1421318,
+  "dur_s": 29.610791666666668,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 1421318,
+   "dur": 29.610792
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0399996654842343,
+   "8": -1.0397480846172142,
+   "32": -1.0396700312373275
+  },
+  "dc_mean_lin": [
+   0.0003161209916334229,
+   0.0003111410004514113
+  ],
+  "dc_mean_dbfs": [
+   -70.00293328802535,
+   -70.14085512359605
+  ],
+  "rms_dbfs": -18.60321458541528,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 1.5833333333333333,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 4883.458333333333,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 7127.145833333334,
+   "first_sample_abs": 0.0009025335311889648,
+   "last_sample_abs": 0.0,
+   "first10ms_rms_dbfs": -14.880316926862104,
+   "last10ms_rms_dbfs": -139.63363694498508,
+   "peak_pos_ms": 199.97916666666669
+  },
+  "lr_max_abs_diff": 1.28102707862854,
+  "lr_corr": 0.002107623499866462,
+  "ebur": {
+   "I": -13.4,
+   "LRA": 24.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -7.002
+  },
+  "sha256": "99573b29e9b4943ab22912b2b65726e8c5aeb0a2c952bc77568fcf02e117c2b8"
+ },
+ {
+  "file": "clockwork/clockwork__Clockwork_Bell_Strike.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 130788,
+  "dur_s": 2.72475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 130788,
+   "dur": 2.72475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0397504203911758,
+   "32": -1.0396723670112895
+  },
+  "dc_mean_lin": [
+   0.0001034852909481073,
+   0.0001023127290237627
+  ],
+  "dc_mean_dbfs": [
+   -79.7024274996076,
+   -79.80140662177251
+  ],
+  "rms_dbfs": -24.4529364463377,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 751.5625,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 1302.5625,
+   "first_sample_abs": 0.025668859481811523,
+   "last_sample_abs": 1.6689300537109375e-06,
+   "first10ms_rms_dbfs": -8.462930185035457,
+   "last10ms_rms_dbfs": -117.966658151589,
+   "peak_pos_ms": 0.5416666666666666
+  },
+  "lr_max_abs_diff": 0.5659335851669312,
+  "lr_corr": 0.3825030006471474,
+  "ebur": {
+   "I": -17.5,
+   "LRA": 22.6,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -12.125
+  },
+  "sha256": "dadc33bd355f2ca0959e0e75f5b3a027fdf01c3b1f0befae055d635f6e50336b"
+ },
+ {
+  "file": "clockwork/clockwork__Clockwork_Bell_Strike_Wavefold.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 150429,
+  "dur_s": 3.1339375,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 150429,
+   "dur": 3.133938
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0233517493544755,
+   "8": -1.0231001684874532,
+   "32": -1.0216405396728345
+  },
+  "dc_mean_lin": [
+   8.461828160616724e-05,
+   8.374955606295423e-05
+  ],
+  "dc_mean_dbfs": [
+   -81.4507159678366,
+   -81.54034972759435
+  ],
+  "rms_dbfs": -22.457121376918504,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 1094.625,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 1657.9791666666665,
+   "first_sample_abs": 0.016823410987854004,
+   "last_sample_abs": 3.5762786865234375e-07,
+   "first10ms_rms_dbfs": -7.677634593052484,
+   "last10ms_rms_dbfs": -133.5982901760454,
+   "peak_pos_ms": 102.8125
+  },
+  "lr_max_abs_diff": 0.6928558349609375,
+  "lr_corr": 0.47099937878049825,
+  "ebur": {
+   "I": -15.3,
+   "LRA": 21.9,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -9.939
+  },
+  "sha256": "6c71712dce6d6700fc83815a36a290a125b1c2c887549246fbcf64180c90bc84"
+ },
+ {
+  "file": "clockwork/clockwork__Clockwork_Gear_Click.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 24672,
+  "dur_s": 0.514,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 24672,
+   "dur": 0.514
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0007394383108341,
+   "8": -0.9896286436963071,
+   "32": -0.9865707981293659
+  },
+  "dc_mean_lin": [
+   0.00018530784974456915,
+   0.00018493867879093234
+  ],
+  "dc_mean_dbfs": [
+   -74.64212366666641,
+   -74.65944498625426
+  ],
+  "rms_dbfs": -22.306929057217975,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 113.52083333333333,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 231.41666666666666,
+   "first_sample_abs": 0.020963430404663086,
+   "last_sample_abs": 7.152557373046875e-07,
+   "first10ms_rms_dbfs": -8.31682412912508,
+   "last10ms_rms_dbfs": -109.04515893812953,
+   "peak_pos_ms": 0.6041666666666667
+  },
+  "lr_max_abs_diff": 0.21559512615203857,
+  "lr_corr": 0.9279545402510484,
+  "ebur": {
+   "I": -15.6,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -15.639
+  },
+  "sha256": "7aa143b9f82eda94a0b39f56bfefbda65a4251778ae5497d187d3cd15df87ef0"
+ },
+ {
+  "file": "clockwork/clockwork__Clockwork_Gear_Shift.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 140626,
+  "dur_s": 2.929708333333333,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 140626,
+   "dur": 2.929708
+  },
+  "sample_peak_dbfs": -1.3455285163571717,
+  "tp_dbtp": {
+   "4": -1.0074169795483703,
+   "8": -0.9923289894799526,
+   "32": -0.9899169216769592
+  },
+  "dc_mean_lin": [
+   0.0002755530798112914,
+   0.0002727896073022782
+  ],
+  "dc_mean_dbfs": [
+   -71.19589461147285,
+   -71.2834435877341
+  ],
+  "rms_dbfs": -23.07890012188862,
+  "code": {
+   "code_max": 7184780,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.08333333333333333,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 1046.6666666666667,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 1458.0416666666667,
+   "first_sample_abs": 0.023828983306884766,
+   "last_sample_abs": 0.0,
+   "first10ms_rms_dbfs": -12.329446198246792,
+   "last10ms_rms_dbfs": -140.2824732356535,
+   "peak_pos_ms": 360.6875
+  },
+  "lr_max_abs_diff": 0.5226250886917114,
+  "lr_corr": 0.542975056519324,
+  "ebur": {
+   "I": -12.9,
+   "LRA": 5.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -10.428
+  },
+  "sha256": "557a4de7f44df2fbbf48536f216f7010bfc8354337f6261128842c958130e6bb"
+ },
+ {
+  "file": "clockwork/clockwork__Clockwork_Spring_Release.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 65988,
+  "dur_s": 1.37475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 65988,
+   "dur": 1.37475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.038359942234563,
+   "8": -1.036732416824153,
+   "32": -1.036575867036802
+  },
+  "dc_mean_lin": [
+   0.0003242345913298933,
+   0.00032195931218888333
+  ],
+  "dc_mean_dbfs": [
+   -69.78281307646799,
+   -69.84398018150956
+  ],
+  "rms_dbfs": -33.79614578999393,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 471.7916666666667,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 711.2708333333333,
+   "first_sample_abs": 0.0023741722106933594,
+   "last_sample_abs": 1.7881393432617188e-06,
+   "first10ms_rms_dbfs": -15.359687609934632,
+   "last10ms_rms_dbfs": -121.62366227232337,
+   "peak_pos_ms": 0.16666666666666666
+  },
+  "lr_max_abs_diff": 0.1595834493637085,
+  "lr_corr": 0.7392028475707032,
+  "ebur": {
+   "I": -28.9,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -24.942
+  },
+  "sha256": "9486fe6e29e9ffcacf6835b684263dbdcfec1d1a862ee9c9b198549d6e040b95"
+ },
+ {
+  "file": "clockwork/clockwork__Clockwork_Tick_Loop.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 247955,
+  "dur_s": 5.165729166666667,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 247955,
+   "dur": 5.165729
+  },
+  "sample_peak_dbfs": -1.2455295099285892,
+  "tp_dbtp": {
+   "4": -1.0327995463856894,
+   "8": -1.0325479655186722,
+   "32": -1.0276318251578982
+  },
+  "dc_mean_lin": [
+   0.0003687796211269599,
+   0.0003647515057954955
+  ],
+  "dc_mean_dbfs": [
+   -68.66466172398655,
+   -68.76005813085199
+  ],
+  "rms_dbfs": -21.01528766840987,
+  "code": {
+   "code_max": 7267975,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.9583333333333333,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 389.5,
+   "first_sample_abs": 0.024383544921875,
+   "last_sample_abs": 6.592273712158203e-05,
+   "first10ms_rms_dbfs": -8.65060124127244,
+   "last10ms_rms_dbfs": -87.37770831734679,
+   "peak_pos_ms": 1000.2708333333335
+  },
+  "lr_max_abs_diff": 0.4653817415237427,
+  "lr_corr": 0.5855099844521746,
+  "ebur": {
+   "I": -15.0,
+   "LRA": 3.4,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -12.08
+  },
+  "sha256": "703c328ce6ffe1de7e0e3737269fb6a2e4193e3807ff5831a35c0d63eb11f2ec"
+ },
+ {
+  "file": "clockwork/clockwork__Clockwork_Ticking_Room.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 368079,
+  "dur_s": 7.6683125,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 368079,
+   "dur": 7.668313
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -0.9691626187025462,
+   "8": -0.9495551511580252,
+   "32": -0.9488580484087645
+  },
+  "dc_mean_lin": [
+   0.00036439407358861885,
+   0.0003595148877191816
+  ],
+  "dc_mean_dbfs": [
+   -68.7685738979045,
+   -68.88566241046684
+  ],
+  "rms_dbfs": -19.66216159887899,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 2653.375,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 3256.25,
+   "first_sample_abs": 0.03080761432647705,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -8.39473501950279,
+   "last10ms_rms_dbfs": -141.50223136970584,
+   "peak_pos_ms": 98.66666666666667
+  },
+  "lr_max_abs_diff": 0.8503627777099609,
+  "lr_corr": 0.41385054120417325,
+  "ebur": {
+   "I": -10.8,
+   "LRA": 13.6,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -8.785
+  },
+  "sha256": "4c5c109ee85189b86179d7c68b0b49e29b843c40da9292083777921f46ae3621"
+ },
+ {
+  "file": "forest/forest__Forest_Acorn_Tap.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 29508,
+  "dur_s": 0.61475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 29508,
+   "dur": 0.61475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -0.970689752242778,
+   "8": -0.9704381713757576,
+   "32": -0.9701397154806863
+  },
+  "dc_mean_lin": [
+   0.00041295593066381636,
+   0.0004114529959502963
+  ],
+  "dc_mean_dbfs": [
+   -67.68192584777849,
+   -67.71359542120362
+  ],
+  "rms_dbfs": -23.934569425378072,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 115.72916666666666,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 252.89583333333331,
+   "first_sample_abs": 0.0037757158279418945,
+   "last_sample_abs": 7.152557373046875e-06,
+   "first10ms_rms_dbfs": -8.258372195536275,
+   "last10ms_rms_dbfs": -100.61973066026474,
+   "peak_pos_ms": 0.2916666666666667
+  },
+  "lr_max_abs_diff": 0.21360981464385986,
+  "lr_corr": 0.8705265018898394,
+  "ebur": {
+   "I": -22.3,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -19.492
+  },
+  "sha256": "abf6f6cc9f0c6aae3d472cca9690b068c6a12f06d23f795542cdb1a32bf0f47a"
+ },
+ {
+  "file": "forest/forest__Forest_Bamboo_Rain.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 509988,
+  "dur_s": 10.62475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 509988,
+   "dur": 10.62475
+  },
+  "sample_peak_dbfs": -1.0455282084022055,
+  "tp_dbtp": {
+   "4": -1.0389443107223881,
+   "8": -1.038025034711665,
+   "32": -1.0378968760741407
+  },
+  "dc_mean_lin": [
+   0.00031712449644057285,
+   0.00031222111739522283
+  ],
+  "dc_mean_dbfs": [
+   -69.97540418764733,
+   -70.11075452655724
+  ],
+  "rms_dbfs": -22.93818490184362,
+  "code": {
+   "code_max": 7437269,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.041666666666666664,
+   "lead_below_80dBFS_ms": 0.020833333333333332,
+   "trail_below_80dBFS_ms": 3540.1875,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 4586.916666666666,
+   "first_sample_abs": 6.67572021484375e-05,
+   "last_sample_abs": 0.0,
+   "first10ms_rms_dbfs": -14.129676889898695,
+   "last10ms_rms_dbfs": -141.55709034948617,
+   "peak_pos_ms": 1247.5
+  },
+  "lr_max_abs_diff": 1.3650645017623901,
+  "lr_corr": 0.029157826017904308,
+  "ebur": {
+   "I": -15.4,
+   "LRA": 19.3,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -9.608
+  },
+  "sha256": "a171ae794fc76ddfceea053bff439281859dfeeda4c4a953b42a06fbf1d08d19"
+ },
+ {
+  "file": "forest/forest__Forest_Bird_Call.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 98148,
+  "dur_s": 2.04475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 98148,
+   "dur": 2.04475
+  },
+  "sample_peak_dbfs": -1.1455285459856677,
+  "tp_dbtp": {
+   "4": -1.0543511927688118,
+   "8": -1.0521474411948102,
+   "32": -1.0497931566565253
+  },
+  "dc_mean_lin": [
+   0.0002002021150619694,
+   0.0001980019343503215
+  ],
+  "dc_mean_dbfs": [
+   -73.97062677340872,
+   -74.0666113388535
+  ],
+  "rms_dbfs": -24.032293562328665,
+  "code": {
+   "code_max": 7352135,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 436.14583333333337,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 824.2708333333333,
+   "first_sample_abs": 0.0014857053756713867,
+   "last_sample_abs": 1.5497207641601562e-06,
+   "first10ms_rms_dbfs": -8.591137503600278,
+   "last10ms_rms_dbfs": -112.20502885728577,
+   "peak_pos_ms": 0.10416666666666667
+  },
+  "lr_max_abs_diff": 0.6946158409118652,
+  "lr_corr": 0.33845156384438846,
+  "ebur": {
+   "I": -15.2,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -11.383
+  },
+  "sha256": "e5d3b5bf2de62f1bc932ff92cf1cbace04d92406b651197011fc8f1537809197"
+ },
+ {
+  "file": "forest/forest__Forest_Bird_Call_Alarm.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 68868,
+  "dur_s": 1.43475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 68868,
+   "dur": 1.43475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.013903876181576,
+   "8": -1.0040275666769534,
+   "32": -1.0017660396495662
+  },
+  "dc_mean_lin": [
+   0.00017776868065980667,
+   0.00017637719245033688
+  ],
+  "dc_mean_dbfs": [
+   -75.00289501520571,
+   -75.07115149444262
+  ],
+  "rms_dbfs": -25.024161401707964,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 357.39583333333337,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 629.9583333333333,
+   "first_sample_abs": 0.0003739595413208008,
+   "last_sample_abs": 9.5367431640625e-07,
+   "first10ms_rms_dbfs": -9.582178281578415,
+   "last10ms_rms_dbfs": -119.87216545296508,
+   "peak_pos_ms": 0.08333333333333333
+  },
+  "lr_max_abs_diff": 0.428877592086792,
+  "lr_corr": 0.5005533529370867,
+  "ebur": {
+   "I": -16.5,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -13.499
+  },
+  "sha256": "3491ad15b1359cf5b9bbaab82acdf726ee03c31db9d5021adea176a799467a3e"
+ },
+ {
+  "file": "forest/forest__Forest_Branch_Snap.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 41988,
+  "dur_s": 0.87475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 41988,
+   "dur": 0.87475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0306620857232234,
+   "8": -1.0304105048562038,
+   "32": -1.0303324514763157
+  },
+  "dc_mean_lin": [
+   0.0009156218668250932,
+   0.0009102704775518516
+  ],
+  "dc_mean_dbfs": [
+   -60.765676881590906,
+   -60.81659084688638
+  ],
+  "rms_dbfs": -23.888352938406115,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 84.875,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 304.3125,
+   "first_sample_abs": 0.0011059045791625977,
+   "last_sample_abs": 1.7404556274414062e-05,
+   "first10ms_rms_dbfs": -9.865479825961653,
+   "last10ms_rms_dbfs": -97.09118625546375,
+   "peak_pos_ms": 0.75
+  },
+  "lr_max_abs_diff": 0.3324306011199951,
+  "lr_corr": 0.831820033493056,
+  "ebur": {
+   "I": -19.8,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -17.116
+  },
+  "sha256": "5b330d300a1ad7ae037500b01650867331cb649ae0148a9e07ad2d16a562a507"
+ },
+ {
+  "file": "forest/forest__Forest_Leaf_Sweep.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 251268,
+  "dur_s": 5.23475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 251268,
+   "dur": 5.23475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0397504203911758,
+   "32": -1.0396723670112895
+  },
+  "dc_mean_lin": [
+   0.0005823808055340979,
+   0.0005743112127155083
+  ],
+  "dc_mean_dbfs": [
+   -64.69585894409252,
+   -64.817054091478
+  ],
+  "rms_dbfs": -20.928381823363893,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 1581.3541666666665,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 2255.5833333333335,
+   "first_sample_abs": 0.0012409687042236328,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -25.38401538264235,
+   "last10ms_rms_dbfs": -134.7611947450494,
+   "peak_pos_ms": 396.5
+  },
+  "lr_max_abs_diff": 1.1105984449386597,
+  "lr_corr": 0.18096419529263658,
+  "ebur": {
+   "I": -13.2,
+   "LRA": 20.3,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -9.768
+  },
+  "sha256": "57af1e2fb6ace57f7e032dcf7a2709f9b79ffb11d9587a7c2ea450b819bc0cb3"
+ },
+ {
+  "file": "forest/forest__Forest_Rain_Pattern.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 800988,
+  "dur_s": 16.68725,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 800988,
+   "dur": 16.68725
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0397504203911758,
+   "32": -1.0396723670112895
+  },
+  "dc_mean_lin": [
+   0.0005462436516315292,
+   0.0005383913456347982
+  ],
+  "dc_mean_dbfs": [
+   -65.25227194605668,
+   -65.37803859578781
+  ],
+  "rms_dbfs": -22.839022283926894,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.14583333333333334,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 2498.875,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 3177.8541666666665,
+   "first_sample_abs": 0.0006029605865478516,
+   "last_sample_abs": 0.0,
+   "first10ms_rms_dbfs": -33.39546465306421,
+   "last10ms_rms_dbfs": -141.82268063468084,
+   "peak_pos_ms": 1652.6458333333333
+  },
+  "lr_max_abs_diff": 1.4331835508346558,
+  "lr_corr": 0.10740971805188743,
+  "ebur": {
+   "I": -17.7,
+   "LRA": 8.2,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -9.667
+  },
+  "sha256": "20ac5ace6f9d01da14af8aa11d7d42eab1b8d800c9c8d809442c8a25c1ef859e"
+ },
+ {
+  "file": "ocean/ocean__Ocean_Abyss_Hum.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 977988,
+  "dur_s": 20.37475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 977988,
+   "dur": 20.37475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0397504203911758,
+   "32": -1.0396723670112895
+  },
+  "dc_mean_lin": [
+   0.0012212069280447984,
+   0.0012014115633223218
+  ],
+  "dc_mean_dbfs": [
+   -58.264214811295034,
+   -58.40616384759166
+  ],
+  "rms_dbfs": -19.18586106150145,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 2
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.9375,
+   "lead_below_80dBFS_ms": 0.020833333333333332,
+   "trail_below_80dBFS_ms": 5718.625,
+   "lead_below_60dBFS_ms": 0.0625,
+   "trail_below_60dBFS_ms": 7724.875,
+   "first_sample_abs": 4.291534423828125e-06,
+   "last_sample_abs": 0.0,
+   "first10ms_rms_dbfs": -26.75934695648134,
+   "last10ms_rms_dbfs": -137.26874418699262,
+   "peak_pos_ms": 398.2291666666667
+  },
+  "lr_max_abs_diff": 0.736639142036438,
+  "lr_corr": 0.27627107940230283,
+  "ebur": {
+   "I": -17.4,
+   "LRA": 17.1,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -10.53
+  },
+  "sha256": "b72151f0d0da014963679ce739b9b729a6bc0c6041919f191e562360c47b3014"
+ },
+ {
+  "file": "ocean/ocean__Ocean_Bubble_Pop.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 95748,
+  "dur_s": 1.99475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 95748,
+   "dur": 1.99475
+  },
+  "sample_peak_dbfs": -1.0455282084022055,
+  "tp_dbtp": {
+   "4": -1.040000833371136,
+   "8": -1.0397492525041165,
+   "32": -1.0396711991242304
+  },
+  "dc_mean_lin": [
+   0.0002516870680531449,
+   0.00024854040247468607
+  ],
+  "dc_mean_dbfs": [
+   -71.98278196773295,
+   -72.09206005446347
+  ],
+  "rms_dbfs": -18.984267908117992,
+  "code": {
+   "code_max": 7437269,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.10416666666666667,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 426.6875,
+   "first_sample_abs": 0.0015017986297607422,
+   "last_sample_abs": 6.99758529663086e-05,
+   "first10ms_rms_dbfs": -9.12615749305083,
+   "last10ms_rms_dbfs": -83.39268250587187,
+   "peak_pos_ms": 134.60416666666666
+  },
+  "lr_max_abs_diff": 1.1887915134429932,
+  "lr_corr": 0.3016611794432819,
+  "ebur": {
+   "I": -13.6,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -9.36
+  },
+  "sha256": "3fdc0a1710249cf738632ad9203dc0d5ac4f444dea4731368f44301cf7a1d90a"
+ },
+ {
+  "file": "ocean/ocean__Ocean_Bubble_Pop_Deep.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 223428,
+  "dur_s": 4.65475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 223428,
+   "dur": 4.65475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0397504203911758,
+   "32": -1.0396723670112895
+  },
+  "dc_mean_lin": [
+   0.00022458625722909342,
+   0.00022116077166720074
+  ],
+  "dc_mean_dbfs": [
+   -72.97233644788258,
+   -73.10583806808053
+  ],
+  "rms_dbfs": -21.516013313667948,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 601.7083333333333,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 1507.1666666666667,
+   "first_sample_abs": 0.00010371208190917969,
+   "last_sample_abs": 8.58306884765625e-06,
+   "first10ms_rms_dbfs": -18.53599590687391,
+   "last10ms_rms_dbfs": -101.99875598656763,
+   "peak_pos_ms": 220.54166666666666
+  },
+  "lr_max_abs_diff": 0.9956041574478149,
+  "lr_corr": 0.32488000795230165,
+  "ebur": {
+   "I": -14.1,
+   "LRA": 24.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -9.504
+  },
+  "sha256": "545e6fa9f19a929386a035a50f6446172c76f02eeff036a40f4ddb171aa4d948"
+ },
+ {
+  "file": "ocean/ocean__Ocean_Depth_Slam.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 301857,
+  "dur_s": 6.2886875,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 301857,
+   "dur": 6.288688
+  },
+  "sample_peak_dbfs": -1.0455282084022055,
+  "tp_dbtp": {
+   "4": -1.040000833371136,
+   "8": -1.0397492525041165,
+   "32": -1.0396711991242304
+  },
+  "dc_mean_lin": [
+   0.0018418196741181335,
+   0.0018153513913842442
+  ],
+  "dc_mean_dbfs": [
+   -54.69505784509675,
+   -54.820785951748874
+  ],
+  "rms_dbfs": -20.296975957790757,
+  "code": {
+   "code_max": 7437269,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 2
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 1062.75,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 2235.9791666666665,
+   "first_sample_abs": 0.00014591217041015625,
+   "last_sample_abs": 4.291534423828125e-06,
+   "first10ms_rms_dbfs": -22.381313526153548,
+   "last10ms_rms_dbfs": -107.56199205581835,
+   "peak_pos_ms": 483.4583333333333
+  },
+  "lr_max_abs_diff": 1.1575006246566772,
+  "lr_corr": -0.12403598029740243,
+  "ebur": {
+   "I": -15.1,
+   "LRA": 23.4,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -11.495
+  },
+  "sha256": "d3a9693e81e0d5cab8cc4c7bcca4b2c2934f8524defdf2b19687217928b5ec62"
+ },
+ {
+  "file": "ocean/ocean__Ocean_Droplet_Tap.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 52468,
+  "dur_s": 1.0930833333333334,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 52468,
+   "dur": 1.093083
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.01316636338608,
+   "8": -1.011650920842949,
+   "32": -1.0114878890888512
+  },
+  "dc_mean_lin": [
+   0.0003702153204017599,
+   0.0003671138294951676
+  ],
+  "dc_mean_dbfs": [
+   -68.63091226118836,
+   -68.70398509878922
+  ],
+  "rms_dbfs": -17.2689472814925,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.0,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 205.58333333333334,
+   "first_sample_abs": 0.0008409023284912109,
+   "last_sample_abs": 0.00013458728790283203,
+   "first10ms_rms_dbfs": -6.166749640460408,
+   "last10ms_rms_dbfs": -80.59897760172801,
+   "peak_pos_ms": 0.22916666666666666
+  },
+  "lr_max_abs_diff": 0.7910197973251343,
+  "lr_corr": 0.3935339816329267,
+  "ebur": {
+   "I": -14.4,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -10.127
+  },
+  "sha256": "f7ae2745b9b74eeb2282bf051068c917493b5ca5b1ce94dd2586bb1e6252581c"
+ },
+ {
+  "file": "ocean/ocean__Ocean_Tide_Wash.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 492794,
+  "dur_s": 10.266541666666667,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 492794,
+   "dur": 10.266542
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0399996654842343,
+   "8": -1.0397480846172142,
+   "32": -1.0396700312373275
+  },
+  "dc_mean_lin": [
+   0.0008429785052235532,
+   0.0008296856703713517
+  ],
+  "dc_mean_dbfs": [
+   -61.483669982755806,
+   -61.62172821221188
+  ],
+  "rms_dbfs": -18.962908587162104,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.020833333333333332,
+   "trail_below_80dBFS_ms": 3119.8125,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 4465.479166666666,
+   "first_sample_abs": 5.245208740234375e-06,
+   "last_sample_abs": 2.384185791015625e-07,
+   "first10ms_rms_dbfs": -22.200307151555695,
+   "last10ms_rms_dbfs": -133.7328500045366,
+   "peak_pos_ms": 412.0208333333333
+  },
+  "lr_max_abs_diff": 1.4755665063858032,
+  "lr_corr": -0.4728462868744656,
+  "ebur": {
+   "I": -13.5,
+   "LRA": 23.7,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -8.27
+  },
+  "sha256": "f44a6930adc3362a2e29121f8ddf63e940c3f5f557334e6ce000b5afafae9f6b"
+ },
+ {
+  "file": "ocean/ocean__Ocean_Wave_Cycle.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 759588,
+  "dur_s": 15.82475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 759588,
+   "dur": 15.82475
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0399996654842343,
+   "8": -1.0397480846172142,
+   "32": -1.0396700312373275
+  },
+  "dc_mean_lin": [
+   0.0009391329433519787,
+   0.0009241209579841053
+  ],
+  "dc_mean_dbfs": [
+   -60.54545849594737,
+   -60.68542360704855
+  ],
+  "rms_dbfs": -19.251418055496732,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 2
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.020833333333333332,
+   "trail_below_80dBFS_ms": 5018.770833333333,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 6594.166666666666,
+   "first_sample_abs": 4.887580871582031e-06,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -23.295168549564362,
+   "last10ms_rms_dbfs": -141.28083048526776,
+   "peak_pos_ms": 412.0208333333333
+  },
+  "lr_max_abs_diff": 1.5059831142425537,
+  "lr_corr": -0.40703858607394816,
+  "ebur": {
+   "I": -14.0,
+   "LRA": 19.7,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -7.914
+  },
+  "sha256": "f38b7ec5fa59d29782840689069516e5f5ff86e288c948cf96aaf22cbed02b6c"
+ },
+ {
+  "file": "rabbit/rabbit__Rabbit_Bounce_Loop.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 257547,
+  "dur_s": 5.3655625,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 257547,
+   "dur": 5.365563
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0315808056440459,
+   "8": -1.0313292247770272,
+   "32": -1.0304549646499215
+  },
+  "dc_mean_lin": [
+   0.00023084406684295138,
+   0.00022922085666477645
+  ],
+  "dc_mean_dbfs": [
+   -72.73362566423036,
+   -72.79491737437891
+  ],
+  "rms_dbfs": -14.153190259238034,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.020833333333333332,
+   "trail_below_80dBFS_ms": 1245.3125,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 1512.125,
+   "first_sample_abs": 2.3245811462402344e-05,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -8.914321413384283,
+   "last10ms_rms_dbfs": -142.07437010616408,
+   "peak_pos_ms": 993.8125
+  },
+  "lr_max_abs_diff": 0.5874630212783813,
+  "lr_corr": 0.7084290497250242,
+  "ebur": {
+   "I": -9.3,
+   "LRA": 5.5,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -6.592
+  },
+  "sha256": "8aee6c08d373eaa60b838067e0443fc842c461d2272dbd717e1ab3fbed79aea8"
+ },
+ {
+  "file": "rabbit/rabbit__Rabbit_Carrot_Button.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 37188,
+  "dur_s": 0.77475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 37188,
+   "dur": 0.77475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0088306584481634,
+   "8": -1.008579077581141,
+   "32": -1.0084144442340772
+  },
+  "dc_mean_lin": [
+   0.0002655025911777394,
+   0.00026450117608610245
+  ],
+  "dc_mean_dbfs": [
+   -71.51862472112651,
+   -71.55144785128525
+  ],
+  "rms_dbfs": -24.879264606084618,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 165.4375,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 355.1875,
+   "first_sample_abs": 0.0013971328735351562,
+   "last_sample_abs": 5.9604644775390625e-06,
+   "first10ms_rms_dbfs": -7.489160131595507,
+   "last10ms_rms_dbfs": -104.20008663786356,
+   "peak_pos_ms": 0.22916666666666666
+  },
+  "lr_max_abs_diff": 0.16773879528045654,
+  "lr_corr": 0.9375659321615517,
+  "ebur": {
+   "I": -22.1,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -19.202
+  },
+  "sha256": "0e63feec13f4562a01b081ec694560e746f089125f17e8ec51aa49da23668be5"
+ },
+ {
+  "file": "rabbit/rabbit__Rabbit_Ding.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 98236,
+  "dur_s": 2.0465833333333334,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 98236,
+   "dur": 2.046583
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0178625142002367,
+   "8": -1.013867033198175,
+   "32": -1.0119423839352184
+  },
+  "dc_mean_lin": [
+   8.741078797514399e-05,
+   8.66029483302466e-05
+  ],
+  "dc_mean_dbfs": [
+   -81.16869929492063,
+   -81.24934645023949
+  ],
+  "rms_dbfs": -16.438027832628663,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 194.27083333333334,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 543.1666666666667,
+   "first_sample_abs": 0.009613394737243652,
+   "last_sample_abs": 9.894371032714844e-06,
+   "first10ms_rms_dbfs": -5.3319105976308965,
+   "last10ms_rms_dbfs": -95.35435513981685,
+   "peak_pos_ms": 0.47916666666666663
+  },
+  "lr_max_abs_diff": 0.694872260093689,
+  "lr_corr": 0.37781723517203986,
+  "ebur": {
+   "I": -10.7,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -5.357
+  },
+  "sha256": "1ef541f67da77266680acfc1b254a4b2f7906ee86bf5503632637271d3f8c5bc"
+ },
+ {
+  "file": "rabbit/rabbit__Rabbit_Ding_Angry.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 111588,
+  "dur_s": 2.32475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 111588,
+   "dur": 2.32475
+  },
+  "sample_peak_dbfs": -1.1455273645752275,
+  "tp_dbtp": {
+   "4": -0.9965028109418916,
+   "8": -0.9962512300748688,
+   "32": -0.987789557995774
+  },
+  "dc_mean_lin": [
+   7.97781815395375e-05,
+   7.883494449917269e-05
+  ],
+  "dc_mean_dbfs": [
+   -81.9623173440646,
+   -82.06562467580461
+  ],
+  "rms_dbfs": -21.137076468722412,
+  "code": {
+   "code_max": 7352136,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 109.1875,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 606.375,
+   "first_sample_abs": 0.03463137149810791,
+   "last_sample_abs": 1.8358230590820312e-05,
+   "first10ms_rms_dbfs": -8.442130740494035,
+   "last10ms_rms_dbfs": -90.92608892831974,
+   "peak_pos_ms": 0.47916666666666663
+  },
+  "lr_max_abs_diff": 0.7044036388397217,
+  "lr_corr": 0.16424900350187294,
+  "ebur": {
+   "I": -14.4,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -9.639
+  },
+  "sha256": "0d8428527ca4899ed4fab2ecd60de828778f90f3c7c08519ce702ff1d6bf2998"
+ },
+ {
+  "file": "rabbit/rabbit__Rabbit_Hop_Transition.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 131506,
+  "dur_s": 2.739708333333333,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 131506,
+   "dur": 2.739708
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0323749094668062,
+   "8": -1.0321233285997877,
+   "32": -1.0319380878302888
+  },
+  "dc_mean_lin": [
+   0.00012972879095780808,
+   0.00012819532633549327
+  ],
+  "dc_mean_dbfs": [
+   -77.73927258833982,
+   -77.84255615526833
+  ],
+  "rms_dbfs": -17.48135963893339,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 148.14583333333334,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 696.9791666666667,
+   "first_sample_abs": 0.003954887390136719,
+   "last_sample_abs": 2.491474151611328e-05,
+   "first10ms_rms_dbfs": -14.99150008231372,
+   "last10ms_rms_dbfs": -97.97178015471458,
+   "peak_pos_ms": 386.8333333333333
+  },
+  "lr_max_abs_diff": 1.0861600637435913,
+  "lr_corr": 0.25797412147658155,
+  "ebur": {
+   "I": -9.3,
+   "LRA": 20.3,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -6.472
+  },
+  "sha256": "707d0f6cbd6491849de1e5f651c58708635e9cfea8da3f98c6caa48a5e9d2145"
+ },
+ {
+  "file": "rabbit/rabbit__Rabbit_Stomp.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 75588,
+  "dur_s": 1.57475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 75588,
+   "dur": 1.57475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0397504203911758,
+   "32": -1.0391899694247122
+  },
+  "dc_mean_lin": [
+   0.0005077278338999207,
+   0.0005036840970259959
+  ],
+  "dc_mean_dbfs": [
+   -65.88738055393661,
+   -65.95683522080037
+  ],
+  "rms_dbfs": -36.870177461839575,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 500.77083333333337,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 829.9375,
+   "first_sample_abs": 0.001017451286315918,
+   "last_sample_abs": 1.6689300537109375e-06,
+   "first10ms_rms_dbfs": -17.061039053548278,
+   "last10ms_rms_dbfs": -120.76596803041333,
+   "peak_pos_ms": 0.125
+  },
+  "lr_max_abs_diff": 0.09566366672515869,
+  "lr_corr": 0.7781098665083706,
+  "ebur": {
+   "I": -32.4,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -28.357
+  },
+  "sha256": "44314a0ea8ae4357cdc575b17889cff3925cdfbef1ef884eeca8097b878cadd4"
+ },
+ {
+  "file": "rabbit/rabbit__Rabbit_Wind_Chimes.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 511188,
+  "dur_s": 10.64975,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 511188,
+   "dur": 10.64975
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -1.0225299896428157,
+   "8": -1.0212032431764704,
+   "32": -1.0210535758938808
+  },
+  "dc_mean_lin": [
+   3.885231061012607e-05,
+   3.826787404852029e-05
+  ],
+  "dc_mean_dbfs": [
+   -88.21166295791124,
+   -88.34331328210651
+  ],
+  "rms_dbfs": -18.895881021372475,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.020833333333333332,
+   "trail_below_80dBFS_ms": 3214.9375,
+   "lead_below_60dBFS_ms": 0.020833333333333332,
+   "trail_below_60dBFS_ms": 4178.666666666667,
+   "first_sample_abs": 6.9141387939453125e-06,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -30.975285577707137,
+   "last10ms_rms_dbfs": -141.48409796207116,
+   "peak_pos_ms": 2616.791666666667
+  },
+  "lr_max_abs_diff": 0.9541867971420288,
+  "lr_corr": 0.14267832938451816,
+  "ebur": {
+   "I": -11.0,
+   "LRA": 16.1,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -7.322
+  },
+  "sha256": "8b4dc9b7242c825a4719e5e5ecdd50f6aecab9a1dec439f09a02494c3336b80f"
+ },
+ {
+  "file": "restraint/restraint__Restraint_Bolt_Click.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 77052,
+  "dur_s": 1.60525,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 77052,
+   "dur": 1.60525
+  },
+  "sample_peak_dbfs": -1.1455285459856677,
+  "tp_dbtp": {
+   "4": -1.0361070206213587,
+   "8": -1.0358554397543387,
+   "32": -1.035777386374452
+  },
+  "dc_mean_lin": [
+   9.578676051219193e-05,
+   9.554127465340044e-05
+  ],
+  "dc_mean_dbfs": [
+   -80.37389028478536,
+   -80.39617937843965
+  ],
+  "rms_dbfs": -23.685471580102902,
+  "code": {
+   "code_max": 7352135,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.0,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 435.64583333333337,
+   "first_sample_abs": 0.0413055419921875,
+   "last_sample_abs": 0.00016021728515625,
+   "first10ms_rms_dbfs": -8.935783973570052,
+   "last10ms_rms_dbfs": -77.48712678317838,
+   "peak_pos_ms": 1.8125
+  },
+  "lr_max_abs_diff": 0.16906821727752686,
+  "lr_corr": 0.9560309827002151,
+  "ebur": {
+   "I": -17.5,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -12.937
+  },
+  "sha256": "3b192e6522e9a7d6dc9066fcf683947d24231137a68cce1424947d98655f5984"
+ },
+ {
+  "file": "restraint/restraint__Restraint_Chain_Drag.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 286404,
+  "dur_s": 5.96675,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 286404,
+   "dur": 5.96675
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.038382438136121,
+   "32": -1.0382648580747524
+  },
+  "dc_mean_lin": [
+   0.0013096640849935598,
+   0.00129085256491268
+  ],
+  "dc_mean_dbfs": [
+   -57.65680164018547,
+   -57.782467159339895
+  ],
+  "rms_dbfs": -28.255970802281055,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 2171.6875,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 3001.0625,
+   "first_sample_abs": 0.004100680351257324,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -16.036114055930227,
+   "last10ms_rms_dbfs": -140.97257273759735,
+   "peak_pos_ms": 0.14583333333333334
+  },
+  "lr_max_abs_diff": 0.4421870708465576,
+  "lr_corr": 0.22364975732610964,
+  "ebur": {
+   "I": -20.7,
+   "LRA": 22.9,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -17.498
+  },
+  "sha256": "9219575e82041f4c39119c12749d316f073f9d401088de126ef93896ee00e5d9"
+ },
+ {
+  "file": "restraint/restraint__Restraint_Industrial_Pulse.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 409205,
+  "dur_s": 8.525104166666667,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 409205,
+   "dur": 8.525104
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0397504203911758,
+   "32": -1.0396723670112895
+  },
+  "dc_mean_lin": [
+   0.002144020144213834,
+   0.0021166015621900364
+  ],
+  "dc_mean_dbfs": [
+   -53.375422770631886,
+   -53.48721775343365
+  ],
+  "rms_dbfs": -17.51540779200892,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 1908.125,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 2484.75,
+   "first_sample_abs": 0.016376018524169922,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -9.17649664496339,
+   "last10ms_rms_dbfs": -141.36804114305474,
+   "peak_pos_ms": 2578.9583333333335
+  },
+  "lr_max_abs_diff": 1.2376376390457153,
+  "lr_corr": 0.026115032909932185,
+  "ebur": {
+   "I": -13.2,
+   "LRA": 12.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -7.953
+  },
+  "sha256": "313ae9836629dcb91b0c632d0a0ea70d3d8d69161c1d2b8449f4bd6edfa90974"
+ },
+ {
+  "file": "restraint/restraint__Restraint_Iron_Drone.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 912708,
+  "dur_s": 19.01475,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 912708,
+   "dur": 19.01475
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0397504203911758,
+   "32": -1.0396723670112895
+  },
+  "dc_mean_lin": [
+   0.0010392325900767147,
+   0.0010224605437102509
+  ],
+  "dc_mean_dbfs": [
+   -59.66574484708103,
+   -59.8070688444963
+  ],
+  "rms_dbfs": -17.47485893029628,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 2
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.020833333333333332,
+   "trail_below_80dBFS_ms": 7778.875,
+   "lead_below_60dBFS_ms": 0.041666666666666664,
+   "trail_below_60dBFS_ms": 9038.729166666666,
+   "first_sample_abs": 4.887580871582031e-06,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -26.459056825695505,
+   "last10ms_rms_dbfs": -141.01297251561473,
+   "peak_pos_ms": 549.8541666666666
+  },
+  "lr_max_abs_diff": 1.4610321521759033,
+  "lr_corr": -0.22291636335390272,
+  "ebur": {
+   "I": -15.4,
+   "LRA": 18.7,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -10.448
+  },
+  "sha256": "c9e928a4b8897ae9444a17c5c2bd730fb7d02fd3e8e6ab2cb54f73fcd2f87280"
+ },
+ {
+  "file": "restraint/restraint__Restraint_Lock_Click.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 89265,
+  "dur_s": 1.8596875,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 89265,
+   "dur": 1.859688
+  },
+  "sample_peak_dbfs": -1.0455270405153032,
+  "tp_dbtp": {
+   "4": -0.9585775495916248,
+   "8": -0.9583259687246082,
+   "32": -0.9582071554396447
+  },
+  "dc_mean_lin": [
+   0.00015164716219839272,
+   0.00015038813769046127
+  ],
+  "dc_mean_dbfs": [
+   -76.38331424621705,
+   -76.45572837312545
+  ],
+  "rms_dbfs": -21.096254784925563,
+  "code": {
+   "code_max": 7437270,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 542.9791666666666,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 860.2916666666666,
+   "first_sample_abs": 0.04313051700592041,
+   "last_sample_abs": 2.384185791015625e-07,
+   "first10ms_rms_dbfs": -10.76386285247976,
+   "last10ms_rms_dbfs": -128.23955852464192,
+   "peak_pos_ms": 51.229166666666664
+  },
+  "lr_max_abs_diff": 0.8446239233016968,
+  "lr_corr": 0.482474529897372,
+  "ebur": {
+   "I": -12.9,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -9.056
+  },
+  "sha256": "eccb4905267c4c5473d3ac78585d6bdf6c5b9e10ab8dfab547a3618a32f069b2"
+ },
+ {
+  "file": "restraint/restraint__Restraint_Lock_Click_Distorted.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 89265,
+  "dur_s": 1.8596875,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 89265,
+   "dur": 1.859688
+  },
+  "sample_peak_dbfs": -1.1455285459856677,
+  "tp_dbtp": {
+   "4": -1.0217551066154416,
+   "8": -0.9688155745405257,
+   "32": -0.9687375211606419
+  },
+  "dc_mean_lin": [
+   0.00191268337972824,
+   0.0018992624876846794
+  ],
+  "dc_mean_dbfs": [
+   -54.367138318403086,
+   -54.428300188406745
+  ],
+  "rms_dbfs": -20.916851535875306,
+  "code": {
+   "code_max": 7352135,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 619.1666666666666,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 921.3958333333333,
+   "first_sample_abs": 0.02598273754119873,
+   "last_sample_abs": 1.1920928955078125e-07,
+   "first10ms_rms_dbfs": -9.078628793744011,
+   "last10ms_rms_dbfs": -134.11681391367966,
+   "peak_pos_ms": 103.72916666666666
+  },
+  "lr_max_abs_diff": 0.5148332118988037,
+  "lr_corr": 0.8100632814384332,
+  "ebur": {
+   "I": -15.7,
+   "LRA": 0.0,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -11.948
+  },
+  "sha256": "35c22ec41bfc94421efe911001563bf09836595907b6bc0d79e3793481c77d04"
+ },
+ {
+  "file": "restraint/restraint__Restraint_Shackle_Slam.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 129811,
+  "dur_s": 2.7043958333333333,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 129811,
+   "dur": 2.704396
+  },
+  "sample_peak_dbfs": -1.045529376289265,
+  "tp_dbtp": {
+   "4": -1.0400020012581959,
+   "8": -1.0394871342752172,
+   "32": -1.0393342412467135
+  },
+  "dc_mean_lin": [
+   0.0012999426640753888,
+   0.0012848595257607526
+  ],
+  "dc_mean_dbfs": [
+   -57.721516049629514,
+   -57.82288702675963
+  ],
+  "rms_dbfs": -31.797118203979956,
+  "code": {
+   "code_max": 7437268,
+   "full_scale_hits": 0,
+   "n_at_max_code": 2,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 465.875,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 1139.0625,
+   "first_sample_abs": 0.0018488168716430664,
+   "last_sample_abs": 5.125999450683594e-06,
+   "first10ms_rms_dbfs": -22.44186852162961,
+   "last10ms_rms_dbfs": -105.63024980864282,
+   "peak_pos_ms": 20.270833333333332
+  },
+  "lr_max_abs_diff": 0.2180652618408203,
+  "lr_corr": 0.4662090238379207,
+  "ebur": {
+   "I": -27.7,
+   "LRA": 22.3,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -22.454
+  },
+  "sha256": "48d2a30eccf6da9184b32466b9296d8e87a4bf2ff8b9826fc509d9c458a541a0"
+ },
+ {
+  "file": "loop_ready/akashic/akashic__Akashic_Meditation_Loop__LoopReady_60bpm_4bars.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 768000,
+  "dur_s": 16.0,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 768000,
+   "dur": 16.0
+  },
+  "sample_peak_dbfs": -1.000836231968715,
+  "tp_dbtp": {
+   "4": -0.9953088569376455,
+   "8": -0.9950572760706257,
+   "32": -0.9949792226907396
+  },
+  "dc_mean_lin": [
+   0.00025313848722726106,
+   0.0002490324901106457
+  ],
+  "dc_mean_dbfs": [
+   -71.93283639199899,
+   -72.07487977653678
+  ],
+  "rms_dbfs": -20.15693607033498,
+  "code": {
+   "code_max": 7475635,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.0,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 0.0,
+   "first_sample_abs": 0.007676124572753906,
+   "last_sample_abs": 0.008372664451599121,
+   "first10ms_rms_dbfs": -29.90327120477067,
+   "last10ms_rms_dbfs": -44.63790699526597,
+   "peak_pos_ms": 12179.895833333334
+  },
+  "lr_max_abs_diff": 0.8450937271118164,
+  "lr_corr": 0.1757458703764485,
+  "ebur": {
+   "I": -15.7,
+   "LRA": 9.1,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -8.136
+  },
+  "sha256": "9dc139196501d259323de02bb0a76e2bb1f1cf4bea1794015e0f82d184fa9bca",
+  "seam": {
+   "jump": 0.0006965398788452148,
+   "jump_pct_of_instep": 22.012919287655322,
+   "instep_p50": 0.0025224685668945312,
+   "instep_p99": 0.033508868217468346,
+   "instep_max": 0.06323301792144775,
+   "seam_curv": 0.0003075599670410156,
+   "seam_curv2": 0.005023002624511719,
+   "curv_p99": 0.0026373898983001742,
+   "curv_max": 0.006545543670654297,
+   "seam_hf_vs_median_db": -4.470983993401626,
+   "seam_hf_vs_max_db": -26.79264574622373
+  }
+ },
+ {
+  "file": "loop_ready/clockwork/clockwork__Clockwork_Tick_Loop__LoopReady_120bpm_2bars.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 192000,
+  "dur_s": 4.0,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 192000,
+   "dur": 4.0
+  },
+  "sample_peak_dbfs": -1.2138790977429506,
+  "tp_dbtp": {
+   "4": -1.00079764877008,
+   "8": -1.0005460679030607,
+   "32": -0.9956298928681859
+  },
+  "dc_mean_lin": [
+   0.0004780272083977858,
+   0.00047280532121658325
+  ],
+  "dc_mean_dbfs": [
+   -66.4109476694008,
+   -66.50635288610647
+  ],
+  "rms_dbfs": -19.864061086785444,
+  "code": {
+   "code_max": 7294507,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.0,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 0.0,
+   "first_sample_abs": 0.021100401878356934,
+   "last_sample_abs": 0.016252756118774414,
+   "first10ms_rms_dbfs": -8.564325381641504,
+   "last10ms_rms_dbfs": -34.98425662965924,
+   "peak_pos_ms": 1000.2708333333335
+  },
+  "lr_max_abs_diff": 0.45559680461883545,
+  "lr_corr": 0.5858075547885295,
+  "ebur": {
+   "I": -15.0,
+   "LRA": 1.2,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -12.048
+  },
+  "sha256": "dfd56616db65c7c003407f3aa5676a87970643bebd611aa987fa9465877e6d42",
+  "seam": {
+   "jump": 0.030339837074279785,
+   "jump_pct_of_instep": 52.676316022479284,
+   "instep_p50": 0.02829921245574951,
+   "instep_p99": 0.16570341587066645,
+   "instep_max": 0.5449697971343994,
+   "seam_curv": 0.029728293418884277,
+   "seam_curv2": 0.5147130489349365,
+   "curv_p99": 0.096933034658432,
+   "curv_max": 0.5142092704772949,
+   "seam_hf_vs_median_db": 16.365483183735503,
+   "seam_hf_vs_max_db": -2.7326072171810205
+  }
+ },
+ {
+  "file": "loop_ready/forest/forest__Forest_Rain_Pattern__LoopReady_80bpm_4bars.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 576000,
+  "dur_s": 12.0,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 576000,
+   "dur": 12.0
+  },
+  "sample_peak_dbfs": -1.0000008709134622,
+  "tp_dbtp": {
+   "4": -0.9944734958823935,
+   "8": -0.9942219150153733,
+   "32": -0.9941438616354863
+  },
+  "dc_mean_lin": [
+   0.000763610531265537,
+   0.0007526342127886083
+  ],
+  "dc_mean_dbfs": [
+   -62.34256181408048,
+   -62.46832087345662
+  ],
+  "rms_dbfs": -21.360977602479938,
+  "code": {
+   "code_max": 7476354,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.0,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 0.0,
+   "first_sample_abs": 0.03135228157043457,
+   "last_sample_abs": 0.02604842185974121,
+   "first10ms_rms_dbfs": -31.575241737251318,
+   "last10ms_rms_dbfs": -31.64757125865456,
+   "peak_pos_ms": 1652.6458333333333
+  },
+  "lr_max_abs_diff": 1.44071364402771,
+  "lr_corr": 0.10736366210623088,
+  "ebur": {
+   "I": -17.5,
+   "LRA": 4.5,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -9.622
+  },
+  "sha256": "21170b5eb30bc7365aaf46cf9e4ce53963d13732b79d7f2c727931c24e40e8e7",
+  "seam": {
+   "jump": 0.005303859710693359,
+   "jump_pct_of_instep": 44.67195255547319,
+   "instep_p50": 0.006158947944641113,
+   "instep_p99": 0.047143032550811814,
+   "instep_max": 0.11295938491821289,
+   "seam_curv": 0.00012302398681640625,
+   "seam_curv2": 0.03928256034851074,
+   "curv_p99": 0.00843216776847841,
+   "curv_max": 0.1137012243270874,
+   "seam_hf_vs_median_db": 8.688104808948884,
+   "seam_hf_vs_max_db": -12.625648168137232
+  }
+ },
+ {
+  "file": "loop_ready/ocean/ocean__Ocean_Wave_Cycle__LoopReady_60bpm_2bars.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 384000,
+  "dur_s": 8.0,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 384000,
+   "dur": 8.0
+  },
+  "sample_peak_dbfs": -1.0000008709134622,
+  "tp_dbtp": {
+   "4": -0.9944734958823935,
+   "8": -0.9942219150153733,
+   "32": -0.9941438616354863
+  },
+  "dc_mean_lin": [
+   0.0018689327649772168,
+   0.0018390586404129863
+  ],
+  "dc_mean_dbfs": [
+   -54.56812644245666,
+   -54.708088451652294
+  ],
+  "rms_dbfs": -16.23665417861863,
+  "code": {
+   "code_max": 7476354,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.0,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 0.0,
+   "first_sample_abs": 0.0024459362030029297,
+   "last_sample_abs": 0.0023927688598632812,
+   "first10ms_rms_dbfs": -23.172425842315548,
+   "last10ms_rms_dbfs": -53.74142647907088,
+   "peak_pos_ms": 412.0208333333333
+  },
+  "lr_max_abs_diff": 1.5153493881225586,
+  "lr_corr": -0.4069492089919058,
+  "ebur": {
+   "I": -13.8,
+   "LRA": 12.6,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -7.86
+  },
+  "sha256": "3681d5fa252b9093d13348c7ef17549dba451170533ef49bf89501479b91f036",
+  "seam": {
+   "jump": 0.00010418891906738281,
+   "jump_pct_of_instep": 4.588293198680205,
+   "instep_p50": 0.001040816307067871,
+   "instep_p99": 0.006254444122314462,
+   "instep_max": 0.009069085121154785,
+   "seam_curv": 2.002716064453125e-05,
+   "seam_curv2": 0.001055598258972168,
+   "curv_p99": 0.0005260741710662806,
+   "curv_max": 0.001645207405090332,
+   "seam_hf_vs_median_db": -3.3117606147793603,
+   "seam_hf_vs_max_db": -19.396240770191145
+  }
+ },
+ {
+  "file": "loop_ready/rabbit/rabbit__Rabbit_Bounce_Loop__LoopReady_140bpm_2bars.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 164571,
+  "dur_s": 3.4285625,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 164571,
+   "dur": 3.428563
+  },
+  "sample_peak_dbfs": -1.0119312621598884,
+  "tp_dbtp": {
+   "4": -0.9979813103866901,
+   "8": -0.9977297295196736,
+   "32": -0.9968557996476474
+  },
+  "dc_mean_lin": [
+   0.0003626753376407462,
+   0.0003601284372650159
+  ],
+  "dc_mean_dbfs": [
+   -68.80963951925415,
+   -68.87085167089953
+  ],
+  "rms_dbfs": -12.174664056914848,
+  "code": {
+   "code_max": 7466092,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.0,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 0.0,
+   "first_sample_abs": 0.03374660015106201,
+   "last_sample_abs": 0.032653212547302246,
+   "first10ms_rms_dbfs": -8.882831114095948,
+   "last10ms_rms_dbfs": -30.499289864282233,
+   "peak_pos_ms": 993.8125
+  },
+  "lr_max_abs_diff": 0.5897371768951416,
+  "lr_corr": 0.7084387182361711,
+  "ebur": {
+   "I": -9.3,
+   "LRA": 0.7,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -6.559
+  },
+  "sha256": "e1e30e372c9386bba48fb5fab64d757ba59cfe98006956ccb5b346041ca4fce9",
+  "seam": {
+   "jump": 0.0032426118850708008,
+   "jump_pct_of_instep": 1.3823904721395153,
+   "instep_p50": 0.03048020601272583,
+   "instep_p99": 0.11291027069091797,
+   "instep_max": 0.19734930992126465,
+   "seam_curv": 0.0004856586456298828,
+   "seam_curv2": 0.114859938621521,
+   "curv_p99": 0.05324055194854742,
+   "curv_max": 0.18127977848052979,
+   "seam_hf_vs_median_db": 2.3627874472324857,
+   "seam_hf_vs_max_db": -6.400969218216245
+  }
+ },
+ {
+  "file": "loop_ready/restraint/restraint__Restraint_Industrial_Pulse__LoopReady_100bpm_2bars.wav",
+  "sr": 48000,
+  "ch": 2,
+  "subtype": "PCM_24",
+  "frames": 230400,
+  "dur_s": 4.8,
+  "ffprobe": {
+   "codec": "pcm_s24le",
+   "sr": 48000,
+   "ch": 2,
+   "bits": 24,
+   "nb": 230400,
+   "dur": 4.8
+  },
+  "sample_peak_dbfs": -1.0004551393521608,
+  "tp_dbtp": {
+   "4": -0.9949277643210921,
+   "8": -0.9946761834540709,
+   "32": -0.9945981300741847
+  },
+  "dc_mean_lin": [
+   0.0038277574059449966,
+   0.003778806587991615
+  ],
+  "dc_mean_dbfs": [
+   -48.34111189124769,
+   -48.45290672327698
+  ],
+  "rms_dbfs": -14.97104131718828,
+  "code": {
+   "code_max": 7475963,
+   "full_scale_hits": 0,
+   "n_at_max_code": 1,
+   "max_run_at_max_code": 1,
+   "max_flat_run_ge_half_fs": 0
+  },
+  "edges": {
+   "lead_exact_zero_ms": 0.0,
+   "trail_exact_zero_ms": 0.0,
+   "lead_below_80dBFS_ms": 0.0,
+   "trail_below_80dBFS_ms": 0.0,
+   "lead_below_60dBFS_ms": 0.0,
+   "trail_below_60dBFS_ms": 0.0,
+   "first_sample_abs": 0.07222986221313477,
+   "last_sample_abs": 0.05399596691131592,
+   "first10ms_rms_dbfs": -9.187312629273254,
+   "last10ms_rms_dbfs": -30.64441975614497,
+   "peak_pos_ms": 2578.9583333333335
+  },
+  "lr_max_abs_diff": 1.2440725564956665,
+  "lr_corr": 0.025727354119670698,
+  "ebur": {
+   "I": -13.0,
+   "LRA": 1.1,
+   "tp_ebur_dbfs": -1.0,
+   "maxM": -7.908
+  },
+  "sha256": "a4b26daefef376c9391d43cc12828c3aa67828b87bc3be3ce76aa1a8327ddf2b",
+  "seam": {
+   "jump": 0.018233895301818848,
+   "jump_pct_of_instep": 77.77290700046441,
+   "instep_p50": 0.009364008903503418,
+   "instep_p99": 0.05471117258071896,
+   "instep_max": 0.13581502437591553,
+   "seam_curv": 0.017034292221069336,
+   "seam_curv2": 0.04443550109863281,
+   "curv_p99": 0.025339491367340088,
+   "curv_max": 0.14049935340881348,
+   "seam_hf_vs_median_db": 5.556812703891845,
+   "seam_hf_vs_max_db": -10.37727308214359
+  }
+ }
+]
