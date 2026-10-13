@@ -1,0 +1,13 @@
+# product WAV vs (scalar gain) x (same score, FX on, normalize off, rendered by archived renderer 9123db8f; current CLI result byte-identical)
+akashic__Akashic_Light_Tap           len prod/fxon 60788/60788 gain +24.0296 dB resid max 15.84 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 15.9 LSB24) rel rms -96.3 dB arch==cur True
+clockwork__Clockwork_Bell_Strike     len prod/fxon 130788/130788 gain +19.2177 dB resid max 9.04 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 9.1 LSB24) rel rms -101.0 dB arch==cur True
+clockwork__Clockwork_Gear_Click      len prod/fxon 24672/24672 gain +20.4874 dB resid max 10.55 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 10.6 LSB24) rel rms -101.7 dB arch==cur True
+forest__Forest_Acorn_Tap             len prod/fxon 29508/29508 gain +19.0606 dB resid max 8.88 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 9.0 LSB24) rel rms -101.7 dB arch==cur True
+ocean__Ocean_Droplet_Tap             len prod/fxon 52468/52468 gain +49.2580 dB resid max 289.51 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 290.3 LSB24) rel rms -76.8 dB arch==cur True
+ocean__Ocean_Bubble_Pop              len prod/fxon 95748/95748 gain +43.4640 dB resid max 149.08 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 149.0 LSB24) rel rms -80.9 dB arch==cur True
+ocean__Ocean_Bubble_Pop_Deep         len prod/fxon 223428/223428 gain +20.9496 dB resid max 11.17 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 11.2 LSB24) rel rms -101.9 dB arch==cur True
+rabbit__Rabbit_Ding                  len prod/fxon 98236/98236 gain +27.5417 dB resid max 23.86 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 23.8 LSB24) rel rms -99.8 dB arch==cur True
+rabbit__Rabbit_Ding_Angry            len prod/fxon 111588/111588 gain +21.5077 dB resid max 11.84 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 11.9 LSB24) rel rms -101.7 dB arch==cur True
+rabbit__Rabbit_Carrot_Button         len prod/fxon 37188/37188 gain +17.7914 dB resid max 7.59 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 7.8 LSB24) rel rms -102.3 dB arch==cur True
+restraint__Restraint_Bolt_Click      len prod/fxon 77052/77052 gain +22.5075 dB resid max 13.35 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 13.3 LSB24) rel rms -98.0 dB arch==cur True
+akashic__Library_Opening_Bell        len prod/fxon 1421318/1421318 gain +22.1602 dB resid max 12.93 LSB24 (render itself is 24-bit: 1 LSB of render x gain = 12.8 LSB24) rel rms -103.4 dB arch==cur True

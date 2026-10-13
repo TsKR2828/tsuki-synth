@@ -1,12 +1,25 @@
 # TsukiSynth 交接文件
 
-> 交接視窗：**2026-10-07（WF1003 已 commit＋push 到 `6198922`；WF1004＋WF1004b＋WF1004c（B2d 落地）整合卡全綠、staged 未 commit）**　repo：`E:\Tsuki-project\tsuki-synth`　分支：`fix/deep-physics-audit-20260716`
+> 交接視窗：**2026-10-12（WF1004 系列已 commit＋push 到 `5a57656`；VST3 已部署；WF1005 稽核 PASS、43 檔 staged 未 commit）**　repo：`E:\Tsuki-project\tsuki-synth`　分支：`fix/deep-physics-audit-20260716`
 > **新 session 先讀 §0、§1 再動手。** 最新裁定表與各卡結果在 `docs/workcards/WF1002_README.md`（§1 裁定表、§3 WF1002、§4 WF1002b）；
 > 待辦勾選清單在 `TODO.md` 開頭；各輪細節與歷史決策在 `DEVLOG.md`（本檔不再保留舊輪的大段數字）。
 
 ---
 
 ## 0. 現況
+
+### WF1005（2026-10-12；**稽核 PASS、staged 43 檔、沒 commit**）
+
+月月 10-12 裁：WF1004 系列 commit＋push（主 session 切 5 個：`e04552c` P／`31a7341` B2／`e4ee3d8` 報告／`43f70a9` 證據／`5a57656` 交接）、commit 後跑部署腳本、York 論文重下載、**BOOTH 已註冊**、音效包授權「照預設」。
+
+- **部署（已做）**：UAC 提權跑 `deploy_tsukisynth.ps1 -Apply`，`C:\Program Files\Common Files\VST3\TsukiSynth.vst3` sha256＝`760aa93b…`（＝`build\`＝WF1004c 整合版）；舊 `fa13ac17` 搬到 `E:\Tsuki-project\_backups\vst3_old_20261012_010139\`。log `E:\Tsuki-project\_scratch\deploy_20261012.log`。**Cubase 還沒重掃**。
+- **York 論文（已做）**：從 White Rose eTheses 重下載完整版 22,959,998 B、161 頁，MD5 `7526a6e8…` 與原站 Content-MD5 相符；殘檔備份 `_tools\papers\_truncated_backup_20261012\`，README／SHA256SUMS 已更新。
+- **L 卡 授權照預設＋正式 zip（PASS）**：SE 包 12 處 [TBD]（第 1/8/9/12 條×中英日）照 WF1002_addendum 182-186 行預設填好、草稿框拿掉，`--release` 重打，`x2_verify --release` 204/204。
+  **要上傳的檔**：`exports/products/clean_batch2_v1_1_candidate/packages/TsukiSynth_Worldview_SE_Pack_v1.1.zip`（77,927,295 B、51 成員、sha256 `867f94fa…`；跟候選版只差 LICENSE.txt／README.txt，49 個 WAV 逐位元相同）。
+  **不能上傳**：同資料夾的 `_FAB.zip`（Fab 暫緩）、`TsukiSynth_Album_Vol1_v1.1.zip`（專輯授權 BGM A/B 未裁、42 處 TBD）、三個舊 `_candidate.zip`。上架步驟 `reports/wf1005_booth_upload_checklist.zh-TW.md`。products 在 gitignore，改前備份 `_pre_WF1005_backup_20261012\`。
+- **Y 卡 論文第 4 章對照（PASS，資訊性）**：報告 `reports/wf1005_york_ch4_comparison.zh-TW.md`。handpan 是球殼（1:2:3）、舌鼓是懸臂梁（1:6.27:17.55），1:2:3／拍頻／強打泛音變多三條判準不適用；適用的都對上（引擎層基頻 12/12 ±5 c 內、模態比對梁錨點最多約 0.16%、T60 量測對模型最多差 2%）。T60 在論文音域內只有 3 音（1 符合、Bolt Click／Opening Bell 比 handpan 長 2.4～3.8 倍，梁衰減本來無文獻錨點）。不擋上架。
+  工兵因子代理寫檔限制寫不進 .md，主 session 從回傳抽出存檔並套稽核修正 3 處；稽核續審另改 4 處小措辭（`wf1005_Y_audit.txt` 續審節）。
+- **月月待辦**：定價（建議 ¥900／¥800 觀察）、商品圖看 BOOTH 後台上傳提示、照清單上傳、Cubase 重掃（之後 AI 跑 `tools/cubase_scan_verify.py`）、要不要 commit WF1005、第 9 條準據法是 AI 建議非法律意見。
 
 ### WF1004（2026-10-07；**staged、沒 commit、沒 push**，等月月審）
 

@@ -1,0 +1,199 @@
+# wf1005_L_license_release.txt
+# generated 2026-10-12T01:09:18  (WF1005-L, SE pack license 照預設 + release zips)
+# paths below are relative to exports/products/clean_batch2_v1_1_candidate/ unless stated
+
+== 0. inputs
+license decision: 月月 2026-10-12 「授權照預設」; defaults from reports/decision_packets/WF1002_addendum_decisions.zh-TW.md lines 182-186
+  s1 channels = BOOTH, itch.io | s8 products released before the breach = may stay on the market | s9 = laws of the Republic of China (Taiwan), Taiwan Taipei District Court (AI suggestion, NOT legal advice) | s12 contact = BOOTH message function
+backup of everything touched: _pre_WF1005_backup_20261012/ (SHA256SUMS.txt inside)
+
+== 1. [TBD] inventory (before) and fill table
+before: 'TBD' occurrences in LICENSE_SE_PACK_v1_1.txt = 14 ; lines containing '[TBD' = 14
+  = 12 body slots (sections 1, 8, 9, 12 x EN/ZH/JA) + 2 lines inside the draft box (old file lines 7 and 8)
+after : 'TBD' occurrences = 0
+
+Every one of the 12 body slots maps onto one of the 4 approved defaults; no slot was left over and nothing was invented (status stays PASS, not BLOCKED).
+
+--- [header] header box (lines 1-11) -> removed (old text below, 12 lines)
+   OLD| ######################################################################
+   OLD| # DRAFT v1.1 / 草稿 / 草案 — NOT LEGAL ADVICE / 非法律意見 / 法的助言ではありません
+   OLD| # Prepared 2026-09-25 by an AI assistant (WF0925-X2) for review by the
+   OLD| # licensor (月月 / TsKR2828). Not yet approved. Do not ship as-is.
+   OLD| # 2026-10-02 (WF1002-P): the licensor's decisions Q21=A, Q22=A, Q22b=A,
+   OLD| # Q22c=B + contact exception, Q22d=A (English prevails) are applied.
+   OLD| # Every item still marked [TBD] must be decided by the licensor before release.
+   OLD| # 本檔是 AI 起草的條文草稿，不是法律意見；[TBD] 處要月月決定；
+   OLD| # 要不要請律師看由月月決定。上架前請刪除這個方框。
+   OLD| # 本書面は AI が作成した草案であり法的助言ではありません。
+   OLD| ######################################################################
+   OLD| 
+   NEW| (nothing)
+
+--- [header] header version line
+   OLD| Version 1.1 (draft) — 2026-09-25, revised 2026-10-02  (replaces v1.0 of 2026-09-16)
+   NEW| Version 1.1 — 2026-09-25, revised 2026-10-12  (replaces v1.0 of 2026-09-16)
+
+--- [01/12] EN section 1
+   OLD| the licensor's own store pages on [TBD: BOOTH / itch.io /
+   OLD|    other channels the licensor lists]. A copy obtained any other way
+   OLD|    (for example a re-upload, or a file passed on by another buyer) comes
+   OLD|    with no license.
+   NEW| the licensor's own store pages on BOOTH and itch.io. A copy
+   NEW|    obtained any other way (for example a re-upload, or a file passed on
+   NEW|    by another buyer) comes with no license.
+
+--- [02/12] ZH section 1
+   OLD| 組織。授權通路是授權人自己的商店頁面：[TBD：BOOTH／itch.io／授權人列出的
+   OLD|    其他通路]。用其他方式取得的檔案
+   NEW| 組織。授權通路是授權人自己的商店頁面：BOOTH 與 itch.io。
+   NEW|    用其他方式取得的檔案
+
+--- [03/12] JA section 1
+   OLD| ページ [TBD：BOOTH／itch.io／許諾者が指定するその他の経路] です。それ以外の
+   OLD|    方法で入手したもの
+   NEW| ページ（BOOTH および itch.io）です。それ以外の
+   NEW|    方法で入手したもの
+
+--- [04/12] EN section 8
+   OLD|    [TBD: whether products you released before the breach, while you were
+   OLD|    following these terms, may stay available.]
+   NEW|    Products you released before the breach, while you were following
+   NEW|    these terms, may remain available.
+
+--- [05/12] ZH section 8
+   OLD|    [TBD：違約前、依本條款正常發佈的作品，能不能繼續留在市面上。]
+   NEW|    違約前、依本條款正常發佈的作品，可以繼續留在市面上。
+
+--- [06/12] JA section 8
+   OLD|    [TBD：違反前に本規約どおり公開した制作物を公開し続けてよいかどうか。]
+   NEW|    違反前に本規約どおり公開した制作物は、公開し続けて構いません。
+
+--- [07/12] EN section 9
+   OLD|    [TBD: to be filled in by the licensor.]
+   NEW|    This license is governed by the laws of the Republic of China
+   NEW|    (Taiwan). The Taiwan Taipei District Court is the court of
+   NEW|    jurisdiction for any dispute arising from this license.
+
+--- [08/12] ZH section 9
+   OLD|    [TBD：由授權人填寫。]
+   NEW|    本授權以中華民國（台灣）法律為準據法；因本授權所生之爭議，以台灣台北
+   NEW|    地方法院為管轄法院。
+
+--- [09/12] JA section 9
+   OLD|    [TBD：許諾者が記入。]
+   NEW|    本規約は中華民国（台湾）の法律に準拠します。本規約に起因する紛争に
+   NEW|    ついては、台湾台北地方法院を管轄裁判所とします。
+
+--- [10/12] EN section 12
+   OLD|    [TBD: contact address]
+   NEW|    Please contact the licensor through the message function on BOOTH.
+
+--- [11/12] ZH section 12
+   OLD|    [TBD：聯絡地址]
+   NEW|    請透過 BOOTH 的訊息功能聯絡授權人。
+
+--- [12/12] JA section 12
+   OLD|    [TBD：連絡先]
+   NEW|    許諾者へのご連絡は、BOOTH のメッセージ機能をご利用ください。
+
+slots filled: 12/12
+
+== 2. independent check of the shipped zip (not via x2_verify; plain zipfile + regex)
+TsukiSynth_Worldview_SE_Pack_v1.1.zip
+   size 77,927,295 B (74.32 MiB) | sha256 867f94faf5f6c2114024ce91a957b47443657c34a5a9926e5eca649058cb18b5 | members 51 | testzip None
+   LICENSE.txt: sha256 e965080d8bd9e147481e683196cfa566ce32b3424f114fee9defbce8c7158a34 | 'TBD' count 0 | draft-marker regex hits 0 | equals source file: True
+   README.txt: first line 'TsukiSynth Worldview SE Pack Vol.1 - README (v1.1)' | 'CANDIDATE' in README: False
+TsukiSynth_Worldview_SE_Pack_v1.1_FAB.zip
+   size 77,921,033 B (74.31 MiB) | sha256 aa50df02f86fd0b49946945c240b96a277e790bfd969c0f0a446f6fae55ef7da | members 50 | testzip None
+   LICENSE.txt: (not a member; this variant never carried our license)
+   README.txt: first line 'TsukiSynth Worldview SE Pack Vol.1 - README (v1.1)' | 'CANDIDATE' in README: False
+TsukiSynth_Album_Vol1_v1.1.zip
+   size 98,965,205 B (94.38 MiB) | sha256 f6b64208d5e5c084c173bae687dd6d5e952ebf3a884f1f55bd48c088924d5a6b | members 15 | testzip None
+   LICENSE.txt: (not a member; this variant never carried our license)
+   README.txt: first line 'TsukiSynth Physical Modeling Album Vol.1 - README (v1.1)' | 'CANDIDATE' in README: False
+
+SE release zip vs pre-WF1005 candidate zip: same member list: True ; members whose bytes differ: ['LICENSE.txt', 'README.txt']  (expected: LICENSE.txt, README.txt only; 49 WAV members byte-identical)
+
+== 3. draft-marker residue in the shipped license (regex, case-insensitive)
+pattern: TBD|DRAFT|NOT LEGAL ADVICE|非法律意見|法的助言|草稿|草案|下書き|候選|candidate|Do not ship|Not yet approved
+LICENSE_SE_PACK_v1_1.txt hits: 0
+zip LICENSE.txt hits: 0
+
+== 4. album license (OUT OF SCOPE, not touched)
+LICENSE_ALBUM_v1_1.txt sha256 7f1983f7cb74755177754523d2ce625b60b3b11cbac8364d2f8aa9376f0f6a44 ; identical to pre-WF1005 backup: True
+TBD status as found: ascii '[TBD' x 16, 'TBD' x 42 (3 languages; includes s5 video BGM option A/B, credit line, Content ID stance, DistroKid timing, English-prevails, etc.)
+album zip with a release name was produced by --release (script builds all three) but it has no license member and the album is NOT approved for sale: do not upload TsukiSynth_Album_Vol1_v1.1.zip yet.
+
+== 5. x2_build_packages.py --release (full command + stdout summary; member lists in wf1005_L_packages.txt)
+command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_build_packages.py --complete include --loops both --music tpdf --sfx current --release --evidence reports/gate_outputs/wf1005_L_packages.txt
+exit: 0 (the --release guard checks LICENSE for 'DRAFT v1.1' and '[TBD'; both absent, so it ran)
+# wf1005_L_packages.txt  generated 2026-10-12T01:07:11
+# command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_build_packages.py --complete include --loops both --music tpdf --sfx current --release --evidence reports/gate_outputs/wf1005_
+# member lines: sha256  bytes  arcname  <=  source (source paths relative to exports/products/)
+TsukiSynth_Worldview_SE_Pack_v1.1.zip  sha256 867f94faf5f6c2114024ce91a957b47443657c34a5a9926e5eca649058cb18b5  bytes 77927295  members 51
+TsukiSynth_Worldview_SE_Pack_v1.1_FAB.zip  sha256 aa50df02f86fd0b49946945c240b96a277e790bfd969c0f0a446f6fae55ef7da  bytes 77921033  members 50
+TsukiSynth_Album_Vol1_v1.1.zip  sha256 f6b64208d5e5c084c173bae687dd6d5e952ebf3a884f1f55bd48c088924d5a6b  bytes 98965205  members 15
+
+== 6. x2_verify.py --release (full output in wf1005_L_verify.txt)
+command: python exports/products/clean_batch2_v1_1_candidate/scripts/x2_verify.py --complete include --music tpdf --release --evidence wf1005_L_verify.txt --packages-evidence wf1005_L_packages.txt --tmp <scratch>
+== V1 originals untouched
+[PASS] V1 clean_batch2/ sha256 set == _ORIGINALS_SHA256_before.txt
+== V2 X1 candidate manifest still holds
+== V3 zip contents
+== V4 rebuild determinism
+[PASS] V4 rebuild exit code 0 (--release accepted: LICENSE has no [TBD]/draft box)
+[PASS] V4 TsukiSynth_Worldview_SE_Pack_v1.1.zip: rebuilt sha256 identical  -- 867f94faf5f6c211 vs 867f94faf5f6c211
+[PASS] V4 TsukiSynth_Worldview_SE_Pack_v1.1_FAB.zip: rebuilt sha256 identical  -- aa50df02f86fd0b4 vs aa50df02f86fd0b4
+[PASS] V4 TsukiSynth_Album_Vol1_v1.1.zip: rebuilt sha256 identical  -- f6b64208d5e5c084 vs f6b64208d5e5c084
+== V5 text checks
+== V6 answer-sheet times
+== V7 verification-chain claim
+== V8 upstream evidence files
+[PASS] V8 wf0925_X2_web_sources.txt ends with RESULT: PASS
+[PASS] V8 wf0925_X2_catalog.txt ends with RESULT: PASS
+[PASS] V8 wf0925_X2_listening_kit.txt ends with RESULT: PASS
+[PASS] V8 wf0925_X2_packages.txt body == packages/PACKAGES_MANIFEST_v1_1.txt
+[PASS] V8 packages evidence lists the current sha256 of all 3 product zips
+== V9 README durations == WAV header frames / sample rate, rounded once
+== V10 README numbers == XF measurement files
+[PASS] V10 wf0925b_XF_tp_meters.txt ends with RESULT: PASS
+[PASS] V10 wf0925b_XF_loop_facts.txt ends with RESULT: PASS
+== V11 same wording fixed in PRODUCT_SHEET / LISTENING_CHECKLIST / QA_REPORT
+== V12 album license draft and DistroKid notes
+[PASS] V12 LICENSE_ALBUM_v1_1.txt is not inside any zip in packages/ (waiting for 月月)  -- []
+[PASS] V12 wf0925b_XF_web_sources.txt ends with RESULT: PASS
+== V13 WF1002 decisions (2026-10-02) visible in the text; replaced option text gone
+[PASS] V13 Q22 (WF1005 release) LICENSE_SE has 0 [TBD] in any section  -- {}
+[PASS] V13 Q22 (WF1005 release) LICENSE_SE draft box gone (so --release is accepted)
+== V14 WF1005-L release: license slots filled (3 languages), zip carries the formal license, no candidate marker
+[PASS] V14 license slot filled: EN s1 channels
+[PASS] V14 license slot filled: ZH s1 channels
+[PASS] V14 license slot filled: JA s1 channels
+[PASS] V14 license slot filled: EN s8 stay available
+[PASS] V14 license slot filled: ZH s8 stay available
+[PASS] V14 license slot filled: JA s8 stay available
+[PASS] V14 license slot filled: EN s9 law+court
+[PASS] V14 license slot filled: ZH s9 law+court
+[PASS] V14 license slot filled: JA s9 law+court
+[PASS] V14 license slot filled: EN s12 contact
+[PASS] V14 license slot filled: ZH s12 contact
+[PASS] V14 license slot filled: JA s12 contact
+[PASS] V14 LICENSE_SE_PACK_v1_1.txt: 0 draft/TBD/candidate markers (regex TBD|DRAFT|NOT LEGAL ADVICE|非法律意見|法的助言|草稿|草案|下書き|候選|candidate|Do not ship|Not yet approved, case-insensitive)  -- []
+[PASS] V14 TsukiSynth_Worldview_SE_Pack_v1.1.zip: LICENSE.txt == the filled LICENSE_SE_PACK_v1_1.txt (sha256 e965080d8bd9...)
+[PASS] V14 TsukiSynth_Worldview_SE_Pack_v1.1.zip: LICENSE.txt has 0 TBD / draft markers  -- []
+[PASS] V14 TsukiSynth_Worldview_SE_Pack_v1.1.zip: README.txt has no candidate banner
+[PASS] V14 release zips present without '_candidate' in the name (SE, SE_FAB, Album)  -- ['TsukiSynth_Album_Vol1_v1.1.zip', 'TsukiSynth_Worldview_SE_Pack_v1.1.zip', 'TsukiSynth_Worldview_SE_Pack_v1.1_FAB.zip']
+[PASS] V14 LICENSE_ALBUM_v1_1.txt not touched by WF1005 (same bytes as the pre-WF1005 backup; album license is outside this decision)
+GATE X2 verify: 204/204
+RESULT: PASS
+
+== 7. file hashes (after)
+e965080d8bd9e147481e683196cfa566ce32b3424f114fee9defbce8c7158a34 *LICENSE_SE_PACK_v1_1.txt
+e03d8b9008576d1cdb3d2d3a497693d43aa07cd7778a563ea942d51a3593a7fb *CHANGES_v1_1.md
+f1a14e7b728f482a2fb9ceb4f97c3dc13538ee7221929efaff4723f4fd655a2b *scripts/x2_verify.py
+738c7c9dd58ea2c825965830c552778a09c9dc8a52084523cea443f2dd998c01 *scripts/x2_build_packages.py
+db17e68e39d4554bdad3cdf0f6753439cbc2c0742ec4871f8793e0c80ad0c739 *packages/PACKAGES_MANIFEST_v1_1.txt
+9da098c832d8c08f9a158b8636f70c2be4d8205925f293511c2d65b9e49d839b *_X2_MANIFEST_SHA256.txt
+(x2_build_packages.py unchanged vs backup: yes)
+
+RESULT: PASS

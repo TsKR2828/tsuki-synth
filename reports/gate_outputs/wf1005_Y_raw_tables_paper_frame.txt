@@ -1,0 +1,14 @@
+paper-style single frame (6 ms after onset; Hamming 2048; FFT 32768; fs 48 kHz => bin 23.4 Hz; window-sidelobe peaks within 4 bins of a stronger peak removed)
+each peak: Hz, dB re strongest, and whether it is a model mode (within 1 % of a dump-modes partial) or not
+Akashic_Light_Tap      | 2093.0Hz +0.0dB mode1 ; 1987.8Hz -41.8dB non-mode ; 2198.2Hz -42.1dB non-mode ; 1870.9Hz -45.6dB non-mode
+Clockwork_Bell_Strike  | 659.2Hz +0.0dB mode1 ; 4131.5Hz -2.0dB mode2 ; 4237.1Hz -40.2dB non-mode ; 4025.8Hz -40.7dB non-mode
+Clockwork_Gear_Click   | 3680.7Hz +0.0dB mode2 ; 587.3Hz -2.0dB mode1 ; 10305.8Hz -37.3dB mode3 ; 3575.6Hz -39.1dB non-mode
+Forest_Acorn_Tap       | 698.5Hz +0.0dB mode1 ; 803.0Hz -36.0dB non-mode ; 593.9Hz -37.1dB non-mode ; 919.2Hz -39.8dB non-mode
+Ocean_Droplet_Tap      | 880.0Hz +0.0dB mode1 ; 5514.7Hz -29.0dB mode2 ; 985.3Hz -42.0dB non-mode ; 774.8Hz -43.2dB non-mode
+Ocean_Bubble_Pop       | 1046.5Hz +0.0dB mode1 ; 6558.8Hz -36.9dB mode2 ; 1151.7Hz -42.3dB non-mode ; 941.3Hz -42.7dB non-mode
+Ocean_Bubble_Pop_Deep  | 523.2Hz +0.0dB mode1 ; 3278.5Hz -36.6dB mode2 ; 418.7Hz -42.1dB non-mode ; 627.9Hz -43.0dB non-mode
+Rabbit_Ding            | 1568.0Hz +0.0dB mode1 ; 9826.4Hz -30.8dB mode2 ; 1673.5Hz -42.5dB non-mode ; 1462.5Hz -42.8dB non-mode
+Rabbit_Ding_Angry      | 1568.0Hz +0.0dB mode1 ; 9826.4Hz -17.7dB mode2 ; 1673.5Hz -42.5dB non-mode ; 1462.5Hz -42.8dB non-mode
+Rabbit_Carrot_Button   | 880.0Hz +0.0dB mode1 ; 984.8Hz -36.3dB non-mode ; 775.3Hz -37.7dB non-mode ; 1101.4Hz -40.1dB non-mode
+Restraint_Bolt_Click   | 1228.3Hz +0.0dB mode2 ; 3439.2Hz -0.6dB mode3 ; 196.0Hz -13.5dB mode1 ; 6739.6Hz -23.1dB mode4
+Library_Opening_Bell   | 293.7Hz +0.0dB mode1 ; 1840.1Hz -27.3dB mode2 ; 398.8Hz -41.1dB non-mode ; 515.8Hz -44.5dB non-mode

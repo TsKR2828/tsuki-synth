@@ -1,0 +1,56 @@
+# WF1005 Y card read-only proof
+# before snapshot 2026-10-12 01:06:58 | after snapshot 2026-10-12 01:20:10
+# snapshot = path,size,mtime of every file under exports/products/clean_batch2_v1_1_candidate, exports/products/clean_batch2, _tools/papers
+files before 406 / after 408
+
+== papers/ (this card read the PDF only) ==
+changed files under _tools/papers: NONE
+PDF sha256 e2e37fa01b44d505d28d677662d8513ec7a19bb6e422c4e5988614817c7a560f bytes 22959998 mtime 2026-10-12 01:02:39
+SHA256SUMS.txt (papers/) says: e2e37fa01b44d505d28d677662d8513ec7a19bb6e422c4e5988614817c7a560f *Alon2015_York_MSc_handpan.pdf
+
+== product-side files this card read ==
+unchanged       84781  mtime 2026-10-02 00:21:18  sha256 5993bbef1c72ecab  catalog_v1_1.json
+unchanged    77927636  mtime 2026-10-02 00:21:59  sha256 0b46e09320efa05e  packages/TsukiSynth_Worldview_SE_Pack_v1.1_candidate.zip
+NOT IN SNAPSHOT        1438  mtime 2026-05-12 21:11:30  sha256 c0d82f6c6ec00a05  E:/Tsuki-project/tsuki-synth/scores/library/akashic/akashic_ui_001.score.json
+NOT IN SNAPSHOT        4244  mtime 2026-07-06 00:27:29  sha256 cc318d8648d598a5  E:/Tsuki-project/tsuki-synth/scores/library/akashic/akashic_opening_bell_001.score.json
+NOT IN SNAPSHOT        1387  mtime 2026-05-12 21:11:30  sha256 26fd126ca3934c36  E:/Tsuki-project/tsuki-synth/scores/library/clockwork/clockwork_ui_001.score.json
+NOT IN SNAPSHOT        1414  mtime 2026-05-12 21:11:30  sha256 906992580a697da0  E:/Tsuki-project/tsuki-synth/scores/library/clockwork/clockwork_notify_001.score.json
+NOT IN SNAPSHOT        1401  mtime 2026-05-12 21:11:30  sha256 ad888f45e610df15  E:/Tsuki-project/tsuki-synth/scores/library/forest/forest_ui_001.score.json
+NOT IN SNAPSHOT        1398  mtime 2026-05-12 21:11:30  sha256 c6ddbdc296c069c0  E:/Tsuki-project/tsuki-synth/scores/library/ocean/ocean_ui_001.score.json
+NOT IN SNAPSHOT        1547  mtime 2026-05-12 21:11:30  sha256 6da25f41e950e3b7  E:/Tsuki-project/tsuki-synth/scores/library/ocean/ocean_notify_001.score.json
+NOT IN SNAPSHOT        1595  mtime 2026-05-12 21:11:30  sha256 828d462dcb2c000b  E:/Tsuki-project/tsuki-synth/scores/library/ocean/ocean_notify_var01.score.json
+NOT IN SNAPSHOT        1383  mtime 2026-05-12 21:11:30  sha256 e0750052f7c814db  E:/Tsuki-project/tsuki-synth/scores/library/rabbit/rabbit_notify_001.score.json
+NOT IN SNAPSHOT        1502  mtime 2026-05-12 21:11:30  sha256 4f3c88b5037494e6  E:/Tsuki-project/tsuki-synth/scores/library/rabbit/rabbit_notify_var01.score.json
+NOT IN SNAPSHOT        1362  mtime 2026-05-12 21:11:30  sha256 8451374100690e4b  E:/Tsuki-project/tsuki-synth/scores/library/rabbit/rabbit_ui_001.score.json
+NOT IN SNAPSHOT        1435  mtime 2026-05-12 21:11:30  sha256 9385e85b1e93400d  E:/Tsuki-project/tsuki-synth/scores/library/restraint/restraint_ui_001.score.json
+
+== the 12 extracted WAVs vs catalog dist_sha256 ==
+12/12 sha256 equal to catalog dist_sha256
+
+== other changes seen in products/ between the two snapshots (NOT made by this card) ==
+This card wrote nothing under products/ or papers/ (its scripts only open them for reading; every output is under E:/Tsuki-project/_scratch/wf1005/Y/ or, at the end, reports/).
+The snapshots were taken 2026-10-12 01:06:58 and 01:20:10. Not made by this card. Most likely the parallel WF1005 L card (licence/release step; git status shows wf1005_L_* evidence files already staged, but this card did not verify who wrote what). Files that differ between the two snapshots:
+  CHANGED  size 52234 -> 55228  mtime -> 2026-10-12 01:08:18  CHANGES_v1_1.md
+  CHANGED  size 5777 -> 6119  mtime -> 2026-10-12 01:13:20  _X2_MANIFEST_SHA256.txt
+  CHANGED  size 24151 -> 24120  mtime -> 2026-10-12 01:07:11  packages/PACKAGES_MANIFEST_v1_1.txt
+  NEW      size None -> 98965205  mtime -> 2026-10-12 01:07:11  packages/TsukiSynth_Album_Vol1_v1.1.zip
+  CHANGED  size 48492371 -> 77927295  mtime -> 2026-10-12 01:07:00  packages/TsukiSynth_Worldview_SE_Pack_v1.1.zip
+  NEW      size None -> 77921033  mtime -> 2026-10-12 01:07:05  packages/TsukiSynth_Worldview_SE_Pack_v1.1_FAB.zip
+  CHANGED  size 3573 -> 3476  mtime -> 2026-10-12 01:07:05  zip_readme/README_ALBUM_v1_1.txt
+  CHANGED  size 25441 -> 25344  mtime -> 2026-10-12 01:07:00  zip_readme/README_SE_PACK_v1_1_FAB.txt
+
+Candidate packages used by this card (hash before = hash after, from hashes_before.txt / hashes_after.txt, same sha256 lines):
+  before e2e37fa01b44d505d28d677662d8513ec7a19bb6e422c4e5988614817c7a560f */e/Tsuki-project/_tools/papers/Alon2015_York
+  before 28c79ebde7568883d81a61fd97201581ce0230f4453d8902fb1f1d7c5a98bbf7 */e/Tsuki-project/tsuki-synth/exports/product
+  before e9be61a5bf13798749ba94f59d9abd108352687b4fbad74300406feffbc94cae */e/Tsuki-project/tsuki-synth/exports/product
+  before 0b46e09320efa05e514ba7f2d6e77143808cb67d218d3033c9eb3d2870ee5888 */e/Tsuki-project/tsuki-synth/exports/product
+  before e73ad49182d1c7a90be0913f506e39109754c26b0f5c870ca46d88080348474d */e/Tsuki-project/tsuki-synth/exports/product
+  before 38ac5b45237d1d4b0416c6638fa635eaa12286ee07d951ab5b92abb8ae8e4fc2 */e/Tsuki-project/tsuki-synth/exports/product
+  after  e2e37fa01b44d505d28d677662d8513ec7a19bb6e422c4e5988614817c7a560f */e/Tsuki-project/_tools/papers/Alon2015_York
+  after  f6b64208d5e5c084c173bae687dd6d5e952ebf3a884f1f55bd48c088924d5a6b */e/Tsuki-project/tsuki-synth/exports/product
+  after  28c79ebde7568883d81a61fd97201581ce0230f4453d8902fb1f1d7c5a98bbf7 */e/Tsuki-project/tsuki-synth/exports/product
+  after  867f94faf5f6c2114024ce91a957b47443657c34a5a9926e5eca649058cb18b5 */e/Tsuki-project/tsuki-synth/exports/product
+  after  aa50df02f86fd0b49946945c240b96a277e790bfd969c0f0a446f6fae55ef7da */e/Tsuki-project/tsuki-synth/exports/product
+  after  0b46e09320efa05e514ba7f2d6e77143808cb67d218d3033c9eb3d2870ee5888 */e/Tsuki-project/tsuki-synth/exports/product
+  after  e73ad49182d1c7a90be0913f506e39109754c26b0f5c870ca46d88080348474d */e/Tsuki-project/tsuki-synth/exports/product
+  after  38ac5b45237d1d4b0416c6638fa635eaa12286ee07d951ab5b92abb8ae8e4fc2 */e/Tsuki-project/tsuki-synth/exports/product

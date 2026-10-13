@@ -1,0 +1,110 @@
+{
+ "akashic__Akashic_Light_Tap": {
+  "len_product": 60788,
+  "len_fxon": 60788,
+  "gain": 15.903092815586486,
+  "gain_db": 24.029631872727247,
+  "resid_max_lsb24": 15.83988256379962,
+  "resid_rms_db_rel": -96.3326343016457,
+  "arch_eq_cur": true
+ },
+ "clockwork__Clockwork_Bell_Strike": {
+  "len_product": 130788,
+  "len_fxon": 130788,
+  "gain": 9.13868428407448,
+  "gain_db": 19.217673478576717,
+  "resid_max_lsb24": 9.040081598213874,
+  "resid_rms_db_rel": -100.97483240325765,
+  "arch_eq_cur": true
+ },
+ "clockwork__Clockwork_Gear_Click": {
+  "len_product": 24672,
+  "len_fxon": 24672,
+  "gain": 10.57721540989784,
+  "gain_db": 20.48742698103816,
+  "resid_max_lsb24": 10.550115447491407,
+  "resid_rms_db_rel": -101.69977564306097,
+  "arch_eq_cur": true
+ },
+ "forest__Forest_Acorn_Tap": {
+  "len_product": 29508,
+  "len_fxon": 29508,
+  "gain": 8.974871573688327,
+  "gain_db": 19.060564854784193,
+  "resid_max_lsb24": 8.883927050745115,
+  "resid_rms_db_rel": -101.72197622836444,
+  "arch_eq_cur": true
+ },
+ "ocean__Ocean_Droplet_Tap": {
+  "len_product": 52468,
+  "len_fxon": 52468,
+  "gain": 290.33499319591954,
+  "gain_db": 49.257987663654475,
+  "resid_max_lsb24": 289.51358318235725,
+  "resid_rms_db_rel": -76.7845298359036,
+  "arch_eq_cur": true
+ },
+ "ocean__Ocean_Bubble_Pop": {
+  "len_product": 95748,
+  "len_fxon": 95748,
+  "gain": 149.00431447901747,
+  "gain_db": 43.463976875265836,
+  "resid_max_lsb24": 149.08297945931554,
+  "resid_rms_db_rel": -80.89071830202991,
+  "arch_eq_cur": true
+ },
+ "ocean__Ocean_Bubble_Pop_Deep": {
+  "len_product": 223428,
+  "len_fxon": 223428,
+  "gain": 11.155294711750727,
+  "gain_db": 20.94962096796212,
+  "resid_max_lsb24": 11.174966945312917,
+  "resid_rms_db_rel": -101.93427625097841,
+  "arch_eq_cur": true
+ },
+ "rabbit__Rabbit_Ding": {
+  "len_product": 98236,
+  "len_fxon": 98236,
+  "gain": 23.82779463674648,
+  "gain_db": 27.541676968277514,
+  "resid_max_lsb24": 23.864374378696084,
+  "resid_rms_db_rel": -99.79194898263478,
+  "arch_eq_cur": true
+ },
+ "rabbit__Rabbit_Ding_Angry": {
+  "len_product": 111588,
+  "len_fxon": 111588,
+  "gain": 11.895629853187215,
+  "gain_db": 21.50774884259257,
+  "resid_max_lsb24": 11.838013438653434,
+  "resid_rms_db_rel": -101.6561559703407,
+  "arch_eq_cur": true
+ },
+ "rabbit__Rabbit_Carrot_Button": {
+  "len_product": 37188,
+  "len_fxon": 37188,
+  "gain": 7.754816872018783,
+  "gain_db": 17.791430930392153,
+  "resid_max_lsb24": 7.588093807949917,
+  "resid_rms_db_rel": -102.25040804014859,
+  "arch_eq_cur": true
+ },
+ "restraint__Restraint_Bolt_Click": {
+  "len_product": 77052,
+  "len_fxon": 77052,
+  "gain": 13.346743490095841,
+  "gain_db": 22.507506277599553,
+  "resid_max_lsb24": 13.346713085193187,
+  "resid_rms_db_rel": -98.02405315292037,
+  "arch_eq_cur": true
+ },
+ "akashic__Library_Opening_Bell": {
+  "len_product": 1421318,
+  "len_fxon": 1421318,
+  "gain": 12.823642225615664,
+  "gain_db": 22.160227857526298,
+  "resid_max_lsb24": 12.930966216139495,
+  "resid_rms_db_rel": -103.43269318679381,
+  "arch_eq_cur": true
+ }
+}

@@ -1,0 +1,24 @@
+akashic__Akashic_Light_Tap           noteOff 0.270s | as-authored: -30 dB at 0.16447916666666668  -60 dB at 0.2742291666666667 | free: -60 dB at 0.3200208333333333 (model T60 0.323)
+clockwork__Clockwork_Bell_Strike     noteOff 0.900s | as-authored: -30 dB at 0.524  -60 dB at 0.9091666666666667 | free: -60 dB at 1.0157916666666666 (model T60 1.026)
+clockwork__Clockwork_Gear_Click      noteOff 0.054s | as-authored: -30 dB at 0.0919375  -60 dB at 0.142625 | free: -60 dB at 1.1475416666666667 (model T60 1.159)
+forest__Forest_Acorn_Tap             noteOff 0.090s | as-authored: -30 dB at 0.05372916666666667  -60 dB at 0.09133333333333334 | free: -60 dB at 0.09570833333333334 (model T60 0.097)
+ocean__Ocean_Droplet_Tap             noteOff 0.135s | as-authored: -30 dB at 0.15591666666666668  -60 dB at 0.19141666666666668 | free: -60 dB at 0.7939791666666667 (model T60 0.802)
+ocean__Ocean_Bubble_Pop              noteOff 0.270s | as-authored: -30 dB at 0.2810625  -60 dB at 0.3070833333333333 | free: -60 dB at 0.6635416666666667 (model T60 0.670)
+ocean__Ocean_Bubble_Pop_Deep         noteOff 0.450s | as-authored: -30 dB at 0.47775  -60 dB at 0.5362291666666666 | free: -60 dB at 1.3526041666666666 (model T60 1.365)
+rabbit__Rabbit_Ding                  noteOff 0.720s | as-authored: -30 dB at 0.7713333333333333  -60 dB at 0.8781666666666667 | free: -60 dB at 2.7325208333333335 (model T60 2.757)
+rabbit__Rabbit_Ding_Angry            noteOff 0.540s | as-authored: -30 dB at 0.5616041666666667  -60 dB at 0.6241458333333333 | free: -60 dB at 1.6290416666666667 (model T60 1.635)
+rabbit__Rabbit_Carrot_Button         noteOff 0.135s | as-authored: -30 dB at 0.056416666666666664  -60 dB at 0.10091666666666667 | free: -60 dB at 0.1009375 (model T60 0.102)
+restraint__Restraint_Bolt_Click      noteOff 0.072s | as-authored: -30 dB at 0.9718125  -60 dB at 1.3440833333333333 | free: -60 dB at 22.349479166666665 (model T60 22.642)
+akashic__Library_Opening_Bell        noteOff 3.600s | as-authored: -30 dB at 3.8795208333333333  -60 dB at 4.2818958333333335 | free: -60 dB at 14.228583333333333 (model T60 14.365)
+akashic__Akashic_Light_Tap {'1.5': np.float64(-37.3), '2': np.float64(-50.1), '2.5': np.float64(-53.8), '3': np.float64(-57.0), '3.5': np.float64(-62.3)}
+clockwork__Clockwork_Bell_Strike {'1.5': np.float64(-50.1), '2': np.float64(-56.5), '2.5': np.float64(-50.3), '3': np.float64(-45.0), '3.5': np.float64(-46.1)}
+clockwork__Clockwork_Gear_Click {'1.5': np.float64(-59.6), '2': np.float64(-55.4), '2.5': np.float64(-51.7), '3': np.float64(-47.2), '3.5': np.float64(-48.7)}
+forest__Forest_Acorn_Tap {'1.5': np.float64(-31.8), '2': np.float64(-44.0), '2.5': np.float64(-44.7), '3': np.float64(-55.8), '3.5': np.float64(-65.7)}
+ocean__Ocean_Droplet_Tap {'1.5': np.float64(-48.6), '2': np.float64(-52.9), '2.5': np.float64(-61.6), '3': np.float64(-67.3), '3.5': np.float64(-72.5)}
+ocean__Ocean_Bubble_Pop {'1.5': np.float64(-47.3), '2': np.float64(-52.2), '2.5': np.float64(-60.2), '3': np.float64(-61.9), '3.5': np.float64(-68.5)}
+ocean__Ocean_Bubble_Pop_Deep {'1.5': np.float64(-49.0), '2': np.float64(-51.3), '2.5': np.float64(-56.2), '3': np.float64(-61.0), '3.5': np.float64(-66.2)}
+rabbit__Rabbit_Ding {'1.5': np.float64(-59.0), '2': np.float64(-68.1), '2.5': np.float64(-69.2), '3': np.float64(-79.1), '3.5': np.float64(-88.6)}
+rabbit__Rabbit_Ding_Angry {'1.5': np.float64(-51.2), '2': np.float64(-59.7), '2.5': np.float64(-68.8), '3': np.float64(-68.1), '3.5': np.float64(-67.7)}
+rabbit__Rabbit_Carrot_Button {'1.5': np.float64(-33.9), '2': np.float64(-39.7), '2.5': np.float64(-49.1), '3': np.float64(-56.1), '3.5': np.float64(-62.0)}
+restraint__Restraint_Bolt_Click {'1.5': np.float64(-81.4), '2': np.float64(-80.3), '2.5': np.float64(-75.2), '3': np.float64(-75.0), '3.5': np.float64(-68.6)}
+akashic__Library_Opening_Bell {'1.5': np.float64(-35.7), '2': np.float64(-43.1), '2.5': np.float64(-48.7), '3': np.float64(-55.8), '3.5': np.float64(-56.2)}

@@ -1,0 +1,71 @@
+anchor ratios [1.0, 6.2669, 17.5475, 34.3861, 56.8426]
+
+== A. modal ratios (dry free render, narrow-band measured; model from dump-modes) vs cantilever anchor ==
+Akashic_Light_Tap | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2669 model 6.2669 anchor 6.2669 (meas-anc -0.000% model-anc +0.000%) rel-peak -19.7dB
+Clockwork_Bell_Strike | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2669 model 6.2669 anchor 6.2669 (meas-anc +0.000% model-anc +0.000%) rel-peak +8.6dB ; m3: meas 17.5474 model 17.5475 anchor 17.5475 (meas-anc -0.000% model-anc +0.000%) rel-peak -5.7dB
+Clockwork_Gear_Click | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2669 model 6.2669 anchor 6.2669 (meas-anc -0.000% model-anc -0.000%) rel-peak +11.2dB ; m3: meas 17.5478 model 17.5475 anchor 17.5475 (meas-anc +0.002% model-anc -0.000%) rel-peak -1.1dB
+Forest_Acorn_Tap | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2701 model 6.2669 anchor 6.2669 (meas-anc +0.052% model-anc +0.000%) rel-peak -9.3dB ; m3: meas 16.8489 model 17.5475 anchor 17.5475 (meas-anc -3.981% model-anc +0.000%) rel-peak -32.3dB
+Ocean_Droplet_Tap | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2668 model 6.2669 anchor 6.2669 (meas-anc -0.002% model-anc +0.000%) rel-peak -17.3dB ; m3: meas 17.5476 model 17.5475 anchor 17.5475 (meas-anc +0.001% model-anc -0.000%) rel-peak -39.1dB
+Ocean_Bubble_Pop | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2669 model 6.2669 anchor 6.2669 (meas-anc +0.000% model-anc +0.000%) rel-peak -22.8dB ; m3: meas 17.5525 model 17.5475 anchor 17.5475 (meas-anc +0.029% model-anc +0.000%) rel-peak -66.4dB
+Ocean_Bubble_Pop_Deep | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2670 model 6.2669 anchor 6.2669 (meas-anc +0.001% model-anc +0.000%) rel-peak -30.0dB ; m3: meas 17.6929 model 17.5475 anchor 17.5475 (meas-anc +0.829% model-anc +0.000%) rel-peak -63.7dB ; m4: meas 34.3860 model 34.3861 anchor 34.3861 (meas-anc -0.000% model-anc +0.000%) rel-peak -57.8dB
+Rabbit_Ding | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2669 model 6.2669 anchor 6.2669 (meas-anc +0.001% model-anc +0.000%) rel-peak -18.5dB
+Rabbit_Ding_Angry | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2669 model 6.2669 anchor 6.2669 (meas-anc +0.001% model-anc +0.000%) rel-peak +0.4dB
+Rabbit_Carrot_Button | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2676 model 6.2669 anchor 6.2669 (meas-anc +0.012% model-anc +0.000%) rel-peak -12.4dB ; m3: meas 16.4387 model 17.5475 anchor 17.5475 (meas-anc -6.319% model-anc -0.000%) rel-peak -30.6dB
+Restraint_Bolt_Click | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2669 model 6.2669 anchor 6.2669 (meas-anc +0.000% model-anc -0.000%) rel-peak +14.0dB ; m3: meas 17.5475 model 17.5475 anchor 17.5475 (meas-anc +0.000% model-anc -0.000%) rel-peak +15.9dB ; m4: meas 34.3860 model 34.3860 anchor 34.3861 (meas-anc -0.000% model-anc -0.000%) rel-peak +0.1dB ; m5: meas 56.8430 model 56.8425 anchor 56.8426 (meas-anc +0.001% model-anc -0.000%) rel-peak -3.1dB
+Library_Opening_Bell | m1: meas 1.0000 model 1.0000 anchor 1.0000 (meas-anc +0.000% model-anc +0.000%) rel-peak +0.0dB ; m2: meas 6.2669 model 6.2669 anchor 6.2669 (meas-anc +0.000% model-anc -0.000%) rel-peak -26.3dB ; m3: meas 17.8244 model 17.5475 anchor 17.5475 (meas-anc +1.578% model-anc -0.000%) rel-peak -57.4dB ; m4: meas 34.2737 model 34.3860 anchor 34.3861 (meas-anc -0.327% model-anc -0.000%) rel-peak -68.6dB ; m5: meas 53.6016 model 56.8426 anchor 56.8426 (meas-anc -5.702% model-anc -0.000%) rel-peak -77.5dB
+
+== B. paper-style frame (6 ms, Hamming2048/FFT32768, sidelobes suppressed): top4 (Hz,dB) and ratios of the three strongest over the lowest of them ==
+Akashic_Light_Tap [(2093.0, 0.0), (1987.8, -41.8), (2198.2, -42.1), (1870.9, -45.6)] [1.0, 1.053, 1.106]
+Clockwork_Bell_Strike [(659.2, 0.0), (4131.5, -2.0), (4237.1, -40.2), (4025.8, -40.7)] [1.0, 6.267, 6.427]
+Clockwork_Gear_Click [(3680.7, 0.0), (587.3, -2.0), (10305.8, -37.3), (3575.6, -39.1)] [1.0, 6.267, 17.546]
+Forest_Acorn_Tap [(698.5, 0.0), (803.0, -36.0), (593.9, -37.1), (919.2, -39.8)] [1.0, 1.176, 1.352]
+Ocean_Droplet_Tap [(880.0, 0.0), (5514.7, -29.0), (985.3, -42.0), (774.8, -43.2)] [1.0, 1.12, 6.266]
+Ocean_Bubble_Pop [(1046.5, 0.0), (6558.8, -36.9), (1151.7, -42.3), (941.3, -42.7)] [1.0, 1.101, 6.267]
+Ocean_Bubble_Pop_Deep [(523.2, 0.0), (3278.5, -36.6), (418.7, -42.1), (627.9, -43.0)] [1.0, 1.25, 7.831]
+Rabbit_Ding [(1568.0, 0.0), (9826.4, -30.8), (1673.5, -42.5), (1462.5, -42.8)] [1.0, 1.067, 6.267]
+Rabbit_Ding_Angry [(1568.0, 0.0), (9826.4, -17.7), (1673.5, -42.5), (1462.5, -42.8)] [1.0, 1.067, 6.267]
+Rabbit_Carrot_Button [(880.0, 0.0), (984.8, -36.3), (775.3, -37.7), (1101.4, -40.1)] [1.0, 1.135, 1.27]
+Restraint_Bolt_Click [(1228.3, 0.0), (3439.2, -0.6), (196.0, -13.5), (6739.6, -23.1)] [1.0, 6.266, 17.544]
+Library_Opening_Bell [(293.7, 0.0), (1840.1, -27.3), (398.8, -41.1), (515.8, -44.5)] [1.0, 1.358, 6.264]
+
+== C. T60 fundamental ==
+Akashic_Light_Tap        note C7  model 0.3232 free_env 0.3233 free_sch 0.3231 | as-authored(slope) 0.3233 | product(slope) 0.4041
+Clockwork_Bell_Strike    note E5  model 1.026 free_env 1.026 free_sch 1.025 | as-authored(slope) 1.026 | product(slope) 0.6456
+Clockwork_Gear_Click     note D5  model 1.159 free_env 1.159 free_sch 1.159 | as-authored(slope) 0.08654 | product(slope) 0.33
+Forest_Acorn_Tap         note F5  model 0.09672 free_env 0.09863 free_sch 0.09711 | as-authored(slope) 0.09864 | product(slope) 2.087
+Ocean_Droplet_Tap        note A5  model 0.8016 free_env 0.8017 free_sch 0.8013 | as-authored(slope) 0.2933 | product(slope) 1.392
+Ocean_Bubble_Pop         note C6  model 0.6701 free_env 0.6702 free_sch 0.6698 | as-authored(slope) 0.5968 | product(slope) 0.2877
+Ocean_Bubble_Pop_Deep    note C5  model 1.365 free_env 1.366 free_sch 1.365 | as-authored(slope) 1.055 | product(slope) 3.15
+Rabbit_Ding              note G6  model 2.757 free_env 2.756 free_sch 2.755 | as-authored(slope) 2.165 | product(slope) 1.216
+Rabbit_Ding_Angry        note G6  model 1.635 free_env 1.636 free_sch 1.635 | as-authored(slope) 1.51 | product(slope) 3.277
+Rabbit_Carrot_Button     note A5  model 0.1017 free_env 0.1037 free_sch 0.1021 | as-authored(slope) 0.1037 | product(slope) 0.09516
+Restraint_Bolt_Click     note G3  model 22.64 free_env 22.56 free_sch 22.56 | as-authored(slope) 1.811 | product(slope) 1.809
+Library_Opening_Bell     note D4  model 14.37 free_env 14.37 free_sch 14.37 | as-authored(slope) 10.83 | product(slope) 6.433
+
+== D. f0: engine (dry) vs product (cents vs model f1; model f1 vs ET) ==
+Akashic_Light_Tap        model-ET -0.000c | dry E1 -0.00 E2/3% -0.01 E2/6% -0.01 | product E1 +2.12 E2/3% -3.01 E2/6% -4.18 | dry-as-authored E1 -0.00 E2/3% -0.01 glide=False
+Clockwork_Bell_Strike    model-ET -0.000c | dry E1 -0.00 E2/3% -0.03 E2/6% -0.02 | product E1 -6.02 E2/3% -0.38 E2/6% -0.14 | dry-as-authored E1 -0.00 E2/3% -0.03 glide=False
+Clockwork_Gear_Click     model-ET +0.001c | dry E1 +0.00 E2/3% -0.03 E2/6% -0.04 | product E1 -12.76 E2/3% -8.14 E2/6% -6.49 | dry-as-authored E1 +0.00 E2/3% -0.03 glide=False
+Forest_Acorn_Tap         model-ET -0.001c | dry E1 +0.02 E2/3% -0.57 E2/6% -0.71 | product E1 -1.59 E2/3% -0.11 E2/6% +0.14 | dry-as-authored E1 +0.02 E2/3% -0.57 glide=False
+Ocean_Droplet_Tap        model-ET +0.000c | dry E1 +0.00 E2/3% -0.01 E2/6% -0.00 | product E1 -3.29 E2/3% -1.24 E2/6% -1.12 | dry-as-authored E1 +0.00 E2/3% -0.01 glide=False
+Ocean_Bubble_Pop         model-ET -0.000c | dry E1 -0.00 E2/3% -0.01 E2/6% -0.00 | product E1 +3.99 E2/3% -5.06 E2/6% -29.25 | dry-as-authored E1 -0.04 E2/3% -0.28 glide=True
+Ocean_Bubble_Pop_Deep    model-ET -0.000c | dry E1 -0.00 E2/3% -0.01 E2/6% -0.01 | product E1 -1.26 E2/3% -3.58 E2/6% -9.44 | dry-as-authored E1 -0.05 E2/3% -0.24 glide=True
+Rabbit_Ding              model-ET +0.000c | dry E1 -0.00 E2/3% -0.00 E2/6% +0.00 | product E1 -0.30 E2/3% +0.38 E2/6% +0.37 | dry-as-authored E1 -0.00 E2/3% -0.00 glide=False
+Rabbit_Ding_Angry        model-ET +0.000c | dry E1 -0.00 E2/3% -0.00 E2/6% -0.00 | product E1 +1.15 E2/3% +1.00 E2/6% +1.09 | dry-as-authored E1 -0.00 E2/3% -0.00 glide=False
+Rabbit_Carrot_Button     model-ET +0.000c | dry E1 -0.01 E2/3% -0.20 E2/6% -0.24 | product E1 -11.39 E2/3% +0.14 E2/6% -0.19 | dry-as-authored E1 -0.01 E2/3% -0.20 glide=False
+Restraint_Bolt_Click     model-ET +0.002c | dry E1 +0.00 E2/3% +0.03 E2/6% -0.09 | product E1 +0.11 E2/3% +0.96 E2/6% +0.91 | dry-as-authored E1 +0.00 E2/3% +0.03 glide=False
+Library_Opening_Bell     model-ET +0.001c | dry E1 +0.00 E2/3% -0.00 E2/6% -0.00 | product E1 -3.36 E2/3% -3.29 E2/6% -2.85 | dry-as-authored E1 +0.00 E2/3% -0.00 glide=False
+
+== E. beating ==
+Akashic_Light_Tap min pair spacing Hz 11023.6 | dry-free minima 0 spectrogram-bin minima 0 | product minima 7 rate 35.9
+Clockwork_Bell_Strike min pair spacing Hz 3472.2 | dry-free minima 0 spectrogram-bin minima 0 | product minima 6 rate 11.8
+Clockwork_Gear_Click min pair spacing Hz 3093.4 | dry-free minima 0 spectrogram-bin minima 0 | product minima 0 rate None
+Forest_Acorn_Tap min pair spacing Hz 3678.7 | dry-free minima 0 spectrogram-bin minima 0 | product minima 2 rate 24.0
+Ocean_Droplet_Tap min pair spacing Hz 4634.9 | dry-free minima 0 spectrogram-bin minima 0 | product minima 4 rate 10.5
+Ocean_Bubble_Pop min pair spacing Hz 5511.8 | dry-free minima 0 spectrogram-bin minima 0 | product minima 13 rate 21.7
+Ocean_Bubble_Pop_Deep min pair spacing Hz 2755.9 | dry-free minima 0 spectrogram-bin minima 0 | product minima 11 rate 10.7
+Rabbit_Ding min pair spacing Hz 8258.4 | dry-free minima 0 spectrogram-bin minima 0 | product minima 2 rate 4.5
+Rabbit_Ding_Angry min pair spacing Hz 8258.4 | dry-free minima 0 spectrogram-bin minima 0 | product minima 9 rate 11.0
+Rabbit_Carrot_Button min pair spacing Hz 4634.9 | dry-free minima 0 spectrogram-bin minima 0 | product minima 4 rate 58.4
+Restraint_Bolt_Click min pair spacing Hz 1032.3 | dry-free minima 0 spectrogram-bin minima 0 | product minima 0 rate None
+Library_Opening_Bell min pair spacing Hz 1546.7 | dry-free minima 0 spectrogram-bin minima 0 | product minima 7 rate 3.0

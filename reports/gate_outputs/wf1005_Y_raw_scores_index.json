@@ -1,0 +1,276 @@
+{
+ "akashic__Akashic_Light_Tap": {
+  "src_score": "scores\\library\\akashic\\akashic_ui_001.score.json",
+  "note": "C7",
+  "engine": "beam",
+  "duration": 0.3,
+  "glide": null,
+  "n_events_src": 1,
+  "max_t60_model": 0.3232,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "glass",
+   "thickness_mm": 1.0,
+   "length_mm": 15,
+   "width_mm": 6,
+   "strike_position": 0.25,
+   "exciter": "hard_plastic"
+  },
+  "velocity": 0.5
+ },
+ "clockwork__Clockwork_Bell_Strike": {
+  "src_score": "scores\\library\\clockwork\\clockwork_notify_001.score.json",
+  "note": "E5",
+  "engine": "beam",
+  "duration": 1.0,
+  "glide": null,
+  "n_events_src": 1,
+  "max_t60_model": 1.0256,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "brass",
+   "thickness_mm": 3.0,
+   "length_mm": 45,
+   "width_mm": 20,
+   "strike_position": 0.25,
+   "exciter": "metal_hammer"
+  },
+  "velocity": 0.7
+ },
+ "clockwork__Clockwork_Gear_Click": {
+  "src_score": "scores\\library\\clockwork\\clockwork_ui_001.score.json",
+  "note": "D5",
+  "engine": "beam",
+  "duration": 0.06,
+  "glide": null,
+  "n_events_src": 1,
+  "max_t60_model": 1.1591,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "brass",
+   "thickness_mm": 4.0,
+   "length_mm": 12,
+   "width_mm": 8,
+   "strike_position": 0.1,
+   "exciter": "metal_tip"
+  },
+  "velocity": 0.6
+ },
+ "forest__Forest_Acorn_Tap": {
+  "src_score": "scores\\library\\forest\\forest_ui_001.score.json",
+  "note": "F5",
+  "engine": "beam",
+  "duration": 0.1,
+  "glide": null,
+  "n_events_src": 1,
+  "max_t60_model": 0.096719,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "wood_oak",
+   "thickness_mm": 8.0,
+   "length_mm": 15,
+   "width_mm": 15,
+   "strike_position": 0.3,
+   "exciter": "wood_mallet"
+  },
+  "velocity": 0.5
+ },
+ "ocean__Ocean_Droplet_Tap": {
+  "src_score": "scores\\library\\ocean\\ocean_ui_001.score.json",
+  "note": "A5",
+  "engine": "beam",
+  "duration": 0.15,
+  "glide": null,
+  "n_events_src": 1,
+  "max_t60_model": 0.80159,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "glass",
+   "thickness_mm": 1.5,
+   "length_mm": 12,
+   "width_mm": 12,
+   "strike_position": 0.4,
+   "exciter": "finger_tap"
+  },
+  "velocity": 0.45
+ },
+ "ocean__Ocean_Bubble_Pop": {
+  "src_score": "scores\\library\\ocean\\ocean_notify_001.score.json",
+  "note": "C6",
+  "engine": "beam",
+  "duration": 0.3,
+  "glide": {
+   "from_note": "A5",
+   "duration_ms": 60,
+   "curve": "exponential"
+  },
+  "n_events_src": 1,
+  "max_t60_model": 0.67012,
+  "variants": [
+   "dry",
+   "free",
+   "free_noglide",
+   "dry_noglide"
+  ],
+  "params": {
+   "material": "glass",
+   "thickness_mm": 1.0,
+   "length_mm": 18,
+   "width_mm": 18,
+   "strike_position": 0.5,
+   "exciter": "finger_tap"
+  },
+  "velocity": 0.55
+ },
+ "ocean__Ocean_Bubble_Pop_Deep": {
+  "src_score": "scores\\library\\ocean\\ocean_notify_var01.score.json",
+  "note": "C5",
+  "engine": "beam",
+  "duration": 0.5,
+  "glide": {
+   "from_note": "A4",
+   "duration_ms": 100,
+   "curve": "exponential"
+  },
+  "n_events_src": 1,
+  "max_t60_model": 1.3653,
+  "variants": [
+   "dry",
+   "free",
+   "free_noglide",
+   "dry_noglide"
+  ],
+  "params": {
+   "material": "glass",
+   "thickness_mm": 2.0,
+   "length_mm": 30,
+   "width_mm": 30,
+   "strike_position": 0.5,
+   "exciter": "rubber_mallet"
+  },
+  "velocity": 0.5
+ },
+ "rabbit__Rabbit_Ding": {
+  "src_score": "scores\\library\\rabbit\\rabbit_notify_001.score.json",
+  "note": "G6",
+  "engine": "beam",
+  "duration": 0.8,
+  "glide": null,
+  "n_events_src": 1,
+  "max_t60_model": 2.7567,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "aluminum",
+   "thickness_mm": 1.8,
+   "length_mm": 32,
+   "width_mm": 10,
+   "strike_position": 0.3,
+   "exciter": "wood_mallet"
+  },
+  "velocity": 0.65
+ },
+ "rabbit__Rabbit_Ding_Angry": {
+  "src_score": "scores\\library\\rabbit\\rabbit_notify_var01.score.json",
+  "note": "G6",
+  "engine": "beam",
+  "duration": 0.6,
+  "glide": null,
+  "n_events_src": 1,
+  "max_t60_model": 1.6354,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "steel",
+   "thickness_mm": 1.8,
+   "length_mm": 32,
+   "width_mm": 10,
+   "strike_position": 0.15,
+   "exciter": "metal_mallet"
+  },
+  "velocity": 0.95
+ },
+ "rabbit__Rabbit_Carrot_Button": {
+  "src_score": "scores\\library\\rabbit\\rabbit_ui_001.score.json",
+  "note": "A5",
+  "engine": "beam",
+  "duration": 0.15,
+  "glide": null,
+  "n_events_src": 1,
+  "max_t60_model": 0.1017,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "wood_maple",
+   "thickness_mm": 4.0,
+   "length_mm": 25,
+   "width_mm": 15,
+   "strike_position": 0.3,
+   "exciter": "wood_mallet"
+  },
+  "velocity": 0.55
+ },
+ "restraint__Restraint_Bolt_Click": {
+  "src_score": "scores\\library\\restraint\\restraint_ui_001.score.json",
+  "note": "G3",
+  "engine": "beam",
+  "duration": 0.08,
+  "glide": null,
+  "n_events_src": 1,
+  "max_t60_model": 22.642,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "steel",
+   "thickness_mm": 5.0,
+   "length_mm": 20,
+   "width_mm": 8,
+   "strike_position": 0.1,
+   "exciter": "metal_tip"
+  },
+  "velocity": 0.65
+ },
+ "akashic__Library_Opening_Bell": {
+  "src_score": "scores\\library\\akashic\\akashic_opening_bell_001.score.json",
+  "note": "D4",
+  "engine": "tongue_drum",
+  "duration": 4.0,
+  "glide": null,
+  "n_events_src": 8,
+  "max_t60_model": 14.365,
+  "variants": [
+   "dry",
+   "free"
+  ],
+  "params": {
+   "material": "steel",
+   "thickness_mm": 2.5,
+   "strike_position": 0.5,
+   "exciter": "felt_mallet"
+  },
+  "velocity": 0.7
+ }
+}

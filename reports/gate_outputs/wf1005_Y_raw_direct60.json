@@ -1,0 +1,122 @@
+{
+ "akashic__Akashic_Light_Tap": {
+  "as_authored_dry": {
+   "t_minus30": 0.16447916666666668,
+   "t_minus60": 0.2742291666666667
+  },
+  "free": {
+   "t_minus30": 0.1645,
+   "t_minus60": 0.3200208333333333
+  }
+ },
+ "clockwork__Clockwork_Bell_Strike": {
+  "as_authored_dry": {
+   "t_minus30": 0.524,
+   "t_minus60": 0.9091666666666667
+  },
+  "free": {
+   "t_minus30": 0.5239791666666667,
+   "t_minus60": 1.0157916666666666
+  }
+ },
+ "clockwork__Clockwork_Gear_Click": {
+  "as_authored_dry": {
+   "t_minus30": 0.0919375,
+   "t_minus60": 0.142625
+  },
+  "free": {
+   "t_minus30": 0.5916041666666667,
+   "t_minus60": 1.1475416666666667
+  }
+ },
+ "forest__Forest_Acorn_Tap": {
+  "as_authored_dry": {
+   "t_minus30": 0.05372916666666667,
+   "t_minus60": 0.09133333333333334
+  },
+  "free": {
+   "t_minus30": 0.05375,
+   "t_minus60": 0.09570833333333334
+  }
+ },
+ "ocean__Ocean_Droplet_Tap": {
+  "as_authored_dry": {
+   "t_minus30": 0.15591666666666668,
+   "t_minus60": 0.19141666666666668
+  },
+  "free": {
+   "t_minus30": 0.40822916666666664,
+   "t_minus60": 0.7939791666666667
+  }
+ },
+ "ocean__Ocean_Bubble_Pop": {
+  "as_authored_dry": {
+   "t_minus30": 0.2810625,
+   "t_minus60": 0.3070833333333333
+  },
+  "free": {
+   "t_minus30": 0.3409375,
+   "t_minus60": 0.6635416666666667
+  }
+ },
+ "ocean__Ocean_Bubble_Pop_Deep": {
+  "as_authored_dry": {
+   "t_minus30": 0.47775,
+   "t_minus60": 0.5362291666666666
+  },
+  "free": {
+   "t_minus30": 0.69525,
+   "t_minus60": 1.3526041666666666
+  }
+ },
+ "rabbit__Rabbit_Ding": {
+  "as_authored_dry": {
+   "t_minus30": 0.7713333333333333,
+   "t_minus60": 0.8781666666666667
+  },
+  "free": {
+   "t_minus30": 1.3607708333333333,
+   "t_minus60": 2.7325208333333335
+  }
+ },
+ "rabbit__Rabbit_Ding_Angry": {
+  "as_authored_dry": {
+   "t_minus30": 0.5616041666666667,
+   "t_minus60": 0.6241458333333333
+  },
+  "free": {
+   "t_minus30": 0.8112291666666667,
+   "t_minus60": 1.6290416666666667
+  }
+ },
+ "rabbit__Rabbit_Carrot_Button": {
+  "as_authored_dry": {
+   "t_minus30": 0.056416666666666664,
+   "t_minus60": 0.10091666666666667
+  },
+  "free": {
+   "t_minus30": 0.05639583333333333,
+   "t_minus60": 0.1009375
+  }
+ },
+ "restraint__Restraint_Bolt_Click": {
+  "as_authored_dry": {
+   "t_minus30": 0.9718125,
+   "t_minus60": 1.3440833333333333
+  },
+  "free": {
+   "t_minus30": 11.14025,
+   "t_minus60": 22.349479166666665
+  }
+ },
+ "akashic__Library_Opening_Bell": {
+  "as_authored_dry": {
+   "t_minus30": 3.8795208333333333,
+   "t_minus60": 4.2818958333333335
+  },
+  "free": {
+   "t_minus30": 7.095854166666666,
+   "t_minus60": 14.228583333333333
+  }
+ }
+}

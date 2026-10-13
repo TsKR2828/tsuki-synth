@@ -1,0 +1,29 @@
+akashic__Akashic_Light_Tap           2x dry   -81.0 dB prod   -50.1 dB | 3x dry   -88.0 dB prod   -57.0 dB
+clockwork__Clockwork_Bell_Strike     2x dry   none>-90 prod   -56.5 dB | 3x dry   none>-90 prod   -45.0 dB
+clockwork__Clockwork_Gear_Click      2x dry   none>-90 prod   -55.4 dB | 3x dry   none>-90 prod   -47.2 dB
+forest__Forest_Acorn_Tap             2x dry   -55.1 dB prod   -44.0 dB | 3x dry   -61.7 dB prod   -55.8 dB
+ocean__Ocean_Droplet_Tap             2x dry   none>-90 prod   -52.9 dB | 3x dry   none>-90 prod   -67.3 dB
+ocean__Ocean_Bubble_Pop              2x dry   none>-90 prod   -52.2 dB | 3x dry   none>-90 prod   -61.9 dB
+ocean__Ocean_Bubble_Pop_Deep         2x dry   none>-90 prod   -51.3 dB | 3x dry   none>-90 prod   -61.0 dB
+rabbit__Rabbit_Ding                  2x dry   none>-90 prod   -68.1 dB | 3x dry   none>-90 prod   -79.1 dB
+rabbit__Rabbit_Ding_Angry            2x dry   none>-90 prod   -59.7 dB | 3x dry   none>-90 prod   -68.1 dB
+rabbit__Rabbit_Carrot_Button         2x dry   -54.7 dB prod   -39.7 dB | 3x dry   -60.9 dB prod   -56.1 dB
+restraint__Restraint_Bolt_Click      2x dry   none>-90 prod   -80.3 dB | 3x dry   none>-90 prod   -75.0 dB
+akashic__Library_Opening_Bell        2x dry   none>-90 prod   -43.1 dB | 3x dry   none>-90 prod   -55.8 dB
+velocity 0.25 {'n_modes_model': 6, 'amp_ratio_m2_m1_db': np.float64(13.767001520739015), 'n_peaks_above_m40': 4, 'n_peaks_above_m60': 43, 'peak_abs': 0.02338862419128418}
+velocity 0.5 {'n_modes_model': 6, 'amp_ratio_m2_m1_db': np.float64(14.030404388103506), 'n_peaks_above_m40': 5, 'n_peaks_above_m60': 45, 'peak_abs': 0.05483818054199219}
+velocity 0.65 {'n_modes_model': 6, 'amp_ratio_m2_m1_db': np.float64(14.112885101237957), 'n_peaks_above_m40': 5, 'n_peaks_above_m60': 45, 'peak_abs': 0.07296347618103027}
+velocity 0.95 {'n_modes_model': 6, 'amp_ratio_m2_m1_db': np.float64(14.216697597187874), 'n_peaks_above_m40': 4, 'n_peaks_above_m60': 45, 'peak_abs': 0.10407531261444092}
+strike_position 0.05 {'m2_over_m1_db': np.float64(14.69), 'm3_over_m1_db': np.float64(17.43)}
+strike_position 0.1 {'m2_over_m1_db': np.float64(14.11), 'm3_over_m1_db': np.float64(16.24)}
+strike_position 0.2 {'m2_over_m1_db': np.float64(12.74), 'm3_over_m1_db': np.float64(13.09)}
+strike_position 0.3 {'m2_over_m1_db': np.float64(10.99), 'm3_over_m1_db': np.float64(8.44)}
+strike_position 0.4 {'m2_over_m1_db': np.float64(8.73), 'm3_over_m1_db': np.float64(0.75)}
+strike_position 0.5 {'m2_over_m1_db': np.float64(5.72), 'm3_over_m1_db': np.float64(-31.17)}
+register G3 {'f1': 195.998, 't60_f1': 22.642, 't60_f2': 2.3313, 'n': 6}
+register D4 {'f1': 293.665, 't60_f1': 14.365, 't60_f2': 1.2856, 'n': 5}
+register G4 {'f1': 391.995, 't60_f1': 10.251, 't60_f2': 0.81969, 'n': 4}
+register C5 {'f1': 523.251, 't60_f1': 7.2225, 't60_f2': 0.51226, 'n': 4}
+register G5 {'f1': 783.991, 't60_f1': 4.3107, 't60_f2': 0.25718, 'n': 3}
+register C6 {'f1': 1046.502, 't60_f1': 2.9187, 't60_f2': 0.1542, 'n': 3}
+register G6 {'f1': 1567.982, 't60_f1': 1.6354, 't60_f2': 0.073692, 'n': 2}

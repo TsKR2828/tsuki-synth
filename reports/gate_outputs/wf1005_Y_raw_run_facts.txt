@@ -1,0 +1,9 @@
+python 3.13.3 | numpy 2.4.4 | scipy 1.17.1 | soundfile 0.13.1 | PyMuPDF PyMuPDF 1.28.0
+sha256 1af414a9b695d59b1ca0c185d33a4cb4485dd268565aa2ee12a5e5ac90bfcfae bin/TsukiSynthCLI_current.exe
+sha256 9123db8f63390bfe9070e9509fb2b60e9cc32ecb52e3bb2afc330d2b5fe01be8 bin/TsukiSynthCLI_9123db8f_build20260915.exe
+build CLI sha256 1af414a9b695d59b1ca0c185d33a4cb4485dd268565aa2ee12a5e5ac90bfcfae (build/TsukiSynthCLI_artefacts/Release/TsukiSynthCLI.exe; copied unchanged into scratch bin/)
+paper E:/Tsuki-project/_tools/papers/Alon2015_York_MSc_handpan.pdf bytes 22959998 pages 161 sha256 e2e37fa01b44d505d28d677662d8513ec7a19bb6e422c4e5988614817c7a560f md5 7526a6e8c0d272a9182191fcfeb1c898
+dry renders: current CLI vs archived product renderer 9123db8f byte-identical 28/28
+fx-on renders: current CLI vs archived renderer byte-identical 12/12
+dump-modes partial tables, current vs archived renderer identical 12/12
+determinism (Bolt Click dry rendered twice, byte-identical): True

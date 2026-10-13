@@ -1,0 +1,116 @@
+# wf1005_L_audit.txt
+# WF1005 L card (SE pack license "照預設" + release zips) — auditor (Opus) re-verification
+# date 2026-10-12 ; repo E:\Tsuki-project\tsuki-synth ; branch fix/deep-physics-audit-20260716 ; HEAD 5a57656
+# paths relative to exports/products/clean_batch2_v1_1_candidate/ unless stated
+# The auditor did NOT trust the worker log: every number below was recomputed by the auditor
+# (PowerShell Get-FileHash, git diff --no-index, own script E:\Tsuki-project\_scratch\wf1005\L_audit\audit_zips.py,
+#  own run of x2_verify.py --release).
+
+VERDICT: PASS (with one auditor erratum, applied — see section 7)
+
+== 1. Backup integrity (_pre_WF1005_backup_20261012/)
+- 16 files recomputed with Get-FileHash: 16/16 equal to the backup's own SHA256SUMS.txt.
+- Independent anchor (committed in git HEAD, reports/gate_outputs/wf1002_P_apply.txt lines 36-52 and wf1002_P_packages.txt):
+  the "after WF1002" hashes recorded there equal the backup copies for all 12 files that record covers:
+    LICENSE_SE_PACK_v1_1.txt 66c91df3... | LICENSE_ALBUM_v1_1.txt 7f1983f7... | PACKAGES_MANIFEST 9a32f6c7...
+    SE candidate zip 0b46e093... | SE FAB candidate zip e73ad491... | Album candidate zip 28c79ebd... | listening kit 38ac5b45...
+    x2_build_packages.py 738c7c9d... | x2_verify.py 3d07e00d... | README_SE 1b57bc11... | README_SE_FAB 983ad145... | README_ALBUM 92c350ee...
+- The pre-WF1005 _X2_MANIFEST_SHA256.txt (backup copy, 23a1ad89...) lists the same hashes for those files and for
+  CHANGES_v1_1.md 332e3348..., LISTING_COPY 7d8f57b3..., PRODUCT_SHEET ee3303bc... -> all equal to the backup copies.
+  (CHANGES / _X2_MANIFEST pre-WF1005 hashes have no record in git; they are only consistent with the pre-WF1005 manifest.)
+- Files modified in exports/products on 2026-10-12 (outside the backup folder): exactly the 11 declared files
+  (LICENSE_SE, CHANGES, _X2_MANIFEST, PACKAGES_MANIFEST, 3 new release zips, x2_verify.py, 3 zip_readme files). Nothing else.
+- Current _X2_MANIFEST vs pre-WF1005 copy: only these lines differ: CHANGES, LICENSE_SE, PACKAGES_MANIFEST, x2_verify.py,
+  3 zip_readme files, plus 3 new release-zip lines. LICENSE_ALBUM, LISTING_COPY, PRODUCT_SHEET, catalog, all listening_kit WAVs,
+  all 3 _candidate zips and the listening-kit zip: same hash as before.
+-> PASS
+
+== 2. License, slot by slot (git diff --no-index --word-diff, backup vs current; auditor read all three languages)
+Defaults source: reports/decision_packets/WF1002_addendum_decisions.zh-TW.md lines 182-186 (channels BOOTH+itch.io;
+works released before breach may stay; ROC (Taiwan) law + 台灣台北地方法院 (AI suggestion, not legal advice); BOOTH message function).
+Before: '[TBD' 14 (12 body slots + 2 lines inside the draft box). After: 'TBD' 0.
+ slot | EN | ZH | JA | matches default | 3-language meaning
+ s1  | "store pages on BOOTH and itch.io" | "BOOTH 與 itch.io" | "（BOOTH および itch.io）" | yes | equal
+ s8  | "Products you released before the breach, while you were following these terms, may remain available."
+     | "違約前、依本條款正常發佈的作品，可以繼續留在市面上。" | "違反前に本規約どおり公開した制作物は、公開し続けて構いません。" | yes | equal
+ s9  | "governed by the laws of the Republic of China (Taiwan). The Taiwan Taipei District Court is the court of jurisdiction for any dispute arising from this license."
+     | "以中華民國（台灣）法律為準據法；…以台灣台北地方法院為管轄法院。" | "中華民国（台湾）の法律に準拠…台湾台北地方法院を管轄裁判所とします。" | yes | equal (none says 專屬/exclusive)
+ s12 | "contact the licensor through the message function on BOOTH." | "透過 BOOTH 的訊息功能聯絡授權人。" | "BOOTH のメッセージ機能をご利用ください。" | yes | equal
+- 12/12 slots filled, each maps to one of the 4 defaults; the old placeholder option "other channels the licensor lists"
+  was dropped (the default lists only BOOTH and itch.io). No other clause text changed (word-diff shows only the box,
+  the version line, and these 12 slots).
+- Version line: "Version 1.1 (draft) — ..., revised 2026-10-02" -> "Version 1.1 — ..., revised 2026-10-12".
+- Residue regex on the current file (auditor's own counts; the same patterns on the backup give non-zero, proving they match):
+    TBD 0 (before 14) | [TBD 0 (14) | draft(ci) 0 (2) | 草稿 0 (2) | 草案 0 (2) | 非法律意見/法律意見 0 (2) | 法的助言 0 (2) |
+    legal advice(ci) 0 (1) | ###### box 0 (2)
+-> PASS
+
+== 3. Release zips, opened and extracted by the auditor
+TsukiSynth_Worldview_SE_Pack_v1.1.zip  77,927,295 B  sha256 867f94faf5f6c2114024ce91a957b47443657c34a5a9926e5eca649058cb18b5
+- sha256 and bytes == PACKAGES_MANIFEST header; testzip None; 51 members == 51 manifest rows (name set equal).
+- Every member sha256+size == its manifest row (51/51); every non-generated member == its "<=" source file byte-identical.
+- Extracted to E:\Tsuki-project\_scratch\wf1005\L_audit\extract: 51 files on disk, 51 match manifest sha256.
+- vs pre-WF1005 candidate zip (backup copy): same 51 names; bytes differ ONLY for LICENSE.txt and README.txt;
+  WAV members 49/49 byte-identical.
+- LICENSE.txt in zip == LICENSE_SE_PACK_v1_1.txt byte-identical, sha256 e965080d8bd9e147481e683196cfa566ce32b3424f114fee9defbce8c7158a34,
+  TBD/draft/草稿/草案/legal-advice/box regex all 0.
+- README.txt change = removal of the first 2 lines "[v1.1 CANDIDATE - pending approval / 承認待ちの候補版 / 候選版，尚未核可上架]" + blank.
+  Same 2-line removal in zip_readme/README_SE_PACK_v1_1.txt, README_SE_PACK_v1_1_FAB.txt, README_ALBUM_v1_1.txt (git diff -U0); nothing else.
+TsukiSynth_Worldview_SE_Pack_v1.1_FAB.zip  77,921,033 B  sha256 aa50df02f86fd0b4...  50 members, all rows match, only README differs, 49/49 WAV identical, no LICENSE member.
+TsukiSynth_Album_Vol1_v1.1.zip  98,965,205 B  sha256 f6b64208d5e5c084...  15 members, all rows match, only README differs, 14/14 audio identical, no LICENSE member.
+All three _candidate zips in packages/ are still byte-identical to their backup copies.
+-> PASS
+
+== 4. x2_verify.py run by the auditor
+command (cwd = repo): python exports/products/clean_batch2_v1_1_candidate/scripts/x2_verify.py --complete include --music tpdf --release
+  --evidence wf1005_L_audit_verify.txt --packages-evidence wf1005_L_packages.txt --tmp ../_scratch/wf1005/L_audit/verify_tmp
+exit 0 ; "GATE X2 verify: 204/204" ; 204 [PASS] lines, 0 [FAIL] ; full output reports/gate_outputs/wf1005_L_audit_verify.txt
+- includes V1 (clean_batch2/ 212 originals == _ORIGINALS_SHA256_before.txt) and V4 (independent --release rebuild: all 3 sha256 identical).
+- _X2_MANIFEST_SHA256.txt rewritten by the run with identical content (hash before == after, 9da098c8...).
+Review of the x2_verify.py patch (diff vs backup, +70/-10): every change is gated on --release; without --release the old
+checks run unchanged. --release mode drops the "--release must be refused" and "[TBD]/NOT LEGAL ADVICE must be present"
+checks (they only make sense for the draft) and replaces them with stricter opposite checks (0 TBD, no draft box, V14 12 slots,
+zip LICENSE == source, album license unchanged). No tolerance or threshold was loosened. x2_build_packages.py unchanged (diff empty).
+-> PASS
+
+== 5. Album license not touched
+LICENSE_ALBUM_v1_1.txt sha256 7f1983f7cb74755177754523d2ce625b60b3b11cbac8364d2f8aa9376f0f6a44 == backup == WF1002 committed record;
+mtime 2026-10-02 00:25:05; '[TBD' 16, 'TBD' 42 (auditor count). Not in any zip.
+-> PASS
+
+== 6. Upload checklist reports/wf1005_booth_upload_checklist.zh-TW.md
+- path of the zip: exists, correct. sha256 867f94fa... and 77,927,295 B (74.3 MiB) correct. 51 members = LICENSE + README + 43 SFX + 6 loop-ready: correct.
+- LICENSE.txt sha256 e965080d... correct.
+- price ¥900 / ¥800: sources correct (WF1002_addendum_decisions line 181 "建議 ¥900（或 ¥800 開賣觀察一個月）"; LISTING_COPY_v1_1.md line 16).
+  Checklist says 月月 has not set the price: consistent (no record found of a price decision).
+- "非法律意見" note present (line 9 and the §7 table, s9), and it is NOT in the license text: correct placement.
+- other references checked: LISTING_COPY A section starts line 11, "詳細は同梱の LICENSE をご覧ください" line 55, no TBD in A section;
+  art/ cover_draft.png 1600x1600, 6 thumbs 1200x1200; wf1002b_booth_image_specs §1-1 (1.2 GB per file, ファイルの追加・管理, アルバム情報 converts WAV): all match.
+- §6 "do not upload" table lists the 6 other zips correctly.
+- ERROR found: line 8 said "同資料夾還有 5 個別的 zip"; packages/ has 7 zips, i.e. 6 others (the §6 table itself lists 6). -> see section 7.
+
+== 7. Auditor erratum (applied)
+reports/wf1005_booth_upload_checklist.zh-TW.md line 8: "還有 5 個別的 zip" -> "還有 6 個別的 zip" (one digit; nothing else changed).
+sha256 before 6d53954c9c5626e86b5ecca0cd012cb0587e6b590a6c693bbd426b9ce562d1b5 -> after c909a10d8508feadc8ba0ce72c0b27b2b8fa0deb6b4ef69913c76bb559f860b7.
+Treated like the WF1004 Q-card precedent (PASS with auditor erratum): the count is wrong, but the list it points to (§6) is complete and correct,
+and no product file, hash or license text is affected.
+
+== 8. Notes for 月月 / planner (not blocking)
+N1. --release builds all three zips, so packages/ now has TsukiSynth_Album_Vol1_v1.1.zip with a release-style name and no CANDIDATE banner,
+    although the album license is undecided and the zip has no license file. It is listed as "do not upload" in the checklist §6 and CHANGES.
+    Risk = picking the wrong file by name. Optional later card: make --release build only the SE zip, or move non-sellable zips to a subfolder.
+N2. The 3 old _candidate zips (draft license inside) remain in packages/ next to the release zip. Same naming risk; kept on purpose (also in backup).
+N3. s8 text: "must stop using and delete your copies" and "products released before the breach may remain available" coexist; this is the default as given.
+N4. s9 says "管轄法院"/"court of jurisdiction", not exclusive; court name kept as "台灣台北地方法院" (official form 臺灣臺北地方法院). Both are written in the checklist for 月月.
+N5. s12 contact = BOOTH message only; itch.io-only buyers may not be able to reach the licensor. Written in the checklist §5.
+N6. exports/ is gitignored: the product changes are not in git; recovery is via _pre_WF1005_backup_20261012/ only.
+N7. Label cosmetic: x2_verify V8 line still prints "wf0925_X2_packages.txt" while comparing --packages-evidence (wf1005_L_packages.txt). Pre-existing label.
+
+== 9. Scope / R7
+- git diff HEAD -- src tests CMakeLists.txt: empty. No commit, no push by worker or auditor.
+- git status before auditor add: 4 worker untracked files + auditor's wf1005_L_audit_verify.txt + this file; nothing staged/modified before.
+- Auditor git add (PASS): reports/gate_outputs/wf1005_L_license_release.txt, wf1005_L_packages.txt, wf1005_L_verify.txt,
+  wf1005_L_audit_verify.txt, wf1005_L_audit.txt, reports/wf1005_booth_upload_checklist.zh-TW.md. (exports/products is gitignored, not added.)
+- Auditor scratch: E:\Tsuki-project\_scratch\wf1005\L_audit\ (audit_zips.py, outputs, extract/, verify_tmp/).
+
+RESULT: PASS
